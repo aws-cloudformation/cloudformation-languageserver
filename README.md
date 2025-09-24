@@ -1,4 +1,4 @@
-## My Project
+## AWS CloudFormation Language Server for Code Editors
 
 TODO: Fill this README out!
 
