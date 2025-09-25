@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES2022",
+    "moduleResolution": "node",
+    "lib": [
+      "ES2022"
+    ],
+    "declaration": true,
+    "rootDir": ".",
+    "outDir": "out",
+    "sourceMap": true,
+    "declarationMap": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "composite": true,
+    "noImplicitOverride": true,
+    "allowJs": false,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "useDefineForClassFields": false,
+    "resolveJsonModule": true,
+    "types": ["vitest"],
+  },
+  "include": ["src", "tst", "tools", "package.json"],
+  "exclude": [
+    "build",
+    "bundle",
+    "coverage",
+    "out",
+    "node_modules",
+    "src/services/guard/assets/guard.js"
+  ]
+}

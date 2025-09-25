@@ -1,0 +1,103 @@
+name: Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            branch:
+                description: 'Branch to release from'
+                required: true
+                default: 'beta'
+                type: choice
+                options:
+                    - beta
+                    - prod
+
+permissions:
+    contents: write
+
+jobs:
+    get-versions:
+        uses: ./.github/workflows/versions.yml
+
+    build-and-release:
+        name: Build Release Assets
+        needs: get-versions
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest, macos-latest, macos-12, ubuntu-20.04]
+                arch: [x64, arm64]
+                exclude:
+                    - os: windows-latest
+                      arch: arm64
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ needs.get-versions.outputs.node-version }}
+                  cache: 'npm'
+
+            # - name: Setup Go
+            #   uses: actions/setup-go@v5
+            #   with:
+            #       go-version: ${{ needs.get-versions.outputs.go-version }}
+
+            - name: Install Node.js dependencies
+              run: npm ci
+
+            - name: Build Node.js application
+              shell: bash
+              run: |
+                  if [ "${{ github.event.inputs.branch }}" == "beta" ]; then
+                    npm run bundle:beta
+                  else
+                    npm run bundle:prod
+                  fi
+
+            # - name: Build Go application
+            #   run: npm run build:go:prod
+
+            - name: Read version from package.json
+              id: get-version
+              run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+            - name: Set Release Asset Name
+              id: set-asset-name
+              shell: bash
+              run: |
+                  APP_NAME='${{ needs.get-versions.outputs.app-name }}'
+                  VERSION=${{ steps.get-version.outputs.version }}
+                  OS=${{ matrix.os }}
+                  ARCH=${{ matrix.arch }}
+                  BRANCH=${{ github.event.inputs.branch }}
+
+                  if [ "$BRANCH" = "beta" ]; then
+                    ASSET_NAME="${APP_NAME}-beta-${VERSION}-${OS}-${ARCH}.zip"
+                  else
+                    ASSET_NAME="${APP_NAME}-${VERSION}-${OS}-${ARCH}.zip"
+                  fi
+
+                  echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
+                  echo "ASSET_PATH=./$ASSET_NAME" >> $GITHUB_OUTPUT
+                  echo "ASSET_PATH=./$ASSET_NAME" >> $GITHUB_OUTPUT
+
+            - name: Create Zip Archive of the bundle
+              shell: bash
+              run: |
+                  zip -r ${{ steps.set-asset-name.outputs.ASSET_NAME }} bundle/production
+
+            - name: Create GitHub Release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: v${{ steps.get-version.outputs.version }}
+                  name: Release v${{ steps.get-version.outputs.version }}${{ github.event.inputs.branch == 'beta' && ' (Beta)' || '' }}
+                  prerelease: ${{ github.event.inputs.branch == 'beta' }}
+                  files: ${{ steps.set-asset-name.outputs.ASSET_PATH }}
+                  fail_on_unmatched_files: true
+                  body: 'Release based on commit: ${{ github.sha }}'
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

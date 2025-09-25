@@ -1,0 +1,51 @@
+name: Promote to Beta
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to promote (e.g., 1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  get-versions:
+    uses: ./.github/workflows/versions.yml
+
+  promote-to-beta:
+    name: Promote Main to Beta
+    needs: get-versions
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.get-versions.outputs.node-version }}
+
+      - name: Configure Git User
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Create version commit and tag on main branch
+        run: |
+          git checkout main
+          git pull origin main
+          npm version ${{ github.event.inputs.version }} -m "chore: Start release for v%s"
+          git push origin main --follow-tags
+
+      - name: Merge main into beta
+        run: |
+          git checkout beta
+          git pull origin beta
+          git merge --no-ff -m "Release: Promoting main to beta for release v${{ github.event.inputs.version }}" main
+          git push origin beta

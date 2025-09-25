@@ -1,17 +1,45 @@
-## AWS CloudFormation Language Server for Code Editors
+# AWS CloudFormation Language Server for Code Editors
 
-TODO: Fill this README out!
+A LSP server implementation that provides intelligent editing support for CloudFormation templates in JSON and YAML formats.
 
-Be sure to:
+## Features
 
-* Change the title in this README
-* Edit your repository description on GitHub
+### Intelligent Code Completion
+- **Resource Types**: Auto-complete AWS resource types with fuzzy matching
+- **Properties**: Context-aware property suggestions for CloudFormation resources
+- **Intrinsic Functions**: Complete function names and parameter suggestions
+- **Parameters & References**: Auto-complete template parameters, conditions, and mappings
+- **Template Sections**: Top-level CloudFormation section completion
 
-## Security
+### Real-time Validation
+- **Syntax Validation**: Immediate feedback on JSON/YAML syntax errors
+- **Schema Validation**: CloudFormation resource schema enforcement with regional support
+- **cfn-lint Integration**: Python-based linting with comprehensive rule validation
+- **AWS Guard Integration**: Policy-as-code validation for security and compliance
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+### Documentation & Navigation
+- **Hover Documentation**: Contextual help for resources, properties, and functions
+- **Go-to-Definition**: Navigate to CloudFormation reference definitions
+- **Document Symbols**: Template structure navigation and outline view
+- **Parameter Information**: Type and constraint documentation
+
+### AWS Integration
+- **Stack Operations**: List and manage CloudFormation stacks
+- **Resource Discovery**: Browse available AWS resource types by region
+- **Template Validation**: Server-side CloudFormation template validation
+- **Template Deployment**: Deploy templates directly from the editor
+- **Resource State Import**: Import existing AWS resources into templates
+
+### Advanced Capabilities
+- **Multi-Format Support**: Native JSON and YAML CloudFormation template processing
+- **Partial Parsing**: Intelligent completion even in incomplete or malformed templates
+- **Regional Schemas**: Automatic schema retrieval and caching for different AWS regions
+
+## Requirements
+
+- **Node.js**: Version 22.15.0 to 22.17.0
+- **npm**: Version 10.5.0 or higher
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
-
+Licensed under the Apache License, Version 2.0. See [LICENSE.txt](LICENSE.txt) for details.

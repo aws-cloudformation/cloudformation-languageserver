@@ -1,0 +1,14 @@
+/node_modules
+/build
+/out
+/coverage
+/bundle
+/bin
+/tmp-node-modules
+*.tsbuildinfo
+*.node
+.DS_Store
+tools/*
+!tools/*.ts
+**/.aws-cfn-storage
+/oss-attribution

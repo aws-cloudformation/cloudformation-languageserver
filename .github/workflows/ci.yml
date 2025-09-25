@@ -1,0 +1,50 @@
+name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+      - beta
+      - prod
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  get-versions:
+    uses: ./.github/workflows/versions.yml
+
+  build-and-test:
+    name: Build and Test
+    needs: get-versions
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.get-versions.outputs.node-version }}
+          cache: 'npm'
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ needs.get-versions.outputs.go-version }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint application
+        run: npm run lint
+
+      - name: Build application
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run tests (Go)
+        run: npm run test:go
