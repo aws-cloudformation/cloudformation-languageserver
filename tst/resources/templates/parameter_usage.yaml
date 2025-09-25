@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Simple template showing parameter reference'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+  BucketName: 
+    Type: String
+    Default: testbucket
+Mappings:
+  EnvMap:
+    dev:
+      Size: small
+    prod:
+      Size: large
+
+Conditions:
+  # Ref in condition
+  IsProduction: !Equals [!Ref Environment, "prod"]
+  IsDevEnv: !Equals [!Sub "${Environment}-test", "dev-test"]
+
+Resources:
+  # 1. Direct Ref with short form
+  Bucket1:
+    Type: AWS::S3::Bucket
+    Conditions: IsProduction
+    Properties:
+      BucketName: !Ref Environment
+
+  # 2. Direct Ref with long form
+  Bucket2:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Ref: BucketName
+
+  # 3. Ref with pseudo parameter
+  Bucket3:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join ["-", [!Ref "AWS::Region", "bucketName"]]
+
+  # 4. Nested ref
+  Bucket4:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join ["-", [!Ref "Environment", "joined"]]
+
+  Bucket5:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "Bucket5-${Environment}"
+
+  Bucket6:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Sub: "Bucket6-${Environment}"
+
+  Bucket7:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "Bucket-${AWS::Region}"
+
+Outputs:
+  # Output with direct ref
+  EnvironmentName:
+    Value: !Ref Environment

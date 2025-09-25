@@ -1,0 +1,78 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Simple template showing parameter reference",
+  "Parameters": {
+    "Environment": {
+      "Type": "String",
+      "Default": "dev"
+    }
+  },
+  "Mappings": {
+    "EnvMap": {
+      "dev": {
+        "Size": "small"
+      },
+      "prod": {
+        "Size": "large"
+      }
+    }
+  },
+  "Conditions": {
+    "IsProduction": {
+      "Fn::Equals": [ { "Ref": "Environment" }, "prod" ]
+    },
+    "IsDevEnv": {
+      "Fn::Equals": [ { "Fn::Sub": "${Environment}-test" }, "dev-test" ]
+    }
+  },
+  "Resources": {
+    "Bucket1": {
+      "Type": "AWS::S3::Bucket",
+      "Conditions": "IsProduction",
+      "Properties": {
+        "BucketName": {
+          "Ref": "Environment"
+        }
+      }
+    },
+    "Bucket2": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::Join": [ "-", [ { "Ref": "AWS::Region" }, "bucketName" ] ]
+        }
+      }
+    },
+    "Bucket3": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::Join": [ "-", [ { "Ref": "Environment" },"joined" ] ]
+        }
+      }
+    },
+    "Bucket4": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::Sub": "Bucket-${Environment}"
+        }
+      }
+    },
+    "Bucket5": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::Sub": "Bucket-${AWS::Region}"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "EnvironmentName": {
+      "Value": {
+        "Ref": "Environment"
+      }
+    }
+  }
+}

@@ -1,0 +1,59 @@
+import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
+import { Context } from '../context/Context';
+import { TopLevelSection } from '../context/ContextType';
+import { getEntityMap } from '../context/SectionContextBuilder';
+import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
+import { CompletionProvider } from './CompletionProvider';
+import { createCompletionItem } from './CompletionUtils';
+
+export class ConditionCompletionProvider implements CompletionProvider {
+    private readonly log = LoggerFactory.getLogger(ConditionCompletionProvider);
+    private readonly conditionFuzzySearch = getFuzzySearchFunction({
+        keys: [{ name: 'label', weight: 1 }],
+        threshold: 0.5,
+        distance: 10,
+        minMatchCharLength: 1,
+        shouldSort: true,
+        ignoreLocation: false,
+    });
+
+    public constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
+
+    public getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
+        this.log.debug(
+            {
+                provider: 'Condition Completion',
+                position: params.position,
+            },
+            'Processing condition completion request',
+        );
+
+        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
+        if (!syntaxTree) {
+            return;
+        }
+
+        const conditionMap = getEntityMap(syntaxTree, TopLevelSection.Conditions);
+        if (!conditionMap || conditionMap.size === 0) {
+            return undefined;
+        }
+
+        const conditionLogicalNameToOmit =
+            context.section === TopLevelSection.Conditions && context.logicalId ? context.logicalId : '';
+        const items = this.getConditionsAsCompletionItems(
+            [...conditionMap.keys()].filter((k) => k !== conditionLogicalNameToOmit),
+        );
+
+        if (context.text.length > 0) {
+            return this.conditionFuzzySearch(items, context.text);
+        }
+
+        return items;
+    }
+
+    private getConditionsAsCompletionItems(keys: ReadonlyArray<string>): CompletionItem[] {
+        return keys.map((k) => createCompletionItem(k, CompletionItemKind.Reference));
+    }
+}

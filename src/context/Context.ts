@@ -1,0 +1,288 @@
+import { SyntaxNode } from 'tree-sitter';
+import { DocumentType } from '../document/Document';
+import { removeQuotes } from '../utils/String';
+import {
+    IntrinsicsSet,
+    PseudoParametersSet,
+    ResourceAttributesSet,
+    TopLevelSection,
+    TopLevelSectionsSet,
+    TopLevelSectionsWithLogicalIdsSet,
+} from './ContextType';
+import { IntrinsicContext } from './IntrinsicContext';
+import { Entity } from './semantic/Entity';
+import { nodeToEntity } from './semantic/EntityBuilder';
+import { normalizeIntrinsicFunction } from './semantic/Intrinsics';
+import { PropertyPath } from './syntaxtree/SyntaxTree';
+import { NodeType } from './syntaxtree/utils/NodeType';
+import { YamlNodeTypes, CommonNodeTypes } from './syntaxtree/utils/TreeSitterTypes';
+
+export type SectionType = TopLevelSection | 'Unknown';
+
+export class Context {
+    public readonly section: SectionType;
+    public readonly isTopLevel: boolean;
+    public readonly logicalId?: string;
+    public readonly hasLogicalId: boolean;
+    public readonly text: string;
+    public readonly entitySection?: string | number;
+
+    public readonly isResourceType: boolean;
+    public readonly isIntrinsicFunc: boolean;
+    public readonly isPseudoParameter: boolean;
+    public readonly isResourceAttribute: boolean;
+
+    private _intrinsicContext?: IntrinsicContext;
+
+    constructor(
+        private readonly node: SyntaxNode,
+        private readonly pathToRoot: ReadonlyArray<SyntaxNode>,
+        public readonly propertyPath: PropertyPath,
+        public readonly documentType: DocumentType,
+        public readonly entityRootNode: SyntaxNode | undefined,
+        private _entity?: Entity, // Lazy loading
+    ) {
+        const { section, logicalId } = logicalIdAndSection(propertyPath);
+        this.section = section;
+        this.isTopLevel = this.propertyPath.length < 2 && !NodeType.containsMultipleSections(node);
+        this.logicalId = logicalId;
+        this.hasLogicalId = this.logicalId !== undefined;
+
+        this.text = removeQuotes(this.node.text).trim();
+        this.isResourceType = NodeType.isResourceType(this.text);
+        this.isPseudoParameter = PseudoParametersSet.has(this.text);
+        this.isResourceAttribute = ResourceAttributesSet.has(this.text);
+        this.isIntrinsicFunc = this.isIntrinsicFunction(this.text);
+        this.entitySection = this.hasLogicalId ? this.propertyPath[2] : undefined;
+    }
+
+    public get entity(): Entity {
+        this._entity ??= nodeToEntity(this.documentType, this.entityRootNode, this.section, this.logicalId);
+        return this._entity;
+    }
+
+    public get intrinsicContext(): IntrinsicContext {
+        this._intrinsicContext ??= new IntrinsicContext(this.pathToRoot, this.documentType);
+        return this._intrinsicContext;
+    }
+
+    public get startPosition() {
+        return this.node.startPosition;
+    }
+
+    public get endPosition() {
+        return this.node.endPosition;
+    }
+
+    public getRootEntityText() {
+        return this.entityRootNode?.text;
+    }
+
+    public isKey() {
+        // SYNTHETIC_KEY_OR_VALUE can be both key and value
+        if (NodeType.isNodeType(this.node, CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE)) {
+            return true;
+        }
+
+        // Check if we're on a different row than the key (indented on next line)
+        const isOnDifferentRow = this.isOnDifferentRowThanKey();
+
+        return (
+            this.propertyPath.at(-1) === this.text ||
+            NodeType.isNodeType(this.node, CommonNodeTypes.SYNTHETIC_KEY) ||
+            isOnDifferentRow
+        );
+    }
+
+    public isValue() {
+        // SYNTHETIC_KEY_OR_VALUE can be both key and value
+        if (NodeType.isNodeType(this.node, CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE)) {
+            return true;
+        }
+
+        // SYNTHETIC_KEY should only be a key, not a value
+        if (NodeType.isNodeType(this.node, CommonNodeTypes.SYNTHETIC_KEY)) {
+            return false;
+        }
+
+        // Check if we're on a different row than the key (indented on next line)
+        const isOnDifferentRow = this.isOnDifferentRowThanKey();
+
+        // If we're on a different row, we could be a key and a value
+        if (isOnDifferentRow) {
+            return true;
+        }
+
+        // If we're positioned on the property name itself, it's a key not a value
+        return !(this.propertyPath.at(-1) === this.text);
+    }
+
+    private isOnDifferentRowThanKey(): boolean {
+        // Find the parent block_mapping_pair node to get the key position
+        let current = this.node.parent;
+        while (current) {
+            if (NodeType.isNodeType(current, YamlNodeTypes.BLOCK_MAPPING_PAIR)) {
+                // If current node starts on a different row than the key, it could be a new key
+                return current.startPosition.row < this.node.startPosition.row;
+            }
+            current = current.parent;
+        }
+
+        return false;
+    }
+
+    public atBlockMappingLevel() {
+        return this.node.type === (YamlNodeTypes.BLOCK_MAPPING as string);
+    }
+
+    private isIntrinsicFunction(text: string): boolean {
+        return IntrinsicsSet.has(normalizeIntrinsicFunction(text));
+    }
+
+    // Matches SectionType, ignores LogicalId, then matches the paths provided after logicalId
+    public matchPathWithLogicalId(section: SectionType, ...paths: string[]) {
+        if (section !== this.section) {
+            return false;
+        }
+
+        if (!this.hasLogicalId) {
+            return false;
+        }
+
+        if (paths.length > 0 && this.propertyPath.length < 3) {
+            return false;
+        }
+
+        for (const [idx, path] of paths.entries()) {
+            if (this.propertyPath[idx + 2] !== path) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public atEntityKeyLevel() {
+        if (!this.hasLogicalId) {
+            return false;
+        }
+
+        // Case 1: propertyPath.length === 3 (e.g., ['Resources', 'MyResource', 'Type'])
+        // We're at a resource attribute level
+        if (this.propertyPath.length === 3 && this.entitySection === this.text) {
+            return true;
+        }
+
+        // Case 2: propertyPath.length === 2 (e.g., ['Resources', 'MyResource'])
+        // We need to distinguish between:
+        // - Cursor in middle of resource name (should return false)
+        // - Cursor after resource name, ready for attributes (should return true)
+        if (this.propertyPath.length === 2) {
+            // If the current text matches the logical ID (resource name),
+            // it means the cursor is positioned within the resource name itself
+            // In this case, we should NOT provide entity key completions
+            if (this.text === this.logicalId) {
+                return false;
+            }
+
+            // If entitySection is undefined and text is not the resource name,
+            // it means we're positioned after the resource name, ready for attributes
+            return this.entitySection !== this.text;
+        }
+
+        return false;
+    }
+
+    public atNestedEntityKeyLevel(parentKey: string) {
+        const parentKeyIdx = this.propertyPath.indexOf(parentKey);
+        if (parentKeyIdx === -1 || !this.hasLogicalId) {
+            return false;
+        }
+
+        const childKeyIdx = parentKeyIdx + 1;
+
+        return (
+            this.hasLogicalId &&
+            ((this.propertyPath.length === childKeyIdx && parentKey !== this.text) ||
+                (this.propertyPath.length === childKeyIdx + 1 && this.propertyPath[childKeyIdx] === this.text))
+        );
+    }
+
+    public getMappingKeys(): string[] {
+        if (!NodeType.isMappingNode(this.node, this.documentType)) {
+            return [];
+        }
+
+        const keys: string[] = [];
+        for (const child of this.node.children) {
+            const key = NodeType.extractKeyFromPair(child, this.documentType);
+            if (key !== undefined) {
+                keys.push(key);
+            }
+        }
+        return keys;
+    }
+
+    public createContextFromParent(stopCondition: (node: SyntaxNode) => boolean): Context | undefined {
+        let current = this.node.parent;
+        let pathIndex = this.pathToRoot.length - 1; // Start from parent
+
+        while (current && pathIndex >= 0) {
+            if (stopCondition(current)) {
+                const parentPath = this.pathToRoot.slice(0, pathIndex + 1);
+                const parentPropertyPath = this.propertyPath.slice(0, pathIndex + 1);
+
+                return new Context(
+                    current,
+                    parentPath,
+                    parentPropertyPath,
+                    this.documentType,
+                    this.entityRootNode,
+                    this._entity,
+                );
+            }
+            current = current.parent;
+            pathIndex--;
+        }
+        return undefined;
+    }
+
+    public record() {
+        return {
+            section: this.section,
+            logicalId: this.logicalId,
+            text: this.text,
+            propertyPath: this.propertyPath,
+            entitySection: this.entitySection,
+            metadata: `isTopLevel=${this.isTopLevel}, isResourceType=${this.isResourceType}, isIntrinsicFunction=${this.isIntrinsicFunc}, isPseudoParameter=${this.isPseudoParameter}, isResourceAttribute=${this.isResourceAttribute}`,
+            node: { start: this.node.startPosition, end: this.node.endPosition },
+            root: { start: this.entityRootNode?.startPosition, end: this.entityRootNode?.endPosition },
+            entity: this.entity,
+            intrinsicContext: this.intrinsicContext.record(),
+        };
+    }
+}
+
+export function logicalIdAndSection(propertyPath: PropertyPath) {
+    const section = findSection(propertyPath);
+    let logicalId: string | undefined;
+
+    if (propertyPath.length > 1 && section !== 'Unknown' && TopLevelSectionsWithLogicalIdsSet.has(section)) {
+        logicalId = propertyPath[1] as string;
+    }
+
+    return {
+        section,
+        logicalId,
+    };
+}
+
+function findSection(propertyPath: PropertyPath): SectionType {
+    if (propertyPath.length > 0) {
+        const topLevelKey = propertyPath[0] as string;
+        if (TopLevelSectionsSet.has(topLevelKey)) {
+            return topLevelKey as TopLevelSection;
+        }
+    }
+    return 'Unknown';
+}

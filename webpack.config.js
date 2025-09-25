@@ -74,14 +74,7 @@ const IGNORE_PATTERNS = [
 ];
 
 // Keeping license for legal
-const KEEP_PATTERNS = [
-    '**/python_stdlib.zip', 
-    '**/LICENSE*', 
-    '**/LICENCE*',
-    '**/package.json', 
-    '**/yarn.lock',
-    '**/yaml/dist/doc/**'
-];
+const KEEP_PATTERNS = ['**/python_stdlib.zip', '**/yaml/dist/doc/**'];
 
 function createPlugins(isDevelopment, outputPath, mode, env) {
     const plugins = [];
@@ -235,7 +228,7 @@ const baseConfig = {
     target: 'node',
     entry: {
         [BUNDLE_NAME]: './src/app/standalone.ts',
-        // 'pyodide-worker': './src/services/cfnLint/pyodide-worker.ts',
+        'pyodide-worker': './src/services/cfnLint/pyodide-worker.ts',
     },
     resolve: {
         extensions: ['.ts', '.js', '.node'],
@@ -283,7 +276,7 @@ const baseConfig = {
 
 module.exports = (env = {}) => {
     const mode = env.mode;
-    const awsEnv = env.env;
+    let awsEnv = env.env;
 
     // Validate mode
     const validModes = ['development', 'production'];
@@ -292,8 +285,12 @@ module.exports = (env = {}) => {
         process.exit(1);
     }
 
+    if (mode === 'development') {
+        awsEnv = 'alpha';
+    }
+
     // Validate env
-    const validEnvs = ['dev', 'beta', 'prod'];
+    const validEnvs = ['alpha', 'beta', 'prod'];
     if (!validEnvs.includes(awsEnv)) {
         console.error(`Invalid env: ${awsEnv}. Valid options: ${validEnvs.join(', ')}`);
         process.exit(1);

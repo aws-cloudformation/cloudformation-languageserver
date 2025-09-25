@@ -1,0 +1,257 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Template for testing condition usage detection with all intrinsic forms'
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, prod]
+  CreateDatabase:
+    Type: String
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+
+Conditions:
+  # Short-form single line
+  IsProduction: !Equals [!Ref Environment, prod]
+  
+  # Full-form single line
+  IsDevelopment:
+    Fn::Equals: [!Ref Environment, dev]
+  
+  # Short-form multi-line
+  ShouldCreateDatabase: !Equals
+    - !Ref CreateDatabase
+    - 'true'
+  
+  # Full-form multi-line
+  IsProductionAndCreateDB:
+    Fn::And:
+      - Condition: IsProduction
+      - Condition: ShouldCreateDatabase
+  
+  # Mixed forms - short-form with full-form Condition
+  IsDevOrCreateDB: !Or
+    - Condition: IsDevelopment
+    - Condition: ShouldCreateDatabase
+  
+  # Full-form with short-form Condition
+  NotProduction:
+    Fn::Not:
+      - !Condition IsProduction
+  
+  # Complex nested conditions with mixed forms
+  ComplexCondition:
+    Fn::And:
+      - Fn::Or:
+          - !Condition IsProduction
+          - Condition: IsDevelopment
+      - !Not [!Condition ShouldCreateDatabase]
+
+Resources:
+  ProductionBucket:
+    Type: AWS::S3::Bucket
+    Condition: IsProduction
+    Properties:
+      # Short-form single line
+      BucketName: !If [IsProduction, my-prod-bucket, my-dev-bucket]
+      
+      VersioningConfiguration:
+        # Full-form single line
+        Status:
+          Fn::If: [IsProduction, Enabled, Suspended]
+      
+      PublicAccessBlockConfiguration:
+        # Short-form multi-line
+        BlockPublicAcls: !If
+          - IsProduction
+          - true
+          - false
+        
+        # Full-form multi-line
+        BlockPublicPolicy:
+          Fn::If:
+            - IsProduction
+            - true
+            - false
+    
+    UpdatePolicy:
+      Condition: IsProduction
+    
+    Metadata:
+      Condition: IsProduction
+      Description: Production S3 bucket
+
+  DevelopmentBucket:
+    Type: AWS::S3::Bucket
+    Condition: IsDevelopment
+    Properties:
+      BucketName: my-dev-bucket
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Condition: ShouldCreateDatabase
+    Properties:
+      DBInstanceClass: db.t3.micro
+      Engine: mysql
+      MasterUsername: admin
+      MasterUserPassword: password123
+      AllocatedStorage: '20'
+
+  ConditionalResource:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-12345678
+      
+      # Short-form condition reference
+      InstanceType: !If [IsProductionAndCreateDB, t3.large, t3.micro]
+      
+      SecurityGroups:
+        # Full-form multi-line If
+        - Fn::If:
+            - IsProduction
+            - !Ref ProductionSecurityGroup
+            - !Ref DevSecurityGroup
+      
+      Tags:
+        - Key: Environment
+          # Short-form single line
+          Value: !If [IsProduction, Production, Development]
+        
+        - Key: HasDatabase
+          # Full-form single line
+          Value:
+            Fn::If: [ShouldCreateDatabase, 'true', 'false']
+        
+        - Key: ComplexTag
+          # Short-form multi-line
+          Value: !If
+            - ComplexCondition
+            - Complex-True
+            - Complex-False
+
+  ProductionSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: IsProduction
+    Properties:
+      GroupDescription: Production security group
+
+  DevSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: IsDevelopment
+    Properties:
+      GroupDescription: Development security group
+
+  NestedConditionResource:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      # Nested conditions with mixed forms
+      Bucket:
+        Fn::If:
+          - IsProduction
+          - !Ref ProductionBucket
+          - !Ref DevelopmentBucket
+      
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: s3:GetObject
+            Resource: !Sub
+              - '${BucketArn}/*'
+              - BucketArn: !If
+                  - IsProduction
+                  - !GetAtt ProductionBucket.Arn
+                  - !GetAtt DevelopmentBucket.Arn
+
+  # Resource with condition in And/Or/Not intrinsics
+  LogicalConditionResource:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !If
+        - Fn::And:
+            - !Condition IsProduction
+            - Condition: ShouldCreateDatabase
+        - prod-db-alarm
+        - dev-alarm
+      
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: !If
+        - Fn::Or:
+            - Condition: IsProduction
+            - !Condition ShouldCreateDatabase
+        - 80
+        - 90
+      
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: !If
+        - Fn::Not:
+            - !Condition IsProduction
+        - notBreaching
+        - breaching
+
+Outputs:
+  ProductionBucketName:
+    Condition: IsProduction
+    Description: Name of the production bucket
+    Value: !Ref ProductionBucket
+
+  DatabaseEndpoint:
+    Condition: ShouldCreateDatabase
+    Description: Database endpoint
+    Value: !GetAtt Database.Endpoint.Address
+
+  # Short-form condition output
+  ConditionalOutput:
+    Description: Conditional output value
+    Value: !If [IsDevOrCreateDB, 'Development or Database Created', 'Production without Database']
+
+  # Full-form condition output
+  FullFormConditionalOutput:
+    Description: Full-form conditional output
+    Value:
+      Fn::If:
+        - IsProduction
+        - Production Environment
+        - Development Environment
+
+  # Multi-line condition output
+  MultiLineConditionalOutput:
+    Description: Multi-line conditional output
+    Value: !If
+      - ComplexCondition
+      - !If [IsProduction, 'Complex Prod', 'Complex Dev']
+      - 'Simple Case'
+
+  # Nested conditions with And/Or/Not
+  LogicalConditionalOutput:
+    Condition: NotProduction
+    Description: Output using logical conditions
+    Value:
+      Fn::If:
+        - Fn::And:
+            - !Condition IsDevelopment
+            - Condition: ShouldCreateDatabase
+        - Dev with Database
+        - Fn::If:
+            - Fn::Or:
+                - Condition: IsProduction
+                - !Condition ShouldCreateDatabase
+            - Prod or No Database
+            - Default Case
+
+  # Edge case: Condition keyword in different intrinsics
+  EdgeCaseOutput:
+    Description: Edge case with condition in various intrinsics
+    Value: !If
+      - Fn::Equals:
+          - Fn::And:
+              - Condition: IsProduction
+              - !Condition ShouldCreateDatabase
+          - true
+      - Both conditions true
+      - At least one false

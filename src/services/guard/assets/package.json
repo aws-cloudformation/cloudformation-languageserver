@@ -1,0 +1,12 @@
+{
+  "name": "cfn-guard-wasm",
+  "version": "3.1.2",
+  "description": "CloudFormation Guard WASM module",
+  "main": "guard.js",
+  "types": "guard.d.ts",
+  "files": [
+    "guard.js",
+    "guard_bg.wasm",
+    "guard.d.ts"
+  ]
+}

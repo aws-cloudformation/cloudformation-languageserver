@@ -1,0 +1,9 @@
+{
+  "AWSTemplateFormatVersion": "date",
+  "Hello1
+  "Resources": {
+    "MyS3Bucket": {
+      "Type":"AWS::S3::Bucket"
+    }
+  },
+HelloA

@@ -1,0 +1,156 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Template for testing condition usage detection",
+  "Parameters": {
+    "Environment": {
+      "Type": "String",
+      "Default": "dev",
+      "AllowedValues": ["dev", "prod"]
+    },
+    "CreateDatabase": {
+      "Type": "String",
+      "Default": "true",
+      "AllowedValues": ["true", "false"]
+    }
+  },
+  "Conditions": {
+    "IsProduction": {
+      "Fn::Equals": [
+        { "Ref": "Environment" },
+        "prod"
+      ]
+    },
+    "IsDevelopment": {
+      "Fn::Equals": [
+        { "Ref": "Environment" },
+        "dev"
+      ]
+    },
+    "ShouldCreateDatabase": {
+      "Fn::Equals": [
+        { "Ref": "CreateDatabase" },
+        "true"
+      ]
+    },
+    "IsProductionAndCreateDB": {
+      "Fn::And": [
+        { "Condition": "IsProduction" },
+        { "Condition": "ShouldCreateDatabase" }
+      ]
+    },
+    "IsDevOrCreateDB": {
+      "Fn::Or": [
+        { "Condition": "IsDevelopment" },
+        { "Condition": "ShouldCreateDatabase" }
+      ]
+    },
+    "NotProduction": {
+      "Fn::Not": [
+        { "Condition": "IsProduction" }
+      ]
+    }
+  },
+  "Resources": {
+    "ProductionBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Condition": "IsProduction",
+      "Properties": {
+        "BucketName": {
+          "Fn::If": [
+            "IsProduction",
+            "my-prod-bucket",
+            "my-dev-bucket"
+          ]
+        },
+        "VersioningConfiguration": {
+          "Status": {
+            "Fn::If": [
+              "IsProduction",
+              "Enabled",
+              "Suspended"
+            ]
+          }
+        }
+      },
+      "UpdatePolicy": {
+        "Condition": "IsProduction"
+      },
+      "Metadata": {
+        "Condition": "IsProduction",
+        "Description": "Production S3 bucket"
+      }
+    },
+    "DevelopmentBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Condition": "IsDevelopment",
+      "Properties": {
+        "BucketName": "my-dev-bucket"
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Condition": "ShouldCreateDatabase",
+      "Properties": {
+        "DBInstanceClass": "db.t3.micro",
+        "Engine": "mysql",
+        "MasterUsername": "admin",
+        "MasterUserPassword": "password123",
+        "AllocatedStorage": "20"
+      }
+    },
+    "ConditionalResource": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "ImageId": "ami-12345678",
+        "InstanceType": {
+          "Fn::If": [
+            "IsProductionAndCreateDB",
+            "t3.large",
+            "t3.micro"
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Fn::If": [
+                "IsProduction",
+                "Production",
+                "Development"
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "ProductionBucketName": {
+      "Condition": "IsProduction",
+      "Description": "Name of the production bucket",
+      "Value": {
+        "Ref": "ProductionBucket"
+      }
+    },
+    "DatabaseEndpoint": {
+      "Condition": "ShouldCreateDatabase",
+      "Description": "Database endpoint",
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "Endpoint.Address"
+        ]
+      }
+    },
+    "ConditionalOutput": {
+      "Description": "Conditional output value",
+      "Value": {
+        "Fn::If": [
+          "IsDevOrCreateDB",
+          "Development or Database Created",
+          "Production without Database"
+        ]
+      }
+    }
+  }
+}

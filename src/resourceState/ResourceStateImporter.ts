@@ -1,0 +1,327 @@
+import { CodeActionKind, Position, Range, TextEdit } from 'vscode-languageserver';
+import { stringify as yamlStringify } from 'yaml';
+import { TopLevelSection } from '../context/ContextType';
+import { getEntityMap } from '../context/SectionContextBuilder';
+import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
+import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
+import { Document, DocumentType } from '../document/Document';
+import { DocumentManager } from '../document/DocumentManager';
+import { ResourceSchema } from '../schema/ResourceSchema';
+import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { TransformersUtil } from '../schema/transformers/TransformersUtil';
+import { ServerComponents } from '../server/ServerComponents';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { extractErrorMessage } from '../utils/Errors';
+import { ResourceStateManager } from './ResourceStateManager';
+import {
+    ResourceIdentifier,
+    ResourceSelection,
+    ResourceStateImportParams,
+    ResourceStateImportResult,
+    ResourceTemplateFormat,
+    ResourceType,
+} from './ResourceStateTypes';
+import { StackManagementInfoProvider } from './StackManagementInfoProvider';
+
+interface ResourcesSection {
+    endPosition: { row: number };
+}
+
+const log = LoggerFactory.getLogger('ResourceStateImporter');
+
+export class ResourceStateImporter {
+    private readonly transformers = TransformersUtil.createTransformers();
+    constructor(
+        private readonly documentManager: DocumentManager,
+        private readonly syntaxTreeManager: SyntaxTreeManager,
+        private readonly resourceStateManager: ResourceStateManager,
+        private readonly schemaRetriever: SchemaRetriever,
+        private readonly stackManagementInfoProvider: StackManagementInfoProvider,
+    ) {}
+
+    public async importResourceState(params: ResourceStateImportParams): Promise<ResourceStateImportResult> {
+        const { resourceSelections, textDocument } = params;
+        if (!resourceSelections) {
+            return this.getFailureResponse('No resources selected for import.');
+        }
+
+        const document = this.documentManager.get(textDocument.uri);
+        if (!document) {
+            return this.getFailureResponse('Import failed. Document not found.');
+        }
+
+        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(textDocument.uri);
+        if (!syntaxTree) {
+            return this.getFailureResponse('Import failed. Syntax tree not found');
+        }
+
+        const { fetchedResourceStates, importResult } = await this.getResourceStates(resourceSelections, syntaxTree);
+        const resourceSection = this.getResourceSection(syntaxTree);
+        const insertPosition = this.getInsertPosition(resourceSection, document);
+        const docFormattedText = this.combineResourcesToDocumentFormat(
+            fetchedResourceStates,
+            document.documentType,
+            resourceSection !== undefined,
+        );
+
+        const commaPrefix = insertPosition.commaPrefixNeeded ? ',\n' : '';
+        const newLineSuffix = insertPosition.newLineSuffixNeeded ? '\n' : '';
+
+        const textEdit: TextEdit = {
+            range: Range.create(insertPosition.position, insertPosition.position),
+            newText: commaPrefix + docFormattedText + newLineSuffix,
+        };
+
+        return {
+            ...importResult,
+            kind: CodeActionKind.Refactor,
+            edit: {
+                changes: {
+                    [document.uri]: [textEdit],
+                },
+            },
+        };
+    }
+
+    private async getResourceStates(
+        resourceSelections: ResourceSelection[],
+        syntaxTree: SyntaxTree,
+    ): Promise<{ fetchedResourceStates: ResourceTemplateFormat[]; importResult: ResourceStateImportResult }> {
+        const fetchedResourceStates: ResourceTemplateFormat[] = [];
+        const importResult: ResourceStateImportResult = {
+            title: 'Resource State Import',
+            failedImports: new Map<ResourceType, ResourceIdentifier[]>(),
+            successfulImports: new Map<ResourceType, ResourceIdentifier[]>(),
+        };
+
+        const generatedLogicalIds = new Set<string>();
+
+        for (const resourceSelection of resourceSelections) {
+            const resourceType = resourceSelection.resourceType;
+            const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
+            if (!schema) {
+                this.getOrCreate(importResult.failedImports, resourceType, []).push(
+                    ...resourceSelection.resourceIdentifiers,
+                );
+                continue;
+            }
+            for (const resourceIdentifier of resourceSelection.resourceIdentifiers) {
+                try {
+                    const resourceState = await this.resourceStateManager.getResource(resourceType, resourceIdentifier);
+                    if (resourceState) {
+                        this.getOrCreate(importResult.successfulImports, resourceType, []).push(resourceIdentifier);
+                        const logicalId = this.generateUniqueLogicalId(
+                            resourceType,
+                            resourceIdentifier,
+                            syntaxTree,
+                            generatedLogicalIds,
+                        );
+                        generatedLogicalIds.add(logicalId);
+                        fetchedResourceStates.push({
+                            [logicalId]: {
+                                Type: resourceType,
+                                Properties: this.applyTransformations(resourceState.properties, schema),
+                                Metadata: {
+                                    PrimaryIdentifier: resourceIdentifier,
+                                    ...(await this.getStackManagementMetadata(resourceIdentifier)),
+                                },
+                            },
+                        });
+                    } else {
+                        this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
+                    }
+                } catch (error) {
+                    log.error(
+                        { error: extractErrorMessage(error) },
+                        `Error importing resource state for ${resourceType} id: ${resourceIdentifier}`,
+                    );
+                    this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
+                }
+            }
+        }
+        return { fetchedResourceStates, importResult };
+    }
+
+    private generateUniqueLogicalId(
+        resourceType: string,
+        resourceIdentifier: string,
+        syntaxTree: SyntaxTree,
+        idsAlreadyGenerated?: Set<string>,
+    ): string {
+        const entities = getEntityMap(syntaxTree, TopLevelSection.Resources);
+        const existingLogicalIds = new Set<string>(entities?.keys());
+
+        // Add any additional IDs generated in current operation
+        if (idsAlreadyGenerated) {
+            for (const id of idsAlreadyGenerated) {
+                existingLogicalIds.add(id);
+            }
+        }
+
+        return this.generateLogicalId(resourceType, resourceIdentifier, existingLogicalIds);
+    }
+
+    private generateLogicalId(resourceType: string, identifier: string, existingLogicalIds?: Set<string>): string {
+        // get Bucket from AWS::S3::Bucket or if malformed just the resourceType sanitized
+        const resourceTypeParts = resourceType.split('::');
+        const resourceTypeThirdPartOrFull = resourceTypeParts.pop() ?? resourceType.replaceAll(/[^a-zA-Z]/g, '');
+        if (!existingLogicalIds?.has(resourceTypeThirdPartOrFull)) {
+            return resourceTypeThirdPartOrFull;
+        }
+        const cleanIdentifier = identifier.replaceAll(/[^a-zA-Z]/g, '');
+        const typeAndId = resourceTypeThirdPartOrFull + cleanIdentifier.slice(0, 10);
+        if (!existingLogicalIds?.has(typeAndId)) {
+            return typeAndId;
+        }
+        return crypto
+            .randomUUID()
+            .replaceAll(/[^a-zA-Z]/g, '')
+            .slice(0, 10);
+    }
+
+    private getResourceSection(syntaxTree: SyntaxTree): ResourcesSection | undefined {
+        const topLevelSections = syntaxTree.findTopLevelSections([TopLevelSection.Resources]);
+        if (topLevelSections.has(TopLevelSection.Resources)) {
+            return topLevelSections.get(TopLevelSection.Resources) as ResourcesSection;
+        }
+        return;
+    }
+
+    private combineResourcesToDocumentFormat(
+        resources: ResourceTemplateFormat[],
+        documentType: DocumentType,
+        resourceSectionExists: boolean,
+    ): string {
+        const combined = {};
+        for (const resource of resources) {
+            Object.assign(combined, resource);
+        }
+        const output = resourceSectionExists ? combined : { Resources: combined };
+        if (documentType === DocumentType.JSON) {
+            const outputWithoutEnclosingBracesAndNewline = JSON.stringify(output, undefined, 2).slice(2, -2);
+
+            if (resourceSectionExists) {
+                // Existing resource section - add 2 spaces to all lines
+                return '  ' + outputWithoutEnclosingBracesAndNewline.replaceAll('\n', '\n  ');
+            } else {
+                // No resource section - content is already properly indented by JSON.stringify
+                return outputWithoutEnclosingBracesAndNewline;
+            }
+        }
+
+        // YAML handling adds new line prefix always to work around some YAML end of file parsing errors
+        const yamlOutput = yamlStringify(output, { indent: 2 });
+        if (resourceSectionExists) {
+            // Existing resource section - add 2 spaces to all lines for proper indentation
+            return '\n  ' + yamlOutput.replaceAll('\n', '\n  ').trim();
+        } else {
+            // No resource section - content is already properly indented
+            return '\n' + yamlOutput.trim();
+        }
+    }
+
+    private applyTransformations(properties: string, schema: ResourceSchema): Record<string, string> {
+        const propertiesObj = JSON.parse(properties) as Record<string, string>;
+
+        if (schema) {
+            for (const transformer of this.transformers) {
+                transformer.transform(propertiesObj, schema);
+            }
+        }
+        return propertiesObj;
+    }
+
+    private getInsertPosition(
+        resourcesSection: ResourcesSection | undefined,
+        document: Document,
+    ): { position: Position; commaPrefixNeeded: boolean; newLineSuffixNeeded: boolean } {
+        if (document.documentType === DocumentType.YAML) {
+            let position: Position;
+            if (resourcesSection) {
+                position =
+                    document.getLine(resourcesSection.endPosition.row)?.trim().length === 0
+                        ? { line: resourcesSection.endPosition.row, character: 0 }
+                        : { line: resourcesSection.endPosition.row + 1, character: 0 };
+            } else {
+                position =
+                    document.getLine(document.lineCount - 1)?.trim().length === 0
+                        ? { line: document.lineCount - 1, character: 0 }
+                        : { line: document.lineCount, character: 0 };
+            }
+            return { position: position, commaPrefixNeeded: false, newLineSuffixNeeded: false };
+        }
+
+        let line = resourcesSection ? resourcesSection.endPosition.row : document.lineCount - 1;
+        while (line > 0) {
+            const previousLine = document.getLine(line - 1);
+            if (previousLine === undefined) {
+                return { position: { line: line, character: 0 }, commaPrefixNeeded: false, newLineSuffixNeeded: false };
+            } else if (previousLine.trim().length > 0) {
+                if (previousLine.trimEnd().endsWith(',') || previousLine.trimEnd().endsWith('{')) {
+                    return {
+                        position: { line: line, character: 0 },
+                        commaPrefixNeeded: false,
+                        newLineSuffixNeeded: true,
+                    };
+                }
+                return {
+                    position: { line: line - 1, character: previousLine.trimEnd().length },
+                    commaPrefixNeeded: true,
+                    newLineSuffixNeeded: false,
+                };
+            }
+            line--;
+        }
+        // malformed case, allow import to end of document
+        return {
+            position: { line: document.lineCount, character: 0 },
+            commaPrefixNeeded: false,
+            newLineSuffixNeeded: false,
+        };
+    }
+
+    private async getStackManagementMetadata(identifier: string) {
+        const stackManagementInfo = await this.stackManagementInfoProvider.getResourceManagementState(identifier);
+        return {
+            ManagedByStack:
+                stackManagementInfo.managedByStack === undefined
+                    ? 'unknown'
+                    : stackManagementInfo.managedByStack.toString(),
+            StackName: stackManagementInfo.stackName,
+            StackId: stackManagementInfo.stackId,
+        };
+    }
+
+    private getFailureResponse(
+        title: string,
+        successfulImports?: Map<ResourceType, ResourceIdentifier[]>,
+        failedImports?: Map<ResourceType, ResourceIdentifier[]>,
+    ): ResourceStateImportResult {
+        return {
+            title: title,
+            successfulImports: successfulImports ?? new Map<ResourceType, ResourceIdentifier[]>(),
+            failedImports: failedImports ?? new Map<ResourceType, ResourceIdentifier[]>(),
+        };
+    }
+
+    private getOrCreate<K, V>(map: Map<K, V>, key: K, createValue: V): V {
+        if (map.has(key)) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            return map.get(key)!; // non-null assertion after check with has()
+        } else {
+            const newValue = createValue;
+            map.set(key, newValue);
+            return newValue;
+        }
+    }
+
+    static create(components: ServerComponents): ResourceStateImporter {
+        return new ResourceStateImporter(
+            components.documentManager,
+            components.syntaxTreeManager,
+            components.resourceStateManager,
+            components.schemaRetriever,
+            components.stackManagementInfoProvider,
+        );
+    }
+}

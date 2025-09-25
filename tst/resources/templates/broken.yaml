@@ -1,0 +1,7 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Hello1
+Test: 1
+Hello2
+Resources:
+  Resource1:
+    Type: AWS::S3::Bu

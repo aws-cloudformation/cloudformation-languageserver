@@ -1,0 +1,1064 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Comprehensive CloudFormation template showcasing ALL complex syntax - GOOD STATE",
+  
+  "Transform": [
+    "AWS::Serverless-2016-10-31",
+    "AWS::Include"
+  ],
+  
+  "Metadata": {
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Network Configuration"
+          },
+          "Parameters": [
+            "VpcCidr",
+            "EnvironmentName"
+          ]
+        }
+      ],
+      "ParameterLabels": {
+        "VpcCidr": {
+          "default": "VPC CIDR Block"
+        }
+      }
+    },
+    "CustomMetadata": {
+      "Version": "1.0.0",
+      "ComplexObject": {
+        "NestedArray": [
+          "Item1",
+          {
+            "Key1": "Value1",
+            "Key2": "Value2"
+          }
+        ]
+      }
+    }
+  },
+  
+  "Parameters": {
+    "EnvironmentName": {
+      "Type": "String",
+      "Default": "production",
+      "AllowedValues": [
+        "development",
+        "staging",
+        "production"
+      ],
+      "ConstraintDescription": "Must be development, staging, or production"
+    },
+    "VpcCidr": {
+      "Type": "String",
+      "Default": "10.0.0.0/16",
+      "AllowedPattern": "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    },
+    "SubnetCidrs": {
+      "Type": "CommaDelimitedList",
+      "Default": "10.0.1.0/24,10.0.2.0/24"
+    },
+    "DatabasePassword": {
+      "Type": "String",
+      "NoEcho": true,
+      "MinLength": 8,
+      "MaxLength": 128
+    },
+    "InstanceCount": {
+      "Type": "Number",
+      "Default": 2,
+      "MinValue": 1,
+      "MaxValue": 10
+    },
+    "AvailabilityZones": {
+      "Type": "List<AWS::EC2::AvailabilityZone::Name>",
+      "Description": "List of AZs"
+    },
+    "SSMParameter": {
+      "Type": "AWS::SSM::Parameter::Value<String>",
+      "Default": "/myapp/config/database-url"
+    },
+    "BooleanParameter": {
+      "Type": "String",
+      "Default": "true",
+      "AllowedValues": [
+        "true",
+        "false"
+      ]
+    }
+  },
+  
+  "Mappings": {
+    "RegionMap": {
+      "us-east-1": {
+        "AMI": "ami-0abcdef1234567890",
+        "InstanceType": "t3.micro"
+      },
+      "us-west-2": {
+        "AMI": "ami-0fedcba0987654321",
+        "InstanceType": "t3.small"
+      }
+    },
+    "EnvironmentMap": {
+      "development": {
+        "DatabaseSize": "db.t3.micro",
+        "LogLevel": "DEBUG"
+      },
+      "production": {
+        "DatabaseSize": "db.t3.large",
+        "LogLevel": "WARN"
+      }
+    }
+  },
+  
+  "Conditions": {
+    "IsProduction": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnvironmentName"
+        },
+        "production"
+      ]
+    },
+    "IsNotProduction": {
+      "Fn::Not": [
+        {
+          "Condition": "IsProduction"
+        }
+      ]
+    },
+    "IsDevelopment": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnvironmentName"
+        },
+        "development"
+      ]
+    },
+    "IsProductionOrStaging": {
+      "Fn::Or": [
+        {
+          "Condition": "IsProduction"
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "EnvironmentName"
+            },
+            "staging"
+          ]
+        }
+      ]
+    },
+    "ComplexCondition": {
+      "Fn::And": [
+        {
+          "Condition": "IsProductionOrStaging"
+        },
+        {
+          "Fn::Not": [
+            {
+              "Condition": "IsDevelopment"
+            }
+          ]
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "AWS::Region"
+            },
+            "us-east-1"
+          ]
+        }
+      ]
+    },
+    "HasMultipleAZs": {
+      "Fn::Not": [
+        {
+          "Fn::Equals": [
+            {
+              "Fn::Select": [
+                1,
+                {
+                  "Ref": "AvailabilityZones"
+                }
+              ]
+            },
+            ""
+          ]
+        }
+      ]
+    }
+  },
+  
+  "Rules": {
+    "ValidateRegionAndEnvironment": {
+      "RuleCondition": {
+        "Fn::Equals": [
+          {
+            "Ref": "AWS::Region"
+          },
+          "us-east-1"
+        ]
+      },
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Contains": [
+              [
+                "t3.micro",
+                "t3.small",
+                "t3.medium"
+              ],
+              {
+                "Fn::FindInMap": [
+                  "RegionMap",
+                  {
+                    "Ref": "AWS::Region"
+                  },
+                  "InstanceType"
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Instance type must be valid for region"
+        },
+        {
+          "Assert": {
+            "Fn::And": [
+              {
+                "Fn::Not": [
+                  {
+                    "Fn::Equals": [
+                      {
+                        "Ref": "DatabasePassword"
+                      },
+                      ""
+                    ]
+                  }
+                ]
+              },
+              {
+                "Fn::Not": [
+                  {
+                    "Fn::Equals": [
+                      {
+                        "Ref": "VpcCidr"
+                      },
+                      ""
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Required parameters must not be empty"
+        }
+      ]
+    },
+    "ValidateParameterCombinations": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Or": [
+              {
+                "Fn::Equals": [
+                  {
+                    "Ref": "EnvironmentName"
+                  },
+                  "development"
+                ]
+              },
+              {
+                "Fn::And": [
+                  {
+                    "Fn::Not": [
+                      {
+                        "Fn::Equals": [
+                          {
+                            "Ref": "EnvironmentName"
+                          },
+                          "development"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Fn::Not": [
+                      {
+                        "Fn::Equals": [
+                          {
+                            "Fn::Select": [
+                              1,
+                              {
+                                "Ref": "AvailabilityZones"
+                              }
+                            ]
+                          },
+                          ""
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "Non-development environments must specify multiple availability zones"
+        },
+        {
+          "Assert": {
+            "Fn::Implies": [
+              {
+                "Fn::Equals": [
+                  {
+                    "Ref": "BooleanParameter"
+                  },
+                  "true"
+                ]
+              },
+              {
+                "Fn::And": [
+                  {
+                    "Fn::Not": [
+                      {
+                        "Fn::Equals": [
+                          {
+                            "Ref": "InstanceCount"
+                          },
+                          1
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "Fn::Not": [
+                      {
+                        "Fn::Equals": [
+                          {
+                            "Ref": "SSMParameter"
+                          },
+                          ""
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "AssertDescription": "When BooleanParameter is true, InstanceCount must be > 1 and SSMParameter must be provided"
+        }
+      ]
+    }
+  },
+  
+  "Resources": {
+    "VPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": {
+          "Ref": "VpcCidr"
+        },
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName}-vpc"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "EnvironmentName"
+            }
+          }
+        ]
+      },
+      "Metadata": {
+        "Purpose": "Main VPC",
+        "CreatedBy": "CloudFormation"
+      }
+    },
+    "PublicSubnet": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "CidrBlock": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "SubnetCidrs"
+            }
+          ]
+        },
+        "AvailabilityZone": {
+          "Fn::Select": [
+            0,
+            {
+              "Ref": "AvailabilityZones"
+            }
+          ]
+        },
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": [
+                "${EnvName}-public-subnet-${AZ}",
+                {
+                  "EnvName": {
+                    "Ref": "EnvironmentName"
+                  },
+                  "AZ": {
+                    "Fn::Select": [
+                      0,
+                      {
+                        "Ref": "AvailabilityZones"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          },
+          {
+            "Key": "Type",
+            "Value": "Public"
+          }
+        ]
+      },
+      "Condition": "IsProductionOrStaging"
+    },
+    "WebSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Security group with complex rules",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "HTTP access"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0",
+            "Description": "HTTPS access"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "SourceSecurityGroupId": {
+              "Ref": "BastionSecurityGroup"
+            },
+            "Description": "SSH from bastion"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName}-web-sg"
+            }
+          }
+        ]
+      }
+    },
+    "BastionSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Bastion security group",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 22,
+            "ToPort": 22,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ]
+      }
+    },
+    "LaunchTemplate": {
+      "Type": "AWS::EC2::LaunchTemplate",
+      "Properties": {
+        "LaunchTemplateName": {
+          "Fn::Sub": "${EnvironmentName}-template"
+        },
+        "LaunchTemplateData": {
+          "ImageId": {
+            "Fn::FindInMap": [
+              "RegionMap",
+              {
+                "Ref": "AWS::Region"
+              },
+              "AMI"
+            ]
+          },
+          "InstanceType": {
+            "Fn::FindInMap": [
+              "RegionMap",
+              {
+                "Ref": "AWS::Region"
+              },
+              "InstanceType"
+            ]
+          },
+          "SecurityGroupIds": [
+            {
+              "Ref": "WebSecurityGroup"
+            }
+          ],
+          "TagSpecifications": [
+            {
+              "ResourceType": "instance",
+              "Tags": [
+                {
+                  "Key": "Name",
+                  "Value": {
+                    "Fn::Sub": "${EnvironmentName}-instance"
+                  }
+                },
+                {
+                  "Key": "Environment",
+                  "Value": {
+                    "Ref": "EnvironmentName"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "Metadata": {
+        "AWS::CloudFormation::Designer": {
+          "id": "launch-template-id"
+        }
+      }
+    },
+    "AutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "AutoScalingGroupName": {
+          "Fn::Sub": "${EnvironmentName}-asg"
+        },
+        "LaunchTemplate": {
+          "LaunchTemplateId": {
+            "Ref": "LaunchTemplate"
+          },
+          "Version": {
+            "Fn::GetAtt": [
+              "LaunchTemplate",
+              "LatestVersionNumber"
+            ]
+          }
+        },
+        "DesiredCapacity": {
+          "Ref": "InstanceCount"
+        },
+        "VPCZoneIdentifier": [
+          {
+            "Fn::If": [
+              "HasMultipleAZs",
+              {
+                "Ref": "PublicSubnet"
+              },
+              {
+                "Ref": "PublicSubnet"
+              }
+            ]
+          }
+        ],
+        "HealthCheckType": "ELB",
+        "HealthCheckGracePeriod": 300,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName}-asg"
+            },
+            "PropagateAtLaunch": false
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "EnvironmentName"
+            },
+            "PropagateAtLaunch": true
+          }
+        ]
+      },
+      "UpdatePolicy": {
+        "AutoScalingRollingUpdate": {
+          "MinInstancesInService": 1,
+          "MaxBatchSize": 2,
+          "PauseTime": "PT5M",
+          "WaitOnResourceSignals": true
+        }
+      },
+      "CreationPolicy": {
+        "ResourceSignal": {
+          "Count": {
+            "Ref": "InstanceCount"
+          },
+          "Timeout": "PT10M"
+        }
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "DBInstanceIdentifier": {
+          "Fn::Sub": "${EnvironmentName}-database"
+        },
+        "DBInstanceClass": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            {
+              "Ref": "EnvironmentName"
+            },
+            "DatabaseSize"
+          ]
+        },
+        "Engine": "mysql",
+        "EngineVersion": "8.0",
+        "AllocatedStorage": {
+          "Fn::If": [
+            "IsProduction",
+            100,
+            20
+          ]
+        },
+        "StorageType": "gp2",
+        "StorageEncrypted": {
+          "Fn::If": [
+            "IsProduction",
+            true,
+            false
+          ]
+        },
+        "MasterUsername": "admin",
+        "MasterUserPassword": {
+          "Ref": "DatabasePassword"
+        },
+        "VPCSecurityGroups": [
+          {
+            "Ref": "DatabaseSecurityGroup"
+          }
+        ],
+        "BackupRetentionPeriod": {
+          "Fn::If": [
+            "IsProduction",
+            7,
+            1
+          ]
+        },
+        "MultiAZ": {
+          "Condition": "IsProduction"
+        },
+        "PubliclyAccessible": false,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName}-database"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "EnvironmentName"
+            }
+          }
+        ]
+      },
+      "DeletionPolicy": {
+        "Fn::If": [
+          "IsProduction",
+          "Snapshot",
+          "Delete"
+        ]
+      },
+      "UpdateReplacePolicy": {
+        "Fn::If": [
+          "IsProduction",
+          "Snapshot",
+          "Delete"
+        ]
+      }
+    },
+    "DatabaseSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Database security group",
+        "VpcId": {
+          "Ref": "VPC"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 3306,
+            "ToPort": 3306,
+            "SourceSecurityGroupId": {
+              "Ref": "WebSecurityGroup"
+            }
+          }
+        ]
+      }
+    },
+    "LambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": {
+          "Fn::Sub": "${EnvironmentName}-function"
+        },
+        "Runtime": "python3.9",
+        "Handler": "index.lambda_handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": {
+            "Fn::Sub": "import json\nimport boto3\n\ndef lambda_handler(event, context):\n    return {\n        'statusCode': 200,\n        'body': json.dumps({\n            'environment': '${EnvironmentName}',\n            'region': '${AWS::Region}',\n            'database': '${Database}'\n        })\n    }"
+          }
+        },
+        "Environment": {
+          "Variables": {
+            "ENVIRONMENT": {
+              "Ref": "EnvironmentName"
+            },
+            "DATABASE_ENDPOINT": {
+              "Fn::GetAtt": [
+                "Database",
+                "Endpoint.Address"
+              ]
+            },
+            "LOG_LEVEL": {
+              "Fn::FindInMap": [
+                "EnvironmentMap",
+                {
+                  "Ref": "EnvironmentName"
+                },
+                "LogLevel"
+              ]
+            },
+            "VPC_ID": {
+              "Ref": "VPC"
+            }
+          }
+        },
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Ref": "WebSecurityGroup"
+            }
+          ],
+          "SubnetIds": [
+            {
+              "Ref": "PublicSubnet"
+            }
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName}-lambda"
+            }
+          }
+        ]
+      },
+      "Condition": "IsProductionOrStaging"
+    },
+    "LambdaRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": {
+          "Fn::Sub": "${EnvironmentName}-lambda-role"
+        },
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "DatabaseAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "rds:DescribeDBInstances",
+                    "rds:DescribeDBClusters"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "arn:aws:rds:${AWS::Region}:${AWS::AccountId}:db:${Database}"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "DatabaseAlarm": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": {
+          "Fn::Sub": "${EnvironmentName}-database-cpu"
+        },
+        "AlarmDescription": "Database CPU utilization alarm",
+        "MetricName": "CPUUtilization",
+        "Namespace": "AWS/RDS",
+        "Statistic": "Average",
+        "Period": 300,
+        "EvaluationPeriods": 2,
+        "Threshold": 80,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "Dimensions": [
+          {
+            "Name": "DBInstanceIdentifier",
+            "Value": {
+              "Ref": "Database"
+            }
+          }
+        ],
+        "AlarmActions": [
+          {
+            "Ref": "SNSTopic"
+          }
+        ],
+        "TreatMissingData": "notBreaching"
+      },
+      "Condition": "IsProduction"
+    },
+    "SNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": {
+          "Fn::Sub": "${EnvironmentName}-alerts"
+        },
+        "DisplayName": {
+          "Fn::Sub": "${EnvironmentName} Environment Alerts"
+        },
+        "KmsMasterKeyId": "alias/aws/sns",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${EnvironmentName}-alerts"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "EnvironmentName"
+            }
+          }
+        ]
+      }
+    }
+  },
+  
+  "Outputs": {
+    "VPCId": {
+      "Description": "ID of the VPC",
+      "Value": {
+        "Ref": "VPC"
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${EnvironmentName}-VPC-ID"
+        }
+      }
+    },
+    "VPCCidr": {
+      "Description": "CIDR block of the VPC",
+      "Value": {
+        "Fn::GetAtt": [
+          "VPC",
+          "CidrBlock"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${EnvironmentName}-VPC-CIDR"
+        }
+      }
+    },
+    "DatabaseEndpoint": {
+      "Description": "RDS database endpoint",
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "Endpoint.Address"
+        ]
+      },
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${EnvironmentName}-Database-Endpoint"
+        }
+      },
+      "Condition": "IsProductionOrStaging"
+    },
+    "ComplexOutput": {
+      "Description": "Complex output demonstrating multiple functions",
+      "Value": {
+        "Fn::Sub": [
+          "Environment: ${Environment}\nVPC: ${VpcId} (${VpcCidr})\nSubnets: ${SubnetList}\nDatabase: ${DbEndpoint}:${DbPort}\nInstance Count: ${InstanceCount}\nRegion AZs: ${AvailabilityZones}\nMax Scaling: ${MaxScaling}",
+          {
+            "Environment": {
+              "Ref": "EnvironmentName"
+            },
+            "VpcId": {
+              "Ref": "VPC"
+            },
+            "VpcCidr": {
+              "Fn::GetAtt": [
+                "VPC",
+                "CidrBlock"
+              ]
+            },
+            "SubnetList": {
+              "Fn::Join": [
+                ", ",
+                {
+                  "Ref": "SubnetCidrs"
+                }
+              ]
+            },
+            "DbEndpoint": {
+              "Fn::GetAtt": [
+                "Database",
+                "Endpoint.Address"
+              ]
+            },
+            "DbPort": {
+              "Fn::GetAtt": [
+                "Database",
+                "Endpoint.Port"
+              ]
+            },
+            "InstanceCount": {
+              "Ref": "InstanceCount"
+            },
+            "AvailabilityZones": {
+              "Fn::Join": [
+                ", ",
+                {
+                  "Ref": "AvailabilityZones"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "ConditionalOutput": {
+      "Description": "Output that only exists in production",
+      "Value": {
+        "Fn::If": [
+          "IsProduction",
+          {
+            "Fn::Sub": [
+              "Production environment in ${Region} with ${Count} instances",
+              {
+                "Region": {
+                  "Ref": "AWS::Region"
+                },
+                "Count": {
+                  "Ref": "InstanceCount"
+                }
+              }
+            ]
+          },
+          {
+            "Ref": "AWS::NoValue"
+          }
+        ]
+      },
+      "Condition": "IsProduction"
+    },
+    "NestedFunctionOutput": {
+      "Description": "Output with deeply nested functions",
+      "Value": {
+        "Fn::Select": [
+          0,
+          {
+            "Fn::Split": [
+              ",",
+              {
+                "Fn::Sub": [
+                  "${First},${Second},${Third}",
+                  {
+                    "First": {
+                      "Fn::FindInMap": [
+                        "RegionMap",
+                        {
+                          "Ref": "AWS::Region"
+                        },
+                        "AMI"
+                      ]
+                    },
+                    "Second": {
+                      "Fn::GetAtt": [
+                        "Database",
+                        "Endpoint.Address"
+                      ]
+                    },
+                    "Third": {
+                      "Fn::If": [
+                        "IsProduction",
+                        "prod",
+                        "dev"
+                      ]
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

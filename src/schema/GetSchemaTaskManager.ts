@@ -1,0 +1,121 @@
+import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
+import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
+import { DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
+import { ClientMessage } from '../telemetry/ClientMessage';
+import { AwsRegion } from '../utils/Region';
+import { GetPrivateSchemasTask, GetPublicSchemaTask } from './GetSchemaTask';
+import { SchemaFileType } from './RegionalSchemas';
+import { cfnResourceSchemaLink, downloadFile, unZipFile } from './RemoteSchemaHelper';
+import { SchemaStore } from './SchemaStore';
+
+const TenSeconds = 10 * 1000;
+const OneHour = 60 * 60 * 1000;
+
+export class GetSchemaTaskManager implements Configurable, Closeable {
+    private readonly tasks: GetPublicSchemaTask[] = [];
+    private readonly privateTask: GetPrivateSchemasTask;
+    private settingsSubscription?: SettingsSubscription;
+
+    private isRunning: boolean = false;
+
+    private readonly timeout: NodeJS.Timeout;
+    private readonly interval: NodeJS.Timeout;
+
+    constructor(
+        private readonly schemas: SchemaStore,
+        private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
+        private readonly getPrivateResources: () => Promise<DescribeTypeOutput[]>,
+        private readonly clientMessage: ClientMessage,
+        private profile: string = DefaultSettings.profile.profile,
+    ) {
+        this.privateTask = new GetPrivateSchemasTask(this.getPrivateResources, () => this.profile);
+
+        this.timeout = setTimeout(() => {
+            // Wait before trying to call CFN APIs so that credentials have time to update
+            this.runPrivateTask();
+        }, TenSeconds);
+
+        this.interval = setInterval(() => {
+            // Keep private schemas up to date with credential changes if profile has not already ben loaded
+            this.runPrivateTask();
+        }, OneHour);
+    }
+
+    configure(settingsManager: ISettingsSubscriber): void {
+        // Clean up existing subscription if present
+        if (this.settingsSubscription) {
+            this.settingsSubscription.unsubscribe();
+        }
+
+        // Set initial settings
+        this.profile = settingsManager.getCurrentSettings().profile.profile;
+
+        // Subscribe to profile settings changes
+        this.settingsSubscription = settingsManager.subscribe('profile', (newProfileSettings) => {
+            this.onSettingsChanged(newProfileSettings.profile);
+        });
+    }
+
+    private onSettingsChanged(newProfile: string): void {
+        this.profile = newProfile;
+    }
+
+    addTask(region: AwsRegion, regionFirstCreatedMs?: number) {
+        if (!this.currentRegionalTasks().has(region)) {
+            this.tasks.push(new GetPublicSchemaTask(region, this.getPublicSchemas, regionFirstCreatedMs));
+        }
+        this.startProcessing();
+    }
+
+    runPrivateTask() {
+        this.privateTask.run(this.schemas.privateSchemas, this.clientMessage).catch(() => {});
+    }
+
+    public currentRegionalTasks() {
+        return new Set(this.tasks.map((task) => task.region));
+    }
+
+    private startProcessing() {
+        if (!this.isRunning && this.tasks.length > 0) {
+            this.isRunning = true;
+            this.run();
+        }
+    }
+
+    private run() {
+        const task = this.tasks.shift();
+        if (task) {
+            task.run(this.schemas.publicSchemas, this.clientMessage)
+                .catch(() => {
+                    this.tasks.push(task);
+                })
+                .finally(() => {
+                    this.isRunning = false;
+                    this.startProcessing();
+                });
+        }
+    }
+
+    public close() {
+        // Unsubscribe from settings changes
+        if (this.settingsSubscription) {
+            this.settingsSubscription.unsubscribe();
+            this.settingsSubscription = undefined;
+        }
+
+        clearTimeout(this.timeout);
+        clearInterval(this.interval);
+    }
+
+    static create(components: ServerComponents) {
+        return new GetSchemaTaskManager(
+            components.schemaStore,
+            (region: AwsRegion) => {
+                return unZipFile(downloadFile(cfnResourceSchemaLink(region)));
+            },
+            () => components.cfnService.getAllPrivateResourceSchemas(),
+            components.clientMessage,
+            DefaultSettings.profile.profile,
+        );
+    }
+}
