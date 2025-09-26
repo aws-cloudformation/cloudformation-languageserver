@@ -53,16 +53,32 @@ export function createCompletionItem(
         sortText?: string;
         documentation?: string;
         data?: Record<string, unknown>;
+        context?: Context;
     },
 ): CompletionItem {
+    let textEdit: TextEdit | undefined = undefined;
+    let filterText = label;
+    const insertText = options?.insertText ?? label;
+    if (options?.context) {
+        const textInQuotes = options.context.textInQuotes();
+        if (textInQuotes) {
+            const range = createReplacementRange(options.context);
+            filterText = `${textInQuotes}${String(label)}${textInQuotes}`;
+            if (range) {
+                textEdit = TextEdit.replace(range, `${textInQuotes}${insertText}${textInQuotes}`);
+            }
+        }
+    }
+
     return {
         label,
         kind,
         detail: options?.detail ?? ExtensionName,
-        insertText: options?.insertText ?? label,
+        insertText: insertText,
         insertTextFormat: options?.insertTextFormat,
         insertTextMode: options?.insertTextMode,
-        filterText: label,
+        textEdit: textEdit,
+        filterText: filterText,
         sortText: options?.sortText,
         documentation: `${options?.documentation ? `${options?.documentation}\n` : ''}Source: ${ExtensionName}`,
         data: options?.data,

@@ -109,17 +109,25 @@ export abstract class SyntaxTree {
         const isYAML = this.type === DocumentType.YAML;
         let hasError = this.hasErrorInParentChain(initialNode);
 
-        if (isYAML && hasError) {
-            const incrementalNode = this.tryIncrementalParsing(position);
-            if (incrementalNode) {
-                initialNode = incrementalNode;
-                hasError = this.hasErrorInParentChain(initialNode); // Recalculate after incremental parsing
+        if (hasError) {
+            if (isYAML) {
+                const incrementalNode = this.tryIncrementalYamlParsing(position);
+                if (incrementalNode) {
+                    initialNode = incrementalNode;
+                    hasError = this.hasErrorInParentChain(initialNode); // Recalculate after incremental parsing
+                }
+            } else {
+                const incrementalNode = this.tryIncrementalJsonParsing(position);
+                if (incrementalNode) {
+                    initialNode = incrementalNode;
+                    hasError = this.hasErrorInParentChain(initialNode); // Recalculate after incremental parsing
+                }
             }
         }
 
-        // YAML-specific: if namedDescendantForPosition returned a block_mapping_pair,
-        // validate we're actually at colon/separator position
-        if (this.type === DocumentType.YAML && NodeType.isNodeType(initialNode, YamlNodeTypes.BLOCK_MAPPING_PAIR)) {
+        // 3. validate we're actually at colon/separator position
+        // prevents : triggering which has a bad parent path and results in false positive autocompletion
+        if (this.type === DocumentType.YAML && NodeType.isPairNode(initialNode, this.type)) {
             const key = initialNode.childForFieldName('key');
             const value = initialNode.childForFieldName('value');
             if (
@@ -131,7 +139,13 @@ export abstract class SyntaxTree {
             }
         }
 
-        // Special handling for YAML: check for whitespace-only lines first
+        // 4. if we are in JSON even if this is YAML we probably have the right node already
+        // For scalar types, return immediately as they're already the most specific node
+        if (NodeType.isScalarNode(initialNode, this.type) && !hasError) {
+            return initialNode;
+        }
+
+        // 5. Special handling for YAML: check for whitespace-only lines first
         if (this.type === DocumentType.YAML && !hasError) {
             const currentLine = this.lines[point.row];
             const trimmedLine = currentLine?.trim() || '';
@@ -144,7 +158,7 @@ export abstract class SyntaxTree {
             }
         }
 
-        // 3. Try to find the ideal node immediately: the most specific, valid, small node.
+        // 6. Try to find the ideal node immediately: the most specific, valid, small node.
         // This is the best-case scenario and allows for a very fast exit.
         const specificNode = NodeSearch.findMostSpecificNode(
             initialNode,
@@ -155,7 +169,7 @@ export abstract class SyntaxTree {
             return specificNode;
         }
 
-        // 4. If no ideal node was found, the initialNode might be large or invalid.
+        // 7. If no ideal node was found, the initialNode might be large or invalid.
         // Now, we search for a "better" alternative nearby.
         const betterNode = NodeSearch.findNearbyNode(
             this.tree.rootNode,
@@ -172,13 +186,13 @@ export abstract class SyntaxTree {
             return betterNode;
         }
 
-        // 5. Fallback: If no better alternative is found, return the original node
+        // 8. Fallback: If no better alternative is found, return the original node
         // ONLY if it's valid. A large but valid node is better than nothing.
         if (NodeType.isValidNode(initialNode)) {
             return initialNode;
         }
 
-        // 6. Last Resort: The initial node was invalid, and we found no good alternative.
+        // 9. Last Resort: The initial node was invalid, and we found no good alternative.
         // Find any smaller node nearby, even if it's not perfectly valid, as it's
         // better than returning a large, broken node.
         const anySmallerNode = NodeSearch.findNearbyNode(
@@ -243,6 +257,13 @@ export abstract class SyntaxTree {
             return undefined;
         };
 
+        if (NodeType.isNodeType(node, YamlNodeTypes.FLOW_MAPPING)) {
+            const syntheticKey = createSyntheticNode('', point, point, node);
+            syntheticKey.type = CommonNodeTypes.SYNTHETIC_KEY;
+            syntheticKey.grammarType = CommonNodeTypes.SYNTHETIC_KEY;
+            return syntheticKey;
+        }
+
         let closestKey = findClosestKey();
 
         if (closestKey) {
@@ -306,7 +327,7 @@ export abstract class SyntaxTree {
         return false;
     }
 
-    private tryIncrementalParsing(position: Position): SyntaxNode | undefined {
+    private tryIncrementalYamlParsing(position: Position): SyntaxNode | undefined {
         const currentLine = this.lines[position.line] ?? '';
         const textBeforeCursor = currentLine.slice(0, Math.max(0, position.character));
         const textAfterCursor = currentLine.slice(Math.max(0, position.character));
@@ -316,6 +337,33 @@ export abstract class SyntaxTree {
             // Insert colon and space at cursor position
             const modifiedLines = [...this.lines];
             modifiedLines[position.line] = textBeforeCursor + ': ' + textAfterCursor;
+            const completedContent = modifiedLines.join('\n');
+            const result = this.testIncrementalParsing(completedContent, position);
+            if (result) return result;
+        }
+
+        return undefined;
+    }
+
+    private tryIncrementalJsonParsing(position: Position): SyntaxNode | undefined {
+        const currentLine = this.lines[position.line] ?? '';
+        const textBeforeCursor = currentLine.slice(0, Math.max(0, position.character));
+        const textAfterCursor = currentLine.slice(Math.max(0, position.character));
+
+        // Strategy 1: If typing a key, add colon and space
+        if (textBeforeCursor.endsWith(':') && textBeforeCursor.trim() && !textAfterCursor.trim()) {
+            // Insert colon and space at cursor position
+            const modifiedLines = [...this.lines];
+            modifiedLines[position.line] = textBeforeCursor + ' null';
+            const completedContent = modifiedLines.join('\n');
+            const result = this.testIncrementalParsing(completedContent, position);
+            if (result) return result;
+        } else if (currentLine.includes('"')) {
+            // Strategy 2: Handle any quoted string as potential incomplete key
+            // Look for patterns like "text" and convert to "text": null
+            const modifiedLines = [...this.lines];
+            // Replace quoted strings that aren't followed by : with complete key-value pairs
+            modifiedLines[position.line] = currentLine.replace(/"([^"]*)"\s*(?!:)/g, '"$1": null');
             const completedContent = modifiedLines.join('\n');
             const result = this.testIncrementalParsing(completedContent, position);
             if (result) return result;
@@ -437,7 +485,7 @@ export abstract class SyntaxTree {
             if (NodeType.isPairNode(parent, this.type)) {
                 // This is a key-value pair. Add the key to our semantic path.
                 const key = NodeType.extractKeyFromPair(parent, this.type);
-                if (key) {
+                if (key !== undefined) {
                     propertyPath.push(key);
                 }
                 entityPath.push(parent);
@@ -472,6 +520,18 @@ export abstract class SyntaxTree {
                 const index = parent.namedChildren.findIndex((child) => child.id === current?.id);
                 if (index !== -1) {
                     propertyPath.push(index);
+                    entityPath.push(current);
+                }
+            } else if (
+                NodeType.isNodeType(parent, YamlNodeTypes.FLOW_NODE) &&
+                NodeType.isNodeType(current, YamlNodeTypes.DOUBLE_QUOTE_SCALAR)
+            ) {
+                // Could be incomplete key in nested JSON but need to look to grandparent
+                const grandparent = parent.parent;
+                if (grandparent && NodeType.isNodeType(grandparent, YamlNodeTypes.FLOW_MAPPING)) {
+                    // Is incomplete key pair in an object
+                    // { "" }
+                    propertyPath.push(current.text.replace(/^,?\s*"|"\s*/g, ''));
                     entityPath.push(current);
                 }
             }

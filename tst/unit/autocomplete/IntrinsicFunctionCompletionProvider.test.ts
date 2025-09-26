@@ -198,7 +198,7 @@ describe('IntrinsicFunctionCompletionProvider', () => {
 
         // Check that the fuzzy search properties are set
         expect(base64Function!.sortText).toBeDefined();
-        expect(base64Function!.filterText).toBe('Fn::Base');
+        expect(base64Function!.filterText).toBe('Fn::Base64');
     });
 
     test('should return fuzzy matched results for typos in function name', () => {
