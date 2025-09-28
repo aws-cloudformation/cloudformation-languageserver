@@ -4,7 +4,6 @@ import * as CompletionUtils from '../../../src/autocomplete/CompletionUtils';
 import { TopLevelSectionCompletionProvider } from '../../../src/autocomplete/TopLevelSectionCompletionProvider';
 import { TopLevelSection } from '../../../src/context/ContextType';
 import { DocumentType } from '../../../src/document/Document';
-import { DefaultSettings, EditorSettings } from '../../../src/settings/Settings';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createTopLevelContext } from '../../utils/MockContext';
 import { createMockComponents, createMockDocumentManager } from '../../utils/MockServerComponents';
@@ -34,7 +33,7 @@ describe('TopLevelSectionCompletionProvider', () => {
         // Create a mock context with text that will match "Resources" in fuzzy search
         const mockContext = createTopLevelContext('Unknown', { text: 'Res' });
 
-        const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+        const result = provider.getCompletions(mockContext, mockParams);
 
         expect(result).toBeDefined();
         // Since we're at top level, we should get sections
@@ -52,7 +51,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
         const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-        const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+        const result = provider.getCompletions(mockContext, mockParams);
 
         expect(result).toBeDefined();
         expect(result).toHaveLength(15); // All TopLevelSection enum values (10) + snippets (5)
@@ -78,7 +77,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
         const mockContext = createTopLevelContext('Unknown', { text: 'Par' });
 
-        const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+        const result = provider.getCompletions(mockContext, mockParams);
 
         expect(result).toBeDefined();
         expect(result!.length).toBeGreaterThan(0);
@@ -94,7 +93,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
         const mockContext = createTopLevelContext('Unknown', { text: '    ' });
 
-        const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+        const result = provider.getCompletions(mockContext, mockParams);
 
         expect(result).toBeDefined();
         expect(result).toHaveLength(15); // Should return all sections (10) + snippets (5)
@@ -105,7 +104,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
         const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-        const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+        const result = provider.getCompletions(mockContext, mockParams);
 
         expect(result).toBeDefined();
 
@@ -130,7 +129,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
         const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-        const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+        const result = provider.getCompletions(mockContext, mockParams);
 
         // Check that all sections return raw labels without formatting
         for (const section of Object.values(TopLevelSection)) {
@@ -149,7 +148,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
         const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-        const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+        const result = provider.getCompletions(mockContext, mockParams);
 
         // Verify that defined sections are filtered out
         expect(result).toBeDefined();
@@ -177,7 +176,7 @@ describe('TopLevelSectionCompletionProvider', () => {
             mockSyntaxTree.topLevelSections.returns([]);
             const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-            const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            const result = provider.getCompletions(mockContext, mockParams);
 
             expect(result).toBeDefined();
 
@@ -215,7 +214,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 type: DocumentType.YAML,
             });
 
-            const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            const result = provider.getCompletions(mockContext, mockParams);
 
             // Find the Resources snippet
             const resourcesSnippet = result!.find(
@@ -236,7 +235,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             mockDocumentManager.getLine.returns('');
 
-            const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            const result = provider.getCompletions(mockContext, mockParams);
 
             // Find the Resources snippet
             const resourcesSnippet = result!.find(
@@ -260,7 +259,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             mockDocumentManager.getLine.returns('');
 
-            provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            provider.getCompletions(mockContext, mockParams);
 
             // Verify that handleSnippetJsonQuotes was called for each snippet
             expect(handleSnippetJsonQuotesSpy).toHaveBeenCalled();
@@ -280,7 +279,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 type: DocumentType.YAML,
             });
 
-            provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            provider.getCompletions(mockContext, mockParams);
 
             // Verify that handleSnippetJsonQuotes was not called
             expect(handleSnippetJsonQuotesSpy).not.toHaveBeenCalled();
@@ -290,7 +289,7 @@ describe('TopLevelSectionCompletionProvider', () => {
             mockSyntaxTree.topLevelSections.returns([]);
             const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-            const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            const result = provider.getCompletions(mockContext, mockParams);
 
             // Find the Parameters snippet
             const parametersSnippet = result!.find(
@@ -305,7 +304,7 @@ describe('TopLevelSectionCompletionProvider', () => {
             mockSyntaxTree.topLevelSections.returns([]);
             const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-            const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            const result = provider.getCompletions(mockContext, mockParams);
 
             // Find the Outputs snippet
             const outputsSnippet = result!.find(
@@ -320,7 +319,7 @@ describe('TopLevelSectionCompletionProvider', () => {
             mockSyntaxTree.topLevelSections.returns([]);
             const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-            const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            const result = provider.getCompletions(mockContext, mockParams);
 
             // Find the Conditions snippet
             const conditionsSnippet = result!.find(
@@ -338,7 +337,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-            const result = provider.getCompletions(mockContext, mockParams, DefaultSettings.editor);
+            const result = provider.getCompletions(mockContext, mockParams);
 
             // Verify that defined sections are filtered out from snippets
             const resourcesSnippet = result!.find(
@@ -364,15 +363,30 @@ describe('TopLevelSectionCompletionProvider', () => {
         });
 
         describe('Snippet Indentation', () => {
-            test('should use 2 spaces in YAML snippets when tabSize is 2', () => {
-                const editorSettings: EditorSettings = {
-                    tabSize: 2,
-                    insertSpaces: true,
+            test('should use 2 spaces in YAML snippets when configured with tabSize 2', () => {
+                const testProvider = new TopLevelSectionCompletionProvider(
+                    mockComponents.syntaxTreeManager,
+                    mockDocumentManager,
+                );
+
+                const mockSettingsManager = {
+                    getCurrentSettings: vi.fn().mockReturnValue({
+                        editor: { tabSize: 2, insertSpaces: true },
+                    }),
+                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
+                        if (settingType === 'editor') {
+                            callback({ tabSize: 2, insertSpaces: true });
+                        }
+                        return { unsubscribe: vi.fn() };
+                    }),
+                    clearSubscriptions: vi.fn(),
                 };
+
+                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
-                const result = provider.getCompletions(mockContext, mockParams, editorSettings);
+                const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
@@ -382,15 +396,30 @@ describe('TopLevelSectionCompletionProvider', () => {
                 expect(resourcesSnippet!.insertText).toBe('Resources:\n  ${1:MyLogicalId}:\n    Type: $2\n    $3');
             });
 
-            test('should use 4 spaces in YAML snippets when tabSize is 4', () => {
-                const editorSettings: EditorSettings = {
-                    tabSize: 4,
-                    insertSpaces: true,
+            test('should use 4 spaces in YAML snippets when configured with tabSize 4', () => {
+                const testProvider = new TopLevelSectionCompletionProvider(
+                    mockComponents.syntaxTreeManager,
+                    mockDocumentManager,
+                );
+
+                const mockSettingsManager = {
+                    getCurrentSettings: vi.fn().mockReturnValue({
+                        editor: { tabSize: 4, insertSpaces: true },
+                    }),
+                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
+                        if (settingType === 'editor') {
+                            callback({ tabSize: 4, insertSpaces: true });
+                        }
+                        return { unsubscribe: vi.fn() };
+                    }),
+                    clearSubscriptions: vi.fn(),
                 };
+
+                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
-                const result = provider.getCompletions(mockContext, mockParams, editorSettings);
+                const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
@@ -403,14 +432,29 @@ describe('TopLevelSectionCompletionProvider', () => {
             });
 
             test('should use spaces for YAML even when insertSpaces is false', () => {
-                const editorSettings: EditorSettings = {
-                    tabSize: 3,
-                    insertSpaces: false, // Should be ignored for YAML
+                const testProvider = new TopLevelSectionCompletionProvider(
+                    mockComponents.syntaxTreeManager,
+                    mockDocumentManager,
+                );
+
+                const mockSettingsManager = {
+                    getCurrentSettings: vi.fn().mockReturnValue({
+                        editor: { tabSize: 3, insertSpaces: false },
+                    }),
+                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
+                        if (settingType === 'editor') {
+                            callback({ tabSize: 3, insertSpaces: false });
+                        }
+                        return { unsubscribe: vi.fn() };
+                    }),
+                    clearSubscriptions: vi.fn(),
                 };
+
+                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
-                const result = provider.getCompletions(mockContext, mockParams, editorSettings);
+                const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
@@ -423,10 +467,25 @@ describe('TopLevelSectionCompletionProvider', () => {
             });
 
             test('should use spaces in JSON snippets when insertSpaces is true', () => {
-                const editorSettings: EditorSettings = {
-                    tabSize: 4,
-                    insertSpaces: true,
+                const testProvider = new TopLevelSectionCompletionProvider(
+                    mockComponents.syntaxTreeManager,
+                    mockDocumentManager,
+                );
+
+                const mockSettingsManager = {
+                    getCurrentSettings: vi.fn().mockReturnValue({
+                        editor: { tabSize: 4, insertSpaces: true },
+                    }),
+                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
+                        if (settingType === 'editor') {
+                            callback({ tabSize: 4, insertSpaces: true });
+                        }
+                        return { unsubscribe: vi.fn() };
+                    }),
+                    clearSubscriptions: vi.fn(),
                 };
+
+                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', {
                     text: '',
@@ -435,7 +494,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
                 mockDocumentManager.getLine.returns('');
 
-                const result = provider.getCompletions(mockContext, mockParams, editorSettings);
+                const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
@@ -448,10 +507,25 @@ describe('TopLevelSectionCompletionProvider', () => {
             });
 
             test('should use single tab in JSON snippets when insertSpaces is false', () => {
-                const editorSettings: EditorSettings = {
-                    tabSize: 4, // Tab size doesn't matter for single tab
-                    insertSpaces: false,
+                const testProvider = new TopLevelSectionCompletionProvider(
+                    mockComponents.syntaxTreeManager,
+                    mockDocumentManager,
+                );
+
+                const mockSettingsManager = {
+                    getCurrentSettings: vi.fn().mockReturnValue({
+                        editor: { tabSize: 4, insertSpaces: false },
+                    }),
+                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
+                        if (settingType === 'editor') {
+                            callback({ tabSize: 4, insertSpaces: false });
+                        }
+                        return { unsubscribe: vi.fn() };
+                    }),
+                    clearSubscriptions: vi.fn(),
                 };
+
+                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', {
                     text: '',
@@ -460,7 +534,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
                 mockDocumentManager.getLine.returns('');
 
-                const result = provider.getCompletions(mockContext, mockParams, editorSettings);
+                const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,

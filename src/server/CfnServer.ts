@@ -16,6 +16,7 @@ import { documentSymbolHandler } from '../handlers/DocumentSymbolHandler';
 import { executionHandler } from '../handlers/ExecutionHandler';
 import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
+import { inlineCompletionHandler } from '../handlers/InlineCompletionHandler';
 import {
     listResourcesHandler,
     getResourceTypesHandler,
@@ -53,6 +54,7 @@ export class CfnServer {
         this.features.documents.onDidSave(didSaveHandler(this.components));
 
         this.features.handlers.onCompletion(completionHandler(this.components));
+        this.features.handlers.onInlineCompletion(inlineCompletionHandler(this.components));
         this.features.handlers.onHover(hoverHandler(this.components));
         this.features.handlers.onExecuteCommand(executionHandler(this.components));
         this.features.handlers.onCodeAction(codeActionHandler(this.components));

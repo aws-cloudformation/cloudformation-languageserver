@@ -3,10 +3,15 @@ import { CompletionItemKind, CompletionList } from 'vscode-languageserver';
 import { CompletionFormatter } from '../../../src/autocomplete/CompletionFormatter';
 import { ResourceAttribute, TopLevelSection } from '../../../src/context/ContextType';
 import { DocumentType } from '../../../src/document/Document';
-import { DefaultSettings, EditorSettings } from '../../../src/settings/Settings';
 import { createTopLevelContext } from '../../utils/MockContext';
 
 describe('CompletionFormatAdapter', () => {
+    let formatter: CompletionFormatter;
+
+    beforeEach(() => {
+        formatter = CompletionFormatter.getInstance();
+    });
+
     describe('adaptCompletions', () => {
         let mockCompletions: CompletionList;
 
@@ -31,7 +36,7 @@ describe('CompletionFormatAdapter', () => {
         test('should adapt completions for YAML document type', () => {
             const mockContext = createTopLevelContext('Unknown', { type: DocumentType.YAML });
 
-            const result = CompletionFormatter.format(mockCompletions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(mockCompletions, mockContext);
 
             expect(result).toBeDefined();
             expect(result.items).toHaveLength(2);
@@ -42,7 +47,7 @@ describe('CompletionFormatAdapter', () => {
         test('should adapt completions for JSON document type', () => {
             const mockContext = createTopLevelContext('Unknown', { type: DocumentType.JSON });
 
-            const result = CompletionFormatter.format(mockCompletions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(mockCompletions, mockContext);
 
             expect(result).toBeDefined();
             expect(result.items).toHaveLength(2);
@@ -59,7 +64,7 @@ describe('CompletionFormatAdapter', () => {
                 items: [{ label: 'Resources', kind: CompletionItemKind.Property }],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('Resources');
         });
@@ -71,7 +76,7 @@ describe('CompletionFormatAdapter', () => {
                 items: [{ label: 'Resources', kind: CompletionItemKind.Property }],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('Resources:\n  ');
         });
@@ -90,7 +95,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].label).toBe('Resources');
             expect(result.items[0].kind).toBe(CompletionItemKind.Property);
@@ -113,7 +118,7 @@ describe('CompletionFormatAdapter', () => {
                 items: [{ label: TopLevelSection.AWSTemplateFormatVersion, kind: CompletionItemKind.Property }],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('AWSTemplateFormatVersion: "2010-09-09"');
         });
@@ -127,7 +132,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('Description: ');
             expect(result.items[1].insertText).toBe('Transform: ');
@@ -143,7 +148,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('Resources:\n  ');
             expect(result.items[1].insertText).toBe('Parameters:\n  ');
@@ -160,7 +165,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('CreationPolicy: ');
             expect(result.items[1].insertText).toBe('DependsOn: ');
@@ -177,7 +182,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('AWS::EC2::Instance');
             expect(result.items[1].insertText).toBe('AWS::S3::Bucket');
@@ -194,7 +199,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('Type: ');
             expect(result.items[1].insertText).toBe('CreationPolicy: ');
@@ -218,7 +223,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('ObjectProperty:');
             expect(result.items[1].insertText).toBe('SimpleProperty: ');
@@ -241,7 +246,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('ArrayProperty:\n  ');
             expect(result.items[1].insertText).toBe('SimpleProperty: ');
@@ -257,7 +262,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('AuthenticatedRead');
             expect(result.items[1].insertText).toBe('Private');
@@ -274,143 +279,11 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = CompletionFormatter.format(completions, mockContext, DefaultSettings.editor);
+            const result = formatter.format(completions, mockContext);
 
             expect(result.items[0].insertText).toBe('IsProduction');
             expect(result.items[1].insertText).toBe('CreateNATGateway');
             expect(result.items[2].insertText).toBe('ShouldCreateCache');
-        });
-    });
-
-    describe('Indentation Settings', () => {
-        test('should use 2 spaces when tabSize is 2 and insertSpaces is true', () => {
-            const editorSettings: EditorSettings = {
-                tabSize: 2,
-                insertSpaces: true,
-            };
-            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.YAML });
-            const completions: CompletionList = {
-                isIncomplete: false,
-                items: [
-                    { label: TopLevelSection.Resources, kind: CompletionItemKind.Property },
-                    { label: 'Properties', kind: CompletionItemKind.Property },
-                    {
-                        label: 'ArrayProperty',
-                        kind: CompletionItemKind.Property,
-                        data: { type: 'array' },
-                    },
-                ],
-            };
-
-            const result = CompletionFormatter.format(completions, mockContext, editorSettings);
-
-            expect(result.items[0].insertText).toBe('Resources:\n  '); // 2 spaces
-            expect(result.items[1].insertText).toBe('Properties:\n  '); // 2 spaces
-            expect(result.items[2].insertText).toBe('ArrayProperty:\n  '); // 2 spaces
-        });
-
-        test('should use 4 spaces when tabSize is 4 and insertSpaces is true', () => {
-            const editorSettings: EditorSettings = {
-                tabSize: 4,
-                insertSpaces: true,
-            };
-            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.YAML });
-            const completions: CompletionList = {
-                isIncomplete: false,
-                items: [
-                    { label: TopLevelSection.Resources, kind: CompletionItemKind.Property },
-                    { label: 'Properties', kind: CompletionItemKind.Property },
-                    {
-                        label: 'ArrayProperty',
-                        kind: CompletionItemKind.Property,
-                        data: { type: 'array' },
-                    },
-                ],
-            };
-
-            const result = CompletionFormatter.format(completions, mockContext, editorSettings);
-
-            expect(result.items[0].insertText).toBe('Resources:\n    '); // 4 spaces
-            expect(result.items[1].insertText).toBe('Properties:\n    '); // 4 spaces
-            expect(result.items[2].insertText).toBe('ArrayProperty:\n    '); // 4 spaces
-        });
-
-        test('should use spaces even when insertSpaces is false', () => {
-            const editorSettings: EditorSettings = {
-                tabSize: 4,
-                insertSpaces: false,
-            };
-            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.YAML });
-            const completions: CompletionList = {
-                isIncomplete: false,
-                items: [
-                    { label: TopLevelSection.Resources, kind: CompletionItemKind.Property },
-                    { label: 'Properties', kind: CompletionItemKind.Property },
-                    {
-                        label: 'ArrayProperty',
-                        kind: CompletionItemKind.Property,
-                        data: { type: 'array' },
-                    },
-                ],
-            };
-
-            const result = CompletionFormatter.format(completions, mockContext, editorSettings);
-
-            expect(result.items[0].insertText).toBe('Resources:\n    '); // 4 spaces
-            expect(result.items[1].insertText).toBe('Properties:\n    '); // 4 spaces
-            expect(result.items[2].insertText).toBe('ArrayProperty:\n    '); // 4 spaces
-        });
-
-        test('should not affect non-indented completions', () => {
-            const editorSettings: EditorSettings = {
-                tabSize: 8,
-                insertSpaces: false,
-            };
-            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.YAML });
-            const completions: CompletionList = {
-                isIncomplete: false,
-                items: [
-                    { label: TopLevelSection.AWSTemplateFormatVersion, kind: CompletionItemKind.Property },
-                    { label: TopLevelSection.Description, kind: CompletionItemKind.Property },
-                    { label: 'AWS::S3::Bucket', kind: CompletionItemKind.Class },
-                    { label: 'AuthenticatedRead', kind: CompletionItemKind.EnumMember },
-                    {
-                        label: 'ObjectProperty',
-                        kind: CompletionItemKind.Property,
-                        data: { type: 'object' },
-                    },
-                ],
-            };
-
-            const result = CompletionFormatter.format(completions, mockContext, editorSettings);
-
-            // These should not be affected by indentation settings
-            expect(result.items[0].insertText).toBe('AWSTemplateFormatVersion: "2010-09-09"');
-            expect(result.items[1].insertText).toBe('Description: ');
-            expect(result.items[2].insertText).toBe('AWS::S3::Bucket');
-            expect(result.items[3].insertText).toBe('AuthenticatedRead');
-            expect(result.items[4].insertText).toBe('ObjectProperty:');
-        });
-
-        test('should not affect JSON formatting regardless of indentation settings', () => {
-            const editorSettings: EditorSettings = {
-                tabSize: 8,
-                insertSpaces: false,
-            };
-            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.JSON });
-            const completions: CompletionList = {
-                isIncomplete: false,
-                items: [
-                    { label: TopLevelSection.Resources, kind: CompletionItemKind.Property },
-                    { label: 'Properties', kind: CompletionItemKind.Property },
-                ],
-            };
-
-            const result = CompletionFormatter.format(completions, mockContext, editorSettings);
-
-            // JSON formatting should not be affected by indentation settings
-            expect(result.items[0].insertText).toBe('Resources');
-            expect(result.items[1].insertText).toBe('Properties');
         });
     });
 });

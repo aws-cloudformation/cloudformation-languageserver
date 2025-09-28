@@ -1,0 +1,39 @@
+name: App Configs
+
+on:
+  workflow_call:
+    outputs:
+      node-version:
+        description: "Node.js version"
+        value: ${{ jobs.get-versions.outputs.node-version }}
+      go-version:
+        description: "Go version"
+        value: ${{ jobs.get-versions.outputs.go-version }}
+      app-name:
+        description: "Application name"
+        value: ${{ jobs.get-app-name.outputs.app-name }}
+
+jobs:
+  get-versions:
+    runs-on: ubuntu-latest
+    env:
+      NODE_VERSION: '22.x'
+      GO_VERSION: '1.25.x'
+    outputs:
+      node-version: ${{ env.NODE_VERSION }}
+      go-version: ${{ env.GO_VERSION }}
+    steps:
+      - name: Provide Versions
+        run: |
+          echo "Exporting Node.js version = ${{ env.NODE_VERSION }}"
+          echo "Exporting Go version = ${{ env.GO_VERSION }}"
+
+  get-app-name:
+    runs-on: ubuntu-latest
+    env:
+      APP_NAME: 'cloudformation-languageserver'
+    outputs:
+      app-name: ${{ env.APP_NAME }}
+    steps:
+      - name: Provide App Name
+        run: echo "Exporting app name = ${{ env.APP_NAME }}"

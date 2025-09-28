@@ -4,6 +4,10 @@ import { RemoteConsole } from 'vscode-languageserver/node';
 import { CfnAI } from '../../src/ai/CfnAI';
 import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { CompletionRouter } from '../../src/autocomplete/CompletionRouter';
+import { InlineCompletionRouter } from '../../src/autocomplete/InlineCompletionRouter';
+import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
+import { ResourceStateCompletionProvider } from '../../src/autocomplete/ResourceStateCompletionProvider';
+import { TopLevelSectionCompletionProvider } from '../../src/autocomplete/TopLevelSectionCompletionProvider';
 import { ContextManager } from '../../src/context/ContextManager';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { DataStoreFactoryProvider, MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
@@ -73,9 +77,14 @@ export class MockedServerComponents extends ServerComponents {
 
     declare readonly hoverRouter: StubbedInstance<HoverRouter>;
     declare readonly completionRouter: StubbedInstance<CompletionRouter>;
+    declare readonly inlineCompletionRouter: StubbedInstance<InlineCompletionRouter>;
     declare readonly definitionProvider: StubbedInstance<DefinitionProvider>;
     declare readonly codeActionService: StubbedInstance<CodeActionService>;
     declare readonly documentSymbolRouter: StubbedInstance<DocumentSymbolRouter>;
+
+    declare readonly topLevelSectionCompletionProvider: StubbedInstance<TopLevelSectionCompletionProvider>;
+    declare readonly resourceEntityCompletionProvider: StubbedInstance<ResourceEntityCompletionProvider>;
+    declare readonly resourceStateCompletionProvider: StubbedInstance<ResourceStateCompletionProvider>;
 
     declare readonly validationWorkflowService: StubbedInstance<ValidationWorkflow>;
     declare readonly deploymentWorkflowService: StubbedInstance<DeploymentWorkflow>;
@@ -221,8 +230,43 @@ export function createMockCompletionRouter() {
     return stubInterface<CompletionRouter>();
 }
 
+export function createMockInlineCompletionRouter() {
+    return stubInterface<InlineCompletionRouter>();
+}
+
 export function createMockDocumentSymbolRouter() {
     return stubInterface<DocumentSymbolRouter>();
+}
+
+export function createMockTopLevelSectionCompletionProvider(
+    syntaxTreeManager?: SyntaxTreeManager,
+    documentManager?: DocumentManager,
+) {
+    if (syntaxTreeManager && documentManager) {
+        return new TopLevelSectionCompletionProvider(syntaxTreeManager, documentManager);
+    }
+    return stubInterface<TopLevelSectionCompletionProvider>();
+}
+
+export function createMockResourceEntityCompletionProvider(
+    schemaRetriever?: SchemaRetriever,
+    documentManager?: DocumentManager,
+) {
+    if (schemaRetriever && documentManager) {
+        return new ResourceEntityCompletionProvider(schemaRetriever, documentManager);
+    }
+    return stubInterface<ResourceEntityCompletionProvider>();
+}
+
+export function createMockResourceStateCompletionProvider(
+    resourceStateManager?: ResourceStateManager,
+    documentManager?: DocumentManager,
+    schemaRetriever?: SchemaRetriever,
+) {
+    if (resourceStateManager && documentManager && schemaRetriever) {
+        return new ResourceStateCompletionProvider(resourceStateManager, documentManager, schemaRetriever);
+    }
+    return stubInterface<ResourceStateCompletionProvider>();
 }
 
 export function createMockValidationWorkflowService() {
@@ -262,6 +306,11 @@ export function mockCfnAi() {
 }
 
 export function createMockComponents(overrides: Partial<ServerComponents> = {}): MockedServerComponents {
+    const syntaxTreeManager = overrides.syntaxTreeManager ?? createMockSyntaxTreeManager();
+    const documentManager = overrides.documentManager ?? createMockDocumentManager();
+    const schemaRetriever = overrides.schemaRetriever ?? createMockSchemaRetriever();
+    const resourceStateManager = overrides.resourceStateManager ?? createMockResourceStateManager();
+
     return new MockedServerComponents(
         {
             diagnostics: overrides.diagnostics ?? createMockLspDiagnostics(),
@@ -275,25 +324,35 @@ export function createMockComponents(overrides: Partial<ServerComponents> = {}):
             clientMessage: overrides.clientMessage ?? createMockClientMessage(),
             diagnosticCoordinator: overrides.diagnosticCoordinator ?? createMockDiagnosticCoordinator(),
             settingsManager: overrides.settingsManager ?? createMockSettingsManager(),
-            syntaxTreeManager: overrides.syntaxTreeManager ?? createMockSyntaxTreeManager(),
-            documentManager: overrides.documentManager ?? createMockDocumentManager(),
+            syntaxTreeManager,
+            documentManager,
             contextManager: overrides.contextManager ?? createMockContextManager(),
             awsCredentials: overrides.awsCredentials ?? createMockAwsCredentials(),
             awsClient: overrides.awsClient ?? createMockAwsApiClientComponent(),
             cfnService: overrides.cfnService ?? createMockCfnService(),
             ccapiService: overrides.ccapiService ?? createMockCcapiService(),
             iacGeneratorService: overrides.iacGeneratorService ?? createMockIacGeneratorService(),
-            resourceStateManager: overrides.resourceStateManager ?? createMockResourceStateManager(),
+            resourceStateManager,
             resourceStateImporter: overrides.resourceStateImporter ?? createMockResourceStateImporter(),
             schemaTaskManager: overrides.schemaTaskManager ?? createMockSchemaTaskManager(),
-            schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
+            schemaRetriever,
             cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
             guardService: overrides.guardService ?? createMockGuardService(),
             hoverRouter: overrides.hoverRouter ?? createMockHoverRouter(),
             completionRouter: overrides.completionRouter ?? createMockCompletionRouter(),
+            inlineCompletionRouter: overrides.inlineCompletionRouter ?? createMockInlineCompletionRouter(),
             definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
             codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
             documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
+            topLevelSectionCompletionProvider:
+                overrides.topLevelSectionCompletionProvider ??
+                createMockTopLevelSectionCompletionProvider(syntaxTreeManager, documentManager),
+            resourceEntityCompletionProvider:
+                overrides.resourceEntityCompletionProvider ??
+                createMockResourceEntityCompletionProvider(schemaRetriever, documentManager),
+            resourceStateCompletionProvider:
+                overrides.resourceStateCompletionProvider ??
+                createMockResourceStateCompletionProvider(resourceStateManager, documentManager, schemaRetriever),
             validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
             deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
             cfnAI: overrides.cfnAI ?? mockCfnAi(),

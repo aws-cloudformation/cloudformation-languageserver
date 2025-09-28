@@ -1,9 +1,8 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { CompletionParams, CompletionItemKind, CompletionTriggerKind } from 'vscode-languageserver';
-import {
-    ResourceSectionCompletionProvider,
-    createResourceCompletionProviders,
-} from '../../../src/autocomplete/ResourceSectionCompletionProvider';
+import { ResourceEntityCompletionProvider } from '../../../src/autocomplete/ResourceEntityCompletionProvider';
+import { ResourceSectionCompletionProvider } from '../../../src/autocomplete/ResourceSectionCompletionProvider';
+import { ResourceStateCompletionProvider } from '../../../src/autocomplete/ResourceStateCompletionProvider';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { createResourceContext } from '../../utils/MockContext';
@@ -17,17 +16,29 @@ describe('ResourceSectionCompletionProvider', () => {
     const mockComponents = createMockComponents();
     const mockDocumentManager = createMockDocumentManager();
     const mockResourceStateManager = createMockResourceStateManager();
-    const resourceProviders = createResourceCompletionProviders(
+
+    const resourceEntityProvider = new ResourceEntityCompletionProvider(
         mockComponents.schemaRetriever,
         mockDocumentManager,
-        mockResourceStateManager,
     );
-    const provider = new ResourceSectionCompletionProvider(
-        mockComponents.schemaRetriever,
+
+    const resourceStateProvider = new ResourceStateCompletionProvider(
+        mockResourceStateManager,
         mockDocumentManager,
-        mockResourceStateManager,
-        resourceProviders,
+        mockComponents.schemaRetriever,
     );
+
+    const mockTestComponents = createMockComponents({
+        schemaRetriever: mockComponents.schemaRetriever,
+        documentManager: mockDocumentManager,
+        resourceStateManager: mockResourceStateManager,
+        resourceEntityCompletionProvider: resourceEntityProvider,
+        resourceStateCompletionProvider: resourceStateProvider,
+    });
+
+    const provider = new ResourceSectionCompletionProvider(mockTestComponents);
+
+    const resourceProviders = provider['resourceProviders'];
 
     const mockParams: CompletionParams = {
         textDocument: { uri: 'file:///test.yaml' },

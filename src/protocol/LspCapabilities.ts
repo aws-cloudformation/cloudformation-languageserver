@@ -29,6 +29,7 @@ export const LspCapabilities: InitializeResult = {
                 labelDetailsSupport: true,
             },
         },
+        inlineCompletionProvider: true,
         definitionProvider: true,
         documentSymbolProvider: true,
         executeCommandProvider: {

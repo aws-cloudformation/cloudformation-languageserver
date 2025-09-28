@@ -1325,13 +1325,12 @@ O`,
                         content: `nvironmentName
         VpcId: !Ref VPC
         VpcCidr: !GetAtt VPC.`,
-                        position: { line: 436, character: 27 },
+                        position: { line: 442, character: 27 },
                         description: 'GetAtt attribute returns all attributes',
                         verification: {
-                            position: { line: 438, character: 29 },
+                            position: { line: 443, character: 29 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['DefaultNetworkAcl', 'CidrBlockAssociations'])
-                                .todo()
                                 .build(),
                         },
                     },
@@ -1341,13 +1340,12 @@ O`,
         SubnetList: !Join [", ", !Ref SubnetCidrs]
         DbEndpoint: !GetAtt Database.Endpoint.Address
         DbPort: !GetAtt Database.Endpoint.`,
-                        position: { line: 438, character: 29 },
+                        position: { line: 443, character: 29 },
                         description: 'Ref parameter inside !Sub',
                         verification: {
-                            position: { line: 441, character: 42 },
+                            position: { line: 446, character: 42 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Endpoint.Address', 'Endpoint.Port'])
-                                .todo()
                                 .build(),
                         },
                     },
@@ -1379,10 +1377,10 @@ O`,
         - !Sub
           - "\${First},\${Second},\${Third}"
           - First: !FindInMap [RegionMap, !Ref AWS::Region, A]`,
-                        position: { line: 442, character: 27 },
+                        position: { line: 446, character: 42 },
                         description: 'suggest Mapping second level key in deeply nested intrinsic function',
                         verification: {
-                            position: { line: 470, character: 61 },
+                            position: { line: 471, character: 61 },
                             // todo: fix bug in FindInMap completion where using intrinsic in second arg breaks
                             //  suggestion for third arg
                             expectation: CompletionExpectationBuilder.create().expectItems(['AMI']).todo().build(),
@@ -1390,7 +1388,7 @@ O`,
                     },
                     {
                         action: 'delete',
-                        range: { start: { line: 470, character: 61 }, end: { line: 466, character: 62 } },
+                        range: { start: { line: 471, character: 61 }, end: { line: 471, character: 62 } },
                         description: 'remove ]',
                     },
                     {
@@ -1398,10 +1396,10 @@ O`,
                         content: `MI]
             Second: !GetAtt Database.Endpoint.Address
             Th`,
-                        position: { line: 470, character: 61 },
+                        position: { line: 471, character: 64 },
                         description: 'suggest substitution variable in second arg of Fn::Sub based on first arg',
                         verification: {
-                            position: { line: 472, character: 14 },
+                            position: { line: 474, character: 14 },
                             // todo: feature to suggest variables authored in Fn::Sub first arg while typing second arg
                             expectation: CompletionExpectationBuilder.create().expectItems(['Third']).todo().build(),
                         },

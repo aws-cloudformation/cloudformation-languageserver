@@ -1,0 +1,50 @@
+name: Promote Beta to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm-prod-promotion:
+        description: 'Confirm promotion to Prod'
+        required: true
+        type: choice
+        options:
+        - 'No'
+        - 'Yes'
+        default: 'No'
+
+jobs:
+  promote:
+    name: Promote Beta to Prod
+    if: github.event.inputs.confirm-prod-promotion == 'Yes'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'beta'
+          fetch-depth: 0
+
+      - name: Merge Beta to Prod
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin prod
+
+          if git merge-base --is-ancestor beta origin/prod; then
+            echo "Branch 'prod' is already up-to-date with 'beta'."
+          else
+            git checkout prod
+            git merge --ff-only beta
+            git push origin prod
+          fi
+
+  release:
+    name: Build, Tag, and Release Prod
+    needs: [promote]
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
+    with:
+      branch: 'prod'
+      is-prerelease: false

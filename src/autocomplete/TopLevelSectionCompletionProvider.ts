@@ -4,11 +4,12 @@ import { TopLevelSection, TopLevelSections } from '../context/ContextType';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
-import { EditorSettings } from '../settings/Settings';
+import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
+import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
-import { ExtendedCompletionItem } from './CompletionFormatter';
+import { CompletionFormatter, ExtendedCompletionItem } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, handleSnippetJsonQuotes } from './CompletionUtils';
 
@@ -27,8 +28,10 @@ type SectionSnippetMap = {
     [key in TopLevelSection]?: SnippetTemplate;
 };
 
-export class TopLevelSectionCompletionProvider implements CompletionProvider {
+export class TopLevelSectionCompletionProvider implements CompletionProvider, Configurable, Closeable {
     private readonly sectionKeywordFs = getFuzzySearchFunction();
+    private editorSettings: EditorSettings = DefaultSettings.editor;
+    private editorSettingsSubscription?: SettingsSubscription;
 
     private readonly log = LoggerFactory.getLogger(TopLevelSectionCompletionProvider);
 
@@ -42,42 +45,42 @@ export class TopLevelSectionCompletionProvider implements CompletionProvider {
         },
         [TopLevelSection.Resources]: {
             json: `"Resources": {
-{INDENT1}"\${1:MyLogicalId}": {
-{INDENT2}"Type": "$2",
-{INDENT2}$3
-{INDENT1}}
+${CompletionFormatter.getIndentPlaceholder(1)}"\${1:MyLogicalId}": {
+${CompletionFormatter.getIndentPlaceholder(2)}"Type": "$2",
+${CompletionFormatter.getIndentPlaceholder(2)}$3
+${CompletionFormatter.getIndentPlaceholder(1)}}
 }`,
             yaml: `Resources:
-{INDENT1}\${1:MyLogicalId}:
-{INDENT2}Type: $2
-{INDENT2}$3`,
+${CompletionFormatter.getIndentPlaceholder(1)}\${1:MyLogicalId}:
+${CompletionFormatter.getIndentPlaceholder(2)}Type: $2
+${CompletionFormatter.getIndentPlaceholder(2)}$3`,
         },
         [TopLevelSection.Parameters]: {
             json: `"Parameters": {
-{INDENT1}"\${1:ParameterName}": {
-{INDENT2}"Type": "$2"
-{INDENT1}}
+${CompletionFormatter.getIndentPlaceholder(1)}"\${1:ParameterName}": {
+${CompletionFormatter.getIndentPlaceholder(2)}"Type": "$2"
+${CompletionFormatter.getIndentPlaceholder(1)}}
 }`,
             yaml: `Parameters:
-{INDENT1}\${1:ParameterName}:
-{INDENT2}Type: $2`,
+${CompletionFormatter.getIndentPlaceholder(1)}\${1:ParameterName}:
+${CompletionFormatter.getIndentPlaceholder(2)}Type: $2`,
         },
         [TopLevelSection.Outputs]: {
             json: `"Outputs": {
-{INDENT1}"\${1:OutputName}": {
-{INDENT2}"Value": $2
-{INDENT1}}
+${CompletionFormatter.getIndentPlaceholder(1)}"\${1:OutputName}": {
+${CompletionFormatter.getIndentPlaceholder(2)}"Value": $2
+${CompletionFormatter.getIndentPlaceholder(1)}}
 }`,
             yaml: `Outputs:
-{INDENT1}\${1:OutputName}:
-{INDENT2}Value: $2`,
+${CompletionFormatter.getIndentPlaceholder(1)}\${1:OutputName}:
+${CompletionFormatter.getIndentPlaceholder(2)}Value: $2`,
         },
         [TopLevelSection.Conditions]: {
             json: `"Conditions": {
-{INDENT1}"\${1:ConditionName}": $2
+${CompletionFormatter.getIndentPlaceholder(1)}"\${1:ConditionName}": $2
 }`,
             yaml: `Conditions:
-{INDENT1}\${1:ConditionName}: $2`,
+${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
         },
     };
 
@@ -86,14 +89,10 @@ export class TopLevelSectionCompletionProvider implements CompletionProvider {
         private readonly documentManager: DocumentManager,
     ) {}
 
-    getCompletions(
-        context: Context,
-        params: CompletionParams,
-        editorSettings: EditorSettings,
-    ): CompletionItem[] | undefined {
+    getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         // Get both regular and snippet completions
         const stringCompletions = this.getTopLevelSectionCompletions();
-        const snippetCompletions = this.getTopLevelSectionSnippetCompletions(context, params, editorSettings);
+        const snippetCompletions = this.getTopLevelSectionSnippetCompletions(context, params);
 
         // Combine both types of completions
         let completions = [...stringCompletions, ...snippetCompletions];
@@ -119,16 +118,12 @@ export class TopLevelSectionCompletionProvider implements CompletionProvider {
         return TopLevelSections.map((section) => createCompletionItem(section, CompletionItemKind.Class));
     }
 
-    private getTopLevelSectionSnippetCompletions(
-        context: Context,
-        params: CompletionParams,
-        editorSettings: EditorSettings,
-    ): CompletionItem[] {
+    private getTopLevelSectionSnippetCompletions(context: Context, params: CompletionParams): CompletionItem[] {
         const snippets: CompletionItem[] = [];
 
         // Add snippets for top level sections
         for (const [section] of Object.entries(this.sectionSnippets)) {
-            snippets.push(this.createSectionSnippet(section as TopLevelSection, context, params, editorSettings));
+            snippets.push(this.createSectionSnippet(section as TopLevelSection, context, params));
         }
 
         return snippets;
@@ -138,7 +133,6 @@ export class TopLevelSectionCompletionProvider implements CompletionProvider {
         section: TopLevelSection,
         context: Context,
         params: CompletionParams,
-        editorSettings: EditorSettings,
     ): ExtendedCompletionItem {
         const snippetTemplate = this.sectionSnippets[section];
 
@@ -148,7 +142,7 @@ export class TopLevelSectionCompletionProvider implements CompletionProvider {
 
         let snippet = context.documentType === DocumentType.JSON ? snippetTemplate.json : snippetTemplate.yaml;
 
-        snippet = applySnippetIndentation(snippet, editorSettings, context.documentType);
+        snippet = applySnippetIndentation(snippet, this.editorSettings, context.documentType);
 
         const completionItem: ExtendedCompletionItem = createCompletionItem(section, CompletionItemKind.Snippet, {
             insertText: snippet,
@@ -170,5 +164,26 @@ export class TopLevelSectionCompletionProvider implements CompletionProvider {
         }
 
         return completionItem;
+    }
+
+    configure(settingsManager: ISettingsSubscriber): void {
+        if (this.editorSettingsSubscription) {
+            this.editorSettingsSubscription.unsubscribe();
+        }
+
+        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
+            this.editorSettings = newEditorSettings;
+        });
+    }
+
+    close(): void {
+        if (this.editorSettingsSubscription) {
+            this.editorSettingsSubscription.unsubscribe();
+            this.editorSettingsSubscription = undefined;
+        }
+    }
+
+    static create(components: ServerComponents) {
+        return new TopLevelSectionCompletionProvider(components.syntaxTreeManager, components.documentManager);
     }
 }

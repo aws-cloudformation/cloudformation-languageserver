@@ -5,15 +5,20 @@ import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
+import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
-import { ExtendedCompletionItem } from './CompletionFormatter';
+import { applySnippetIndentation } from '../utils/IndentationUtils';
+import { CompletionFormatter, ExtendedCompletionItem } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, handleSnippetJsonQuotes } from './CompletionUtils';
 import { EntityFieldCompletionProvider } from './EntityFieldCompletionProvider';
 
-export class ResourceEntityCompletionProvider implements CompletionProvider {
+export class ResourceEntityCompletionProvider implements CompletionProvider, Configurable, Closeable {
     private readonly fuzzySearch = getFuzzySearchFunction();
     private readonly entityFieldProvider: EntityFieldCompletionProvider<Resource>;
+    private editorSettings: EditorSettings = DefaultSettings.editor;
+    private editorSettingsSubscription?: SettingsSubscription;
 
     constructor(
         private readonly schemaRetriever: SchemaRetriever,
@@ -77,22 +82,50 @@ export class ResourceEntityCompletionProvider implements CompletionProvider {
     }
 
     private generateRequiredPropertiesSnippet(schema: ResourceSchema, documentType: DocumentType): string {
+        let snippet: string;
+        const indent1 = CompletionFormatter.getIndentPlaceholder(1);
+
         if (!schema.required || schema.required.length === 0) {
-            return documentType === DocumentType.JSON ? `"Properties": {\n  $1\n}` : `Properties:\n  $1`;
+            snippet =
+                documentType === DocumentType.JSON ? `"Properties": {\n${indent1}$1\n}` : `Properties:\n${indent1}$1`;
+        } else {
+            const requiredProps = schema.required
+                .map((propName, index) => {
+                    if (documentType === DocumentType.JSON) {
+                        return `"${propName}": $${index + 1}`;
+                    } else {
+                        return `${propName}: $${index + 1}`;
+                    }
+                })
+                .join(documentType === DocumentType.JSON ? `,\n${indent1}` : `\n${indent1}`);
+
+            snippet =
+                documentType === DocumentType.JSON
+                    ? `"Properties": {\n${indent1}${requiredProps}\n}`
+                    : `Properties:\n${indent1}${requiredProps}`;
         }
 
-        const requiredProps = schema.required
-            .map((propName, index) => {
-                if (documentType === DocumentType.JSON) {
-                    return `"${propName}": $${index + 1}`;
-                } else {
-                    return `${propName}: $${index + 1}`;
-                }
-            })
-            .join(documentType === DocumentType.JSON ? ',\n  ' : '\n  ');
+        return applySnippetIndentation(snippet, this.editorSettings, documentType);
+    }
 
-        return documentType === DocumentType.JSON
-            ? `"Properties": {\n  ${requiredProps}\n}`
-            : `Properties:\n  ${requiredProps}`;
+    configure(settingsManager: ISettingsSubscriber): void {
+        if (this.editorSettingsSubscription) {
+            this.editorSettingsSubscription.unsubscribe();
+        }
+
+        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
+            this.editorSettings = newEditorSettings;
+        });
+    }
+
+    close(): void {
+        if (this.editorSettingsSubscription) {
+            this.editorSettingsSubscription.unsubscribe();
+            this.editorSettingsSubscription = undefined;
+        }
+    }
+
+    static create(components: ServerComponents) {
+        return new ResourceEntityCompletionProvider(components.schemaRetriever, components.documentManager);
     }
 }

@@ -1,103 +1,147 @@
 name: Release
 
 on:
-    workflow_dispatch:
-        inputs:
-            branch:
-                description: 'Branch to release from'
-                required: true
-                default: 'beta'
-                type: choice
-                options:
-                    - beta
-                    - prod
+  workflow_call:
+    inputs:
+      branch:
+        description: 'The branch that has been promoted and is ready for release.'
+        required: true
+        type: string
 
-permissions:
-    contents: write
+      tag-suffix:
+        description: "A suffix to append to the version tag (e.g., '-beta')."
+        required: false
+        type: string
+        default: ''
+
+      is-prerelease:
+        description: 'Whether to mark the GitHub release as a pre-release.'
+        required: true
+        type: boolean
 
 jobs:
-    get-versions:
-        uses: ./.github/workflows/versions.yml
+  get-configs:
+    name: Get Configs
+    uses: ./.github/workflows/configs.yml
 
-    build-and-release:
-        name: Build Release Assets
-        needs: get-versions
-        strategy:
-            matrix:
-                os: [ubuntu-latest, windows-latest, macos-latest, macos-12, ubuntu-20.04]
-                arch: [x64, arm64]
-                exclude:
-                    - os: windows-latest
-                      arch: arm64
-        runs-on: ${{ matrix.os }}
+  get-build-matrix:
+    name: Get Build Matrix
+    uses: ./.github/workflows/build-matrix.yml
 
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
+  build-and-test:
+    name: Build and Test
+    needs: [get-configs, get-build-matrix]
+    uses: ./.github/workflows/build-and-test.yml
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJson(needs.get-build-matrix.outputs.build-matrix) }}
+    with:
+      ref: ${{ inputs.branch }}
+      runs-on: ${{ matrix.runner }}
+      arch: ${{ matrix.arch }}
 
-            - name: Setup Node.js
-              uses: actions/setup-node@v4
-              with:
-                  node-version: ${{ needs.get-versions.outputs.node-version }}
-                  cache: 'npm'
+  version-and-tag:
+    name: Release Tag
+    runs-on: ubuntu-latest
+    needs: [get-configs, build-and-test]
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version-and-tag.outputs.tag }}
+      version: ${{ steps.version-and-tag.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: '${{ inputs.branch }}'
+          fetch-depth: 0
 
-            # - name: Setup Go
-            #   uses: actions/setup-go@v5
-            #   with:
-            #       go-version: ${{ needs.get-versions.outputs.go-version }}
+      - name: Create Tag
+        id: version-and-tag
+        run: |
+          VERSION=$(jq -r .version package.json)
+          FULL_TAG="v${VERSION}${{ inputs.tag-suffix }}"
+          
+          if git rev-parse "$FULL_TAG" >/dev/null 2>&1; then
+            echo "::error::Git tag $FULL_TAG already exists."
+            exit 1
+          fi
 
-            - name: Install Node.js dependencies
-              run: npm ci
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-            - name: Build Node.js application
-              shell: bash
-              run: |
-                  if [ "${{ github.event.inputs.branch }}" == "beta" ]; then
-                    npm run bundle:beta
-                  else
-                    npm run bundle:prod
-                  fi
+          echo "Creating tag $FULL_TAG..."
+          git tag -a "$FULL_TAG" -m "Release $FULL_TAG"
+          git push origin "$FULL_TAG"
 
-            # - name: Build Go application
-            #   run: npm run build:go:prod
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$FULL_TAG" >> $GITHUB_OUTPUT
 
-            - name: Read version from package.json
-              id: get-version
-              run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+  release:
+    name: Release
+    needs: [get-configs, get-build-matrix, version-and-tag]
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJson(needs.get-build-matrix.outputs.build-matrix) }}
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.version-and-tag.outputs.tag }}
 
-            - name: Set Release Asset Name
-              id: set-asset-name
-              shell: bash
-              run: |
-                  APP_NAME='${{ needs.get-versions.outputs.app-name }}'
-                  VERSION=${{ steps.get-version.outputs.version }}
-                  OS=${{ matrix.os }}
-                  ARCH=${{ matrix.arch }}
-                  BRANCH=${{ github.event.inputs.branch }}
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} ${{ inputs.runs-on }} (${{ inputs.arch }})
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.get-configs.outputs.node-version }}
+          cache: 'npm'
+          architecture: ${{ needs.get-configs.outputs.arch }}
 
-                  if [ "$BRANCH" = "beta" ]; then
-                    ASSET_NAME="${APP_NAME}-beta-${VERSION}-${OS}-${ARCH}.zip"
-                  else
-                    ASSET_NAME="${APP_NAME}-${VERSION}-${OS}-${ARCH}.zip"
-                  fi
+      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} ${{ inputs.runs-on }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ needs.get-configs.outputs.go-version }}
+          cache: true
 
-                  echo "ASSET_NAME=$ASSET_NAME" >> $GITHUB_OUTPUT
-                  echo "ASSET_PATH=./$ASSET_NAME" >> $GITHUB_OUTPUT
-                  echo "ASSET_PATH=./$ASSET_NAME" >> $GITHUB_OUTPUT
+      - name: Install Dependencies
+        run: npm ci
 
-            - name: Create Zip Archive of the bundle
-              shell: bash
-              run: |
-                  zip -r ${{ steps.set-asset-name.outputs.ASSET_NAME }} bundle/production
+      - name: Bundle
+        run: npm run bundle:${{ inputs.branch }}
 
-            - name: Create GitHub Release
-              uses: softprops/action-gh-release@v2
-              with:
-                  tag_name: v${{ steps.get-version.outputs.version }}
-                  name: Release v${{ steps.get-version.outputs.version }}${{ github.event.inputs.branch == 'beta' && ' (Beta)' || '' }}
-                  prerelease: ${{ github.event.inputs.branch == 'beta' }}
-                  files: ${{ steps.set-asset-name.outputs.ASSET_PATH }}
-                  fail_on_unmatched_files: true
-                  body: 'Release based on commit: ${{ github.sha }}'
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # - name: Bundle Go
+        # run: npm run build:go:prod
+
+      - name: Set release asset name
+        id: set-asset-name
+        shell: bash
+        run: |
+          APP_NAME=${{ needs.get-configs.outputs.app-name }}
+          VERSION=${{ needs.version-and-tag.outputs.version }}
+          OS=${{ matrix.os }}
+          ARCH=${{ matrix.arch }}
+
+          ASSET_NAME="${APP_NAME}-${{needs.version-and-tag.outputs.version}}${{ inputs.tag-suffix }}-${OS}-${ARCH}.zip"
+          echo "ASSET_NAME=${ASSET_NAME}" >> $GITHUB_OUTPUT
+          echo "ASSET_PATH=./${ASSET_NAME}" >> $GITHUB_OUTPUT
+      
+      - name: Create Zip 
+        shell: bash
+        env:
+          ASSET_NAME: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
+        run: |
+          echo "Creating zip: $ASSET_NAME"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+            powershell -Command "Compress-Archive -Path 'bundle/production/*' -DestinationPath '$env:ASSET_NAME'"
+          else
+            zip -r "$ASSET_NAME" bundle/production
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.version-and-tag.outputs.tag }}
+          prerelease: ${{ inputs.is-prerelease }}
+          files: ${{ steps.set-asset-name.outputs.ASSET_PATH }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true

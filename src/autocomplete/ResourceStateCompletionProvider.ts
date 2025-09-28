@@ -16,14 +16,18 @@ import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { TransformersUtil } from '../schema/transformers/TransformersUtil';
+import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
+import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, handleSnippetJsonQuotes } from './CompletionUtils';
 
 const log = LoggerFactory.getLogger('ResourceStateCompletionProvider');
 
-export class ResourceStateCompletionProvider implements CompletionProvider {
+export class ResourceStateCompletionProvider implements CompletionProvider, Configurable, Closeable {
     private readonly transformers = TransformersUtil.createTransformers();
+    private editorSettings: EditorSettings = DefaultSettings.editor;
+    private editorSettingsSubscription?: SettingsSubscription;
 
     constructor(
         private readonly resourceStateManager: ResourceStateManager,
@@ -134,12 +138,15 @@ export class ResourceStateCompletionProvider implements CompletionProvider {
     }
 
     private transformPropertiesToDocType(properties: Record<string, string>, context: Context): string {
+        const tabSize = this.editorSettings.tabSize;
+
         if (context.documentType === DocumentType.YAML) {
             if (Object.keys(properties).length === 0) return '';
-            return yamlStringify(properties);
+            return yamlStringify(properties, { indent: tabSize });
         }
+
         // slice to remove the leading {\n and closing \n}
-        return JSON.stringify(properties, undefined, 2).slice(2, -2);
+        return JSON.stringify(properties, undefined, tabSize).slice(2, -2);
     }
 
     private formatForJson(completion: CompletionItem, context: Context, params: CompletionParams): void {
@@ -151,8 +158,34 @@ export class ResourceStateCompletionProvider implements CompletionProvider {
             ResourceStateCompletionProvider.name,
         );
 
-        // undoing the indentation after JSON.stringify with 2 space
+        // undoing the indentation after JSON.stringify with dynamic indentation
+        const tabSize = this.editorSettings.tabSize;
         const textEdit = completion.textEdit as TextEdit;
-        textEdit.range.start.character = textEdit.range.start.character - 2;
+        textEdit.range.start.character = textEdit.range.start.character - tabSize;
+    }
+
+    configure(settingsManager: ISettingsSubscriber): void {
+        if (this.editorSettingsSubscription) {
+            this.editorSettingsSubscription.unsubscribe();
+        }
+
+        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
+            this.editorSettings = newEditorSettings;
+        });
+    }
+
+    close(): void {
+        if (this.editorSettingsSubscription) {
+            this.editorSettingsSubscription.unsubscribe();
+            this.editorSettingsSubscription = undefined;
+        }
+    }
+
+    static create(components: ServerComponents) {
+        return new ResourceStateCompletionProvider(
+            components.resourceStateManager,
+            components.documentManager,
+            components.schemaRetriever,
+        );
     }
 }

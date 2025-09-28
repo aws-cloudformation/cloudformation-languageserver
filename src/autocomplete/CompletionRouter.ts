@@ -11,13 +11,7 @@ import { DocumentManager } from '../document/DocumentManager';
 import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
-import {
-    CompletionSettings,
-    DefaultSettings,
-    EditorSettings,
-    ISettingsSubscriber,
-    SettingsSubscription,
-} from '../settings/Settings';
+import { CompletionSettings, DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { CompletionFormatter } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
@@ -27,7 +21,6 @@ import { IntrinsicFunctionArgumentCompletionProvider } from './IntrinsicFunction
 import { IntrinsicFunctionCompletionProvider } from './IntrinsicFunctionCompletionProvider';
 import { ParameterTypeValueCompletionProvider } from './ParameterTypeValueCompletionProvider';
 import { ResourceSectionCompletionProvider } from './ResourceSectionCompletionProvider';
-import { TopLevelSectionCompletionProvider } from './TopLevelSectionCompletionProvider';
 
 export type CompletionProviderType =
     | 'TopLevelSection'
@@ -39,10 +32,9 @@ const Condition = 'Condition';
 
 export class CompletionRouter implements Configurable, Closeable {
     private completionSettings: CompletionSettings = DefaultSettings.completion;
-    private editorSettings: EditorSettings = DefaultSettings.editor;
     private settingsSubscription?: SettingsSubscription;
-    private editorSettingsSubscription?: SettingsSubscription;
     private readonly log = LoggerFactory.getLogger(CompletionRouter);
+    private readonly formatter = CompletionFormatter.getInstance();
 
     constructor(
         private readonly contextManager: ContextManager,
@@ -50,12 +42,7 @@ export class CompletionRouter implements Configurable, Closeable {
         syntaxTreeManager: SyntaxTreeManager,
         documentManager: DocumentManager,
         resourceStateManager: ResourceStateManager,
-        private readonly completionProviderMap = createCompletionProviders(
-            schemaRetriever,
-            syntaxTreeManager,
-            documentManager,
-            resourceStateManager,
-        ),
+        private readonly completionProviderMap: Map<CompletionProviderType, CompletionProvider>,
         private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
     ) {}
 
@@ -80,12 +67,10 @@ export class CompletionRouter implements Configurable, Closeable {
 
         // Check for intrinsic function argument completions first
         if (context.intrinsicContext.inIntrinsic()) {
-            const doc = this.completionProviderMap
-                .get('IntrinsicFunctionArgument')
-                ?.getCompletions(context, params, this.editorSettings);
+            const doc = this.completionProviderMap.get('IntrinsicFunctionArgument')?.getCompletions(context, params);
 
             if (doc && !(doc instanceof Promise) && doc.length > 0) {
-                return CompletionFormatter.format({ isIncomplete: false, items: doc }, context, this.editorSettings);
+                return this.formatter.format({ isIncomplete: false, items: doc }, context);
             }
         }
 
@@ -103,17 +88,16 @@ export class CompletionRouter implements Configurable, Closeable {
             provider = this.entityFieldCompletionProviderMap.get(context.entity.entityType);
         }
 
-        const completions = provider?.getCompletions(context, params, this.editorSettings) ?? [];
+        const completions = provider?.getCompletions(context, params) ?? [];
 
         if (completions instanceof Promise) {
             return completions.then((result) => {
-                return CompletionFormatter.format(
+                return this.formatter.format(
                     {
                         isIncomplete: false,
                         items: result.slice(0, this.completionSettings.maxCompletions),
                     },
                     context,
-                    this.editorSettings,
                 );
             });
         } else if (completions) {
@@ -122,7 +106,7 @@ export class CompletionRouter implements Configurable, Closeable {
                 items: completions.slice(0, this.completionSettings.maxCompletions),
             };
 
-            return CompletionFormatter.format(completionList, context, this.editorSettings);
+            return this.formatter.format(completionList, context);
         }
         return;
     }
@@ -272,22 +256,10 @@ export class CompletionRouter implements Configurable, Closeable {
         if (this.settingsSubscription) {
             this.settingsSubscription.unsubscribe();
         }
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-        }
-
-        // Get initial settings
-        this.completionSettings = settingsManager.getCurrentSettings().completion;
-        this.editorSettings = settingsManager.getCurrentSettings().editor;
 
         // Subscribe to completion settings changes
         this.settingsSubscription = settingsManager.subscribe('completion', (newCompletionSettings) => {
-            this.onCompletionSettingsChanged(newCompletionSettings);
-        });
-
-        // Subscribe to editor settings changes
-        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
-            this.onEditorSettingsChanged(newEditorSettings);
+            this.completionSettings = newCompletionSettings;
         });
     }
 
@@ -296,18 +268,6 @@ export class CompletionRouter implements Configurable, Closeable {
             this.settingsSubscription.unsubscribe();
             this.settingsSubscription = undefined;
         }
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-            this.editorSettingsSubscription = undefined;
-        }
-    }
-
-    private onCompletionSettingsChanged(settings: CompletionSettings): void {
-        this.completionSettings = settings;
-    }
-
-    private onEditorSettingsChanged(settings: EditorSettings): void {
-        this.editorSettings = settings;
     }
 
     static create(components: ServerComponents) {
@@ -317,30 +277,26 @@ export class CompletionRouter implements Configurable, Closeable {
             components.syntaxTreeManager,
             components.documentManager,
             components.resourceStateManager,
+            createCompletionProviders(components),
         );
     }
 }
 
 export function createCompletionProviders(
-    schemaRetriever: SchemaRetriever,
-    syntaxTreeManager: SyntaxTreeManager,
-    documentManager: DocumentManager,
-    resourceStateManager: ResourceStateManager,
+    components: ServerComponents,
 ): Map<CompletionProviderType, CompletionProvider> {
     const completionProviderMap = new Map<CompletionProviderType, CompletionProvider>();
-    completionProviderMap.set(
-        'TopLevelSection',
-        new TopLevelSectionCompletionProvider(syntaxTreeManager, documentManager),
-    );
-    completionProviderMap.set(
-        EntityType.Resource,
-        new ResourceSectionCompletionProvider(schemaRetriever, documentManager, resourceStateManager),
-    );
-    completionProviderMap.set(EntityType.Condition, new ConditionCompletionProvider(syntaxTreeManager));
+    completionProviderMap.set('TopLevelSection', components.topLevelSectionCompletionProvider);
+    completionProviderMap.set(EntityType.Resource, new ResourceSectionCompletionProvider(components));
+    completionProviderMap.set(EntityType.Condition, new ConditionCompletionProvider(components.syntaxTreeManager));
     completionProviderMap.set('IntrinsicFunction', new IntrinsicFunctionCompletionProvider());
     completionProviderMap.set(
         'IntrinsicFunctionArgument',
-        new IntrinsicFunctionArgumentCompletionProvider(syntaxTreeManager, schemaRetriever, documentManager),
+        new IntrinsicFunctionArgumentCompletionProvider(
+            components.syntaxTreeManager,
+            components.schemaRetriever,
+            components.documentManager,
+        ),
     );
     completionProviderMap.set('ParameterTypeValue', new ParameterTypeValueCompletionProvider());
 

@@ -1,0 +1,79 @@
+name: Promote Main to Beta
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'The version to release. Can be the same as or higher than the version in main.'
+        required: true
+        type: string
+
+jobs:
+  get-configs:
+    name: Get Configs
+    uses: ./.github/workflows/configs.yml
+
+  promote:
+    name: Prepare Main and Promote to Beta
+    needs: [get-configs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 'main'
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} ${{ inputs.runs-on }} (${{ inputs.arch }})
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.get-configs.outputs.node-version }}
+          cache: 'npm'
+          architecture: ${{ needs.get-configs.outputs.arch }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump Version on Main if Needed
+        run: |
+          PKG_VERSION=$(jq -r .version package.json)
+          INPUT_VERSION="${{ inputs.version }}"
+          HIGHEST_VERSION=$(printf "%s\n%s" "$PKG_VERSION" "$INPUT_VERSION" | sort -V | tail -n1)
+
+          if [ "$INPUT_VERSION" == "$PKG_VERSION" ]; then
+            echo "Input version matches package.json. No version bump needed on main."
+          elif [ "$HIGHEST_VERSION" == "$INPUT_VERSION" ]; then
+            echo "Bumping version on the main branch..."
+            npm version --no-git-tag-version "$INPUT_VERSION"
+            git add package.json package-lock.json
+            git commit -m "chore(release): Bump version to $INPUT_VERSION"
+            git push origin main
+          else
+            echo "::error::Input version ($INPUT_VERSION) must be >= current version ($PKG_VERSION)."
+            exit 1
+          fi
+
+      - name: Merge Main to Beta
+        run: |
+          git fetch origin beta
+          if git merge-base --is-ancestor main origin/beta; then
+            echo "Branch 'beta' is already up-to-date with 'main'."
+          else
+            git checkout beta
+            git merge --ff-only main
+            git push origin beta
+          fi
+  
+  release:
+    name: Build, Tag, and Release Beta
+    needs: [promote]
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
+    with:
+      branch: 'beta'
+      tag-suffix: '-beta'
+      is-prerelease: true

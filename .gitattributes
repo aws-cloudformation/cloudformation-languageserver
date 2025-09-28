@@ -1,0 +1,65 @@
+* text=auto eof=lf
+
+################################################################################
+# The following files are binary and should be left untouched.
+# Git should not attempt to normalize line endings or generate text diffs.
+################################################################################
+
+# Archives
+*.zip    binary
+*.gz     binary
+*.tar    binary
+*.rar    binary
+*.7z     binary
+*.vsix   binary
+
+# Compiled Code / Packages
+*.jar    binary
+*.war    binary
+*.ear    binary
+*.class  binary
+*.dll    binary
+*.exe    binary
+*.so     binary
+*.a      binary
+cfn-init binary
+*.node   binary
+*.wasm   binary
+*.bat    binary
+
+# Documents
+*.pdf    binary
+*.doc    binary
+*.docx   binary
+*.xls    binary
+*.xlsx   binary
+*.ppt    binary
+*.pptx   binary
+*.odt    binary
+*.csv    binary
+
+# Images
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.bmp    binary
+*.ico    binary
+*.tif    binary
+*.tiff   binary
+*.webp   binary
+*.svg    binary
+
+# Audio & Video
+*.mp3    binary
+*.mp4    binary
+*.mkv    binary
+*.wav    binary
+*.ogg    binary
+*.mov    binary
+
+# Other
+*.keystore binary
+*.jks      binary
+*.db       binary
+*.sqlite   binary

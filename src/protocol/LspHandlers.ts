@@ -27,6 +27,8 @@ import {
     DefinitionParams,
     DidChangeConfigurationParams,
     HoverParams,
+    InlineCompletionList,
+    InlineCompletionParams,
     SignatureHelpParams,
 } from 'vscode-languageserver-protocol';
 
@@ -110,6 +112,12 @@ export class LspHandlers {
         >,
     ) {
         this.connection.onCodeAction(handler);
+    }
+
+    onInlineCompletion(
+        handler: ServerRequestHandler<InlineCompletionParams, InlineCompletionList | undefined | null, never, void>,
+    ) {
+        this.connection.onRequest('textDocument/inlineCompletion', handler);
     }
 
     onDidChangeConfiguration(handler: NotificationHandler<DidChangeConfigurationParams>) {

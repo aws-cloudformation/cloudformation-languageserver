@@ -3,7 +3,8 @@ import { Context } from '../context/Context';
 import { ResourceAttributesSet, TopLevelSection, TopLevelSectionsSet } from '../context/ContextType';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentType } from '../document/Document';
-import { EditorSettings } from '../settings/Settings';
+import { Closeable, Configurable } from '../server/ServerComponents';
+import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getIndentationString } from '../utils/IndentationUtils';
 
@@ -16,14 +17,35 @@ export interface ExtendedCompletionItem extends CompletionItem {
     data?: CompletionItemData;
 }
 
-export class CompletionFormatter {
+export class CompletionFormatter implements Configurable, Closeable {
     private static readonly log = LoggerFactory.getLogger(CompletionFormatter);
+    private static instance: CompletionFormatter;
+    private editorSettings: EditorSettings = DefaultSettings.editor;
+    private editorSettingsSubscription?: SettingsSubscription;
 
-    static format(completions: CompletionList, context: Context, editorSettings: EditorSettings): CompletionList {
+    private constructor() {}
+
+    static getInstance(): CompletionFormatter {
+        if (!CompletionFormatter.instance) {
+            CompletionFormatter.instance = new CompletionFormatter();
+        }
+        return CompletionFormatter.instance;
+    }
+
+    /**
+     * Generates an indent placeholder for snippets
+     * @param numberOfIndents The number of indentation levels (1 = {INDENT1}, 2 = {INDENT2}, etc.)
+     * @returns The indent placeholder string
+     */
+    static getIndentPlaceholder(numberOfIndents: number): string {
+        return `{INDENT${numberOfIndents}}`;
+    }
+
+    format(completions: CompletionList, context: Context): CompletionList {
         try {
             const documentType = context.documentType;
 
-            const formattedItems = completions.items.map((item) => this.formatItem(item, documentType, editorSettings));
+            const formattedItems = completions.items.map((item) => this.formatItem(item, documentType));
 
             return {
                 ...completions,
@@ -35,11 +57,24 @@ export class CompletionFormatter {
         }
     }
 
-    private static formatItem(
-        item: CompletionItem,
-        documentType: DocumentType,
-        editorSettings: EditorSettings,
-    ): CompletionItem {
+    configure(settingsManager: ISettingsSubscriber): void {
+        if (this.editorSettingsSubscription) {
+            this.editorSettingsSubscription.unsubscribe();
+        }
+
+        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
+            this.editorSettings = newEditorSettings;
+        });
+    }
+
+    close(): void {
+        if (this.editorSettingsSubscription) {
+            this.editorSettingsSubscription.unsubscribe();
+            this.editorSettingsSubscription = undefined;
+        }
+    }
+
+    private formatItem(item: CompletionItem, documentType: DocumentType): CompletionItem {
         const formattedItem = { ...item };
 
         // Skip formatting for items that already have snippet format
@@ -52,21 +87,17 @@ export class CompletionFormatter {
         if (documentType === DocumentType.JSON) {
             formattedItem.insertText = this.formatForJson(textToFormat);
         } else {
-            formattedItem.insertText = this.formatForYaml(textToFormat, item, editorSettings);
+            formattedItem.insertText = this.formatForYaml(textToFormat, item);
         }
 
         return formattedItem;
     }
 
-    private static formatForJson(label: string): string {
+    private formatForJson(label: string): string {
         return label;
     }
 
-    private static formatForYaml(
-        label: string,
-        item: CompletionItem | undefined,
-        editorSettings: EditorSettings,
-    ): string {
+    private formatForYaml(label: string, item: CompletionItem | undefined): string {
         // Intrinsic functions should not be formatted with colons
         if (
             item?.data &&
@@ -85,7 +116,7 @@ export class CompletionFormatter {
             return label;
         }
 
-        const indentString = getIndentationString(editorSettings, DocumentType.YAML);
+        const indentString = getIndentationString(this.editorSettings, DocumentType.YAML);
 
         if (this.isTopLevelSection(label)) {
             if (label === String(TopLevelSection.AWSTemplateFormatVersion)) {
@@ -110,20 +141,20 @@ export class CompletionFormatter {
         }
     }
 
-    private static isTopLevelSection(label: string): boolean {
+    private isTopLevelSection(label: string): boolean {
         return TopLevelSectionsSet.has(label);
     }
 
-    private static isResourceAttribute(label: string): boolean {
+    private isResourceAttribute(label: string): boolean {
         return ResourceAttributesSet.has(label);
     }
 
-    private static isObjectType(item?: CompletionItem): boolean {
+    private isObjectType(item?: CompletionItem): boolean {
         const data = item?.data as CompletionItemData | undefined;
         return data?.type === 'object';
     }
 
-    private static isArrayType(item?: CompletionItem): boolean {
+    private isArrayType(item?: CompletionItem): boolean {
         const data = item?.data as CompletionItemData | undefined;
         return data?.type === 'array';
     }

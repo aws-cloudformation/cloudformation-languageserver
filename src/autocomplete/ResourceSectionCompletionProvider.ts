@@ -1,14 +1,10 @@
 import { CompletionItem, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { Resource } from '../context/semantic/Entity';
-import { DocumentManager } from '../document/DocumentManager';
-import { ResourceStateManager } from '../resourceState/ResourceStateManager';
-import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { CompletionProvider } from './CompletionProvider';
-import { ResourceEntityCompletionProvider } from './ResourceEntityCompletionProvider';
 import { ResourcePropertyCompletionProvider } from './ResourcePropertyCompletionProvider';
-import { ResourceStateCompletionProvider } from './ResourceStateCompletionProvider';
 import { ResourceTypeCompletionProvider } from './ResourceTypeCompletionProvider';
 
 enum ResourceCompletionType {
@@ -22,14 +18,8 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
     private readonly log = LoggerFactory.getLogger(ResourceSectionCompletionProvider);
 
     constructor(
-        schemaRetriever: SchemaRetriever,
-        documentManager: DocumentManager,
-        resourceStateManager: ResourceStateManager,
-        private readonly resourceProviders = createResourceCompletionProviders(
-            schemaRetriever,
-            documentManager,
-            resourceStateManager,
-        ),
+        components: ServerComponents,
+        private readonly resourceProviders = createResourceCompletionProviders(components),
     ) {}
 
     getCompletions(
@@ -82,20 +72,18 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
 }
 
 export function createResourceCompletionProviders(
-    schemaRetriever: SchemaRetriever,
-    documentManager: DocumentManager,
-    resourceStateManager: ResourceStateManager,
+    components: ServerComponents,
 ): Map<ResourceCompletionType, CompletionProvider> {
     const resourceProviderMap = new Map<ResourceCompletionType, CompletionProvider>();
+    resourceProviderMap.set(ResourceCompletionType.Entity, components.resourceEntityCompletionProvider);
     resourceProviderMap.set(
-        ResourceCompletionType.Entity,
-        new ResourceEntityCompletionProvider(schemaRetriever, documentManager),
+        ResourceCompletionType.Type,
+        new ResourceTypeCompletionProvider(components.schemaRetriever),
     );
-    resourceProviderMap.set(ResourceCompletionType.Type, new ResourceTypeCompletionProvider(schemaRetriever));
-    resourceProviderMap.set(ResourceCompletionType.Property, new ResourcePropertyCompletionProvider(schemaRetriever));
     resourceProviderMap.set(
-        ResourceCompletionType.State,
-        new ResourceStateCompletionProvider(resourceStateManager, documentManager, schemaRetriever),
+        ResourceCompletionType.Property,
+        new ResourcePropertyCompletionProvider(components.schemaRetriever),
     );
+    resourceProviderMap.set(ResourceCompletionType.State, components.resourceStateCompletionProvider);
     return resourceProviderMap;
 }

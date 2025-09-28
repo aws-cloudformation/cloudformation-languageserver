@@ -1,0 +1,82 @@
+name: Build and Test
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: 'The runner environment for the job (e.g., ubuntu-latest, windows-latest).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+
+      arch:
+        description: 'The architecture to target (e.g., "x64").'
+        required: false
+        type: string
+        default: 'x64'
+
+      ref:
+        description: 'The Git ref to checkout.'
+        required: false
+        type: string
+
+jobs:
+  get-configs:
+    name: Get Configs
+    uses: ./.github/workflows/configs.yml
+
+  build-test-nodejs:
+    needs: [get-configs]
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Log Commit and Branch
+        shell: bash
+        run: echo "Checked out commit ${{ github.sha }} on ref ${{ github.ref_name }}"
+
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} ${{ inputs.runs-on }} (${{ inputs.arch }})
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.get-configs.outputs.node-version }}
+          cache: 'npm'
+          architecture: ${{ needs.get-configs.outputs.arch }}
+
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm run test
+
+  build-test-go:
+    needs: [get-configs]
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+      
+      - name: Log Commit and Branch
+        shell: bash
+        run: echo "Checked out commit ${{ github.sha }} on ref ${{ github.ref_name }}"
+
+      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} ${{ inputs.runs-on }} (${{ inputs.arch }})
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ needs.get-configs.outputs.go-version }}
+          cache: true
+
+      - name: Build
+        run: GOPROXY=direct go build -C ./cfn-init ./...
+
+      - name: Test
+        run: GOPROXY=direct go test -C ./cfn-init -v -cover ./...

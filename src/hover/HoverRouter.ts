@@ -36,8 +36,6 @@ export class HoverRouter implements Configurable, Closeable {
             this.settingsSubscription.unsubscribe();
         }
 
-        this.settings = settingsManager.getCurrentSettings().hover;
-
         this.settingsSubscription = settingsManager.subscribe('hover', (newHoverSettings) => {
             this.onSettingsChanged(newHoverSettings);
         });
