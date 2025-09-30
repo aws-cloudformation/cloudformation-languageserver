@@ -1,5 +1,13 @@
 # AWS CloudFormation Language Server for Code Editors
 
+<div align="center">
+
+[![build](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/build-and-test.yml)
+&nbsp;
+[![CodeQL](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/github-code-scanning/codeql)
+
+</div>
+
 A LSP server implementation that provides intelligent editing support for CloudFormation templates in JSON and YAML formats.
 
 ## Features

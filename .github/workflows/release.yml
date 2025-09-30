@@ -1,4 +1,5 @@
 name: Release
+run-name: Release ${{ inputs.tag }}
 
 on:
   workflow_call:
@@ -80,14 +81,14 @@ jobs:
         with:
           ref: ${{ needs.version-and-tag.outputs.tag }}
 
-      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} ${{ matrix.runner }} (${{ matrix.arch }})
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ matrix.runner }}-${{ matrix.arch }})
         uses: actions/setup-node@v4
         with:
           node-version: ${{ needs.get-configs.outputs.node-version }}
           cache: 'npm'
           architecture: ${{ matrix.arch }}
 
-      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} ${{ matrix.runner }} (${{ matrix.arch }})
+      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ matrix.runner }}-${{ matrix.arch }})
         uses: actions/setup-go@v4
         with:
           go-version: ${{ needs.get-configs.outputs.go-version }}
@@ -106,6 +107,7 @@ jobs:
           fi
 
       # - name: Bundle Go
+        # shell: bash
         # run: npm run build:go:prod
 
       - name: Set release asset name
@@ -114,31 +116,38 @@ jobs:
         run: |
           APP_NAME=${{ needs.get-configs.outputs.app-name }}
           VERSION=${{ needs.version-and-tag.outputs.tag }}
-          OS=${{ matrix.os }}
+          OS=${{ matrix.runner }}
           ARCH=${{ matrix.arch }}
 
           ASSET_NAME="${APP_NAME}-${VERSION}-${OS}-${ARCH}.zip"
           echo "ASSET_NAME=${ASSET_NAME}"
           echo "ASSET_NAME=${ASSET_NAME}" >> $GITHUB_OUTPUT
-          echo "ASSET_PATH=./${ASSET_NAME}" >> $GITHUB_OUTPUT
-      
-      - name: Create Zip 
-        shell: bash
+
+      - name: Create Zip (Unix)
+        if: runner.os != 'Windows'
         env:
           ASSET_NAME: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
         run: |
-          echo "Creating zip: $ASSET_NAME"
-          if [[ "$RUNNER_OS" == "Windows" ]]; then
-            powershell -Command "Compress-Archive -Path 'bundle/production/*' -DestinationPath '$env:ASSET_NAME'"
-          else
-            zip -r "$ASSET_NAME" bundle/production
-          fi
+          echo "Creating zip: ${{ env.ASSET_NAME }}"
+          (cd ./bundle/production && zip -r ../../${{ env.ASSET_NAME }} .)
+          ls -la
+
+      - name: Create Zip (Windows)
+        if: runner.os == 'Windows'
+        env:
+          ASSET_NAME: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
+        run: |
+          echo "Creating zip: ${{ env.ASSET_NAME }}"
+          Compress-Archive -Path ./bundle/production/* -DestinationPath ./${{ env.ASSET_NAME }}
+          dir
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
+        env:
+          ASSET_NAME: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
         with:
           tag_name: ${{ needs.version-and-tag.outputs.tag }}
           prerelease: ${{ needs.version-and-tag.outputs.is-prerelease }}
-          files: ${{ steps.set-asset-name.outputs.ASSET_PATH }}
+          files: ${{ env.ASSET_NAME }}
           generate_release_notes: true
           fail_on_unmatched_files: true

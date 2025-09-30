@@ -1,4 +1,4 @@
-name: Main branch CI
+name: Main CI
 
 on:
   push:
@@ -9,3 +9,8 @@ on:
 jobs:
   build-and-test:
     uses: ./.github/workflows/build-and-test.yml
+    permissions:
+      contents: read
+      pull-requests: write
+    with:
+      ref: ${{ github.sha }}
