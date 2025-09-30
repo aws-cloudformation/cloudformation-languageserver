@@ -1,14 +1,24 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { InlineCompletionParams, InlineCompletionTriggerKind } from 'vscode-languageserver-protocol';
-import { InlineCompletionRouter } from '../../../src/autocomplete/InlineCompletionRouter';
+import {
+    InlineCompletionRouter,
+    createInlineCompletionProviders,
+} from '../../../src/autocomplete/InlineCompletionRouter';
 import { DocumentType } from '../../../src/document/Document';
+import { RelationshipSchemaService } from '../../../src/services/RelationshipSchemaService';
 import { DefaultSettings } from '../../../src/settings/Settings';
 import { createTopLevelContext } from '../../utils/MockContext';
-import { createMockContextManager, createMockSettingsManager } from '../../utils/MockServerComponents';
+import {
+    createMockContextManager,
+    createMockDocumentManager,
+    createMockSettingsManager,
+} from '../../utils/MockServerComponents';
 
 describe('InlineCompletionRouter', () => {
     const mockContextManager = createMockContextManager();
+    const mockDocumentManager = createMockDocumentManager();
     const mockSettingsManager = createMockSettingsManager();
+    const mockRelationshipSchemaService = RelationshipSchemaService.getInstance();
     let router: InlineCompletionRouter;
 
     const mockParams: InlineCompletionParams = {
@@ -21,7 +31,8 @@ describe('InlineCompletionRouter', () => {
 
     beforeEach(() => {
         mockContextManager.getContext.reset();
-        router = new InlineCompletionRouter(mockContextManager);
+        const providers = createInlineCompletionProviders(mockDocumentManager, mockRelationshipSchemaService);
+        router = new InlineCompletionRouter(mockContextManager, providers);
         router.configure(mockSettingsManager);
         vi.restoreAllMocks();
     });
@@ -32,6 +43,13 @@ describe('InlineCompletionRouter', () => {
             completion: { ...DefaultSettings.completion, enabled: false },
         };
         const disabledSettingsManager = createMockSettingsManager(disabledSettings);
+        disabledSettingsManager.subscribe.callsFake((path: keyof typeof disabledSettings, callback: any) => {
+            callback(disabledSettings[path]);
+            return {
+                unsubscribe: () => {},
+                isActive: () => true,
+            };
+        });
         router.configure(disabledSettingsManager);
 
         const result = router.getInlineCompletions(mockParams);
@@ -51,7 +69,7 @@ describe('InlineCompletionRouter', () => {
     });
 
     test('should return undefined when context exists but no providers match', () => {
-        const mockContext = createTopLevelContext('Resources', { text: 'AWS::' });
+        const mockContext = createTopLevelContext('Parameters', { text: 'AWS::' });
         mockContextManager.getContext.returns(mockContext);
 
         const result = router.getInlineCompletions(mockParams);
@@ -125,26 +143,6 @@ describe('InlineCompletionRouter', () => {
     });
 
     describe('Settings Management', () => {
-        test('should update completion settings when notified', () => {
-            const newCompletionSettings = { ...DefaultSettings.completion, enabled: false };
-
-            // Simulate settings change
-            router['onCompletionSettingsChanged'](newCompletionSettings);
-
-            // Verify settings were updated
-            expect(router['completionSettings']).toEqual(newCompletionSettings);
-        });
-
-        test('should update editor settings when notified', () => {
-            const newEditorSettings = { ...DefaultSettings.editor, tabSize: 8 };
-
-            // Simulate settings change
-            router['onEditorSettingsChanged'](newEditorSettings);
-
-            // Verify settings were updated
-            expect(router['editorSettings']).toEqual(newEditorSettings);
-        });
-
         test('should configure with settings manager', () => {
             const customSettings = {
                 ...DefaultSettings,
@@ -152,6 +150,13 @@ describe('InlineCompletionRouter', () => {
                 editor: { ...DefaultSettings.editor, tabSize: 8 },
             };
             const customSettingsManager = createMockSettingsManager(customSettings);
+            customSettingsManager.subscribe.callsFake((path: keyof typeof customSettings, callback: any) => {
+                callback(customSettings[path]);
+                return {
+                    unsubscribe: () => {},
+                    isActive: () => true,
+                };
+            });
 
             router.configure(customSettingsManager);
 
@@ -172,7 +177,21 @@ describe('InlineCompletionRouter', () => {
             };
 
             const firstSettingsManager = createMockSettingsManager(firstSettings);
+            firstSettingsManager.subscribe.callsFake((path: keyof typeof firstSettings, callback: any) => {
+                callback(firstSettings[path]);
+                return {
+                    unsubscribe: () => {},
+                    isActive: () => true,
+                };
+            });
             const secondSettingsManager = createMockSettingsManager(secondSettings);
+            secondSettingsManager.subscribe.callsFake((path: keyof typeof secondSettings, callback: any) => {
+                callback(secondSettings[path]);
+                return {
+                    unsubscribe: () => {},
+                    isActive: () => true,
+                };
+            });
 
             // Configure with first settings manager
             router.configure(firstSettingsManager);
@@ -196,6 +215,13 @@ describe('InlineCompletionRouter', () => {
                 editor: { ...DefaultSettings.editor, tabSize: 6 },
             };
             const customSettingsManager = createMockSettingsManager(customSettings);
+            customSettingsManager.subscribe.callsFake((path: keyof typeof customSettings, callback: any) => {
+                callback(customSettings[path]);
+                return {
+                    unsubscribe: () => {},
+                    isActive: () => true,
+                };
+            });
 
             router.configure(customSettingsManager);
 
@@ -216,10 +242,67 @@ describe('InlineCompletionRouter', () => {
         });
     });
 
+    describe('Related Resources Provider', () => {
+        test('should attempt to use related resources provider for Resources section at top level', () => {
+            const mockContext = createTopLevelContext('Resources', {
+                text: '',
+                propertyPath: ['Resources'],
+            });
+            mockContextManager.getContext.returns(mockContext);
+
+            const result = router.getInlineCompletions(mockParams);
+
+            expect(mockContextManager.getContext.calledOnce).toBe(true);
+            // Should attempt to use related resources provider but return undefined due to no existing resources
+            expect(result).toBeUndefined();
+        });
+
+        test('should not use related resources provider for non-Resources section', () => {
+            const mockContext = createTopLevelContext('Parameters', {
+                text: '',
+                propertyPath: ['Parameters'],
+            });
+            mockContextManager.getContext.returns(mockContext);
+
+            const result = router.getInlineCompletions(mockParams);
+
+            expect(result).toBeUndefined();
+            expect(mockContextManager.getContext.calledOnce).toBe(true);
+        });
+
+        test('should handle Resources section with resource-level context', () => {
+            const mockContext = createTopLevelContext('Resources', {
+                text: 'MyResource',
+                propertyPath: ['Resources', 'MyResource'],
+            });
+            mockContextManager.getContext.returns(mockContext);
+
+            const result = router.getInlineCompletions(mockParams);
+
+            expect(mockContextManager.getContext.calledOnce).toBe(true);
+            // Should return undefined since no existing resources to suggest from
+            expect(result).toBeUndefined();
+        });
+
+        test('should not use related resources provider for deep property paths', () => {
+            const mockContext = createTopLevelContext('Resources', {
+                text: 'BucketName',
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'BucketName'],
+            });
+            mockContextManager.getContext.returns(mockContext);
+
+            const result = router.getInlineCompletions(mockParams);
+
+            expect(result).toBeUndefined();
+            expect(mockContextManager.getContext.calledOnce).toBe(true);
+        });
+    });
+
     describe('Static Factory Method', () => {
         test('should create router with components', () => {
             const mockComponents = {
                 contextManager: mockContextManager,
+                documentManager: mockDocumentManager,
             } as any;
 
             const createdRouter = InlineCompletionRouter.create(mockComponents);
