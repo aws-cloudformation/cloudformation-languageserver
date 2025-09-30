@@ -85,7 +85,7 @@ export class HoverRouter implements Configurable, Closeable {
             return this.hoverProviderMap.get(HoverType.IntrinsicFunction)?.getInformation(context);
         } else if (context.isPseudoParameter) {
             return this.hoverProviderMap.get(HoverType.PseudoParameter)?.getInformation(context);
-        } else if (context.section === TopLevelSection.Resources&& !context.intrinsicContext.inIntrinsic()) {
+        } else if (context.section === TopLevelSection.Resources && !context.intrinsicContext.inIntrinsic()) {
             const doc = this.hoverProviderMap.get(HoverType.ResourceSection)?.getInformation(context);
             if (doc) {
                 return doc;

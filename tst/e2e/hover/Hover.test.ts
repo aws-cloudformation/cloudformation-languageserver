@@ -2007,9 +2007,7 @@ Resources:
                         description: 'Test invalid parameter reference hover should return undefined',
                         verification: {
                             position: { line: 7, character: 30 }, // Position on "NonExistentParam" in !Ref NonExistentParam
-                            expectation: HoverExpectationBuilder.create()
-                                .expectUndefined()
-                                .build(),
+                            expectation: HoverExpectationBuilder.create().expectUndefined().build(),
                         },
                     },
                 ],
