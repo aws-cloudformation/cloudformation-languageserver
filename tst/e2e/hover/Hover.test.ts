@@ -1950,6 +1950,71 @@ Resources:
             expect(emptyHover).toBeUndefined();
         });
 
+        it('Parameter Reference Hover - Valid and Invalid Cases', () => {
+            const template = new TemplateBuilder(DocumentType.YAML);
+            const scenario: TemplateScenario = {
+                name: 'Parameter Reference Hover Tests',
+                steps: [
+                    {
+                        action: 'initialize',
+                        content: `AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  BucketName:
+    Type: String
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName`,
+                    },
+                    {
+                        action: 'type',
+                        content: '',
+                        position: { line: 7, character: 25 },
+                        description: 'Test valid parameter reference hover',
+                        verification: {
+                            position: { line: 8, character: 25 }, // Position on "BucketName" in !Ref BucketName
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContainsText(['**Type:** String', 'BucketName'])
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            template.executeScenario(scenario);
+
+            // Test Case 2: Invalid parameter reference
+            const invalidTemplate = new TemplateBuilder(DocumentType.YAML);
+            const invalidScenario: TemplateScenario = {
+                name: 'Invalid Parameter Reference Hover Test',
+                steps: [
+                    {
+                        action: 'initialize',
+                        content: `AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  BucketName:
+    Type: String
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref NonExistentParam`,
+                    },
+                    {
+                        action: 'type',
+                        content: '',
+                        position: { line: 8, character: 25 },
+                        description: 'Test invalid parameter reference hover should return undefined',
+                        verification: {
+                            position: { line: 7, character: 30 }, // Position on "NonExistentParam" in !Ref NonExistentParam
+                            expectation: HoverExpectationBuilder.create().expectUndefined().build(),
+                        },
+                    },
+                ],
+            };
+            invalidTemplate.executeScenario(invalidScenario);
+        });
+
         it('HoverExpectationBuilder Functionality', () => {
             const expectation = HoverExpectationBuilder.create()
                 .expectContainsText(['test', 'content'])
