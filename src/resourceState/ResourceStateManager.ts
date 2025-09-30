@@ -7,7 +7,7 @@ import { DefaultSettings, ProfileSettings, SettingsSubscription } from '../setti
 import { SettingsManager } from '../settings/SettingsManager';
 import { ClientMessage } from '../telemetry/ClientMessage';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { ListResourcesResult, RefreshResourceListResult } from './ResourceStateTypes';
+import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
 
 const log = LoggerFactory.getLogger('ResourceStateManager');
 
@@ -140,7 +140,7 @@ export class ResourceStateManager implements Configurable, Closeable {
         };
     }
 
-    public async refreshResourceList(resourceTypes: string[]): Promise<RefreshResourceListResult> {
+    public async refreshResourceList(resourceTypes: string[]): Promise<RefreshResourcesResult> {
         if (this.isRefreshing) {
             // return cached resource list
             return {

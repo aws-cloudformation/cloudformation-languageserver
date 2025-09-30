@@ -16,8 +16,8 @@ import { ResourceStateManager } from './ResourceStateManager';
 import {
     ResourceIdentifier,
     ResourceSelection,
-    ResourceStateImportParams,
-    ResourceStateImportResult,
+    ResourceStateParams,
+    ResourceStateResult,
     ResourceTemplateFormat,
     ResourceType,
 } from './ResourceStateTypes';
@@ -39,7 +39,7 @@ export class ResourceStateImporter {
         private readonly stackManagementInfoProvider: StackManagementInfoProvider,
     ) {}
 
-    public async importResourceState(params: ResourceStateImportParams): Promise<ResourceStateImportResult> {
+    public async importResourceState(params: ResourceStateParams): Promise<ResourceStateResult> {
         const { resourceSelections, textDocument } = params;
         if (!resourceSelections) {
             return this.getFailureResponse('No resources selected for import.');
@@ -86,9 +86,9 @@ export class ResourceStateImporter {
     private async getResourceStates(
         resourceSelections: ResourceSelection[],
         syntaxTree: SyntaxTree,
-    ): Promise<{ fetchedResourceStates: ResourceTemplateFormat[]; importResult: ResourceStateImportResult }> {
+    ): Promise<{ fetchedResourceStates: ResourceTemplateFormat[]; importResult: ResourceStateResult }> {
         const fetchedResourceStates: ResourceTemplateFormat[] = [];
-        const importResult: ResourceStateImportResult = {
+        const importResult: ResourceStateResult = {
             title: 'Resource State Import',
             failedImports: {},
             successfulImports: {},
@@ -296,7 +296,7 @@ export class ResourceStateImporter {
         title: string,
         successfulImports?: Record<ResourceType, ResourceIdentifier[]>,
         failedImports?: Record<ResourceType, ResourceIdentifier[]>,
-    ): ResourceStateImportResult {
+    ): ResourceStateResult {
         return {
             title: title,
             successfulImports: successfulImports ?? {},

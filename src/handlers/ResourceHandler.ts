@@ -1,12 +1,12 @@
 import { ServerRequestHandler } from 'vscode-languageserver';
 import {
-    GetResourceTypesResult,
+    ResourceTypesResult,
     ListResourcesParams,
     ListResourcesResult,
-    RefreshResourceListParams,
-    RefreshResourceListResult,
-    ResourceStateImportParams,
-    ResourceStateImportResult,
+    RefreshResourcesParams,
+    RefreshResourcesResult,
+    ResourceStateParams,
+    ResourceStateResult,
     ResourceSummary,
 } from '../resourceState/ResourceStateTypes';
 import { ServerComponents } from '../server/ServerComponents';
@@ -17,8 +17,8 @@ const log = LoggerFactory.getLogger('ResourceHandler');
 
 export function getResourceTypesHandler(
     components: ServerComponents,
-): ServerRequestHandler<void, GetResourceTypesResult, never, void> {
-    return (): GetResourceTypesResult => {
+): ServerRequestHandler<void, ResourceTypesResult, never, void> {
+    return (): ResourceTypesResult => {
         try {
             const resourceTypes = components.resourceStateManager.getResourceTypes();
             return { resourceTypes };
@@ -61,16 +61,16 @@ export function listResourcesHandler(
 
 export function importResourceStateHandler(
     components: ServerComponents,
-): ServerRequestHandler<ResourceStateImportParams, ResourceStateImportResult, never, void> {
-    return async (params: ResourceStateImportParams): Promise<ResourceStateImportResult> => {
+): ServerRequestHandler<ResourceStateParams, ResourceStateResult, never, void> {
+    return async (params: ResourceStateParams): Promise<ResourceStateResult> => {
         return await components.resourceStateImporter.importResourceState(params);
     };
 }
 
 export function refreshResourceListHandler(
     components: ServerComponents,
-): ServerRequestHandler<RefreshResourceListParams, RefreshResourceListResult, never, void> {
-    return async (params: RefreshResourceListParams): Promise<RefreshResourceListResult> => {
+): ServerRequestHandler<RefreshResourcesParams, RefreshResourcesResult, never, void> {
+    return async (params: RefreshResourcesParams): Promise<RefreshResourcesResult> => {
         try {
             const timeout = new Promise<never>((resolve, reject) =>
                 setTimeout(() => reject(new Error('Resource list refresh timed out')), 30_000),

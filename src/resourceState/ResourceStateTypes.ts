@@ -2,14 +2,14 @@ import { CodeAction, CodeActionParams } from 'vscode-languageserver';
 import { RequestType } from 'vscode-languageserver-protocol';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-export type GetResourceTypesParams = {};
+export type ResourceTypesParams = {};
 
-export type GetResourceTypesResult = {
+export type ResourceTypesResult = {
     resourceTypes: string[];
 };
 
-export const GetResourceTypesRequest = new RequestType<GetResourceTypesParams, GetResourceTypesResult, void>(
-    'aws/cfn/resourceTypes',
+export const ResourceTypesRequest = new RequestType<ResourceTypesParams, ResourceTypesResult, void>(
+    'aws/cfn/resources/types',
 );
 
 export type ResourceSelection = {
@@ -17,17 +17,17 @@ export type ResourceSelection = {
     resourceIdentifiers: string[];
 };
 
-export interface ResourceStateImportParams extends CodeActionParams {
+export interface ResourceStateParams extends CodeActionParams {
     resourceSelections?: ResourceSelection[];
 }
 
-export interface ResourceStateImportResult extends CodeAction {
+export interface ResourceStateResult extends CodeAction {
     successfulImports: Record<ResourceType, ResourceIdentifier[]>;
     failedImports: Record<ResourceType, ResourceIdentifier[]>;
 }
 
-export const ResourceStateImportRequest = new RequestType<ResourceStateImportParams, ResourceStateImportResult, void>(
-    'aws/cfn/resourceStateImport',
+export const ResourceStateRequest = new RequestType<ResourceStateParams, ResourceStateResult, void>(
+    'aws/cfn/resources/state',
 );
 
 export type ResourceType = string;
@@ -48,20 +48,20 @@ export type ListResourcesResult = {
 };
 
 export const ListResourcesRequest = new RequestType<ListResourcesParams, ListResourcesResult, void>(
-    'aws/cfn/resources',
+    'aws/cfn/resources/list',
 );
 
-export type RefreshResourceListParams = {
+export type RefreshResourcesParams = {
     resourceTypes: string[];
 };
 
-export type RefreshResourceListResult = {
+export type RefreshResourcesResult = {
     resources: ResourceSummary[];
     refreshFailed: boolean;
 };
 
-export const RefreshResourceListRequest = new RequestType<RefreshResourceListParams, RefreshResourceListResult, void>(
-    'aws/cfn/refreshResourceList',
+export const RefreshResourceListRequest = new RequestType<RefreshResourcesParams, RefreshResourcesResult, void>(
+    'aws/cfn/resources/refresh',
 );
 
 export interface ResourceTemplateFormat {

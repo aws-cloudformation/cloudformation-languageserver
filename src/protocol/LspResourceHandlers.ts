@@ -1,16 +1,16 @@
 import { Connection, ServerRequestHandler } from 'vscode-languageserver';
 import {
-    GetResourceTypesResult,
-    GetResourceTypesRequest,
+    ResourceTypesResult,
+    ResourceTypesRequest,
     ListResourcesParams,
     ListResourcesResult,
     ListResourcesRequest,
-    ResourceStateImportParams,
-    ResourceStateImportResult,
-    ResourceStateImportRequest,
+    ResourceStateParams,
+    ResourceStateResult,
+    ResourceStateRequest,
     RefreshResourceListRequest,
-    RefreshResourceListParams,
-    RefreshResourceListResult,
+    RefreshResourcesParams,
+    RefreshResourcesResult,
 } from '../resourceState/ResourceStateTypes';
 
 export class LspResourceHandlers {
@@ -20,19 +20,15 @@ export class LspResourceHandlers {
         this.connection.onRequest(ListResourcesRequest.method, handler);
     }
 
-    onRefreshResourceList(
-        handler: ServerRequestHandler<RefreshResourceListParams, RefreshResourceListResult, never, void>,
-    ) {
+    onRefreshResourceList(handler: ServerRequestHandler<RefreshResourcesParams, RefreshResourcesResult, never, void>) {
         this.connection.onRequest(RefreshResourceListRequest.method, handler);
     }
 
-    onGetResourceTypes(handler: ServerRequestHandler<void, GetResourceTypesResult, never, void>) {
-        this.connection.onRequest(GetResourceTypesRequest.method, handler);
+    onGetResourceTypes(handler: ServerRequestHandler<void, ResourceTypesResult, never, void>) {
+        this.connection.onRequest(ResourceTypesRequest.method, handler);
     }
 
-    onResourceStateImport(
-        handler: ServerRequestHandler<ResourceStateImportParams, ResourceStateImportResult, never, void>,
-    ) {
-        this.connection.onRequest(ResourceStateImportRequest.method, handler);
+    onResourceStateImport(handler: ServerRequestHandler<ResourceStateParams, ResourceStateResult, never, void>) {
+        this.connection.onRequest(ResourceStateRequest.method, handler);
     }
 }
