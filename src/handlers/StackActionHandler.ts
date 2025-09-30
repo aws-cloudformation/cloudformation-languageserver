@@ -5,25 +5,25 @@ import { Parameter } from '../context/semantic/Entity';
 import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { parseTemplateActionParams, parseGetParametersParams } from '../templates/TemplateParser';
+import { parseStackActionParams, parseGetParametersParams } from '../stackActions/StackActionParser';
 import {
     GetParametersParams,
     GetParametersResult,
-    TemplateActionParams,
-    TemplateActionResult,
-    TemplateStatusResult,
-} from '../templates/TemplateRequestType';
+    StackActionParams,
+    StackActionResult,
+    StackActionStatusResult,
+} from '../stackActions/StackActionRequestType';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
-const log = LoggerFactory.getLogger('TemplateHandler');
+const log = LoggerFactory.getLogger('StackActionHandler');
 
-export function templateParametersHandler(
+export function stackActionParametersHandler(
     components: ServerComponents,
 ): ServerRequestHandler<GetParametersParams, GetParametersResult, never, void> {
     return (rawParams, _token, _workDoneProgress, _resultProgress) => {
-        log.debug({ Handler: 'TemplateParameters', rawParams });
+        log.debug({ Handler: 'StackActionParameters', rawParams });
 
         try {
             const params = parseWithPrettyError(parseGetParametersParams, rawParams);
@@ -42,72 +42,72 @@ export function templateParametersHandler(
                 parameters: [],
             };
         } catch (error) {
-            handleTemplateError(error, 'Failed to get parameters');
+            handleStackActionError(error, 'Failed to get parameters');
         }
     };
 }
 
-export function templateValidationCreateHandler(
+export function stackActionValidationCreateHandler(
     components: ServerComponents,
-): ServerRequestHandler<TemplateActionParams, TemplateActionResult, never, void> {
+): ServerRequestHandler<StackActionParams, StackActionResult, never, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'TemplateValidationCreate', rawParams });
+        log.debug({ Handler: 'StackActionValidationCreate', rawParams });
 
         try {
-            const params = parseWithPrettyError(parseTemplateActionParams, rawParams);
+            const params = parseWithPrettyError(parseStackActionParams, rawParams);
             return await components.validationWorkflowService.start(params);
         } catch (error) {
-            handleTemplateError(error, 'Failed to start validation workflow');
+            handleStackActionError(error, 'Failed to start validation workflow');
         }
     };
 }
 
-export function templateDeploymentCreateHandler(
+export function stackActionDeploymentCreateHandler(
     components: ServerComponents,
-): ServerRequestHandler<TemplateActionParams, TemplateActionResult, never, void> {
+): ServerRequestHandler<StackActionParams, StackActionResult, never, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'TemplateDeploymentCreate', rawParams });
+        log.debug({ Handler: 'StackActionDeploymentCreate', rawParams });
 
         try {
-            const params = parseWithPrettyError(parseTemplateActionParams, rawParams);
+            const params = parseWithPrettyError(parseStackActionParams, rawParams);
             return await components.deploymentWorkflowService.start(params);
         } catch (error) {
-            handleTemplateError(error, 'Failed to start deployment workflow');
+            handleStackActionError(error, 'Failed to start deployment workflow');
         }
     };
 }
 
-export function templateValidationStatusHandler(
+export function stackActionValidationStatusHandler(
     components: ServerComponents,
-): ServerRequestHandler<Identifiable, TemplateStatusResult, never, void> {
+): ServerRequestHandler<Identifiable, StackActionStatusResult, never, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'TemplateValidationStatus', rawParams });
+        log.debug({ Handler: 'StackActionValidationStatus', rawParams });
 
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.validationWorkflowService.getStatus(params);
         } catch (error) {
-            handleTemplateError(error, 'Failed to get validation status');
+            handleStackActionError(error, 'Failed to get validation status');
         }
     };
 }
 
-export function templateDeploymentStatusHandler(
+export function stackActionDeploymentStatusHandler(
     components: ServerComponents,
-): ServerRequestHandler<Identifiable, TemplateStatusResult, never, void> {
+): ServerRequestHandler<Identifiable, StackActionStatusResult, never, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'TemplateDeploymentStatus', rawParams });
+        log.debug({ Handler: 'StackActionDeploymentStatus', rawParams });
 
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.deploymentWorkflowService.getStatus(params);
         } catch (error) {
-            handleTemplateError(error, 'Failed to get deployment status');
+            handleStackActionError(error, 'Failed to get deployment status');
         }
     };
 }
 
-function handleTemplateError(error: unknown, contextMessage: string): never {
+function handleStackActionError(error: unknown, contextMessage: string): never {
     if (error instanceof ResponseError) {
         throw error;
     }

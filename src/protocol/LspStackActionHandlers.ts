@@ -1,34 +1,36 @@
 import { Connection, ServerRequestHandler } from 'vscode-languageserver';
 import {
-    TemplateActionParams,
-    TemplateActionResult,
     TemplateValidationCreateRequest,
     TemplateDeploymentCreateRequest,
     TemplateDeploymentStatusRequest,
-    TemplateStatusResult,
     TemplateValidationStatusRequest,
-    GetParametersParams,
     GetParametersRequest,
+} from '../stackActions/StackActionProtocol';
+import {
+    StackActionParams,
+    StackActionResult,
+    StackActionStatusResult,
+    GetParametersParams,
     GetParametersResult,
-} from '../templates/TemplateRequestType';
+} from '../stackActions/StackActionRequestType';
 import { Identifiable } from './LspTypes';
 
-export class LspTemplateHandlers {
+export class LspStackActionHandlers {
     constructor(private readonly connection: Connection) {}
 
-    onTemplateValidationCreate(handler: ServerRequestHandler<TemplateActionParams, TemplateActionResult, never, void>) {
+    onTemplateValidationCreate(handler: ServerRequestHandler<StackActionParams, StackActionResult, never, void>) {
         this.connection.onRequest(TemplateValidationCreateRequest.method, handler);
     }
 
-    onTemplateDeploymentCreate(handler: ServerRequestHandler<TemplateActionParams, TemplateActionResult, never, void>) {
+    onTemplateDeploymentCreate(handler: ServerRequestHandler<StackActionParams, StackActionResult, never, void>) {
         this.connection.onRequest(TemplateDeploymentCreateRequest.method, handler);
     }
 
-    onTemplateValidationStatus(handler: ServerRequestHandler<Identifiable, TemplateStatusResult, never, void>) {
+    onTemplateValidationStatus(handler: ServerRequestHandler<Identifiable, StackActionStatusResult, never, void>) {
         this.connection.onRequest(TemplateValidationStatusRequest.method, handler);
     }
 
-    onTemplateDeploymentStatus(handler: ServerRequestHandler<Identifiable, TemplateStatusResult, never, void>) {
+    onTemplateDeploymentStatus(handler: ServerRequestHandler<Identifiable, StackActionStatusResult, never, void>) {
         this.connection.onRequest(TemplateDeploymentStatusRequest.method, handler);
     }
 

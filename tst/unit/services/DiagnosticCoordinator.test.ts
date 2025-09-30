@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Diagnostic, DiagnosticSeverity, Range, Position } from 'vscode-languageserver';
 import { LspDiagnostics } from '../../../src/protocol/LspDiagnostics';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
-import { CFN_VALIDATION_SOURCE } from '../../../src/templates/ValidationWorkflow';
+import { CFN_VALIDATION_SOURCE } from '../../../src/stackActions/ValidationWorkflow';
 
 describe('DiagnosticCoordinator', () => {
     let coordinator: DiagnosticCoordinator;

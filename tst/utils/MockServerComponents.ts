@@ -21,8 +21,8 @@ import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
 import { LspDocuments } from '../../src/protocol/LspDocuments';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
-import { LspStackHandlers } from '../../src/protocol/LspStackHandlers';
-import { LspTemplateHandlers } from '../../src/protocol/LspTemplateHandlers';
+import { LspStackActionHandlers } from '../../src/protocol/LspStackActionHandlers';
+import { LspStackQueryHandlers } from '../../src/protocol/LspStackQueryHandlers';
 import { LspWorkspace } from '../../src/protocol/LspWorkspace';
 import { ResourceStateImporter } from '../../src/resourceState/ResourceStateImporter';
 import { ResourceStateManager } from '../../src/resourceState/ResourceStateManager';
@@ -41,9 +41,9 @@ import { GuardService } from '../../src/services/guard/GuardService';
 import { IacGeneratorService } from '../../src/services/IacGeneratorService';
 import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
+import { DeploymentWorkflow } from '../../src/stackActions/DeploymentWorkflow';
+import { ValidationWorkflow } from '../../src/stackActions/ValidationWorkflow';
 import { ClientMessage } from '../../src/telemetry/ClientMessage';
-import { DeploymentWorkflow } from '../../src/templates/DeploymentWorkflow';
-import { ValidationWorkflow } from '../../src/templates/ValidationWorkflow';
 
 export class MockedServerComponents extends ServerComponents {
     declare readonly diagnostics: StubbedInstance<LspDiagnostics>;
@@ -106,12 +106,12 @@ export function createMockLspResourceHandlers() {
     return stubInterface<LspResourceHandlers>();
 }
 
-export function createMockLspTemplateHandlers() {
-    return stubInterface<LspTemplateHandlers>();
+export function createMockLspStackActionHandlers() {
+    return stubInterface<LspStackActionHandlers>();
 }
 
-export function createMockStackHandlers() {
-    return stubInterface<LspStackHandlers>();
+export function createMockStackQueryHandlers() {
+    return stubInterface<LspStackQueryHandlers>();
 }
 
 export function createMockLspCommunication() {

@@ -1,7 +1,7 @@
 import { Connection, ServerRequestHandler } from 'vscode-languageserver';
 import { ListStacksParams, ListStacksResult, ListStacksRequest } from '../stacks/StackRequestType';
 
-export class LspStackHandlers {
+export class LspStackQueryHandlers {
     constructor(private readonly connection: Connection) {}
 
     onListStacks(handler: ServerRequestHandler<ListStacksParams, ListStacksResult, never, void>) {

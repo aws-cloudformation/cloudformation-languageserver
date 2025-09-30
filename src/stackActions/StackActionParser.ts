@@ -1,6 +1,6 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
-import { TemplateActionParams, GetParametersParams } from './TemplateRequestType';
+import { StackActionParams, GetParametersParams } from './StackActionRequestType';
 
 const CapabilitySchema = z.enum([
     Capability.CAPABILITY_AUTO_EXPAND,
@@ -15,7 +15,7 @@ const ParameterSchema = z.object({
     ResolvedValue: z.string().optional(),
 });
 
-const TemplateActionParamsSchema = z.object({
+const StackActionParamsSchema = z.object({
     id: z.string().min(1),
     uri: z.string().min(1),
     stackName: z.string().min(1).max(128),
@@ -27,8 +27,8 @@ const GetParametersParamsSchema = z.object({
     uri: z.string().min(1),
 });
 
-export function parseTemplateActionParams(input: unknown): TemplateActionParams {
-    return TemplateActionParamsSchema.parse(input);
+export function parseStackActionParams(input: unknown): StackActionParams {
+    return StackActionParamsSchema.parse(input);
 }
 
 export function parseGetParametersParams(input: unknown): GetParametersParams {

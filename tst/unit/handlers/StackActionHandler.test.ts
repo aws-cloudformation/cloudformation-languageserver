@@ -12,18 +12,18 @@ import * as SectionContextBuilder from '../../../src/context/SectionContextBuild
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import {
-    templateParametersHandler,
-    templateValidationCreateHandler,
-    templateDeploymentCreateHandler,
-    templateValidationStatusHandler,
-    templateDeploymentStatusHandler,
-} from '../../../src/handlers/TemplateHandler';
+    stackActionParametersHandler,
+    stackActionValidationCreateHandler,
+    stackActionDeploymentCreateHandler,
+    stackActionValidationStatusHandler,
+    stackActionDeploymentStatusHandler,
+} from '../../../src/handlers/StackActionHandler';
 import {
     GetParametersParams,
     GetParametersResult,
-    TemplateStatus,
-    WorkflowResult,
-} from '../../../src/templates/TemplateRequestType';
+    StackActionPhase,
+    StackActionStatus,
+} from '../../../src/stackActions/StackActionRequestType';
 import {
     createMockComponents,
     createMockSyntaxTreeManager,
@@ -39,8 +39,8 @@ vi.mock('../../../src/protocol/LspParser', () => ({
     parseIdentifiable: vi.fn((input) => input),
 }));
 
-vi.mock('../../../src/templates/TemplateParser', () => ({
-    parseTemplateActionParams: vi.fn((input) => input),
+vi.mock('../../../src/stackActions/StackActionParser', () => ({
+    parseStackActionParams: vi.fn((input) => input),
     parseGetParametersParams: vi.fn((input) => input),
 }));
 
@@ -48,7 +48,7 @@ vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
     parseWithPrettyError: vi.fn((parser, input) => parser(input)),
 }));
 
-describe('TemplateHandler', () => {
+describe('StackActionHandler', () => {
     let mockComponents: MockedServerComponents;
     let syntaxTreeManager: StubbedInstance<SyntaxTreeManager>;
     let getEntityMapSpy: any;
@@ -66,12 +66,12 @@ describe('TemplateHandler', () => {
         mockComponents.deploymentWorkflowService.getStatus.reset();
     });
 
-    describe('templateParametersHandler', () => {
+    describe('stackActionParametersHandler', () => {
         it('returns empty array when no syntax tree found', () => {
             const params: GetParametersParams = { uri: 'test://template.yaml' };
             syntaxTreeManager.getSyntaxTree.withArgs(params.uri).returns(undefined);
 
-            const handler = templateParametersHandler(mockComponents);
+            const handler = stackActionParametersHandler(mockComponents);
             const result = handler(params, mockToken, mockWorkDoneProgress, mockResultProgress) as GetParametersResult;
 
             expect(result).toEqual({ parameters: [] });
@@ -84,7 +84,7 @@ describe('TemplateHandler', () => {
             syntaxTreeManager.getSyntaxTree.withArgs(params.uri).returns(mockSyntaxTree);
             getEntityMapSpy.mockReturnValue(undefined);
 
-            const handler = templateParametersHandler(mockComponents);
+            const handler = stackActionParametersHandler(mockComponents);
             const result = handler(params, mockToken, mockWorkDoneProgress, mockResultProgress) as GetParametersResult;
 
             expect(result).toEqual({ parameters: [] });
@@ -105,7 +105,7 @@ describe('TemplateHandler', () => {
             syntaxTreeManager.getSyntaxTree.withArgs(params.uri).returns(mockSyntaxTree);
             getEntityMapSpy.mockReturnValue(parametersMap);
 
-            const handler = templateParametersHandler(mockComponents);
+            const handler = stackActionParametersHandler(mockComponents);
             const result = handler(params, mockToken, mockWorkDoneProgress, mockResultProgress) as GetParametersResult;
 
             expect(result.parameters).toHaveLength(2);
@@ -114,12 +114,12 @@ describe('TemplateHandler', () => {
         });
     });
 
-    describe('templateValidationCreateHandler', () => {
+    describe('stackActionValidationCreateHandler', () => {
         it('should delegate to validation service', async () => {
             const mockResult = { id: 'test-id', changeSetName: 'cs-123', stackName: 'test-stack' };
             mockComponents.validationWorkflowService.start.resolves(mockResult);
 
-            const handler = templateValidationCreateHandler(mockComponents);
+            const handler = stackActionValidationCreateHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
             const result = await handler(params, {} as any, {} as any);
@@ -132,7 +132,7 @@ describe('TemplateHandler', () => {
             const responseError = new ResponseError(ErrorCodes.InternalError, 'Service error');
             mockComponents.validationWorkflowService.start.rejects(responseError);
 
-            const handler = templateValidationCreateHandler(mockComponents);
+            const handler = stackActionValidationCreateHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
             await expect(handler(params, {} as any, {} as any)).rejects.toThrow(responseError);
@@ -141,19 +141,19 @@ describe('TemplateHandler', () => {
         it('should wrap other errors as InternalError', async () => {
             mockComponents.validationWorkflowService.start.rejects(new Error('Generic error'));
 
-            const handler = templateValidationCreateHandler(mockComponents);
+            const handler = stackActionValidationCreateHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
             await expect(handler(params, {} as any, {} as any)).rejects.toThrow(ResponseError);
         });
     });
 
-    describe('templateDeploymentCreateHandler', () => {
+    describe('stackActionDeploymentCreateHandler', () => {
         it('should delegate to deployment service', async () => {
             const mockResult = { id: 'test-id', changeSetName: 'cs-123', stackName: 'test-stack' };
             mockComponents.deploymentWorkflowService.start.resolves(mockResult);
 
-            const handler = templateDeploymentCreateHandler(mockComponents);
+            const handler = stackActionDeploymentCreateHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
             const result = await handler(params, {} as any, {} as any);
@@ -163,16 +163,16 @@ describe('TemplateHandler', () => {
         });
     });
 
-    describe('templateValidationStatusHandler', () => {
+    describe('stackActionValidationStatusHandler', () => {
         it('should delegate to validation service poll', async () => {
             const mockResult = {
                 id: 'test-id',
-                status: TemplateStatus.VALIDATION_COMPLETE,
-                result: WorkflowResult.SUCCESSFUL,
+                status: StackActionPhase.VALIDATION_COMPLETE,
+                result: StackActionStatus.SUCCESSFUL,
             };
             mockComponents.validationWorkflowService.getStatus.resolves(mockResult);
 
-            const handler = templateValidationStatusHandler(mockComponents);
+            const handler = stackActionValidationStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
             const result = await handler(params, {} as any, {} as any);
@@ -182,16 +182,16 @@ describe('TemplateHandler', () => {
         });
     });
 
-    describe('templateDeploymentStatusHandler', () => {
+    describe('stackActionDeploymentStatusHandler', () => {
         it('should delegate to deployment service poll', async () => {
             const mockResult = {
                 id: 'test-id',
-                status: TemplateStatus.DEPLOYMENT_COMPLETE,
-                result: WorkflowResult.SUCCESSFUL,
+                status: StackActionPhase.DEPLOYMENT_COMPLETE,
+                result: StackActionStatus.SUCCESSFUL,
             };
             mockComponents.deploymentWorkflowService.getStatus.resolves(mockResult);
 
-            const handler = templateDeploymentStatusHandler(mockComponents);
+            const handler = stackActionDeploymentStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
             const result = await handler(params, {} as any, {} as any);

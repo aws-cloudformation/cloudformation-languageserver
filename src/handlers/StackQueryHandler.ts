@@ -4,7 +4,7 @@ import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 
-const log = LoggerFactory.getLogger('StackHandler');
+const log = LoggerFactory.getLogger('StackQueryHandler');
 
 export function listStacksHandler(
     components: ServerComponents,

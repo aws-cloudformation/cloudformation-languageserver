@@ -4,23 +4,27 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ResponseError } from 'vscode-languageserver';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
-import { TemplateActionParams, TemplateStatus, WorkflowResult } from '../../../src/templates/TemplateRequestType';
 import {
     processChangeSet,
     waitForValidation,
     waitForDeployment,
     deleteStackAndChangeSet,
     deleteChangeSet,
-    mapChangesToTemplateChanges,
-} from '../../../src/templates/TemplateWorkflowOperations';
-import { TemplateWorkflowState } from '../../../src/templates/TemplateWorkflowType';
+    mapChangesToStackChanges,
+} from '../../../src/stackActions/StackActionOperations';
+import {
+    StackActionParams,
+    StackActionPhase,
+    StackActionStatus,
+} from '../../../src/stackActions/StackActionRequestType';
+import { StackActionWorkflowState } from '../../../src/stackActions/StackActionWorkflowType';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 
 vi.mock('../../../src/utils/Retry', () => ({
     retryWithExponentialBackoff: vi.fn(),
 }));
 
-describe('TemplateWorkflowOperations', () => {
+describe('StackActionWorkflowOperations', () => {
     let mockCfnService: CfnService;
     let mockDocumentManager: DocumentManager;
 
@@ -44,7 +48,7 @@ describe('TemplateWorkflowOperations', () => {
 
     describe('processChangeSet', () => {
         it('should create change set successfully', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -72,7 +76,7 @@ describe('TemplateWorkflowOperations', () => {
         });
 
         it('should throw error when document not found', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///missing.yaml',
                 stackName: 'test-stack',
@@ -95,8 +99,8 @@ describe('TemplateWorkflowOperations', () => {
             const result = await waitForDeployment(mockCfnService, 'test-stack', ChangeSetType.CREATE);
 
             expect(result).toEqual({
-                status: TemplateStatus.DEPLOYMENT_COMPLETE,
-                result: WorkflowResult.SUCCESSFUL,
+                phase: StackActionPhase.DEPLOYMENT_COMPLETE,
+                status: StackActionStatus.SUCCESSFUL,
                 reason: undefined,
             });
             expect(mockCfnService.waitUntilStackCreateComplete).toHaveBeenCalledWith({
@@ -112,8 +116,8 @@ describe('TemplateWorkflowOperations', () => {
             const result = await waitForDeployment(mockCfnService, 'test-stack', ChangeSetType.CREATE);
 
             expect(result).toEqual({
-                status: TemplateStatus.DEPLOYMENT_FAILED,
-                result: WorkflowResult.FAILED,
+                phase: StackActionPhase.DEPLOYMENT_FAILED,
+                status: StackActionStatus.FAILED,
                 reason: undefined,
             });
         });
@@ -126,8 +130,8 @@ describe('TemplateWorkflowOperations', () => {
             const result = await waitForDeployment(mockCfnService, 'test-stack', ChangeSetType.UPDATE);
 
             expect(result).toEqual({
-                status: TemplateStatus.DEPLOYMENT_COMPLETE,
-                result: WorkflowResult.SUCCESSFUL,
+                phase: StackActionPhase.DEPLOYMENT_COMPLETE,
+                status: StackActionStatus.SUCCESSFUL,
                 reason: undefined,
             });
             expect(mockCfnService.waitUntilStackUpdateComplete).toHaveBeenCalledWith({
@@ -141,13 +145,13 @@ describe('TemplateWorkflowOperations', () => {
             const { retryWithExponentialBackoff } = await import('../../../src/utils/Retry');
             (retryWithExponentialBackoff as any).mockResolvedValue(undefined);
 
-            const workflow: TemplateWorkflowState = {
+            const workflow: StackActionWorkflowState = {
                 id: 'test-id',
                 changeSetName: 'changeset-123',
                 stackName: 'test-stack',
-                status: TemplateStatus.VALIDATION_COMPLETE,
+                phase: StackActionPhase.VALIDATION_COMPLETE,
                 startTime: Date.now(),
-                result: WorkflowResult.SUCCESSFUL,
+                status: StackActionStatus.SUCCESSFUL,
             };
 
             await deleteStackAndChangeSet(mockCfnService, workflow, 'workflow-id');
@@ -169,13 +173,13 @@ describe('TemplateWorkflowOperations', () => {
             const { retryWithExponentialBackoff } = await import('../../../src/utils/Retry');
             (retryWithExponentialBackoff as any).mockResolvedValue(undefined);
 
-            const workflow: TemplateWorkflowState = {
+            const workflow: StackActionWorkflowState = {
                 id: 'test-id',
                 changeSetName: 'changeset-123',
                 stackName: 'test-stack',
-                status: TemplateStatus.VALIDATION_COMPLETE,
+                phase: StackActionPhase.VALIDATION_COMPLETE,
                 startTime: Date.now(),
-                result: WorkflowResult.SUCCESSFUL,
+                status: StackActionStatus.SUCCESSFUL,
             };
 
             await deleteChangeSet(mockCfnService, workflow, 'workflow-id');
@@ -192,8 +196,8 @@ describe('TemplateWorkflowOperations', () => {
         });
     });
 
-    describe('mapChangesToTemplateChanges', () => {
-        it('should map AWS SDK changes to template changes', () => {
+    describe('mapChangesToStackChanges', () => {
+        it('should map AWS SDK changes to stack changes', () => {
             const changes: Change[] = [
                 {
                     Type: 'Resource',
@@ -217,7 +221,7 @@ describe('TemplateWorkflowOperations', () => {
                 },
             ];
 
-            const result = mapChangesToTemplateChanges(changes);
+            const result = mapChangesToStackChanges(changes);
 
             expect(result).toHaveLength(1);
             expect(result![0]).toEqual({
@@ -243,12 +247,12 @@ describe('TemplateWorkflowOperations', () => {
         });
 
         it('should handle undefined changes', () => {
-            const result = mapChangesToTemplateChanges(undefined);
+            const result = mapChangesToStackChanges(undefined);
             expect(result).toBeUndefined();
         });
 
         it('should handle empty changes array', () => {
-            const result = mapChangesToTemplateChanges([]);
+            const result = mapChangesToStackChanges([]);
             expect(result).toEqual([]);
         });
     });
@@ -273,8 +277,8 @@ describe('TemplateWorkflowOperations', () => {
 
             const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
 
-            expect(result.status).toBe(TemplateStatus.VALIDATION_COMPLETE);
-            expect(result.result).toBe(WorkflowResult.SUCCESSFUL);
+            expect(result.phase).toBe(StackActionPhase.VALIDATION_COMPLETE);
+            expect(result.status).toBe(StackActionStatus.SUCCESSFUL);
             expect(result.changes).toBeDefined();
             expect(mockCfnService.waitUntilChangeSetCreateComplete).toHaveBeenCalledWith({
                 ChangeSetName: 'test-changeset',
@@ -294,8 +298,8 @@ describe('TemplateWorkflowOperations', () => {
 
             const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
 
-            expect(result.status).toBe(TemplateStatus.VALIDATION_FAILED);
-            expect(result.result).toBe(WorkflowResult.FAILED);
+            expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
+            expect(result.status).toBe(StackActionStatus.FAILED);
             expect(result.reason).toBe('Test failure');
         });
 
@@ -304,8 +308,8 @@ describe('TemplateWorkflowOperations', () => {
 
             const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
 
-            expect(result.status).toBe(TemplateStatus.VALIDATION_FAILED);
-            expect(result.result).toBe(WorkflowResult.FAILED);
+            expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
+            expect(result.status).toBe(StackActionStatus.FAILED);
             expect(result.reason).toBe('Network error');
         });
 
@@ -314,8 +318,8 @@ describe('TemplateWorkflowOperations', () => {
 
             const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
 
-            expect(result.status).toBe(TemplateStatus.VALIDATION_FAILED);
-            expect(result.result).toBe(WorkflowResult.FAILED);
+            expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
+            expect(result.status).toBe(StackActionStatus.FAILED);
             expect(result.reason).toBe('Validation failed');
         });
     });
