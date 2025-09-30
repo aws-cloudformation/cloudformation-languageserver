@@ -116,6 +116,14 @@ async function initializePyodide(): Promise<InitializeResult> {
         // Load required packages
         await pyodide.loadPackage('micropip');
         await pyodide.loadPackage('ssl');
+        await pyodide.loadPackage('pyyaml');
+
+        // Replace CSafeLoader with SafeLoader to avoid Pyodide parsing issues
+        await pyodide.runPythonAsync(`
+       import yaml
+       if hasattr(yaml, 'CSafeLoader'):
+           yaml.CSafeLoader = yaml.SafeLoader
+     `);
 
         // Install cfn-lint
         await pyodide.runPythonAsync(`
