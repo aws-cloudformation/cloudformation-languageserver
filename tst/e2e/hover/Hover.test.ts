@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { intrinsicFunctionsDocsMap } from '../../../src/artifacts/IntrinsicFunctionsDocs';
+import { parameterAttributeDocsMap } from '../../../src/artifacts/ParameterAttributeDocs';
 import { pseudoParameterDocsMap } from '../../../src/artifacts/PseudoParameterDocs';
 import { resourceAttributeDocsMap } from '../../../src/artifacts/ResourceAttributeDocs';
 import { templateSectionDocsMap } from '../../../src/artifacts/TemplateSectionDocs';
@@ -157,6 +158,126 @@ Parameters:
                             position: { line: 31, character: 5 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContainsText(['**Type:** String', '**Default Value:** "production"'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on Type Parameter Atribute',
+                        verification: {
+                            position: { line: 32, character: 6 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('Type'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on Default Parameter Atribute',
+                        verification: {
+                            position: { line: 33, character: 8 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('Default'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on AllowedValues Parameter Atribute',
+                        verification: {
+                            position: { line: 34, character: 10 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('AllowedValues'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on ConstraintDescription Parameter Atribute',
+                        verification: {
+                            position: { line: 35, character: 10 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('ConstraintDescription'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on NoEcho Parameter Atribute',
+                        verification: {
+                            position: { line: 48, character: 9 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('NoEcho'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on MinLength Parameter Atribute',
+                        verification: {
+                            position: { line: 49, character: 9 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('MinLength'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on MaxLength Parameter Atribute',
+                        verification: {
+                            position: { line: 50, character: 9 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('MaxLength'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on MinValue Parameter Atribute',
+                        verification: {
+                            position: { line: 55, character: 9 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('MinValue'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on MaxValue Parameter Atribute',
+                        verification: {
+                            position: { line: 56, character: 9 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('MaxValue'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 69, character: 36 },
+                        description: 'Hover on Description Parameter Atribute',
+                        verification: {
+                            position: { line: 60, character: 9 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(parameterAttributeDocsMap.get('Description'))
                                 .build(),
                         },
                     },
