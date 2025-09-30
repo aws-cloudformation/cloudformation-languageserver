@@ -22,7 +22,6 @@ on:
 
 jobs:
   get-configs:
-    name: Get Configs
     uses: ./.github/workflows/configs.yml
 
   build-test-nodejs:

@@ -13,8 +13,7 @@ on:
         default: 'No'
 
 jobs:
-  promote:
-    name: Promote Beta to Prod
+  promote-beta-to-prod:
     if: github.event.inputs.confirm-prod-promotion == 'Yes'
     runs-on: ubuntu-latest
     permissions:
@@ -39,9 +38,8 @@ jobs:
             git push origin prod
           fi
 
-  release:
-    name: Build, Tag, and Release Prod
-    needs: [promote]
+  build-tag-release-prod:
+    needs: [promote-beta-to-prod]
     uses: ./.github/workflows/release.yml
     permissions:
       contents: write

@@ -9,7 +9,6 @@ on:
 
 jobs:
   define-matrix:
-    name: Build Matrix
     runs-on: ubuntu-latest
     outputs:
       build-matrix: ${{ steps.set-matrix.outputs.matrix }}
