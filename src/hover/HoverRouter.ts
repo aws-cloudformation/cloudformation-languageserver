@@ -13,6 +13,7 @@ import { HoverProvider } from './HoverProvider';
 import { IntrinsicFunctionArgumentHoverProvider } from './IntrinsicFunctionArgumentHoverProvider';
 import { IntrinsicFunctionHoverProvider } from './IntrinsicFunctionHoverProvider';
 import { MappingHoverProvider } from './MappingHoverProvider';
+import { ParameterAttributeHoverProvider } from './ParameterAttributeHoverProvider';
 import { ParameterHoverProvider } from './ParameterHoverProvider';
 import { PseudoParameterHoverProvider } from './PseudoParameterHoverProvider';
 import { ResourceSectionHoverProvider } from './ResourceSectionHoverProvider';
@@ -90,6 +91,12 @@ export class HoverRouter implements Configurable, Closeable {
                 return doc;
             }
         } else if (context.section === TopLevelSection.Parameters) {
+            if (this.isParameterAttribute(context)) {
+                const doc = this.hoverProviderMap.get(HoverType.ParameterAttribute)?.getInformation(context);
+                if (doc) {
+                    return doc;
+                }
+            }
             const doc = this.hoverProviderMap.get(HoverType.Parameter)?.getInformation(context);
             if (doc) {
                 return doc;
@@ -104,12 +111,21 @@ export class HoverRouter implements Configurable, Closeable {
         hoverProviderMap.set(HoverType.TopLevelSection, new TemplateSectionHoverProvider());
         hoverProviderMap.set(HoverType.ResourceSection, new ResourceSectionHoverProvider(schemaRetriever));
         hoverProviderMap.set(HoverType.Parameter, new ParameterHoverProvider());
+        hoverProviderMap.set(HoverType.ParameterAttribute, new ParameterAttributeHoverProvider());
         hoverProviderMap.set(HoverType.PseudoParameter, new PseudoParameterHoverProvider());
         hoverProviderMap.set(HoverType.Condition, new ConditionHoverProvider());
         hoverProviderMap.set(HoverType.Mapping, new MappingHoverProvider());
         hoverProviderMap.set(HoverType.IntrinsicFunction, new IntrinsicFunctionHoverProvider());
         hoverProviderMap.set(HoverType.IntrinsicFunctionArgument, new IntrinsicFunctionArgumentHoverProvider());
         return hoverProviderMap;
+    }
+
+    private isParameterAttribute(context: Context): boolean {
+        if (context.section !== TopLevelSection.Parameters) {
+            return false;
+        }
+
+        return ParameterAttributeHoverProvider.isParameterAttribute(context.text);
     }
 
     private getTopLevelReference(context: ContextWithRelatedEntities): string | undefined {
@@ -153,6 +169,7 @@ enum HoverType {
     IntrinsicFunction,
     IntrinsicFunctionArgument,
     Parameter,
+    ParameterAttribute,
     PseudoParameter,
     Condition,
     Mapping,
