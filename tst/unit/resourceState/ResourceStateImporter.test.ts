@@ -5,7 +5,7 @@ import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeMan
 import { DocumentType } from '../../../src/document/Document';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { ResourceStateImporter } from '../../../src/resourceState/ResourceStateImporter';
-import { ResourceSelection, ResourceStateImportParams } from '../../../src/resourceState/ResourceStateTypes';
+import { ResourceSelection, ResourceStateParams } from '../../../src/resourceState/ResourceStateTypes';
 import {
     createMockClientMessage,
     createMockSchemaRetriever,
@@ -159,7 +159,7 @@ Resources:
             });
 
             // Execute the import
-            const params: ResourceStateImportParams = {
+            const params: ResourceStateParams = {
                 resourceSelections,
                 textDocument: { uri },
                 range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
@@ -222,7 +222,7 @@ Resources:
     // Test cases for failure scenarios
     describe('Failure scenarios', () => {
         it('should return failure when no resources are selected', async () => {
-            const params: ResourceStateImportParams = {
+            const params: ResourceStateParams = {
                 resourceSelections: undefined as any,
                 textDocument: { uri: 'test://test.template' },
                 range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
@@ -238,7 +238,7 @@ Resources:
         });
 
         it('should return failure when document is not found', async () => {
-            const params: ResourceStateImportParams = {
+            const params: ResourceStateParams = {
                 resourceSelections: [
                     {
                         resourceType: 'AWS::S3::Bucket',
@@ -266,7 +266,7 @@ Resources:
             const textDocument = TextDocument.create(uri, 'json', 1, content);
             (documentManager as any).documents._syncedDocuments.set(uri, textDocument);
 
-            const params: ResourceStateImportParams = {
+            const params: ResourceStateParams = {
                 resourceSelections: [
                     {
                         resourceType: 'AWS::S3::Bucket',
