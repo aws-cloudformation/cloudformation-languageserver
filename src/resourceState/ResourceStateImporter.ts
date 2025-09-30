@@ -90,8 +90,8 @@ export class ResourceStateImporter {
         const fetchedResourceStates: ResourceTemplateFormat[] = [];
         const importResult: ResourceStateImportResult = {
             title: 'Resource State Import',
-            failedImports: new Map<ResourceType, ResourceIdentifier[]>(),
-            successfulImports: new Map<ResourceType, ResourceIdentifier[]>(),
+            failedImports: {},
+            successfulImports: {},
         };
 
         const generatedLogicalIds = new Set<string>();
@@ -294,24 +294,22 @@ export class ResourceStateImporter {
 
     private getFailureResponse(
         title: string,
-        successfulImports?: Map<ResourceType, ResourceIdentifier[]>,
-        failedImports?: Map<ResourceType, ResourceIdentifier[]>,
+        successfulImports?: Record<ResourceType, ResourceIdentifier[]>,
+        failedImports?: Record<ResourceType, ResourceIdentifier[]>,
     ): ResourceStateImportResult {
         return {
             title: title,
-            successfulImports: successfulImports ?? new Map<ResourceType, ResourceIdentifier[]>(),
-            failedImports: failedImports ?? new Map<ResourceType, ResourceIdentifier[]>(),
+            successfulImports: successfulImports ?? {},
+            failedImports: failedImports ?? {},
         };
     }
 
-    private getOrCreate<K, V>(map: Map<K, V>, key: K, createValue: V): V {
-        if (map.has(key)) {
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-            return map.get(key)!; // non-null assertion after check with has()
+    private getOrCreate<V>(record: Record<string, V>, key: string, createValue: V): V {
+        if (key in record) {
+            return record[key];
         } else {
-            const newValue = createValue;
-            map.set(key, newValue);
-            return newValue;
+            record[key] = createValue;
+            return createValue;
         }
     }
 

@@ -22,8 +22,8 @@ export interface ResourceStateImportParams extends CodeActionParams {
 }
 
 export interface ResourceStateImportResult extends CodeAction {
-    successfulImports: Map<ResourceType, ResourceIdentifier[]>;
-    failedImports: Map<ResourceType, ResourceIdentifier[]>;
+    successfulImports: Record<ResourceType, ResourceIdentifier[]>;
+    failedImports: Record<ResourceType, ResourceIdentifier[]>;
 }
 
 export const ResourceStateImportRequest = new RequestType<ResourceStateImportParams, ResourceStateImportResult, void>(
