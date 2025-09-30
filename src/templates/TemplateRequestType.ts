@@ -16,7 +16,7 @@ export type TemplateActionResult = Identifiable & {
     stackName: string;
 };
 
-export type GetParametersParams = {
+export type TemplateMetadataParams = {
     uri: string;
 };
 
@@ -76,6 +76,14 @@ export const TemplateDeploymentStatusRequest = new RequestType<Identifiable, Tem
     'aws/cfn/template/deployment/status',
 );
 
-export const GetParametersRequest = new RequestType<GetParametersParams, GetParametersResult, void>(
+export const GetParametersRequest = new RequestType<TemplateMetadataParams, GetParametersResult, void>(
     'aws/cfn/template/parameters',
+);
+
+export type GetCapabilitiesResult = {
+    capabilities: Capability[];
+};
+
+export const GetCapabilitiesRequest = new RequestType<TemplateMetadataParams, GetCapabilitiesResult, void>(
+    'aws/cfn/template/capabilities',
 );

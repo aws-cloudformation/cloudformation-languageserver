@@ -1,12 +1,14 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Connection, ServerRequestHandler } from 'vscode-languageserver/node';
+import { Connection, RequestHandler } from 'vscode-languageserver/node';
 import { LspTemplateHandlers } from '../../../src/protocol/LspTemplateHandlers';
 import { Identifiable } from '../../../src/protocol/LspTypes';
 import {
-    GetParametersParams,
+    TemplateMetadataParams,
     GetParametersResult,
     GetParametersRequest,
+    GetCapabilitiesResult,
+    GetCapabilitiesRequest,
     TemplateActionParams,
     TemplateActionResult,
     TemplateValidationCreateRequest,
@@ -26,15 +28,23 @@ describe('LspTemplateHandlers', () => {
     });
 
     it('should register onGetParameters handler', () => {
-        const mockHandler: ServerRequestHandler<GetParametersParams, GetParametersResult, never, void> = vi.fn();
+        const mockHandler: RequestHandler<TemplateMetadataParams, GetParametersResult, never> = vi.fn();
 
         templateHandlers.onGetParameters(mockHandler);
 
         expect(connection.onRequest.calledWith(GetParametersRequest.method)).toBe(true);
     });
 
+    it('should register onGetCapabilities handler', () => {
+        const mockHandler: RequestHandler<TemplateMetadataParams, GetCapabilitiesResult, never> = vi.fn();
+
+        templateHandlers.onGetCapabilities(mockHandler);
+
+        expect(connection.onRequest.calledWith(GetCapabilitiesRequest.method)).toBe(true);
+    });
+
     it('should register onTemplateValidate handler', () => {
-        const mockHandler: ServerRequestHandler<TemplateActionParams, TemplateActionResult, never, void> = vi.fn();
+        const mockHandler: RequestHandler<TemplateActionParams, TemplateActionResult, never> = vi.fn();
 
         templateHandlers.onTemplateValidationCreate(mockHandler);
 
@@ -42,7 +52,7 @@ describe('LspTemplateHandlers', () => {
     });
 
     it('should register onTemplateDeploy handler', () => {
-        const mockHandler: ServerRequestHandler<TemplateActionParams, TemplateActionResult, never, void> = vi.fn();
+        const mockHandler: RequestHandler<TemplateActionParams, TemplateActionResult, never> = vi.fn();
 
         templateHandlers.onTemplateDeploymentCreate(mockHandler);
 
@@ -50,7 +60,7 @@ describe('LspTemplateHandlers', () => {
     });
 
     it('should register onTemplateValidatePoll handler', () => {
-        const mockHandler: ServerRequestHandler<Identifiable, TemplateStatusResult, never, void> = vi.fn();
+        const mockHandler: RequestHandler<Identifiable, TemplateStatusResult, never> = vi.fn();
 
         templateHandlers.onTemplateValidationStatus(mockHandler);
 
@@ -58,7 +68,7 @@ describe('LspTemplateHandlers', () => {
     });
 
     it('should register onTemplateDeployPoll handler', () => {
-        const mockHandler: ServerRequestHandler<Identifiable, TemplateStatusResult, never, void> = vi.fn();
+        const mockHandler: RequestHandler<Identifiable, TemplateStatusResult, never> = vi.fn();
 
         templateHandlers.onTemplateDeploymentStatus(mockHandler);
 
