@@ -5,6 +5,7 @@ import { CompletionParams, TextDocumentIdentifier } from 'vscode-languageserver'
 import { IntrinsicFunctionArgumentCompletionProvider } from '../../../src/autocomplete/IntrinsicFunctionArgumentCompletionProvider';
 import { IntrinsicFunction, TopLevelSection } from '../../../src/context/ContextType';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
+import { EntityType } from '../../../src/context/semantic/SemanticTypes';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DocumentType } from '../../../src/document/Document';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
@@ -177,33 +178,73 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Sub Function', () => {
             expect(resourceCompletions[0].label).toBe('DatabaseInstance');
         });
 
-        it('should not include resource completions in other sections', () => {
-            const context = createMockContext(TopLevelSection.Parameters, 'MyParam', { text: '' });
+        it('should include GetAtt completions in Resources section', () => {
+            const context = createMockContext(TopLevelSection.Resources, 'MyResource', { text: '' });
             Object.defineProperty(context, 'intrinsicContext', {
-                value: createMockIntrinsicContext(IntrinsicFunction.Sub, ['Hello ${MyParam}']),
+                value: createMockIntrinsicContext(IntrinsicFunction.Sub, ['Hello ${MyBucket.Arn}']),
             });
 
-            const mockSyntaxTree = stubInterface<SyntaxTree>();
-            const entityMaps = new Map([
-                [TopLevelSection.Resources, new Map([['MyResource', { entity: { Type: 'AWS::S3::Bucket' } }]])],
+            const mockResourcesMap = new Map([
+                ['MyResource', { entity: { Type: 'AWS::S3::Bucket', entityType: EntityType.Resource } }],
+                ['MyBucket', { entity: { Type: 'AWS::S3::Bucket', entityType: EntityType.Resource } }],
             ]);
-            mockSyntaxTree.findTopLevelSections.callsFake((sections: TopLevelSection[]) => {
-                const result = new Map();
-                for (const section of sections) {
-                    if (entityMaps.has(section)) {
-                        result.set(section, entityMaps.get(section));
-                    }
-                }
-                return result;
-            });
+
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.findTopLevelSections.returns(new Map([[TopLevelSection.Resources, {} as SyntaxNode]]));
             (mockSyntaxTree as any).type = DocumentType.YAML;
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            (getEntityMap as any).mockImplementation((syntaxTree: any, section: TopLevelSection) => {
+                if (section === TopLevelSection.Resources) {
+                    return mockResourcesMap;
+                }
+                return new Map();
+            });
 
             const result = provider.getCompletions(context, createTestParams());
 
             expect(result).toBeDefined();
-            const resourceCompletions = result!.filter((item) => item.detail?.includes('Resource ('));
-            expect(resourceCompletions.length).toBe(0);
+            const getAttCompletions = result!.filter((item) => item.detail?.includes('GetAtt ('));
+            expect(getAttCompletions.length).toBe(2); // MyBucket.Arn and MyBucket.DomainName
+
+            const labels = result!.map((item) => item.label);
+            expect(labels).toContain('MyBucket.Arn');
+            expect(labels).toContain('MyBucket.DomainName');
+        });
+
+        it('should exclude current resource from GetAtt completions', () => {
+            const context = createMockContext(TopLevelSection.Resources, 'MyBucket', { text: '' });
+            Object.defineProperty(context, 'intrinsicContext', {
+                value: createMockIntrinsicContext(IntrinsicFunction.Sub, ['Hello ${}']),
+            });
+
+            const mockResourcesMap = new Map([
+                ['MyBucket', { entity: { Type: 'AWS::S3::Bucket', entityType: EntityType.Resource } }],
+                ['OtherBucket', { entity: { Type: 'AWS::S3::Bucket', entityType: EntityType.Resource } }],
+            ]);
+
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.findTopLevelSections.returns(new Map([[TopLevelSection.Resources, {} as SyntaxNode]]));
+            (mockSyntaxTree as any).type = DocumentType.YAML;
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            (getEntityMap as any).mockImplementation((syntaxTree: any, section: TopLevelSection) => {
+                if (section === TopLevelSection.Resources) {
+                    return mockResourcesMap;
+                }
+                return new Map();
+            });
+
+            const result = provider.getCompletions(context, createTestParams());
+
+            expect(result).toBeDefined();
+            const getAttCompletions = result!.filter((item) => item.detail?.includes('GetAtt ('));
+            expect(getAttCompletions.length).toBe(2); // Only OtherBucket attributes
+
+            const labels = result!.map((item) => item.label);
+            expect(labels).toContain('OtherBucket.Arn');
+            expect(labels).toContain('OtherBucket.DomainName');
+            expect(labels).not.toContain('MyBucket.Arn');
         });
     });
 

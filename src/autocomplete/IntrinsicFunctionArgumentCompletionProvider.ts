@@ -142,12 +142,15 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             params,
             syntaxTree,
         );
+        const getAttCompletions = this.getGetAttCompletions(syntaxTree, context.logicalId);
 
-        if (!parametersAndResourcesCompletions || parametersAndResourcesCompletions.length === 0) {
-            return this.applyFuzzySearch(this.pseudoParameterCompletionItems, context.text);
+        const baseItems = [...this.pseudoParameterCompletionItems];
+        if (parametersAndResourcesCompletions && parametersAndResourcesCompletions.length > 0) {
+            baseItems.push(...parametersAndResourcesCompletions);
         }
-
-        const allItems = [...this.pseudoParameterCompletionItems, ...parametersAndResourcesCompletions];
+        if (getAttCompletions.length > 0) {
+            baseItems.push(...getAttCompletions);
+        }
 
         // Handle ${} parameter substitution context detection
         const subText = this.getTextForSub(params.textDocument.uri, params.position, context);
@@ -155,10 +158,10 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             if (subText === '') {
                 return [];
             }
-            return this.applyFuzzySearch(allItems, subText);
+            return this.applyFuzzySearch(baseItems, subText);
         }
 
-        return this.applyFuzzySearch(allItems, context.text);
+        return this.applyFuzzySearch(baseItems, context.text);
     }
 
     private getParametersAndResourcesAsCompletionItems(
@@ -295,6 +298,62 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                     detail: typeof resource.Type === 'string' ? `Resource (${resource.Type})` : undefined,
                 }),
             );
+        }
+
+        return completionItems;
+    }
+
+    private getResourceAttributes(resourceType: string): string[] {
+        const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
+        if (!schema?.readOnlyProperties || schema.readOnlyProperties.length === 0) {
+            return [];
+        }
+
+        return schema.readOnlyProperties
+            .map((propertyPath) => {
+                const match = propertyPath.match(/^\/properties\/(.+)$/);
+                return match ? match[1].replaceAll('/', '.') : undefined;
+            })
+            .filter((attr): attr is string => attr !== undefined)
+            .filter((attr) => {
+                const lastDotIndex = attr.lastIndexOf('.');
+                if (lastDotIndex === -1) return true;
+                const pathWithoutLastSegment = attr.slice(0, Math.max(0, lastDotIndex));
+                return !pathWithoutLastSegment.includes('*');
+            })
+            .filter((attr, index, array) => array.indexOf(attr) === index);
+    }
+
+    private getGetAttCompletions(syntaxTree: SyntaxTree, currentLogicalId?: string): CompletionItem[] {
+        const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
+        if (!resourcesMap || resourcesMap.size === 0) {
+            return [];
+        }
+
+        const completionItems: CompletionItem[] = [];
+
+        for (const [resourceName, resourceContext] of resourcesMap) {
+            if (resourceName === currentLogicalId) {
+                continue;
+            }
+
+            const resource = resourceContext.entity as Resource;
+            if (!resource.Type || typeof resource.Type !== 'string') {
+                continue;
+            }
+
+            const attributes = this.getResourceAttributes(resource.Type);
+            for (const attributeName of attributes) {
+                completionItems.push(
+                    createCompletionItem(`${resourceName}.${attributeName}`, CompletionItemKind.Property, {
+                        detail: `GetAtt (${resource.Type})`,
+                        documentation: `Get attribute ${attributeName} from resource ${resourceName}`,
+                        data: {
+                            isIntrinsicFunction: true,
+                        },
+                    }),
+                );
+            }
         }
 
         return completionItems;
@@ -638,51 +697,35 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const resource = resourceContext.entity as Resource;
-        if (!resource.Type) {
+        if (!resource.Type || typeof resource.Type !== 'string') {
             return undefined;
         }
 
-        const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
-        if (!schema?.readOnlyProperties || schema.readOnlyProperties.length === 0) {
+        const attributes = this.getResourceAttributes(resource.Type);
+        if (attributes.length === 0) {
             return undefined;
         }
 
-        const attributes = schema.readOnlyProperties
-            .map((propertyPath) => {
-                const match = propertyPath.match(/^\/properties\/(.+)$/);
-                if (match) {
-                    return match[1].replaceAll('/', '.');
-                }
-                return;
-            })
-            .filter((attr): attr is string => attr !== undefined)
-            .filter((attr) => {
-                const lastDotIndex = attr.lastIndexOf('.');
-                if (lastDotIndex === -1) return true;
+        const completionItems = attributes.map((attributeName) => {
+            const item = createCompletionItem(attributeName, CompletionItemKind.Property);
 
-                const pathWithoutLastSegment = attr.slice(0, Math.max(0, lastDotIndex));
-                return !pathWithoutLastSegment.includes('*');
-            })
-            .filter((attr, index, array) => array.indexOf(attr) === index)
-            .map((attributeName) => {
-                const item = createCompletionItem(attributeName, CompletionItemKind.Property);
-
-                if (context.text.length > 0) {
-                    const range = createReplacementRange(context);
-                    if (range) {
-                        if (typeof args === 'string' && args.includes('.')) {
-                            item.textEdit = TextEdit.replace(range, resourceLogicalId + '.' + attributeName);
-                            item.filterText = resourceLogicalId + attributeName;
-                        } else {
-                            item.textEdit = TextEdit.replace(range, attributeName);
-                        }
-                        delete item.insertText;
+            if (context.text.length > 0) {
+                const range = createReplacementRange(context);
+                if (range) {
+                    if (typeof args === 'string' && args.includes('.')) {
+                        item.textEdit = TextEdit.replace(range, resourceLogicalId + '.' + attributeName);
+                        item.filterText = resourceLogicalId + attributeName;
+                    } else {
+                        item.textEdit = TextEdit.replace(range, attributeName);
                     }
+                    delete item.insertText;
                 }
-                return item;
-            });
+            }
 
-        return context.text.length > 0 ? this.attributeFuzzySearch(attributes, context.text) : attributes;
+            return item;
+        });
+
+        return context.text.length > 0 ? this.attributeFuzzySearch(completionItems, context.text) : completionItems;
     }
 
     private extractGetAttResourceLogicalId(args: unknown): string | undefined {
