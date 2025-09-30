@@ -10,11 +10,9 @@ on:
 
 jobs:
   get-configs:
-    name: Get Configs
     uses: ./.github/workflows/configs.yml
 
-  promote:
-    name: Prepare Main and Promote to Beta
+  promote-main-to-beta:
     needs: [get-configs]
     runs-on: ubuntu-latest
     permissions:
@@ -67,9 +65,8 @@ jobs:
             git push origin beta
           fi
   
-  release:
-    name: Build, Tag, and Release Beta
-    needs: [promote]
+  build-tag-release-beta:
+    needs: [promote-main-to-beta]
     uses: ./.github/workflows/release.yml
     permissions:
       contents: write
