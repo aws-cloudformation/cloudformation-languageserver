@@ -1,6 +1,6 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
-import { TemplateActionParams, GetParametersParams } from './TemplateRequestType';
+import { TemplateActionParams, TemplateMetadataParams } from './TemplateRequestType';
 
 const CapabilitySchema = z.enum([
     Capability.CAPABILITY_AUTO_EXPAND,
@@ -31,6 +31,6 @@ export function parseTemplateActionParams(input: unknown): TemplateActionParams 
     return TemplateActionParamsSchema.parse(input);
 }
 
-export function parseGetParametersParams(input: unknown): GetParametersParams {
+export function parseTemplateMetadataParams(input: unknown): TemplateMetadataParams {
     return GetParametersParamsSchema.parse(input);
 }

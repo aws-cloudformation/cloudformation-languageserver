@@ -34,6 +34,9 @@ import {
     StackResourceDriftStatus,
     Parameter,
     RegistryType,
+    ValidateTemplateCommand,
+    ValidateTemplateInput,
+    ValidateTemplateOutput,
     Visibility,
     TypeSummary,
     DescribeTypeOutput,
@@ -273,6 +276,10 @@ export class CfnService {
             };
             return await waitUntilStackUpdateComplete(waiterConfig, params);
         });
+    }
+
+    public async validateTemplate(params: ValidateTemplateInput): Promise<ValidateTemplateOutput> {
+        return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
     }
 
     static create(components: ServerComponents) {

@@ -1,7 +1,7 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
-import { parseTemplateActionParams, parseGetParametersParams } from '../../../src/templates/TemplateParser';
+import { parseTemplateActionParams, parseTemplateMetadataParams } from '../../../src/templates/TemplateParser';
 
 describe('TemplateParser', () => {
     describe('parseTemplateActionParams', () => {
@@ -164,7 +164,7 @@ describe('TemplateParser', () => {
                 uri: 'file:///test.yaml',
             };
 
-            const result = parseGetParametersParams(input);
+            const result = parseTemplateMetadataParams(input);
 
             expect(result).toEqual({
                 uri: 'file:///test.yaml',
@@ -176,21 +176,21 @@ describe('TemplateParser', () => {
                 uri: '',
             };
 
-            expect(() => parseGetParametersParams(input)).toThrow(ZodError);
+            expect(() => parseTemplateMetadataParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for missing uri', () => {
             const input = {};
 
-            expect(() => parseGetParametersParams(input)).toThrow(ZodError);
+            expect(() => parseTemplateMetadataParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for null input', () => {
-            expect(() => parseGetParametersParams(null)).toThrow(ZodError);
+            expect(() => parseTemplateMetadataParams(null)).toThrow(ZodError);
         });
 
         it('should throw ZodError for undefined input', () => {
-            expect(() => parseGetParametersParams(undefined)).toThrow(ZodError);
+            expect(() => parseTemplateMetadataParams(undefined)).toThrow(ZodError);
         });
     });
 });

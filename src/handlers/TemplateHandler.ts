@@ -1,4 +1,4 @@
-import { ServerRequestHandler, ResponseError, ErrorCodes } from 'vscode-languageserver';
+import { ResponseError, ErrorCodes, RequestHandler } from 'vscode-languageserver';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Parameter } from '../context/semantic/Entity';
@@ -6,10 +6,12 @@ import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { parseTemplateActionParams, parseGetParametersParams } from '../templates/TemplateParser';
+import { analyzeCapabilities } from '../templates/CapabilityAnalyzer';
+import { parseTemplateActionParams, parseTemplateMetadataParams } from '../templates/TemplateParser';
 import {
-    GetParametersParams,
+    TemplateMetadataParams,
     GetParametersResult,
+    GetCapabilitiesResult,
     TemplateActionParams,
     TemplateActionResult,
     TemplateStatusResult,
@@ -21,12 +23,12 @@ const log = LoggerFactory.getLogger('TemplateHandler');
 
 export function templateParametersHandler(
     components: ServerComponents,
-): ServerRequestHandler<GetParametersParams, GetParametersResult, never, void> {
-    return (rawParams, _token, _workDoneProgress, _resultProgress) => {
+): RequestHandler<TemplateMetadataParams, GetParametersResult, void> {
+    return (rawParams) => {
         log.debug({ Handler: 'TemplateParameters', rawParams });
 
         try {
-            const params = parseWithPrettyError(parseGetParametersParams, rawParams);
+            const params = parseWithPrettyError(parseTemplateMetadataParams, rawParams);
             const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params.uri);
             if (syntaxTree) {
                 const parametersMap = getEntityMap(syntaxTree, TopLevelSection.Parameters);
@@ -49,7 +51,7 @@ export function templateParametersHandler(
 
 export function templateValidationCreateHandler(
     components: ServerComponents,
-): ServerRequestHandler<TemplateActionParams, TemplateActionResult, never, void> {
+): RequestHandler<TemplateActionParams, TemplateActionResult, void> {
     return async (rawParams) => {
         log.debug({ Handler: 'TemplateValidationCreate', rawParams });
 
@@ -64,7 +66,7 @@ export function templateValidationCreateHandler(
 
 export function templateDeploymentCreateHandler(
     components: ServerComponents,
-): ServerRequestHandler<TemplateActionParams, TemplateActionResult, never, void> {
+): RequestHandler<TemplateActionParams, TemplateActionResult, void> {
     return async (rawParams) => {
         log.debug({ Handler: 'TemplateDeploymentCreate', rawParams });
 
@@ -79,7 +81,7 @@ export function templateDeploymentCreateHandler(
 
 export function templateValidationStatusHandler(
     components: ServerComponents,
-): ServerRequestHandler<Identifiable, TemplateStatusResult, never, void> {
+): RequestHandler<Identifiable, TemplateStatusResult, void> {
     return (rawParams) => {
         log.debug({ Handler: 'TemplateValidationStatus', rawParams });
 
@@ -94,7 +96,7 @@ export function templateValidationStatusHandler(
 
 export function templateDeploymentStatusHandler(
     components: ServerComponents,
-): ServerRequestHandler<Identifiable, TemplateStatusResult, never, void> {
+): RequestHandler<Identifiable, TemplateStatusResult, void> {
     return (rawParams) => {
         log.debug({ Handler: 'TemplateDeploymentStatus', rawParams });
 
@@ -103,6 +105,28 @@ export function templateDeploymentStatusHandler(
             return components.deploymentWorkflowService.getStatus(params);
         } catch (error) {
             handleTemplateError(error, 'Failed to get deployment status');
+        }
+    };
+}
+
+export function templateCapabilitiesHandler(
+    components: ServerComponents,
+): RequestHandler<TemplateMetadataParams, GetCapabilitiesResult, void> {
+    return async (rawParams) => {
+        log.debug({ Handler: 'TemplateCapabilities', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseTemplateMetadataParams, rawParams);
+            const document = components.documentManager.get(params.uri);
+            if (!document) {
+                throw new ResponseError(ErrorCodes.InvalidRequest, 'Template body document not available');
+            }
+
+            const capabilities = await analyzeCapabilities(document, components.cfnService);
+
+            return { capabilities };
+        } catch (error) {
+            handleTemplateError(error, 'Failed to analyze template capabilities');
         }
     };
 }
