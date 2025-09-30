@@ -312,7 +312,6 @@ module.exports = (env = {}) => {
         output: {
             clean: true,
             filename: `[name].js`,
-            chunkFilename: `${BUNDLE_NAME}-[name]-[contenthash].js`,
             path: outputPath,
             library: {
                 type: 'commonjs2',

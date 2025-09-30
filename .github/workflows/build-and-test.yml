@@ -17,7 +17,7 @@ on:
 
       ref:
         description: 'The Git ref to checkout.'
-        required: false
+        required: true
         type: string
 
 jobs:
@@ -25,6 +25,9 @@ jobs:
     uses: ./.github/workflows/configs.yml
 
   build-test-nodejs:
+    permissions:
+      contents: read
+      pull-requests: write
     needs: [get-configs]
     runs-on: ${{ inputs.runs-on }}
     steps:
@@ -36,24 +39,43 @@ jobs:
         shell: bash
         run: echo "Checked out commit ${{ github.sha }} on ref ${{ github.ref_name }}"
 
-      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} ${{ inputs.runs-on }} (${{ inputs.arch }})
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ inputs.runs-on }}-${{ inputs.arch }})
         uses: actions/setup-node@v4
         with:
           node-version: ${{ needs.get-configs.outputs.node-version }}
           cache: 'npm'
-          architecture: ${{ needs.get-configs.outputs.arch }}
+          architecture: ${{ inputs.arch }}
 
       - name: Install Dependencies
         run: npm ci
-      
-      - name: Lint
-        run: npm run lint
 
       - name: Build
         run: npm run build
 
-      - name: Test
-        run: npm run test
+      - name: Lint and Test
+        if: runner.os != 'Windows'
+        run: npm run lint && npm run test
+
+      - name: Code Coverage
+        if: runner.os != 'Windows' && github.event_name == 'pull_request'
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/**/cobertura-coverage.xml
+          badge: false
+          fail_below_min: false
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: false
+          indicators: true
+          output: both
+          thresholds: '80 85'
+
+      - name: Add Coverage PR Comment
+        if: runner.os != 'Windows' && github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          recreate: true
+          path: code-coverage-results.md
 
   build-test-go:
     needs: [get-configs]
@@ -68,14 +90,16 @@ jobs:
         shell: bash
         run: echo "Checked out commit ${{ github.sha }} on ref ${{ github.ref_name }}"
 
-      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} ${{ inputs.runs-on }} (${{ inputs.arch }})
+      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ inputs.runs-on }}-${{ inputs.arch }})
         uses: actions/setup-go@v4
         with:
           go-version: ${{ needs.get-configs.outputs.go-version }}
           cache: true
 
       - name: Build
+        shell: bash
         run: GOPROXY=direct go build -C ./cfn-init ./...
 
       - name: Test
+        shell: bash
         run: GOPROXY=direct go test -C ./cfn-init -v -cover ./...
