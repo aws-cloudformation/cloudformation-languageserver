@@ -1,48 +1,57 @@
-name: Promote Beta to Production
+name: Release Prod
 
 on:
   workflow_dispatch:
     inputs:
-      confirm-prod-promotion:
-        description: 'Confirm promotion to Prod'
+      version:
+        description: 'The version to promote to production (must have corresponding beta tag)'
         required: true
-        type: choice
-        options:
-        - 'No'
-        - 'Yes'
-        default: 'No'
+        type: string
 
 jobs:
   promote-beta-to-prod:
-    if: github.event.inputs.confirm-prod-promotion == 'Yes'
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    outputs:
+      tag: ${{ steps.version-and-tag.outputs.tag }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: 'beta'
+          ref: 'main'
           fetch-depth: 0
 
-      - name: Merge Beta to Prod
+      - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin prod
 
-          if git merge-base --is-ancestor beta origin/prod; then
-            echo "Branch 'prod' is already up-to-date with 'beta'."
-          else
-            git checkout prod
-            git merge --ff-only beta
-            git push origin prod
+      - name: Tag
+        id: version-and-tag
+        run: |
+          INPUT_VERSION="${{ inputs.version }}"
+          BETA_TAG="v$INPUT_VERSION-beta"
+          PROD_TAG="v$INPUT_VERSION"
+          
+          # Check if beta tag exists
+          if ! git tag -l | grep -q "^$BETA_TAG$"; then
+            echo "::error::Beta tag $BETA_TAG does not exist. Cannot promote to production."
+            exit 1
           fi
+          
+          # Checkout the code at the beta tag
+          git checkout "$BETA_TAG"
+          
+          # Create and push production tag
+          git tag "$PROD_TAG"
+          git push origin "$PROD_TAG"
 
-  build-tag-release-prod:
+          echo "tag=$PROD_TAG" >> $GITHUB_OUTPUT
+
+  call-release:
     needs: [promote-beta-to-prod]
     uses: ./.github/workflows/release.yml
     permissions:
       contents: write
     with:
-      branch: 'prod'
-      is-prerelease: false
+      tag: ${{ needs.promote-beta-to-prod.outputs.tag }}
