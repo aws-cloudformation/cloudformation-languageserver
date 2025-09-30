@@ -198,9 +198,6 @@ export class ResourceStateManager implements Configurable, Closeable {
             this.settingsSubscription.unsubscribe();
         }
 
-        const newSettings = settingsManager.getCurrentSettings().profile;
-        this.onSettingsChanged(newSettings);
-
         this.settingsSubscription = settingsManager.subscribe('profile', (newResourceStateSettings) => {
             this.onSettingsChanged(newResourceStateSettings);
         });

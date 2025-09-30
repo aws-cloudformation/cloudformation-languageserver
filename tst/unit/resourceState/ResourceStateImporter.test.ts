@@ -233,8 +233,8 @@ Resources:
 
             expect(result.edit).toBeUndefined();
             expect(result.title).toBe('No resources selected for import.');
-            expect(result.successfulImports.size).toBe(0);
-            expect(result.failedImports.size).toBe(0);
+            expect(Object.keys(result.successfulImports)).toHaveLength(0);
+            expect(Object.keys(result.failedImports)).toHaveLength(0);
         });
 
         it('should return failure when document is not found', async () => {
@@ -254,8 +254,8 @@ Resources:
 
             expect(result.edit).toBeUndefined();
             expect(result.title).toBe('Import failed. Document not found.');
-            expect(result.successfulImports.size).toBe(0);
-            expect(result.failedImports.size).toBe(0);
+            expect(Object.keys(result.successfulImports)).toHaveLength(0);
+            expect(Object.keys(result.failedImports)).toHaveLength(0);
         });
 
         it('should return failure when syntax tree is not found', async () => {
@@ -282,8 +282,8 @@ Resources:
 
             expect(result.edit).toBeUndefined();
             expect(result.title).toBe('Import failed. Syntax tree not found');
-            expect(result.successfulImports.size).toBe(0);
-            expect(result.failedImports.size).toBe(0);
+            expect(Object.keys(result.successfulImports)).toHaveLength(0);
+            expect(Object.keys(result.failedImports)).toHaveLength(0);
 
             // Cleanup
             (documentManager as any).documents._syncedDocuments.delete(uri);
