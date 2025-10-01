@@ -28,13 +28,14 @@ jobs:
     needs: [get-configs]
     runs-on: ${{ inputs.runs-on }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
+          fetch-tags: true
 
-      - name: Log Commit and Branch
+      - name: Git Status
         shell: bash
-        run: echo "Checked out sha=${{ github.sha }} ref=${{ github.ref }} head_ref=${{ github.head_ref }}"
+        run: echo "Building from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
       - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ inputs.runs-on }}-${{ inputs.arch }})
         uses: actions/setup-node@v4
@@ -58,13 +59,14 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref }}
-      
-      - name: Log Commit and Branch
+          fetch-tags: true
+
+      - name: Git Status
         shell: bash
-        run: echo "Checked out sha=${{ github.sha }} ref=${{ github.ref }} head_ref=${{ github.head_ref }}"
+        run: echo "Building from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
       - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ inputs.runs-on }}-${{ inputs.arch }})
         uses: actions/setup-go@v4
