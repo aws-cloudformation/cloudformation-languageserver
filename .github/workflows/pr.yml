@@ -15,7 +15,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }}
         uses: actions/setup-node@v4
@@ -55,7 +55,7 @@ jobs:
     needs: [get-configs]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Go ${{ needs.get-configs.outputs.go-version }}
         uses: actions/setup-go@v4

@@ -30,7 +30,7 @@ jobs:
       tag: ${{ steps.validate-tag.outputs.tag }}
       is-prerelease: ${{ steps.validate-tag.outputs.is-prerelease }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.tag }}
       
@@ -77,9 +77,14 @@ jobs:
       matrix: ${{ fromJson(needs.get-build-matrix.outputs.build-matrix) }}
     runs-on: ${{ matrix.runner }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ needs.version-and-tag.outputs.tag }}
+          fetch-tags: true
+
+      - name: Git Status
+        shell: bash
+        run: echo "Bundling from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
       - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ matrix.runner }}-${{ matrix.arch }})
         uses: actions/setup-node@v4
