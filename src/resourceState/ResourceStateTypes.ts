@@ -17,8 +17,18 @@ export type ResourceSelection = {
     resourceIdentifiers: string[];
 };
 
+/*
+ * Import purpose is to move an existing resource to be managed by a stack
+ * Clone purpose is to create a new resource using the configuration of an existing resource as a reference
+ */
+export enum ResourceStatePurpose {
+    IMPORT = 'Import',
+    CLONE = 'Clone',
+}
+
 export interface ResourceStateParams extends CodeActionParams {
     resourceSelections?: ResourceSelection[];
+    purpose: ResourceStatePurpose;
 }
 
 export interface ResourceStateResult extends CodeAction {
