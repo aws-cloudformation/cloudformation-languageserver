@@ -3,11 +3,7 @@ import { Context } from '../context/Context';
 import { HoverProvider } from './HoverProvider';
 
 export class OutputSectionFieldHoverProvider implements HoverProvider {
-    private static readonly OUTPUT_SECTION_FIELDS = new Set([
-        'Description',
-        'Value',
-        'Export',
-    ]);
+    private static readonly OUTPUT_SECTION_FIELDS = new Set(['Description', 'Value', 'Export']);
 
     getInformation(context: Context): string | undefined {
         const attributeName = context.text;

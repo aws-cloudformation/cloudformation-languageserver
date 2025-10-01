@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { intrinsicFunctionsDocsMap } from '../../../src/artifacts/IntrinsicFunctionsDocs';
-import { parameterAttributeDocsMap } from '../../../src/artifacts/ParameterAttributeDocs';
 import { outputSectionFieldDocsMap } from '../../../src/artifacts/OutputSectionFieldDocs';
+import { parameterAttributeDocsMap } from '../../../src/artifacts/ParameterAttributeDocs';
 import { pseudoParameterDocsMap } from '../../../src/artifacts/PseudoParameterDocs';
 import { resourceAttributeDocsMap } from '../../../src/artifacts/ResourceAttributeDocs';
 import { templateSectionDocsMap } from '../../../src/artifacts/TemplateSectionDocs';

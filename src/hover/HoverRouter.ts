@@ -102,12 +102,10 @@ export class HoverRouter implements Configurable, Closeable {
             if (doc) {
                 return doc;
             }
-        } else if (context.section === TopLevelSection.Outputs) {
-            if (this.isOutputAttribute(context)) {
-                const doc = this.hoverProviderMap.get(HoverType.OutputSectionField)?.getInformation(context);
-                if (doc) {
-                    return doc;
-                }
+        } else if (context.section === TopLevelSection.Outputs && this.isOutputAttribute(context)) {
+            const doc = this.hoverProviderMap.get(HoverType.OutputSectionField)?.getInformation(context);
+            if (doc) {
+                return doc;
             }
         }
 

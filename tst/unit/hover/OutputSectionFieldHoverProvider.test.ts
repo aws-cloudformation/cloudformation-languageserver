@@ -18,7 +18,7 @@ describe('OutputSectionFieldHoverProvider', () => {
             expect(result).toContain('**Description (optional)**');
             expect(result).toContain('A `String` type that describes the output value');
             expect(result).toContain('between 0 and 1024 bytes in length');
-            expect(result).toContain('You can\'t use a parameter or function to specify the description');
+            expect(result).toContain("You can't use a parameter or function to specify the description");
         });
 
         it('should return Value documentation when hovering on Value attribute', () => {
@@ -31,7 +31,9 @@ describe('OutputSectionFieldHoverProvider', () => {
 
             expect(result).toContain('**Value (required)**');
             expect(result).toContain('The value of the property returned by the [describe-stacks]');
-            expect(result).toContain('The value of an output can include literals, parameter references, pseudo parameters, a mapping value, or intrinsic functions');
+            expect(result).toContain(
+                'The value of an output can include literals, parameter references, pseudo parameters, a mapping value, or intrinsic functions',
+            );
         });
 
         it('should return Export documentation when hovering on Export attribute', () => {
@@ -106,11 +108,7 @@ describe('OutputSectionFieldHoverProvider', () => {
 
     describe('isOutputSectionField static method', () => {
         it('should return true for valid output attributes', () => {
-            const validAttributes = [
-                'Description',
-                'Value',
-                'Export',
-            ];
+            const validAttributes = ['Description', 'Value', 'Export'];
 
             for (const attribute of validAttributes) {
                 expect(OutputSectionFieldHoverProvider.isOutputSectionField(attribute)).toBe(true);
