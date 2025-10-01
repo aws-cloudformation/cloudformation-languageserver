@@ -1,5 +1,5 @@
 name: Release Prod
-run-name: Release Prod ${{ inputs.version }}
+run-name: Release Prod ${{ inputs.version }} ${{ github.actor }} ${{ github.event_name }}
 
 on:
   workflow_dispatch:

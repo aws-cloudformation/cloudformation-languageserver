@@ -1,5 +1,5 @@
 name: Release Beta
-run-name: Release Beta ${{ inputs.version }}
+run-name: Release Beta ${{ inputs.version }} ${{ github.actor }} ${{ github.event_name }}
 
 on:
   workflow_dispatch:

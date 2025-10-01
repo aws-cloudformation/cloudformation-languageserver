@@ -1,5 +1,5 @@
 name: Release
-run-name: Release ${{ inputs.tag }}
+run-name: Release ${{ inputs.tag }} ${{ github.actor }} ${{ github.event_name }}
 
 on:
   workflow_call:
