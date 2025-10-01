@@ -1,4 +1,4 @@
-import { TextDocumentChangeEvent } from 'vscode-languageserver/lib/common/textDocuments';
+import { TextDocumentChangeEvent } from 'vscode-languageserver';
 import { TextDocuments, Connection } from 'vscode-languageserver/node';
 import { DidChangeTextDocumentParams, NotificationHandler } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';

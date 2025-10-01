@@ -1,4 +1,4 @@
-import { InlineCompletionList, InlineCompletionParams } from 'vscode-languageserver-protocol';
+import { InlineCompletionList, InlineCompletionParams, InlineCompletionItem } from 'vscode-languageserver-protocol';
 import { ContextManager } from '../context/ContextManager';
 import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
 import {
@@ -11,6 +11,7 @@ import {
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 
 export type InlineCompletionProviderType = 'ResourceBlock' | 'PropertyBlock' | 'TemplateSection' | 'AIGenerated';
+type ReturnType = InlineCompletionList | InlineCompletionItem[] | null | undefined;
 
 export class InlineCompletionRouter implements Configurable, Closeable {
     private completionSettings: CompletionSettings = DefaultSettings.completion;
@@ -21,9 +22,7 @@ export class InlineCompletionRouter implements Configurable, Closeable {
 
     constructor(private readonly contextManager: ContextManager) {}
 
-    getInlineCompletions(
-        params: InlineCompletionParams,
-    ): Promise<InlineCompletionList> | InlineCompletionList | undefined {
+    getInlineCompletions(params: InlineCompletionParams): Promise<ReturnType> | ReturnType {
         if (!this.completionSettings.enabled) return;
 
         const context = this.contextManager.getContext(params);

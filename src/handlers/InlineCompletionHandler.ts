@@ -1,5 +1,5 @@
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
-import { InlineCompletionParams, InlineCompletionList } from 'vscode-languageserver-protocol';
+import { RequestHandler } from 'vscode-languageserver/node';
+import { InlineCompletionParams, InlineCompletionList, InlineCompletionItem } from 'vscode-languageserver-protocol';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 
@@ -7,8 +7,8 @@ const log = LoggerFactory.getLogger('InlineCompletionHandler');
 
 export function inlineCompletionHandler(
     components: ServerComponents,
-): ServerRequestHandler<InlineCompletionParams, InlineCompletionList | undefined | null, never, void> {
-    return (params, _token, _workDoneProgress, _resultProgress) => {
+): RequestHandler<InlineCompletionParams, InlineCompletionList | InlineCompletionItem[] | null | undefined, void> {
+    return (params, _token) => {
         log.debug({
             Handler: 'InlineCompletion',
             Document: params.textDocument.uri,

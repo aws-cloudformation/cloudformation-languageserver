@@ -1,4 +1,4 @@
-import { Connection, RequestHandler, NotificationHandler } from 'vscode-languageserver/node';
+import { Connection, RequestHandler, NotificationHandler } from 'vscode-languageserver';
 import {
     IamCredentialsUpdateRequest,
     BearerCredentialsUpdateRequest,
