@@ -37,7 +37,7 @@ jobs:
 
       - name: Log Commit and Branch
         shell: bash
-        run: echo "Checked out commit ${{ github.sha }} on ref ${{ github.ref_name }}"
+        run: echo "Checked out sha=${{ github.sha }} ref=${{ github.ref }} head_ref=${{ github.head_ref }}"
 
       - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ inputs.runs-on }}-${{ inputs.arch }})
         uses: actions/setup-node@v4
@@ -88,7 +88,7 @@ jobs:
       
       - name: Log Commit and Branch
         shell: bash
-        run: echo "Checked out commit ${{ github.sha }} on ref ${{ github.ref_name }}"
+        run: echo "Checked out sha=${{ github.sha }} ref=${{ github.ref }} head_ref=${{ github.head_ref }}"
 
       - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ inputs.runs-on }}-${{ inputs.arch }})
         uses: actions/setup-go@v4

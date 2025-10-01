@@ -2,7 +2,7 @@
 
 <div align="center">
 
-[![build](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/build-and-test.yml/badge.svg)](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/build-and-test.yml)
+[![build](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/ci.yml)
 &nbsp;
 [![CodeQL](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/github-code-scanning/codeql)
 

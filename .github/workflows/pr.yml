@@ -1,7 +1,7 @@
-name: Main CI
+name: Pull Request
 
 on:
-  push:
+  pull_request:
     branches: [ main ]
 
 jobs:
@@ -9,5 +9,6 @@ jobs:
     uses: ./.github/workflows/build-and-test.yml
     permissions:
       contents: read
+      pull-requests: write
     with:
       ref: ${{ github.sha }}
