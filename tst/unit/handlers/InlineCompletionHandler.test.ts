@@ -36,7 +36,7 @@ describe('InlineCompletionHandler', () => {
         mockServices.inlineCompletionRouter.getInlineCompletions.returns(mockInlineCompletions);
 
         const handler = inlineCompletionHandler(mockServices);
-        const result = handler(mockParams, CancellationToken.None, undefined as any, undefined as any);
+        const result = handler(mockParams, CancellationToken.None);
 
         expect(mockServices.inlineCompletionRouter.getInlineCompletions.calledOnce).toBe(true);
         expect(mockServices.inlineCompletionRouter.getInlineCompletions.calledWith(mockParams)).toBe(true);
@@ -47,7 +47,7 @@ describe('InlineCompletionHandler', () => {
         mockServices.inlineCompletionRouter.getInlineCompletions.returns(undefined);
 
         const handler = inlineCompletionHandler(mockServices);
-        const result = handler(mockParams, CancellationToken.None, undefined as any, undefined as any);
+        const result = handler(mockParams, CancellationToken.None);
 
         expect(result).toBeUndefined();
     });
@@ -68,7 +68,7 @@ describe('InlineCompletionHandler', () => {
         mockServices.inlineCompletionRouter.getInlineCompletions.returns(Promise.resolve(mockInlineCompletions));
 
         const handler = inlineCompletionHandler(mockServices);
-        const result = await handler(mockParams, CancellationToken.None, undefined as any, undefined as any);
+        const result = await handler(mockParams, CancellationToken.None);
 
         expect(result).toEqual(mockInlineCompletions);
     });
@@ -84,7 +84,7 @@ describe('InlineCompletionHandler', () => {
         mockServices.inlineCompletionRouter.getInlineCompletions.returns({ items: [] });
 
         const handler = inlineCompletionHandler(mockServices);
-        handler(automaticParams, CancellationToken.None, undefined as any, undefined as any);
+        handler(automaticParams, CancellationToken.None);
 
         expect(mockServices.inlineCompletionRouter.getInlineCompletions.calledWith(automaticParams)).toBe(true);
     });
@@ -98,7 +98,7 @@ describe('InlineCompletionHandler', () => {
         mockServices.inlineCompletionRouter.getInlineCompletions.returns({ items: [] });
 
         const handler = inlineCompletionHandler(mockServices);
-        handler(jsonParams, CancellationToken.None, undefined as any, undefined as any);
+        handler(jsonParams, CancellationToken.None);
 
         expect(mockServices.inlineCompletionRouter.getInlineCompletions.calledWith(jsonParams)).toBe(true);
     });
@@ -112,7 +112,7 @@ describe('InlineCompletionHandler', () => {
         mockServices.inlineCompletionRouter.getInlineCompletions.returns({ items: [] });
 
         const handler = inlineCompletionHandler(mockServices);
-        handler(positionParams, CancellationToken.None, undefined as any, undefined as any);
+        handler(positionParams, CancellationToken.None);
 
         expect(mockServices.inlineCompletionRouter.getInlineCompletions.calledWith(positionParams)).toBe(true);
     });

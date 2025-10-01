@@ -1,4 +1,4 @@
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { ServerRequestHandler } from 'vscode-languageserver';
 import {
     Connection,
     NotificationHandler,
@@ -30,6 +30,8 @@ import {
     InlineCompletionList,
     InlineCompletionParams,
     SignatureHelpParams,
+    InlineCompletionRequest,
+    InlineCompletionItem,
 } from 'vscode-languageserver-protocol';
 
 export class LspHandlers {
@@ -115,9 +117,13 @@ export class LspHandlers {
     }
 
     onInlineCompletion(
-        handler: ServerRequestHandler<InlineCompletionParams, InlineCompletionList | undefined | null, never, void>,
+        handler: RequestHandler<
+            InlineCompletionParams,
+            InlineCompletionList | InlineCompletionItem[] | null | undefined,
+            void
+        >,
     ) {
-        this.connection.onRequest('textDocument/inlineCompletion', handler);
+        this.connection.onRequest(InlineCompletionRequest.type, handler);
     }
 
     onDidChangeConfiguration(handler: NotificationHandler<DidChangeConfigurationParams>) {

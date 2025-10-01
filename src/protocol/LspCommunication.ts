@@ -1,4 +1,4 @@
-import { Connection, ShowMessageRequestParams, RemoteConsole } from 'vscode-languageserver/node';
+import { Connection, ShowMessageRequestParams, RemoteConsole } from 'vscode-languageserver';
 import {
     LogMessageParams,
     MessageActionItem,
@@ -6,7 +6,7 @@ import {
     ShowMessageNotification,
     ShowMessageRequest,
     LogMessageNotification,
-} from 'vscode-languageserver-protocol/lib/common/protocol';
+} from 'vscode-languageserver-protocol';
 
 export class LspCommunication {
     public readonly console: RemoteConsole;
