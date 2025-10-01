@@ -121,7 +121,7 @@ jobs:
         run: |
           APP_NAME=${{ needs.get-configs.outputs.app-name }}
           VERSION=${{ needs.version-and-tag.outputs.tag }}
-          OS=${{ matrix.runner }}
+          OS=${{ matrix.name }}
           ARCH=${{ matrix.arch }}
 
           ASSET_NAME="${APP_NAME}-${VERSION}-${OS}-${ARCH}.zip"
