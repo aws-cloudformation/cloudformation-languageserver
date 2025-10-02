@@ -1458,6 +1458,16 @@ Resources:
             expect(node).toBeDefined();
         });
 
+        it('should handle position exactly at end of line ending with colon', () => {
+            const template = `Resources:
+  Bucket:`;
+            const tree = createSyntaxTree(template, DocumentType.YAML);
+            // Position exactly at the end of line ending with colon
+            const node = tree.getNodeAtPosition({ line: 1, character: 9 });
+            expect(node).toBeDefined();
+            expect(node.type).toBe('block_mapping_pair');
+        });
+
         it('should return Key and Value for cursor after dash in array item', () => {
             const template = `Resources:
   Bucket:
