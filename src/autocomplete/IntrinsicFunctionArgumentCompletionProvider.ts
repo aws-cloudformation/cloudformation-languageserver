@@ -462,19 +462,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
     private getMappingNameCompletions(mappingsEntities: Map<string, Context>, context: Context): CompletionItem[] {
         try {
-            const items = [...mappingsEntities.keys()].map((key) => {
-                const item = createCompletionItem(key, CompletionItemKind.EnumMember);
-
-                if (context.text.length > 0) {
-                    const range = createReplacementRange(context);
-                    if (range) {
-                        item.textEdit = TextEdit.replace(range, key);
-                        delete item.insertText;
-                    }
-                }
-
-                return item;
-            });
+            const items = [...mappingsEntities.keys()].map((key) =>
+                createCompletionItem(key, CompletionItemKind.EnumMember, { context }),
+            );
 
             return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
         } catch (error) {
@@ -508,19 +498,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 return undefined;
             }
 
-            const items = topLevelKeys.map((key) => {
-                const item = createCompletionItem(key, CompletionItemKind.EnumMember);
-
-                if (context.text.length > 0) {
-                    const range = createReplacementRange(context);
-                    if (range) {
-                        item.textEdit = TextEdit.replace(range, key);
-                        delete item.insertText;
-                    }
-                }
-
-                return item;
-            });
+            const items = topLevelKeys.map((key) =>
+                createCompletionItem(key, CompletionItemKind.EnumMember, { context }),
+            );
 
             return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
         } catch (error) {
@@ -556,19 +536,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 return undefined;
             }
 
-            const items = secondLevelKeys.map((key) => {
-                const item = createCompletionItem(key, CompletionItemKind.EnumMember);
-
-                if (context.text.length > 0) {
-                    const range = createReplacementRange(context);
-                    if (range) {
-                        item.textEdit = TextEdit.replace(range, key);
-                        delete item.insertText;
-                    }
-                }
-
-                return item;
-            });
+            const items = secondLevelKeys.map((key) =>
+                createCompletionItem(key, CompletionItemKind.EnumMember, { context }),
+            );
 
             return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
         } catch (error) {
@@ -652,19 +622,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
         const items = [...resourceEntities.keys()]
             .filter((logicalId) => logicalId !== context.logicalId)
-            .map((logicalId) => {
-                const item = createCompletionItem(logicalId, CompletionItemKind.Reference);
-
-                if (context.text.length > 0) {
-                    const range = createReplacementRange(context);
-                    if (range) {
-                        item.textEdit = TextEdit.replace(range, logicalId);
-                        delete item.insertText;
-                    }
-                }
-
-                return item;
-            });
+            .map((logicalId) => createCompletionItem(logicalId, CompletionItemKind.Reference, { context }));
 
         return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
     }

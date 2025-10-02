@@ -134,6 +134,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             existingProperties,
             context.text.length === 0,
             schema,
+            context,
         );
     }
 
@@ -162,6 +163,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         const completions = enumValues.map((value, index) =>
             createCompletionItem(String(value), CompletionItemKind.EnumMember, {
                 sortText: `${index}`,
+                context: context,
             }),
         );
 
@@ -204,6 +206,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         existingProperties: Set<string>,
         isEmptyText: boolean,
         schema: ResourceSchema,
+        context: Context,
     ): CompletionItem[] {
         const result: CompletionItem[] = [];
 
@@ -232,6 +235,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
                 CompletionItemKind.Property,
                 {
                     data: itemData,
+                    context: context,
                 },
             );
 

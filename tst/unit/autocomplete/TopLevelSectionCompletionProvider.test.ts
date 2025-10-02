@@ -85,7 +85,7 @@ describe('TopLevelSectionCompletionProvider', () => {
         // Should find Parameters as a match
         const parametersItem = result!.find((item) => item.label === 'Parameters');
         expect(parametersItem).toBeDefined();
-        expect(parametersItem!.filterText).toBe('Par');
+        expect(parametersItem!.filterText).toBe('Parameters');
     });
 
     test('should handle context with whitespace-only text', () => {
