@@ -135,7 +135,7 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
                         fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify(tmpPkg, null, 2));
                         fs.copyFileSync('package-lock.json', `${tmpDir}/package-lock.json`);
 
-                        execSync('npm ci', { cwd: tmpDir, stdio: 'inherit' });
+                        execSync('npm ci --only=prod', { cwd: tmpDir, stdio: 'inherit' });
                         callback();
                     } catch (error) {
                         callback(error);
