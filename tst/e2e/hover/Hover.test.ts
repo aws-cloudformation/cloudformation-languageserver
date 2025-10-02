@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { intrinsicFunctionsDocsMap } from '../../../src/artifacts/IntrinsicFunctionsDocs';
+import { outputSectionFieldDocsMap } from '../../../src/artifacts/OutputSectionFieldDocs';
 import { parameterAttributeDocsMap } from '../../../src/artifacts/ParameterAttributeDocs';
 import { pseudoParameterDocsMap } from '../../../src/artifacts/PseudoParameterDocs';
 import { resourceAttributeDocsMap } from '../../../src/artifacts/ResourceAttributeDocs';
@@ -1476,6 +1477,30 @@ Outputs:`,
                     },
                     {
                         action: 'type',
+                        content: ``,
+                        position: { line: 408, character: 18 },
+                        description: 'Test Hover for Description output section field',
+                        verification: {
+                            position: { line: 407, character: 8 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(outputSectionFieldDocsMap.get('Description'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 408, character: 18 },
+                        description: 'Test Hover for Value output section field',
+                        verification: {
+                            position: { line: 408, character: 7 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(outputSectionFieldDocsMap.get('Value'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
                         content: ` VPC.CidrBlock
     Export:
       Name: !Sub "\${EnvironmentName}-VPC-CIDR"
@@ -1489,6 +1514,18 @@ Outputs:`,
                             position: { line: 414, character: 15 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContent(intrinsicFunctionsDocsMap.get(IntrinsicFunction.GetAtt))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 414, character: 18 },
+                        description: 'Test Hover for Export output section field',
+                        verification: {
+                            position: { line: 409, character: 7 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(outputSectionFieldDocsMap.get('Export'))
                                 .build(),
                         },
                     },
