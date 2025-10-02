@@ -126,7 +126,7 @@ jobs:
           APP_NAME=${{ needs.get-configs.outputs.app-name }}
           VERSION=$(node -p "require('./package.json').version")
           OS=${{ runner.os }}
-          ARCH=${{ runner.arch }}
+          ARCH=${{ matrix.arch }}
           
           TAG=${{ needs.version-and-tag.outputs.tag }}
           if [[ "$TAG" =~ -alpha$ ]]; then
