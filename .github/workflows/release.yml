@@ -33,6 +33,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.tag }}
+          fetch-tags: true
       
       - name: Get version from package.json
         id: get-version
@@ -49,7 +50,7 @@ jobs:
           if [[ "$TAG" == "v$VERSION" ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=false" >> $GITHUB_OUTPUT
-          elif [[ "$TAG" =~ ^v$VERSION-[a-zA-Z0-9]+$ ]]; then
+          elif [[ "$TAG" =~ ^v$VERSION-(alpha|beta)$ ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=true" >> $GITHUB_OUTPUT
           else
@@ -105,7 +106,10 @@ jobs:
       - name: Bundle
         shell: bash
         run: |
-          if [[ "${{ needs.version-and-tag.outputs.is-prerelease }}" == "true" ]]; then
+          TAG=${{ needs.version-and-tag.outputs.tag }}
+          if [[ "$TAG" =~ -alpha$ ]]; then
+            npm run bundle:alpha
+          elif [[ "$TAG" =~ -beta$ ]]; then
             npm run bundle:beta
           else
             npm run bundle:prod
@@ -120,11 +124,20 @@ jobs:
         shell: bash
         run: |
           APP_NAME=${{ needs.get-configs.outputs.app-name }}
-          VERSION=${{ needs.version-and-tag.outputs.tag }}
-          OS=${{ matrix.name }}
-          ARCH=${{ matrix.arch }}
-
-          ASSET_NAME="${APP_NAME}-${VERSION}-${OS}-${ARCH}.zip"
+          VERSION=$(node -p "require('./package.json').version")
+          OS=${{ runner.os }}
+          ARCH=${{ runner.arch }}
+          
+          TAG=${{ needs.version-and-tag.outputs.tag }}
+          if [[ "$TAG" =~ -alpha$ ]]; then
+            FILE_NAME="${APP_NAME}-${VERSION}-alpha-${OS}-${ARCH}.zip"
+          elif [[ "$TAG" =~ -beta$ ]]; then
+            FILE_NAME="${APP_NAME}-${VERSION}-beta-${OS}-${ARCH}.zip"
+          else
+            FILE_NAME="${APP_NAME}-${VERSION}-${OS}-${ARCH}.zip"
+          fi
+          
+          ASSET_NAME=$(echo "$FILE_NAME" | tr '[:upper:]' '[:lower:]')
           echo "ASSET_NAME=${ASSET_NAME}"
           echo "ASSET_NAME=${ASSET_NAME}" >> $GITHUB_OUTPUT
 

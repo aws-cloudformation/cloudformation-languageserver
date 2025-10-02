@@ -37,7 +37,7 @@ jobs:
         shell: bash
         run: echo "Building from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
-      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ inputs.runs-on }}-${{ inputs.arch }})
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ runner.os }}-${{ runner.arch }})
         uses: actions/setup-node@v4
         with:
           node-version: ${{ needs.get-configs.outputs.node-version }}
@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: echo "Building from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
-      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ inputs.runs-on }}-${{ inputs.arch }})
+      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ runner.os }}-${{ runner.arch }})
         uses: actions/setup-go@v4
         with:
           go-version: ${{ needs.get-configs.outputs.go-version }}
