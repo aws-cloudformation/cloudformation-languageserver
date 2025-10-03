@@ -1,7 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
-import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
 import { IntrinsicFunction } from '../../context/ContextType';
+import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
 
 /**
  * Analyzes CloudFormation template syntax nodes to identify extractable literal values.
