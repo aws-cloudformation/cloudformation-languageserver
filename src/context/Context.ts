@@ -189,7 +189,7 @@ export class Context {
         // Case 2: Two situations exist that we need to account for:
         // isKey and isValue can be True when at the first key inside a value
         // when we are at level 2 this means we are at Entity/LogicalId as the first key
-        // when we are at level 3 this means we are at Entity/LogicalId/Proeprties as the first key
+        // when we are at level 3 this means we are at Entity/LogicalId/Properties as the first key
         if (this.isKey() && this.isValue()) {
             if (this.propertyPath.length === 2) {
                 return true;
@@ -204,7 +204,7 @@ export class Context {
             return false;
         }
 
-        // Catch all at this point to say that the isKey is the most import thing
+        // Catch all at this point to say that the isKey is the most important thing
         return this.isKey();
     }
 
