@@ -1,11 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
-import { DeploymentWorkflow } from '../../../src/templates/DeploymentWorkflow';
-import { TemplateActionParams, TemplateStatus, WorkflowResult } from '../../../src/templates/TemplateRequestType';
-import { processChangeSet } from '../../../src/templates/TemplateWorkflowOperations';
+import { DeploymentWorkflow } from '../../../src/stackActions/DeploymentWorkflow';
+import { processChangeSet } from '../../../src/stackActions/StackActionOperations';
+import {
+    StackActionParams,
+    StackActionPhase,
+    StackActionStatus,
+} from '../../../src/stackActions/StackActionRequestType';
 
-vi.mock('../../../src/templates/TemplateWorkflowOperations');
+vi.mock('../../../src/stackActions/StackActionOperations');
 
 describe('DeploymentWorkflow', () => {
     let deploymentWorkflow: DeploymentWorkflow;
@@ -21,7 +25,7 @@ describe('DeploymentWorkflow', () => {
 
     describe('start', () => {
         it('should start deployment workflow with CREATE when stack does not exist', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -42,7 +46,7 @@ describe('DeploymentWorkflow', () => {
         });
 
         it('should start deployment workflow with UPDATE when stack exists', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -71,9 +75,9 @@ describe('DeploymentWorkflow', () => {
                 id: 'test-id',
                 changeSetName: 'changeset-123',
                 stackName: 'test-stack',
-                status: TemplateStatus.VALIDATION_IN_PROGRESS,
+                phase: StackActionPhase.VALIDATION_IN_PROGRESS,
                 startTime: Date.now(),
-                result: WorkflowResult.IN_PROGRESS,
+                status: StackActionStatus.IN_PROGRESS,
             };
 
             // Directly set workflow state
@@ -82,8 +86,8 @@ describe('DeploymentWorkflow', () => {
             const result = deploymentWorkflow.getStatus(params);
 
             expect(result).toEqual({
-                status: TemplateStatus.VALIDATION_IN_PROGRESS,
-                result: WorkflowResult.IN_PROGRESS,
+                phase: StackActionPhase.VALIDATION_IN_PROGRESS,
+                status: StackActionStatus.IN_PROGRESS,
                 changes: undefined,
                 id: 'test-id',
             });

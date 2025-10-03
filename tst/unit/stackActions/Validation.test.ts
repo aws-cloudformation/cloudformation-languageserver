@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TemplateStatus } from '../../../src/templates/TemplateRequestType';
-import { Validation } from '../../../src/templates/Validation';
+import { StackActionPhase } from '../../../src/stackActions/StackActionRequestType';
+import { Validation } from '../../../src/stackActions/Validation';
 
 describe('Validation', () => {
     let validation: Validation;
@@ -32,8 +32,8 @@ describe('Validation', () => {
     });
 
     it('should set and get status', () => {
-        validation.setStatus(TemplateStatus.VALIDATION_IN_PROGRESS);
-        expect(validation.getStatus()).toBe(TemplateStatus.VALIDATION_IN_PROGRESS);
+        validation.setStatus(StackActionPhase.VALIDATION_IN_PROGRESS);
+        expect(validation.getStatus()).toBe(StackActionPhase.VALIDATION_IN_PROGRESS);
     });
 
     it('should set and get changes', () => {
@@ -95,8 +95,8 @@ describe('Validation', () => {
         });
 
         it('should set and get status through consistent methods', () => {
-            validation.setStatus(TemplateStatus.VALIDATION_IN_PROGRESS);
-            expect(validation.getStatus()).toBe(TemplateStatus.VALIDATION_IN_PROGRESS);
+            validation.setStatus(StackActionPhase.VALIDATION_IN_PROGRESS);
+            expect(validation.getStatus()).toBe(StackActionPhase.VALIDATION_IN_PROGRESS);
         });
 
         it('should set and get changes through consistent methods', () => {

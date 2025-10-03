@@ -3,11 +3,15 @@ import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeMan
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
-import { TemplateActionParams, TemplateStatus, WorkflowResult } from '../../../src/templates/TemplateRequestType';
-import { processChangeSet } from '../../../src/templates/TemplateWorkflowOperations';
-import { ValidationWorkflow } from '../../../src/templates/ValidationWorkflow';
+import { processChangeSet } from '../../../src/stackActions/StackActionOperations';
+import {
+    StackActionParams,
+    StackActionPhase,
+    StackActionStatus,
+} from '../../../src/stackActions/StackActionRequestType';
+import { ValidationWorkflow } from '../../../src/stackActions/ValidationWorkflow';
 
-vi.mock('../../../src/templates/TemplateWorkflowOperations');
+vi.mock('../../../src/stackActions/StackActionOperations');
 
 describe('ValidationWorkflow', () => {
     let validationWorkflow: ValidationWorkflow;
@@ -35,7 +39,7 @@ describe('ValidationWorkflow', () => {
 
     describe('start', () => {
         it('should start validation workflow with CREATE when stack does not exist', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -56,7 +60,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should start validation workflow with UPDATE when stack exists', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -85,9 +89,9 @@ describe('ValidationWorkflow', () => {
                 id: 'test-id',
                 changeSetName: 'changeset-123',
                 stackName: 'test-stack',
-                status: TemplateStatus.VALIDATION_IN_PROGRESS,
+                phase: StackActionPhase.VALIDATION_IN_PROGRESS,
                 startTime: Date.now(),
-                result: WorkflowResult.IN_PROGRESS,
+                status: StackActionStatus.IN_PROGRESS,
             };
 
             // Directly set workflow state
@@ -96,8 +100,8 @@ describe('ValidationWorkflow', () => {
             const result = validationWorkflow.getStatus(params);
 
             expect(result).toEqual({
-                status: TemplateStatus.VALIDATION_IN_PROGRESS,
-                result: WorkflowResult.IN_PROGRESS,
+                phase: StackActionPhase.VALIDATION_IN_PROGRESS,
+                status: StackActionStatus.IN_PROGRESS,
                 changes: undefined,
                 id: 'test-id',
             });
@@ -125,7 +129,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should add validation to manager when workflow starts', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -149,7 +153,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should get validation from manager during workflow operations', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -171,7 +175,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should remove validation from manager after workflow completion', async () => {
-            const params: TemplateActionParams = {
+            const params: StackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',

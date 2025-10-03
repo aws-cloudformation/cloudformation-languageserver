@@ -1,36 +1,38 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Connection, RequestHandler } from 'vscode-languageserver/node';
-import { LspTemplateHandlers } from '../../../src/protocol/LspTemplateHandlers';
+import { LspStackActionHandlers } from '../../../src/protocol/LspStackActionHandlers';
 import { Identifiable } from '../../../src/protocol/LspTypes';
 import {
-    TemplateMetadataParams,
-    GetParametersResult,
-    GetParametersRequest,
-    GetCapabilitiesResult,
     GetCapabilitiesRequest,
-    TemplateActionParams,
-    TemplateActionResult,
+    GetParametersRequest,
     TemplateValidationCreateRequest,
     TemplateDeploymentCreateRequest,
     TemplateValidationStatusRequest,
     TemplateDeploymentStatusRequest,
-    TemplateStatusResult,
-} from '../../../src/templates/TemplateRequestType';
+} from '../../../src/stackActions/StackActionProtocol';
+import {
+    GetCapabilitiesResult,
+    TemplateMetadataParams,
+    GetParametersResult,
+    StackActionParams,
+    StackActionResult,
+    StackActionStatusResult,
+} from '../../../src/stackActions/StackActionRequestType';
 
 describe('LspTemplateHandlers', () => {
     let connection: StubbedInstance<Connection>;
-    let templateHandlers: LspTemplateHandlers;
+    let stackActionHandlers: LspStackActionHandlers;
 
     beforeEach(() => {
         connection = stubInterface<Connection>();
-        templateHandlers = new LspTemplateHandlers(connection);
+        stackActionHandlers = new LspStackActionHandlers(connection);
     });
 
     it('should register onGetParameters handler', () => {
         const mockHandler: RequestHandler<TemplateMetadataParams, GetParametersResult, never> = vi.fn();
 
-        templateHandlers.onGetParameters(mockHandler);
+        stackActionHandlers.onGetParameters(mockHandler);
 
         expect(connection.onRequest.calledWith(GetParametersRequest.method)).toBe(true);
     });
@@ -38,39 +40,39 @@ describe('LspTemplateHandlers', () => {
     it('should register onGetCapabilities handler', () => {
         const mockHandler: RequestHandler<TemplateMetadataParams, GetCapabilitiesResult, never> = vi.fn();
 
-        templateHandlers.onGetCapabilities(mockHandler);
+        stackActionHandlers.onGetCapabilities(mockHandler);
 
         expect(connection.onRequest.calledWith(GetCapabilitiesRequest.method)).toBe(true);
     });
 
     it('should register onTemplateValidate handler', () => {
-        const mockHandler: RequestHandler<TemplateActionParams, TemplateActionResult, never> = vi.fn();
+        const mockHandler: RequestHandler<StackActionParams, StackActionResult, void> = vi.fn();
 
-        templateHandlers.onTemplateValidationCreate(mockHandler);
+        stackActionHandlers.onTemplateValidationCreate(mockHandler);
 
         expect(connection.onRequest.calledWith(TemplateValidationCreateRequest.method)).toBe(true);
     });
 
     it('should register onTemplateDeploy handler', () => {
-        const mockHandler: RequestHandler<TemplateActionParams, TemplateActionResult, never> = vi.fn();
+        const mockHandler: RequestHandler<StackActionParams, StackActionResult, void> = vi.fn();
 
-        templateHandlers.onTemplateDeploymentCreate(mockHandler);
+        stackActionHandlers.onTemplateDeploymentCreate(mockHandler);
 
         expect(connection.onRequest.calledWith(TemplateDeploymentCreateRequest.method)).toBe(true);
     });
 
     it('should register onTemplateValidatePoll handler', () => {
-        const mockHandler: RequestHandler<Identifiable, TemplateStatusResult, never> = vi.fn();
+        const mockHandler: RequestHandler<Identifiable, StackActionStatusResult, void> = vi.fn();
 
-        templateHandlers.onTemplateValidationStatus(mockHandler);
+        stackActionHandlers.onTemplateValidationStatus(mockHandler);
 
         expect(connection.onRequest.calledWith(TemplateValidationStatusRequest.method)).toBe(true);
     });
 
     it('should register onTemplateDeployPoll handler', () => {
-        const mockHandler: RequestHandler<Identifiable, TemplateStatusResult, never> = vi.fn();
+        const mockHandler: RequestHandler<Identifiable, StackActionStatusResult, void> = vi.fn();
 
-        templateHandlers.onTemplateDeploymentStatus(mockHandler);
+        stackActionHandlers.onTemplateDeploymentStatus(mockHandler);
 
         expect(connection.onRequest.calledWith(TemplateDeploymentStatusRequest.method)).toBe(true);
     });

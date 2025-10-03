@@ -1,36 +1,38 @@
 import { Connection, RequestHandler } from 'vscode-languageserver';
 import {
-    TemplateActionParams,
-    TemplateActionResult,
     TemplateValidationCreateRequest,
     TemplateDeploymentCreateRequest,
     TemplateDeploymentStatusRequest,
-    TemplateStatusResult,
     TemplateValidationStatusRequest,
-    TemplateMetadataParams,
-    GetParametersRequest,
-    GetParametersResult,
     GetCapabilitiesRequest,
+    GetParametersRequest,
+} from '../stackActions/StackActionProtocol';
+import {
+    TemplateMetadataParams,
+    StackActionParams,
+    StackActionResult,
+    StackActionStatusResult,
+    GetParametersResult,
     GetCapabilitiesResult,
-} from '../templates/TemplateRequestType';
+} from '../stackActions/StackActionRequestType';
 import { Identifiable } from './LspTypes';
 
-export class LspTemplateHandlers {
+export class LspStackActionHandlers {
     constructor(private readonly connection: Connection) {}
 
-    onTemplateValidationCreate(handler: RequestHandler<TemplateActionParams, TemplateActionResult, void>) {
+    onTemplateValidationCreate(handler: RequestHandler<StackActionParams, StackActionResult, void>) {
         this.connection.onRequest(TemplateValidationCreateRequest.method, handler);
     }
 
-    onTemplateDeploymentCreate(handler: RequestHandler<TemplateActionParams, TemplateActionResult, void>) {
+    onTemplateDeploymentCreate(handler: RequestHandler<StackActionParams, StackActionResult, void>) {
         this.connection.onRequest(TemplateDeploymentCreateRequest.method, handler);
     }
 
-    onTemplateValidationStatus(handler: RequestHandler<Identifiable, TemplateStatusResult, void>) {
+    onTemplateValidationStatus(handler: RequestHandler<Identifiable, StackActionStatusResult, void>) {
         this.connection.onRequest(TemplateValidationStatusRequest.method, handler);
     }
 
-    onTemplateDeploymentStatus(handler: RequestHandler<Identifiable, TemplateStatusResult, void>) {
+    onTemplateDeploymentStatus(handler: RequestHandler<Identifiable, StackActionStatusResult, void>) {
         this.connection.onRequest(TemplateDeploymentStatusRequest.method, handler);
     }
 
