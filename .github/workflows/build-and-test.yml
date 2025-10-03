@@ -20,6 +20,25 @@ on:
         required: true
         type: string
 
+  workflow_dispatch:
+    inputs:
+      runs-on:
+        description: 'The runner environment for the job (e.g., ubuntu-latest, windows-latest).'
+        required: false
+        type: string
+        default: 'ubuntu-latest'
+
+      arch:
+        description: 'The architecture to target (e.g., "x64").'
+        required: false
+        type: string
+        default: 'x64'
+
+      ref:
+        description: 'The Git ref to checkout.'
+        required: true
+        type: string
+
 jobs:
   get-configs:
     uses: ./.github/workflows/configs.yml
@@ -37,7 +56,7 @@ jobs:
         shell: bash
         run: echo "Building from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
-      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ runner.os }}-${{ runner.arch }})
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ runner.os }}-${{ inputs.arch }})
         uses: actions/setup-node@v4
         with:
           node-version: ${{ needs.get-configs.outputs.node-version }}
