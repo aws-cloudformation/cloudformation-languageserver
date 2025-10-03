@@ -414,6 +414,9 @@ export abstract class SyntaxTree {
         const lastCharNode = this.tree.rootNode.namedDescendantForPosition({ row: point.row, column: lastCharIndex });
 
         if (NodeType.isNodeType(lastCharNode, YamlNodeTypes.BLOCK_MAPPING_PAIR)) {
+            if (point.column === lastCharNode.endPosition.column) {
+                return lastCharNode;
+            }
             const syntheticValue = createSyntheticNode('', point, point, lastCharNode);
             syntheticValue.type = CommonNodeTypes.SYNTHETIC_VALUE;
             syntheticValue.grammarType = CommonNodeTypes.SYNTHETIC_VALUE;
