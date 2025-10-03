@@ -1486,6 +1486,25 @@ Resources:
             expect(node).toBeDefined();
             expect(node.type).toBe(CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE);
         });
+
+        it('should return Key for cursor after being in a mapping', () => {
+            const template = `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties: {
+      
+    }`;
+            const tree = createSyntaxTree(template, DocumentType.YAML);
+            // Position after the dash (where cursor would be)
+            const node = tree.getNodeAtPosition({ line: 4, character: 6 });
+            expect(node).toBeDefined();
+            expect(node.type).toBe(CommonNodeTypes.SYNTHETIC_KEY);
+
+            // Validate the path is correct
+            const pathInfo = tree.getPathAndEntityInfo(node);
+            expect(pathInfo).toBeDefined();
+            expect(pathInfo.propertyPath).toStrictEqual(['Resources', 'Bucket', 'Properties', '']);
+        });
     });
 
     describe('topLevelSections', () => {

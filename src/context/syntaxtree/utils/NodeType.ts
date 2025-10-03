@@ -48,6 +48,11 @@ export class NodeType {
         return types.includes(node.type);
     }
 
+    public static isScalarNode(node: SyntaxNode, documentType: DocumentType): boolean {
+        const set = documentType === DocumentType.JSON ? JSON_NODE_SETS.scalar : YAML_NODE_SETS.scalar;
+        return set.has(node.type);
+    }
+
     public static isNotNodeType(node: SyntaxNode, ...types: string[]) {
         if (types.length === 1) {
             return node.type !== types[0];

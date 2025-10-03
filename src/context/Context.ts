@@ -18,6 +18,7 @@ import { NodeType } from './syntaxtree/utils/NodeType';
 import { YamlNodeTypes, CommonNodeTypes } from './syntaxtree/utils/TreeSitterTypes';
 
 export type SectionType = TopLevelSection | 'Unknown';
+export type QuoteCharacter = '"' | "'";
 
 export class Context {
     public readonly section: SectionType;
@@ -94,6 +95,16 @@ export class Context {
         );
     }
 
+    public textInQuotes(): QuoteCharacter | undefined {
+        if (NodeType.isNodeType(this.node, YamlNodeTypes.DOUBLE_QUOTE_SCALAR)) {
+            return '"';
+        } else if (NodeType.isNodeType(this.node, YamlNodeTypes.SINGLE_QUOTE_SCALAR)) {
+            return "'";
+        }
+
+        return undefined;
+    }
+
     public isValue() {
         // SYNTHETIC_KEY_OR_VALUE can be both key and value
         if (NodeType.isNodeType(this.node, CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE)) {
@@ -121,7 +132,10 @@ export class Context {
         // Find the parent block_mapping_pair node to get the key position
         let current = this.node.parent;
         while (current) {
-            if (NodeType.isNodeType(current, YamlNodeTypes.BLOCK_MAPPING_PAIR)) {
+            // if we are in a FLOW (nested JSON) then just return FALSE because this doesn't apply
+            if (NodeType.isNodeType(current, YamlNodeTypes.FLOW_MAPPING, YamlNodeTypes.FLOW_SEQUENCE)) {
+                return false;
+            } else if (NodeType.isNodeType(current, YamlNodeTypes.BLOCK_MAPPING_PAIR)) {
                 // If current node starts on a different row than the key, it could be a new key
                 return current.startPosition.row < this.node.startPosition.row;
             }
@@ -252,6 +266,7 @@ export class Context {
             section: this.section,
             logicalId: this.logicalId,
             text: this.text,
+            nodeType: this.node.type,
             propertyPath: this.propertyPath,
             entitySection: this.entitySection,
             metadata: `isTopLevel=${this.isTopLevel}, isResourceType=${this.isResourceType}, isIntrinsicFunction=${this.isIntrinsicFunc}, isPseudoParameter=${this.isPseudoParameter}, isResourceAttribute=${this.isResourceAttribute}`,
@@ -259,6 +274,8 @@ export class Context {
             root: { start: this.entityRootNode?.startPosition, end: this.entityRootNode?.endPosition },
             entity: this.entity,
             intrinsicContext: this.intrinsicContext.record(),
+            isKey: this.isKey(),
+            isValue: this.isValue(),
         };
     }
 }

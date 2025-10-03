@@ -1,5 +1,5 @@
 import Fuse, { IFuseOptions } from 'fuse.js';
-import { CompletionItem, InsertTextFormat } from 'vscode-languageserver';
+import { CompletionItem } from 'vscode-languageserver';
 
 export type FuzzySearchFunction = (items: CompletionItem[], query: string) => CompletionItem[];
 
@@ -28,9 +28,6 @@ export function fuzzySearch(
         const item = result.item;
         item.sortText = index < 10 ? `0${index}` : String(index);
         item.preselect = index === 0;
-        if (item.insertTextFormat !== InsertTextFormat.Snippet) {
-            item.filterText = query;
-        }
 
         return item;
     });

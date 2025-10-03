@@ -13,6 +13,7 @@ import { CfnValue } from '../context/semantic/SemanticTypes';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceStateManager } from '../resourceState/ResourceStateManager';
+import { ResourceStatePurpose } from '../resourceState/ResourceStateTypes';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { TransformersUtil } from '../schema/transformers/TransformersUtil';
@@ -25,7 +26,7 @@ import { createCompletionItem, handleSnippetJsonQuotes } from './CompletionUtils
 const log = LoggerFactory.getLogger('ResourceStateCompletionProvider');
 
 export class ResourceStateCompletionProvider implements CompletionProvider, Configurable, Closeable {
-    private readonly transformers = TransformersUtil.createTransformers();
+    private readonly transformers = TransformersUtil.createTransformers(ResourceStatePurpose.IMPORT);
     private editorSettings: EditorSettings = DefaultSettings.editor;
     private editorSettingsSubscription?: SettingsSubscription;
 

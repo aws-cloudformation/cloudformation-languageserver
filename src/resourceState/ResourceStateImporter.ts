@@ -17,6 +17,7 @@ import {
     ResourceIdentifier,
     ResourceSelection,
     ResourceStateParams,
+    ResourceStatePurpose,
     ResourceStateResult,
     ResourceTemplateFormat,
     ResourceType,
@@ -30,7 +31,9 @@ interface ResourcesSection {
 const log = LoggerFactory.getLogger('ResourceStateImporter');
 
 export class ResourceStateImporter {
-    private readonly transformers = TransformersUtil.createTransformers();
+    private readonly importTransformers = TransformersUtil.createTransformers(ResourceStatePurpose.IMPORT);
+    private readonly cloneTransformers = TransformersUtil.createTransformers(ResourceStatePurpose.CLONE);
+
     constructor(
         private readonly documentManager: DocumentManager,
         private readonly syntaxTreeManager: SyntaxTreeManager,
@@ -40,7 +43,7 @@ export class ResourceStateImporter {
     ) {}
 
     public async importResourceState(params: ResourceStateParams): Promise<ResourceStateResult> {
-        const { resourceSelections, textDocument } = params;
+        const { resourceSelections, textDocument, purpose } = params;
         if (!resourceSelections) {
             return this.getFailureResponse('No resources selected for import.');
         }
@@ -55,7 +58,11 @@ export class ResourceStateImporter {
             return this.getFailureResponse('Import failed. Syntax tree not found');
         }
 
-        const { fetchedResourceStates, importResult } = await this.getResourceStates(resourceSelections, syntaxTree);
+        const { fetchedResourceStates, importResult } = await this.getResourceStates(
+            resourceSelections,
+            syntaxTree,
+            purpose,
+        );
         const resourceSection = this.getResourceSection(syntaxTree);
         const insertPosition = this.getInsertPosition(resourceSection, document);
         const docFormattedText = this.combineResourcesToDocumentFormat(
@@ -86,6 +93,7 @@ export class ResourceStateImporter {
     private async getResourceStates(
         resourceSelections: ResourceSelection[],
         syntaxTree: SyntaxTree,
+        purpose: ResourceStatePurpose,
     ): Promise<{ fetchedResourceStates: ResourceTemplateFormat[]; importResult: ResourceStateResult }> {
         const fetchedResourceStates: ResourceTemplateFormat[] = [];
         const importResult: ResourceStateResult = {
@@ -120,11 +128,8 @@ export class ResourceStateImporter {
                         fetchedResourceStates.push({
                             [logicalId]: {
                                 Type: resourceType,
-                                Properties: this.applyTransformations(resourceState.properties, schema),
-                                Metadata: {
-                                    PrimaryIdentifier: resourceIdentifier,
-                                    ...(await this.getStackManagementMetadata(resourceIdentifier)),
-                                },
+                                Properties: this.applyTransformations(resourceState.properties, schema, purpose),
+                                Metadata: await this.createMetadata(resourceIdentifier, purpose),
                             },
                         });
                     } else {
@@ -220,11 +225,17 @@ export class ResourceStateImporter {
         }
     }
 
-    private applyTransformations(properties: string, schema: ResourceSchema): Record<string, string> {
+    private applyTransformations(
+        properties: string,
+        schema: ResourceSchema,
+        purpose: ResourceStatePurpose,
+    ): Record<string, string> {
         const propertiesObj = JSON.parse(properties) as Record<string, string>;
 
         if (schema) {
-            for (const transformer of this.transformers) {
+            const transformers =
+                purpose === ResourceStatePurpose.CLONE ? this.cloneTransformers : this.importTransformers;
+            for (const transformer of transformers) {
                 transformer.transform(propertiesObj, schema);
             }
         }
@@ -277,6 +288,19 @@ export class ResourceStateImporter {
             position: { line: document.lineCount, character: 0 },
             commaPrefixNeeded: false,
             newLineSuffixNeeded: false,
+        };
+    }
+
+    private async createMetadata(resourceIdentifier: string, purpose?: ResourceStatePurpose) {
+        if (purpose === ResourceStatePurpose.CLONE) {
+            return {
+                PrimaryIdentifier: `<CLONE>${resourceIdentifier}`,
+            };
+        }
+
+        return {
+            PrimaryIdentifier: resourceIdentifier,
+            ...(await this.getStackManagementMetadata(resourceIdentifier)),
         };
     }
 

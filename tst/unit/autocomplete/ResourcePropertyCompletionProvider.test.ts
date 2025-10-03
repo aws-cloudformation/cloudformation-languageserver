@@ -753,6 +753,78 @@ describe('ResourcePropertyCompletionProvider', () => {
         expect(valueItem!.kind).toBe(CompletionItemKind.Property);
     });
 
+    test('should handle double quoted property names in YAML', () => {
+        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
+        const mockSchemas = new Map<string, ResourceSchema>();
+        mockSchemas.set('AWS::S3::Bucket', mockSchema);
+
+        const combinedSchemas = new CombinedSchemas();
+        Object.defineProperty(combinedSchemas, 'schemas', {
+            get: () => mockSchemas,
+        });
+        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+
+        const mockContext = createResourceContext('MyBucket', {
+            text: `"Bucket"`,
+            propertyPath: ['Resources', 'MyBucket', 'Properties', 'Bucket'],
+            data: {
+                Type: 'AWS::S3::Bucket',
+                Properties: {},
+            },
+            nodeType: 'double_quote_scalar', // Simulate double quoted context
+        });
+
+        const result = provider.getCompletions(mockContext, mockParams);
+
+        expect(result).toBeDefined();
+        expect(result!.length).toBeGreaterThan(0);
+
+        // Find BucketName completion item
+        const bucketNameItem = result!.find((item) => item.label === 'BucketName');
+        expect(bucketNameItem).toBeDefined();
+
+        // Should have textEdit with quotes
+        expect(bucketNameItem!.textEdit).toBeDefined();
+        expect(bucketNameItem!.textEdit?.newText).toBe('"BucketName"');
+        expect(bucketNameItem!.filterText).toBe('"BucketName"');
+    });
+
+    test('should handle single quoted property names in YAML', () => {
+        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
+        const mockSchemas = new Map<string, ResourceSchema>();
+        mockSchemas.set('AWS::S3::Bucket', mockSchema);
+
+        const combinedSchemas = new CombinedSchemas();
+        Object.defineProperty(combinedSchemas, 'schemas', {
+            get: () => mockSchemas,
+        });
+        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+
+        const mockContext = createResourceContext('MyBucket', {
+            text: 'Bucket',
+            propertyPath: ['Resources', 'MyBucket', 'Properties', 'Bucket'],
+            data: {
+                Type: 'AWS::S3::Bucket',
+                Properties: {},
+            },
+            nodeType: 'single_quote_scalar', // Simulate single quoted context
+        });
+
+        const result = provider.getCompletions(mockContext, mockParams);
+
+        expect(result).toBeDefined();
+        expect(result!.length).toBeGreaterThan(0);
+
+        // Find BucketName completion item
+        const bucketNameItem = result!.find((item) => item.label === 'BucketName');
+        expect(bucketNameItem).toBeDefined();
+
+        // Should have textEdit with single quotes
+        expect(bucketNameItem!.textEdit).toBeDefined();
+        expect(bucketNameItem!.textEdit?.newText).toBe("'BucketName'");
+        expect(bucketNameItem!.filterText).toBe("'BucketName'");
+    });
+
     // Enum Value Completion Tests (migrated from ResourceEnumValueCompletionProvider)
     describe('Enum Value Completions', () => {
         const accessControlEnumValues = [
@@ -903,10 +975,10 @@ describe('ResourcePropertyCompletionProvider', () => {
         test('should return empty array when schema is not found for resource type in enum context', () => {
             const mockContext = createResourceContext('MyResource', {
                 text: '',
-                propertyPath: ['Resources', 'MyResource', 'Properties', 'SomeProperty', 'Value'],
+                propertyPath: ['Resources', 'MyResource', 'Properties', 'SomeProperty'],
                 data: {
                     Type: 'AWS::Unknown::Resource',
-                    Properties: { SomeProperty: {} },
+                    Properties: { SomeProperty: '' },
                 },
             });
             const testSchemas = combinedSchemas([]);
@@ -916,6 +988,62 @@ describe('ResourcePropertyCompletionProvider', () => {
 
             expect(result).toBeDefined();
             expect(result!.length).toBe(0);
+        });
+
+        test('should handle double quoted enum values in YAML', () => {
+            setupS3SchemaWithEnums();
+
+            const mockContext = createResourceContext('MyBucket', {
+                text: `"Pub"`,
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'AccessControl'],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: { AccessControl: '' },
+                },
+                nodeType: 'double_quote_scalar', // Simulate double quoted context
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(2); // PublicRead and PublicReadWrite
+
+            // Find PublicRead completion item
+            const publicReadItem = result!.find((item) => item.label === 'PublicRead');
+            expect(publicReadItem).toBeDefined();
+
+            // Should have textEdit with double quotes
+            expect(publicReadItem!.textEdit).toBeDefined();
+            expect(publicReadItem!.textEdit?.newText).toBe('"PublicRead"');
+            expect(publicReadItem!.filterText).toBe('"PublicRead"');
+        });
+
+        test('should handle single quoted enum values in YAML', () => {
+            setupS3SchemaWithEnums();
+
+            const mockContext = createResourceContext('MyBucket', {
+                text: `'Priv'`,
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'AccessControl'],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: { AccessControl: '' },
+                },
+                nodeType: 'single_quote_scalar', // Simulate single quoted context
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(1); // Only Private matches
+
+            // Find Private completion item
+            const privateItem = result!.find((item) => item.label === 'Private');
+            expect(privateItem).toBeDefined();
+
+            // Should have textEdit with single quotes
+            expect(privateItem!.textEdit).toBeDefined();
+            expect(privateItem!.textEdit?.newText).toBe("'Private'");
+            expect(privateItem!.filterText).toBe("'Private'");
         });
     });
 });

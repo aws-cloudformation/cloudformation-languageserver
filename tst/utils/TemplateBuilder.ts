@@ -67,6 +67,9 @@ class CompletionExpectation extends Expectation {
             detail?: string;
             documentation?: string;
             insertText?: string;
+            textEdit?: {
+                newText: string;
+            };
         };
     };
 }
@@ -493,6 +496,13 @@ export class TemplateBuilder {
                         expectAt(item.insertText, position, `InsertText mismatch for item '${label}'${desc}`).toBe(
                             details.insertText,
                         );
+                    }
+                    if (details.textEdit?.newText !== undefined) {
+                        expectAt(
+                            item.textEdit?.newText,
+                            position,
+                            `TextEdit NewText mismatch for item '${label}'${desc}`,
+                        ).toBe(details.textEdit?.newText);
                     }
                 }
             }

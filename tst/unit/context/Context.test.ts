@@ -591,4 +591,65 @@ Resources:
             expect(context!.atEntityKeyLevel()).toBe(false);
         });
     });
+
+    describe('textInQuotes method', () => {
+        // Create test templates with quoted values
+        const quotedYamlTemplate = `AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  TestResource:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      BucketName: "my-bucket"
+      Tags:
+        - Key: 'Environment'
+          Value: 'Production'`;
+
+        const quotedYamlUri = 'file:///quoted-test.yaml';
+
+        beforeAll(() => {
+            syntaxTreeManager.add(quotedYamlUri, quotedYamlTemplate);
+        });
+
+        it('should return double quote for double quoted values', () => {
+            // Position in "2010-09-09" (double quoted)
+            const context = getContextAt(0, 30, quotedYamlUri);
+            expect(context).toBeDefined();
+            expect(context!.textInQuotes()).toBe('"');
+        });
+
+        it('should return double quote for double quoted resource type', () => {
+            // Position in "AWS::S3::Bucket" (double quoted)
+            const context = getContextAt(3, 15, quotedYamlUri);
+            expect(context).toBeDefined();
+            expect(context!.textInQuotes()).toBe('"');
+        });
+
+        it('should return double quote for double quoted property value', () => {
+            // Position in "my-bucket" (double quoted)
+            const context = getContextAt(5, 20, quotedYamlUri);
+            expect(context).toBeDefined();
+            expect(context!.textInQuotes()).toBe('"');
+        });
+
+        it('should return single quote for single quoted values', () => {
+            // Position in 'Environment' (single quoted)
+            const context = getContextAt(7, 15, quotedYamlUri);
+            expect(context).toBeDefined();
+            expect(context!.textInQuotes()).toBe("'");
+        });
+
+        it('should return single quote for single quoted tag value', () => {
+            // Position in 'Production' (single quoted)
+            const context = getContextAt(8, 20, quotedYamlUri);
+            expect(context).toBeDefined();
+            expect(context!.textInQuotes()).toBe("'");
+        });
+
+        it('should return undefined for unquoted values', () => {
+            // Position in unquoted resource name
+            const context = getContextAt(2, 5, quotedYamlUri);
+            expect(context).toBeDefined();
+            expect(context!.textInQuotes()).toBeUndefined();
+        });
+    });
 });

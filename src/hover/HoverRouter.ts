@@ -13,6 +13,7 @@ import { HoverProvider } from './HoverProvider';
 import { IntrinsicFunctionArgumentHoverProvider } from './IntrinsicFunctionArgumentHoverProvider';
 import { IntrinsicFunctionHoverProvider } from './IntrinsicFunctionHoverProvider';
 import { MappingHoverProvider } from './MappingHoverProvider';
+import { OutputSectionFieldHoverProvider } from './OutputSectionFieldHoverProvider';
 import { ParameterAttributeHoverProvider } from './ParameterAttributeHoverProvider';
 import { ParameterHoverProvider } from './ParameterHoverProvider';
 import { PseudoParameterHoverProvider } from './PseudoParameterHoverProvider';
@@ -101,6 +102,11 @@ export class HoverRouter implements Configurable, Closeable {
             if (doc) {
                 return doc;
             }
+        } else if (context.section === TopLevelSection.Outputs && this.isOutputAttribute(context)) {
+            const doc = this.hoverProviderMap.get(HoverType.OutputSectionField)?.getInformation(context);
+            if (doc) {
+                return doc;
+            }
         }
 
         return this.getTopLevelReference(context);
@@ -112,6 +118,7 @@ export class HoverRouter implements Configurable, Closeable {
         hoverProviderMap.set(HoverType.ResourceSection, new ResourceSectionHoverProvider(schemaRetriever));
         hoverProviderMap.set(HoverType.Parameter, new ParameterHoverProvider());
         hoverProviderMap.set(HoverType.ParameterAttribute, new ParameterAttributeHoverProvider());
+        hoverProviderMap.set(HoverType.OutputSectionField, new OutputSectionFieldHoverProvider());
         hoverProviderMap.set(HoverType.PseudoParameter, new PseudoParameterHoverProvider());
         hoverProviderMap.set(HoverType.Condition, new ConditionHoverProvider());
         hoverProviderMap.set(HoverType.Mapping, new MappingHoverProvider());
@@ -126,6 +133,14 @@ export class HoverRouter implements Configurable, Closeable {
         }
 
         return ParameterAttributeHoverProvider.isParameterAttribute(context.text);
+    }
+
+    private isOutputAttribute(context: Context): boolean {
+        if (context.section !== TopLevelSection.Outputs) {
+            return false;
+        }
+
+        return OutputSectionFieldHoverProvider.isOutputSectionField(context.text);
     }
 
     private getTopLevelReference(context: ContextWithRelatedEntities): string | undefined {
@@ -170,6 +185,7 @@ enum HoverType {
     IntrinsicFunctionArgument,
     Parameter,
     ParameterAttribute,
+    OutputSectionField,
     PseudoParameter,
     Condition,
     Mapping,

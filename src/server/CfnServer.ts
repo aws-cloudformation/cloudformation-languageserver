@@ -30,6 +30,7 @@ import {
     templateValidationStatusHandler,
     templateDeploymentStatusHandler,
     templateParametersHandler,
+    templateCapabilitiesHandler,
 } from '../handlers/TemplateHandler';
 import { LspFeatures } from '../protocol/LspConnection';
 import { ServerComponents } from './ServerComponents';
@@ -69,6 +70,7 @@ export class CfnServer {
         this.features.authHandlers.onSsoTokenChanged(ssoTokenChangedHandler(this.components));
 
         this.features.templateHandlers.onGetParameters(templateParametersHandler(this.components));
+        this.features.templateHandlers.onGetCapabilities(templateCapabilitiesHandler(this.components));
         this.features.templateHandlers.onTemplateValidationCreate(templateValidationCreateHandler(this.components));
         this.features.templateHandlers.onTemplateDeploymentCreate(templateDeploymentCreateHandler(this.components));
         this.features.templateHandlers.onTemplateValidationStatus(templateValidationStatusHandler(this.components));
