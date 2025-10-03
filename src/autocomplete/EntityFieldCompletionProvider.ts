@@ -8,9 +8,6 @@ import { createCompletionItem } from './CompletionUtils';
 
 export class EntityFieldCompletionProvider<T extends Entity> implements CompletionProvider {
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] {
-        if (!context.isKey()) {
-            return [];
-        }
         const entity = context.entity as T;
 
         const items = this.getFieldsAsCompletionItems(entity);
