@@ -1,6 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
 import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
+import { IntrinsicFunction } from '../../context/ContextType';
 
 /**
  * Analyzes CloudFormation template syntax nodes to identify extractable literal values.
@@ -143,40 +144,23 @@ export class LiteralValueDetector {
     }
 
     private isIntrinsicFunctionName(name: string): boolean {
-        const intrinsicFunctions = [
-            'Ref',
-            'Fn::GetAtt',
-            'GetAtt', // YAML allows short forms without Fn:: prefix
-            'Fn::Join',
-            'Join',
-            'Fn::Sub',
-            'Sub',
-            'Fn::Base64',
-            'Base64',
-            'Fn::GetAZs',
-            'GetAZs',
-            'Fn::ImportValue',
-            'ImportValue',
-            'Fn::Select',
-            'Select',
-            'Fn::Split',
-            'Split',
-            'Fn::FindInMap',
-            'FindInMap',
-            'Fn::Equals',
-            'Equals',
-            'Fn::If',
-            'If',
-            'Fn::Not',
-            'Not',
-            'Fn::And',
-            'And',
-            'Fn::Or',
-            'Or',
-            'Condition',
-        ];
+        // Check full function names from enum
+        if (Object.values(IntrinsicFunction).includes(name as IntrinsicFunction)) {
+            return true;
+        }
 
-        return intrinsicFunctions.includes(name);
+        // Check short forms (YAML allows forms without Fn:: prefix)
+        const shortFormName = `Fn::${name}`;
+        if (Object.values(IntrinsicFunction).includes(shortFormName as IntrinsicFunction)) {
+            return true;
+        }
+
+        // Special case: Condition is also treated as an intrinsic function context
+        if (name === 'Condition') {
+            return true;
+        }
+
+        return false;
     }
 
     private isReferenceFunctionName(name: string): boolean {
