@@ -68,6 +68,7 @@ export function didChangeHandler(components: ServerComponents): NotificationHand
         const content = textDocument.getText();
         const changes = params.contentChanges;
         try {
+            let hasFullDocumentChange = false;
             for (const change of changes) {
                 if ('range' in change) {
                     // This is an incremental change with a specific range
@@ -82,7 +83,13 @@ export function didChangeHandler(components: ServerComponents): NotificationHand
 
                     const { edit } = createEdit(content, change.text, start, end);
                     updateSyntaxTree(components.syntaxTreeManager, textDocument, edit);
+                } else {
+                    hasFullDocumentChange = true;
                 }
+            }
+
+            if (hasFullDocumentChange) {
+                components.syntaxTreeManager.add(documentUri, content);
             }
         } catch (error) {
             log.error({ error: extractErrorMessage(error), uri: documentUri }, 'Error updating tree');

@@ -1,6 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import {
     CodeAction,
+    CodeActionKind,
     CodeActionParams,
     Command,
     Diagnostic,
@@ -8,18 +9,22 @@ import {
     TextEdit,
     WorkspaceEdit,
 } from 'vscode-languageserver';
+import { Context } from '../context/Context';
+import { ContextManager } from '../context/ContextManager';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeSearch } from '../context/syntaxtree/utils/NodeSearch';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
 import { ANALYZE_DIAGNOSTIC } from '../handlers/ExecutionHandler';
 import { ServerComponents } from '../server/ServerComponents';
+import { SettingsManager } from '../settings/SettingsManager';
 import { ClientMessage } from '../telemetry/ClientMessage';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { CFN_VALIDATION_SOURCE } from '../templates/ValidationWorkflow';
 import { extractErrorMessage } from '../utils/Errors';
 import { pointToPosition } from '../utils/TypeConverters';
 import { DiagnosticCoordinator } from './DiagnosticCoordinator';
+import { ExtractToParameterProvider } from './extractToParameter/ExtractToParameterProvider';
 
 export interface CodeActionFix {
     title: string;
@@ -38,6 +43,9 @@ export class CodeActionService {
         private readonly documentManager: DocumentManager,
         private readonly clientMessage: ClientMessage,
         private readonly diagnosticCoordinator: DiagnosticCoordinator,
+        private readonly settingsManager: SettingsManager,
+        private readonly contextManager?: ContextManager,
+        private readonly extractToParameterProvider?: ExtractToParameterProvider,
     ) {}
 
     /**
@@ -71,7 +79,11 @@ export class CodeActionService {
             codeActions.push(this.generateAIAnalysisAction(params.textDocument.uri, params.context.diagnostics));
         }
 
-        this.log.debug(`Generated ${codeActions.length} code actions`);
+        if (this.shouldOfferRefactorActions(params)) {
+            const refactorActions = this.generateRefactorActions(params);
+            codeActions.push(...refactorActions);
+        }
+
         return codeActions;
     }
 
@@ -484,12 +496,174 @@ export class CodeActionService {
         return match ? match[1] : undefined;
     }
 
+    /**
+     * Determines whether refactor actions should be offered based on the code action request context.
+     *
+     * If the client has specified a filter (params.context.only), we only offer refactor actions
+     * when the client explicitly requests Refactor or RefactorExtract actions. This prevents showing refactor
+     * actions when the client only wants quickfixes or other specific action types.
+     *
+     * If no filter is specified, we always offer refactor actions as they're generally useful.
+     */
+    private shouldOfferRefactorActions(params: CodeActionParams): boolean {
+        const shouldOffer = params.context.only
+            ? params.context.only.includes(CodeActionKind.Refactor) ||
+              params.context.only.includes(CodeActionKind.RefactorExtract)
+            : true;
+
+        return shouldOffer;
+    }
+
+    private generateRefactorActions(params: CodeActionParams): CodeAction[] {
+        const refactorActions: CodeAction[] = [];
+
+        try {
+            if (!this.contextManager || !this.extractToParameterProvider) {
+                return refactorActions;
+            }
+
+            const document = this.documentManager.get(params.textDocument.uri);
+            if (!document) {
+                return refactorActions;
+            }
+
+            const context = this.contextManager.getContext({
+                textDocument: params.textDocument,
+                position: params.range.start,
+            });
+
+            if (!context) {
+                return refactorActions;
+            }
+
+            const canExtract = this.extractToParameterProvider.canExtract(context);
+
+            if (canExtract) {
+                const extractAction = this.generateExtractToParameterAction(params, context);
+                if (extractAction) {
+                    refactorActions.push(extractAction);
+                }
+
+                const hasMultiple = this.extractToParameterProvider.hasMultipleOccurrences(context);
+
+                if (hasMultiple) {
+                    const extractAllAction = this.generateExtractAllOccurrencesToParameterAction(params, context);
+                    if (extractAllAction) {
+                        refactorActions.push(extractAllAction);
+                    }
+                }
+            }
+        } catch (error) {
+            this.clientMessage.error(`Error generating refactor actions: ${extractErrorMessage(error)}`);
+        }
+
+        return refactorActions;
+    }
+
+    private generateExtractToParameterAction(params: CodeActionParams, context: Context): CodeAction | undefined {
+        try {
+            if (!this.extractToParameterProvider) {
+                return undefined;
+            }
+
+            const editorSettings = this.settingsManager.getCurrentSettings().editor;
+
+            const extractionResult = this.extractToParameterProvider.generateExtraction(
+                context,
+                params.range,
+                editorSettings,
+                params.textDocument.uri,
+            );
+
+            if (!extractionResult) {
+                return undefined;
+            }
+
+            const workspaceEdit: WorkspaceEdit = {
+                changes: {
+                    [params.textDocument.uri]: [
+                        extractionResult.parameterInsertionEdit,
+                        extractionResult.replacementEdit,
+                    ],
+                },
+            };
+
+            return {
+                title: 'Extract to Parameter',
+                kind: CodeActionKind.RefactorExtract,
+                edit: workspaceEdit,
+                command: {
+                    title: 'Position cursor in parameter description',
+                    command: 'aws.cloudformation.extractToParameter.positionCursor',
+                    arguments: [params.textDocument.uri, extractionResult.parameterName, context.documentType],
+                },
+            };
+        } catch (error) {
+            this.clientMessage.error(`Error generating extract to parameter action: ${extractErrorMessage(error)}`);
+            return undefined;
+        }
+    }
+
+    private generateExtractAllOccurrencesToParameterAction(
+        params: CodeActionParams,
+        context: Context,
+    ): CodeAction | undefined {
+        try {
+            if (!this.extractToParameterProvider) {
+                return undefined;
+            }
+
+            const editorSettings = this.settingsManager.getCurrentSettings().editor;
+
+            const extractionResult = this.extractToParameterProvider.generateAllOccurrencesExtraction(
+                context,
+                params.range,
+                editorSettings,
+                params.textDocument.uri,
+            );
+
+            if (!extractionResult) {
+                return undefined;
+            }
+
+            const allEdits = [extractionResult.parameterInsertionEdit, ...extractionResult.replacementEdits];
+
+            const workspaceEdit: WorkspaceEdit = {
+                changes: {
+                    [params.textDocument.uri]: allEdits,
+                },
+            };
+
+            return {
+                title: 'Extract All Occurrences to Parameter',
+                kind: CodeActionKind.RefactorExtract,
+                edit: workspaceEdit,
+                command: {
+                    title: 'Position cursor in parameter description',
+                    command: 'aws.cloudformation.extractToParameter.positionCursor',
+                    arguments: [params.textDocument.uri, extractionResult.parameterName, context.documentType],
+                },
+            };
+        } catch (error) {
+            this.clientMessage.error(
+                `Error generating extract all occurrences to parameter action: ${extractErrorMessage(error)}`,
+            );
+            return undefined;
+        }
+    }
+
     static create(components: ServerComponents) {
+        const contextManager = new ContextManager(components.syntaxTreeManager);
+        const extractToParameterProvider = new ExtractToParameterProvider(components.syntaxTreeManager);
+
         return new CodeActionService(
             components.syntaxTreeManager,
             components.documentManager,
             components.clientMessage,
             components.diagnosticCoordinator,
+            components.settingsManager,
+            contextManager,
+            extractToParameterProvider,
         );
     }
 }

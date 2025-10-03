@@ -75,6 +75,10 @@ export class Context {
         return this.node.endPosition;
     }
 
+    public get syntaxNode() {
+        return this.node;
+    }
+
     public getRootEntityText() {
         return this.entityRootNode?.text;
     }

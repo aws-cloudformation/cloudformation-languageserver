@@ -8,6 +8,7 @@ import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeMan
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CodeActionService } from '../../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
+import { SettingsManager } from '../../../src/settings/SettingsManager';
 import { ClientMessage } from '../../../src/telemetry/ClientMessage';
 import { CFN_VALIDATION_SOURCE } from '../../../src/templates/ValidationWorkflow';
 import { createMockClientMessage } from '../../utils/MockServerComponents';
@@ -26,11 +27,13 @@ describe('CodeActionService', () => {
         mockDocumentManager = stubInterface<DocumentManager>();
         mockSyntaxTree = stubInterface<SyntaxTree>();
         const mockDiagnosticCoordinator = stubInterface<DiagnosticCoordinator>();
+        const mockSettingsManager = stubInterface<SettingsManager>();
         codeActionService = new CodeActionService(
             mockSyntaxTreeManager,
             mockDocumentManager,
             mockLog,
             mockDiagnosticCoordinator,
+            mockSettingsManager,
         );
     });
 
