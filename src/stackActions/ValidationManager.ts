@@ -1,4 +1,4 @@
-import { TemplateChange } from './TemplateRequestType';
+import { StackChange } from './StackActionRequestType';
 import { Validation } from './Validation';
 
 export class ValidationManager {
@@ -12,7 +12,7 @@ export class ValidationManager {
         return this.validations.get(stackName);
     }
 
-    setChanges(stackName: string, changes: TemplateChange[]): void {
+    setChanges(stackName: string, changes: StackChange[]): void {
         const validation = this.validations.get(stackName);
         if (validation) {
             validation.setChanges(changes);

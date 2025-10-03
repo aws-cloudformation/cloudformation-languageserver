@@ -14,8 +14,8 @@ import { LspDiagnostics } from './LspDiagnostics';
 import { LspDocuments } from './LspDocuments';
 import { LspHandlers } from './LspHandlers';
 import { LspResourceHandlers } from './LspResourceHandlers';
-import { LspStackHandlers } from './LspStackHandlers';
-import { LspTemplateHandlers } from './LspTemplateHandlers';
+import { LspStackActionHandlers } from './LspStackActionHandlers';
+import { LspStackQueryHandlers } from './LspStackQueryHandlers';
 import { LspWorkspace } from './LspWorkspace';
 
 type LspConnectionHandlers = {
@@ -32,8 +32,8 @@ export type LspFeatures = {
     communication: LspCommunication;
     handlers: LspHandlers;
     authHandlers: LspAuthHandlers;
-    templateHandlers: LspTemplateHandlers;
-    stackHandlers: LspStackHandlers;
+    stackActionHandlers: LspStackActionHandlers;
+    stackQueryHandlers: LspStackQueryHandlers;
     resourceHandlers: LspResourceHandlers;
 };
 
@@ -44,8 +44,8 @@ export class LspConnection {
     private readonly communication: LspCommunication;
     private readonly handlers: LspHandlers;
     private readonly authHandlers: LspAuthHandlers;
-    private readonly templateHandlers: LspTemplateHandlers;
-    private readonly stackHandlers: LspStackHandlers;
+    private readonly stackActionHandlers: LspStackActionHandlers;
+    private readonly stackHandlers: LspStackQueryHandlers;
     private readonly resourceHandlers: LspResourceHandlers;
 
     private initializeParams?: InitializeParams;
@@ -67,8 +67,8 @@ export class LspConnection {
         this.communication = new LspCommunication(this.connection);
         this.handlers = new LspHandlers(this.connection);
         this.authHandlers = new LspAuthHandlers(this.connection);
-        this.templateHandlers = new LspTemplateHandlers(this.connection);
-        this.stackHandlers = new LspStackHandlers(this.connection);
+        this.stackActionHandlers = new LspStackActionHandlers(this.connection);
+        this.stackHandlers = new LspStackQueryHandlers(this.connection);
         this.resourceHandlers = new LspResourceHandlers(this.connection);
 
         this.communication.console.info(`${ExtensionName} launched from ${__dirname}`);
@@ -104,8 +104,8 @@ export class LspConnection {
             communication: this.communication,
             handlers: this.handlers,
             authHandlers: this.authHandlers,
-            templateHandlers: this.templateHandlers,
-            stackHandlers: this.stackHandlers,
+            stackActionHandlers: this.stackActionHandlers,
+            stackQueryHandlers: this.stackHandlers,
             resourceHandlers: this.resourceHandlers,
         };
     }

@@ -1,11 +1,11 @@
 import { StackSummary, StackStatus } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, vi } from 'vitest';
 import { CancellationToken, ResultProgressReporter, WorkDoneProgressReporter } from 'vscode-languageserver';
-import { listStacksHandler } from '../../../src/handlers/StackHandler';
+import { listStacksHandler } from '../../../src/handlers/StackQueryHandler';
+import { GetParametersResult } from '../../../src/stackActions/StackActionRequestType';
 import { ListStacksParams, ListStacksResult } from '../../../src/stacks/StackRequestType';
-import { GetParametersResult } from '../../../src/templates/TemplateRequestType';
 
-describe('StackHandler', () => {
+describe('StackQueryHandler', () => {
     const mockParams = {} as ListStacksParams;
     const mockToken = {} as CancellationToken;
     const mockWorkDoneProgress = {} as WorkDoneProgressReporter;

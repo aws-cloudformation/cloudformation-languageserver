@@ -4,18 +4,18 @@ import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { CfnService } from '../services/CfnService';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { processChangeSet, waitForValidation, waitForDeployment } from './StackActionOperations';
 import {
-    TemplateActionParams,
-    TemplateActionResult,
-    TemplateStatus,
-    WorkflowResult,
-    TemplateStatusResult,
-} from './TemplateRequestType';
-import { processChangeSet, waitForValidation, waitForDeployment } from './TemplateWorkflowOperations';
-import { TemplateWorkflowState, TemplateWorkflow } from './TemplateWorkflowType';
+    StackActionParams,
+    StackActionResult,
+    StackActionPhase,
+    StackActionStatus,
+    StackActionStatusResult,
+} from './StackActionRequestType';
+import { StackActionWorkflowState, StackActionWorkflow } from './StackActionWorkflowType';
 
-export class DeploymentWorkflow implements TemplateWorkflow {
-    private readonly workflows = new Map<string, TemplateWorkflowState>();
+export class DeploymentWorkflow implements StackActionWorkflow {
+    private readonly workflows = new Map<string, StackActionWorkflowState>();
     private readonly log = LoggerFactory.getLogger(DeploymentWorkflow);
 
     constructor(
@@ -27,7 +27,7 @@ export class DeploymentWorkflow implements TemplateWorkflow {
         return new DeploymentWorkflow(components.cfnService, components.documentManager);
     }
 
-    async start(params: TemplateActionParams): Promise<TemplateActionResult> {
+    async start(params: StackActionParams): Promise<StackActionResult> {
         // Check if stack exists to determine CREATE vs UPDATE
         let changeSetType: ChangeSetType = ChangeSetType.CREATE;
         try {
@@ -44,9 +44,9 @@ export class DeploymentWorkflow implements TemplateWorkflow {
             id: params.id,
             changeSetName: changeSetName,
             stackName: params.stackName,
-            status: TemplateStatus.VALIDATION_IN_PROGRESS,
+            phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            result: WorkflowResult.IN_PROGRESS,
+            status: StackActionStatus.IN_PROGRESS,
         });
 
         void this.runDeploymentAsync(params.id, changeSetName, params.stackName, changeSetType);
@@ -58,15 +58,15 @@ export class DeploymentWorkflow implements TemplateWorkflow {
         };
     }
 
-    getStatus(params: Identifiable): TemplateStatusResult {
+    getStatus(params: Identifiable): StackActionStatusResult {
         const workflow = this.workflows.get(params.id);
         if (!workflow) {
             throw new Error(`Workflow not found: ${params.id}`);
         }
 
         return {
+            phase: workflow.phase,
             status: workflow.status,
-            result: workflow.result,
             changes: workflow.changes,
             id: workflow.id,
         };
@@ -90,19 +90,19 @@ export class DeploymentWorkflow implements TemplateWorkflow {
 
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
+                phase: validationResult.phase,
                 status: validationResult.status,
-                result: validationResult.result,
                 changes: validationResult.changes,
             });
 
-            if (validationResult.result === WorkflowResult.FAILED) {
+            if (validationResult.status === StackActionStatus.FAILED) {
                 return;
             }
 
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
-                status: TemplateStatus.VALIDATION_COMPLETE,
-                result: WorkflowResult.IN_PROGRESS,
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                status: StackActionStatus.IN_PROGRESS,
                 changes: validationResult.changes,
             });
 
@@ -113,8 +113,8 @@ export class DeploymentWorkflow implements TemplateWorkflow {
 
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
-                status: TemplateStatus.DEPLOYMENT_IN_PROGRESS,
-                result: WorkflowResult.IN_PROGRESS,
+                phase: StackActionPhase.DEPLOYMENT_IN_PROGRESS,
+                status: StackActionStatus.IN_PROGRESS,
                 changes: validationResult.changes,
             });
 
@@ -122,16 +122,16 @@ export class DeploymentWorkflow implements TemplateWorkflow {
 
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
+                phase: deploymentResult.phase,
                 status: deploymentResult.status,
-                result: deploymentResult.result,
                 changes: validationResult.changes,
             });
         } catch (error) {
             this.log.error({ error, workflowId }, 'Deployment workflow failed');
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
-                status: validationResult ? TemplateStatus.DEPLOYMENT_FAILED : TemplateStatus.VALIDATION_FAILED,
-                result: WorkflowResult.FAILED,
+                phase: validationResult ? StackActionPhase.DEPLOYMENT_FAILED : StackActionPhase.VALIDATION_FAILED,
+                status: StackActionStatus.FAILED,
                 changes: validationResult?.changes,
             });
         }

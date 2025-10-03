@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Validation } from '../../../src/templates/Validation';
-import { ValidationManager } from '../../../src/templates/ValidationManager';
+import { Validation } from '../../../src/stackActions/Validation';
+import { ValidationManager } from '../../../src/stackActions/ValidationManager';
 
 describe('ValidationManager', () => {
     let manager: ValidationManager;

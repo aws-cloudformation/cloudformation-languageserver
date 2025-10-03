@@ -1,7 +1,7 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { TemplateStatus, WorkflowResult } from '../../../src/templates/TemplateRequestType';
-import { ValidationWorkflow } from '../../../src/templates/ValidationWorkflow';
+import { StackActionPhase, StackActionStatus } from '../../../src/stackActions/StackActionRequestType';
+import { ValidationWorkflow } from '../../../src/stackActions/ValidationWorkflow';
 
 describe('ValidationWorkflow Enhanced Features', () => {
     let workflow: ValidationWorkflow;
@@ -75,14 +75,14 @@ describe('ValidationWorkflow Enhanced Features', () => {
             id: 'test-id',
             changeSetName: 'test-changeset',
             stackName: 'test-stack',
-            status: TemplateStatus.VALIDATION_IN_PROGRESS,
+            phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            result: WorkflowResult.IN_PROGRESS,
+            status: StackActionStatus.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
 
-        expect(mockValidation.setStatus).toHaveBeenCalledWith(TemplateStatus.VALIDATION_COMPLETE);
+        expect(mockValidation.setStatus).toHaveBeenCalledWith(StackActionPhase.VALIDATION_COMPLETE);
         expect(mockValidation.setChanges).toHaveBeenCalled();
     });
 
@@ -99,14 +99,14 @@ describe('ValidationWorkflow Enhanced Features', () => {
             id: 'test-id',
             changeSetName: 'test-changeset',
             stackName: 'test-stack',
-            status: TemplateStatus.VALIDATION_IN_PROGRESS,
+            phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            result: WorkflowResult.IN_PROGRESS,
+            status: StackActionStatus.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
 
-        expect(mockValidation.setStatus).toHaveBeenCalledWith(TemplateStatus.VALIDATION_FAILED);
+        expect(mockValidation.setStatus).toHaveBeenCalledWith(StackActionPhase.VALIDATION_FAILED);
     });
 
     it('should cleanup validation object after workflow completion', async () => {
@@ -122,9 +122,9 @@ describe('ValidationWorkflow Enhanced Features', () => {
             id: 'test-id',
             changeSetName: 'test-changeset',
             stackName: 'test-stack',
-            status: TemplateStatus.VALIDATION_IN_PROGRESS,
+            phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            result: WorkflowResult.IN_PROGRESS,
+            status: StackActionStatus.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
