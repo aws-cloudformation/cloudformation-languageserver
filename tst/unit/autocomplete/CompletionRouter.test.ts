@@ -209,16 +209,12 @@ describe('CompletionRouter', () => {
             resourceStateCompletionProvider: resourceStateProvider,
             schemaRetriever: mockComponents.schemaRetriever,
         });
-        const completionProvider = createCompletionProviders(mockTestComponents);
-        const entityFieldProvider = createEntityFieldProviders();
+        const completionProviderMap = createCompletionProviders(mockTestComponents);
+        const entityFieldProviderMap = createEntityFieldProviders();
         const realCompletionRouter = new CompletionRouter(
             contextManager,
-            mockComponents.schemaRetriever,
-            syntaxTreeManager,
-            mockDocumentManager,
-            mockResourceStateManager,
-            completionProvider,
-            entityFieldProvider,
+            completionProviderMap,
+            entityFieldProviderMap,
         );
 
         function expectCompletionProvider(
@@ -228,7 +224,7 @@ describe('CompletionRouter', () => {
             entityType: EntityType,
             description: string,
         ) {
-            const conditionProvider = completionProvider.get(entityType);
+            const conditionProvider = completionProviderMap.get(entityType);
             const getCompletionsSpy = vi.spyOn(conditionProvider!, 'getCompletions');
 
             const result = realCompletionRouter.getCompletions(docPosition(uri, line, character));
@@ -243,7 +239,7 @@ describe('CompletionRouter', () => {
             uri: string,
             description: string,
         ) {
-            const intrinsicArgumentProvider = completionProvider.get('IntrinsicFunctionArgument');
+            const intrinsicArgumentProvider = completionProviderMap.get('IntrinsicFunctionArgument');
             const getCompletionsSpy = vi.spyOn(intrinsicArgumentProvider!, 'getCompletions');
 
             const result = realCompletionRouter.getCompletions(docPosition(uri, line, character));
@@ -287,7 +283,7 @@ describe('CompletionRouter', () => {
                 uri: string,
                 description: string,
             ) {
-                const conditionProvider = completionProvider.get(EntityType.Condition);
+                const conditionProvider = completionProviderMap.get(EntityType.Condition);
                 const getCompletionsSpy = vi.spyOn(conditionProvider!, 'getCompletions');
 
                 realCompletionRouter.getCompletions(docPosition(uri, line, character)) as CompletionList | undefined;
@@ -667,7 +663,7 @@ describe('CompletionRouter', () => {
                 uri: string,
                 description: string,
             ) {
-                const intrinsicArgumentProvider = completionProvider.get('IntrinsicFunctionArgument');
+                const intrinsicArgumentProvider = completionProviderMap.get('IntrinsicFunctionArgument');
                 const getCompletionsSpy = vi.spyOn(intrinsicArgumentProvider!, 'getCompletions');
 
                 const result = realCompletionRouter.getCompletions(docPosition(uri, line, character));
