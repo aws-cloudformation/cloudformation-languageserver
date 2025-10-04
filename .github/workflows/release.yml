@@ -20,9 +20,6 @@ jobs:
   get-configs:
     uses: ./.github/workflows/configs.yml
 
-  get-build-matrix:
-    uses: ./.github/workflows/build-matrix.yml
-
   version-and-tag:
     runs-on: ubuntu-latest
     outputs:
@@ -50,33 +47,43 @@ jobs:
           if [[ "$TAG" == "v$VERSION" ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=false" >> $GITHUB_OUTPUT
-          elif [[ "$TAG" =~ ^v$VERSION-(alpha|beta)$ ]]; then
+          elif [[ "$TAG" =~ ^v$VERSION-[0-9]{12}-alpha$ ]]; then
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "is-prerelease=true" >> $GITHUB_OUTPUT
+          elif [[ "$TAG" =~ ^v$VERSION-beta$ ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=true" >> $GITHUB_OUTPUT
           else
-            echo "Error: Tag ($TAG) must be v$VERSION or v$VERSION-<suffix>"
+            echo "Error: Tag ($TAG) must be v$VERSION, v$VERSION-yyyymmddhhmm-alpha, or v$VERSION-beta"
             exit 1
           fi
 
   build-and-test:
-    needs: [get-configs, get-build-matrix, version-and-tag]
+    needs: [get-configs, version-and-tag]
     uses: ./.github/workflows/build-and-test.yml
     strategy:
       fail-fast: true
-      matrix: ${{ fromJson(needs.get-build-matrix.outputs.build-matrix) }}
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
     with:
       ref: ${{ needs.version-and-tag.outputs.tag }}
-      runs-on: ${{ matrix.runner }}
-      arch: ${{ matrix.arch }}
+      runs-on: ${{ matrix.os }}
 
   bundle-and-release:
-    needs: [get-configs, get-build-matrix, version-and-tag, build-and-test]
+    needs: [get-configs, version-and-tag, build-and-test]
     permissions:
       contents: write
     strategy:
       fail-fast: true
-      matrix: ${{ fromJson(needs.get-build-matrix.outputs.build-matrix) }}
-    runs-on: ${{ matrix.runner }}
+      matrix:
+        include:
+          - { os: "ubuntu-latest", arch: "x64", platform: "linux" }
+          - { os: "ubuntu-latest", arch: "arm64", platform: "linux" }
+          - { os: "ubuntu-latest", arch: "arm", platform: "linux" }
+          - { os: "macos-latest", arch: "x64", platform: "darwin" }
+          - { os: "macos-latest", arch: "arm64", platform: "darwin" }
+          - { os: "windows-latest", arch: "x64", platform: "win32" }
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
         with:
@@ -87,14 +94,13 @@ jobs:
         shell: bash
         run: echo "Bundling from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
-      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ matrix.runner }}-${{ matrix.arch }})
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ runner.os }})
         uses: actions/setup-node@v4
         with:
           node-version: ${{ needs.get-configs.outputs.node-version }}
           cache: 'npm'
-          architecture: ${{ matrix.arch }}
 
-      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ matrix.runner }}-${{ matrix.arch }})
+      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ runner.os }})
         uses: actions/setup-go@v4
         with:
           go-version: ${{ needs.get-configs.outputs.go-version }}
@@ -103,21 +109,29 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Bundle
+      - name: Bundle (${{ matrix.platform }}-${{ matrix.arch }})
         shell: bash
         run: |
           TAG=${{ needs.version-and-tag.outputs.tag }}
           if [[ "$TAG" =~ -alpha$ ]]; then
-            npm run bundle:alpha
+            npm run bundle:alpha -- --env platform=${{ matrix.platform }} --env arch=${{ matrix.arch }}
           elif [[ "$TAG" =~ -beta$ ]]; then
-            npm run bundle:beta
+            npm run bundle:beta -- --env platform=${{ matrix.platform }} --env arch=${{ matrix.arch }}
           else
-            npm run bundle:prod
+            npm run bundle:prod -- --env platform=${{ matrix.platform }} --env arch=${{ matrix.arch }}
           fi
 
-      # - name: Bundle Go
-        # shell: bash
-        # run: npm run build:go:prod
+      - name: Bundle Go
+        shell: bash
+        env:
+          GOPROXY: direct
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            go build -C ./cfn-init -v -o ../bundle/production/bin/cfn-init.exe
+          else
+            go build -C ./cfn-init -v -o ../bundle/production/bin/cfn-init
+          fi
+          cp ./cfn-init/THIRD-PARTY-LICENSES.txt ./bundle/production/bin/
 
       - name: Set release asset name
         id: set-asset-name
@@ -125,16 +139,16 @@ jobs:
         run: |
           APP_NAME=${{ needs.get-configs.outputs.app-name }}
           VERSION=$(node -p "require('./package.json').version")
-          OS=${{ runner.os }}
+          PLATFORM=${{ matrix.platform }}
           ARCH=${{ matrix.arch }}
           
           TAG=${{ needs.version-and-tag.outputs.tag }}
           if [[ "$TAG" =~ -alpha$ ]]; then
-            FILE_NAME="${APP_NAME}-${VERSION}-alpha-${OS}-${ARCH}.zip"
+            FILE_NAME="${APP_NAME}-${VERSION}-alpha-${PLATFORM}-${ARCH}.zip"
           elif [[ "$TAG" =~ -beta$ ]]; then
-            FILE_NAME="${APP_NAME}-${VERSION}-beta-${OS}-${ARCH}.zip"
+            FILE_NAME="${APP_NAME}-${VERSION}-beta-${PLATFORM}-${ARCH}.zip"
           else
-            FILE_NAME="${APP_NAME}-${VERSION}-${OS}-${ARCH}.zip"
+            FILE_NAME="${APP_NAME}-${VERSION}-${PLATFORM}-${ARCH}.zip"
           fi
           
           ASSET_NAME=$(echo "$FILE_NAME" | tr '[:upper:]' '[:lower:]')
@@ -148,7 +162,6 @@ jobs:
         run: |
           echo "Creating zip: ${{ env.ASSET_NAME }}"
           (cd ./bundle/production && zip -r ../../${{ env.ASSET_NAME }} .)
-          ls -la
 
       - name: Create Zip (Windows)
         if: runner.os == 'Windows'
@@ -157,7 +170,6 @@ jobs:
         run: |
           echo "Creating zip: ${{ env.ASSET_NAME }}"
           Compress-Archive -Path ./bundle/production/* -DestinationPath ./${{ env.ASSET_NAME }}
-          dir
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
