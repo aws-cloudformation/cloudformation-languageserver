@@ -32,7 +32,6 @@ jobs:
         with:
           node-version: ${{ needs.get-configs.outputs.node-version }}
           cache: 'npm'
-          architecture: ${{ needs.get-configs.outputs.arch }}
 
       - name: Configure Git
         run: |

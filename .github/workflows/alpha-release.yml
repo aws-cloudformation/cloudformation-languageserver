@@ -1,0 +1,46 @@
+name: Release Alpha
+run-name: Release Alpha ${{ github.actor }} ${{ github.event_name }}
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 2 AM UTC daily
+  workflow_dispatch:
+
+jobs:
+  create-alpha-tag:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    outputs:
+      tag: ${{ steps.version-and-tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: 'main'
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create alpha tag
+        id: version-and-tag
+        run: |
+          PKG_VERSION=$(jq -r .version package.json)
+          DATE=$(date +%Y%m%d%H%M)
+          TAG="v${PKG_VERSION}-${DATE}-alpha"
+          
+          git tag "$TAG"
+          git push origin "$TAG"
+          echo "Created tag from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
+
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+  call-release:
+    needs: [create-alpha-tag]
+    uses: ./.github/workflows/release.yml
+    permissions:
+      contents: write
+    with:
+      tag: ${{ needs.create-alpha-tag.outputs.tag }}
