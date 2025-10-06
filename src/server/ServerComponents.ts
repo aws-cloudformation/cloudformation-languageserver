@@ -34,9 +34,9 @@ import { DiagnosticCoordinator } from '../services/DiagnosticCoordinator';
 import { GuardService } from '../services/guard/GuardService';
 import { IacGeneratorService } from '../services/IacGeneratorService';
 import { SettingsManager } from '../settings/SettingsManager';
-import { DeploymentWorkflow } from '../stackActions/DeploymentWorkflow';
-import { ValidationManager } from '../stackActions/ValidationManager';
-import { ValidationWorkflow } from '../stackActions/ValidationWorkflow';
+import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
+import { ValidationManager } from '../stacks/actions/ValidationManager';
+import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
 import { ClientMessage } from '../telemetry/ClientMessage';
 import { StdOutLogger, LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
@@ -110,7 +110,7 @@ export class ServerComponents {
     private closeableComponents: Closeable[] = [];
 
     constructor(
-        features: Omit<LspFeatures, 'handlers' | 'stackActionHandlers' | 'stackQueryHandlers' | 'resourceHandlers'>,
+        features: Omit<LspFeatures, 'handlers' | 'stackHandlers' | 'resourceHandlers'>,
         overrides: Partial<ServerComponents> = {},
     ) {
         this.diagnostics = features.diagnostics;

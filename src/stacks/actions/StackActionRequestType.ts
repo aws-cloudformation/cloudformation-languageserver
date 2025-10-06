@@ -1,6 +1,6 @@
 import { Parameter, Capability, ResourceChangeDetail } from '@aws-sdk/client-cloudformation';
-import { Parameter as EntityParameter } from '../context/semantic/Entity';
-import { Identifiable } from '../protocol/LspTypes';
+import { Parameter as EntityParameter } from '../../context/semantic/Entity';
+import { Identifiable } from '../../protocol/LspTypes';
 
 export type StackActionParams = Identifiable & {
     uri: string;
@@ -15,7 +15,7 @@ export type StackActionResult = Identifiable & {
     stackName: string;
 };
 
-export type TemplateMetadataParams = {
+export type StackActionMetadataParams = {
     uri: string;
 };
 

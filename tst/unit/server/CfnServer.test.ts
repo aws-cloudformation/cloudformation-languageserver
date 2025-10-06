@@ -8,8 +8,7 @@ import {
     createMockLspDocuments,
     createMockLspWorkspace,
     createMockLspDiagnostics,
-    createMockLspStackActionHandlers,
-    createMockStackQueryHandlers,
+    createMockLspStackHandlers,
     createMockLspResourceHandlers,
 } from '../../utils/MockServerComponents';
 
@@ -32,8 +31,7 @@ describe('CfnServer', () => {
             communication: createMockLspCommunication(),
             handlers: createMockLspHandlers(),
             authHandlers: createMockAuthHandlers(),
-            stackActionHandlers: createMockLspStackActionHandlers(),
-            stackQueryHandlers: createMockStackQueryHandlers(),
+            stackHandlers: createMockLspStackHandlers(),
             resourceHandlers: createMockLspResourceHandlers(),
         };
 
@@ -71,13 +69,12 @@ describe('CfnServer', () => {
             expect(mockFeatures.authHandlers.onBearerCredentialsDelete.calledOnce).toBe(true);
             expect(mockFeatures.authHandlers.onSsoTokenChanged.calledOnce).toBe(true);
 
-            expect(mockFeatures.stackActionHandlers.onGetParameters.calledOnce).toBe(true);
-            expect(mockFeatures.stackActionHandlers.onTemplateValidationCreate.calledOnce).toBe(true);
-            expect(mockFeatures.stackActionHandlers.onTemplateDeploymentCreate.calledOnce).toBe(true);
-            expect(mockFeatures.stackActionHandlers.onTemplateValidationStatus.calledOnce).toBe(true);
-            expect(mockFeatures.stackActionHandlers.onTemplateDeploymentStatus.calledOnce).toBe(true);
-
-            expect(mockFeatures.stackQueryHandlers.onListStacks.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onGetParameters.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onTemplateValidationCreate.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onTemplateDeploymentCreate.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onTemplateValidationStatus.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onTemplateDeploymentStatus.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onListStacks.calledOnce).toBe(true);
         });
     });
 

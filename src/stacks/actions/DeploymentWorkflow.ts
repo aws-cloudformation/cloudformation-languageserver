@@ -1,9 +1,9 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
-import { DocumentManager } from '../document/DocumentManager';
-import { Identifiable } from '../protocol/LspTypes';
-import { ServerComponents } from '../server/ServerComponents';
-import { CfnService } from '../services/CfnService';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { DocumentManager } from '../../document/DocumentManager';
+import { Identifiable } from '../../protocol/LspTypes';
+import { ServerComponents } from '../../server/ServerComponents';
+import { CfnService } from '../../services/CfnService';
+import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { processChangeSet, waitForValidation, waitForDeployment } from './StackActionOperations';
 import {
     StackActionParams,

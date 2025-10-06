@@ -2,7 +2,7 @@ import { Capability } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Document } from '../../../src/document/Document';
 import { CfnService } from '../../../src/services/CfnService';
-import { analyzeCapabilities } from '../../../src/stackActions/CapabilityAnalyzer';
+import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
 
 describe('analyzeCapabilities', () => {
     const mockDocument = {

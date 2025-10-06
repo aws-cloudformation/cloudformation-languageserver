@@ -1,48 +1,48 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Connection, RequestHandler } from 'vscode-languageserver/node';
-import { LspStackActionHandlers } from '../../../src/protocol/LspStackActionHandlers';
+import { LspStackHandlers } from '../../../src/protocol/LspStackHandlers';
 import { Identifiable } from '../../../src/protocol/LspTypes';
 import {
-    GetCapabilitiesRequest,
-    GetParametersRequest,
-    TemplateValidationCreateRequest,
-    TemplateDeploymentCreateRequest,
-    TemplateValidationStatusRequest,
-    TemplateDeploymentStatusRequest,
-} from '../../../src/stackActions/StackActionProtocol';
+    StackActionCapabilitiesRequest,
+    StackActionParametersRequest,
+    StackActionValidationCreateRequest,
+    StackActionDeploymentCreateRequest,
+    StackActionValidationStatusRequest,
+    StackActionDeploymentStatusRequest,
+} from '../../../src/stacks/actions/StackActionProtocol';
 import {
     GetCapabilitiesResult,
-    TemplateMetadataParams,
+    StackActionMetadataParams,
     GetParametersResult,
     StackActionParams,
     StackActionResult,
     StackActionStatusResult,
-} from '../../../src/stackActions/StackActionRequestType';
+} from '../../../src/stacks/actions/StackActionRequestType';
 
 describe('LspTemplateHandlers', () => {
     let connection: StubbedInstance<Connection>;
-    let stackActionHandlers: LspStackActionHandlers;
+    let stackActionHandlers: LspStackHandlers;
 
     beforeEach(() => {
         connection = stubInterface<Connection>();
-        stackActionHandlers = new LspStackActionHandlers(connection);
+        stackActionHandlers = new LspStackHandlers(connection);
     });
 
     it('should register onGetParameters handler', () => {
-        const mockHandler: RequestHandler<TemplateMetadataParams, GetParametersResult, never> = vi.fn();
+        const mockHandler: RequestHandler<StackActionMetadataParams, GetParametersResult, never> = vi.fn();
 
         stackActionHandlers.onGetParameters(mockHandler);
 
-        expect(connection.onRequest.calledWith(GetParametersRequest.method)).toBe(true);
+        expect(connection.onRequest.calledWith(StackActionParametersRequest.method)).toBe(true);
     });
 
     it('should register onGetCapabilities handler', () => {
-        const mockHandler: RequestHandler<TemplateMetadataParams, GetCapabilitiesResult, never> = vi.fn();
+        const mockHandler: RequestHandler<StackActionMetadataParams, GetCapabilitiesResult, never> = vi.fn();
 
         stackActionHandlers.onGetCapabilities(mockHandler);
 
-        expect(connection.onRequest.calledWith(GetCapabilitiesRequest.method)).toBe(true);
+        expect(connection.onRequest.calledWith(StackActionCapabilitiesRequest.method)).toBe(true);
     });
 
     it('should register onTemplateValidate handler', () => {
@@ -50,7 +50,7 @@ describe('LspTemplateHandlers', () => {
 
         stackActionHandlers.onTemplateValidationCreate(mockHandler);
 
-        expect(connection.onRequest.calledWith(TemplateValidationCreateRequest.method)).toBe(true);
+        expect(connection.onRequest.calledWith(StackActionValidationCreateRequest.method)).toBe(true);
     });
 
     it('should register onTemplateDeploy handler', () => {
@@ -58,7 +58,7 @@ describe('LspTemplateHandlers', () => {
 
         stackActionHandlers.onTemplateDeploymentCreate(mockHandler);
 
-        expect(connection.onRequest.calledWith(TemplateDeploymentCreateRequest.method)).toBe(true);
+        expect(connection.onRequest.calledWith(StackActionDeploymentCreateRequest.method)).toBe(true);
     });
 
     it('should register onTemplateValidatePoll handler', () => {
@@ -66,7 +66,7 @@ describe('LspTemplateHandlers', () => {
 
         stackActionHandlers.onTemplateValidationStatus(mockHandler);
 
-        expect(connection.onRequest.calledWith(TemplateValidationStatusRequest.method)).toBe(true);
+        expect(connection.onRequest.calledWith(StackActionValidationStatusRequest.method)).toBe(true);
     });
 
     it('should register onTemplateDeployPoll handler', () => {
@@ -74,6 +74,6 @@ describe('LspTemplateHandlers', () => {
 
         stackActionHandlers.onTemplateDeploymentStatus(mockHandler);
 
-        expect(connection.onRequest.calledWith(TemplateDeploymentStatusRequest.method)).toBe(true);
+        expect(connection.onRequest.calledWith(StackActionDeploymentStatusRequest.method)).toBe(true);
     });
 });

@@ -21,8 +21,7 @@ import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
 import { LspDocuments } from '../../src/protocol/LspDocuments';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
-import { LspStackActionHandlers } from '../../src/protocol/LspStackActionHandlers';
-import { LspStackQueryHandlers } from '../../src/protocol/LspStackQueryHandlers';
+import { LspStackHandlers } from '../../src/protocol/LspStackHandlers';
 import { LspWorkspace } from '../../src/protocol/LspWorkspace';
 import { ResourceStateImporter } from '../../src/resourceState/ResourceStateImporter';
 import { ResourceStateManager } from '../../src/resourceState/ResourceStateManager';
@@ -41,8 +40,8 @@ import { GuardService } from '../../src/services/guard/GuardService';
 import { IacGeneratorService } from '../../src/services/IacGeneratorService';
 import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
-import { DeploymentWorkflow } from '../../src/stackActions/DeploymentWorkflow';
-import { ValidationWorkflow } from '../../src/stackActions/ValidationWorkflow';
+import { DeploymentWorkflow } from '../../src/stacks/actions/DeploymentWorkflow';
+import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow';
 import { ClientMessage } from '../../src/telemetry/ClientMessage';
 
 export class MockedServerComponents extends ServerComponents {
@@ -106,12 +105,8 @@ export function createMockLspResourceHandlers() {
     return stubInterface<LspResourceHandlers>();
 }
 
-export function createMockLspStackActionHandlers() {
-    return stubInterface<LspStackActionHandlers>();
-}
-
-export function createMockStackQueryHandlers() {
-    return stubInterface<LspStackQueryHandlers>();
+export function createMockLspStackHandlers() {
+    return stubInterface<LspStackHandlers>();
 }
 
 export function createMockLspCommunication() {

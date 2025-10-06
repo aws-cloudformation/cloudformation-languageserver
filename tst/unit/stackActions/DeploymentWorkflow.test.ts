@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
-import { DeploymentWorkflow } from '../../../src/stackActions/DeploymentWorkflow';
-import { processChangeSet } from '../../../src/stackActions/StackActionOperations';
+import { DeploymentWorkflow } from '../../../src/stacks/actions/DeploymentWorkflow';
+import { processChangeSet } from '../../../src/stacks/actions/StackActionOperations';
 import {
     StackActionParams,
     StackActionPhase,
     StackActionStatus,
-} from '../../../src/stackActions/StackActionRequestType';
+} from '../../../src/stacks/actions/StackActionRequestType';
 
-vi.mock('../../../src/stackActions/StackActionOperations');
+vi.mock('../../../src/stacks/actions/StackActionOperations');
 
 describe('DeploymentWorkflow', () => {
     let deploymentWorkflow: DeploymentWorkflow;

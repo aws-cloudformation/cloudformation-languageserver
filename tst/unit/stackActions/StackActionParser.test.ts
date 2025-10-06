@@ -1,7 +1,7 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
-import { parseStackActionParams, parseTemplateMetadataParams } from '../../../src/stackActions/StackActionParser';
+import { parseStackActionParams, parseTemplateMetadataParams } from '../../../src/stacks/actions/StackActionParser';
 
 describe('StackActionParser', () => {
     describe('parseStackActionParams', () => {
