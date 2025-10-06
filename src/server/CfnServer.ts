@@ -22,6 +22,7 @@ import {
     getResourceTypesHandler,
     importResourceStateHandler,
     refreshResourceListHandler,
+    getStackMgmtInfo,
 } from '../handlers/ResourceHandler';
 import { listStacksHandler } from '../handlers/StackHandler';
 import {
@@ -82,6 +83,7 @@ export class CfnServer {
         this.features.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));
         this.features.resourceHandlers.onGetResourceTypes(getResourceTypesHandler(this.components));
         this.features.resourceHandlers.onResourceStateImport(importResourceStateHandler(this.components));
+        this.features.resourceHandlers.onStackMgmtInfo(getStackMgmtInfo(this.components));
     }
 
     async close(): Promise<void> {

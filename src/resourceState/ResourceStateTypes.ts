@@ -1,5 +1,6 @@
 import { CodeAction, CodeActionParams } from 'vscode-languageserver';
 import { RequestType } from 'vscode-languageserver-protocol';
+import { ResourceStackManagementResult } from './StackManagementInfoProvider';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export type ResourceTypesParams = {};
@@ -86,3 +87,7 @@ export interface ResourceTemplateFormat {
         };
     };
 }
+
+export const StackMgmtInfoRequest = new RequestType<ResourceIdentifier, ResourceStackManagementResult, void>(
+    'aws/cfn/resources/stackMgmtInfo',
+);
