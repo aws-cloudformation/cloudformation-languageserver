@@ -17,7 +17,6 @@ import { DocumentType } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
-import { SettingsState } from '../../src/settings/Settings';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
 import {
@@ -118,7 +117,6 @@ export class TemplateBuilder {
     private readonly schemaRetriever: SchemaRetriever;
     private readonly completionRouter: CompletionRouter;
     private readonly hoverRouter: HoverRouter;
-    private readonly settings: SettingsState;
     private readonly uri: string;
     private version: number = 0;
 
@@ -129,7 +127,6 @@ export class TemplateBuilder {
         this.documentManager = new DocumentManager(this.textDocuments);
         this.contextManager = new ContextManager(this.syntaxTreeManager);
         this.schemaRetriever = createMockSchemaRetriever(combinedSchemas());
-        this.settings = new SettingsState();
         const topLevelSectionProvider = new TopLevelSectionCompletionProvider(
             this.syntaxTreeManager,
             this.documentManager,
@@ -153,14 +150,7 @@ export class TemplateBuilder {
 
         const completionProviders = createCompletionProviders(mockTestComponents);
 
-        this.completionRouter = new CompletionRouter(
-            this.contextManager,
-            this.schemaRetriever,
-            this.syntaxTreeManager,
-            this.documentManager,
-            createMockResourceStateManager(),
-            completionProviders,
-        );
+        this.completionRouter = new CompletionRouter(this.contextManager, completionProviders);
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever);
         this.initialize(startingContent);
     }

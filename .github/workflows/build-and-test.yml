@@ -1,4 +1,5 @@
 name: Build and Test
+run-name: Build and Test ${{ github.actor }} ${{ github.event_name }}
 
 on:
   workflow_call:
@@ -9,11 +10,18 @@ on:
         type: string
         default: 'ubuntu-latest'
 
-      arch:
-        description: 'The architecture to target (e.g., "x64").'
+      ref:
+        description: 'The Git ref to checkout.'
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      runs-on:
+        description: 'The runner environment for the job (e.g., ubuntu-latest, windows-latest).'
         required: false
         type: string
-        default: 'x64'
+        default: 'ubuntu-latest'
 
       ref:
         description: 'The Git ref to checkout.'
@@ -37,12 +45,11 @@ jobs:
         shell: bash
         run: echo "Building from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
-      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ runner.os }}-${{ runner.arch }})
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }} (${{ runner.os }})
         uses: actions/setup-node@v4
         with:
           node-version: ${{ needs.get-configs.outputs.node-version }}
           cache: 'npm'
-          architecture: ${{ inputs.arch }}
 
       - name: Install Dependencies
         run: npm ci
@@ -68,7 +75,7 @@ jobs:
         shell: bash
         run: echo "Building from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
-      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ runner.os }}-${{ runner.arch }})
+      - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ runner.os }})
         uses: actions/setup-go@v4
         with:
           go-version: ${{ needs.get-configs.outputs.go-version }}
@@ -76,8 +83,12 @@ jobs:
 
       - name: Build
         shell: bash
-        run: GOPROXY=direct go build -C ./cfn-init ./...
+        env:
+          GOPROXY: direct
+        run: go build -C ./cfn-init -v ./...
 
       - name: Test
         shell: bash
-        run: GOPROXY=direct go test -C ./cfn-init -v -cover ./...
+        env:
+          GOPROXY: direct
+        run: go test -C ./cfn-init -v -cover ./...

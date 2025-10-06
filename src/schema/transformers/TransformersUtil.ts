@@ -1,6 +1,7 @@
 import { ResourceStatePurpose } from '../../resourceState/ResourceStateTypes';
 import { RemoveMutuallyExclusivePropertiesTransformer } from './RemoveMutuallyExclusivePropertiesTransformer';
 import { RemoveReadonlyPropertiesTransformer } from './RemoveReadonlyPropertiesTransformer';
+import { RemoveRequiredXorPropertiesTransformer } from './RemoveRequiredXorPropertiesTransformer';
 import { RemoveSystemTagsTransformer } from './RemoveSystemTagsTransformer';
 import { ReplacePrimaryIdentifierTransformer } from './ReplacePrimaryIdentifierTransformer';
 import type { ResourceTemplateTransformer } from './ResourceTemplateTransformer';
@@ -12,6 +13,7 @@ export class TransformersUtil {
                 new RemoveReadonlyPropertiesTransformer(),
                 new RemoveMutuallyExclusivePropertiesTransformer(),
                 new RemoveSystemTagsTransformer(),
+                new RemoveRequiredXorPropertiesTransformer(),
             ];
         } else if (purpose === ResourceStatePurpose.CLONE) {
             return [
@@ -19,6 +21,7 @@ export class TransformersUtil {
                 new RemoveMutuallyExclusivePropertiesTransformer(),
                 new RemoveSystemTagsTransformer(),
                 new ReplacePrimaryIdentifierTransformer(),
+                new RemoveRequiredXorPropertiesTransformer(),
             ];
         }
         return [];

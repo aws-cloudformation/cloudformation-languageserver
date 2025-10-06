@@ -211,21 +211,6 @@ export class Context {
         return false;
     }
 
-    public atNestedEntityKeyLevel(parentKey: string) {
-        const parentKeyIdx = this.propertyPath.indexOf(parentKey);
-        if (parentKeyIdx === -1 || !this.hasLogicalId) {
-            return false;
-        }
-
-        const childKeyIdx = parentKeyIdx + 1;
-
-        return (
-            this.hasLogicalId &&
-            ((this.propertyPath.length === childKeyIdx && parentKey !== this.text) ||
-                (this.propertyPath.length === childKeyIdx + 1 && this.propertyPath[childKeyIdx] === this.text))
-        );
-    }
-
     public getMappingKeys(): string[] {
         if (!NodeType.isMappingNode(this.node, this.documentType)) {
             return [];

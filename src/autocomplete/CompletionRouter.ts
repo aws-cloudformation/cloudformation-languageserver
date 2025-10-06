@@ -5,11 +5,7 @@ import { IntrinsicFunction, IntrinsicsUsingConditionKeyword, TopLevelSection } f
 import { isCondition } from '../context/ContextUtils';
 import { Entity, Output, Parameter } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
-import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
-import { DocumentManager } from '../document/DocumentManager';
-import { ResourceStateManager } from '../resourceState/ResourceStateManager';
-import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
 import { CompletionSettings, DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -38,10 +34,6 @@ export class CompletionRouter implements Configurable, Closeable {
 
     constructor(
         private readonly contextManager: ContextManager,
-        schemaRetriever: SchemaRetriever,
-        syntaxTreeManager: SyntaxTreeManager,
-        documentManager: DocumentManager,
-        resourceStateManager: ResourceStateManager,
         private readonly completionProviderMap: Map<CompletionProviderType, CompletionProvider>,
         private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
     ) {}
@@ -271,14 +263,7 @@ export class CompletionRouter implements Configurable, Closeable {
     }
 
     static create(components: ServerComponents) {
-        return new CompletionRouter(
-            components.contextManager,
-            components.schemaRetriever,
-            components.syntaxTreeManager,
-            components.documentManager,
-            components.resourceStateManager,
-            createCompletionProviders(components),
-        );
+        return new CompletionRouter(components.contextManager, createCompletionProviders(components));
     }
 }
 

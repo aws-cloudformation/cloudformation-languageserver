@@ -6,77 +6,55 @@ const webpack = require('webpack');
 const fs = require('fs');
 const { execSync } = require('child_process');
 const path = require('path');
-const { minimatch } = require('minimatch');
 
 const BUNDLE_NAME = 'cfn-lsp-server-standalone';
+const Package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+const PackageLock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
 
 const COPY_FILES = ['LICENSE', 'NOTICE', 'THIRD-PARTY-LICENSES.txt', 'README.md'];
-const ALWAYS_IGNORE = ['**/@types/**', '**/typescript/**'];
-const IGNORE_PATTERNS = [
-    // 1. Tests, Specs, & Benchmarks
-    '**/__tests__/**',
-    '**/{test,spec}{,s}/**',
-    '**/*.{spec,test}.{js,jsx,ts,tsx}',
-    '**/test.js',
-    '**/spec.js',
-    '**/bench.js',
-    '**/benchmark.js',
-    '**/*bench*/**',
-
-    // 2. Documentation & Project Metadata
-    '**/{doc,docs,example{,s},demo{,s},fixture{,s}}/**',
-    '**/{README,CHANGELOG,HISTORY,NOTICE,AUTHORS,CONTRIBUTORS}{,.*}',
-    '**/README*',
-    '**/CHANGELOG*',
-    '**/HISTORY*',
-
-    // 3. Config Files & Tooling
-    '**/{ts,js}config*.json',
-    '**/{vite,webpack,rollup,esbuild,parcel,babel,swc}.config.*',
-    '**/.{babelrc,swcrc,npmrc,yarnrc,nvmrc,env}*',
-    '**/{.eslint,.prettier,.stylelint}*',
-    '**/.{editorconfig,gitattributes,jshintrc,npmignore,nojekyll}',
-    '**/commitlint.config.js',
-    '**/.release-it*.json',
-    '**/.husky/**',
-    '**/.github/**',
-    '**/.{nycrc,taprc,c8rc}*',
-
-    // 4. Source Code & Type Definitions
-    '**/*.{ts,cts,mts}',
-    '**/*.d.{ts,cts,mts}',
-    '**/*.{flow,coffee,proto,scm}',
-
-    // 5. Assets & Non-Code Files
-    '**/*.{css,scss,less,styl}',
-    '**/*.{html,md,txt,markdown,doc,jsdoc}',
-    '**/*.{png,jpg,jpeg,gif,svg,ico,webp,avif}',
-    '**/*.{woff,woff2,eot,ttf,otf}',
-    '**/*.zip',
-
-    // 6. Build System & Misc Files
-    '**/*.{c,cc,cpp,cxx,h,hpp,hxx,gyp,gypi}',
-    '**/Makefile*',
-    '**/CMakeLists.txt',
-    '**/binding.gyp',
-    '**/*.{def,in,1}',
-
-    // 7. IDE, System, & Log Files
-    '**/.{idea,vscode,DS_Store}/**',
-    '**/{.*.log,*.log}',
-    '**/.gitkeep',
-    '**/*.map',
-    '**/.history/**',
-
-    // 8. Scripts
-    '**/.bin/**',
-    '**/*.{cmd,sh}',
+const PLATFORMS = ['linux', 'win32', 'darwin'];
+const KEEP_FILES = [
+    '.cjs',
+    '.gyp',
+    '.js',
+    '.mjs',
+    '.node',
+    '.wasm',
+    'mappingTable.json',
+    'package.json',
+    'pyodide-lock.json',
+    'python_stdlib.zip',
 ];
+const IGNORE_PATHS = ['/bin/', '/test/', '/benchmarks/', '/examples/'];
 
-// Keeping license for legal
-const KEEP_PATTERNS = ['**/python_stdlib.zip', '**/yaml/dist/doc/**'];
+function generateExternals() {
+    const externals = Package.externalDependencies;
+    const collected = new Set(externals);
+    const queue = [...externals];
 
-function createPlugins(isDevelopment, outputPath, mode, env) {
+    while (queue.length > 0) {
+        const dep = queue.shift();
+        const pkgInfo = PackageLock.packages?.[`node_modules/${dep}`];
+
+        if (pkgInfo?.dependencies) {
+            for (const subDep of Object.keys(pkgInfo.dependencies)) {
+                if (!collected.has(subDep) && !subDep.startsWith('@types/') && !pkgInfo.dev && !pkgInfo.optional) {
+                    collected.add(subDep);
+                    queue.push(subDep);
+                }
+            }
+        }
+    }
+
+    for (const dep of Object.keys(Package.nativePrebuilds)) {
+        collected.add(dep);
+    }
+    return Array.from(collected).sort();
+}
+
+const EXTERNALS = generateExternals();
+
+function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, targetArch) {
     const plugins = [];
 
     plugins.push(
@@ -113,20 +91,21 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
 
     if (!isDevelopment) {
         const tmpDir = path.join(__dirname, 'tmp-node-modules');
+        console.debug('Working in tmpDir:', tmpDir);
 
         plugins.push({
             apply: (compiler) => {
                 compiler.hooks.beforeRun.tapAsync('InstallDependencies', (compilation, callback) => {
                     try {
-                        const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-
                         const tmpPkg = {
-                            ...pkg,
+                            ...Package,
                             main: `./${BUNDLE_NAME}.js`,
                         };
 
                         delete tmpPkg['scripts'];
                         delete tmpPkg['devDependencies'];
+                        delete tmpPkg['externalDependencies'];
+                        delete tmpPkg['nativePrebuilds'];
 
                         if (fs.existsSync(tmpDir)) {
                             fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -135,11 +114,51 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
                         fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify(tmpPkg, null, 2));
                         fs.copyFileSync('package-lock.json', `${tmpDir}/package-lock.json`);
 
-                        execSync('npm ci --only=prod', { cwd: tmpDir, stdio: 'inherit' });
+                        execSync('npm ci --omit=dev', { cwd: tmpDir, stdio: 'inherit' });
+                        const otherDeps = Object.entries(Package.nativePrebuilds)
+                            .filter(([key, _version]) => {
+                                return key.endsWith(`${targetPlatform}-${targetArch}`);
+                            })
+                            .map(([key, version]) => {
+                                return `${key}@${version}`;
+                            })
+                            .join(' ');
+
+                        execSync(`npm install --save-exact --force ${otherDeps}`, { cwd: tmpDir, stdio: 'inherit' });
                         callback();
                     } catch (error) {
                         callback(error);
                     }
+                });
+
+                compiler.hooks.afterEmit.tap('CleanUnusedNativeModules', () => {
+                    const nodeModulesPath = path.join(outputPath, 'node_modules');
+
+                    if (!fs.existsSync(nodeModulesPath)) return;
+
+                    function cleanPlatformDirs(dir) {
+                        if (!fs.existsSync(dir)) return;
+
+                        const entries = fs.readdirSync(dir, { withFileTypes: true });
+                        for (const entry of entries) {
+                            if (!entry.isDirectory()) continue;
+
+                            const entryPath = path.join(dir, entry.name);
+                            const isPlatformDir = PLATFORMS.some((p) => entry.name.includes(`${p}-`));
+                            const shouldKeep = entry.name.includes(`${targetPlatform}-${targetArch}`);
+
+                            if (isPlatformDir && !shouldKeep) {
+                                fs.rmSync(entryPath, { recursive: true, force: true });
+                                console.log(`Deleted: ${entryPath}`);
+                            } else if (entry.name === 'prebuilds') {
+                                cleanPlatformDirs(entryPath);
+                            } else {
+                                cleanPlatformDirs(entryPath);
+                            }
+                        }
+                    }
+
+                    cleanPlatformDirs(nodeModulesPath);
                 });
 
                 compiler.hooks.done.tap('CleanupTemp', () => {
@@ -149,7 +168,7 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
 
                     const dotPackageLock = 'bundle/production/node_modules/.package-lock.json';
                     if (fs.existsSync(dotPackageLock)) {
-                        fs.rmSync(dotPackageLock);
+                        fs.rmSync(dotPackageLock, { force: true });
                     }
                 });
             },
@@ -162,17 +181,13 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
                         from: path.join('tmp-node-modules', 'node_modules'),
                         to: 'node_modules',
                         filter: (resourcePath) => {
-                            const relativePath = resourcePath.replaceAll(process.cwd(), '');
-
-                            if (ALWAYS_IGNORE.some((pattern) => minimatch(relativePath, pattern))) {
-                                return false;
-                            }
-                            // If matches KEEP_PATTERNS, always include
-                            return (
-                                KEEP_PATTERNS.some((pattern) => minimatch(relativePath, pattern)) ||
-                                // Otherwise, check if it's not ignored
-                                !IGNORE_PATTERNS.some((pattern) => minimatch(relativePath, pattern))
-                            );
+                            const relativePath = resourcePath.replace(process.cwd(), '');
+                            const isExternal = EXTERNALS.some((external) => {
+                                return relativePath.includes(`/node_modules/${external}/`);
+                            });
+                            const keep = KEEP_FILES.some((pattern) => relativePath.endsWith(pattern));
+                            const ignore = IGNORE_PATHS.some((pattern) => relativePath.includes(pattern));
+                            return isExternal && keep && !ignore;
                         },
                     },
                     {
@@ -189,6 +204,12 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
                 ],
             }),
         );
+
+        plugins.push(
+            new webpack.IgnorePlugin({
+                resourceRegExp: /^@opentelemetry\/(winston-transport|exporter-jaeger)$/,
+            }),
+        );
     }
 
     plugins.push(
@@ -199,29 +220,6 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
     );
 
     return plugins;
-}
-
-function createOptimization(isDevelopment) {
-    const baseOptimization = {
-        minimize: false,
-    };
-
-    if (isDevelopment) {
-        return {
-            ...baseOptimization,
-            removeAvailableModules: false,
-            removeEmptyChunks: false,
-            splitChunks: false,
-        };
-    }
-
-    return {
-        ...baseOptimization,
-        moduleIds: 'deterministic',
-        chunkIds: 'deterministic',
-        usedExports: true,
-        sideEffects: false,
-    };
 }
 
 const baseConfig = {
@@ -277,6 +275,8 @@ const baseConfig = {
 module.exports = (env = {}) => {
     const mode = env.mode;
     let awsEnv = env.env;
+    const targetPlatform = env.platform || process.platform;
+    const targetArch = env.arch || process.arch;
 
     // Validate mode
     const validModes = ['development', 'production'];
@@ -302,7 +302,8 @@ module.exports = (env = {}) => {
     console.info(`Building server with mode: ${mode}`);
     console.info(`NODE_ENV: ${mode}`);
     console.info(`AWS_ENV: ${awsEnv}`);
-    console.info(`Platform: ${process.platform}-${process.arch}`);
+    console.info(`Platform: ${targetPlatform}`);
+    console.info(`Arch: ${targetArch}`);
     console.info(`Output path: ${outputPath}`);
 
     return {
@@ -317,8 +318,17 @@ module.exports = (env = {}) => {
                 type: 'commonjs2',
             },
         },
-        externals: [nodeExternals()],
-        optimization: createOptimization(isDevelopment),
-        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv),
+        externals: isDevelopment ? [nodeExternals()] : EXTERNALS,
+        optimization: {
+            minimize: false,
+            moduleIds: 'deterministic',
+            chunkIds: 'deterministic',
+            usedExports: true,
+            sideEffects: false,
+            splitChunks: {
+                chunks: 'all',
+            },
+        },
+        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, targetPlatform, targetArch),
     };
 };
