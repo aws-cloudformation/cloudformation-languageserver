@@ -10,75 +10,68 @@ import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
  */
 export class LiteralValueDetector {
     public detectLiteralValue(node: SyntaxNode): LiteralValueInfo | undefined {
-        if (!node) {
-            return undefined;
-        }
-
-        if (node.type === 'ERROR') {
+        if (!node || node.type === 'ERROR') {
             return undefined;
         }
 
         let nodeForRange = node;
-        if (node.type === 'string_content' && node.parent && node.parent.type === 'string') {
+        if (node.type === 'string_content' && node.parent?.type === 'string') {
             nodeForRange = node.parent;
         }
 
         const isReference = this.isIntrinsicFunctionOrReference(nodeForRange);
-
         const literalInfo = this.extractLiteralInfo(node);
 
-        if (!literalInfo) {
+        if (!literalInfo || literalInfo.value === null || literalInfo.value === undefined) {
             return undefined;
         }
 
-        const result = {
+        return {
             value: literalInfo.value,
             type: literalInfo.type,
             range: this.nodeToRange(nodeForRange),
             isReference,
         };
-
-        return result;
     }
 
     private isIntrinsicFunctionOrReference(node: SyntaxNode): boolean {
+        if (!node) {
+            return false;
+        }
+
         if (node.type === 'object' && this.isJsonIntrinsicFunction(node)) {
             return true;
         }
 
-        if (node.type === 'flow_node' && node.children.length > 0) {
+        if (node.type === 'flow_node' && node.children?.length > 0) {
             const firstChild = node.children[0];
-            if (firstChild?.type === 'tag') {
-                const tagText = firstChild.text;
-                if (this.isYamlIntrinsicTag(tagText)) {
+            if (firstChild?.type === 'tag' && firstChild.text) {
+                if (this.isYamlIntrinsicTag(firstChild.text)) {
                     return true;
                 }
             }
         }
 
-        // Only block extraction for Ref and GetAtt, not for other intrinsic functions
-        // This allows extracting literals that are arguments to functions like Sub, Join, etc.
         let currentNode: SyntaxNode | null = node.parent;
         while (currentNode) {
             if (currentNode.type === 'object' && this.isJsonReferenceFunction(currentNode)) {
                 return true;
             }
 
-            if (currentNode.type === 'flow_node' && currentNode.children.length > 0) {
+            if (currentNode.type === 'flow_node' && currentNode.children?.length > 0) {
                 const firstChild = currentNode.children[0];
-                if (firstChild?.type === 'tag') {
-                    const tagText = firstChild.text;
-                    if (this.isYamlReferenceTag(tagText)) {
+                if (firstChild?.type === 'tag' && firstChild.text) {
+                    if (this.isYamlReferenceTag(firstChild.text)) {
                         return true;
                     }
                 }
             }
 
             if (currentNode.type === 'block_mapping_pair') {
-                const keyNode = currentNode.children.find(
+                const keyNode = currentNode.children?.find(
                     (child) => child.type === 'flow_node' || child.type === 'plain_scalar',
                 );
-                if (keyNode) {
+                if (keyNode?.text) {
                     const keyText = keyNode.text;
                     if (
                         this.isReferenceFunctionName(keyText) ||
@@ -96,18 +89,22 @@ export class LiteralValueDetector {
     }
 
     private isJsonIntrinsicFunction(node: SyntaxNode): boolean {
+        if (!node?.children) {
+            return false;
+        }
+
         const pairs = node.children.filter((child) => child.type === 'pair');
         if (pairs.length !== 1) {
             return false;
         }
 
         const pair = pairs[0];
-        if (pair.children.length < 2) {
+        if (!pair?.children || pair.children.length < 2) {
             return false;
         }
 
         const keyNode = pair.children[0];
-        if (keyNode?.type !== 'string') {
+        if (keyNode?.type !== 'string' || !keyNode.text) {
             return false;
         }
 
@@ -116,18 +113,22 @@ export class LiteralValueDetector {
     }
 
     private isJsonReferenceFunction(node: SyntaxNode): boolean {
+        if (!node?.children) {
+            return false;
+        }
+
         const pairs = node.children.filter((child) => child.type === 'pair');
         if (pairs.length !== 1) {
             return false;
         }
 
         const pair = pairs[0];
-        if (pair.children.length < 2) {
+        if (!pair?.children || pair.children.length < 2) {
             return false;
         }
 
         const keyNode = pair.children[0];
-        if (keyNode?.type !== 'string') {
+        if (keyNode?.type !== 'string' || !keyNode.text) {
             return false;
         }
 
@@ -178,6 +179,10 @@ export class LiteralValueDetector {
     private extractLiteralInfo(
         node: SyntaxNode,
     ): { value: string | number | boolean | unknown[]; type: LiteralValueType } | undefined {
+        if (!node?.type || !node.text) {
+            return undefined;
+        }
+
         switch (node.type) {
             case 'string': {
                 return {
@@ -194,8 +199,9 @@ export class LiteralValueDetector {
             }
 
             case 'number': {
-                return {
-                    value: this.parseNumberLiteral(node.text),
+                const parsed = this.parseNumberLiteral(node.text);
+                return Number.isNaN(parsed) ? undefined : {
+                    value: parsed,
                     type: LiteralValueType.NUMBER,
                 };
             }
@@ -225,20 +231,8 @@ export class LiteralValueDetector {
                 return this.parseYamlScalar(node.text);
             }
 
-            case 'quoted_scalar': {
-                return {
-                    value: this.parseStringLiteral(node.text),
-                    type: LiteralValueType.STRING,
-                };
-            }
-
-            case 'double_quote_scalar': {
-                return {
-                    value: this.parseStringLiteral(node.text),
-                    type: LiteralValueType.STRING,
-                };
-            }
-
+            case 'quoted_scalar':
+            case 'double_quote_scalar':
             case 'single_quote_scalar': {
                 return {
                     value: this.parseStringLiteral(node.text),
@@ -253,37 +247,21 @@ export class LiteralValueDetector {
                 };
             }
 
-            case 'object': {
+            case 'object':
+            case 'flow_node':
+            case 'string_scalar':
+            case 'block_scalar': {
                 return {
                     value: node.text,
                     type: LiteralValueType.STRING,
                 };
             }
 
-            case 'flow_node': {
-                return {
-                    value: node.text,
-                    type: LiteralValueType.STRING,
-                };
-            }
-
-            case 'string_scalar': {
-                return {
-                    value: node.text,
-                    type: LiteralValueType.STRING,
-                };
-            }
-
-            case 'integer_scalar': {
-                return {
-                    value: this.parseNumberLiteral(node.text),
-                    type: LiteralValueType.NUMBER,
-                };
-            }
-
+            case 'integer_scalar':
             case 'float_scalar': {
-                return {
-                    value: this.parseNumberLiteral(node.text),
+                const parsed = this.parseNumberLiteral(node.text);
+                return Number.isNaN(parsed) ? undefined : {
+                    value: parsed,
                     type: LiteralValueType.NUMBER,
                 };
             }
@@ -292,13 +270,6 @@ export class LiteralValueDetector {
                 return {
                     value: node.text === 'true',
                     type: LiteralValueType.BOOLEAN,
-                };
-            }
-
-            case 'block_scalar': {
-                return {
-                    value: node.text,
-                    type: LiteralValueType.STRING,
                 };
             }
 
@@ -318,6 +289,10 @@ export class LiteralValueDetector {
     }
 
     private parseArrayLiteral(node: SyntaxNode): unknown[] {
+        if (!node?.children) {
+            return [];
+        }
+
         const values: unknown[] = [];
 
         for (const child of node.children) {
@@ -332,7 +307,7 @@ export class LiteralValueDetector {
             }
 
             const childInfo = this.extractLiteralInfo(child);
-            if (childInfo) {
+            if (childInfo?.value !== null && childInfo?.value !== undefined) {
                 values.push(childInfo.value);
             }
         }
@@ -341,6 +316,10 @@ export class LiteralValueDetector {
     }
 
     private parseYamlScalar(text: string): { value: string | number | boolean; type: LiteralValueType } | undefined {
+        if (!text) {
+            return undefined;
+        }
+
         if (text === 'true' || text === 'True' || text === 'TRUE') {
             return { value: true, type: LiteralValueType.BOOLEAN };
         }
