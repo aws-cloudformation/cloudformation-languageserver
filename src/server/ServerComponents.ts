@@ -1,11 +1,7 @@
 import { CfnAI } from '../ai/CfnAI';
 import { AwsCredentials } from '../auth/AwsCredentials';
-import { CompletionFormatter } from '../autocomplete/CompletionFormatter';
 import { CompletionRouter } from '../autocomplete/CompletionRouter';
 import { InlineCompletionRouter } from '../autocomplete/InlineCompletionRouter';
-import { ResourceEntityCompletionProvider } from '../autocomplete/ResourceEntityCompletionProvider';
-import { ResourceStateCompletionProvider } from '../autocomplete/ResourceStateCompletionProvider';
-import { TopLevelSectionCompletionProvider } from '../autocomplete/TopLevelSectionCompletionProvider';
 import { ContextManager } from '../context/ContextManager';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DataStoreFactoryProvider, MultiDataStoreFactoryProvider } from '../datastore/DataStore';
@@ -97,11 +93,6 @@ export class ServerComponents {
     readonly codeActionService: CodeActionService;
     readonly documentSymbolRouter: DocumentSymbolRouter;
 
-    // Completion Providers (need direct access for configuration)
-    readonly topLevelSectionCompletionProvider: TopLevelSectionCompletionProvider;
-    readonly resourceEntityCompletionProvider: ResourceEntityCompletionProvider;
-    readonly resourceStateCompletionProvider: ResourceStateCompletionProvider;
-
     // AI
     readonly cfnAI: CfnAI;
 
@@ -148,14 +139,6 @@ export class ServerComponents {
 
         this.guardService = overrides.guardService ?? GuardService.create(this);
 
-        // Create completion providers first (needed by CompletionRouter)
-        this.topLevelSectionCompletionProvider =
-            overrides.topLevelSectionCompletionProvider ?? TopLevelSectionCompletionProvider.create(this);
-        this.resourceEntityCompletionProvider =
-            overrides.resourceEntityCompletionProvider ?? ResourceEntityCompletionProvider.create(this);
-        this.resourceStateCompletionProvider =
-            overrides.resourceStateCompletionProvider ?? ResourceStateCompletionProvider.create(this);
-
         this.hoverRouter = overrides.hoverRouter ?? HoverRouter.create(this);
         this.completionRouter = overrides.completionRouter ?? CompletionRouter.create(this);
         this.inlineCompletionRouter = overrides.inlineCompletionRouter ?? InlineCompletionRouter.create(this);
@@ -179,15 +162,12 @@ export class ServerComponents {
         this.configurableComponents = [
             LoggerFactory.instance,
             TelemetryService.instance,
+            this.documentManager,
             this.cfnAI,
             this.schemaTaskManager,
             this.schemaRetriever,
             this.hoverRouter,
             this.completionRouter,
-            CompletionFormatter.getInstance(),
-            this.topLevelSectionCompletionProvider,
-            this.resourceEntityCompletionProvider,
-            this.resourceStateCompletionProvider,
             this.inlineCompletionRouter,
             this.cfnLintService,
             this.guardService,
@@ -201,10 +181,6 @@ export class ServerComponents {
             this.resourceStateManager,
             this.hoverRouter,
             this.completionRouter,
-            CompletionFormatter.getInstance(),
-            this.topLevelSectionCompletionProvider,
-            this.resourceEntityCompletionProvider,
-            this.resourceStateCompletionProvider,
             this.inlineCompletionRouter,
             this.schemaTaskManager,
             this.cfnLintService,

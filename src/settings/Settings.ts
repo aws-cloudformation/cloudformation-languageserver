@@ -58,6 +58,7 @@ export type TelemetrySettings = Toggleable<{
 export type EditorSettings = {
     tabSize: number;
     insertSpaces: boolean;
+    detectIndentation: boolean;
 };
 
 export type Settings = {
@@ -114,6 +115,7 @@ export const DefaultSettings: DeepReadonly<Settings> = {
     editor: {
         tabSize: 2,
         insertSpaces: true,
+        detectIndentation: true,
     },
 } as const;
 

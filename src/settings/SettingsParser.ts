@@ -105,6 +105,7 @@ function createEditorSchema(defaults: Settings['editor']) {
         .object({
             tabSize: z.number().default(defaults.tabSize),
             insertSpaces: z.boolean().default(defaults.insertSpaces),
+            detectIndentation: z.boolean().default(defaults.detectIndentation),
         })
         .default(defaults);
 }

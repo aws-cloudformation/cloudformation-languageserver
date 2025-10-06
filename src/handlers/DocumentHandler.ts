@@ -24,6 +24,11 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
         }
 
         const content = document.contents();
+
+        if (components.settingsManager.getCurrentSettings().editor.detectIndentation) {
+            components.documentManager.getEditorSettingsForDocument(uri);
+        }
+
         if (document.isTemplate()) {
             try {
                 components.syntaxTreeManager.addWithTypes(uri, content, document.documentType, document.cfnFileType);
@@ -129,6 +134,9 @@ export function didCloseHandler(components: ServerComponents): (event: TextDocum
 
         // Cancel any pending delayed Guard validation for this document
         components.guardService.cancelDelayedValidation(documentUri);
+
+        // Clear stored indentation detection for this document
+        components.documentManager.clearIndentationForDocument(documentUri);
 
         components.syntaxTreeManager.deleteSyntaxTree(documentUri);
 
