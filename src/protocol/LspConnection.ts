@@ -71,6 +71,8 @@ export class LspConnection {
         this.stackHandlers = new LspStackHandlers(this.connection);
         this.resourceHandlers = new LspResourceHandlers(this.connection);
 
+        this.communication.console.info(`${ExtensionName} launched from ${__dirname}`);
+
         this.connection.onInitialize((params: InitializeParams): InitializeResult => {
             this.communication.console.info(`Initializing ${ExtensionName}...`);
             this.initializeParams = params;
