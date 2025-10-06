@@ -22,7 +22,7 @@ export class LiteralValueDetector {
         const isReference = this.isIntrinsicFunctionOrReference(nodeForRange);
         const literalInfo = this.extractLiteralInfo(node);
 
-        if (!literalInfo || literalInfo.value === null || literalInfo.value === undefined) {
+        if (literalInfo?.value === undefined) {
             return undefined;
         }
 
@@ -45,10 +45,8 @@ export class LiteralValueDetector {
 
         if (node.type === 'flow_node' && node.children?.length > 0) {
             const firstChild = node.children[0];
-            if (firstChild?.type === 'tag' && firstChild.text) {
-                if (this.isYamlIntrinsicTag(firstChild.text)) {
-                    return true;
-                }
+            if (firstChild?.type === 'tag' && firstChild.text && this.isYamlIntrinsicTag(firstChild.text)) {
+                return true;
             }
         }
 
@@ -60,10 +58,8 @@ export class LiteralValueDetector {
 
             if (currentNode.type === 'flow_node' && currentNode.children?.length > 0) {
                 const firstChild = currentNode.children[0];
-                if (firstChild?.type === 'tag' && firstChild.text) {
-                    if (this.isYamlReferenceTag(firstChild.text)) {
-                        return true;
-                    }
+                if (firstChild?.type === 'tag' && firstChild.text && this.isYamlReferenceTag(firstChild.text)) {
+                    return true;
                 }
             }
 
@@ -200,10 +196,12 @@ export class LiteralValueDetector {
 
             case 'number': {
                 const parsed = this.parseNumberLiteral(node.text);
-                return Number.isNaN(parsed) ? undefined : {
-                    value: parsed,
-                    type: LiteralValueType.NUMBER,
-                };
+                return Number.isNaN(parsed)
+                    ? undefined
+                    : {
+                          value: parsed,
+                          type: LiteralValueType.NUMBER,
+                      };
             }
 
             case 'true': {
@@ -260,10 +258,12 @@ export class LiteralValueDetector {
             case 'integer_scalar':
             case 'float_scalar': {
                 const parsed = this.parseNumberLiteral(node.text);
-                return Number.isNaN(parsed) ? undefined : {
-                    value: parsed,
-                    type: LiteralValueType.NUMBER,
-                };
+                return Number.isNaN(parsed)
+                    ? undefined
+                    : {
+                          value: parsed,
+                          type: LiteralValueType.NUMBER,
+                      };
             }
 
             case 'boolean_scalar': {
