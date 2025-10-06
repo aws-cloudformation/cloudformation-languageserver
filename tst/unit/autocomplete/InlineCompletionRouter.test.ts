@@ -11,6 +11,7 @@ import { createTopLevelContext } from '../../utils/MockContext';
 import {
     createMockContextManager,
     createMockDocumentManager,
+    createMockSchemaRetriever,
     createMockSettingsManager,
 } from '../../utils/MockServerComponents';
 
@@ -18,6 +19,7 @@ describe('InlineCompletionRouter', () => {
     const mockContextManager = createMockContextManager();
     const mockDocumentManager = createMockDocumentManager();
     const mockSettingsManager = createMockSettingsManager();
+    const mockSchemaRetriever = createMockSchemaRetriever();
     const mockRelationshipSchemaService = RelationshipSchemaService.getInstance();
     let router: InlineCompletionRouter;
 
@@ -31,7 +33,11 @@ describe('InlineCompletionRouter', () => {
 
     beforeEach(() => {
         mockContextManager.getContext.reset();
-        const providers = createInlineCompletionProviders(mockDocumentManager, mockRelationshipSchemaService);
+        const providers = createInlineCompletionProviders(
+            mockDocumentManager,
+            mockRelationshipSchemaService,
+            mockSchemaRetriever,
+        );
         router = new InlineCompletionRouter(mockContextManager, providers, mockDocumentManager);
         router.configure(mockSettingsManager);
         vi.restoreAllMocks();

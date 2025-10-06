@@ -2,6 +2,7 @@ import { InlineCompletionList, InlineCompletionParams, InlineCompletionItem } fr
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
 import { DocumentManager } from '../document/DocumentManager';
+import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
@@ -101,7 +102,11 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
     static create(core: CfnInfraCore) {
         return new InlineCompletionRouter(
             core.contextManager,
-            createInlineCompletionProviders(core.documentManager, RelationshipSchemaService.getInstance()),
+            createInlineCompletionProviders(
+                core.documentManager,
+                RelationshipSchemaService.getInstance(),
+                core.schemaRetriever,
+            ),
             core.documentManager,
         );
     }
@@ -110,12 +115,13 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
 export function createInlineCompletionProviders(
     documentManager: DocumentManager,
     relationshipSchemaService: RelationshipSchemaService,
+    schemaRetriever: SchemaRetriever,
 ): Map<InlineCompletionProviderType, InlineCompletionProvider> {
     const inlineCompletionProviderMap = new Map<InlineCompletionProviderType, InlineCompletionProvider>();
 
     inlineCompletionProviderMap.set(
         'RelatedResources',
-        new RelatedResourcesInlineCompletionProvider(relationshipSchemaService, documentManager),
+        new RelatedResourcesInlineCompletionProvider(relationshipSchemaService, documentManager, schemaRetriever),
     );
 
     return inlineCompletionProviderMap;
