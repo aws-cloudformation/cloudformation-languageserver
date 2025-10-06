@@ -10,6 +10,7 @@ describe('IndentationUtils', () => {
                 const editorSettings: EditorSettings = {
                     tabSize: 2,
                     insertSpaces: false,
+                    detectIndentation: true,
                 };
 
                 const result = getIndentationString(editorSettings, DocumentType.YAML);
@@ -21,11 +22,13 @@ describe('IndentationUtils', () => {
                 const editorSettings4: EditorSettings = {
                     tabSize: 4,
                     insertSpaces: false,
+                    detectIndentation: true,
                 };
 
                 const editorSettings8: EditorSettings = {
                     tabSize: 8,
                     insertSpaces: true,
+                    detectIndentation: true,
                 };
 
                 expect(getIndentationString(editorSettings4, DocumentType.YAML)).toBe('    '); // 4 spaces
@@ -38,6 +41,7 @@ describe('IndentationUtils', () => {
                 const editorSettings: EditorSettings = {
                     tabSize: 4,
                     insertSpaces: true,
+                    detectIndentation: true,
                 };
 
                 const result = getIndentationString(editorSettings, DocumentType.JSON);
@@ -49,6 +53,7 @@ describe('IndentationUtils', () => {
                 const editorSettings: EditorSettings = {
                     tabSize: 4,
                     insertSpaces: false,
+                    detectIndentation: true,
                 };
 
                 const result = getIndentationString(editorSettings, DocumentType.JSON);

@@ -55,6 +55,7 @@ describe('SettingsState', () => {
                 editor: {
                     tabSize: 2,
                     insertSpaces: false,
+                    detectIndentation: true,
                 },
             };
 

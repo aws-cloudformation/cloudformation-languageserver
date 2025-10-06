@@ -32,7 +32,7 @@ describe('InlineCompletionRouter', () => {
     beforeEach(() => {
         mockContextManager.getContext.reset();
         const providers = createInlineCompletionProviders(mockDocumentManager, mockRelationshipSchemaService);
-        router = new InlineCompletionRouter(mockContextManager, providers);
+        router = new InlineCompletionRouter(mockContextManager, providers, mockDocumentManager);
         router.configure(mockSettingsManager);
         vi.restoreAllMocks();
     });
@@ -161,19 +161,16 @@ describe('InlineCompletionRouter', () => {
             router.configure(customSettingsManager);
 
             expect(router['completionSettings']).toEqual(customSettings.completion);
-            expect(router['editorSettings']).toEqual(customSettings.editor);
         });
 
         test('should handle settings reconfiguration', () => {
             const firstSettings = {
                 ...DefaultSettings,
                 completion: { ...DefaultSettings.completion, enabled: false },
-                editor: { ...DefaultSettings.editor, tabSize: 4 },
             };
             const secondSettings = {
                 ...DefaultSettings,
                 completion: { ...DefaultSettings.completion, enabled: true },
-                editor: { ...DefaultSettings.editor, tabSize: 8 },
             };
 
             const firstSettingsManager = createMockSettingsManager(firstSettings);
@@ -196,14 +193,12 @@ describe('InlineCompletionRouter', () => {
             // Configure with first settings manager
             router.configure(firstSettingsManager);
             expect(router['completionSettings']).toEqual(firstSettings.completion);
-            expect(router['editorSettings']).toEqual(firstSettings.editor);
 
             // Configure with second settings manager
             router.configure(secondSettingsManager);
 
             // Verify settings were updated to second manager's values
             expect(router['completionSettings']).toEqual(secondSettings.completion);
-            expect(router['editorSettings']).toEqual(secondSettings.editor);
         });
     });
 
@@ -212,7 +207,6 @@ describe('InlineCompletionRouter', () => {
             const customSettings = {
                 ...DefaultSettings,
                 completion: { ...DefaultSettings.completion, enabled: false },
-                editor: { ...DefaultSettings.editor, tabSize: 6 },
             };
             const customSettingsManager = createMockSettingsManager(customSettings);
             customSettingsManager.subscribe.callsFake((path: keyof typeof customSettings, callback: any) => {
@@ -227,13 +221,11 @@ describe('InlineCompletionRouter', () => {
 
             // Verify settings are applied
             expect(router['completionSettings']).toEqual(customSettings.completion);
-            expect(router['editorSettings']).toEqual(customSettings.editor);
 
             router.close();
 
             // Settings should still be there after close
             expect(router['completionSettings']).toEqual(customSettings.completion);
-            expect(router['editorSettings']).toEqual(customSettings.editor);
         });
 
         test('should handle close when no subscriptions exist', () => {

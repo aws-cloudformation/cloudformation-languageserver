@@ -3,10 +3,12 @@ import { CompletionItemKind, CompletionList } from 'vscode-languageserver';
 import { CompletionFormatter } from '../../../src/autocomplete/CompletionFormatter';
 import { ResourceAttribute, TopLevelSection } from '../../../src/context/ContextType';
 import { DocumentType } from '../../../src/document/Document';
+import { DefaultSettings } from '../../../src/settings/Settings';
 import { createTopLevelContext } from '../../utils/MockContext';
 
 describe('CompletionFormatAdapter', () => {
     let formatter: CompletionFormatter;
+    const defaultEditorSettings = DefaultSettings.editor;
 
     beforeEach(() => {
         formatter = CompletionFormatter.getInstance();
@@ -36,7 +38,7 @@ describe('CompletionFormatAdapter', () => {
         test('should adapt completions for YAML document type', () => {
             const mockContext = createTopLevelContext('Unknown', { type: DocumentType.YAML });
 
-            const result = formatter.format(mockCompletions, mockContext);
+            const result = formatter.format(mockCompletions, mockContext, defaultEditorSettings);
 
             expect(result).toBeDefined();
             expect(result.items).toHaveLength(2);
@@ -47,7 +49,7 @@ describe('CompletionFormatAdapter', () => {
         test('should adapt completions for JSON document type', () => {
             const mockContext = createTopLevelContext('Unknown', { type: DocumentType.JSON });
 
-            const result = formatter.format(mockCompletions, mockContext);
+            const result = formatter.format(mockCompletions, mockContext, defaultEditorSettings);
 
             expect(result).toBeDefined();
             expect(result.items).toHaveLength(2);
@@ -64,7 +66,7 @@ describe('CompletionFormatAdapter', () => {
                 items: [{ label: 'Resources', kind: CompletionItemKind.Property }],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('Resources');
         });
@@ -76,7 +78,7 @@ describe('CompletionFormatAdapter', () => {
                 items: [{ label: 'Resources', kind: CompletionItemKind.Property }],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('Resources:\n  ');
         });
@@ -95,7 +97,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].label).toBe('Resources');
             expect(result.items[0].kind).toBe(CompletionItemKind.Property);
@@ -118,7 +120,7 @@ describe('CompletionFormatAdapter', () => {
                 items: [{ label: TopLevelSection.AWSTemplateFormatVersion, kind: CompletionItemKind.Property }],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('AWSTemplateFormatVersion: "2010-09-09"');
         });
@@ -132,7 +134,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('Description: ');
             expect(result.items[1].insertText).toBe('Transform: ');
@@ -148,7 +150,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('Resources:\n  ');
             expect(result.items[1].insertText).toBe('Parameters:\n  ');
@@ -165,7 +167,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('CreationPolicy: ');
             expect(result.items[1].insertText).toBe('DependsOn: ');
@@ -182,7 +184,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('AWS::EC2::Instance');
             expect(result.items[1].insertText).toBe('AWS::S3::Bucket');
@@ -199,7 +201,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('Type: ');
             expect(result.items[1].insertText).toBe('CreationPolicy: ');
@@ -223,7 +225,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('ObjectProperty:');
             expect(result.items[1].insertText).toBe('SimpleProperty: ');
@@ -246,7 +248,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('ArrayProperty:\n  ');
             expect(result.items[1].insertText).toBe('SimpleProperty: ');
@@ -262,7 +264,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('AuthenticatedRead');
             expect(result.items[1].insertText).toBe('Private');
@@ -279,7 +281,7 @@ describe('CompletionFormatAdapter', () => {
                 ],
             };
 
-            const result = formatter.format(completions, mockContext);
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
             expect(result.items[0].insertText).toBe('IsProduction');
             expect(result.items[1].insertText).toBe('CreateNATGateway');

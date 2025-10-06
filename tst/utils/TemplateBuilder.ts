@@ -6,9 +6,6 @@ import {
 } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { Position, Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { CompletionRouter, createCompletionProviders } from '../../src/autocomplete/CompletionRouter';
-import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
-import { ResourceStateCompletionProvider } from '../../src/autocomplete/ResourceStateCompletionProvider';
-import { TopLevelSectionCompletionProvider } from '../../src/autocomplete/TopLevelSectionCompletionProvider';
 import { Context, SectionType } from '../../src/context/Context';
 import { ContextManager } from '../../src/context/ContextManager';
 import { TopLevelSection } from '../../src/context/ContextType';
@@ -127,30 +124,17 @@ export class TemplateBuilder {
         this.documentManager = new DocumentManager(this.textDocuments);
         this.contextManager = new ContextManager(this.syntaxTreeManager);
         this.schemaRetriever = createMockSchemaRetriever(combinedSchemas());
-        const topLevelSectionProvider = new TopLevelSectionCompletionProvider(
-            this.syntaxTreeManager,
-            this.documentManager,
-        );
-        const resourceEntityProvider = new ResourceEntityCompletionProvider(this.schemaRetriever, this.documentManager);
-        const resourceStateProvider = new ResourceStateCompletionProvider(
-            createMockResourceStateManager(),
-            this.documentManager,
-            this.schemaRetriever,
-        );
 
         const mockTestComponents = createMockComponents({
             schemaRetriever: this.schemaRetriever,
             syntaxTreeManager: this.syntaxTreeManager,
             documentManager: this.documentManager,
             resourceStateManager: createMockResourceStateManager(),
-            topLevelSectionCompletionProvider: topLevelSectionProvider,
-            resourceEntityCompletionProvider: resourceEntityProvider,
-            resourceStateCompletionProvider: resourceStateProvider,
         });
 
         const completionProviders = createCompletionProviders(mockTestComponents);
 
-        this.completionRouter = new CompletionRouter(this.contextManager, completionProviders);
+        this.completionRouter = new CompletionRouter(this.contextManager, completionProviders, this.documentManager);
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever);
         this.initialize(startingContent);
     }
