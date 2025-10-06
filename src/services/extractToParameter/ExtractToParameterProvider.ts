@@ -1,6 +1,7 @@
 import { Range, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { Context } from '../../context/Context';
 import { TopLevelSection } from '../../context/ContextType';
+import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { EditorSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { AllOccurrencesFinder } from './AllOccurrencesFinder';
@@ -31,14 +32,14 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
     private readonly workspaceEditBuilder: WorkspaceEditBuilder;
     private readonly allOccurrencesFinder: AllOccurrencesFinder;
 
-    constructor(syntaxTreeManager?: import('../../context/syntaxtree/SyntaxTreeManager').SyntaxTreeManager) {
+    constructor(syntaxTreeManager: SyntaxTreeManager) {
         this.literalDetector = new LiteralValueDetector();
         this.nameGenerator = new ParameterNameGenerator();
         this.typeInferrer = new ParameterTypeInferrer();
         this.structureUtils = new TemplateStructureUtils(syntaxTreeManager);
         this.textEditGenerator = new TextEditGenerator();
         this.workspaceEditBuilder = new WorkspaceEditBuilder();
-        this.allOccurrencesFinder = new AllOccurrencesFinder();
+        this.allOccurrencesFinder = new AllOccurrencesFinder(syntaxTreeManager);
     }
 
     /**
@@ -71,7 +72,7 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
      * Checks if there are multiple occurrences of the selected literal value in the template.
      * Used to determine whether to offer the "Extract All Occurrences" action.
      */
-    hasMultipleOccurrences(context: Context): boolean {
+    hasMultipleOccurrences(context: Context, uri?: string): boolean {
         if (!this.canExtract(context)) {
             return false;
         }
@@ -82,17 +83,11 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
             return false;
         }
 
-        const rootNode = context.syntaxNode.tree?.rootNode;
-        if (!rootNode) {
+        if (!uri) {
             return false;
         }
 
-        const allOccurrences = this.allOccurrencesFinder.findAllOccurrences(
-            rootNode,
-            literalInfo.value,
-            literalInfo.type,
-            context.documentType,
-        );
+        const allOccurrences = this.allOccurrencesFinder.findAllOccurrences(uri, literalInfo.value, literalInfo.type);
 
         return allOccurrences.length > 1;
     }
@@ -165,16 +160,14 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
             const parameterName = this.generateParameterName(context, templateContent, uri);
             const parameterDefinition = this.typeInferrer.inferParameterType(literalInfo.type, literalInfo.value);
 
-            const rootNode = context.syntaxNode.tree?.rootNode;
-            if (!rootNode) {
+            if (!uri) {
                 return undefined;
             }
 
             const allOccurrences = this.allOccurrencesFinder.findAllOccurrences(
-                rootNode,
+                uri,
                 literalInfo.value,
                 literalInfo.type,
-                context.documentType,
             );
 
             const replacementEdits = allOccurrences.map((occurrenceRange) =>

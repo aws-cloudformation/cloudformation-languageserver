@@ -44,7 +44,7 @@ export class CodeActionService {
         private readonly clientMessage: ClientMessage,
         private readonly diagnosticCoordinator: DiagnosticCoordinator,
         private readonly settingsManager: SettingsManager,
-        private readonly contextManager?: ContextManager,
+        private readonly contextManager: ContextManager,
         private readonly extractToParameterProvider?: ExtractToParameterProvider,
     ) {}
 
@@ -544,7 +544,10 @@ export class CodeActionService {
                     refactorActions.push(extractAction);
                 }
 
-                const hasMultiple = this.extractToParameterProvider.hasMultipleOccurrences(context);
+                const hasMultiple = this.extractToParameterProvider.hasMultipleOccurrences(
+                    context,
+                    params.textDocument.uri,
+                );
 
                 if (hasMultiple) {
                     const extractAllAction = this.generateExtractAllOccurrencesToParameterAction(params, context);

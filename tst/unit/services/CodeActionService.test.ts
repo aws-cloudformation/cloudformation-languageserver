@@ -3,6 +3,7 @@ import { SyntaxNode } from 'tree-sitter';
 import { stubInterface } from 'ts-sinon';
 import { describe, it, beforeEach, expect } from 'vitest';
 import { CodeActionParams, Diagnostic, DiagnosticSeverity, CodeAction } from 'vscode-languageserver';
+import { ContextManager } from '../../../src/context/ContextManager';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../../src/document/DocumentManager';
@@ -28,12 +29,14 @@ describe('CodeActionService', () => {
         mockSyntaxTree = stubInterface<SyntaxTree>();
         const mockDiagnosticCoordinator = stubInterface<DiagnosticCoordinator>();
         const mockSettingsManager = stubInterface<SettingsManager>();
+        const mockContextManager = stubInterface<ContextManager>();
         codeActionService = new CodeActionService(
             mockSyntaxTreeManager,
             mockDocumentManager,
             mockLog,
             mockDiagnosticCoordinator,
             mockSettingsManager,
+            mockContextManager,
         );
     });
 

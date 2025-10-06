@@ -1,6 +1,10 @@
+import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Range, WorkspaceEdit } from 'vscode-languageserver';
 import { Context } from '../../../../src/context/Context';
+import { TopLevelSection } from '../../../../src/context/ContextType';
+import { SyntaxTree } from '../../../../src/context/syntaxtree/SyntaxTree';
+import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../../../../src/document/Document';
 import { ExtractToParameterProvider } from '../../../../src/services/extractToParameter/ExtractToParameterProvider';
 import { ParameterType } from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
@@ -11,9 +15,13 @@ describe('ExtractToParameterProvider', () => {
     let mockContext: Context;
     let mockRange: Range;
     let mockEditorSettings: EditorSettings;
+    let mockSyntaxTreeManager: ReturnType<typeof stubInterface<SyntaxTreeManager>>;
+    let mockSyntaxTree: ReturnType<typeof stubInterface<SyntaxTree>>;
 
     beforeEach(() => {
-        provider = new ExtractToParameterProvider();
+        mockSyntaxTreeManager = stubInterface<SyntaxTreeManager>();
+        mockSyntaxTree = stubInterface<SyntaxTree>();
+        provider = new ExtractToParameterProvider(mockSyntaxTreeManager);
 
         mockRange = {
             start: { line: 0, character: 0 },
@@ -646,7 +654,33 @@ Resources:
 
             vi.spyOn(mockContext as any, 'getRootEntityText').mockReturnValue(mockTemplateContent);
 
-            const result = provider.hasMultipleOccurrences(mockContext);
+            // Setup SyntaxTree mock to return Resources section with multiple occurrences
+            const mockResourcesSection = {
+                type: 'object',
+                children: [
+                    {
+                        type: 'string',
+                        text: '"my-bucket"',
+                        startPosition: { row: 0, column: 0 },
+                        endPosition: { row: 0, column: 11 },
+                        children: [],
+                    },
+                    {
+                        type: 'string',
+                        text: '"my-bucket"',
+                        startPosition: { row: 1, column: 0 },
+                        endPosition: { row: 1, column: 11 },
+                        children: [],
+                    },
+                ],
+            };
+
+            const sectionsMap = new Map();
+            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = provider.hasMultipleOccurrences(mockContext, 'file:///test.json');
             expect(result).toBe(true);
         });
 
@@ -685,14 +719,14 @@ Resources:
 
             vi.spyOn(mockContext as any, 'getRootEntityText').mockReturnValue(mockTemplateContent);
 
-            const result = provider.hasMultipleOccurrences(mockContext);
+            const result = provider.hasMultipleOccurrences(mockContext, 'file:///test.json');
             expect(result).toBe(false);
         });
 
         it('should return false for non-extractable contexts', () => {
             vi.spyOn(mockContext, 'isValue').mockReturnValue(false);
 
-            const result = provider.hasMultipleOccurrences(mockContext);
+            const result = provider.hasMultipleOccurrences(mockContext, 'file:///test.json');
             expect(result).toBe(false);
         });
     });
@@ -771,7 +805,38 @@ Resources:
 
             vi.spyOn(mockContext as any, 'getRootEntityText').mockReturnValue(mockTemplateContent);
 
-            const result = provider.generateAllOccurrencesExtraction(mockContext, mockRange, mockEditorSettings);
+            // Setup SyntaxTree mock to return Resources section with multiple occurrences
+            const mockResourcesSection = {
+                type: 'object',
+                children: [
+                    {
+                        type: 'string',
+                        text: '"my-bucket"',
+                        startPosition: { row: 0, column: 0 },
+                        endPosition: { row: 0, column: 11 },
+                        children: [],
+                    },
+                    {
+                        type: 'string',
+                        text: '"my-bucket"',
+                        startPosition: { row: 1, column: 0 },
+                        endPosition: { row: 1, column: 11 },
+                        children: [],
+                    },
+                ],
+            };
+
+            const sectionsMap = new Map();
+            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = provider.generateAllOccurrencesExtraction(
+                mockContext,
+                mockRange,
+                mockEditorSettings,
+                'file:///test.json',
+            );
 
             expect(result).toBeDefined();
             expect(result?.parameterName).toBe('MyResourceInstanceType');
@@ -785,19 +850,24 @@ Resources:
         it('should return undefined for non-extractable contexts', () => {
             vi.spyOn(mockContext, 'isValue').mockReturnValue(false);
 
-            const result = provider.generateAllOccurrencesExtraction(mockContext, mockRange, mockEditorSettings);
+            const result = provider.generateAllOccurrencesExtraction(
+                mockContext,
+                mockRange,
+                mockEditorSettings,
+                'file:///test.json',
+            );
             expect(result).toBeUndefined();
         });
 
-        it('should handle templates with no root node', () => {
+        it('should handle templates with no syntax tree', () => {
             (mockContext.syntaxNode as any) = {
                 type: 'string',
                 text: '"my-bucket"',
                 startPosition: { row: 0, column: 0 },
                 endPosition: { row: 0, column: 11 },
-                tree: null,
             } as any;
 
+            // Don't pass URI to simulate no syntax tree available
             const result = provider.generateAllOccurrencesExtraction(mockContext, mockRange, mockEditorSettings);
             expect(result).toBeUndefined();
         });

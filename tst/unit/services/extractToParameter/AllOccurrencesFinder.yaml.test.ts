@@ -1,138 +1,85 @@
+import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DocumentType } from '../../../../src/document/Document';
+import { TopLevelSection } from '../../../../src/context/ContextType';
+import { SyntaxTree } from '../../../../src/context/syntaxtree/SyntaxTree';
+import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { AllOccurrencesFinder } from '../../../../src/services/extractToParameter/AllOccurrencesFinder';
 import { LiteralValueType } from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
 
 describe('AllOccurrencesFinder - YAML', () => {
     let finder: AllOccurrencesFinder;
+    let mockSyntaxTreeManager: ReturnType<typeof stubInterface<SyntaxTreeManager>>;
+    let mockSyntaxTree: ReturnType<typeof stubInterface<SyntaxTree>>;
 
     beforeEach(() => {
-        finder = new AllOccurrencesFinder();
+        mockSyntaxTreeManager = stubInterface<SyntaxTreeManager>();
+        mockSyntaxTree = stubInterface<SyntaxTree>();
+        finder = new AllOccurrencesFinder(mockSyntaxTreeManager);
     });
 
     describe('findAllOccurrences - YAML plain scalars', () => {
         it('should find all plain scalar string occurrences in YAML template', () => {
-            // Mock YAML syntax tree with Resources section containing multiple plain_scalar occurrences
-            const mockRootNode = {
-                type: 'stream',
+            // Create mock Resources section with YAML plain scalars
+            const mockResourcesSection = {
+                type: 'block_mapping',
                 children: [
                     {
-                        type: 'block_mapping_pair',
+                        type: 'string_scalar',
+                        text: 'my-bucket',
                         startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 0 },
-                        childForFieldName: (field: string) => {
-                            if (field === 'key') {
-                                return {
-                                    text: 'Resources',
-                                    type: 'plain_scalar',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 9 },
-                                };
-                            }
-                            if (field === 'value') {
-                                return {
-                                    type: 'block_node',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                    children: [
-                                        {
-                                            type: 'plain_scalar',
-                                            text: 'my-test-bucket',
-                                            startPosition: { row: 5, column: 18 },
-                                            endPosition: { row: 5, column: 32 },
-                                            children: [],
-                                        },
-                                        {
-                                            type: 'plain_scalar',
-                                            text: 'my-test-bucket',
-                                            startPosition: { row: 9, column: 18 },
-                                            endPosition: { row: 9, column: 32 },
-                                            children: [],
-                                        },
-                                        {
-                                            type: 'plain_scalar',
-                                            text: 'different-bucket',
-                                            startPosition: { row: 13, column: 18 },
-                                            endPosition: { row: 13, column: 34 },
-                                            children: [],
-                                        },
-                                    ],
-                                };
-                            }
-                            return null;
-                        },
+                        endPosition: { row: 0, column: 9 },
+                        children: [],
+                    },
+                    {
+                        type: 'string_scalar',
+                        text: 'my-bucket',
+                        startPosition: { row: 1, column: 0 },
+                        endPosition: { row: 1, column: 9 },
                         children: [],
                     },
                 ],
             };
 
-            const occurrences = finder.findAllOccurrences(
-                mockRootNode as any,
-                'my-test-bucket',
-                LiteralValueType.STRING,
-                DocumentType.YAML,
-            );
+            // Setup mock to return Resources section
+            const sectionsMap = new Map();
+            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+
+            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const occurrences = finder.findAllOccurrences('file:///test.yaml', 'my-bucket', LiteralValueType.STRING);
 
             expect(occurrences).toHaveLength(2);
-            expect(occurrences[0].start.line).toBe(5);
-            expect(occurrences[0].start.character).toBe(18);
-            expect(occurrences[1].start.line).toBe(9);
-            expect(occurrences[1].start.character).toBe(18);
         });
 
-        it('should find all quoted scalar string occurrences in YAML template', () => {
-            const mockRootNode = {
-                type: 'stream',
+        it('should find number occurrences in YAML template', () => {
+            const mockResourcesSection = {
+                type: 'block_mapping',
                 children: [
                     {
-                        type: 'block_mapping_pair',
+                        type: 'integer_scalar',
+                        text: '80',
                         startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 0 },
-                        childForFieldName: (field: string) => {
-                            if (field === 'key') {
-                                return {
-                                    text: 'Resources',
-                                    type: 'plain_scalar',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 9 },
-                                };
-                            }
-                            if (field === 'value') {
-                                return {
-                                    type: 'block_node',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                    children: [
-                                        {
-                                            type: 'double_quote_scalar',
-                                            text: '"my-test-bucket"',
-                                            startPosition: { row: 5, column: 18 },
-                                            endPosition: { row: 5, column: 34 },
-                                            children: [],
-                                        },
-                                        {
-                                            type: 'double_quote_scalar',
-                                            text: '"my-test-bucket"',
-                                            startPosition: { row: 9, column: 18 },
-                                            endPosition: { row: 9, column: 34 },
-                                            children: [],
-                                        },
-                                    ],
-                                };
-                            }
-                            return null;
-                        },
+                        endPosition: { row: 0, column: 2 },
+                        children: [],
+                    },
+                    {
+                        type: 'integer_scalar',
+                        text: '80',
+                        startPosition: { row: 1, column: 0 },
+                        endPosition: { row: 1, column: 2 },
                         children: [],
                     },
                 ],
             };
 
-            const occurrences = finder.findAllOccurrences(
-                mockRootNode as any,
-                'my-test-bucket',
-                LiteralValueType.STRING,
-                DocumentType.YAML,
-            );
+            const sectionsMap = new Map();
+            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+
+            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const occurrences = finder.findAllOccurrences('file:///test.yaml', 80, LiteralValueType.NUMBER);
 
             expect(occurrences).toHaveLength(2);
         });

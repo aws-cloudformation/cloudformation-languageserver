@@ -1,6 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
-import { DocumentType } from '../../document/Document';
+import { TopLevelSection } from '../../context/ContextType';
+import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
 import { LiteralValueDetector } from './LiteralValueDetector';
@@ -14,9 +15,11 @@ import { LiteralValueDetector } from './LiteralValueDetector';
 export class AllOccurrencesFinder {
     private readonly log = LoggerFactory.getLogger(AllOccurrencesFinder);
     private readonly literalDetector: LiteralValueDetector;
+    private readonly syntaxTreeManager: SyntaxTreeManager;
 
-    constructor() {
+    constructor(syntaxTreeManager: SyntaxTreeManager) {
         this.literalDetector = new LiteralValueDetector();
+        this.syntaxTreeManager = syntaxTreeManager;
     }
 
     /**
@@ -26,43 +29,41 @@ export class AllOccurrencesFinder {
      * can reference parameters.
      */
     findAllOccurrences(
-        rootNode: SyntaxNode,
+        documentUri: string,
         targetValue: string | number | boolean | unknown[],
         targetType: LiteralValueType,
-        documentType: DocumentType,
     ): Range[] {
         const occurrences: Range[] = [];
 
-        const resourcesAndOutputsSections = this.findResourcesAndOutputsSections(rootNode, documentType);
+        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(documentUri);
+        if (!syntaxTree) {
+            return occurrences;
+        }
 
-        for (const sectionNode of resourcesAndOutputsSections) {
-            this.traverseNode(sectionNode, targetValue, targetType, documentType, occurrences);
+        const sections = syntaxTree.findTopLevelSections([TopLevelSection.Resources, TopLevelSection.Outputs]);
+
+        for (const sectionNode of sections.values()) {
+            this.traverseForMatches(sectionNode, targetValue, targetType, occurrences);
         }
 
         return occurrences;
     }
 
-    private traverseNode(
+    private traverseForMatches(
         node: SyntaxNode,
         targetValue: string | number | boolean | unknown[],
         targetType: LiteralValueType,
-        documentType: DocumentType,
         occurrences: Range[],
     ): void {
         const literalInfo = this.literalDetector.detectLiteralValue(node);
 
-        if (literalInfo && this.isMatchingLiteral(literalInfo, targetValue, targetType)) {
-            if (literalInfo.isReference) {
-                // Skip reference literals
-            } else {
-                occurrences.push(literalInfo.range);
-                // If we found a match, don't traverse children to avoid double-counting
-                return;
-            }
+        if (literalInfo && this.isMatchingLiteral(literalInfo, targetValue, targetType) && !literalInfo.isReference) {
+            occurrences.push(literalInfo.range);
+            return; // Don't traverse children to avoid duplicates
         }
 
         for (const child of node.children) {
-            this.traverseNode(child, targetValue, targetType, documentType, occurrences);
+            this.traverseForMatches(child, targetValue, targetType, occurrences);
         }
     }
 
@@ -110,75 +111,5 @@ export class AllOccurrencesFinder {
         }
 
         return true;
-    }
-
-    /**
-     * Finds the Resources and Outputs section nodes in the template.
-     * Returns an array of section nodes to search within.
-     */
-    private findResourcesAndOutputsSections(rootNode: SyntaxNode, documentType: DocumentType): SyntaxNode[] {
-        const sections: SyntaxNode[] = [];
-
-        this.findSectionsRecursive(rootNode, documentType, sections, 0);
-
-        return sections;
-    }
-
-    /**
-     * Recursively searches for Resources and Outputs sections in the syntax tree.
-     * Limits depth to avoid searching too deep into the tree. Worst case the user
-     * can't refactor all possible matches at the same time but they can still do
-     * them one at a time.
-     */
-    private findSectionsRecursive(
-        node: SyntaxNode,
-        documentType: DocumentType,
-        sections: SyntaxNode[],
-        depth: number,
-    ): void {
-        // Limit depth to avoid searching too deep (Resources/Outputs should be at top level)
-        // YAML has deeper nesting: stream → document → block_node → block_mapping → block_mapping_pair
-        // JSON has shallower nesting: document → object → pair
-        const maxDepth = documentType === DocumentType.YAML ? 5 : 3;
-        if (depth > maxDepth) {
-            return;
-        }
-
-        if (documentType === DocumentType.JSON) {
-            // JSON: look for pair nodes with key "Resources" or "Outputs"
-            if (node.type === 'pair') {
-                const keyNode = node.childForFieldName('key');
-                if (keyNode) {
-                    const keyText = keyNode.text.replaceAll(/^"|"$/g, ''); // Remove quotes
-                    if (keyText === 'Resources' || keyText === 'Outputs') {
-                        const valueNode = node.childForFieldName('value');
-                        if (valueNode) {
-                            sections.push(valueNode);
-                            return; // Don't search deeper once we found a section
-                        }
-                    }
-                }
-            }
-        } else {
-            // YAML: look for block_mapping_pair nodes with key "Resources" or "Outputs"
-            if (node.type === 'block_mapping_pair') {
-                const keyNode = node.childForFieldName('key');
-                if (keyNode) {
-                    const keyText = keyNode.text;
-                    if (keyText === 'Resources' || keyText === 'Outputs') {
-                        const valueNode = node.childForFieldName('value');
-                        if (valueNode) {
-                            sections.push(valueNode);
-                            return; // Don't search deeper once we found a section
-                        }
-                    }
-                }
-            }
-        }
-
-        // Recursively search children
-        for (const child of node.children) {
-            this.findSectionsRecursive(child, documentType, sections, depth + 1);
-        }
     }
 }

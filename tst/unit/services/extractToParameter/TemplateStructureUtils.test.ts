@@ -1,12 +1,16 @@
+import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach } from 'vitest';
+import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../../../../src/document/Document';
 import { TemplateStructureUtils } from '../../../../src/services/extractToParameter/TemplateStructureUtils';
 
 describe('TemplateStructureUtils', () => {
     let utils: TemplateStructureUtils;
+    let mockSyntaxTreeManager: ReturnType<typeof stubInterface<SyntaxTreeManager>>;
 
     beforeEach(() => {
-        utils = new TemplateStructureUtils();
+        mockSyntaxTreeManager = stubInterface<SyntaxTreeManager>();
+        utils = new TemplateStructureUtils(mockSyntaxTreeManager);
     });
 
     describe('findParametersSection', () => {

@@ -37,7 +37,7 @@ export type ParameterInsertionPoint = {
  * Uses the existing SyntaxTree infrastructure for robust parsing.
  */
 export class TemplateStructureUtils {
-    constructor(private readonly syntaxTreeManager?: SyntaxTreeManager) {}
+    constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
     /**
      * Locates the Parameters section in a CloudFormation template.
      * Uses SyntaxTree findTopLevelSections for robust parsing and error recovery.

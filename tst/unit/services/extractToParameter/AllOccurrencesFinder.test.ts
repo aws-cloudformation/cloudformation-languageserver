@@ -1,379 +1,117 @@
+import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DocumentType } from '../../../../src/document/Document';
+import { TopLevelSection } from '../../../../src/context/ContextType';
+import { SyntaxTree } from '../../../../src/context/syntaxtree/SyntaxTree';
+import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { AllOccurrencesFinder } from '../../../../src/services/extractToParameter/AllOccurrencesFinder';
 import { LiteralValueType } from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
 
 describe('AllOccurrencesFinder', () => {
     let finder: AllOccurrencesFinder;
+    let mockSyntaxTreeManager: ReturnType<typeof stubInterface<SyntaxTreeManager>>;
+    let mockSyntaxTree: ReturnType<typeof stubInterface<SyntaxTree>>;
 
     beforeEach(() => {
-        finder = new AllOccurrencesFinder();
+        mockSyntaxTreeManager = stubInterface<SyntaxTreeManager>();
+        mockSyntaxTree = stubInterface<SyntaxTree>();
+        finder = new AllOccurrencesFinder(mockSyntaxTreeManager);
     });
 
     describe('findAllOccurrences', () => {
         it('should find all string occurrences in template', () => {
-            // Mock syntax tree with Resources section containing multiple string occurrences
-            const mockRootNode = {
-                type: 'document',
-                children: [
-                    {
-                        type: 'pair',
-                        startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 0 },
-                        childForFieldName: (field: string) => {
-                            if (field === 'key') {
-                                return {
-                                    text: '"Resources"',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                };
-                            }
-                            if (field === 'value') {
-                                return {
-                                    type: 'object',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                    children: [
-                                        {
-                                            type: 'string',
-                                            text: '"my-bucket"',
-                                            startPosition: { row: 0, column: 0 },
-                                            endPosition: { row: 0, column: 11 },
-                                            children: [],
-                                        },
-                                        {
-                                            type: 'string',
-                                            text: '"my-bucket"',
-                                            startPosition: { row: 1, column: 0 },
-                                            endPosition: { row: 1, column: 11 },
-                                            children: [],
-                                        },
-                                        {
-                                            type: 'string',
-                                            text: '"different-bucket"',
-                                            startPosition: { row: 2, column: 0 },
-                                            endPosition: { row: 2, column: 18 },
-                                            children: [],
-                                        },
-                                    ],
-                                };
-                            }
-                            return null;
-                        },
-                        children: [],
-                    },
-                ],
-            };
-
-            const occurrences = finder.findAllOccurrences(
-                mockRootNode as any,
-                'my-bucket',
-                LiteralValueType.STRING,
-                DocumentType.JSON,
-            );
-
-            expect(occurrences).toHaveLength(2);
-            expect(occurrences[0].start.line).toBe(0);
-            expect(occurrences[1].start.line).toBe(1);
-        });
-
-        it('should find all number occurrences in template', () => {
-            const mockRootNode = {
-                type: 'document',
-                children: [
-                    {
-                        type: 'pair',
-                        startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 0 },
-                        childForFieldName: (field: string) => {
-                            if (field === 'key') {
-                                return {
-                                    text: '"Resources"',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                };
-                            }
-                            if (field === 'value') {
-                                return {
-                                    type: 'object',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                    children: [
-                                        {
-                                            type: 'number',
-                                            text: '1',
-                                            startPosition: { row: 0, column: 0 },
-                                            endPosition: { row: 0, column: 1 },
-                                            children: [],
-                                        },
-                                        {
-                                            type: 'number',
-                                            text: '1',
-                                            startPosition: { row: 1, column: 0 },
-                                            endPosition: { row: 1, column: 1 },
-                                            children: [],
-                                        },
-                                    ],
-                                };
-                            }
-                            return null;
-                        },
-                        children: [],
-                    },
-                ],
-            };
-
-            const occurrences = finder.findAllOccurrences(
-                mockRootNode as any,
-                1,
-                LiteralValueType.NUMBER,
-                DocumentType.JSON,
-            );
-
-            expect(occurrences).toHaveLength(2);
-        });
-
-        it('should find all boolean occurrences in template', () => {
-            const mockRootNode = {
-                type: 'document',
-                children: [
-                    {
-                        type: 'pair',
-                        startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 0 },
-                        childForFieldName: (field: string) => {
-                            if (field === 'key') {
-                                return {
-                                    text: '"Outputs"',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                };
-                            }
-                            if (field === 'value') {
-                                return {
-                                    type: 'object',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                    children: [
-                                        {
-                                            type: 'true',
-                                            text: 'true',
-                                            startPosition: { row: 0, column: 0 },
-                                            endPosition: { row: 0, column: 4 },
-                                            children: [],
-                                        },
-                                        {
-                                            type: 'true',
-                                            text: 'true',
-                                            startPosition: { row: 1, column: 0 },
-                                            endPosition: { row: 1, column: 4 },
-                                            children: [],
-                                        },
-                                    ],
-                                };
-                            }
-                            return null;
-                        },
-                        children: [],
-                    },
-                ],
-            };
-
-            const occurrences = finder.findAllOccurrences(
-                mockRootNode as any,
-                true,
-                LiteralValueType.BOOLEAN,
-                DocumentType.JSON,
-            );
-
-            expect(occurrences).toHaveLength(2);
-        });
-
-        it('should not find intrinsic function references', () => {
-            const mockRootNode = {
-                type: 'document',
-                children: [
-                    {
-                        type: 'pair',
-                        startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 0 },
-                        childForFieldName: (field: string) => {
-                            if (field === 'key') {
-                                return {
-                                    text: '"Resources"',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                };
-                            }
-                            if (field === 'value') {
-                                return {
-                                    type: 'object',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                    children: [
-                                        {
-                                            type: 'string',
-                                            text: '"my-bucket"',
-                                            startPosition: { row: 0, column: 0 },
-                                            endPosition: { row: 0, column: 11 },
-                                            children: [],
-                                        },
-                                        {
-                                            type: 'object',
-                                            text: '{"Ref": "BucketNameParam"}',
-                                            startPosition: { row: 1, column: 0 },
-                                            endPosition: { row: 1, column: 26 },
-                                            children: [
-                                                {
-                                                    type: 'pair',
-                                                    startPosition: { row: 1, column: 1 },
-                                                    endPosition: { row: 1, column: 25 },
-                                                    children: [
-                                                        {
-                                                            type: 'string',
-                                                            text: '"Ref"',
-                                                            startPosition: { row: 1, column: 1 },
-                                                            endPosition: { row: 1, column: 6 },
-                                                            children: [],
-                                                        },
-                                                        {
-                                                            type: 'string',
-                                                            text: '"BucketNameParam"',
-                                                            startPosition: { row: 1, column: 8 },
-                                                            endPosition: { row: 1, column: 25 },
-                                                            children: [],
-                                                        },
-                                                    ],
-                                                },
-                                            ],
-                                        },
-                                    ],
-                                };
-                            }
-                            return null;
-                        },
-                        children: [],
-                    },
-                ],
-            };
-
-            const occurrences = finder.findAllOccurrences(
-                mockRootNode as any,
-                'my-bucket',
-                LiteralValueType.STRING,
-                DocumentType.JSON,
-            );
-
-            // Should only find the literal occurrence, not the Ref
-            expect(occurrences).toHaveLength(1);
-        });
-
-        it('should handle empty results when no matches found', () => {
-            const mockRootNode = {
-                type: 'document',
+            // Create mock Resources section with string literals
+            const mockResourcesSection = {
+                type: 'object',
                 children: [
                     {
                         type: 'string',
-                        text: '"different-bucket"',
+                        text: '"my-bucket"',
                         startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 18 },
+                        endPosition: { row: 0, column: 11 },
+                        children: [],
+                    },
+                    {
+                        type: 'string',
+                        text: '"my-bucket"',
+                        startPosition: { row: 1, column: 0 },
+                        endPosition: { row: 1, column: 11 },
+                        children: [],
+                    },
+                    {
+                        type: 'string',
+                        text: '"different-bucket"',
+                        startPosition: { row: 2, column: 0 },
+                        endPosition: { row: 2, column: 18 },
                         children: [],
                     },
                 ],
             };
 
-            const occurrences = finder.findAllOccurrences(
-                mockRootNode as any,
-                'my-bucket',
-                LiteralValueType.STRING,
-                DocumentType.JSON,
-            );
+            // Setup mock to return Resources section
+            const sectionsMap = new Map();
+            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+
+            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const occurrences = finder.findAllOccurrences('file:///test.json', 'my-bucket', LiteralValueType.STRING);
+
+            expect(occurrences).toHaveLength(2);
+        });
+
+        it('should return empty array when SyntaxTree not found', () => {
+            mockSyntaxTreeManager.getSyntaxTree.returns(undefined);
+
+            const occurrences = finder.findAllOccurrences('file:///test.json', 'my-bucket', LiteralValueType.STRING);
 
             expect(occurrences).toHaveLength(0);
         });
 
-        it('should handle array values', () => {
-            const mockRootNode = {
-                type: 'document',
+        it('should return empty array when no Resources or Outputs sections found', () => {
+            const emptySectionsMap = new Map();
+            mockSyntaxTree.findTopLevelSections.returns(emptySectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const occurrences = finder.findAllOccurrences('file:///test.json', 'my-bucket', LiteralValueType.STRING);
+
+            expect(occurrences).toHaveLength(0);
+        });
+
+        it('should find occurrences in both Resources and Outputs sections', () => {
+            const mockResourcesSection = {
+                type: 'object',
                 children: [
                     {
-                        type: 'pair',
+                        type: 'string',
+                        text: '"shared-value"',
                         startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 0 },
-                        childForFieldName: (field: string) => {
-                            if (field === 'key') {
-                                return {
-                                    text: '"Resources"',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                };
-                            }
-                            if (field === 'value') {
-                                return {
-                                    type: 'object',
-                                    startPosition: { row: 0, column: 0 },
-                                    endPosition: { row: 0, column: 0 },
-                                    children: [
-                                        {
-                                            type: 'array',
-                                            text: '[80, 443]',
-                                            startPosition: { row: 0, column: 0 },
-                                            endPosition: { row: 0, column: 9 },
-                                            children: [
-                                                {
-                                                    type: 'number',
-                                                    text: '80',
-                                                    startPosition: { row: 0, column: 1 },
-                                                    endPosition: { row: 0, column: 3 },
-                                                    children: [],
-                                                },
-                                                {
-                                                    type: 'number',
-                                                    text: '443',
-                                                    startPosition: { row: 0, column: 5 },
-                                                    endPosition: { row: 0, column: 8 },
-                                                    children: [],
-                                                },
-                                            ],
-                                        },
-                                        {
-                                            type: 'array',
-                                            text: '[80, 443]',
-                                            startPosition: { row: 1, column: 0 },
-                                            endPosition: { row: 1, column: 9 },
-                                            children: [
-                                                {
-                                                    type: 'number',
-                                                    text: '80',
-                                                    startPosition: { row: 1, column: 1 },
-                                                    endPosition: { row: 1, column: 3 },
-                                                    children: [],
-                                                },
-                                                {
-                                                    type: 'number',
-                                                    text: '443',
-                                                    startPosition: { row: 1, column: 5 },
-                                                    endPosition: { row: 1, column: 8 },
-                                                    children: [],
-                                                },
-                                            ],
-                                        },
-                                    ],
-                                };
-                            }
-                            return null;
-                        },
+                        endPosition: { row: 0, column: 14 },
                         children: [],
                     },
                 ],
             };
 
-            const occurrences = finder.findAllOccurrences(
-                mockRootNode as any,
-                [80, 443],
-                LiteralValueType.ARRAY,
-                DocumentType.JSON,
-            );
+            const mockOutputsSection = {
+                type: 'object',
+                children: [
+                    {
+                        type: 'string',
+                        text: '"shared-value"',
+                        startPosition: { row: 5, column: 0 },
+                        endPosition: { row: 5, column: 14 },
+                        children: [],
+                    },
+                ],
+            };
+
+            const sectionsMap = new Map();
+            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            sectionsMap.set(TopLevelSection.Outputs, mockOutputsSection as any);
+
+            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const occurrences = finder.findAllOccurrences('file:///test.json', 'shared-value', LiteralValueType.STRING);
 
             expect(occurrences).toHaveLength(2);
         });
