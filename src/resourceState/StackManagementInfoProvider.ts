@@ -2,7 +2,7 @@ import { CloudFormationServiceException } from '@aws-sdk/client-cloudformation';
 import { CfnService } from '../services/CfnService';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 
-type ResourceStackManagementResult = {
+export type ResourceStackManagementResult = {
     physicalResourceId: string;
     managedByStack: boolean | undefined;
     stackName?: string;

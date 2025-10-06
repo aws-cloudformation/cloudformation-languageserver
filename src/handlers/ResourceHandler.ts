@@ -8,7 +8,9 @@ import {
     ResourceStateParams,
     ResourceStateResult,
     ResourceSummary,
+    ResourceIdentifier,
 } from '../resourceState/ResourceStateTypes';
+import { ResourceStackManagementResult } from '../resourceState/StackManagementInfoProvider';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
@@ -84,5 +86,13 @@ export function refreshResourceListHandler(
             log.error(error, 'Failed to refresh resource list');
             throw new Error(`Failed to refresh resource list: ${extractErrorMessage(error)}`);
         }
+    };
+}
+
+export function getStackMgmtInfo(
+    components: ServerComponents,
+): ServerRequestHandler<ResourceIdentifier, ResourceStackManagementResult, never, void> {
+    return async (id) => {
+        return await components.stackManagementInfoProvider.getResourceManagementState(id);
     };
 }

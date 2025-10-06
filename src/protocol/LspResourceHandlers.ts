@@ -11,7 +11,10 @@ import {
     RefreshResourceListRequest,
     RefreshResourcesParams,
     RefreshResourcesResult,
+    StackMgmtInfoRequest,
+    ResourceIdentifier,
 } from '../resourceState/ResourceStateTypes';
+import { ResourceStackManagementResult } from '../resourceState/StackManagementInfoProvider';
 
 export class LspResourceHandlers {
     constructor(private readonly connection: Connection) {}
@@ -30,5 +33,9 @@ export class LspResourceHandlers {
 
     onResourceStateImport(handler: ServerRequestHandler<ResourceStateParams, ResourceStateResult, never, void>) {
         this.connection.onRequest(ResourceStateRequest.method, handler);
+    }
+
+    onStackMgmtInfo(handler: ServerRequestHandler<ResourceIdentifier, ResourceStackManagementResult, never, void>) {
+        this.connection.onRequest(StackMgmtInfoRequest.method, handler);
     }
 }
