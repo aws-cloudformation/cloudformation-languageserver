@@ -14,7 +14,7 @@ import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
 import { ANALYZE_DIAGNOSTIC } from '../handlers/ExecutionHandler';
 import { ServerComponents } from '../server/ServerComponents';
-import { CFN_VALIDATION_SOURCE } from '../stackActions/ValidationWorkflow';
+import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { ClientMessage } from '../telemetry/ClientMessage';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';

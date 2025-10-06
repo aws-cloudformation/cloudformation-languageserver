@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { StackActionPhase } from '../../../src/stackActions/StackActionRequestType';
-import { Validation } from '../../../src/stackActions/Validation';
+import { StackActionPhase } from '../../../src/stacks/actions/StackActionRequestType';
+import { Validation } from '../../../src/stacks/actions/Validation';
 
 describe('Validation', () => {
     let validation: Validation;

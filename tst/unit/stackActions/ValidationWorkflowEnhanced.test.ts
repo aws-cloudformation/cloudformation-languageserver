@@ -1,7 +1,7 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { StackActionPhase, StackActionStatus } from '../../../src/stackActions/StackActionRequestType';
-import { ValidationWorkflow } from '../../../src/stackActions/ValidationWorkflow';
+import { StackActionPhase, StackActionStatus } from '../../../src/stacks/actions/StackActionRequestType';
+import { ValidationWorkflow } from '../../../src/stacks/actions/ValidationWorkflow';
 
 describe('ValidationWorkflow Enhanced Features', () => {
     let workflow: ValidationWorkflow;

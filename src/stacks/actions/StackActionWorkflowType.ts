@@ -1,6 +1,6 @@
-import { Identifiable } from '../protocol/LspTypes';
-import { AwsEnv } from '../utils/Environment';
-import { ExtensionName } from '../utils/ExtensionConfig';
+import { Identifiable } from '../../protocol/LspTypes';
+import { AwsEnv } from '../../utils/Environment';
+import { ExtensionName } from '../../utils/ExtensionConfig';
 import {
     StackActionParams,
     StackActionResult,

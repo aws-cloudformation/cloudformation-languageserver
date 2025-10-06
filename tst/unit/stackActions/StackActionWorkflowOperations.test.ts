@@ -11,13 +11,13 @@ import {
     deleteStackAndChangeSet,
     deleteChangeSet,
     mapChangesToStackChanges,
-} from '../../../src/stackActions/StackActionOperations';
+} from '../../../src/stacks/actions/StackActionOperations';
 import {
     StackActionParams,
     StackActionPhase,
     StackActionStatus,
-} from '../../../src/stackActions/StackActionRequestType';
-import { StackActionWorkflowState } from '../../../src/stackActions/StackActionWorkflowType';
+} from '../../../src/stacks/actions/StackActionRequestType';
+import { StackActionWorkflowState } from '../../../src/stacks/actions/StackActionWorkflowType';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 
 vi.mock('../../../src/utils/Retry', () => ({

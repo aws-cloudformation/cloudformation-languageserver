@@ -1,4 +1,4 @@
-import { Capability } from '@aws-sdk/client-cloudformation';
+import { Capability, StackSummary, StackStatus } from '@aws-sdk/client-cloudformation';
 import { StubbedInstance } from 'ts-sinon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
@@ -14,15 +14,17 @@ import {
     stackActionDeploymentCreateHandler,
     stackActionValidationStatusHandler,
     stackActionDeploymentStatusHandler,
-} from '../../../src/handlers/StackActionHandler';
-import { analyzeCapabilities } from '../../../src/stackActions/CapabilityAnalyzer';
+    listStacksHandler,
+} from '../../../src/handlers/StackHandler';
+import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
 import {
-    TemplateMetadataParams,
+    StackActionMetadataParams,
     GetCapabilitiesResult,
     GetParametersResult,
     StackActionPhase,
     StackActionStatus,
-} from '../../../src/stackActions/StackActionRequestType';
+} from '../../../src/stacks/actions/StackActionRequestType';
+import { ListStacksParams, ListStacksResult } from '../../../src/stacks/StackRequestType';
 import {
     createMockComponents,
     createMockSyntaxTreeManager,
@@ -38,7 +40,7 @@ vi.mock('../../../src/protocol/LspParser', () => ({
     parseIdentifiable: vi.fn((input) => input),
 }));
 
-vi.mock('../../../src/stackActions/StackActionParser', () => ({
+vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
     parseStackActionParams: vi.fn((input) => input),
     parseTemplateMetadataParams: vi.fn((input) => input),
 }));
@@ -47,7 +49,7 @@ vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
     parseWithPrettyError: vi.fn((parser, input) => parser(input)),
 }));
 
-vi.mock('../../../src/stackActions/CapabilityAnalyzer', () => ({
+vi.mock('../../../src/stacks/actions/CapabilityAnalyzer', () => ({
     analyzeCapabilities: vi.fn(),
 }));
 
@@ -70,7 +72,7 @@ describe('StackActionHandler', () => {
 
     describe('stackActionParametersHandler', () => {
         it('returns empty array when no syntax tree found', () => {
-            const params: TemplateMetadataParams = { uri: 'test://template.yaml' };
+            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
             syntaxTreeManager.getSyntaxTree.withArgs(params.uri).returns(undefined);
 
             const handler = stackActionParametersHandler(mockComponents);
@@ -80,7 +82,7 @@ describe('StackActionHandler', () => {
         });
 
         it('returns empty array when getEntityMap returns undefined', () => {
-            const params: TemplateMetadataParams = { uri: 'test://template.yaml' };
+            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
             const mockSyntaxTree = {} as SyntaxTree;
 
             syntaxTreeManager.getSyntaxTree.withArgs(params.uri).returns(mockSyntaxTree);
@@ -93,7 +95,7 @@ describe('StackActionHandler', () => {
         });
 
         it('returns parameters when parameters section exists', () => {
-            const params: TemplateMetadataParams = { uri: 'test://template.yaml' };
+            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
             const mockSyntaxTree = {} as SyntaxTree;
             const mockParam1 = { name: 'param1', type: 'String' };
             const mockParam2 = { name: 'param2', type: 'Number' };
@@ -118,7 +120,7 @@ describe('StackActionHandler', () => {
 
     describe('templateCapabilitiesHandler', () => {
         it('should return capabilities when document is available', async () => {
-            const params: TemplateMetadataParams = { uri: 'test://template.yaml' };
+            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
             const mockDocument = { getText: vi.fn().mockReturnValue('template content') } as unknown as Document;
             const mockCapabilities = ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'] as Capability[];
 
@@ -132,7 +134,7 @@ describe('StackActionHandler', () => {
         });
 
         it('should throw error when document is not available', async () => {
-            const params: TemplateMetadataParams = { uri: 'test://template.yaml' };
+            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
             mockComponents.documentManager.get.withArgs(params.uri).returns(undefined);
 
             const handler = templateCapabilitiesHandler(mockComponents);
@@ -225,6 +227,99 @@ describe('StackActionHandler', () => {
 
             expect(mockComponents.deploymentWorkflowService.getStatus.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
+        });
+    });
+
+    describe('StackQueryHandler', () => {
+        const mockParams = {} as ListStacksParams;
+        const mockToken = {} as CancellationToken;
+
+        it('should return stacks on success', async () => {
+            const mockStacks: StackSummary[] = [
+                {
+                    StackName: 'test-stack',
+                    StackStatus: 'CREATE_COMPLETE',
+                } as StackSummary,
+            ];
+
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                },
+            } as any;
+
+            const handler = listStacksHandler(mockComponents);
+            const result = (await handler(mockParams, mockToken)) as ListStacksResult;
+
+            expect(result.stacks).toEqual(mockStacks);
+        });
+
+        it('should return empty array on error', async () => {
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockRejectedValue(new Error('API Error')),
+                },
+            } as any;
+
+            const handler = listStacksHandler(mockComponents);
+            const result = (await handler(mockParams, mockToken)) as ListStacksResult;
+
+            expect(result.stacks).toEqual([]);
+        });
+
+        it('should pass statusToInclude to cfnService', async () => {
+            const mockStacks: StackSummary[] = [];
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                },
+            } as any;
+
+            const paramsWithInclude: ListStacksParams = {
+                statusToInclude: [StackStatus.CREATE_COMPLETE],
+            };
+
+            const handler = listStacksHandler(mockComponents);
+            await handler(paramsWithInclude, mockToken);
+
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith([StackStatus.CREATE_COMPLETE], undefined);
+        });
+
+        it('should pass statusToExclude to cfnService', async () => {
+            const mockStacks: StackSummary[] = [];
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                },
+            } as any;
+
+            const paramsWithExclude: ListStacksParams = {
+                statusToExclude: [StackStatus.DELETE_COMPLETE],
+            };
+
+            const handler = listStacksHandler(mockComponents);
+            await handler(paramsWithExclude, mockToken);
+
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(undefined, [StackStatus.DELETE_COMPLETE]);
+        });
+
+        it('should return empty array when both statusToInclude and statusToExclude are provided', async () => {
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn(),
+                },
+            } as any;
+
+            const paramsWithBoth: ListStacksParams = {
+                statusToInclude: [StackStatus.CREATE_COMPLETE],
+                statusToExclude: [StackStatus.DELETE_COMPLETE],
+            };
+
+            const handler = listStacksHandler(mockComponents);
+            const result = (await handler(paramsWithBoth, mockToken)) as ListStacksResult;
+
+            expect(result.stacks).toEqual([]);
+            expect(mockComponents.cfnService.listStacks).not.toHaveBeenCalled();
         });
     });
 });

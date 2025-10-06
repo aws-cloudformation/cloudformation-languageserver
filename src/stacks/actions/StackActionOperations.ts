@@ -2,11 +2,11 @@ import { Change, ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { v4 as uuidv4 } from 'uuid';
 import { ResponseError, ErrorCodes } from 'vscode-languageserver';
-import { DocumentManager } from '../document/DocumentManager';
-import { CfnService } from '../services/CfnService';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
-import { retryWithExponentialBackoff } from '../utils/Retry';
+import { DocumentManager } from '../../document/DocumentManager';
+import { CfnService } from '../../services/CfnService';
+import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { extractErrorMessage } from '../../utils/Errors';
+import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { StackChange, StackActionPhase, StackActionStatus, StackActionParams } from './StackActionRequestType';
 import {
     StackActionWorkflowState,

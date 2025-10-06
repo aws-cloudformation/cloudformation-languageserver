@@ -25,14 +25,14 @@ import {
     getStackMgmtInfo,
 } from '../handlers/ResourceHandler';
 import {
+    listStacksHandler,
     stackActionValidationCreateHandler,
     stackActionDeploymentCreateHandler,
     stackActionValidationStatusHandler,
     stackActionDeploymentStatusHandler,
     stackActionParametersHandler,
     templateCapabilitiesHandler,
-} from '../handlers/StackActionHandler';
-import { listStacksHandler } from '../handlers/StackQueryHandler';
+} from '../handlers/StackHandler';
 import { LspFeatures } from '../protocol/LspConnection';
 import { ServerComponents } from './ServerComponents';
 
@@ -70,22 +70,13 @@ export class CfnServer {
         this.features.authHandlers.onBearerCredentialsDelete(bearerCredentialsDeleteHandler(this.components));
         this.features.authHandlers.onSsoTokenChanged(ssoTokenChangedHandler(this.components));
 
-        this.features.stackActionHandlers.onGetParameters(stackActionParametersHandler(this.components));
-        this.features.stackActionHandlers.onTemplateValidationCreate(
-            stackActionValidationCreateHandler(this.components),
-        );
-        this.features.stackActionHandlers.onGetCapabilities(templateCapabilitiesHandler(this.components));
-        this.features.stackActionHandlers.onTemplateDeploymentCreate(
-            stackActionDeploymentCreateHandler(this.components),
-        );
-        this.features.stackActionHandlers.onTemplateValidationStatus(
-            stackActionValidationStatusHandler(this.components),
-        );
-        this.features.stackActionHandlers.onTemplateDeploymentStatus(
-            stackActionDeploymentStatusHandler(this.components),
-        );
-
-        this.features.stackQueryHandlers.onListStacks(listStacksHandler(this.components));
+        this.features.stackHandlers.onGetParameters(stackActionParametersHandler(this.components));
+        this.features.stackHandlers.onTemplateValidationCreate(stackActionValidationCreateHandler(this.components));
+        this.features.stackHandlers.onGetCapabilities(templateCapabilitiesHandler(this.components));
+        this.features.stackHandlers.onTemplateDeploymentCreate(stackActionDeploymentCreateHandler(this.components));
+        this.features.stackHandlers.onTemplateValidationStatus(stackActionValidationStatusHandler(this.components));
+        this.features.stackHandlers.onTemplateDeploymentStatus(stackActionDeploymentStatusHandler(this.components));
+        this.features.stackHandlers.onListStacks(listStacksHandler(this.components));
 
         this.features.resourceHandlers.onListResources(listResourcesHandler(this.components));
         this.features.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));

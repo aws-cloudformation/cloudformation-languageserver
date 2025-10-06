@@ -3,15 +3,15 @@ import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeMan
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
-import { processChangeSet } from '../../../src/stackActions/StackActionOperations';
+import { processChangeSet } from '../../../src/stacks/actions/StackActionOperations';
 import {
     StackActionParams,
     StackActionPhase,
     StackActionStatus,
-} from '../../../src/stackActions/StackActionRequestType';
-import { ValidationWorkflow } from '../../../src/stackActions/ValidationWorkflow';
+} from '../../../src/stacks/actions/StackActionRequestType';
+import { ValidationWorkflow } from '../../../src/stacks/actions/ValidationWorkflow';
 
-vi.mock('../../../src/stackActions/StackActionOperations');
+vi.mock('../../../src/stacks/actions/StackActionOperations');
 
 describe('ValidationWorkflow', () => {
     let validationWorkflow: ValidationWorkflow;

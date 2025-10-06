@@ -1,6 +1,6 @@
 import { Diagnostic, PublishDiagnosticsParams } from 'vscode-languageserver';
 import { LspDiagnostics } from '../protocol/LspDiagnostics';
-import { CFN_VALIDATION_SOURCE } from '../stackActions/ValidationWorkflow';
+import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 

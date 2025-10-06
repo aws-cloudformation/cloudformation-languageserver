@@ -1,11 +1,11 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
-import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
-import { DocumentManager } from '../document/DocumentManager';
-import { Identifiable } from '../protocol/LspTypes';
-import { ServerComponents } from '../server/ServerComponents';
-import { CfnService } from '../services/CfnService';
-import { DiagnosticCoordinator } from '../services/DiagnosticCoordinator';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
+import { DocumentManager } from '../../document/DocumentManager';
+import { Identifiable } from '../../protocol/LspTypes';
+import { ServerComponents } from '../../server/ServerComponents';
+import { CfnService } from '../../services/CfnService';
+import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
+import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { deleteStackAndChangeSet, deleteChangeSet, processChangeSet, waitForValidation } from './StackActionOperations';
 import {
     StackActionParams,

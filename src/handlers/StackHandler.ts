@@ -5,25 +5,26 @@ import { Parameter } from '../context/semantic/Entity';
 import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
-import { analyzeCapabilities } from '../stackActions/CapabilityAnalyzer';
-import { parseStackActionParams, parseTemplateMetadataParams } from '../stackActions/StackActionParser';
+import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
+import { parseStackActionParams, parseTemplateMetadataParams } from '../stacks/actions/StackActionParser';
 import {
     GetCapabilitiesResult,
-    TemplateMetadataParams,
+    StackActionMetadataParams,
     GetParametersResult,
     StackActionParams,
     StackActionResult,
     StackActionStatusResult,
-} from '../stackActions/StackActionRequestType';
+} from '../stacks/actions/StackActionRequestType';
+import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
-const log = LoggerFactory.getLogger('StackActionHandler');
+const log = LoggerFactory.getLogger('StackHandler');
 
 export function stackActionParametersHandler(
     components: ServerComponents,
-): RequestHandler<TemplateMetadataParams, GetParametersResult, void> {
+): RequestHandler<StackActionMetadataParams, GetParametersResult, void> {
     return (rawParams) => {
         log.debug({ Handler: 'StackActionParameters', rawParams });
 
@@ -111,7 +112,7 @@ export function stackActionDeploymentStatusHandler(
 
 export function templateCapabilitiesHandler(
     components: ServerComponents,
-): RequestHandler<TemplateMetadataParams, GetCapabilitiesResult, void> {
+): RequestHandler<StackActionMetadataParams, GetCapabilitiesResult, void> {
     return async (rawParams) => {
         log.debug({ Handler: 'TemplateCapabilities', rawParams });
 
@@ -127,6 +128,22 @@ export function templateCapabilitiesHandler(
             return { capabilities };
         } catch (error) {
             handleStackActionError(error, 'Failed to analyze template capabilities');
+        }
+    };
+}
+
+export function listStacksHandler(
+    components: ServerComponents,
+): RequestHandler<ListStacksParams, ListStacksResult, void> {
+    return async (params: ListStacksParams): Promise<ListStacksResult> => {
+        try {
+            if (params.statusToInclude?.length && params.statusToExclude?.length) {
+                throw new Error('Cannot specify both statusToInclude and statusToExclude');
+            }
+            return { stacks: await components.cfnService.listStacks(params.statusToInclude, params.statusToExclude) };
+        } catch (error) {
+            log.error({ error: extractErrorMessage(error) }, 'Error listing stacks');
+            return { stacks: [] };
         }
     };
 }
