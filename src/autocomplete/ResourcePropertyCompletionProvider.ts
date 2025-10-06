@@ -179,6 +179,37 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Gets existing properties at the current context level
      */
     private getExistingProperties(context: Context): Set<string> {
+        const propertyPath = context.propertyPath;
+        if (propertyPath.length > 3 && typeof propertyPath[propertyPath.length - 1] === 'number') {
+            try {
+                const entity = context.entity as Resource;
+                if (entity?.Properties) {
+                    const pathSegments = propertyPath.slice(3); // Remove ['Resources', 'LogicalId', 'Properties']
+                    let current: unknown = entity.Properties;
+
+                    for (let i = 0; i < pathSegments.length - 1; i++) {
+                        if (current && typeof current === 'object' && pathSegments[i] in current) {
+                            current = (current as Record<string | number, unknown>)[pathSegments[i]];
+                        } else {
+                            current = undefined;
+                            break;
+                        }
+                    }
+
+                    const arrayIndex = pathSegments[pathSegments.length - 1];
+                    if (current && typeof current === 'object' && arrayIndex in current) {
+                        const arrayItem = (current as Record<string | number, unknown>)[arrayIndex];
+
+                        if (arrayItem && typeof arrayItem === 'object' && arrayItem !== null) {
+                            return new Set(Object.keys(arrayItem as Record<string, unknown>));
+                        }
+                    }
+                }
+            } catch {
+                // Continue default behavior
+            }
+        }
+
         // if we are at a spot that we can be a key or value
         // it means we know there aren't siblings and we aren't in a mapping
         if (context.isKey() && context.isValue()) {
