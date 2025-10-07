@@ -144,7 +144,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
 
         snippet = applySnippetIndentation(snippet, this.editorSettings, context.documentType);
 
-        const completionItem: ExtendedCompletionItem = createCompletionItem(section, CompletionItemKind.Snippet, {
+        const completionItem: ExtendedCompletionItem = createCompletionItem(section, CompletionItemKind.File, {
             insertText: snippet,
             data: { type: 'object' },
         });

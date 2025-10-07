@@ -154,7 +154,7 @@ describe('ResourceEntityCompletionProvider', () => {
         expect(propertiesItem).toBeDefined();
 
         // Verify it's a snippet
-        expect(propertiesItem!.kind).toBe(CompletionItemKind.Snippet);
+        expect(propertiesItem!.kind).toBe(CompletionItemKind.File);
         expect(propertiesItem!.insertTextFormat).toBe(InsertTextFormat.Snippet);
 
         // Verify data type is object
