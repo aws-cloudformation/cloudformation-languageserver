@@ -363,7 +363,7 @@ export abstract class SyntaxTree {
             // Look for patterns like "text" and convert to "text": null
             const modifiedLines = [...this.lines];
             // Replace quoted strings that aren't followed by : with complete key-value pairs
-            modifiedLines[position.line] = currentLine.replaceAll(/"([^"]*)"\s*(?!:)/g, '"$1": null');
+            modifiedLines[position.line] = currentLine.replace(/"([^"]*)"\s*(?!:)/g, '"$1": null');
             const completedContent = modifiedLines.join('\n');
             const result = this.testIncrementalParsing(completedContent, position);
             if (result) return result;
@@ -534,7 +534,7 @@ export abstract class SyntaxTree {
                 if (grandparent && NodeType.isNodeType(grandparent, YamlNodeTypes.FLOW_MAPPING)) {
                     // Is incomplete key pair in an object
                     // { "" }
-                    propertyPath.push(current.text.replaceAll(/^,?\s*"|"\s*/g, ''));
+                    propertyPath.push(current.text.replace(/^,?\s*"|"\s*/g, ''));
                     entityPath.push(current);
                 }
             }
