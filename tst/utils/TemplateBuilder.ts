@@ -14,6 +14,7 @@ import { DocumentType } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
+import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
 import {
@@ -23,6 +24,8 @@ import {
     createMockSchemaRetriever,
 } from './MockServerComponents';
 import { combinedSchemas } from './SchemaUtils';
+
+const log = LoggerFactory.getLogger('IntrinsicFunctionArgumentCompletionProvider');
 
 function expectAt(actual: any, position: Position, description?: string) {
     const positionStr = `${position.line}:${position.character}`;
@@ -898,7 +901,11 @@ export class CompletionExpectationBuilder {
 
     todo(comment: string): CompletionExpectationBuilder {
         this.expectation.todo = true;
+<<<<<<< HEAD
         this.expectation.todoComment = comment;
+=======
+        log.debug(comment);
+>>>>>>> db1ccce (Autocomplete revisions, comment parameter in todo)
         return this;
     }
 

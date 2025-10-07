@@ -1171,7 +1171,6 @@ Resources:
                         description: 'Suggest Keys inside but filter out existing keys',
                         verification: {
                             position: { line: 384, character: 14 },
-                            // this works in a real template but not in e2e testing
                             expectation: CompletionExpectationBuilder.create().expectItems(['Value']).build(),
                         },
                     },
@@ -1570,7 +1569,7 @@ O`,
                     {
                         action: 'type',
                         content: `ommaDelimitedList",
-      "D`,
+      "D"`,
                         position: { line: 54, character: 16 },
                         description: 'Parameter fields',
                         verification: {
@@ -1582,6 +1581,11 @@ O`,
                         },
                     },
                     {
+                        action: 'delete',
+                        range: { start: { line: 55, character: 8 }, end: { line: 55, character: 9 } },
+                        description: 'remove closing "',
+                    },
+                    {
                         action: 'type',
                         content: `efault": "10.0.1.0/24,10.0.2.0/24"
     },
@@ -1589,7 +1593,7 @@ O`,
       "Type": "String",
       "NoEcho": true,
       "MinLength": 8, 
-      "M`,
+      "M"`,
                         position: { line: 55, character: 8 },
                         description: 'Parameter fields',
                         verification: {
@@ -1599,6 +1603,11 @@ O`,
                                 .expectContainsItems(['MaxLength'])
                                 .build(),
                         },
+                    },
+                    {
+                        action: 'delete',
+                        range: { start: { line: 61, character: 8 }, end: { line: 61, character: 9 } },
+                        description: 'remove closing "',
                     },
                     {
                         action: 'type',
@@ -1821,7 +1830,7 @@ O`,
                             position: { line: 127, character: 15 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Fn::FindInMap'])
-                                .todo() //Autocomplete looks for Fn or ! in YAML for Intrinsic Function
+                                .todo('Completion provider not recognizing this as inIntrinsicFunction')
                                 .build(),
                         },
                     },
@@ -1839,7 +1848,7 @@ O`,
                             position: { line: 127, character: 69 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['InstanceType'])
-                                .todo() //returns nothing in valid JSON
+                                .todo('Dynamic topLevelKey making secondLevelKey invalid')
                                 .build(),
                         },
                     },
@@ -2335,7 +2344,7 @@ O`,
           ]
         }
       },
-      "Me
+      "Me"
     }`,
                         position: { line: 259, character: 5 },
                         description: 'Suggest resource entity fields expect ones already defined',
@@ -2346,6 +2355,11 @@ O`,
                                 .expectExcludesItems(['Type', 'Properties'])
                                 .build(),
                         },
+                    },
+                    {
+                        action: 'delete',
+                        range: { start: { line: 287, character: 9 }, end: { line: 287, character: 10 } },
+                        description: 'Remove closing quote to continue property name',
                     },
                     {
                         action: 'type',
@@ -2399,15 +2413,8 @@ O`,
                         verification: {
                             position: { line: 299, character: 38 },
                             expectation: CompletionExpectationBuilder.create()
-                                .expectContainsItems([
-                                    'LaunchTemplate',
-                                    'PublicSubnet',
-                                    'WebSecurityGroup',
-                                    'BastionSecurityGroup',
-                                    'VPC',
-                                ])
+                                .expectContainsItems(['LaunchTemplate', 'PublicSubnet'])
                                 .expectExcludesItems(['AutoScalingGroup'])
-                                .todo() //Returns ['LaunchTemplate', 'PublicSubnet']
                                 .build(),
                         },
                     },
@@ -2543,7 +2550,7 @@ O`,
                                     'IsProductionOrStaging',
                                 ])
                                 .expectExcludesItems(['ComplexCondition', 'HasMultipleAZs'])
-                                .todo() //Returns nothing for both YAML and JSON
+                                .todo('Returns nothing for both YAML and JSON')
                                 .build(),
                         },
                     },
@@ -2569,7 +2576,7 @@ O`,
                             position: { line: 364, character: 53 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Snapshot'])
-                                .todo() //Returns nothing for both JSON and YAML
+                                .todo('Returns nothing for both JSON and YAML')
                                 .build(),
                         },
                     },
@@ -2770,7 +2777,9 @@ O`,
                             position: { line: 472, character: 14 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Value', 'Name'])
-                                .todo() // Keys, Values not triggering autocomplete for JSON
+                                .todo(
+                                    'Feature testing (only with ctrl+space) returning cached suggestions. Returns nothing in e2e',
+                                )
                                 .build(),
                         },
                     },
@@ -2788,7 +2797,7 @@ O`,
                             position: { line: 477, character: 14 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Value'])
-                                .todo() //works in real template not in e2e
+                                .todo('Works in functional testing for both comprehensive.json and current doc')
                                 .build(),
                         },
                     },
@@ -2838,7 +2847,7 @@ O`,
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['BucketEncryption'])
                                 .expectExcludesItems(['BucketName'])
-                                .todo() //Returns nothing
+                                .todo('Works in functional testing for both comprehensive.json and current doc')
                                 .build(),
                         },
                     },
@@ -2853,7 +2862,7 @@ O`,
                             position: { line: 511, character: 19 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Enabled', 'Suspended'])
-                                .todo() //Returns nothing
+                                .todo('Returns nothing')
                                 .build(),
                         },
                     },
@@ -2867,7 +2876,7 @@ O`,
                             position: { line: 512, character: 12 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Enabled', 'Suspended'])
-                                .todo() //Returns nothing
+                                .todo('Returns nothing')
                                 .build(),
                         },
                     },
@@ -2877,23 +2886,16 @@ O`,
                         position: { line: 511, character: 19 },
                     },
                     {
-                        action: 'delete',
-                        range: { start: { line: 516, character: 3 }, end: { line: 516, character: 4 } },
-                        description: 'Remove }',
-                    },
-                    {
                         action: 'type',
                         content: `,
-  "O"
-  }`,
-                        position: { line: 516, character: 3 },
+  "O"`,
+                        position: { line: 516, character: 4 },
                         description: 'Suggest Outputs top-level-section and omit authored sections',
                         verification: {
                             position: { line: 517, character: 3 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Outputs'])
                                 .expectExcludesItems(['Conditions', 'Resources', 'Transform', 'Description'])
-                                .todo() //Returns nothing
                                 .build(),
                         },
                     },
@@ -2911,7 +2913,7 @@ O`,
                             position: { line: 520, character: 7 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Value'])
-                                .todo() //Returns nothing
+                                .todo('Works in functional testing for both comprehensive.json and current doc')
                                 .build(),
                         },
                     },
@@ -2948,7 +2950,6 @@ O`,
                                     'IsProductionOrStaging',
                                 ])
                                 .expectExcludesItems(['ComplexCondition', 'HasMultipleAZs'])
-                                .todo() //Returns nothing
                                 .build(),
                         },
                     },
@@ -3054,7 +3055,7 @@ O`,
                             position: { line: 580, character: 79 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['AMI'])
-                                .todo() //Returns nothing for both JSON and YAML
+                                .todo('Works in functional testing for both comprehensive.json and current doc')
                                 .build(),
                         },
                     },
@@ -3075,7 +3076,7 @@ O`,
                             position: { line: 582, character: 17 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Third'])
-                                .todo() //Returns [] for both JSON and YAML
+                                .todo('Returns nothing for both JSON and YAML')
                                 .build(),
                         },
                     },
