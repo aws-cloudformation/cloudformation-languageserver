@@ -1,34 +1,34 @@
 import { RequestType } from 'vscode-languageserver-protocol';
 import { Identifiable } from '../../protocol/LspTypes';
 import {
-    StackActionMetadataParams,
+    TemplateUri,
     GetParametersResult,
-    StackActionParams,
-    StackActionResult,
-    StackActionStatusResult,
+    CreateStackActionParams,
+    CreateStackActionResult,
+    GetStackActionStatusResult,
     GetCapabilitiesResult,
 } from './StackActionRequestType';
 
-export const StackActionValidationCreateRequest = new RequestType<StackActionParams, StackActionResult, void>(
-    'aws/cfn/stacks/actions/validation/create',
+export const CreateValidationRequest = new RequestType<CreateStackActionParams, CreateStackActionResult, void>(
+    'aws/cfn/stack/validation/create',
 );
 
-export const StackActionDeploymentCreateRequest = new RequestType<StackActionParams, StackActionResult, void>(
-    'aws/cfn/stacks/actions/deployment/create',
+export const CreateDeploymentRequest = new RequestType<CreateStackActionParams, CreateStackActionResult, void>(
+    'aws/cfn/stack/deployment/create',
 );
 
-export const StackActionValidationStatusRequest = new RequestType<Identifiable, StackActionStatusResult, void>(
-    'aws/cfn/stacks/actions/validation/status',
+export const GetValidationStatusRequest = new RequestType<Identifiable, GetStackActionStatusResult, void>(
+    'aws/cfn/stack/validation/status',
 );
 
-export const StackActionDeploymentStatusRequest = new RequestType<Identifiable, StackActionStatusResult, void>(
-    'aws/cfn/stacks/actions/deployment/status',
+export const GetDeploymentStatusRequest = new RequestType<Identifiable, GetStackActionStatusResult, void>(
+    'aws/cfn/stack/deployment/status',
 );
 
-export const StackActionParametersRequest = new RequestType<StackActionMetadataParams, GetParametersResult, void>(
-    'aws/cfn/stacks/actions/parameters',
+export const GetParametersRequest = new RequestType<TemplateUri, GetParametersResult, void>(
+    'aws/cfn/stack/parameters',
 );
 
-export const StackActionCapabilitiesRequest = new RequestType<StackActionMetadataParams, GetCapabilitiesResult, void>(
-    'aws/cfn/stacks/actions/capabilities',
+export const GetCapabilitiesRequest = new RequestType<TemplateUri, GetCapabilitiesResult, void>(
+    'aws/cfn/stack/capabilities',
 );

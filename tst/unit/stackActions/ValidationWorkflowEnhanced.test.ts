@@ -1,6 +1,6 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { StackActionPhase, StackActionStatus } from '../../../src/stacks/actions/StackActionRequestType';
+import { StackActionPhase, StackActionState } from '../../../src/stacks/actions/StackActionRequestType';
 import { ValidationWorkflow } from '../../../src/stacks/actions/ValidationWorkflow';
 
 describe('ValidationWorkflow Enhanced Features', () => {
@@ -77,7 +77,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
             stackName: 'test-stack',
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            status: StackActionStatus.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
@@ -101,7 +101,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
             stackName: 'test-stack',
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            status: StackActionStatus.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
@@ -124,7 +124,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
             stackName: 'test-stack',
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            status: StackActionStatus.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);

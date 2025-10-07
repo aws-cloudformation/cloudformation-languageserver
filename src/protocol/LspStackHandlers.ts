@@ -1,17 +1,17 @@
 import { Connection, RequestHandler } from 'vscode-languageserver';
 import {
-    StackActionValidationCreateRequest,
-    StackActionDeploymentCreateRequest,
-    StackActionDeploymentStatusRequest,
-    StackActionValidationStatusRequest,
-    StackActionCapabilitiesRequest,
-    StackActionParametersRequest,
+    CreateValidationRequest,
+    CreateDeploymentRequest,
+    GetDeploymentStatusRequest,
+    GetValidationStatusRequest,
+    GetCapabilitiesRequest,
+    GetParametersRequest,
 } from '../stacks/actions/StackActionProtocol';
 import {
-    StackActionMetadataParams,
-    StackActionParams,
-    StackActionResult,
-    StackActionStatusResult,
+    TemplateUri,
+    CreateStackActionParams,
+    CreateStackActionResult,
+    GetStackActionStatusResult,
     GetParametersResult,
     GetCapabilitiesResult,
 } from '../stacks/actions/StackActionRequestType';
@@ -21,28 +21,28 @@ import { Identifiable } from './LspTypes';
 export class LspStackHandlers {
     constructor(private readonly connection: Connection) {}
 
-    onTemplateValidationCreate(handler: RequestHandler<StackActionParams, StackActionResult, void>) {
-        this.connection.onRequest(StackActionValidationCreateRequest.method, handler);
+    onCreateValidation(handler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void>) {
+        this.connection.onRequest(CreateValidationRequest.method, handler);
     }
 
-    onTemplateDeploymentCreate(handler: RequestHandler<StackActionParams, StackActionResult, void>) {
-        this.connection.onRequest(StackActionDeploymentCreateRequest.method, handler);
+    onCreateDeployment(handler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void>) {
+        this.connection.onRequest(CreateDeploymentRequest.method, handler);
     }
 
-    onTemplateValidationStatus(handler: RequestHandler<Identifiable, StackActionStatusResult, void>) {
-        this.connection.onRequest(StackActionValidationStatusRequest.method, handler);
+    onGetValidationStatus(handler: RequestHandler<Identifiable, GetStackActionStatusResult, void>) {
+        this.connection.onRequest(GetValidationStatusRequest.method, handler);
     }
 
-    onTemplateDeploymentStatus(handler: RequestHandler<Identifiable, StackActionStatusResult, void>) {
-        this.connection.onRequest(StackActionDeploymentStatusRequest.method, handler);
+    onGetDeploymentStatus(handler: RequestHandler<Identifiable, GetStackActionStatusResult, void>) {
+        this.connection.onRequest(GetDeploymentStatusRequest.method, handler);
     }
 
-    onGetParameters(handler: RequestHandler<StackActionMetadataParams, GetParametersResult, void>) {
-        this.connection.onRequest(StackActionParametersRequest.method, handler);
+    onGetParameters(handler: RequestHandler<TemplateUri, GetParametersResult, void>) {
+        this.connection.onRequest(GetParametersRequest.method, handler);
     }
 
-    onGetCapabilities(handler: RequestHandler<StackActionMetadataParams, GetCapabilitiesResult, void>) {
-        this.connection.onRequest(StackActionCapabilitiesRequest.method, handler);
+    onGetCapabilities(handler: RequestHandler<TemplateUri, GetCapabilitiesResult, void>) {
+        this.connection.onRequest(GetCapabilitiesRequest.method, handler);
     }
 
     onListStacks(handler: RequestHandler<ListStacksParams, ListStacksResult, void>) {

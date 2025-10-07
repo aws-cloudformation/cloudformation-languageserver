@@ -13,9 +13,9 @@ import {
     mapChangesToStackChanges,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
-    StackActionParams,
+    CreateStackActionParams,
     StackActionPhase,
-    StackActionStatus,
+    StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
 import { StackActionWorkflowState } from '../../../src/stacks/actions/StackActionWorkflowType';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
@@ -48,7 +48,7 @@ describe('StackActionWorkflowOperations', () => {
 
     describe('processChangeSet', () => {
         it('should create change set successfully', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -76,7 +76,7 @@ describe('StackActionWorkflowOperations', () => {
         });
 
         it('should throw error when document not found', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///missing.yaml',
                 stackName: 'test-stack',
@@ -100,7 +100,7 @@ describe('StackActionWorkflowOperations', () => {
 
             expect(result).toEqual({
                 phase: StackActionPhase.DEPLOYMENT_COMPLETE,
-                status: StackActionStatus.SUCCESSFUL,
+                state: StackActionState.SUCCESSFUL,
                 reason: undefined,
             });
             expect(mockCfnService.waitUntilStackCreateComplete).toHaveBeenCalledWith({
@@ -117,7 +117,7 @@ describe('StackActionWorkflowOperations', () => {
 
             expect(result).toEqual({
                 phase: StackActionPhase.DEPLOYMENT_FAILED,
-                status: StackActionStatus.FAILED,
+                state: StackActionState.FAILED,
                 reason: undefined,
             });
         });
@@ -131,7 +131,7 @@ describe('StackActionWorkflowOperations', () => {
 
             expect(result).toEqual({
                 phase: StackActionPhase.DEPLOYMENT_COMPLETE,
-                status: StackActionStatus.SUCCESSFUL,
+                state: StackActionState.SUCCESSFUL,
                 reason: undefined,
             });
             expect(mockCfnService.waitUntilStackUpdateComplete).toHaveBeenCalledWith({
@@ -151,7 +151,7 @@ describe('StackActionWorkflowOperations', () => {
                 stackName: 'test-stack',
                 phase: StackActionPhase.VALIDATION_COMPLETE,
                 startTime: Date.now(),
-                status: StackActionStatus.SUCCESSFUL,
+                state: StackActionState.SUCCESSFUL,
             };
 
             await deleteStackAndChangeSet(mockCfnService, workflow, 'workflow-id');
@@ -179,7 +179,7 @@ describe('StackActionWorkflowOperations', () => {
                 stackName: 'test-stack',
                 phase: StackActionPhase.VALIDATION_COMPLETE,
                 startTime: Date.now(),
-                status: StackActionStatus.SUCCESSFUL,
+                state: StackActionState.SUCCESSFUL,
             };
 
             await deleteChangeSet(mockCfnService, workflow, 'workflow-id');
@@ -278,7 +278,7 @@ describe('StackActionWorkflowOperations', () => {
             const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_COMPLETE);
-            expect(result.status).toBe(StackActionStatus.SUCCESSFUL);
+            expect(result.state).toBe(StackActionState.SUCCESSFUL);
             expect(result.changes).toBeDefined();
             expect(mockCfnService.waitUntilChangeSetCreateComplete).toHaveBeenCalledWith({
                 ChangeSetName: 'test-changeset',
@@ -299,7 +299,7 @@ describe('StackActionWorkflowOperations', () => {
             const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
-            expect(result.status).toBe(StackActionStatus.FAILED);
+            expect(result.state).toBe(StackActionState.FAILED);
             expect(result.reason).toBe('Test failure');
         });
 
@@ -309,7 +309,7 @@ describe('StackActionWorkflowOperations', () => {
             const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
-            expect(result.status).toBe(StackActionStatus.FAILED);
+            expect(result.state).toBe(StackActionState.FAILED);
             expect(result.reason).toBe('Network error');
         });
 
@@ -319,7 +319,7 @@ describe('StackActionWorkflowOperations', () => {
             const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
-            expect(result.status).toBe(StackActionStatus.FAILED);
+            expect(result.state).toBe(StackActionState.FAILED);
             expect(result.reason).toBe('String error');
         });
     });

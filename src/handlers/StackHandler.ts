@@ -6,14 +6,14 @@ import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
-import { parseStackActionParams, parseTemplateMetadataParams } from '../stacks/actions/StackActionParser';
+import { parseStackActionParams, parseTemplateUriParams } from '../stacks/actions/StackActionParser';
 import {
     GetCapabilitiesResult,
-    StackActionMetadataParams,
+    TemplateUri,
     GetParametersResult,
-    StackActionParams,
-    StackActionResult,
-    StackActionStatusResult,
+    CreateStackActionParams,
+    CreateStackActionResult,
+    GetStackActionStatusResult,
 } from '../stacks/actions/StackActionRequestType';
 import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -22,15 +22,15 @@ import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('StackHandler');
 
-export function stackActionParametersHandler(
+export function getParametersHandler(
     components: ServerComponents,
-): RequestHandler<StackActionMetadataParams, GetParametersResult, void> {
+): RequestHandler<TemplateUri, GetParametersResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'StackActionParameters', rawParams });
+        log.debug({ Handler: 'getParametersHandler', rawParams });
 
         try {
-            const params = parseWithPrettyError(parseTemplateMetadataParams, rawParams);
-            const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params.uri);
+            const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
+            const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params);
             if (syntaxTree) {
                 const parametersMap = getEntityMap(syntaxTree, TopLevelSection.Parameters);
                 if (parametersMap) {
@@ -50,11 +50,11 @@ export function stackActionParametersHandler(
     };
 }
 
-export function stackActionValidationCreateHandler(
+export function createValidationHandler(
     components: ServerComponents,
-): RequestHandler<StackActionParams, StackActionResult, void> {
+): RequestHandler<CreateStackActionParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'StackActionValidationCreate', rawParams });
+        log.debug({ Handler: 'createValidationHandler', rawParams });
 
         try {
             const params = parseWithPrettyError(parseStackActionParams, rawParams);
@@ -65,11 +65,11 @@ export function stackActionValidationCreateHandler(
     };
 }
 
-export function stackActionDeploymentCreateHandler(
+export function createDeploymentHandler(
     components: ServerComponents,
-): RequestHandler<StackActionParams, StackActionResult, void> {
+): RequestHandler<CreateStackActionParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'StackActionDeploymentCreate', rawParams });
+        log.debug({ Handler: 'createDeploymentHandler', rawParams });
 
         try {
             const params = parseWithPrettyError(parseStackActionParams, rawParams);
@@ -80,11 +80,11 @@ export function stackActionDeploymentCreateHandler(
     };
 }
 
-export function stackActionValidationStatusHandler(
+export function getValidationStatusHandler(
     components: ServerComponents,
-): RequestHandler<Identifiable, StackActionStatusResult, void> {
+): RequestHandler<Identifiable, GetStackActionStatusResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'StackActionValidationStatus', rawParams });
+        log.debug({ Handler: 'getValidationStatusHandler', rawParams });
 
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
@@ -95,11 +95,11 @@ export function stackActionValidationStatusHandler(
     };
 }
 
-export function stackActionDeploymentStatusHandler(
+export function getDeploymentStatusHandler(
     components: ServerComponents,
-): RequestHandler<Identifiable, StackActionStatusResult, void> {
+): RequestHandler<Identifiable, GetStackActionStatusResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'StackActionDeploymentStatus', rawParams });
+        log.debug({ Handler: 'getDeploymentStatusHandler', rawParams });
 
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
@@ -110,15 +110,15 @@ export function stackActionDeploymentStatusHandler(
     };
 }
 
-export function templateCapabilitiesHandler(
+export function getCapabilitiesHandler(
     components: ServerComponents,
-): RequestHandler<StackActionMetadataParams, GetCapabilitiesResult, void> {
+): RequestHandler<TemplateUri, GetCapabilitiesResult, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'TemplateCapabilities', rawParams });
+        log.debug({ Handler: 'getCapabilitiesHandler', rawParams });
 
         try {
-            const params = parseWithPrettyError(parseTemplateMetadataParams, rawParams);
-            const document = components.documentManager.get(params.uri);
+            const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
+            const document = components.documentManager.get(params);
             if (!document) {
                 throw new ResponseError(ErrorCodes.InvalidRequest, 'Template body document not available');
             }

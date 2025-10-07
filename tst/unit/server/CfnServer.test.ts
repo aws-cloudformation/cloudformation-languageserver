@@ -70,10 +70,10 @@ describe('CfnServer', () => {
             expect(mockFeatures.authHandlers.onSsoTokenChanged.calledOnce).toBe(true);
 
             expect(mockFeatures.stackHandlers.onGetParameters.calledOnce).toBe(true);
-            expect(mockFeatures.stackHandlers.onTemplateValidationCreate.calledOnce).toBe(true);
-            expect(mockFeatures.stackHandlers.onTemplateDeploymentCreate.calledOnce).toBe(true);
-            expect(mockFeatures.stackHandlers.onTemplateValidationStatus.calledOnce).toBe(true);
-            expect(mockFeatures.stackHandlers.onTemplateDeploymentStatus.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onCreateValidation.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onCreateDeployment.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onGetValidationStatus.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onGetDeploymentStatus.calledOnce).toBe(true);
             expect(mockFeatures.stackHandlers.onListStacks.calledOnce).toBe(true);
         });
     });

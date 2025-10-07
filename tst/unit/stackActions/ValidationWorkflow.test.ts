@@ -5,9 +5,9 @@ import { CfnService } from '../../../src/services/CfnService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import { processChangeSet } from '../../../src/stacks/actions/StackActionOperations';
 import {
-    StackActionParams,
+    CreateStackActionParams,
     StackActionPhase,
-    StackActionStatus,
+    StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
 import { ValidationWorkflow } from '../../../src/stacks/actions/ValidationWorkflow';
 
@@ -39,7 +39,7 @@ describe('ValidationWorkflow', () => {
 
     describe('start', () => {
         it('should start validation workflow with CREATE when stack does not exist', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -60,7 +60,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should start validation workflow with UPDATE when stack exists', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -91,7 +91,7 @@ describe('ValidationWorkflow', () => {
                 stackName: 'test-stack',
                 phase: StackActionPhase.VALIDATION_IN_PROGRESS,
                 startTime: Date.now(),
-                status: StackActionStatus.IN_PROGRESS,
+                state: StackActionState.IN_PROGRESS,
             };
 
             // Directly set workflow state
@@ -101,7 +101,7 @@ describe('ValidationWorkflow', () => {
 
             expect(result).toEqual({
                 phase: StackActionPhase.VALIDATION_IN_PROGRESS,
-                status: StackActionStatus.IN_PROGRESS,
+                state: StackActionState.IN_PROGRESS,
                 changes: undefined,
                 id: 'test-id',
             });
@@ -129,7 +129,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should add validation to manager when workflow starts', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -153,7 +153,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should get validation from manager during workflow operations', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -175,7 +175,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should remove validation from manager after workflow completion', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',

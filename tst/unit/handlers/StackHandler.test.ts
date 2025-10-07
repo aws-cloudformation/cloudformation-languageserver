@@ -8,21 +8,21 @@ import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { Document } from '../../../src/document/Document';
 import {
-    templateCapabilitiesHandler,
-    stackActionParametersHandler,
-    stackActionValidationCreateHandler,
-    stackActionDeploymentCreateHandler,
-    stackActionValidationStatusHandler,
-    stackActionDeploymentStatusHandler,
+    getCapabilitiesHandler,
+    getParametersHandler,
+    createValidationHandler,
+    createDeploymentHandler,
+    getValidationStatusHandler,
+    getDeploymentStatusHandler,
     listStacksHandler,
 } from '../../../src/handlers/StackHandler';
 import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
 import {
-    StackActionMetadataParams,
+    TemplateUri,
     GetCapabilitiesResult,
     GetParametersResult,
     StackActionPhase,
-    StackActionStatus,
+    StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
 import { ListStacksParams, ListStacksResult } from '../../../src/stacks/StackRequestType';
 import {
@@ -42,7 +42,7 @@ vi.mock('../../../src/protocol/LspParser', () => ({
 
 vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
     parseStackActionParams: vi.fn((input) => input),
-    parseTemplateMetadataParams: vi.fn((input) => input),
+    parseTemplateUriParams: vi.fn((input) => input),
 }));
 
 vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
@@ -72,30 +72,30 @@ describe('StackActionHandler', () => {
 
     describe('stackActionParametersHandler', () => {
         it('returns empty array when no syntax tree found', () => {
-            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
-            syntaxTreeManager.getSyntaxTree.withArgs(params.uri).returns(undefined);
+            const templateUri: TemplateUri = 'test://template.yaml';
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(undefined);
 
-            const handler = stackActionParametersHandler(mockComponents);
-            const result = handler(params, mockToken) as GetParametersResult;
+            const handler = getParametersHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetParametersResult;
 
             expect(result).toEqual({ parameters: [] });
         });
 
         it('returns empty array when getEntityMap returns undefined', () => {
-            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
+            const templateUri: TemplateUri = 'test://template.yaml';
             const mockSyntaxTree = {} as SyntaxTree;
 
-            syntaxTreeManager.getSyntaxTree.withArgs(params.uri).returns(mockSyntaxTree);
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
             getEntityMapSpy.mockReturnValue(undefined);
 
-            const handler = stackActionParametersHandler(mockComponents);
-            const result = handler(params, mockToken) as GetParametersResult;
+            const handler = getParametersHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetParametersResult;
 
             expect(result).toEqual({ parameters: [] });
         });
 
         it('returns parameters when parameters section exists', () => {
-            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
+            const templateUri: TemplateUri = 'test://template.yaml';
             const mockSyntaxTree = {} as SyntaxTree;
             const mockParam1 = { name: 'param1', type: 'String' };
             const mockParam2 = { name: 'param2', type: 'Number' };
@@ -106,11 +106,11 @@ describe('StackActionHandler', () => {
                 ['param2', mockContext2],
             ]);
 
-            syntaxTreeManager.getSyntaxTree.withArgs(params.uri).returns(mockSyntaxTree);
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
             getEntityMapSpy.mockReturnValue(parametersMap);
 
-            const handler = stackActionParametersHandler(mockComponents);
-            const result = handler(params, mockToken) as GetParametersResult;
+            const handler = getParametersHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetParametersResult;
 
             expect(result.parameters).toHaveLength(2);
             expect(result.parameters[0]).toBe(mockParam1);
@@ -120,26 +120,26 @@ describe('StackActionHandler', () => {
 
     describe('templateCapabilitiesHandler', () => {
         it('should return capabilities when document is available', async () => {
-            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
+            const templateUri: TemplateUri = 'test://template.yaml';
             const mockDocument = { getText: vi.fn().mockReturnValue('template content') } as unknown as Document;
             const mockCapabilities = ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'] as Capability[];
 
-            mockComponents.documentManager.get.withArgs(params.uri).returns(mockDocument);
+            mockComponents.documentManager.get.withArgs(templateUri).returns(mockDocument);
             vi.mocked(analyzeCapabilities).mockResolvedValue(mockCapabilities);
 
-            const handler = templateCapabilitiesHandler(mockComponents);
-            const result = (await handler(params, mockToken)) as GetCapabilitiesResult;
+            const handler = getCapabilitiesHandler(mockComponents);
+            const result = (await handler(templateUri, mockToken)) as GetCapabilitiesResult;
 
             expect(result.capabilities).toEqual(mockCapabilities);
         });
 
         it('should throw error when document is not available', async () => {
-            const params: StackActionMetadataParams = { uri: 'test://template.yaml' };
-            mockComponents.documentManager.get.withArgs(params.uri).returns(undefined);
+            const templateUri: TemplateUri = 'test://template.yaml';
+            mockComponents.documentManager.get.withArgs(templateUri).returns(undefined);
 
-            const handler = templateCapabilitiesHandler(mockComponents);
+            const handler = getCapabilitiesHandler(mockComponents);
 
-            await expect(handler(params, mockToken)).rejects.toThrow(ResponseError);
+            await expect(handler(templateUri, mockToken)).rejects.toThrow(ResponseError);
         });
     });
 
@@ -148,7 +148,7 @@ describe('StackActionHandler', () => {
             const mockResult = { id: 'test-id', changeSetName: 'cs-123', stackName: 'test-stack' };
             mockComponents.validationWorkflowService.start.resolves(mockResult);
 
-            const handler = stackActionValidationCreateHandler(mockComponents);
+            const handler = createValidationHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
             const result = await handler(params, {} as any);
@@ -161,7 +161,7 @@ describe('StackActionHandler', () => {
             const responseError = new ResponseError(ErrorCodes.InternalError, 'Service error');
             mockComponents.validationWorkflowService.start.rejects(responseError);
 
-            const handler = stackActionValidationCreateHandler(mockComponents);
+            const handler = createValidationHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
             await expect(handler(params, {} as any)).rejects.toThrow(responseError);
@@ -170,7 +170,7 @@ describe('StackActionHandler', () => {
         it('should wrap other errors as InternalError', async () => {
             mockComponents.validationWorkflowService.start.rejects(new Error('Generic error'));
 
-            const handler = stackActionValidationCreateHandler(mockComponents);
+            const handler = createValidationHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
             await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
@@ -182,7 +182,7 @@ describe('StackActionHandler', () => {
             const mockResult = { id: 'test-id', changeSetName: 'cs-123', stackName: 'test-stack' };
             mockComponents.deploymentWorkflowService.start.resolves(mockResult);
 
-            const handler = stackActionDeploymentCreateHandler(mockComponents);
+            const handler = createDeploymentHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
             const result = await handler(params, {} as any);
@@ -197,11 +197,11 @@ describe('StackActionHandler', () => {
             const mockResult = {
                 id: 'test-id',
                 status: StackActionPhase.VALIDATION_COMPLETE,
-                result: StackActionStatus.SUCCESSFUL,
+                result: StackActionState.SUCCESSFUL,
             };
             mockComponents.validationWorkflowService.getStatus.resolves(mockResult);
 
-            const handler = stackActionValidationStatusHandler(mockComponents);
+            const handler = getValidationStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
             const result = await handler(params, {} as any);
@@ -216,11 +216,11 @@ describe('StackActionHandler', () => {
             const mockResult = {
                 id: 'test-id',
                 status: StackActionPhase.DEPLOYMENT_COMPLETE,
-                result: StackActionStatus.SUCCESSFUL,
+                result: StackActionState.SUCCESSFUL,
             };
             mockComponents.deploymentWorkflowService.getStatus.resolves(mockResult);
 
-            const handler = stackActionDeploymentStatusHandler(mockComponents);
+            const handler = getDeploymentStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
             const result = await handler(params, {} as any);

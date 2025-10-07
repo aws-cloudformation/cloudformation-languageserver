@@ -1,6 +1,6 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
-import { StackActionParams, StackActionMetadataParams } from './StackActionRequestType';
+import { CreateStackActionParams, TemplateUri } from './StackActionRequestType';
 
 const CapabilitySchema = z.enum([
     Capability.CAPABILITY_AUTO_EXPAND,
@@ -23,14 +23,12 @@ const StackActionParamsSchema = z.object({
     capabilities: z.array(CapabilitySchema).optional(),
 });
 
-const TemplateMetadataSchema = z.object({
-    uri: z.string().min(1),
-});
+const TemplateUriSchema = z.string().min(1);
 
-export function parseStackActionParams(input: unknown): StackActionParams {
+export function parseStackActionParams(input: unknown): CreateStackActionParams {
     return StackActionParamsSchema.parse(input);
 }
 
-export function parseTemplateMetadataParams(input: unknown): StackActionMetadataParams {
-    return TemplateMetadataSchema.parse(input);
+export function parseTemplateUriParams(input: unknown): TemplateUri {
+    return TemplateUriSchema.parse(input);
 }
