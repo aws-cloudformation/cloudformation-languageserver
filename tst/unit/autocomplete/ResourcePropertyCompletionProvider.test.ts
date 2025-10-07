@@ -1048,15 +1048,8 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should exclude existing properties from array item when in array context', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+        const testSchemas = combinedSchemas([Schemas.S3Bucket]);
+        mockComponents.schemaRetriever.getDefault.returns(testSchemas);
 
         const context = createContextFromYamlContentAndPath(
             `Resources:
