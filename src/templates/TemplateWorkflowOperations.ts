@@ -15,7 +15,7 @@ import {
     changeSetNamePrefix,
 } from './TemplateWorkflowType';
 
-const LOGGER = LoggerFactory.getLogger('TemplateWorkflowOperations');
+const logger = LoggerFactory.getLogger('TemplateWorkflowOperations');
 
 export async function processChangeSet(
     cfnService: CfnService,
@@ -66,17 +66,22 @@ export async function waitForValidation(
                 reason: result.reason ? String(result.reason) : undefined,
             };
         } else {
+            logger.warn(
+                { reason: result.reason ? String(result.reason) : 'Unknown validation failure' },
+                'Validation failed',
+            );
             return {
                 status: TemplateStatus.VALIDATION_FAILED,
                 result: WorkflowResult.FAILED,
-                reason: result.reason ? String(result.reason) : undefined,
+                reason: result.reason ? String(result.reason) : undefined, // TODO: Return reason as part of LSP Response
             };
         }
     } catch (error) {
+        logger.error({ error: extractErrorMessage(error) }, 'Validation failed with error');
         return {
             status: TemplateStatus.VALIDATION_FAILED,
             result: WorkflowResult.FAILED,
-            reason: error instanceof Error ? error.message : 'Validation failed',
+            reason: extractErrorMessage(error),
         };
     }
 }
@@ -103,18 +108,22 @@ export async function waitForDeployment(
                 reason: result.reason ? String(result.reason) : undefined,
             };
         } else {
+            logger.warn(
+                { reason: result.reason ? String(result.reason) : 'Unknown deployment failure' },
+                'Deployment failed',
+            );
             return {
                 status: TemplateStatus.DEPLOYMENT_FAILED,
                 result: WorkflowResult.FAILED,
-                reason: result.reason ? String(result.reason) : undefined,
+                reason: result.reason ? String(result.reason) : undefined, // TODO: Return reason as part of LSP Response
             };
         }
     } catch (error) {
-        LOGGER.info({ error: extractErrorMessage(error) }, 'Validation failed with error');
+        logger.error({ error: extractErrorMessage(error) }, 'Deployment failed with error');
         return {
             status: TemplateStatus.DEPLOYMENT_FAILED,
             result: WorkflowResult.FAILED,
-            reason: String(error),
+            reason: extractErrorMessage(error),
         };
     }
 }
@@ -137,7 +146,7 @@ export async function deleteStackAndChangeSet(
                 initialDelayMs: 1000,
                 operationName: `Delete change set ${workflow.changeSetName}`,
             },
-            LOGGER,
+            logger,
         );
 
         // Delete stack
@@ -152,10 +161,10 @@ export async function deleteStackAndChangeSet(
                 initialDelayMs: 1000,
                 operationName: `Delete stack ${workflow.stackName}`,
             },
-            LOGGER,
+            logger,
         );
     } catch (error) {
-        LOGGER.warn(
+        logger.warn(
             { error, workflowId, changeSetName: workflow.changeSetName },
             'Failed to cleanup workflow resources',
         );
@@ -179,10 +188,10 @@ export async function deleteChangeSet(
                 initialDelayMs: 1000,
                 operationName: `Delete change set ${workflow.changeSetName}`,
             },
-            LOGGER,
+            logger,
         );
     } catch (error) {
-        LOGGER.warn(
+        logger.warn(
             { error, workflowId, changeSetName: workflow.changeSetName },
             'Failed to cleanup workflow resources',
         );
