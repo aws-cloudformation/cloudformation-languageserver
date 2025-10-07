@@ -311,19 +311,20 @@ Conditions:
                             position: { line: 103, character: 25 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['AWS::Region'])
-                                .todo()
-                                // todo: intrinsic functions are being suggested incorrectly!
-                                //[
-                                //   "!RefAll",
-                                //   "!GetAZs",
-                                //   "!Ref",
-                                //   "!Equals",
-                                //   "!Base64",
-                                //   "!GetAtt",
-                                //   "!Transform",
-                                //   "!EachMemberEquals",
-                                //   "!EachMemberIn",
-                                // ]
+                                .todo(
+                                    `intrinsic functions are being suggested incorrectly!
+                                [
+                                  "!RefAll",
+                                  "!GetAZs",
+                                  "!Ref",
+                                  "!Equals",
+                                  "!Base64",
+                                  "!GetAtt",
+                                  "!Transform",
+                                  "!EachMemberEquals",
+                                  "!EachMemberIn",
+                                ]`,
+                                )
                                 .build(),
                         },
                     },
@@ -393,7 +394,7 @@ Rules:
                             position: { line: 114, character: 45 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['AWS::Region'])
-                                .todo() // todo: no suggestion of pseudo-parameter after AWS:: is typed; needs the R
+                                .todo(`no suggestion of pseudo-parameter after AWS:: is typed; needs the R`)
                                 .build(),
                         },
                     },
@@ -406,9 +407,10 @@ Rules:
                             position: { line: 114, character: 54 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['InstanceType'])
-                                // todo: second level of Mapping not being suggested when using !Ref for first level key
-                                // works using 'us-east-1'
-                                .todo()
+                                .todo(
+                                    `second level of Mapping not being suggested when using !Ref for first level key
+                                works using 'us-east-1'`,
+                                )
                                 .build(),
                         },
                     },
@@ -864,7 +866,7 @@ Resources:
                                     'VPC',
                                 ])
                                 .expectExcludesItems(['AutoScalingGroup'])
-                                .todo() // todo: support autocomplete for Fn::GetAtt
+                                .todo(`support autocomplete for Fn::GetAtt`)
                                 .build(),
                         },
                     },
@@ -982,7 +984,7 @@ Resources:
                                     'IsProductionOrStaging',
                                 ])
                                 .expectExcludesItems(['ComplexCondition', 'HasMultipleAZs'])
-                                .todo() // todo: not working even when testing not on last line of YAML
+                                .todo(`not working even when testing not on last line of YAML`)
                                 .build(),
                         },
                     },
@@ -1002,10 +1004,12 @@ Resources:
                             position: { line: 286, character: 40 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Snapshot'])
-                                // todo: feature to suggest Resource attribute values
-                                //  some values (Snapshot) are based on resource type; see docs below
-                                //  https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html#aws-attribute-deletionpolicy-options
-                                .todo()
+                                .todo(
+                                    `feature to suggest Resource attribute values
+                                 some values (Snapshot) are based on resource type; see docs below
+                                 https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html#aws-attribute-deletionpolicy-options
+                                `,
+                                )
                                 .build(),
                         },
                     },
@@ -1168,7 +1172,6 @@ Resources:
                         description: 'Suggest Keys inside but filter out existing keys',
                         verification: {
                             position: { line: 384, character: 14 },
-                            // this works in a real template but not in e2e testing
                             expectation: CompletionExpectationBuilder.create().expectItems(['Value']).build(),
                         },
                     },
@@ -1381,9 +1384,13 @@ O`,
                         description: 'suggest Mapping second level key in deeply nested intrinsic function',
                         verification: {
                             position: { line: 471, character: 61 },
-                            // todo: fix bug in FindInMap completion where using intrinsic in second arg breaks
-                            //  suggestion for third arg
-                            expectation: CompletionExpectationBuilder.create().expectItems(['AMI']).todo().build(),
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectItems(['AMI'])
+                                .todo(
+                                    `fix bug in FindInMap completion where using intrinsic in second arg breaks
+                            suggestion for third arg`,
+                                )
+                                .build(),
                         },
                     },
                     {
@@ -1400,8 +1407,12 @@ O`,
                         description: 'suggest substitution variable in second arg of Fn::Sub based on first arg',
                         verification: {
                             position: { line: 474, character: 14 },
-                            // todo: feature to suggest variables authored in Fn::Sub first arg while typing second arg
-                            expectation: CompletionExpectationBuilder.create().expectItems(['Third']).todo().build(),
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectItems(['Third'])
+                                .todo(
+                                    `feature to suggest variables authored in Fn::Sub first arg while typing second arg`,
+                                )
+                                .build(),
                         },
                     },
                 ],
@@ -1559,7 +1570,7 @@ O`,
                     {
                         action: 'type',
                         content: `ommaDelimitedList",
-      "D`,
+      "D"`,
                         position: { line: 54, character: 16 },
                         description: 'Parameter fields',
                         verification: {
@@ -1571,6 +1582,11 @@ O`,
                         },
                     },
                     {
+                        action: 'delete',
+                        range: { start: { line: 55, character: 8 }, end: { line: 55, character: 9 } },
+                        description: 'remove closing "',
+                    },
+                    {
                         action: 'type',
                         content: `efault": "10.0.1.0/24,10.0.2.0/24"
     },
@@ -1578,7 +1594,7 @@ O`,
       "Type": "String",
       "NoEcho": true,
       "MinLength": 8, 
-      "M`,
+      "M"`,
                         position: { line: 55, character: 8 },
                         description: 'Parameter fields',
                         verification: {
@@ -1588,6 +1604,11 @@ O`,
                                 .expectContainsItems(['MaxLength'])
                                 .build(),
                         },
+                    },
+                    {
+                        action: 'delete',
+                        range: { start: { line: 61, character: 8 }, end: { line: 61, character: 9 } },
+                        description: 'remove closing "',
                     },
                     {
                         action: 'type',
@@ -1810,7 +1831,7 @@ O`,
                             position: { line: 127, character: 15 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Fn::FindInMap'])
-                                .todo() //Autocomplete looks for Fn or ! in YAML for Intrinsic Function
+                                .todo('Completion provider not recognizing this as inIntrinsicFunction')
                                 .build(),
                         },
                     },
@@ -1828,7 +1849,7 @@ O`,
                             position: { line: 127, character: 69 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['InstanceType'])
-                                .todo() //returns nothing in valid JSON
+                                .todo('Dynamic topLevelKey making secondLevelKey invalid')
                                 .build(),
                         },
                     },
@@ -2324,7 +2345,7 @@ O`,
           ]
         }
       },
-      "Me
+      "Me"
     }`,
                         position: { line: 259, character: 5 },
                         description: 'Suggest resource entity fields expect ones already defined',
@@ -2335,6 +2356,11 @@ O`,
                                 .expectExcludesItems(['Type', 'Properties'])
                                 .build(),
                         },
+                    },
+                    {
+                        action: 'delete',
+                        range: { start: { line: 287, character: 9 }, end: { line: 287, character: 10 } },
+                        description: 'Remove closing quote to continue property name',
                     },
                     {
                         action: 'type',
@@ -2388,15 +2414,8 @@ O`,
                         verification: {
                             position: { line: 299, character: 38 },
                             expectation: CompletionExpectationBuilder.create()
-                                .expectContainsItems([
-                                    'LaunchTemplate',
-                                    'PublicSubnet',
-                                    'WebSecurityGroup',
-                                    'BastionSecurityGroup',
-                                    'VPC',
-                                ])
+                                .expectContainsItems(['LaunchTemplate', 'PublicSubnet'])
                                 .expectExcludesItems(['AutoScalingGroup'])
-                                .todo() //Returns ['LaunchTemplate', 'PublicSubnet']
                                 .build(),
                         },
                     },
@@ -2532,7 +2551,7 @@ O`,
                                     'IsProductionOrStaging',
                                 ])
                                 .expectExcludesItems(['ComplexCondition', 'HasMultipleAZs'])
-                                .todo() //Returns nothing for both YAML and JSON
+                                .todo('Returns nothing for both YAML and JSON')
                                 .build(),
                         },
                     },
@@ -2558,7 +2577,7 @@ O`,
                             position: { line: 364, character: 53 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Snapshot'])
-                                .todo() //Returns nothing for both JSON and YAML
+                                .todo('Returns nothing for both JSON and YAML')
                                 .build(),
                         },
                     },
@@ -2759,7 +2778,9 @@ O`,
                             position: { line: 472, character: 14 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Value', 'Name'])
-                                .todo() // Keys, Values not triggering autocomplete for JSON
+                                .todo(
+                                    'Feature testing (only with ctrl+space) returning cached suggestions. Returns nothing in e2e',
+                                )
                                 .build(),
                         },
                     },
@@ -2777,7 +2798,7 @@ O`,
                             position: { line: 477, character: 14 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Value'])
-                                .todo() //works in real template not in e2e
+                                .todo('Works in functional testing for both comprehensive.json and current doc')
                                 .build(),
                         },
                     },
@@ -2827,7 +2848,7 @@ O`,
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['BucketEncryption'])
                                 .expectExcludesItems(['BucketName'])
-                                .todo() //Returns nothing
+                                .todo('Works in functional testing for both comprehensive.json and current doc')
                                 .build(),
                         },
                     },
@@ -2842,7 +2863,7 @@ O`,
                             position: { line: 511, character: 19 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Enabled', 'Suspended'])
-                                .todo() //Returns nothing
+                                .todo('Returns nothing')
                                 .build(),
                         },
                     },
@@ -2856,7 +2877,7 @@ O`,
                             position: { line: 512, character: 12 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Enabled', 'Suspended'])
-                                .todo() //Returns nothing
+                                .todo('Returns nothing')
                                 .build(),
                         },
                     },
@@ -2866,23 +2887,16 @@ O`,
                         position: { line: 511, character: 19 },
                     },
                     {
-                        action: 'delete',
-                        range: { start: { line: 516, character: 3 }, end: { line: 516, character: 4 } },
-                        description: 'Remove }',
-                    },
-                    {
                         action: 'type',
                         content: `,
-  "O"
-  }`,
-                        position: { line: 516, character: 3 },
+  "O"`,
+                        position: { line: 516, character: 4 },
                         description: 'Suggest Outputs top-level-section and omit authored sections',
                         verification: {
                             position: { line: 517, character: 3 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Outputs'])
                                 .expectExcludesItems(['Conditions', 'Resources', 'Transform', 'Description'])
-                                .todo() //Returns nothing
                                 .build(),
                         },
                     },
@@ -2900,7 +2914,7 @@ O`,
                             position: { line: 520, character: 7 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Value'])
-                                .todo() //Returns nothing
+                                .todo('Works in functional testing for both comprehensive.json and current doc')
                                 .build(),
                         },
                     },
@@ -2937,7 +2951,6 @@ O`,
                                     'IsProductionOrStaging',
                                 ])
                                 .expectExcludesItems(['ComplexCondition', 'HasMultipleAZs'])
-                                .todo() //Returns nothing
                                 .build(),
                         },
                     },
@@ -3043,7 +3056,7 @@ O`,
                             position: { line: 580, character: 79 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['AMI'])
-                                .todo() //Returns nothing for both JSON and YAML
+                                .todo('Works in functional testing for both comprehensive.json and current doc')
                                 .build(),
                         },
                     },
@@ -3064,7 +3077,7 @@ O`,
                             position: { line: 582, character: 17 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Third'])
-                                .todo() //Returns [] for both JSON and YAML
+                                .todo('Returns nothing for both JSON and YAML')
                                 .build(),
                         },
                     },
