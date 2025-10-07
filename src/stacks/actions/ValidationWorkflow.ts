@@ -1,32 +1,27 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
-import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
-import { DocumentManager } from '../document/DocumentManager';
-import { Identifiable } from '../protocol/LspTypes';
-import { ServerComponents } from '../server/ServerComponents';
-import { CfnService } from '../services/CfnService';
-import { DiagnosticCoordinator } from '../services/DiagnosticCoordinator';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
+import { DocumentManager } from '../../document/DocumentManager';
+import { Identifiable } from '../../protocol/LspTypes';
+import { ServerComponents } from '../../server/ServerComponents';
+import { CfnService } from '../../services/CfnService';
+import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
+import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { deleteStackAndChangeSet, deleteChangeSet, processChangeSet, waitForValidation } from './StackActionOperations';
 import {
-    TemplateActionParams,
-    TemplateActionResult,
-    TemplateStatus,
-    WorkflowResult,
-    TemplateStatusResult,
-} from './TemplateRequestType';
-import {
-    deleteStackAndChangeSet,
-    deleteChangeSet,
-    processChangeSet,
-    waitForValidation,
-} from './TemplateWorkflowOperations';
-import { TemplateWorkflowState, TemplateWorkflow } from './TemplateWorkflowType';
+    CreateStackActionParams,
+    CreateStackActionResult,
+    StackActionPhase,
+    StackActionState,
+    GetStackActionStatusResult,
+} from './StackActionRequestType';
+import { StackActionWorkflowState, StackActionWorkflow } from './StackActionWorkflowType';
 import { Validation } from './Validation';
 import { ValidationManager } from './ValidationManager';
 
 export const CFN_VALIDATION_SOURCE = 'CFN Dry-Run';
 
-export class ValidationWorkflow implements TemplateWorkflow {
-    private readonly workflows = new Map<string, TemplateWorkflowState>();
+export class ValidationWorkflow implements StackActionWorkflow {
+    private readonly workflows = new Map<string, StackActionWorkflowState>();
     private readonly log = LoggerFactory.getLogger(ValidationWorkflow);
 
     constructor(
@@ -47,7 +42,7 @@ export class ValidationWorkflow implements TemplateWorkflow {
         );
     }
 
-    async start(params: TemplateActionParams): Promise<TemplateActionResult> {
+    async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
         // Check if stack exists to determine CREATE vs UPDATE
         let changeSetType: ChangeSetType = ChangeSetType.CREATE;
         try {
@@ -67,7 +62,7 @@ export class ValidationWorkflow implements TemplateWorkflow {
             params.parameters,
             params.capabilities,
         );
-        validation.setStatus(TemplateStatus.VALIDATION_IN_PROGRESS);
+        validation.setStatus(StackActionPhase.VALIDATION_IN_PROGRESS);
         this.validationManager.add(validation);
 
         // Set initial workflow state
@@ -75,9 +70,9 @@ export class ValidationWorkflow implements TemplateWorkflow {
             id: params.id,
             changeSetName: changeSetName,
             stackName: params.stackName,
-            status: TemplateStatus.VALIDATION_IN_PROGRESS,
+            phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            result: WorkflowResult.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         void this.runValidationAsync(params.id, changeSetName, params.stackName, changeSetType);
@@ -89,15 +84,15 @@ export class ValidationWorkflow implements TemplateWorkflow {
         };
     }
 
-    getStatus(params: Identifiable): TemplateStatusResult {
+    getStatus(params: Identifiable): GetStackActionStatusResult {
         const workflow = this.workflows.get(params.id);
         if (!workflow) {
             throw new Error(`Workflow not found: ${params.id}`);
         }
 
         return {
-            status: workflow.status,
-            result: workflow.result,
+            phase: workflow.phase,
+            state: workflow.state,
             changes: workflow.changes,
             id: workflow.id,
         };
@@ -120,7 +115,7 @@ export class ValidationWorkflow implements TemplateWorkflow {
 
             const validation = this.validationManager.get(stackName);
             if (validation) {
-                validation.setStatus(result.status);
+                validation.setStatus(result.phase);
                 if (result.changes) {
                     validation.setChanges(result.changes);
                 }
@@ -128,8 +123,8 @@ export class ValidationWorkflow implements TemplateWorkflow {
 
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
-                status: result.status,
-                result: result.result,
+                phase: result.phase,
+                state: result.state,
                 changes: result.changes,
             });
         } catch (error) {
@@ -137,13 +132,13 @@ export class ValidationWorkflow implements TemplateWorkflow {
 
             const validation = this.validationManager.get(stackName);
             if (validation) {
-                validation.setStatus(TemplateStatus.VALIDATION_FAILED);
+                validation.setStatus(StackActionPhase.VALIDATION_FAILED);
             }
 
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
-                status: TemplateStatus.VALIDATION_FAILED,
-                result: WorkflowResult.FAILED,
+                phase: StackActionPhase.VALIDATION_FAILED,
+                state: StackActionState.FAILED,
             });
         } finally {
             // Cleanup validation object to prevent memory leaks

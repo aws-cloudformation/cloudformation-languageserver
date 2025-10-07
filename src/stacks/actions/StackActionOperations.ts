@@ -2,25 +2,25 @@ import { Change, ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { v4 as uuidv4 } from 'uuid';
 import { ResponseError, ErrorCodes } from 'vscode-languageserver';
-import { DocumentManager } from '../document/DocumentManager';
-import { CfnService } from '../services/CfnService';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
-import { retryWithExponentialBackoff } from '../utils/Retry';
-import { TemplateChange, TemplateStatus, WorkflowResult, TemplateActionParams } from './TemplateRequestType';
+import { DocumentManager } from '../../document/DocumentManager';
+import { CfnService } from '../../services/CfnService';
+import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { extractErrorMessage } from '../../utils/Errors';
+import { retryWithExponentialBackoff } from '../../utils/Retry';
+import { StackChange, StackActionPhase, StackActionState, CreateStackActionParams } from './StackActionRequestType';
 import {
-    TemplateWorkflowState,
+    StackActionWorkflowState,
     ValidationWaitForResult,
     DeploymentWaitForResult,
     changeSetNamePrefix,
-} from './TemplateWorkflowType';
+} from './StackActionWorkflowType';
 
-const logger = LoggerFactory.getLogger('TemplateWorkflowOperations');
+const logger = LoggerFactory.getLogger('StackActionOperations');
 
 export async function processChangeSet(
     cfnService: CfnService,
     documentManager: DocumentManager,
-    params: TemplateActionParams,
+    params: CreateStackActionParams,
     changeSetType: ChangeSetType,
 ): Promise<string> {
     const document = documentManager.get(params.uri);
@@ -60,9 +60,9 @@ export async function waitForValidation(
             });
 
             return {
-                status: TemplateStatus.VALIDATION_COMPLETE,
-                result: WorkflowResult.SUCCESSFUL,
-                changes: mapChangesToTemplateChanges(response.Changes),
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
+                changes: mapChangesToStackChanges(response.Changes),
                 reason: result.reason ? String(result.reason) : undefined,
             };
         } else {
@@ -71,16 +71,16 @@ export async function waitForValidation(
                 'Validation failed',
             );
             return {
-                status: TemplateStatus.VALIDATION_FAILED,
-                result: WorkflowResult.FAILED,
+                phase: StackActionPhase.VALIDATION_FAILED,
+                state: StackActionState.FAILED,
                 reason: result.reason ? String(result.reason) : undefined, // TODO: Return reason as part of LSP Response
             };
         }
     } catch (error) {
         logger.error({ error: extractErrorMessage(error) }, 'Validation failed with error');
         return {
-            status: TemplateStatus.VALIDATION_FAILED,
-            result: WorkflowResult.FAILED,
+            phase: StackActionPhase.VALIDATION_FAILED,
+            state: StackActionState.FAILED,
             reason: extractErrorMessage(error),
         };
     }
@@ -103,8 +103,8 @@ export async function waitForDeployment(
 
         if (result.state === WaiterState.SUCCESS) {
             return {
-                status: TemplateStatus.DEPLOYMENT_COMPLETE,
-                result: WorkflowResult.SUCCESSFUL,
+                phase: StackActionPhase.DEPLOYMENT_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
                 reason: result.reason ? String(result.reason) : undefined,
             };
         } else {
@@ -113,16 +113,16 @@ export async function waitForDeployment(
                 'Deployment failed',
             );
             return {
-                status: TemplateStatus.DEPLOYMENT_FAILED,
-                result: WorkflowResult.FAILED,
+                phase: StackActionPhase.DEPLOYMENT_FAILED,
+            state: StackActionState.FAILED,
                 reason: result.reason ? String(result.reason) : undefined, // TODO: Return reason as part of LSP Response
             };
         }
     } catch (error) {
         logger.error({ error: extractErrorMessage(error) }, 'Deployment failed with error');
         return {
-            status: TemplateStatus.DEPLOYMENT_FAILED,
-            result: WorkflowResult.FAILED,
+            phase: StackActionPhase.DEPLOYMENT_FAILED,
+            state: StackActionState.FAILED,
             reason: extractErrorMessage(error),
         };
     }
@@ -130,7 +130,7 @@ export async function waitForDeployment(
 
 export async function deleteStackAndChangeSet(
     cfnService: CfnService,
-    workflow: TemplateWorkflowState,
+    workflow: StackActionWorkflowState,
     workflowId: string,
 ): Promise<void> {
     try {
@@ -173,7 +173,7 @@ export async function deleteStackAndChangeSet(
 
 export async function deleteChangeSet(
     cfnService: CfnService,
-    workflow: TemplateWorkflowState,
+    workflow: StackActionWorkflowState,
     workflowId: string,
 ): Promise<void> {
     try {
@@ -198,7 +198,7 @@ export async function deleteChangeSet(
     }
 }
 
-export function mapChangesToTemplateChanges(changes?: Change[]): TemplateChange[] | undefined {
+export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | undefined {
     return changes?.map((change: Change) => ({
         type: change.Type,
         resourceChange: change.ResourceChange

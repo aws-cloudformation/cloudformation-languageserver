@@ -34,12 +34,12 @@ import { DiagnosticCoordinator } from '../services/DiagnosticCoordinator';
 import { GuardService } from '../services/guard/GuardService';
 import { IacGeneratorService } from '../services/IacGeneratorService';
 import { SettingsManager } from '../settings/SettingsManager';
+import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
+import { ValidationManager } from '../stacks/actions/ValidationManager';
+import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
 import { ClientMessage } from '../telemetry/ClientMessage';
 import { StdOutLogger, LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
-import { DeploymentWorkflow } from '../templates/DeploymentWorkflow';
-import { ValidationManager } from '../templates/ValidationManager';
-import { ValidationWorkflow } from '../templates/ValidationWorkflow';
 
 export interface Configurable {
     configure(settingsManager: SettingsManager): void | Promise<void>;
@@ -110,7 +110,7 @@ export class ServerComponents {
     private closeableComponents: Closeable[] = [];
 
     constructor(
-        features: Omit<LspFeatures, 'handlers' | 'templateHandlers' | 'stackHandlers' | 'resourceHandlers'>,
+        features: Omit<LspFeatures, 'handlers' | 'stackHandlers' | 'resourceHandlers'>,
         overrides: Partial<ServerComponents> = {},
     ) {
         this.diagnostics = features.diagnostics;

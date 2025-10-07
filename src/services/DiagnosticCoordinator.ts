@@ -1,7 +1,7 @@
 import { Diagnostic, PublishDiagnosticsParams } from 'vscode-languageserver';
 import { LspDiagnostics } from '../protocol/LspDiagnostics';
+import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { CFN_VALIDATION_SOURCE } from '../templates/ValidationWorkflow';
 import { extractErrorMessage } from '../utils/Errors';
 
 type SourceToDiagnostics = Map<string, Diagnostic[]>;
