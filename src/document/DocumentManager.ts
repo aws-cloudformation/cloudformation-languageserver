@@ -8,17 +8,12 @@ import { Delayer } from '../utils/Delayer';
 import { Document } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
-export type DetectedIndentation = {
-    tabSize: number;
-    detectedFromContent: boolean;
-};
-
 export class DocumentManager implements Configurable {
     private readonly log = LoggerFactory.getLogger(DocumentManager);
     private readonly delayer = new Delayer(5 * 1000);
     private editorSettings: EditorSettings = DefaultSettings.editor;
     private settingsSubscription?: SettingsSubscription;
-    private readonly documentIndentation = new Map<string, DetectedIndentation>();
+    private readonly documentMap = new Map<string, Document>();
 
     constructor(
         private readonly documents: TextDocuments<TextDocument>,
@@ -39,11 +34,19 @@ export class DocumentManager implements Configurable {
     }
 
     get(uri: string) {
+        let document = this.documentMap.get(uri);
+        if (document) {
+            return document;
+        }
+
         const textDocument = this.documents.get(uri);
         if (!textDocument) {
             return;
         }
-        return new Document(textDocument);
+
+        document = new Document(textDocument);
+        this.documentMap.set(uri, document);
+        return document;
     }
 
     getByName(name: string) {
@@ -53,9 +56,18 @@ export class DocumentManager implements Configurable {
     }
 
     allDocuments() {
-        return this.documents.all().map((doc) => {
-            return new Document(doc);
-        });
+        const allDocs: Document[] = [];
+
+        for (const textDoc of this.documents.all()) {
+            let document = this.documentMap.get(textDoc.uri);
+            if (!document) {
+                document = new Document(textDoc);
+                this.documentMap.set(textDoc.uri, document);
+            }
+            allDocs.push(document);
+        }
+
+        return allDocs;
     }
 
     isTemplate(uri: string) {
@@ -83,40 +95,28 @@ export class DocumentManager implements Configurable {
             });
     }
 
-    /**
-     * Get document-specific editor settings with indentation detection
-     * @param uri Document URI
-     * @returns Editor settings with detected indentation if enabled
-     */
     getEditorSettingsForDocument(uri: string): EditorSettings {
-        const baseSettings = this.editorSettings;
-
-        if (!baseSettings.detectIndentation) {
-            return baseSettings;
+        const document = this.get(uri);
+        if (!document) {
+            return this.editorSettings;
         }
 
-        const document = this.get(uri);
-        const detectedIndentation = this.getIndentationForDocument(uri, document?.contents() ?? '', baseSettings);
-
-        return {
-            ...baseSettings,
-            tabSize: detectedIndentation.tabSize,
-        };
+        return document.getEditorSettings(this.editorSettings);
     }
 
-    /**
-     * Clear stored indentation for a document (called when document is closed)
-     * @param uri Document URI
-     */
     clearIndentationForDocument(uri: string): void {
-        this.documentIndentation.delete(uri);
+        const document = this.documentMap.get(uri);
+        if (document) {
+            document.clearIndentation();
+            this.documentMap.delete(uri);
+        }
     }
 
-    /**
-     * Clear all stored indentation data
-     */
     clearAllStoredIndentation(): void {
-        this.documentIndentation.clear();
+        for (const document of this.documentMap.values()) {
+            document.clearIndentation();
+        }
+        this.documentMap.clear();
     }
 
     private onEditorSettingsChanged(newEditorSettings: EditorSettings): void {
@@ -128,84 +128,7 @@ export class DocumentManager implements Configurable {
 
         if (detectIndentationChanged) {
             this.clearAllStoredIndentation();
-
-            if (newEditorSettings.detectIndentation) {
-                const openDocuments = this.allDocuments();
-
-                for (const document of openDocuments) {
-                    this.getIndentationForDocument(document.uri, document.contents(), newEditorSettings);
-                }
-            }
         }
-    }
-
-    /**
-     * Get effective indentation for a document
-     * @param uri Document URI
-     * @param content Document content
-     * @param editorSettings Current editor settings
-     * @returns Effective indentation settings for the document
-     */
-    private getIndentationForDocument(
-        uri: string,
-        content: string,
-        editorSettings: EditorSettings,
-    ): DetectedIndentation {
-        // If detectIndentation is false, use configured settings
-        if (!editorSettings.detectIndentation) {
-            return {
-                tabSize: editorSettings.tabSize,
-                detectedFromContent: false,
-            };
-        }
-
-        const stored = this.documentIndentation.get(uri);
-        if (stored) {
-            return stored;
-        }
-
-        const detected = this.detectIndentationFromContent(content, editorSettings);
-
-        this.documentIndentation.set(uri, detected);
-
-        return detected;
-    }
-
-    /**
-     * Detect indentation from document content by finding the first indented line
-     * @param content Document content to analyze
-     * @param fallbackSettings Fallback settings to use if detection fails
-     * @returns Detected indentation settings
-     */
-    private detectIndentationFromContent(content: string, fallbackSettings: EditorSettings): DetectedIndentation {
-        const lines = content.split('\n');
-
-        const maxLinesToAnalyze = Math.min(lines.length, 30);
-
-        for (let i = 0; i < maxLinesToAnalyze; i++) {
-            const line = lines[i];
-
-            if (line.trim().length === 0) {
-                continue;
-            }
-
-            const leadingSpaces = line.match(/^( *)/)?.[1]?.length ?? 0;
-
-            if (leadingSpaces > 0) {
-                const result: DetectedIndentation = {
-                    tabSize: leadingSpaces,
-                    detectedFromContent: true,
-                };
-
-                return result;
-            }
-        }
-
-        // If no indented lines found, use fallback settings
-        return {
-            tabSize: fallbackSettings.tabSize,
-            detectedFromContent: false,
-        };
     }
 
     static create(components: ServerComponents) {

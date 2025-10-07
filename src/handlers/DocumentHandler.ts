@@ -25,10 +25,6 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
 
         const content = document.contents();
 
-        if (components.settingsManager.getCurrentSettings().editor.detectIndentation) {
-            components.documentManager.getEditorSettingsForDocument(uri);
-        }
-
         if (document.isTemplate()) {
             try {
                 components.syntaxTreeManager.addWithTypes(uri, content, document.documentType, document.cfnFileType);
