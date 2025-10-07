@@ -7,7 +7,7 @@ export class Validation {
     private readonly changeSetName: string;
     private readonly parameters?: Parameter[];
     private capabilities?: Capability[];
-    private status: StackActionPhase | undefined;
+    private phase: StackActionPhase | undefined;
     private changes: StackChange[] | undefined;
 
     constructor(
@@ -40,12 +40,12 @@ export class Validation {
         return this.parameters;
     }
 
-    getStatus(): StackActionPhase | undefined {
-        return this.status;
+    getPhase(): StackActionPhase | undefined {
+        return this.phase;
     }
 
-    setStatus(status: StackActionPhase): void {
-        this.status = status;
+    setPhase(status: StackActionPhase): void {
+        this.phase = status;
     }
 
     getChanges(): StackChange[] | undefined {

@@ -7,7 +7,7 @@ import { CfnService } from '../../services/CfnService';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
-import { StackChange, StackActionPhase, StackActionStatus, StackActionParams } from './StackActionRequestType';
+import { StackChange, StackActionPhase, StackActionState, CreateStackActionParams } from './StackActionRequestType';
 import {
     StackActionWorkflowState,
     ValidationWaitForResult,
@@ -20,7 +20,7 @@ const logger = LoggerFactory.getLogger('StackActionOperations');
 export async function processChangeSet(
     cfnService: CfnService,
     documentManager: DocumentManager,
-    params: StackActionParams,
+    params: CreateStackActionParams,
     changeSetType: ChangeSetType,
 ): Promise<string> {
     const document = documentManager.get(params.uri);
@@ -61,7 +61,7 @@ export async function waitForValidation(
 
             return {
                 phase: StackActionPhase.VALIDATION_COMPLETE,
-                status: StackActionStatus.SUCCESSFUL,
+                state: StackActionState.SUCCESSFUL,
                 changes: mapChangesToStackChanges(response.Changes),
                 reason: result.reason ? String(result.reason) : undefined,
             };
@@ -72,7 +72,7 @@ export async function waitForValidation(
             );
             return {
                 phase: StackActionPhase.VALIDATION_FAILED,
-                status: StackActionStatus.FAILED,
+                state: StackActionState.FAILED,
                 reason: result.reason ? String(result.reason) : undefined, // TODO: Return reason as part of LSP Response
             };
         }
@@ -80,7 +80,7 @@ export async function waitForValidation(
         logger.error({ error: extractErrorMessage(error) }, 'Validation failed with error');
         return {
             phase: StackActionPhase.VALIDATION_FAILED,
-            status: StackActionStatus.FAILED,
+            state: StackActionState.FAILED,
             reason: extractErrorMessage(error),
         };
     }
@@ -104,7 +104,7 @@ export async function waitForDeployment(
         if (result.state === WaiterState.SUCCESS) {
             return {
                 phase: StackActionPhase.DEPLOYMENT_COMPLETE,
-                status: StackActionStatus.SUCCESSFUL,
+                state: StackActionState.SUCCESSFUL,
                 reason: result.reason ? String(result.reason) : undefined,
             };
         } else {
@@ -114,7 +114,7 @@ export async function waitForDeployment(
             );
             return {
                 phase: StackActionPhase.DEPLOYMENT_FAILED,
-                status: StackActionStatus.FAILED,
+                state: StackActionState.FAILED,
                 reason: result.reason ? String(result.reason) : undefined, // TODO: Return reason as part of LSP Response
             };
         }
@@ -122,7 +122,7 @@ export async function waitForDeployment(
         logger.error({ error: extractErrorMessage(error) }, 'Deployment failed with error');
         return {
             phase: StackActionPhase.DEPLOYMENT_FAILED,
-            status: StackActionStatus.FAILED,
+            state: StackActionState.FAILED,
             reason: extractErrorMessage(error),
         };
     }

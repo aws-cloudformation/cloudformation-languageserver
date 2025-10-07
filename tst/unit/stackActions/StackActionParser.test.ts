@@ -1,7 +1,7 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
-import { parseStackActionParams, parseTemplateMetadataParams } from '../../../src/stacks/actions/StackActionParser';
+import { parseStackActionParams, parseTemplateUriParams } from '../../../src/stacks/actions/StackActionParser';
 
 describe('StackActionParser', () => {
     describe('parseStackActionParams', () => {
@@ -160,37 +160,25 @@ describe('StackActionParser', () => {
 
     describe('parseGetParametersParams', () => {
         it('should parse valid get parameters params', () => {
-            const input = {
-                uri: 'file:///test.yaml',
-            };
+            const input = 'file:///test.yaml';
 
-            const result = parseTemplateMetadataParams(input);
+            const result = parseTemplateUriParams(input);
 
-            expect(result).toEqual({
-                uri: 'file:///test.yaml',
-            });
+            expect(result).toEqual('file:///test.yaml');
         });
 
         it('should throw ZodError for empty uri', () => {
-            const input = {
-                uri: '',
-            };
+            const input = '';
 
-            expect(() => parseTemplateMetadataParams(input)).toThrow(ZodError);
-        });
-
-        it('should throw ZodError for missing uri', () => {
-            const input = {};
-
-            expect(() => parseTemplateMetadataParams(input)).toThrow(ZodError);
+            expect(() => parseTemplateUriParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for null input', () => {
-            expect(() => parseTemplateMetadataParams(null)).toThrow(ZodError);
+            expect(() => parseTemplateUriParams(null)).toThrow(ZodError);
         });
 
         it('should throw ZodError for undefined input', () => {
-            expect(() => parseTemplateMetadataParams(undefined)).toThrow(ZodError);
+            expect(() => parseTemplateUriParams(undefined)).toThrow(ZodError);
         });
     });
 });

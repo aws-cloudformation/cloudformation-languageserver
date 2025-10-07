@@ -26,12 +26,12 @@ import {
 } from '../handlers/ResourceHandler';
 import {
     listStacksHandler,
-    stackActionValidationCreateHandler,
-    stackActionDeploymentCreateHandler,
-    stackActionValidationStatusHandler,
-    stackActionDeploymentStatusHandler,
-    stackActionParametersHandler,
-    templateCapabilitiesHandler,
+    createValidationHandler,
+    createDeploymentHandler,
+    getValidationStatusHandler,
+    getDeploymentStatusHandler,
+    getParametersHandler,
+    getCapabilitiesHandler,
 } from '../handlers/StackHandler';
 import { LspFeatures } from '../protocol/LspConnection';
 import { ServerComponents } from './ServerComponents';
@@ -70,12 +70,12 @@ export class CfnServer {
         this.features.authHandlers.onBearerCredentialsDelete(bearerCredentialsDeleteHandler(this.components));
         this.features.authHandlers.onSsoTokenChanged(ssoTokenChangedHandler(this.components));
 
-        this.features.stackHandlers.onGetParameters(stackActionParametersHandler(this.components));
-        this.features.stackHandlers.onTemplateValidationCreate(stackActionValidationCreateHandler(this.components));
-        this.features.stackHandlers.onGetCapabilities(templateCapabilitiesHandler(this.components));
-        this.features.stackHandlers.onTemplateDeploymentCreate(stackActionDeploymentCreateHandler(this.components));
-        this.features.stackHandlers.onTemplateValidationStatus(stackActionValidationStatusHandler(this.components));
-        this.features.stackHandlers.onTemplateDeploymentStatus(stackActionDeploymentStatusHandler(this.components));
+        this.features.stackHandlers.onGetParameters(getParametersHandler(this.components));
+        this.features.stackHandlers.onCreateValidation(createValidationHandler(this.components));
+        this.features.stackHandlers.onGetCapabilities(getCapabilitiesHandler(this.components));
+        this.features.stackHandlers.onCreateDeployment(createDeploymentHandler(this.components));
+        this.features.stackHandlers.onGetValidationStatus(getValidationStatusHandler(this.components));
+        this.features.stackHandlers.onGetDeploymentStatus(getDeploymentStatusHandler(this.components));
         this.features.stackHandlers.onListStacks(listStacksHandler(this.components));
 
         this.features.resourceHandlers.onListResources(listResourcesHandler(this.components));

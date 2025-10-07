@@ -4,9 +4,9 @@ import { CfnService } from '../../../src/services/CfnService';
 import { DeploymentWorkflow } from '../../../src/stacks/actions/DeploymentWorkflow';
 import { processChangeSet } from '../../../src/stacks/actions/StackActionOperations';
 import {
-    StackActionParams,
+    CreateStackActionParams,
     StackActionPhase,
-    StackActionStatus,
+    StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
 
 vi.mock('../../../src/stacks/actions/StackActionOperations');
@@ -25,7 +25,7 @@ describe('DeploymentWorkflow', () => {
 
     describe('start', () => {
         it('should start deployment workflow with CREATE when stack does not exist', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -46,7 +46,7 @@ describe('DeploymentWorkflow', () => {
         });
 
         it('should start deployment workflow with UPDATE when stack exists', async () => {
-            const params: StackActionParams = {
+            const params: CreateStackActionParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -77,7 +77,7 @@ describe('DeploymentWorkflow', () => {
                 stackName: 'test-stack',
                 phase: StackActionPhase.VALIDATION_IN_PROGRESS,
                 startTime: Date.now(),
-                status: StackActionStatus.IN_PROGRESS,
+                state: StackActionState.IN_PROGRESS,
             };
 
             // Directly set workflow state
@@ -87,7 +87,7 @@ describe('DeploymentWorkflow', () => {
 
             expect(result).toEqual({
                 phase: StackActionPhase.VALIDATION_IN_PROGRESS,
-                status: StackActionStatus.IN_PROGRESS,
+                state: StackActionState.IN_PROGRESS,
                 changes: undefined,
                 id: 'test-id',
             });
