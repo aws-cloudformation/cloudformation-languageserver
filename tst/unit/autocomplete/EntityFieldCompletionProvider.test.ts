@@ -14,7 +14,11 @@ describe('EntityFieldCompletionProvider', () => {
 
     describe('Parameter', () => {
         test('should suggest Default, Description, ConstraintDescription with e as partial string', () => {
-            const mockContext = createParameterContext('MyParameter', { text: 'e', data: { Type: 'String' } });
+            const mockContext = createParameterContext('MyParameter', {
+                text: 'e',
+                data: { Type: 'String' },
+                propertyPath: ['Parameters', 'MyParameter', 'e'],
+            });
             const result = parameterFieldCompletionProvider.getCompletions(mockContext, mockParams);
             expect(result).toBeDefined();
             expect(result?.length).equal(9);
@@ -23,7 +27,11 @@ describe('EntityFieldCompletionProvider', () => {
         });
 
         test('should be robust against typos and suggest Type when partial string is yp', () => {
-            const mockContext = createParameterContext('MyParameter', { text: 'yp', data: { Type: undefined } });
+            const mockContext = createParameterContext('MyParameter', {
+                text: 'yp',
+                data: { Type: undefined },
+                propertyPath: ['Parameters', 'MyParameter', 'yp'],
+            });
             const result = parameterFieldCompletionProvider.getCompletions(mockContext, mockParams);
             expect(result).toBeDefined();
             expect(result?.length).equal(1);
@@ -37,6 +45,7 @@ describe('EntityFieldCompletionProvider', () => {
                     Type: 'string',
                     Description: 'some description',
                 },
+                propertyPath: ['Parameters', 'MyParameter', 'e'],
             });
             const result = parameterFieldCompletionProvider.getCompletions(mockContext, mockParams);
             expect(result).toBeDefined();
@@ -47,7 +56,11 @@ describe('EntityFieldCompletionProvider', () => {
         });
 
         test('should suggest all available fields starting with Type (required) when nothing typed yet', () => {
-            const mockContext = createParameterContext('MyParameter', { text: '', data: { Type: undefined } });
+            const mockContext = createParameterContext('MyParameter', {
+                text: '',
+                data: { Type: undefined },
+                propertyPath: ['Parameters', 'MyParameter', ''],
+            });
             const result = parameterFieldCompletionProvider.getCompletions(mockContext, mockParams);
             expect(result).toBeDefined();
             // All Parameter fields should be suggested when none are defined
@@ -80,6 +93,7 @@ describe('EntityFieldCompletionProvider', () => {
                     Description: 'some description',
                     Default: 'default value',
                 },
+                propertyPath: ['Parameters', 'MyParameter', ''],
             });
             const result = parameterFieldCompletionProvider.getCompletions(mockContext, mockParams);
             expect(result).toBeDefined();
@@ -103,7 +117,10 @@ describe('EntityFieldCompletionProvider', () => {
 
     describe('Output', () => {
         test('should suggest export and description with e as partial string', () => {
-            const mockContext = createOutputContext('MyOutput', { text: 'e' });
+            const mockContext = createOutputContext('MyOutput', {
+                text: 'e',
+                propertyPath: ['Outputs', 'MyOutput', 'e'],
+            });
             const result = outputFieldCompletionProvider.getCompletions(mockContext, mockParams);
             expect(result).toBeDefined();
             expect(result?.length).equal(2);
@@ -112,7 +129,10 @@ describe('EntityFieldCompletionProvider', () => {
         });
 
         test('should be robust against typos and suggest Export when partial string is xpo', () => {
-            const mockContext = createOutputContext('MyOutput', { text: 'xpo' });
+            const mockContext = createOutputContext('MyOutput', {
+                text: 'xpo',
+                propertyPath: ['Outputs', 'MyOutput', 'xpo'],
+            });
             const result = outputFieldCompletionProvider.getCompletions(mockContext, mockParams);
             expect(result).toBeDefined();
             expect(result?.length).equal(1);
@@ -125,6 +145,7 @@ describe('EntityFieldCompletionProvider', () => {
                 data: {
                     Description: 'some description',
                 },
+                propertyPath: ['Outputs', 'MyOutput', 'e'],
             });
             const result = outputFieldCompletionProvider.getCompletions(mockContext, mockParams);
             expect(result).toBeDefined();
