@@ -316,7 +316,7 @@ describe('TemplateWorkflowOperations', () => {
 
             expect(result.status).toBe(TemplateStatus.VALIDATION_FAILED);
             expect(result.result).toBe(WorkflowResult.FAILED);
-            expect(result.reason).toBe('Validation failed');
+            expect(result.reason).toBe('String error');
         });
     });
 });
