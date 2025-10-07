@@ -108,7 +108,10 @@ describe('ResourceSectionCompletionProvider', () => {
     });
 
     test('should delegate to entity provider when at entity key level', async () => {
-        const mockContext = createResourceContext('MyResource', { text: '' });
+        const mockContext = createResourceContext('MyResource', {
+            text: '',
+            propertyPath: ['Resources', 'MyResource', ''],
+        });
         const entityProvider = resourceProviders.get('Entity' as any)!;
         const mockCompletions = [
             { label: 'Type', kind: CompletionItemKind.Property },
@@ -147,7 +150,7 @@ describe('ResourceSectionCompletionProvider', () => {
     test('should delegate to property provider when at nested entity key level Properties', async () => {
         const mockContext = createResourceContext('MyBucket', {
             text: 'Bucket',
-            propertyPath: ['Resources', 'MyBucket', 'Properties'],
+            propertyPath: ['Resources', 'MyBucket', 'Properties', 'Bucket'],
             data: {
                 Type: 'AWS::S3::Bucket',
                 Properties: {},

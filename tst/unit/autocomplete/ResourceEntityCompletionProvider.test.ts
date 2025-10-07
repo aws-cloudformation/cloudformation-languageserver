@@ -2,6 +2,7 @@ import { describe, expect, test, beforeEach } from 'vitest';
 import { CompletionParams, CompletionItemKind, CompletionItem, InsertTextFormat } from 'vscode-languageserver';
 import { ResourceEntityCompletionProvider } from '../../../src/autocomplete/ResourceEntityCompletionProvider';
 import { ResourceAttribute } from '../../../src/context/ContextType';
+import { YamlNodeTypes } from '../../../src/context/syntaxtree/utils/TreeSitterTypes';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
@@ -23,7 +24,11 @@ describe('ResourceEntityCompletionProvider', () => {
     });
 
     test('should return resource heading completions when inside Resources section but not inside a resource type', () => {
-        const mockContext = createResourceContext('MyResource', { text: '' });
+        const mockContext = createResourceContext('MyResource', {
+            text: '',
+            nodeType: YamlNodeTypes.STRING_SCALAR,
+            propertyPath: ['Resources', 'MyResource', ''],
+        });
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -58,7 +63,10 @@ describe('ResourceEntityCompletionProvider', () => {
     });
 
     test('should return filtered resource heading completions when text is provided', () => {
-        const mockContext = createResourceContext('MyResource', { text: 'Prop' });
+        const mockContext = createResourceContext('MyResource', {
+            text: '',
+            propertyPath: ['Resources', 'MyResource', ''],
+        });
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -72,7 +80,10 @@ describe('ResourceEntityCompletionProvider', () => {
     });
 
     test('should provide correct insert text for resource properties', () => {
-        const mockContext = createResourceContext('MyResource', { text: '' });
+        const mockContext = createResourceContext('MyResource', {
+            text: '',
+            propertyPath: ['Resources', 'MyResource', ''],
+        });
         const completions = provider.getCompletions(mockContext, mockParams);
 
         expect(completions).toBeDefined();
@@ -137,7 +148,7 @@ describe('ResourceEntityCompletionProvider', () => {
         // Setup context with a resource that has a Type
         const mockContext = createResourceContext('MyInstance', {
             text: '',
-            propertyPath: ['Resources', 'MyInstance'],
+            propertyPath: ['Resources', 'MyInstance', ''],
             data: {
                 Type: 'AWS::EC2::Instance',
             },
@@ -154,7 +165,7 @@ describe('ResourceEntityCompletionProvider', () => {
         expect(propertiesItem).toBeDefined();
 
         // Verify it's a snippet
-        expect(propertiesItem!.kind).toBe(CompletionItemKind.Snippet);
+        expect(propertiesItem!.kind).toBe(CompletionItemKind.File);
         expect(propertiesItem!.insertTextFormat).toBe(InsertTextFormat.Snippet);
 
         // Verify data type is object
@@ -166,7 +177,7 @@ describe('ResourceEntityCompletionProvider', () => {
         // Setup context with a resource that has a Type
         const mockContext = createResourceContext('MyInstance', {
             text: '',
-            propertyPath: ['Resources', 'MyInstance'],
+            propertyPath: ['Resources', 'MyInstance', ''],
             data: {
                 Type: 'AWS::EC2::Instance',
             },
@@ -193,7 +204,7 @@ describe('ResourceEntityCompletionProvider', () => {
         // Setup context with a resource that has a Type
         const mockContext = createResourceContext('MyInstance', {
             text: '',
-            propertyPath: ['Resources', 'MyInstance'],
+            propertyPath: ['Resources', 'MyInstance', ''],
             data: {
                 Type: 'AWS::EC2::Instance',
             },
@@ -218,7 +229,7 @@ describe('ResourceEntityCompletionProvider', () => {
         // Setup context with a resource that has no Type
         const mockContext = createResourceContext('MyResource', {
             text: '',
-            propertyPath: ['Resources', 'MyResource'],
+            propertyPath: ['Resources', 'MyResource', ''],
             data: {},
         });
 
@@ -238,7 +249,7 @@ describe('ResourceEntityCompletionProvider', () => {
         // Setup context with a resource that has a Type
         const mockContext = createResourceContext('MyResource', {
             text: '',
-            propertyPath: ['Resources', 'MyResource'],
+            propertyPath: ['Resources', 'MyResource', ''],
             data: {
                 Type: 'AWS::Unknown::Resource',
             },

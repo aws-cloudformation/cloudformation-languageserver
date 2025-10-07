@@ -61,7 +61,7 @@ describe('TopLevelSectionCompletionProvider', () => {
         expect(regularSections).toHaveLength(10);
 
         // Should return all snippet sections
-        const snippetSections = result!.filter((item) => item.kind === CompletionItemKind.Snippet);
+        const snippetSections = result!.filter((item) => item.kind === CompletionItemKind.File);
         expect(snippetSections).toHaveLength(5);
 
         // Should return all sections without fuzzy search modifications
@@ -182,16 +182,16 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             // Find snippet completions for Resources, Parameters, Outputs, and Conditions
             const resourcesSnippet = result!.find(
-                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
             );
             const parametersSnippet = result!.find(
-                (item) => item.label === 'Parameters' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Parameters' && item.kind === CompletionItemKind.File,
             );
             const outputsSnippet = result!.find(
-                (item) => item.label === 'Outputs' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Outputs' && item.kind === CompletionItemKind.File,
             );
             const conditionsSnippet = result!.find(
-                (item) => item.label === 'Conditions' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Conditions' && item.kind === CompletionItemKind.File,
             );
 
             // Verify that all snippet completions exist
@@ -218,7 +218,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             // Find the Resources snippet
             const resourcesSnippet = result!.find(
-                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
             );
 
             expect(resourcesSnippet).toBeDefined();
@@ -239,7 +239,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             // Find the Resources snippet
             const resourcesSnippet = result!.find(
-                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
             );
 
             expect(resourcesSnippet).toBeDefined();
@@ -293,7 +293,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             // Find the Parameters snippet
             const parametersSnippet = result!.find(
-                (item) => item.label === 'Parameters' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Parameters' && item.kind === CompletionItemKind.File,
             );
 
             expect(parametersSnippet).toBeDefined();
@@ -308,7 +308,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             // Find the Outputs snippet
             const outputsSnippet = result!.find(
-                (item) => item.label === 'Outputs' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Outputs' && item.kind === CompletionItemKind.File,
             );
 
             expect(outputsSnippet).toBeDefined();
@@ -323,7 +323,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             // Find the Conditions snippet
             const conditionsSnippet = result!.find(
-                (item) => item.label === 'Conditions' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Conditions' && item.kind === CompletionItemKind.File,
             );
 
             expect(conditionsSnippet).toBeDefined();
@@ -341,10 +341,10 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             // Verify that defined sections are filtered out from snippets
             const resourcesSnippet = result!.find(
-                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
             );
             const parametersSnippet = result!.find(
-                (item) => item.label === 'Parameters' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Parameters' && item.kind === CompletionItemKind.File,
             );
 
             expect(resourcesSnippet).toBeUndefined();
@@ -352,10 +352,10 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             // But other snippets should still be there
             const outputsSnippet = result!.find(
-                (item) => item.label === 'Outputs' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Outputs' && item.kind === CompletionItemKind.File,
             );
             const conditionsSnippet = result!.find(
-                (item) => item.label === 'Conditions' && item.kind === CompletionItemKind.Snippet,
+                (item) => item.label === 'Conditions' && item.kind === CompletionItemKind.File,
             );
 
             expect(outputsSnippet).toBeDefined();
@@ -389,7 +389,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
-                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
                 );
 
                 expect(resourcesSnippet).toBeDefined();
@@ -422,7 +422,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
-                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
                 );
 
                 expect(resourcesSnippet).toBeDefined();
@@ -457,7 +457,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
-                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
                 );
 
                 expect(resourcesSnippet).toBeDefined();
@@ -497,7 +497,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
-                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
                 );
 
                 expect(resourcesSnippet).toBeDefined();
@@ -537,7 +537,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const result = testProvider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
-                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Snippet,
+                    (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
                 );
 
                 expect(resourcesSnippet).toBeDefined();

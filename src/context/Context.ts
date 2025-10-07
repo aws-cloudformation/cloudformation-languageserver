@@ -185,30 +185,31 @@ export class Context {
             return false;
         }
 
-        // Case 1: propertyPath.length === 3 (e.g., ['Resources', 'MyResource', 'Type'])
-        // We're at a resource attribute level
-        if (this.propertyPath.length === 3 && this.entitySection === this.text) {
-            return true;
+        // Case 1: If we are over 3 we know for sure we are beyond the entity level
+        if (this.propertyPath.length > 3) {
+            return false;
         }
 
-        // Case 2: propertyPath.length === 2 (e.g., ['Resources', 'MyResource'])
-        // We need to distinguish between:
-        // - Cursor in middle of resource name (should return false)
-        // - Cursor after resource name, ready for attributes (should return true)
-        if (this.propertyPath.length === 2) {
-            // If the current text matches the logical ID (resource name),
-            // it means the cursor is positioned within the resource name itself
-            // In this case, we should NOT provide entity key completions
-            if (this.text === this.logicalId) {
+        // Case 2: Two situations exist that we need to account for:
+        // isKey and isValue can be True when at the first key inside a value
+        // when we are at level 2 this means we are at Entity/LogicalId as the first key
+        // when we are at level 3 this means we are at Entity/LogicalId/Properties as the first key
+        if (this.isKey() && this.isValue()) {
+            if (this.propertyPath.length === 2) {
+                return true;
+            } else if (this.propertyPath.length === 3) {
                 return false;
             }
-
-            // If entitySection is undefined and text is not the resource name,
-            // it means we're positioned after the resource name, ready for attributes
-            return this.entitySection !== this.text;
         }
 
-        return false;
+        // Case 3 propertyPath.length === 2 (e.g., ['Resources', 'MyResource'])
+        // We need to see if the cursor is in the resource logical id
+        if (this.propertyPath.length === 2 && this.text === this.logicalId) {
+            return false;
+        }
+
+        // Catch all at this point to say that the isKey is the most important thing
+        return this.isKey();
     }
 
     public getMappingKeys(): string[] {
