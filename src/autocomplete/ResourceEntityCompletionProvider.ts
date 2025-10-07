@@ -62,7 +62,7 @@ export class ResourceEntityCompletionProvider implements CompletionProvider, Con
     ): ExtendedCompletionItem {
         const snippet = this.generateRequiredPropertiesSnippet(schema, context.documentType);
 
-        const completionItem: ExtendedCompletionItem = createCompletionItem('Properties', CompletionItemKind.Snippet, {
+        const completionItem: ExtendedCompletionItem = createCompletionItem('Properties', CompletionItemKind.File, {
             insertText: snippet,
             data: { type: 'object' },
         });
