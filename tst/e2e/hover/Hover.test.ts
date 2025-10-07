@@ -4,12 +4,15 @@ import { outputSectionFieldDocsMap } from '../../../src/artifacts/OutputSectionF
 import { parameterAttributeDocsMap } from '../../../src/artifacts/ParameterAttributeDocs';
 import { pseudoParameterDocsMap } from '../../../src/artifacts/PseudoParameterDocs';
 import { resourceAttributeDocsMap } from '../../../src/artifacts/ResourceAttributeDocs';
+import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { templateSectionDocsMap } from '../../../src/artifacts/TemplateSectionDocs';
 import {
     TopLevelSection,
     IntrinsicFunction,
     PseudoParameter,
     ResourceAttribute,
+    CreationPolicyProperty,
+    ResourceSignalProperty,
 } from '../../../src/context/ContextType';
 import { DocumentType } from '../../../src/document/Document';
 import { HoverExpectationBuilder, TemplateBuilder, TemplateScenario } from '../../utils/TemplateBuilder';
@@ -1157,6 +1160,42 @@ Resources:`,
                             position: { line: 258, character: 8 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContainsText(['CreationPolicy', 'creation', 'signal'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 261, character: 22 },
+                        description: 'Hover on ResourceSignal in CreationPolicy',
+                        verification: {
+                            position: { line: 259, character: 12 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(creationPolicyPropertyDocsMap.get(CreationPolicyProperty.ResourceSignal))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 261, character: 22 },
+                        description: 'Hover on Count in CreationPolicy ResourceSignal',
+                        verification: {
+                            position: { line: 260, character: 10 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(creationPolicyPropertyDocsMap.get(ResourceSignalProperty.Count))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 261, character: 22 },
+                        description: 'Hover on Timeout in CreationPolicy ResourceSignal',
+                        verification: {
+                            position: { line: 261, character: 10 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(creationPolicyPropertyDocsMap.get(ResourceSignalProperty.Timeout))
                                 .build(),
                         },
                     },

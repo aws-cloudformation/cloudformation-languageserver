@@ -9,6 +9,7 @@ import { ServerComponents, Configurable, Closeable } from '../server/ServerCompo
 import { DefaultSettings, HoverSettings, SettingsSubscription, ISettingsSubscriber } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ConditionHoverProvider } from './ConditionHoverProvider';
+import { CreationPolicyPropertyHoverProvider } from './CreationPolicyPropertyHoverProvider';
 import { HoverProvider } from './HoverProvider';
 import { IntrinsicFunctionArgumentHoverProvider } from './IntrinsicFunctionArgumentHoverProvider';
 import { IntrinsicFunctionHoverProvider } from './IntrinsicFunctionHoverProvider';
@@ -87,6 +88,12 @@ export class HoverRouter implements Configurable, Closeable {
         } else if (context.isPseudoParameter) {
             return this.hoverProviderMap.get(HoverType.PseudoParameter)?.getInformation(context);
         } else if (context.section === TopLevelSection.Resources && !context.intrinsicContext.inIntrinsic()) {
+            if (context.isResourceAttributeProperty()) {
+                const doc = this.hoverProviderMap.get(HoverType.CreationPolicyProperty)?.getInformation(context);
+                if (doc) {
+                    return doc;
+                }
+            }
             const doc = this.hoverProviderMap.get(HoverType.ResourceSection)?.getInformation(context);
             if (doc) {
                 return doc;
@@ -124,6 +131,7 @@ export class HoverRouter implements Configurable, Closeable {
         hoverProviderMap.set(HoverType.Mapping, new MappingHoverProvider());
         hoverProviderMap.set(HoverType.IntrinsicFunction, new IntrinsicFunctionHoverProvider());
         hoverProviderMap.set(HoverType.IntrinsicFunctionArgument, new IntrinsicFunctionArgumentHoverProvider());
+        hoverProviderMap.set(HoverType.CreationPolicyProperty, new CreationPolicyPropertyHoverProvider());
         return hoverProviderMap;
     }
 
@@ -189,4 +197,5 @@ enum HoverType {
     PseudoParameter,
     Condition,
     Mapping,
+    CreationPolicyProperty,
 }
