@@ -1,6 +1,6 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { StackActionPhase, StackActionStatus } from '../../../src/stacks/actions/StackActionRequestType';
+import { StackActionPhase, StackActionState } from '../../../src/stacks/actions/StackActionRequestType';
 import { ValidationWorkflow } from '../../../src/stacks/actions/ValidationWorkflow';
 
 describe('ValidationWorkflow Enhanced Features', () => {
@@ -54,9 +54,9 @@ describe('ValidationWorkflow Enhanced Features', () => {
         expect(addCall[0].getStackName()).toBe('test-stack');
     });
 
-    it('should update validation status on successful completion', async () => {
+    it('should update validation phase on successful completion', async () => {
         const mockValidation = {
-            setStatus: vi.fn(),
+            setPhase: vi.fn(),
             setChanges: vi.fn(),
         };
 
@@ -77,18 +77,18 @@ describe('ValidationWorkflow Enhanced Features', () => {
             stackName: 'test-stack',
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            status: StackActionStatus.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
 
-        expect(mockValidation.setStatus).toHaveBeenCalledWith(StackActionPhase.VALIDATION_COMPLETE);
+        expect(mockValidation.setPhase).toHaveBeenCalledWith(StackActionPhase.VALIDATION_COMPLETE);
         expect(mockValidation.setChanges).toHaveBeenCalled();
     });
 
     it('should update validation status on failure', async () => {
         const mockValidation = {
-            setStatus: vi.fn(),
+            setPhase: vi.fn(),
             setChanges: vi.fn(),
         };
 
@@ -101,17 +101,17 @@ describe('ValidationWorkflow Enhanced Features', () => {
             stackName: 'test-stack',
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            status: StackActionStatus.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
 
-        expect(mockValidation.setStatus).toHaveBeenCalledWith(StackActionPhase.VALIDATION_FAILED);
+        expect(mockValidation.setPhase).toHaveBeenCalledWith(StackActionPhase.VALIDATION_FAILED);
     });
 
     it('should cleanup validation object after workflow completion', async () => {
         const mockValidation = {
-            setStatus: vi.fn(),
+            setPhase: vi.fn(),
             setChanges: vi.fn(),
         };
 
@@ -124,7 +124,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
             stackName: 'test-stack',
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            status: StackActionStatus.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
@@ -135,7 +135,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
     describe('Public API Integration Tests', () => {
         it('should handle complete workflow through public methods', async () => {
             const mockValidation = {
-                setStatus: vi.fn(),
+                setPhase: vi.fn(),
                 setChanges: vi.fn(),
             };
 
@@ -175,7 +175,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
 
         it('should handle workflow failure through public methods', async () => {
             const mockValidation = {
-                setStatus: vi.fn(),
+                setPhase: vi.fn(),
                 setChanges: vi.fn(),
             };
 

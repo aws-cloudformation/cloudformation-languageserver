@@ -8,11 +8,11 @@ import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { deleteStackAndChangeSet, deleteChangeSet, processChangeSet, waitForValidation } from './StackActionOperations';
 import {
-    StackActionParams,
-    StackActionResult,
+    CreateStackActionParams,
+    CreateStackActionResult,
     StackActionPhase,
-    StackActionStatus,
-    StackActionStatusResult,
+    StackActionState,
+    GetStackActionStatusResult,
 } from './StackActionRequestType';
 import { StackActionWorkflowState, StackActionWorkflow } from './StackActionWorkflowType';
 import { Validation } from './Validation';
@@ -42,7 +42,7 @@ export class ValidationWorkflow implements StackActionWorkflow {
         );
     }
 
-    async start(params: StackActionParams): Promise<StackActionResult> {
+    async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
         // Check if stack exists to determine CREATE vs UPDATE
         let changeSetType: ChangeSetType = ChangeSetType.CREATE;
         try {
@@ -62,7 +62,7 @@ export class ValidationWorkflow implements StackActionWorkflow {
             params.parameters,
             params.capabilities,
         );
-        validation.setStatus(StackActionPhase.VALIDATION_IN_PROGRESS);
+        validation.setPhase(StackActionPhase.VALIDATION_IN_PROGRESS);
         this.validationManager.add(validation);
 
         // Set initial workflow state
@@ -72,7 +72,7 @@ export class ValidationWorkflow implements StackActionWorkflow {
             stackName: params.stackName,
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            status: StackActionStatus.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         void this.runValidationAsync(params.id, changeSetName, params.stackName, changeSetType);
@@ -84,7 +84,7 @@ export class ValidationWorkflow implements StackActionWorkflow {
         };
     }
 
-    getStatus(params: Identifiable): StackActionStatusResult {
+    getStatus(params: Identifiable): GetStackActionStatusResult {
         const workflow = this.workflows.get(params.id);
         if (!workflow) {
             throw new Error(`Workflow not found: ${params.id}`);
@@ -92,7 +92,7 @@ export class ValidationWorkflow implements StackActionWorkflow {
 
         return {
             phase: workflow.phase,
-            status: workflow.status,
+            state: workflow.state,
             changes: workflow.changes,
             id: workflow.id,
         };
@@ -115,7 +115,7 @@ export class ValidationWorkflow implements StackActionWorkflow {
 
             const validation = this.validationManager.get(stackName);
             if (validation) {
-                validation.setStatus(result.phase);
+                validation.setPhase(result.phase);
                 if (result.changes) {
                     validation.setChanges(result.changes);
                 }
@@ -124,7 +124,7 @@ export class ValidationWorkflow implements StackActionWorkflow {
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
                 phase: result.phase,
-                status: result.status,
+                state: result.state,
                 changes: result.changes,
             });
         } catch (error) {
@@ -132,13 +132,13 @@ export class ValidationWorkflow implements StackActionWorkflow {
 
             const validation = this.validationManager.get(stackName);
             if (validation) {
-                validation.setStatus(StackActionPhase.VALIDATION_FAILED);
+                validation.setPhase(StackActionPhase.VALIDATION_FAILED);
             }
 
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
                 phase: StackActionPhase.VALIDATION_FAILED,
-                status: StackActionStatus.FAILED,
+                state: StackActionState.FAILED,
             });
         } finally {
             // Cleanup validation object to prevent memory leaks

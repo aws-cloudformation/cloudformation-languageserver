@@ -6,11 +6,11 @@ import { CfnService } from '../../services/CfnService';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { processChangeSet, waitForValidation, waitForDeployment } from './StackActionOperations';
 import {
-    StackActionParams,
-    StackActionResult,
+    CreateStackActionParams,
+    CreateStackActionResult,
     StackActionPhase,
-    StackActionStatus,
-    StackActionStatusResult,
+    StackActionState,
+    GetStackActionStatusResult,
 } from './StackActionRequestType';
 import { StackActionWorkflowState, StackActionWorkflow } from './StackActionWorkflowType';
 
@@ -27,7 +27,7 @@ export class DeploymentWorkflow implements StackActionWorkflow {
         return new DeploymentWorkflow(components.cfnService, components.documentManager);
     }
 
-    async start(params: StackActionParams): Promise<StackActionResult> {
+    async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
         // Check if stack exists to determine CREATE vs UPDATE
         let changeSetType: ChangeSetType = ChangeSetType.CREATE;
         try {
@@ -46,7 +46,7 @@ export class DeploymentWorkflow implements StackActionWorkflow {
             stackName: params.stackName,
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
-            status: StackActionStatus.IN_PROGRESS,
+            state: StackActionState.IN_PROGRESS,
         });
 
         void this.runDeploymentAsync(params.id, changeSetName, params.stackName, changeSetType);
@@ -58,7 +58,7 @@ export class DeploymentWorkflow implements StackActionWorkflow {
         };
     }
 
-    getStatus(params: Identifiable): StackActionStatusResult {
+    getStatus(params: Identifiable): GetStackActionStatusResult {
         const workflow = this.workflows.get(params.id);
         if (!workflow) {
             throw new Error(`Workflow not found: ${params.id}`);
@@ -66,7 +66,7 @@ export class DeploymentWorkflow implements StackActionWorkflow {
 
         return {
             phase: workflow.phase,
-            status: workflow.status,
+            state: workflow.state,
             changes: workflow.changes,
             id: workflow.id,
         };
@@ -91,18 +91,18 @@ export class DeploymentWorkflow implements StackActionWorkflow {
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
                 phase: validationResult.phase,
-                status: validationResult.status,
+                state: validationResult.state,
                 changes: validationResult.changes,
             });
 
-            if (validationResult.status === StackActionStatus.FAILED) {
+            if (validationResult.state === StackActionState.FAILED) {
                 return;
             }
 
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
                 phase: StackActionPhase.VALIDATION_COMPLETE,
-                status: StackActionStatus.IN_PROGRESS,
+                state: StackActionState.IN_PROGRESS,
                 changes: validationResult.changes,
             });
 
@@ -114,7 +114,7 @@ export class DeploymentWorkflow implements StackActionWorkflow {
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
                 phase: StackActionPhase.DEPLOYMENT_IN_PROGRESS,
-                status: StackActionStatus.IN_PROGRESS,
+                state: StackActionState.IN_PROGRESS,
                 changes: validationResult.changes,
             });
 
@@ -123,7 +123,7 @@ export class DeploymentWorkflow implements StackActionWorkflow {
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
                 phase: deploymentResult.phase,
-                status: deploymentResult.status,
+                state: deploymentResult.state,
                 changes: validationResult.changes,
             });
         } catch (error) {
@@ -131,7 +131,7 @@ export class DeploymentWorkflow implements StackActionWorkflow {
             this.workflows.set(workflowId, {
                 ...existingWorkflow,
                 phase: validationResult ? StackActionPhase.DEPLOYMENT_FAILED : StackActionPhase.VALIDATION_FAILED,
-                status: StackActionStatus.FAILED,
+                state: StackActionState.FAILED,
                 changes: validationResult?.changes,
             });
         }

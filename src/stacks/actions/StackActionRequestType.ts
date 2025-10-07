@@ -2,22 +2,19 @@ import { Parameter, Capability, ResourceChangeDetail } from '@aws-sdk/client-clo
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
 import { Identifiable } from '../../protocol/LspTypes';
 
-export type StackActionParams = Identifiable & {
+export type CreateStackActionParams = Identifiable & {
     uri: string;
     stackName: string;
     parameters?: Parameter[];
     capabilities?: Capability[];
 };
 
-export type StackActionResult = Identifiable & {
-    id: string;
+export type CreateStackActionResult = Identifiable & {
     changeSetName: string;
     stackName: string;
 };
 
-export type StackActionMetadataParams = {
-    uri: string;
-};
+export type TemplateUri = string;
 
 export type GetParametersResult = {
     parameters: EntityParameter[];
@@ -51,14 +48,14 @@ export enum StackActionPhase {
     DEPLOYMENT_FAILED = 'DEPLOYMENT_FAILED',
 }
 
-export enum StackActionStatus {
+export enum StackActionState {
     IN_PROGRESS = 'IN_PROGRESS',
     SUCCESSFUL = 'SUCCESSFUL',
     FAILED = 'FAILED',
 }
 
-export type StackActionStatusResult = Identifiable & {
-    status: StackActionStatus;
+export type GetStackActionStatusResult = Identifiable & {
+    state: StackActionState;
     phase: StackActionPhase;
     changes?: StackChange[];
 };
