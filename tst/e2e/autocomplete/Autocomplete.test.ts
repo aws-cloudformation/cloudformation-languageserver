@@ -1849,7 +1849,6 @@ O`,
                             position: { line: 127, character: 69 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['InstanceType'])
-                                .todo('Dynamic topLevelKey making secondLevelKey invalid')
                                 .build(),
                         },
                     },
