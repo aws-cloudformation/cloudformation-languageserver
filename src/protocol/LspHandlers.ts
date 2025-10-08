@@ -19,6 +19,8 @@ import {
     CodeActionParams,
     CodeAction,
     Command,
+    CodeLens,
+    CodeLensParams,
 } from 'vscode-languageserver/node';
 import {
     CompletionList,
@@ -128,5 +130,9 @@ export class LspHandlers {
 
     onDidChangeConfiguration(handler: NotificationHandler<DidChangeConfigurationParams>) {
         this.connection.onDidChangeConfiguration(handler);
+    }
+
+    onCodeLens(handler: ServerRequestHandler<CodeLensParams, CodeLens[], never, void>) {
+        this.connection.onCodeLens(handler);
     }
 }

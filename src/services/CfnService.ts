@@ -46,6 +46,7 @@ import {
     waitUntilStackUpdateComplete,
     waitUntilStackCreateComplete,
     DescribeChangeSetCommandOutput,
+    GetTemplateCommand,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { ServerComponents } from '../server/ServerComponents';
@@ -105,6 +106,11 @@ export class CfnService {
         NextToken?: string;
     }): Promise<DescribeStacksCommandOutput> {
         return await this.withClient((client) => client.send(new DescribeStacksCommand(params ?? {})));
+    }
+
+    public async getTemplate(params: { StackName: string }): Promise<string | undefined> {
+        const response = await this.withClient((client) => client.send(new GetTemplateCommand(params)));
+        return response.TemplateBody;
     }
 
     public async createChangeSet(params: {

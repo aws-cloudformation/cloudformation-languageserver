@@ -8,6 +8,7 @@ import { InlineCompletionRouter } from '../../src/autocomplete/InlineCompletionR
 import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
 import { ResourceStateCompletionProvider } from '../../src/autocomplete/ResourceStateCompletionProvider';
 import { TopLevelSectionCompletionProvider } from '../../src/autocomplete/TopLevelSectionCompletionProvider';
+import { ManagedResourceCodeLens } from '../../src/codeLens/ManagedResourceCodeLens';
 import { ContextManager } from '../../src/context/ContextManager';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { DataStoreFactoryProvider, MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
@@ -80,6 +81,7 @@ export class MockedServerComponents extends ServerComponents {
     declare readonly definitionProvider: StubbedInstance<DefinitionProvider>;
     declare readonly codeActionService: StubbedInstance<CodeActionService>;
     declare readonly documentSymbolRouter: StubbedInstance<DocumentSymbolRouter>;
+    declare readonly managedResourceCodeLens: StubbedInstance<ManagedResourceCodeLens>;
 
     declare readonly validationWorkflowService: StubbedInstance<ValidationWorkflow>;
     declare readonly deploymentWorkflowService: StubbedInstance<DeploymentWorkflow>;
@@ -232,6 +234,10 @@ export function createMockDocumentSymbolRouter() {
     return stubInterface<DocumentSymbolRouter>();
 }
 
+export function createMockManagedResourceCodeLens() {
+    return stubInterface<ManagedResourceCodeLens>();
+}
+
 export function createMockTopLevelSectionCompletionProvider(
     syntaxTreeManager?: SyntaxTreeManager,
     documentManager?: DocumentManager,
@@ -338,6 +344,7 @@ export function createMockComponents(overrides: Partial<ServerComponents> = {}):
             definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
             codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
             documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
+            managedResourceCodeLens: overrides.managedResourceCodeLens ?? createMockManagedResourceCodeLens(),
             validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
             deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
             cfnAI: overrides.cfnAI ?? mockCfnAi(),
