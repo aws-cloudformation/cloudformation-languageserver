@@ -8,6 +8,7 @@ import {
     ssoTokenChangedHandler,
 } from '../handlers/AuthHandler';
 import { codeActionHandler } from '../handlers/CodeActionHandler';
+import { codeLensHandler } from '../handlers/CodeLensHandler';
 import { completionHandler } from '../handlers/CompletionHandler';
 import { configurationHandler } from '../handlers/ConfigurationHandler';
 import { definitionHandler } from '../handlers/DefinitionHandler';
@@ -18,6 +19,7 @@ import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
 import { inlineCompletionHandler } from '../handlers/InlineCompletionHandler';
 import {
+    getManagedResourceStackTemplateHandler,
     listResourcesHandler,
     getResourceTypesHandler,
     importResourceStateHandler,
@@ -63,6 +65,7 @@ export class CfnServer {
         this.features.handlers.onDefinition(definitionHandler(this.components));
         this.features.handlers.onDocumentSymbol(documentSymbolHandler(this.components));
         this.features.handlers.onDidChangeConfiguration(configurationHandler(this.components));
+        this.features.handlers.onCodeLens(codeLensHandler(this.components));
 
         this.features.authHandlers.onIamCredentialsUpdate(iamCredentialsUpdateHandler(this.components));
         this.features.authHandlers.onBearerCredentialsUpdate(bearerCredentialsUpdateHandler(this.components));
@@ -77,6 +80,7 @@ export class CfnServer {
         this.features.stackHandlers.onGetValidationStatus(getValidationStatusHandler(this.components));
         this.features.stackHandlers.onGetDeploymentStatus(getDeploymentStatusHandler(this.components));
         this.features.stackHandlers.onListStacks(listStacksHandler(this.components));
+        this.features.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
 
         this.features.resourceHandlers.onListResources(listResourcesHandler(this.components));
         this.features.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));

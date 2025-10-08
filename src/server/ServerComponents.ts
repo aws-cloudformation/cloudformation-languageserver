@@ -2,6 +2,7 @@ import { CfnAI } from '../ai/CfnAI';
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { CompletionRouter } from '../autocomplete/CompletionRouter';
 import { InlineCompletionRouter } from '../autocomplete/InlineCompletionRouter';
+import { ManagedResourceCodeLens } from '../codeLens/ManagedResourceCodeLens';
 import { ContextManager } from '../context/ContextManager';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DataStoreFactoryProvider, MultiDataStoreFactoryProvider } from '../datastore/DataStore';
@@ -92,6 +93,7 @@ export class ServerComponents {
     readonly definitionProvider: DefinitionProvider;
     readonly codeActionService: CodeActionService;
     readonly documentSymbolRouter: DocumentSymbolRouter;
+    readonly managedResourceCodeLens: ManagedResourceCodeLens;
 
     // AI
     readonly cfnAI: CfnAI;
@@ -145,6 +147,7 @@ export class ServerComponents {
         this.definitionProvider = overrides.definitionProvider ?? DefinitionProvider.create(this);
         this.codeActionService = overrides.codeActionService ?? CodeActionService.create(this);
         this.documentSymbolRouter = overrides.documentSymbolRouter ?? DocumentSymbolRouter.create(this);
+        this.managedResourceCodeLens = overrides.managedResourceCodeLens ?? ManagedResourceCodeLens.create(this);
 
         this.cfnAI = overrides.cfnAI ?? CfnAI.create(this);
 
