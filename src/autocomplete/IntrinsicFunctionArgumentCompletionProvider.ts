@@ -454,7 +454,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 return this.getTopLevelKeyCompletions(mappingsEntities, args, context);
             }
             case 3: {
-                log.debug('In case three');
                 return this.getSecondLevelKeyCompletions(mappingsEntities, args, context);
             }
             default: {
