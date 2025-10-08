@@ -131,8 +131,8 @@ export function didCloseHandler(components: ServerComponents): (event: TextDocum
         // Cancel any pending delayed Guard validation for this document
         components.guardService.cancelDelayedValidation(documentUri);
 
-        // Clear stored indentation detection for this document
-        components.documentManager.clearIndentationForDocument(documentUri);
+        // Remove document from DocumentManager map
+        components.documentManager.removeDocument(documentUri);
 
         components.syntaxTreeManager.deleteSyntaxTree(documentUri);
 

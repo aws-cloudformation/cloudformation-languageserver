@@ -104,19 +104,14 @@ export class DocumentManager implements Configurable {
         return document.getEditorSettings(this.editorSettings);
     }
 
-    clearIndentationForDocument(uri: string): void {
-        const document = this.documentMap.get(uri);
-        if (document) {
-            document.clearIndentation();
-            this.documentMap.delete(uri);
-        }
+    removeDocument(uri: string): void {
+        this.documentMap.delete(uri);
     }
 
     clearAllStoredIndentation(): void {
         for (const document of this.documentMap.values()) {
             document.clearIndentation();
         }
-        this.documentMap.clear();
     }
 
     private onEditorSettingsChanged(newEditorSettings: EditorSettings): void {
