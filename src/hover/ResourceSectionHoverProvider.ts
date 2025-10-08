@@ -1,4 +1,5 @@
 import { resourceAttributeDocsMap } from '../artifacts/ResourceAttributeDocs';
+import { creationPolicyPropertyDocsMap } from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
@@ -28,6 +29,9 @@ export class ResourceSectionHoverProvider implements HoverProvider {
         }
         if (context.isResourceType) {
             return this.getFormattedSchemaDoc(schema);
+        }
+        if (context.isResourceAttributeProperty()) {
+            return this.getResourceAttributePropertyDoc(context, resource);
         }
         if (context.isResourceAttribute && resource[context.text] !== undefined) {
             return this.getResourceAttributeDoc(context.text);
@@ -87,5 +91,27 @@ export class ResourceSectionHoverProvider implements HoverProvider {
 
     private getResourceAttributeDoc(attributeName: string): string | undefined {
         return resourceAttributeDocsMap.get(attributeName as ResourceAttribute);
+    }
+
+    private getResourceAttributePropertyDoc(context: Context, _resource: Resource): string | undefined {
+        const propertyPath = context.getResourceAttributePropertyPath();
+        if (propertyPath.length < 2) {
+            return undefined;
+        }
+
+        const attributeType = propertyPath[0] as ResourceAttribute;
+        switch (attributeType) {
+            case ResourceAttribute.CreationPolicy: {
+                return this.getCreationPolicyPropertyDoc(propertyPath);
+            }
+            default: {
+                return undefined;
+            }
+        }
+    }
+
+    private getCreationPolicyPropertyDoc(propertyPath: ReadonlyArray<string>): string | undefined {
+        const propertyPathString = propertyPath.join('.');
+        return creationPolicyPropertyDocsMap.get(propertyPathString);
     }
 }

@@ -5,7 +5,7 @@ import {
     AutoScalingCreationPolicyProperty,
 } from '../../context/ContextType';
 
-export const creationPolicyPropertyDocsMap = getCreationPolicyPropertyDocsMap();
+export const creationPolicyPropertyDocsMap: ReadonlyMap<string, string> = getCreationPolicyPropertyDocsMap();
 
 function getCreationPolicyPropertyDocsMap(): Map<string, string> {
     const docsMap = new Map<string, string>();
@@ -19,7 +19,7 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '---',
             'When CloudFormation creates the associated resource, configures the number of required success signals and the length of time that CloudFormation waits for those signals.',
             '\n',
-            '[AWS Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
+            '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
         ].join('\n'),
     );
 
@@ -38,7 +38,7 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '*Required*: No',
             '\n',
-            '[AWS Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
+            '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
         ].join('\n'),
     );
 
@@ -58,7 +58,7 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '*Required*: No',
             '\n',
-            '[AWS Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
+            '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
         ].join('\n'),
     );
 
@@ -71,7 +71,7 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '---',
             "For a new Amazon EC2 Auto Scaling group, specifies the number of instances that must signal success before setting the group's status to CREATE_COMPLETE.",
             '\n',
-            '[AWS Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-autoscalingcreationpolicy)',
+            '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-autoscalingcreationpolicy)',
         ].join('\n'),
     );
 
@@ -93,7 +93,7 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '*Required*: No',
             '\n',
-            '[AWS Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-autoscalingcreationpolicy)',
+            '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-autoscalingcreationpolicy)',
         ].join('\n'),
     );
 
@@ -108,35 +108,35 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '*Required*: No',
             '\n',
-            '[AWS Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html)',
+            '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html)',
         ].join('\n'),
     );
 
     return docsMap;
 }
 
-export const CREATION_POLICY_SUPPORTED_RESOURCE_TYPES = [
+export const CREATION_POLICY_SUPPORTED_RESOURCE_TYPES: ReadonlyArray<string> = [
     'AWS::AutoScaling::AutoScalingGroup',
     'AWS::EC2::Instance',
     'AWS::CloudFormation::WaitCondition',
     'AWS::AppStream::Fleet',
-] as const;
+];
 
-export const AUTO_SCALING_CREATION_POLICY_SUPPORTED_RESOURCE_TYPES = [
+export const AUTO_SCALING_CREATION_POLICY_SUPPORTED_RESOURCE_TYPES: ReadonlyArray<string> = [
     'AWS::AutoScaling::AutoScalingGroup',
     'AWS::EC2::Instance',
-] as const;
+];
 
-export const START_FLEET_SUPPORTED_RESOURCE_TYPES = ['AWS::AppStream::Fleet'] as const;
+export const START_FLEET_SUPPORTED_RESOURCE_TYPES: ReadonlyArray<string> = ['AWS::AppStream::Fleet'];
 
 export function supportsCreationPolicy(resourceType: string): boolean {
-    return (CREATION_POLICY_SUPPORTED_RESOURCE_TYPES as readonly string[]).includes(resourceType);
+    return CREATION_POLICY_SUPPORTED_RESOURCE_TYPES.includes(resourceType);
 }
 
 export function supportsAutoScalingCreationPolicy(resourceType: string): boolean {
-    return (AUTO_SCALING_CREATION_POLICY_SUPPORTED_RESOURCE_TYPES as readonly string[]).includes(resourceType);
+    return AUTO_SCALING_CREATION_POLICY_SUPPORTED_RESOURCE_TYPES.includes(resourceType);
 }
 
 export function supportsStartFleet(resourceType: string): boolean {
-    return (START_FLEET_SUPPORTED_RESOURCE_TYPES as readonly string[]).includes(resourceType);
+    return START_FLEET_SUPPORTED_RESOURCE_TYPES.includes(resourceType);
 }
