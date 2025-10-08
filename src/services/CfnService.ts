@@ -130,18 +130,18 @@ export class CfnService {
 
             do {
                 const response = await client.send(new DescribeChangeSetCommand({ ...params, NextToken: nextToken }));
-                
-                if (!result) {
-                    result = response;
+
+                if (result) {
+                    result.Changes = [...(result.Changes ?? []), ...(response.Changes ?? [])];
                 } else {
-                    result.Changes = [...(result.Changes || []), ...(response.Changes || [])];
+                    result = response;
                 }
-                
+
                 nextToken = response.NextToken;
             } while (nextToken);
 
-            result!.NextToken = undefined;
-            return result!;
+            result.NextToken = undefined;
+            return result;
         });
     }
 

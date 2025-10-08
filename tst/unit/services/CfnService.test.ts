@@ -244,17 +244,11 @@ describe('CfnService', () => {
             };
             const page3 = {
                 ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
-                Changes: [
-                    { Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource6' } },
-                ],
+                Changes: [{ Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource6' } }],
                 NextToken: undefined,
             };
 
-            cloudFormationMock
-                .on(DescribeChangeSetCommand)
-                .resolvesOnce(page1)
-                .resolvesOnce(page2)
-                .resolvesOnce(page3);
+            cloudFormationMock.on(DescribeChangeSetCommand).resolvesOnce(page1).resolvesOnce(page2).resolvesOnce(page3);
 
             const result = await service.describeChangeSet({
                 StackName: TEST_CONSTANTS.STACK_NAME,
