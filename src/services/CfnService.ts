@@ -124,7 +124,25 @@ export class CfnService {
         IncludePropertyValues: boolean;
         StackName?: string;
     }): Promise<DescribeChangeSetCommandOutput> {
-        return await this.withClient((client) => client.send(new DescribeChangeSetCommand(params)));
+        return await this.withClient(async (client) => {
+            let nextToken: string | undefined;
+            let result: DescribeChangeSetCommandOutput | undefined;
+
+            do {
+                const response = await client.send(new DescribeChangeSetCommand({ ...params, NextToken: nextToken }));
+                
+                if (!result) {
+                    result = response;
+                } else {
+                    result.Changes = [...(result.Changes || []), ...(response.Changes || [])];
+                }
+                
+                nextToken = response.NextToken;
+            } while (nextToken);
+
+            result!.NextToken = undefined;
+            return result!;
+        });
     }
 
     public async detectStackDrift(params: {

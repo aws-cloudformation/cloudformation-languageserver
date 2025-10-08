@@ -283,6 +283,7 @@ describe('TemplateWorkflowOperations', () => {
             expect(mockCfnService.describeChangeSet).toHaveBeenCalledWith({
                 ChangeSetName: 'test-changeset',
                 StackName: 'test-stack',
+                IncludePropertyValues: true,
             });
         });
 

@@ -223,6 +223,49 @@ describe('CfnService', () => {
             expect(result).toEqual(MOCK_RESPONSES.DESCRIBE_CHANGE_SET);
         });
 
+        it('should fetch all pages when paginated', async () => {
+            const page1 = {
+                ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
+                Changes: [
+                    { Type: 'Resource', ResourceChange: { LogicalResourceId: 'Resource1' } },
+                    { Type: 'Resource', ResourceChange: { LogicalResourceId: 'Resource2' } },
+                    { Type: 'Resource', ResourceChange: { LogicalResourceId: 'Resource3' } },
+                ],
+                NextToken: 'token1',
+            };
+            const page2 = {
+                ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
+                Changes: [
+                    { Type: 'Resource', ResourceChange: { LogicalResourceId: 'Resource4' } },
+                    { Type: 'Resource', ResourceChange: { LogicalResourceId: 'Resource5' } },
+                ],
+                NextToken: 'token2',
+            };
+            const page3 = {
+                ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
+                Changes: [
+                    { Type: 'Resource', ResourceChange: { LogicalResourceId: 'Resource6' } },
+                ],
+                NextToken: undefined,
+            };
+
+            cloudFormationMock
+                .on(DescribeChangeSetCommand)
+                .resolvesOnce(page1)
+                .resolvesOnce(page2)
+                .resolvesOnce(page3);
+
+            const result = await service.describeChangeSet({
+                StackName: TEST_CONSTANTS.STACK_NAME,
+                ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
+            });
+
+            expect(result.Changes).toHaveLength(6);
+            expect(result.Changes?.[0].ResourceChange?.LogicalResourceId).toBe('Resource1');
+            expect(result.Changes?.[5].ResourceChange?.LogicalResourceId).toBe('Resource6');
+            expect(result.NextToken).toBeUndefined();
+        });
+
         it('should throw ChangeSetNotFoundException when API call fails', async () => {
             const error = createChangeSetNotFoundError();
             cloudFormationMock.on(DescribeChangeSetCommand).rejects(error);
