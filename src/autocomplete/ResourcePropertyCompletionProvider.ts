@@ -1,6 +1,7 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { Resource } from '../context/semantic/Entity';
+import { CfnValue } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { PropertyType, ResourceSchema } from '../schema/ResourceSchema';
@@ -184,11 +185,11 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             const entity = context.entity as Resource;
             if (entity?.Properties) {
                 const pathSegments = propertyPath.slice(3); // Remove ['Resources', 'LogicalId', 'Properties']
-                let current: unknown = entity.Properties;
+                let current: Record<string, CfnValue> | CfnValue | undefined = entity.Properties;
 
                 for (let i = 0; i < pathSegments.length - 1; i++) {
                     if (current && typeof current === 'object' && pathSegments[i] in current) {
-                        current = (current as Record<string | number, unknown>)[pathSegments[i]];
+                        current = (current as Record<string | number, CfnValue>)[pathSegments[i]];
                     } else {
                         current = undefined;
                         break;
@@ -197,10 +198,10 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
 
                 const arrayIndex = pathSegments[pathSegments.length - 1];
                 if (current && typeof current === 'object' && arrayIndex in current) {
-                    const arrayItem = (current as Record<string | number, unknown>)[arrayIndex];
+                    const arrayItem = (current as Record<string | number, CfnValue>)[arrayIndex];
 
                     if (arrayItem && typeof arrayItem === 'object' && arrayItem !== null) {
-                        return new Set(Object.keys(arrayItem as Record<string, unknown>));
+                        return new Set(Object.keys(arrayItem as Record<string, CfnValue>));
                     }
                 }
             }
