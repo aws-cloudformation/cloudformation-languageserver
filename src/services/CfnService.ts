@@ -121,6 +121,7 @@ export class CfnService {
 
     public async describeChangeSet(params: {
         ChangeSetName: string;
+        IncludePropertyValues: boolean;
         StackName?: string;
     }): Promise<DescribeChangeSetCommandOutput> {
         return await this.withClient((client) => client.send(new DescribeChangeSetCommand(params)));

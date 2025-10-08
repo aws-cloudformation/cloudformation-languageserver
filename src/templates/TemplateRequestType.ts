@@ -33,6 +33,8 @@ export type TemplateChange = {
         resourceType?: string;
         replacement?: string;
         scope?: string[];
+        beforeContext?: string;
+        afterContext?: string;
         details?: ResourceChangeDetail[];
     };
 };
