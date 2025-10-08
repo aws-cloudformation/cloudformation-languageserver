@@ -86,6 +86,51 @@ export const Schemas = {
             return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ssm-parameter.json'), 'utf8');
         },
     },
+    DynamoDBGlobalTable: {
+        fileName: 'file://aws-dynamodb-globaltable.json',
+        get contents() {
+            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-dynamodb-globaltable.json'), 'utf8');
+        },
+    },
+    EC2SpotFleet: {
+        fileName: 'file://aws-ec2-spotfleet.json',
+        get contents() {
+            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ec2-spotfleet.json'), 'utf8');
+        },
+    },
+    ELBv2ListenerRule: {
+        fileName: 'file://aws-elasticloadbalancingv2-listenerrule.json',
+        get contents() {
+            return readFileSync(
+                join(__dirname, '..', 'resources', 'schemas', 'aws-elasticloadbalancingv2-listenerrule.json'),
+                'utf8',
+            );
+        },
+    },
+    ELBv2Listener: {
+        fileName: 'file://aws-elasticloadbalancingv2-listener.json',
+        get contents() {
+            return readFileSync(
+                join(__dirname, '..', 'resources', 'schemas', 'aws-elasticloadbalancingv2-listener.json'),
+                'utf8',
+            );
+        },
+    },
+    SecurityLakeSubscriberNotification: {
+        fileName: 'file://aws-securitylake-subscribernotification.json',
+        get contents() {
+            return readFileSync(
+                join(__dirname, '..', 'resources', 'schemas', 'aws-securitylake-subscribernotification.json'),
+                'utf8',
+            );
+        },
+    },
+    SyntheticsCanary: {
+        fileName: 'file://aws-synthetics-canary.json',
+        get contents() {
+            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-synthetics-canary.json'), 'utf8');
+        },
+    },
 };
 
 export function regionalSchemas(
