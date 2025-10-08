@@ -454,6 +454,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 return this.getTopLevelKeyCompletions(mappingsEntities, args, context);
             }
             case 3: {
+                log.debug('In case three');
                 return this.getSecondLevelKeyCompletions(mappingsEntities, args, context);
             }
             default: {
@@ -517,14 +518,22 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         context: Context,
     ): CompletionItem[] | undefined {
         // Validate arguments structure for second-level keys
-        if (!Array.isArray(args) || args.length < 2 || typeof args[0] !== 'string' || typeof args[1] !== 'string') {
+        if (!Array.isArray(args) || args.length < 2 || typeof args[0] !== 'string') {
             log.debug('Invalid arguments for second-level key completions');
+            return undefined;
+        }
+
+        // Second argument valid if it is a string i.e. 'us-east-1' or object '{Ref: AWS::Region}'
+        const validSecondArg = typeof args[1] === 'string' || this.isRefObject(args[1]);
+
+        if (!validSecondArg) {
+            log.debug('Invalid top level key for second-level key completions');
             return undefined;
         }
 
         try {
             const mappingName = args[0];
-            const topLevelKey = args[1];
+            const topLevelKey = args[1] as string | { Ref: unknown };
 
             const mappingEntity = this.getMappingEntity(mappingsEntities, mappingName);
             if (!mappingEntity) {
@@ -532,19 +541,32 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 return undefined;
             }
 
-            const secondLevelKeys = mappingEntity.getSecondLevelKeys(topLevelKey);
-            if (secondLevelKeys.length === 0) {
-                log.debug(`No second-level keys found for mapping: ${mappingName}, top-level key: ${topLevelKey}`);
+            let secondLevelKeys: string[] = [];
+            let dynamicSecondLevelKeys: string[] = [];
+
+            if (typeof topLevelKey === 'string') {
+                secondLevelKeys = mappingEntity.getSecondLevelKeys(topLevelKey);
+            } else {
+                // For dynamic references, get all possible keys
+                dynamicSecondLevelKeys = mappingEntity.getSecondLevelKeysDynamic(mappingEntity);
+            }
+
+            if (typeof topLevelKey === 'string') {
+                if (secondLevelKeys.length === 0) {
+                    log.debug(`No second-level keys found for mapping: ${mappingName}, top-level key: ${topLevelKey}`);
+                    return undefined;
+                }
+            } else if (typeof topLevelKey === 'object' && dynamicSecondLevelKeys.length === 0) {
+                log.debug(`No second-level keys found for mapping: ${mappingName}`);
                 return undefined;
             }
 
-            const items = secondLevelKeys.map((key) =>
-                createCompletionItem(key, CompletionItemKind.EnumMember, { context }),
-            );
+            const keysToUse = typeof topLevelKey === 'string' ? secondLevelKeys : dynamicSecondLevelKeys;
+            const items = keysToUse.map((key) => createCompletionItem(key, CompletionItemKind.EnumMember, { context }));
 
             return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
         } catch (error) {
-            log.error({ error }, 'Error creating second-level key completions');
+            log.debug({ error }, 'Error creating second-level key completions');
             return undefined;
         }
     }
@@ -567,7 +589,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             // String format
             const dotIndex = args.indexOf('.');
             if (dotIndex === -1) {
-                //resource name
+                // resource name
                 return 1;
             }
 
@@ -703,5 +725,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         return undefined;
+    }
+
+    private isRefObject(value: unknown): value is { Ref: unknown } {
+        return typeof value === 'object' && value !== null && 'Ref' in value;
     }
 }
