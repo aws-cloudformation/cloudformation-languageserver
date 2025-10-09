@@ -2067,7 +2067,11 @@ Resources:
         });
     });
 
+<<<<<<< Updated upstream
     describe('Comprehensive JSON', () => {
+=======
+    describe('JSON', () => {
+>>>>>>> Stashed changes
         it('Hover while authoring', () => {
             const template = new TemplateBuilder(DocumentType.JSON);
             const scenario: TemplateScenario = {
@@ -2088,18 +2092,30 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: `,
   "Description": "Comprehensive CloudFormation template showcasing ALL complex syntax - GOOD STATE"`,
                         position: { line: 1, character: 42 },
                         description: 'Type Description section',
+=======
+                        action: 'type', 
+                        content: `,
+  "Description": "Comprehensive CloudFormation template showcasing ALL complex syntax - GOOD STATE"`,
+                        position: { line: 1, character: 42 }, 
+                        description: 'Type Description section', 
+>>>>>>> Stashed changes
                         verification: {
                             position: { line: 2, character: 10 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContent(templateSectionDocsMap.get(TopLevelSection.Description))
                                 .build(),
                         },
+<<<<<<< Updated upstream
                     },
+=======
+                    }, 
+>>>>>>> Stashed changes
                     {
                         action: 'type',
                         content: `,
@@ -2115,7 +2131,11 @@ Resources:
                                 .expectContent(templateSectionDocsMap.get(TopLevelSection.Transform))
                                 .build(),
                         },
+<<<<<<< Updated upstream
                     },
+=======
+                    }, 
+>>>>>>> Stashed changes
                     {
                         action: 'type',
                         content: `,
@@ -2349,8 +2369,13 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: `,
+=======
+                      action: 'type',
+                      content: `,
+>>>>>>> Stashed changes
   "Mappings": {
     "RegionMap": {
       "us-east-1": {
@@ -2373,14 +2398,21 @@ Resources:
       }
     }
   }`,
+<<<<<<< Updated upstream
                         position: { line: 82, character: 3 },
                         description: 'Type Mappings section',
                         verification: {
+=======
+                      position: { line: 82, character: 3 },
+                      description: 'Type Mappings section', 
+                      verification: {
+>>>>>>> Stashed changes
                             position: { line: 83, character: 3 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContent(templateSectionDocsMap.get(TopLevelSection.Mappings))
                                 .build(),
                         },
+<<<<<<< Updated upstream
                     },
                     {
                         action: 'type',
@@ -2390,6 +2422,16 @@ Resources:
                         position: { line: 104, character: 3 },
                         description: 'Type Conditions section',
                         verification: {
+=======
+                    }, 
+                    {
+                      action: 'type', 
+                      content: `,
+  "Conditions": {
+  }`,                 position: { line: 104, character: 3 }, 
+                      description: 'Type Conditions section', 
+                      verification: {
+>>>>>>> Stashed changes
                             position: { line: 105, character: 3 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContent(templateSectionDocsMap.get(TopLevelSection.Conditions))
@@ -2397,12 +2439,21 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: `
     "IsProduction": {"Fn::Equals"}`,
                         position: { line: 105, character: 17 },
                         description: 'Type Equals function for IsProduction',
                         verification: {
+=======
+                      action: 'type', 
+                      content: `
+    "IsProduction": {"Fn::Equals"}`, 
+                      position: {line: 105, character: 17}, 
+                      description: 'Type Equals function for IsProduction', 
+                      verification: {
+>>>>>>> Stashed changes
                             position: { line: 106, character: 30 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContent(intrinsicFunctionsDocsMap.get(IntrinsicFunction.Equals))
@@ -2410,11 +2461,19 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: `: [{"Ref": "EnvironmentName"}, "production"]`,
                         position: { line: 106, character: 33 },
                         description: 'Type EnvironmentName parameter reference for IsProduction',
                         verification: {
+=======
+                      action: 'type', 
+                      content: `: [{"Ref": "EnvironmentName"}, "production"]`, 
+                      position: {line: 106, character: 33 },
+                      description: 'Type EnvironmentName parameter reference for IsProduction', 
+                      verification: {
+>>>>>>> Stashed changes
                             position: { line: 106, character: 50 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContainsText([
@@ -2427,7 +2486,11 @@ Resources:
                                 ])
                                 .build(),
                         },
+<<<<<<< Updated upstream
                     },
+=======
+                    }, 
+>>>>>>> Stashed changes
                     {
                         action: 'type',
                         content: `, 
@@ -2783,6 +2846,7 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: ` [1, {"Ref": "AvailabilityZones"}]}, ""]}]}
             ]}
@@ -2790,6 +2854,15 @@ Resources:
           "AssertDescription": "Non-development environments must specify multiple availability zones"`,
                         position: { line: 146, character: 57 },
                         description: 'Type non-development environment validation',
+=======
+                      action: 'type', 
+                      content: ` [1, {"Ref": "AvailabilityZones"}]}, ""]}]}
+            ]}
+          ]},
+          "AssertDescription": "Non-development environments must specify multiple availability zones"`,
+                      position: { line: 146, character: 57 },
+                      description: 'Type non-development environment validation',
+>>>>>>> Stashed changes
                     },
                     {
                         action: 'type',
@@ -2976,9 +3049,15 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'delete',
                         range: { start: { line: 181, character: 35 }, end: { line: 181, character: 36 } },
                         description: 'Remove extra }',
+=======
+                      action: 'delete',
+                      range: { start: { line: 181, character: 35 }, end: { line: 181, character: 36 }},
+                      description: 'Remove extra }', 
+>>>>>>> Stashed changes
                     },
                     {
                         action: 'type',
@@ -3005,11 +3084,19 @@ Resources:
                         description: 'Type Select function in subnet properties',
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: `,
       "Condition": "IsProductionOrStaging"`,
                         position: { line: 200, character: 7 },
                         description: '',
+=======
+                      action: 'type',
+                      content:`,
+      "Condition": "IsProductionOrStaging"`,
+                      position: {line: 200, character: 7},
+                      description:''
+>>>>>>> Stashed changes
                     },
                     {
                         action: 'type',
@@ -3074,8 +3161,13 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: `,
+=======
+                      action: 'type',
+                      content: `,
+>>>>>>> Stashed changes
             "Description": "SSH from bastion"
           }
         ],
@@ -3140,6 +3232,7 @@ Resources:
           "id": "launch-template-id"
         }
       }
+<<<<<<< Updated upstream
     }`,
                         position: { line: 227, character: 68 },
                         description: 'Type Launch template and Metada',
@@ -3150,6 +3243,18 @@ Resources:
                         position: { line: 277, character: 68 },
                         description: 'Verify hover on AWS::EC2::SecurityGroup',
                         verification: {
+=======
+    }`, 
+                      position: { line: 227, character: 68}, 
+                      description: 'Type Launch template and Metada'
+                    },
+                    {
+                      action: 'type', 
+                      content: ``,
+                      position: { line: 277, character: 68},
+                      description: 'Verify hover on AWS::EC2::SecurityGroup',
+                      verification: {
+>>>>>>> Stashed changes
                             position: { line: 246, character: 25 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('### AWS::EC2::SecurityGroup')
@@ -3158,10 +3263,17 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: ``,
                         position: { line: 277, character: 68 },
                         description: '!Ref VPC gets VPC information on hover',
+=======
+                      action: 'type', 
+                      content: ``,
+                      position: { line: 277, character: 68},
+                      description: '!Ref VPC gets VPC information on hover',
+>>>>>>> Stashed changes
                         verification: {
                             position: { line: 249, character: 26 },
                             expectation: HoverExpectationBuilder.create()
@@ -3170,10 +3282,17 @@ Resources:
                         },
                     },
                     {
+<<<<<<< Updated upstream
                         action: 'type',
                         content: ``,
                         position: { line: 277, character: 68 },
                         description: 'Verify hover on FindInMap function in LaunchTemplate',
+=======
+                      action: 'type', 
+                      content: ``,
+                      position: { line: 277, character: 68},
+                      description: 'Verify hover on FindInMap function in LaunchTemplate',
+>>>>>>> Stashed changes
                         verification: {
                             position: { line: 265, character: 27 },
                             expectation: HoverExpectationBuilder.create()
@@ -3212,7 +3331,12 @@ Resources:
         ]
       }`,
                         position: { line: 292, character: 5 },
+<<<<<<< Updated upstream
                         description: 'Type AWS::AutoScaling::AutoScalingGroup resource type',
+=======
+                        description:
+                            'Type AWS::AutoScaling::AutoScalingGroup resource type',
+>>>>>>> Stashed changes
                         verification: {
                             position: { line: 294, character: 15 },
                             expectation: HoverExpectationBuilder.create()
@@ -3424,7 +3548,12 @@ Resources:
                         action: 'type',
                         content: ``,
                         position: { line: 307, character: 19 },
+<<<<<<< Updated upstream
                         description: 'Verify hover on GetAtt function for Database endpoint',
+=======
+                        description:
+                            'Verify hover on GetAtt function for Database endpoint',
+>>>>>>> Stashed changes
                         verification: {
                             position: { line: 395, character: 39 },
                             expectation: HoverExpectationBuilder.create()
@@ -3867,9 +3996,17 @@ Resources:
                                 .build(),
                         },
                     },
+<<<<<<< Updated upstream
                 ],
             };
             template.executeScenario(scenario);
         });
     });
+=======
+                ]
+            }
+            template.executeScenario(scenario);
+        })
+    })
+>>>>>>> Stashed changes
 });

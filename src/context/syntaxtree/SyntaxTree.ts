@@ -363,8 +363,12 @@ export abstract class SyntaxTree {
             // Look for patterns like "text" and convert to "text": null
             const modifiedLines = [...this.lines];
             // Replace quoted strings that aren't followed by : with complete key-value pairs
+<<<<<<< Updated upstream
             // eslint-disable-next-line unicorn/prefer-string-replace-all
             modifiedLines[position.line] = currentLine.replace(/"([^"]*)"\s*(?!:)/g, '"$1": null');
+=======
+            modifiedLines[position.line] = currentLine.replaceAll(/"([^"]*)"\s*(?!:)/g, '"$1": null');
+>>>>>>> Stashed changes
             const completedContent = modifiedLines.join('\n');
             const result = this.testIncrementalParsing(completedContent, position);
             if (result) return result;
@@ -535,8 +539,12 @@ export abstract class SyntaxTree {
                 if (grandparent && NodeType.isNodeType(grandparent, YamlNodeTypes.FLOW_MAPPING)) {
                     // Is incomplete key pair in an object
                     // { "" }
+<<<<<<< Updated upstream
                     // eslint-disable-next-line unicorn/prefer-string-replace-all
                     propertyPath.push(current.text.replace(/^,?\s*"|"\s*/g, ''));
+=======
+                    propertyPath.push(current.text.replaceAll(/^,?\s*"|"\s*/g, ''));
+>>>>>>> Stashed changes
                     entityPath.push(current);
                 }
             }
