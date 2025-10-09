@@ -46,6 +46,7 @@ import {
     waitUntilStackUpdateComplete,
     waitUntilStackCreateComplete,
     DescribeChangeSetCommandOutput,
+    Change,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { ServerComponents } from '../server/ServerComponents';
@@ -127,19 +128,22 @@ export class CfnService {
         return await this.withClient(async (client) => {
             let nextToken: string | undefined;
             let result: DescribeChangeSetCommandOutput | undefined;
+            const changes: Change[] = [];
 
             do {
                 const response = await client.send(new DescribeChangeSetCommand({ ...params, NextToken: nextToken }));
 
                 if (result) {
-                    result.Changes = [...(result.Changes ?? []), ...(response.Changes ?? [])];
+                    changes.push(...(response.Changes ?? []));
                 } else {
                     result = response;
+                    changes.push(...(result.Changes ?? []));
                 }
 
                 nextToken = response.NextToken;
             } while (nextToken);
 
+            result.Changes = changes;
             result.NextToken = undefined;
             return result;
         });
