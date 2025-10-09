@@ -1,4 +1,4 @@
-export const outputSectionFieldDocsMap = getOutputSectionFieldDocsMap();
+export const outputSectionFieldDocsMap: ReadonlyMap<string, string> = getOutputSectionFieldDocsMap();
 
 function getOutputSectionFieldDocsMap(): Map<string, string> {
     const outputSectionFieldDocsMap = new Map<string, string>();

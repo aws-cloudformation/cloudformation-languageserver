@@ -1,4 +1,4 @@
-export const parameterAttributeDocsMap = getParameterAttributeDocsMap();
+export const parameterAttributeDocsMap: ReadonlyMap<string, string> = getParameterAttributeDocsMap();
 
 function getParameterAttributeDocsMap(): Map<string, string> {
     const parameterAttributeDocsMap = new Map<string, string>();
