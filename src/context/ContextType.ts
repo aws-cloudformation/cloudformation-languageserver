@@ -69,6 +69,21 @@ export enum ResourceAttribute {
     Metadata = 'Metadata',
 }
 
+export enum CreationPolicyProperty {
+    ResourceSignal = 'ResourceSignal',
+    AutoScalingCreationPolicy = 'AutoScalingCreationPolicy',
+    StartFleet = 'StartFleet',
+}
+
+export enum ResourceSignalProperty {
+    Count = 'Count',
+    Timeout = 'Timeout',
+}
+
+export enum AutoScalingCreationPolicyProperty {
+    MinSuccessfulInstancesPercent = 'MinSuccessfulInstancesPercent',
+}
+
 export const Intrinsics: ReadonlyArray<string> = Object.values(IntrinsicFunction);
 export const PseudoParameters: ReadonlyArray<string> = Object.values(PseudoParameter);
 export const TopLevelSections: ReadonlyArray<string> = Object.values(TopLevelSection);
