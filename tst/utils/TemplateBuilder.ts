@@ -772,8 +772,9 @@ export class ContextExpectationBuilder {
         return this;
     }
 
-    todo(): ContextExpectationBuilder {
+    todo(comment: string): ContextExpectationBuilder {
         this.expectation.todo = true;
+        log.debug(comment)
         return this;
     }
 
@@ -840,8 +841,9 @@ export class HoverExpectationBuilder {
         return this;
     }
 
-    todo(): HoverExpectationBuilder {
+    todo(comment: string): HoverExpectationBuilder {
         this.expectation.todo = true;
+        log.debug(comment);
         return this;
     }
 
