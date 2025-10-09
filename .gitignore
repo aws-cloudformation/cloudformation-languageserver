@@ -12,3 +12,7 @@ tools/*
 !tools/*.ts
 **/.aws-cfn-storage
 /oss-attribution
+mise.toml
+tst/e2e/autocomplete/node_modules/
+tst/e2e/autocomplete/package-lock.json
+

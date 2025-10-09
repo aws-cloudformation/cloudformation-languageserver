@@ -774,7 +774,7 @@ export class ContextExpectationBuilder {
 
     todo(comment: string): ContextExpectationBuilder {
         this.expectation.todo = true;
-        log.debug(comment)
+        log.debug(comment);
         return this;
     }
 

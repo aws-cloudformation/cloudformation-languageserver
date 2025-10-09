@@ -1084,7 +1084,7 @@ Resources:`,
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Resource:** LaunchTemplate')
                                 .expectContainsText(['LaunchTemplate', 'AWS::EC2::LaunchTemplate'])
-                                .todo("Hover returns nothing, both in e2e and functional testing")
+                                .todo('Hover returns nothing, both in e2e and functional testing')
                                 .build(),
                         },
                     },
@@ -1112,7 +1112,7 @@ Resources:`,
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Condition:** HasMultipleAZs')
                                 .expectContainsText(['HasMultipleAZs', '!Not', '!Equals', '!Select'])
-                                .todo("Hover returns nothing both in e2e and functional testing")
+                                .todo('Hover returns nothing both in e2e and functional testing')
                                 .build(),
                         },
                     },
@@ -2568,7 +2568,7 @@ Resources:
                             position: { line: 114, character: 28 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContainsText(['**Condition**, IsProductionOrStaging'])
-                                .todo("hover on condition name reference for !Condition and not just Condition:")
+                                .todo('hover on condition name reference for !Condition and not just Condition:')
                                 .build(),
                         },
                     },
@@ -3241,7 +3241,7 @@ Resources:
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Resource:** LaunchTemplate')
                                 .expectContainsText(['LaunchTemplate', 'AWS::EC2::LaunchTemplate'])
-                                .todo("hover returns nothing")
+                                .todo('hover returns nothing')
                                 .build(),
                         },
                     },
@@ -3267,7 +3267,7 @@ Resources:
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Condition:** HasMultipleAZs')
                                 .expectContainsText(['HasMultipleAZs', '!Not', '!Equals', '!Select'])
-                                .todo("Hover returns nothing, both in e2e functional testing")
+                                .todo('Hover returns nothing, both in e2e functional testing')
                                 .build(),
                         },
                     },
@@ -3483,7 +3483,7 @@ Resources:
                                     'Creates a new role for your AWS-account',
                                     'AssumeRolePolicyDocument',
                                 ])
-                                .todo("Hover returns nothing, both in e2e and functional testing")
+                                .todo('Hover returns nothing, both in e2e and functional testing')
                                 .build(),
                         },
                     },
@@ -3579,24 +3579,24 @@ Resources:
                     {
                         action: 'type',
                         content: `,
-  "SNSTopic": {
-    "Type": "AWS::SNS::Topic",
-    "Properties": {
-      "TopicName": {"Fn::Sub": "\${EnvironmentName}-alerts"},
-      "DisplayName": {"Fn::Sub": "\${EnvironmentName} Environment Alerts"},
-      "KmsMasterKeyId": "alias/aws/sns",
-      "Tags": [
-        {
-          "Key": "Name",
-          "Value": {"Fn::Sub": "\${EnvironmentName}-alerts"}
-        },
-        {
-          "Key": "Environment",
-          "Value": {"Ref": "EnvironmentName"}
-        }
-      ]
-    }
-  }`,
+    "SNSTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": {"Fn::Sub": "\${EnvironmentName}-alerts"},
+        "DisplayName": {"Fn::Sub": "\${EnvironmentName} Environment Alerts"},
+        "KmsMasterKeyId": "alias/aws/sns",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {"Fn::Sub": "\${EnvironmentName}-alerts"}
+          },
+          {
+            "Key": "Environment",
+            "Value": {"Ref": "EnvironmentName"}
+          }
+        ]
+      }
+    }`,
                         position: { line: 481, character: 5 },
                         description: 'Type AWS::SNS::Topic resource type',
                         verification: {
