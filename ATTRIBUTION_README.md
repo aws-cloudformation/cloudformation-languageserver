@@ -15,6 +15,12 @@ npm run clean
 npm install
 ```
 
+### 2. Install ts-node in package
+
+```bash
+npm install -g ts-node
+```
+
 ### 2. Generate Attribution
 
 ```bash
