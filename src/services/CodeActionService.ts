@@ -569,12 +569,13 @@ export class CodeActionService {
                 return undefined;
             }
 
-            const editorSettings = this.settingsManager.getCurrentSettings().editor;
+            const baseEditorSettings = this.settingsManager.getCurrentSettings().editor;
+            const docEditorSettings = this.documentManager.get(params.textDocument.uri)!.getEditorSettings(baseEditorSettings)
 
             const extractionResult = this.extractToParameterProvider.generateExtraction(
                 context,
                 params.range,
-                editorSettings,
+                docEditorSettings,
                 params.textDocument.uri,
             );
 

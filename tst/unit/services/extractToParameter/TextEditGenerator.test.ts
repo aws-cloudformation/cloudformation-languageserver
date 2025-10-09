@@ -17,6 +17,7 @@ describe('TextEditGenerator', () => {
         defaultEditorSettings = {
             tabSize: 4,
             insertSpaces: true,
+            detectIndentation: false,
         };
     });
 
@@ -493,6 +494,7 @@ describe('TextEditGenerator', () => {
             const editorSettings: EditorSettings = {
                 tabSize: 2,
                 insertSpaces: true,
+                detectIndentation: false,
             };
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
@@ -523,6 +525,7 @@ describe('TextEditGenerator', () => {
             const editorSettings: EditorSettings = {
                 tabSize: 4,
                 insertSpaces: false,
+                detectIndentation: false,
             };
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
@@ -553,6 +556,7 @@ describe('TextEditGenerator', () => {
             const editorSettings: EditorSettings = {
                 tabSize: 3,
                 insertSpaces: false, // Should be ignored for YAML
+                detectIndentation: false,
             };
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {

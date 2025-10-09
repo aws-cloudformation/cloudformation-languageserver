@@ -31,6 +31,7 @@ describe('ExtractToParameterProvider', () => {
         mockEditorSettings = {
             insertSpaces: true,
             tabSize: 2,
+            detectIndentation: false,
         };
 
         // Create a minimal mock context
