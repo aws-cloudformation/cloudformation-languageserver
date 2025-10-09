@@ -406,9 +406,6 @@ Rules:
                             position: { line: 114, character: 54 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['InstanceType'])
-                                // todo: second level of Mapping not being suggested when using !Ref for first level key
-                                // works using 'us-east-1'
-                                .todo()
                                 .build(),
                         },
                     },
@@ -1383,7 +1380,7 @@ O`,
                             position: { line: 471, character: 61 },
                             // todo: fix bug in FindInMap completion where using intrinsic in second arg breaks
                             //  suggestion for third arg
-                            expectation: CompletionExpectationBuilder.create().expectItems(['AMI']).todo().build(),
+                            expectation: CompletionExpectationBuilder.create().expectItems(['AMI']).build(),
                         },
                     },
                     {

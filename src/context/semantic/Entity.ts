@@ -147,6 +147,17 @@ export class Mapping extends Entity {
         return [];
     }
 
+    public getSecondLevelKeysDynamic(mappingEntity: Mapping): string[] {
+        const allKeys = new Set<string>();
+        const topLevelKeys = mappingEntity.getTopLevelKeys();
+
+        for (const tlKey of topLevelKeys) {
+            const keys = mappingEntity.getSecondLevelKeys(tlKey);
+            for (const key of keys) allKeys.add(key);
+        }
+        return [...allKeys];
+    }
+
     public getValue(topLevelKey: string, secondLevelKey: string): MappingValueType | undefined {
         return this.value[topLevelKey]?.[secondLevelKey];
     }

@@ -53,16 +53,19 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {
+            log.debug('No syntax tree found');
             return;
         }
 
         // Only handle contexts that are inside intrinsic functions
         if (!context?.intrinsicContext?.inIntrinsic()) {
+            log.debug('Not in intrinsic context');
             return undefined;
         }
 
         const intrinsicFunction = context.intrinsicContext.intrinsicFunction();
         if (!intrinsicFunction) {
+            log.debug('No intrinsic function found');
             return undefined;
         }
 
@@ -71,6 +74,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 provider: 'IntrinsicFunctionArgument',
                 context: context.record(),
                 intrinsicFunction: intrinsicFunction.type,
+                args: intrinsicFunction.args,
             },
             'Processing intrinsic function argument completion request',
         );
@@ -515,14 +519,14 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         context: Context,
     ): CompletionItem[] | undefined {
         // Validate arguments structure for second-level keys
-        if (!Array.isArray(args) || args.length < 2 || typeof args[0] !== 'string' || typeof args[1] !== 'string') {
+        if (!this.isValidSecondLevelKeyArgs(args)) {
             log.debug('Invalid arguments for second-level key completions');
             return undefined;
         }
 
         try {
             const mappingName = args[0];
-            const topLevelKey = args[1];
+            const topLevelKey = args[1] as string | { Ref: unknown } | { '!Ref': unknown };
 
             const mappingEntity = this.getMappingEntity(mappingsEntities, mappingName);
             if (!mappingEntity) {
@@ -530,9 +534,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 return undefined;
             }
 
-            const secondLevelKeys = mappingEntity.getSecondLevelKeys(topLevelKey);
+            const secondLevelKeys = this.getSecondLevelKeysForTopLevelKey(mappingEntity, topLevelKey);
             if (secondLevelKeys.length === 0) {
-                log.debug(`No second-level keys found for mapping: ${mappingName}, top-level key: ${topLevelKey}`);
+                log.debug(`No second-level keys found for mapping: ${mappingName}`);
                 return undefined;
             }
 
@@ -540,11 +544,71 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 createCompletionItem(key, CompletionItemKind.EnumMember, { context }),
             );
 
-            return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
+            return this.filterSecondLevelKeyItems(items, context, topLevelKey);
         } catch (error) {
-            log.error({ error }, 'Error creating second-level key completions');
+            log.debug({ error }, 'Error creating second-level key completions');
             return undefined;
         }
+    }
+
+    private isValidSecondLevelKeyArgs(args: unknown): args is [string, string | object] {
+        if (!Array.isArray(args) || args.length < 2 || typeof args[0] !== 'string') {
+            return false;
+        }
+
+        // Second argument valid if it is a string i.e. 'us-east-1' or object '{Ref: AWS::Region}' or '{!Ref: AWS::Region}'
+        return typeof args[1] === 'string' || this.isRefObject(args[1]);
+    }
+
+    private getSecondLevelKeysForTopLevelKey(
+        mappingEntity: Mapping,
+        topLevelKey: string | { Ref: unknown } | { '!Ref': unknown },
+    ): string[] {
+        if (typeof topLevelKey === 'string') {
+            return mappingEntity.getSecondLevelKeys(topLevelKey);
+        } else {
+            // For dynamic references, get all possible keys
+            return mappingEntity.getSecondLevelKeysDynamic(mappingEntity);
+        }
+    }
+
+    private filterSecondLevelKeyItems(
+        items: CompletionItem[],
+        context: Context,
+        topLevelKey: string | { Ref: unknown } | { '!Ref': unknown },
+    ): CompletionItem[] {
+        // Check if context.text contains the full FindInMap syntax (empty third argument case)
+        if (context.text.startsWith('[') && context.text.endsWith(']')) {
+            return items;
+        }
+
+        // If no text typed, return all items
+        if (context.text.length === 0) {
+            return items;
+        }
+
+        return this.applySecondLevelKeyFiltering(items, context, topLevelKey);
+    }
+
+    private applySecondLevelKeyFiltering(
+        items: CompletionItem[],
+        context: Context,
+        topLevelKey: string | { Ref: unknown } | { '!Ref': unknown },
+    ): CompletionItem[] {
+        // For dynamic keys, try prefix matching first, then fall back to fuzzy search
+        if (typeof topLevelKey === 'object') {
+            const prefixMatches = items.filter((item) =>
+                item.label.toLowerCase().startsWith(context.text.toLowerCase()),
+            );
+
+            if (prefixMatches.length === 0) {
+                return this.fuzzySearch(items, context.text);
+            }
+
+            return prefixMatches;
+        }
+
+        return this.fuzzySearch(items, context.text);
     }
 
     private getMappingEntity(mappingsEntities: Map<string, Context>, mappingName: string): Mapping | undefined {
@@ -701,5 +765,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         return undefined;
+    }
+
+    private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } {
+        return typeof value === 'object' && value !== null && ('Ref' in value || '!Ref' in value);
     }
 }
