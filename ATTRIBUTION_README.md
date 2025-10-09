@@ -15,18 +15,10 @@ npm run clean
 npm install
 ```
 
-### 2. Generate SBOM
+### 2. Generate Attribution
 
 ```bash
-npm sbom --sbom-format spdx > sbom/sbom.json
-jq -r '["Name","SPDXID","Version","DownloadLocation","License"] as $header | $header, (.packages[] | select(.name != "@aws/cloudformation-languageserver") | [.name, .SPDXID, .versionInfo, .downloadLocation, .licenseDeclared]) | @csv' sbom/sbom.json > sbom/sbom.csv
-```
-
-### 3. Generate Attribution Document
-
-```bash
-generate-attribution
-cp oss-attribution/attribution.txt THIRD-PARTY-LICENSES.txt
+ts-node tools/generate-attribution.ts
 ```
 
 ### Misc

@@ -17,18 +17,15 @@ import { ResourceStatePurpose } from '../resourceState/ResourceStateTypes';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { TransformersUtil } from '../schema/transformers/TransformersUtil';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
-import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
+import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, handleSnippetJsonQuotes } from './CompletionUtils';
 
 const log = LoggerFactory.getLogger('ResourceStateCompletionProvider');
 
-export class ResourceStateCompletionProvider implements CompletionProvider, Configurable, Closeable {
+export class ResourceStateCompletionProvider implements CompletionProvider {
     private readonly transformers = TransformersUtil.createTransformers(ResourceStatePurpose.IMPORT);
-    private editorSettings: EditorSettings = DefaultSettings.editor;
-    private editorSettingsSubscription?: SettingsSubscription;
 
     constructor(
         private readonly resourceStateManager: ResourceStateManager,
@@ -62,7 +59,7 @@ export class ResourceStateCompletionProvider implements CompletionProvider, Conf
         this.applyTransformers(propertiesObj, schema);
         this.removeExistingProperties(propertiesObj, resource);
 
-        const formattedProperties = this.transformPropertiesToDocType(propertiesObj, context);
+        const formattedProperties = this.transformPropertiesToDocType(propertiesObj, context, params);
         const completion: CompletionItem = createCompletionItem(formattedProperties, CompletionItemKind.Event, {
             insertText: formattedProperties,
             insertTextFormat: InsertTextFormat.PlainText,
@@ -138,8 +135,13 @@ export class ResourceStateCompletionProvider implements CompletionProvider, Conf
         }
     }
 
-    private transformPropertiesToDocType(properties: Record<string, string>, context: Context): string {
-        const tabSize = this.editorSettings.tabSize;
+    private transformPropertiesToDocType(
+        properties: Record<string, string>,
+        context: Context,
+        params: CompletionParams,
+    ): string {
+        const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
+        const tabSize = documentSpecificSettings.tabSize;
 
         if (context.documentType === DocumentType.YAML) {
             if (Object.keys(properties).length === 0) return '';
@@ -159,27 +161,11 @@ export class ResourceStateCompletionProvider implements CompletionProvider, Conf
             ResourceStateCompletionProvider.name,
         );
 
+        const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
         // undoing the indentation after JSON.stringify with dynamic indentation
-        const tabSize = this.editorSettings.tabSize;
+        const tabSize = documentSpecificSettings.tabSize;
         const textEdit = completion.textEdit as TextEdit;
         textEdit.range.start.character = textEdit.range.start.character - tabSize;
-    }
-
-    configure(settingsManager: ISettingsSubscriber): void {
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-        }
-
-        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
-            this.editorSettings = newEditorSettings;
-        });
-    }
-
-    close(): void {
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-            this.editorSettingsSubscription = undefined;
-        }
     }
 
     static create(components: ServerComponents) {

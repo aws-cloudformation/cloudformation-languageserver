@@ -22,7 +22,6 @@ import { LspDocuments } from '../../src/protocol/LspDocuments';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
 import { LspStackHandlers } from '../../src/protocol/LspStackHandlers';
-import { LspTemplateHandlers } from '../../src/protocol/LspTemplateHandlers';
 import { LspWorkspace } from '../../src/protocol/LspWorkspace';
 import { ResourceStateImporter } from '../../src/resourceState/ResourceStateImporter';
 import { ResourceStateManager } from '../../src/resourceState/ResourceStateManager';
@@ -41,9 +40,9 @@ import { GuardService } from '../../src/services/guard/GuardService';
 import { IacGeneratorService } from '../../src/services/IacGeneratorService';
 import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
+import { DeploymentWorkflow } from '../../src/stacks/actions/DeploymentWorkflow';
+import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow';
 import { ClientMessage } from '../../src/telemetry/ClientMessage';
-import { DeploymentWorkflow } from '../../src/templates/DeploymentWorkflow';
-import { ValidationWorkflow } from '../../src/templates/ValidationWorkflow';
 
 export class MockedServerComponents extends ServerComponents {
     declare readonly diagnostics: StubbedInstance<LspDiagnostics>;
@@ -82,16 +81,15 @@ export class MockedServerComponents extends ServerComponents {
     declare readonly codeActionService: StubbedInstance<CodeActionService>;
     declare readonly documentSymbolRouter: StubbedInstance<DocumentSymbolRouter>;
 
-    declare readonly topLevelSectionCompletionProvider: StubbedInstance<TopLevelSectionCompletionProvider>;
-    declare readonly resourceEntityCompletionProvider: StubbedInstance<ResourceEntityCompletionProvider>;
-    declare readonly resourceStateCompletionProvider: StubbedInstance<ResourceStateCompletionProvider>;
-
     declare readonly validationWorkflowService: StubbedInstance<ValidationWorkflow>;
     declare readonly deploymentWorkflowService: StubbedInstance<DeploymentWorkflow>;
 }
 
-export function createMockDocumentManager() {
-    return stubInterface<DocumentManager>();
+export function createMockDocumentManager(customSettings?: Settings) {
+    const mock = stubInterface<DocumentManager>();
+    const settings = customSettings ?? DefaultSettings;
+    mock.getEditorSettingsForDocument.returns(settings.editor);
+    return mock;
 }
 
 export function createMockSyntaxTreeManager() {
@@ -106,11 +104,7 @@ export function createMockLspResourceHandlers() {
     return stubInterface<LspResourceHandlers>();
 }
 
-export function createMockLspTemplateHandlers() {
-    return stubInterface<LspTemplateHandlers>();
-}
-
-export function createMockStackHandlers() {
+export function createMockLspStackHandlers() {
     return stubInterface<LspStackHandlers>();
 }
 
@@ -344,15 +338,6 @@ export function createMockComponents(overrides: Partial<ServerComponents> = {}):
             definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
             codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
             documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
-            topLevelSectionCompletionProvider:
-                overrides.topLevelSectionCompletionProvider ??
-                createMockTopLevelSectionCompletionProvider(syntaxTreeManager, documentManager),
-            resourceEntityCompletionProvider:
-                overrides.resourceEntityCompletionProvider ??
-                createMockResourceEntityCompletionProvider(schemaRetriever, documentManager),
-            resourceStateCompletionProvider:
-                overrides.resourceStateCompletionProvider ??
-                createMockResourceStateCompletionProvider(resourceStateManager, documentManager, schemaRetriever),
             validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
             deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
             cfnAI: overrides.cfnAI ?? mockCfnAi(),

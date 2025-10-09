@@ -1,5 +1,5 @@
 import { Parameter, Capability } from '@aws-sdk/client-cloudformation';
-import { TemplateStatus, TemplateChange } from './TemplateRequestType';
+import { StackActionPhase, StackChange } from './StackActionRequestType';
 
 export class Validation {
     private readonly uri: string;
@@ -7,8 +7,8 @@ export class Validation {
     private readonly changeSetName: string;
     private readonly parameters?: Parameter[];
     private capabilities?: Capability[];
-    private status: TemplateStatus | undefined;
-    private changes: TemplateChange[] | undefined;
+    private phase: StackActionPhase | undefined;
+    private changes: StackChange[] | undefined;
 
     constructor(
         uri: string,
@@ -40,19 +40,19 @@ export class Validation {
         return this.parameters;
     }
 
-    getStatus(): TemplateStatus | undefined {
-        return this.status;
+    getPhase(): StackActionPhase | undefined {
+        return this.phase;
     }
 
-    setStatus(status: TemplateStatus): void {
-        this.status = status;
+    setPhase(status: StackActionPhase): void {
+        this.phase = status;
     }
 
-    getChanges(): TemplateChange[] | undefined {
+    getChanges(): StackChange[] | undefined {
         return this.changes;
     }
 
-    setChanges(changes: TemplateChange[]): void {
+    setChanges(changes: StackChange[]): void {
         this.changes = changes;
     }
 

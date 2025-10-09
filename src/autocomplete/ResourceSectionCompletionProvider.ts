@@ -4,7 +4,9 @@ import { Resource } from '../context/semantic/Entity';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { CompletionProvider } from './CompletionProvider';
+import { ResourceEntityCompletionProvider } from './ResourceEntityCompletionProvider';
 import { ResourcePropertyCompletionProvider } from './ResourcePropertyCompletionProvider';
+import { ResourceStateCompletionProvider } from './ResourceStateCompletionProvider';
 import { ResourceTypeCompletionProvider } from './ResourceTypeCompletionProvider';
 
 enum ResourceCompletionType {
@@ -75,7 +77,10 @@ export function createResourceCompletionProviders(
     components: ServerComponents,
 ): Map<ResourceCompletionType, CompletionProvider> {
     const resourceProviderMap = new Map<ResourceCompletionType, CompletionProvider>();
-    resourceProviderMap.set(ResourceCompletionType.Entity, components.resourceEntityCompletionProvider);
+    resourceProviderMap.set(
+        ResourceCompletionType.Entity,
+        new ResourceEntityCompletionProvider(components.schemaRetriever, components.documentManager),
+    );
     resourceProviderMap.set(
         ResourceCompletionType.Type,
         new ResourceTypeCompletionProvider(components.schemaRetriever),
@@ -84,6 +89,13 @@ export function createResourceCompletionProviders(
         ResourceCompletionType.Property,
         new ResourcePropertyCompletionProvider(components.schemaRetriever),
     );
-    resourceProviderMap.set(ResourceCompletionType.State, components.resourceStateCompletionProvider);
+    resourceProviderMap.set(
+        ResourceCompletionType.State,
+        new ResourceStateCompletionProvider(
+            components.resourceStateManager,
+            components.documentManager,
+            components.schemaRetriever,
+        ),
+    );
     return resourceProviderMap;
 }

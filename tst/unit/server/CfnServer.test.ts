@@ -8,8 +8,7 @@ import {
     createMockLspDocuments,
     createMockLspWorkspace,
     createMockLspDiagnostics,
-    createMockLspTemplateHandlers,
-    createMockStackHandlers,
+    createMockLspStackHandlers,
     createMockLspResourceHandlers,
 } from '../../utils/MockServerComponents';
 
@@ -32,8 +31,7 @@ describe('CfnServer', () => {
             communication: createMockLspCommunication(),
             handlers: createMockLspHandlers(),
             authHandlers: createMockAuthHandlers(),
-            templateHandlers: createMockLspTemplateHandlers(),
-            stackHandlers: createMockStackHandlers(),
+            stackHandlers: createMockLspStackHandlers(),
             resourceHandlers: createMockLspResourceHandlers(),
         };
 
@@ -71,12 +69,11 @@ describe('CfnServer', () => {
             expect(mockFeatures.authHandlers.onBearerCredentialsDelete.calledOnce).toBe(true);
             expect(mockFeatures.authHandlers.onSsoTokenChanged.calledOnce).toBe(true);
 
-            expect(mockFeatures.templateHandlers.onGetParameters.calledOnce).toBe(true);
-            expect(mockFeatures.templateHandlers.onTemplateValidationCreate.calledOnce).toBe(true);
-            expect(mockFeatures.templateHandlers.onTemplateDeploymentCreate.calledOnce).toBe(true);
-            expect(mockFeatures.templateHandlers.onTemplateValidationStatus.calledOnce).toBe(true);
-            expect(mockFeatures.templateHandlers.onTemplateDeploymentStatus.calledOnce).toBe(true);
-
+            expect(mockFeatures.stackHandlers.onGetParameters.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onCreateValidation.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onCreateDeployment.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onGetValidationStatus.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onGetDeploymentStatus.calledOnce).toBe(true);
             expect(mockFeatures.stackHandlers.onListStacks.calledOnce).toBe(true);
         });
     });
