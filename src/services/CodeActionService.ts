@@ -570,7 +570,9 @@ export class CodeActionService {
             }
 
             const baseEditorSettings = this.settingsManager.getCurrentSettings().editor;
-            const docEditorSettings = this.documentManager.get(params.textDocument.uri)!.getEditorSettings(baseEditorSettings)
+            const doc = this.documentManager.get(params.textDocument.uri);
+            if (!doc) return [];
+            const docEditorSettings = doc.getEditorSettings(baseEditorSettings);
 
             const extractionResult = this.extractToParameterProvider.generateExtraction(
                 context,
