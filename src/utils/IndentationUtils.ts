@@ -19,7 +19,7 @@ export function getIndentationString(editorSettings: EditorSettings, documentTyp
 /**
  * Apply indentation to a multi-line snippet template
  * @param template The snippet template with placeholder indentation markers
- * @param editorSettings Editor settings for indentation
+ * @param editorSettings Editor settings for indentation (can be document-specific)
  * @param documentType Document type (YAML/JSON)
  * @returns Formatted snippet with proper indentation
  */

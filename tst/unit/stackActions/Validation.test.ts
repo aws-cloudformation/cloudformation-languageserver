@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TemplateStatus } from '../../../src/templates/TemplateRequestType';
-import { Validation } from '../../../src/templates/Validation';
+import { StackActionPhase } from '../../../src/stacks/actions/StackActionRequestType';
+import { Validation } from '../../../src/stacks/actions/Validation';
 
 describe('Validation', () => {
     let validation: Validation;
@@ -31,9 +31,9 @@ describe('Validation', () => {
         expect(validationWithParams.getCapabilities()).toBe(capabilities);
     });
 
-    it('should set and get status', () => {
-        validation.setStatus(TemplateStatus.VALIDATION_IN_PROGRESS);
-        expect(validation.getStatus()).toBe(TemplateStatus.VALIDATION_IN_PROGRESS);
+    it('should set and get phase', () => {
+        validation.setPhase(StackActionPhase.VALIDATION_IN_PROGRESS);
+        expect(validation.getPhase()).toBe(StackActionPhase.VALIDATION_IN_PROGRESS);
     });
 
     it('should set and get changes', () => {
@@ -65,8 +65,8 @@ describe('Validation', () => {
         expect(validation.getCapabilities()).toBeUndefined();
     });
 
-    it('should handle undefined status', () => {
-        expect(validation.getStatus()).toBeUndefined();
+    it('should handle undefined phase', () => {
+        expect(validation.getPhase()).toBeUndefined();
     });
 
     it('should handle undefined changes', () => {
@@ -94,9 +94,9 @@ describe('Validation', () => {
             expect(validationWithParams.getCapabilities()).toBe(capabilities);
         });
 
-        it('should set and get status through consistent methods', () => {
-            validation.setStatus(TemplateStatus.VALIDATION_IN_PROGRESS);
-            expect(validation.getStatus()).toBe(TemplateStatus.VALIDATION_IN_PROGRESS);
+        it('should set and get phase through consistent methods', () => {
+            validation.setPhase(StackActionPhase.VALIDATION_IN_PROGRESS);
+            expect(validation.getPhase()).toBe(StackActionPhase.VALIDATION_IN_PROGRESS);
         });
 
         it('should set and get changes through consistent methods', () => {
@@ -121,7 +121,7 @@ describe('Validation', () => {
         });
 
         it('should handle undefined values consistently', () => {
-            expect(validation.getStatus()).toBeUndefined();
+            expect(validation.getPhase()).toBeUndefined();
             expect(validation.getChanges()).toBeUndefined();
             expect(validation.getCapabilities()).toBeUndefined();
         });

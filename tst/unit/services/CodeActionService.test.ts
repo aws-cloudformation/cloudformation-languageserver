@@ -8,8 +8,8 @@ import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeMan
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CodeActionService } from '../../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
+import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
 import { ClientMessage } from '../../../src/telemetry/ClientMessage';
-import { CFN_VALIDATION_SOURCE } from '../../../src/templates/ValidationWorkflow';
 import { createMockClientMessage } from '../../utils/MockServerComponents';
 
 /* eslint-disable vitest/expect-expect */

@@ -1,116 +1,325 @@
-import { StackSummary, StackStatus } from '@aws-sdk/client-cloudformation';
-import { describe, it, expect, vi } from 'vitest';
-import { CancellationToken, ResultProgressReporter, WorkDoneProgressReporter } from 'vscode-languageserver';
-import { listStacksHandler } from '../../../src/handlers/StackHandler';
+import { Capability, StackSummary, StackStatus } from '@aws-sdk/client-cloudformation';
+import { StubbedInstance } from 'ts-sinon';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
+import { Context } from '../../../src/context/Context';
+import * as SectionContextBuilder from '../../../src/context/SectionContextBuilder';
+import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
+import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
+import { Document } from '../../../src/document/Document';
+import {
+    getCapabilitiesHandler,
+    getParametersHandler,
+    createValidationHandler,
+    createDeploymentHandler,
+    getValidationStatusHandler,
+    getDeploymentStatusHandler,
+    listStacksHandler,
+} from '../../../src/handlers/StackHandler';
+import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
+import {
+    TemplateUri,
+    GetCapabilitiesResult,
+    GetParametersResult,
+    StackActionPhase,
+    StackActionState,
+} from '../../../src/stacks/actions/StackActionRequestType';
 import { ListStacksParams, ListStacksResult } from '../../../src/stacks/StackRequestType';
-import { GetParametersResult } from '../../../src/templates/TemplateRequestType';
+import {
+    createMockComponents,
+    createMockSyntaxTreeManager,
+    MockedServerComponents,
+} from '../../utils/MockServerComponents';
 
-describe('StackHandler', () => {
-    const mockParams = {} as ListStacksParams;
+vi.mock('../../../src/context/SectionContextBuilder', () => ({
+    getEntityMap: vi.fn(),
+}));
+
+// Mock the parsers
+vi.mock('../../../src/protocol/LspParser', () => ({
+    parseIdentifiable: vi.fn((input) => input),
+}));
+
+vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
+    parseStackActionParams: vi.fn((input) => input),
+    parseTemplateUriParams: vi.fn((input) => input),
+}));
+
+vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
+    parseWithPrettyError: vi.fn((parser, input) => parser(input)),
+}));
+
+vi.mock('../../../src/stacks/actions/CapabilityAnalyzer', () => ({
+    analyzeCapabilities: vi.fn(),
+}));
+
+describe('StackActionHandler', () => {
+    let mockComponents: MockedServerComponents;
+    let syntaxTreeManager: StubbedInstance<SyntaxTreeManager>;
+    let getEntityMapSpy: any;
     const mockToken = {} as CancellationToken;
-    const mockWorkDoneProgress = {} as WorkDoneProgressReporter;
-    const mockResultProgress = {} as ResultProgressReporter<GetParametersResult>;
 
-    it('should return stacks on success', async () => {
-        const mockStacks: StackSummary[] = [
-            {
-                StackName: 'test-stack',
-                StackStatus: 'CREATE_COMPLETE',
-            } as StackSummary,
-        ];
-
-        const mockComponents = {
-            cfnService: {
-                listStacks: vi.fn().mockResolvedValue(mockStacks),
-            },
-        } as any;
-
-        const handler = listStacksHandler(mockComponents);
-        const result = (await handler(
-            mockParams,
-            mockToken,
-            mockWorkDoneProgress,
-            mockResultProgress,
-        )) as ListStacksResult;
-
-        expect(result.stacks).toEqual(mockStacks);
+    beforeEach(() => {
+        syntaxTreeManager = createMockSyntaxTreeManager();
+        mockComponents = createMockComponents({ syntaxTreeManager });
+        getEntityMapSpy = vi.mocked(SectionContextBuilder.getEntityMap);
+        mockComponents.validationWorkflowService.start.reset();
+        mockComponents.validationWorkflowService.getStatus.reset();
+        mockComponents.deploymentWorkflowService.start.reset();
+        mockComponents.deploymentWorkflowService.getStatus.reset();
+        vi.clearAllMocks();
     });
 
-    it('should return empty array on error', async () => {
-        const mockComponents = {
-            cfnService: {
-                listStacks: vi.fn().mockRejectedValue(new Error('API Error')),
-            },
-        } as any;
+    describe('stackActionParametersHandler', () => {
+        it('returns empty array when no syntax tree found', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(undefined);
 
-        const handler = listStacksHandler(mockComponents);
-        const result = (await handler(
-            mockParams,
-            mockToken,
-            mockWorkDoneProgress,
-            mockResultProgress,
-        )) as ListStacksResult;
+            const handler = getParametersHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetParametersResult;
 
-        expect(result.stacks).toEqual([]);
+            expect(result).toEqual({ parameters: [] });
+        });
+
+        it('returns empty array when getEntityMap returns undefined', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockSyntaxTree = {} as SyntaxTree;
+
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
+            getEntityMapSpy.mockReturnValue(undefined);
+
+            const handler = getParametersHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetParametersResult;
+
+            expect(result).toEqual({ parameters: [] });
+        });
+
+        it('returns parameters when parameters section exists', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockSyntaxTree = {} as SyntaxTree;
+            const mockParam1 = { name: 'param1', type: 'String' };
+            const mockParam2 = { name: 'param2', type: 'Number' };
+            const mockContext1 = { entity: mockParam1 } as unknown as Context;
+            const mockContext2 = { entity: mockParam2 } as unknown as Context;
+            const parametersMap = new Map([
+                ['param1', mockContext1],
+                ['param2', mockContext2],
+            ]);
+
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
+            getEntityMapSpy.mockReturnValue(parametersMap);
+
+            const handler = getParametersHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetParametersResult;
+
+            expect(result.parameters).toHaveLength(2);
+            expect(result.parameters[0]).toBe(mockParam1);
+            expect(result.parameters[1]).toBe(mockParam2);
+        });
     });
 
-    it('should pass statusToInclude to cfnService', async () => {
-        const mockStacks: StackSummary[] = [];
-        const mockComponents = {
-            cfnService: {
-                listStacks: vi.fn().mockResolvedValue(mockStacks),
-            },
-        } as any;
+    describe('templateCapabilitiesHandler', () => {
+        it('should return capabilities when document is available', async () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockDocument = { getText: vi.fn().mockReturnValue('template content') } as unknown as Document;
+            const mockCapabilities = ['CAPABILITY_IAM', 'CAPABILITY_NAMED_IAM'] as Capability[];
 
-        const paramsWithInclude: ListStacksParams = {
-            statusToInclude: [StackStatus.CREATE_COMPLETE],
-        };
+            mockComponents.documentManager.get.withArgs(templateUri).returns(mockDocument);
+            vi.mocked(analyzeCapabilities).mockResolvedValue(mockCapabilities);
 
-        const handler = listStacksHandler(mockComponents);
-        await handler(paramsWithInclude, mockToken, mockWorkDoneProgress, mockResultProgress);
+            const handler = getCapabilitiesHandler(mockComponents);
+            const result = (await handler(templateUri, mockToken)) as GetCapabilitiesResult;
 
-        expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith([StackStatus.CREATE_COMPLETE], undefined);
+            expect(result.capabilities).toEqual(mockCapabilities);
+        });
+
+        it('should throw error when document is not available', async () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            mockComponents.documentManager.get.withArgs(templateUri).returns(undefined);
+
+            const handler = getCapabilitiesHandler(mockComponents);
+
+            await expect(handler(templateUri, mockToken)).rejects.toThrow(ResponseError);
+        });
     });
 
-    it('should pass statusToExclude to cfnService', async () => {
-        const mockStacks: StackSummary[] = [];
-        const mockComponents = {
-            cfnService: {
-                listStacks: vi.fn().mockResolvedValue(mockStacks),
-            },
-        } as any;
+    describe('templateValidationCreateHandler', () => {
+        it('should delegate to validation service', async () => {
+            const mockResult = { id: 'test-id', changeSetName: 'cs-123', stackName: 'test-stack' };
+            mockComponents.validationWorkflowService.start.resolves(mockResult);
 
-        const paramsWithExclude: ListStacksParams = {
-            statusToExclude: [StackStatus.DELETE_COMPLETE],
-        };
+            const handler = createValidationHandler(mockComponents);
+            const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
-        const handler = listStacksHandler(mockComponents);
-        await handler(paramsWithExclude, mockToken, mockWorkDoneProgress, mockResultProgress);
+            const result = await handler(params, {} as any);
 
-        expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(undefined, [StackStatus.DELETE_COMPLETE]);
+            expect(mockComponents.validationWorkflowService.start.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+
+        it('should propagate ResponseError from service', async () => {
+            const responseError = new ResponseError(ErrorCodes.InternalError, 'Service error');
+            mockComponents.validationWorkflowService.start.rejects(responseError);
+
+            const handler = createValidationHandler(mockComponents);
+            const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
+
+            await expect(handler(params, {} as any)).rejects.toThrow(responseError);
+        });
+
+        it('should wrap other errors as InternalError', async () => {
+            mockComponents.validationWorkflowService.start.rejects(new Error('Generic error'));
+
+            const handler = createValidationHandler(mockComponents);
+            const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
+
+            await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
+        });
     });
 
-    it('should return empty array when both statusToInclude and statusToExclude are provided', async () => {
-        const mockComponents = {
-            cfnService: {
-                listStacks: vi.fn(),
-            },
-        } as any;
+    describe('stackActionDeploymentCreateHandler', () => {
+        it('should delegate to deployment service', async () => {
+            const mockResult = { id: 'test-id', changeSetName: 'cs-123', stackName: 'test-stack' };
+            mockComponents.deploymentWorkflowService.start.resolves(mockResult);
 
-        const paramsWithBoth: ListStacksParams = {
-            statusToInclude: [StackStatus.CREATE_COMPLETE],
-            statusToExclude: [StackStatus.DELETE_COMPLETE],
-        };
+            const handler = createDeploymentHandler(mockComponents);
+            const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
-        const handler = listStacksHandler(mockComponents);
-        const result = (await handler(
-            paramsWithBoth,
-            mockToken,
-            mockWorkDoneProgress,
-            mockResultProgress,
-        )) as ListStacksResult;
+            const result = await handler(params, {} as any);
 
-        expect(result.stacks).toEqual([]);
-        expect(mockComponents.cfnService.listStacks).not.toHaveBeenCalled();
+            expect(mockComponents.deploymentWorkflowService.start.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+    });
+
+    describe('stackActionValidationStatusHandler', () => {
+        it('should delegate to validation service poll', async () => {
+            const mockResult = {
+                id: 'test-id',
+                status: StackActionPhase.VALIDATION_COMPLETE,
+                result: StackActionState.SUCCESSFUL,
+            };
+            mockComponents.validationWorkflowService.getStatus.resolves(mockResult);
+
+            const handler = getValidationStatusHandler(mockComponents);
+            const params = { id: 'test-id' };
+
+            const result = await handler(params, {} as any);
+
+            expect(mockComponents.validationWorkflowService.getStatus.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+    });
+
+    describe('stackActionDeploymentStatusHandler', () => {
+        it('should delegate to deployment service poll', async () => {
+            const mockResult = {
+                id: 'test-id',
+                status: StackActionPhase.DEPLOYMENT_COMPLETE,
+                result: StackActionState.SUCCESSFUL,
+            };
+            mockComponents.deploymentWorkflowService.getStatus.resolves(mockResult);
+
+            const handler = getDeploymentStatusHandler(mockComponents);
+            const params = { id: 'test-id' };
+
+            const result = await handler(params, {} as any);
+
+            expect(mockComponents.deploymentWorkflowService.getStatus.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+    });
+
+    describe('StackQueryHandler', () => {
+        const mockParams = {} as ListStacksParams;
+        const mockToken = {} as CancellationToken;
+
+        it('should return stacks on success', async () => {
+            const mockStacks: StackSummary[] = [
+                {
+                    StackName: 'test-stack',
+                    StackStatus: 'CREATE_COMPLETE',
+                } as StackSummary,
+            ];
+
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                },
+            } as any;
+
+            const handler = listStacksHandler(mockComponents);
+            const result = (await handler(mockParams, mockToken)) as ListStacksResult;
+
+            expect(result.stacks).toEqual(mockStacks);
+        });
+
+        it('should return empty array on error', async () => {
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockRejectedValue(new Error('API Error')),
+                },
+            } as any;
+
+            const handler = listStacksHandler(mockComponents);
+            const result = (await handler(mockParams, mockToken)) as ListStacksResult;
+
+            expect(result.stacks).toEqual([]);
+        });
+
+        it('should pass statusToInclude to cfnService', async () => {
+            const mockStacks: StackSummary[] = [];
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                },
+            } as any;
+
+            const paramsWithInclude: ListStacksParams = {
+                statusToInclude: [StackStatus.CREATE_COMPLETE],
+            };
+
+            const handler = listStacksHandler(mockComponents);
+            await handler(paramsWithInclude, mockToken);
+
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith([StackStatus.CREATE_COMPLETE], undefined);
+        });
+
+        it('should pass statusToExclude to cfnService', async () => {
+            const mockStacks: StackSummary[] = [];
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                },
+            } as any;
+
+            const paramsWithExclude: ListStacksParams = {
+                statusToExclude: [StackStatus.DELETE_COMPLETE],
+            };
+
+            const handler = listStacksHandler(mockComponents);
+            await handler(paramsWithExclude, mockToken);
+
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(undefined, [StackStatus.DELETE_COMPLETE]);
+        });
+
+        it('should return empty array when both statusToInclude and statusToExclude are provided', async () => {
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn(),
+                },
+            } as any;
+
+            const paramsWithBoth: ListStacksParams = {
+                statusToInclude: [StackStatus.CREATE_COMPLETE],
+                statusToExclude: [StackStatus.DELETE_COMPLETE],
+            };
+
+            const handler = listStacksHandler(mockComponents);
+            const result = (await handler(paramsWithBoth, mockToken)) as ListStacksResult;
+
+            expect(result.stacks).toEqual([]);
+            expect(mockComponents.cfnService.listStacks).not.toHaveBeenCalled();
+        });
     });
 });

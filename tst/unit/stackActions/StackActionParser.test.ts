@@ -1,11 +1,11 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
-import { parseTemplateActionParams, parseTemplateMetadataParams } from '../../../src/templates/TemplateParser';
+import { parseStackActionParams, parseTemplateUriParams } from '../../../src/stacks/actions/StackActionParser';
 
-describe('TemplateParser', () => {
-    describe('parseTemplateActionParams', () => {
-        it('should parse valid template action params', () => {
+describe('StackActionParser', () => {
+    describe('parseStackActionParams', () => {
+        it('should parse valid stack action params', () => {
             const input = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
@@ -19,7 +19,7 @@ describe('TemplateParser', () => {
                 capabilities: [Capability.CAPABILITY_IAM],
             };
 
-            const result = parseTemplateActionParams(input);
+            const result = parseStackActionParams(input);
 
             expect(result).toEqual({
                 id: 'test-id',
@@ -42,7 +42,7 @@ describe('TemplateParser', () => {
                 stackName: 'test-stack',
             };
 
-            const result = parseTemplateActionParams(input);
+            const result = parseStackActionParams(input);
 
             expect(result).toEqual({
                 id: 'test-id',
@@ -58,7 +58,7 @@ describe('TemplateParser', () => {
                 stackName: 'test-stack',
             };
 
-            expect(() => parseTemplateActionParams(input)).toThrow(ZodError);
+            expect(() => parseStackActionParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for missing id', () => {
@@ -67,7 +67,7 @@ describe('TemplateParser', () => {
                 stackName: 'test-stack',
             };
 
-            expect(() => parseTemplateActionParams(input)).toThrow(ZodError);
+            expect(() => parseStackActionParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for empty uri', () => {
@@ -77,7 +77,7 @@ describe('TemplateParser', () => {
                 stackName: 'test-stack',
             };
 
-            expect(() => parseTemplateActionParams(input)).toThrow(ZodError);
+            expect(() => parseStackActionParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for empty stackName', () => {
@@ -87,7 +87,7 @@ describe('TemplateParser', () => {
                 stackName: '',
             };
 
-            expect(() => parseTemplateActionParams(input)).toThrow(ZodError);
+            expect(() => parseStackActionParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for stackName exceeding 128 characters', () => {
@@ -97,7 +97,7 @@ describe('TemplateParser', () => {
                 stackName: 'a'.repeat(129),
             };
 
-            expect(() => parseTemplateActionParams(input)).toThrow(ZodError);
+            expect(() => parseStackActionParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for invalid capability', () => {
@@ -108,7 +108,7 @@ describe('TemplateParser', () => {
                 capabilities: ['INVALID_CAPABILITY'],
             };
 
-            expect(() => parseTemplateActionParams(input)).toThrow(ZodError);
+            expect(() => parseStackActionParams(input)).toThrow(ZodError);
         });
 
         it('should parse all valid capabilities', () => {
@@ -123,7 +123,7 @@ describe('TemplateParser', () => {
                 ],
             };
 
-            const result = parseTemplateActionParams(input);
+            const result = parseStackActionParams(input);
 
             expect(result.capabilities).toEqual([
                 Capability.CAPABILITY_IAM,
@@ -147,7 +147,7 @@ describe('TemplateParser', () => {
                 ],
             };
 
-            const result = parseTemplateActionParams(input);
+            const result = parseStackActionParams(input);
 
             expect(result.parameters?.[0]).toEqual({
                 ParameterKey: 'Environment',
@@ -160,37 +160,25 @@ describe('TemplateParser', () => {
 
     describe('parseGetParametersParams', () => {
         it('should parse valid get parameters params', () => {
-            const input = {
-                uri: 'file:///test.yaml',
-            };
+            const input = 'file:///test.yaml';
 
-            const result = parseTemplateMetadataParams(input);
+            const result = parseTemplateUriParams(input);
 
-            expect(result).toEqual({
-                uri: 'file:///test.yaml',
-            });
+            expect(result).toEqual('file:///test.yaml');
         });
 
         it('should throw ZodError for empty uri', () => {
-            const input = {
-                uri: '',
-            };
+            const input = '';
 
-            expect(() => parseTemplateMetadataParams(input)).toThrow(ZodError);
-        });
-
-        it('should throw ZodError for missing uri', () => {
-            const input = {};
-
-            expect(() => parseTemplateMetadataParams(input)).toThrow(ZodError);
+            expect(() => parseTemplateUriParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for null input', () => {
-            expect(() => parseTemplateMetadataParams(null)).toThrow(ZodError);
+            expect(() => parseTemplateUriParams(null)).toThrow(ZodError);
         });
 
         it('should throw ZodError for undefined input', () => {
-            expect(() => parseTemplateMetadataParams(undefined)).toThrow(ZodError);
+            expect(() => parseTemplateUriParams(undefined)).toThrow(ZodError);
         });
     });
 });

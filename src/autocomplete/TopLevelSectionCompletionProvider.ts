@@ -4,8 +4,7 @@ import { TopLevelSection, TopLevelSections } from '../context/ContextType';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
-import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
+import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
@@ -28,11 +27,8 @@ type SectionSnippetMap = {
     [key in TopLevelSection]?: SnippetTemplate;
 };
 
-export class TopLevelSectionCompletionProvider implements CompletionProvider, Configurable, Closeable {
+export class TopLevelSectionCompletionProvider implements CompletionProvider {
     private readonly sectionKeywordFs = getFuzzySearchFunction();
-    private editorSettings: EditorSettings = DefaultSettings.editor;
-    private editorSettingsSubscription?: SettingsSubscription;
-
     private readonly log = LoggerFactory.getLogger(TopLevelSectionCompletionProvider);
 
     /**
@@ -142,7 +138,9 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
 
         let snippet = context.documentType === DocumentType.JSON ? snippetTemplate.json : snippetTemplate.yaml;
 
-        snippet = applySnippetIndentation(snippet, this.editorSettings, context.documentType);
+        const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
+
+        snippet = applySnippetIndentation(snippet, documentSpecificSettings, context.documentType);
 
         const completionItem: ExtendedCompletionItem = createCompletionItem(section, CompletionItemKind.File, {
             insertText: snippet,
@@ -164,23 +162,6 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
         }
 
         return completionItem;
-    }
-
-    configure(settingsManager: ISettingsSubscriber): void {
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-        }
-
-        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
-            this.editorSettings = newEditorSettings;
-        });
-    }
-
-    close(): void {
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-            this.editorSettingsSubscription = undefined;
-        }
     }
 
     static create(components: ServerComponents) {

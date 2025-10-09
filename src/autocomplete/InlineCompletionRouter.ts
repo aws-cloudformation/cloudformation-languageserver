@@ -4,13 +4,7 @@ import { ContextManager } from '../context/ContextManager';
 import { DocumentManager } from '../document/DocumentManager';
 import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
-import {
-    CompletionSettings,
-    DefaultSettings,
-    EditorSettings,
-    ISettingsSubscriber,
-    SettingsSubscription,
-} from '../settings/Settings';
+import { CompletionSettings, DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { InlineCompletionProvider } from './InlineCompletionProvider';
 import { RelatedResourcesInlineCompletionProvider } from './RelatedResourcesInlineCompletionProvider';
@@ -20,14 +14,13 @@ type ReturnType = InlineCompletionList | InlineCompletionItem[] | null | undefin
 
 export class InlineCompletionRouter implements Configurable, Closeable {
     private completionSettings: CompletionSettings = DefaultSettings.completion;
-    private editorSettings: EditorSettings = DefaultSettings.editor;
     private settingsSubscription?: SettingsSubscription;
-    private editorSettingsSubscription?: SettingsSubscription;
     private readonly log = LoggerFactory.getLogger(InlineCompletionRouter);
 
     constructor(
         private readonly contextManager: ContextManager,
         private readonly inlineCompletionProviderMap: Map<InlineCompletionProviderType, InlineCompletionProvider>,
+        private readonly documentManager: DocumentManager,
     ) {}
 
     getInlineCompletions(params: InlineCompletionParams): Promise<ReturnType> | ReturnType {
@@ -52,7 +45,11 @@ export class InlineCompletionRouter implements Configurable, Closeable {
         if (this.isAuthoringNewResource(context)) {
             const relatedResourcesProvider = this.inlineCompletionProviderMap.get('RelatedResources');
             if (relatedResourcesProvider) {
-                const result = relatedResourcesProvider.getlineCompletion(context, params, this.editorSettings);
+                const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(
+                    params.textDocument.uri,
+                );
+
+                const result = relatedResourcesProvider.getlineCompletion(context, params, documentSpecificSettings);
 
                 if (result instanceof Promise) {
                     return result.then((items) => {
@@ -71,18 +68,10 @@ export class InlineCompletionRouter implements Configurable, Closeable {
         if (this.settingsSubscription) {
             this.settingsSubscription.unsubscribe();
         }
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-        }
 
         // Subscribe to completion settings changes
         this.settingsSubscription = settingsManager.subscribe('completion', (newCompletionSettings) => {
             this.completionSettings = newCompletionSettings;
-        });
-
-        // Subscribe to editor settings changes
-        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
-            this.editorSettings = newEditorSettings;
         });
     }
 
@@ -90,10 +79,6 @@ export class InlineCompletionRouter implements Configurable, Closeable {
         if (this.settingsSubscription) {
             this.settingsSubscription.unsubscribe();
             this.settingsSubscription = undefined;
-        }
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-            this.editorSettingsSubscription = undefined;
         }
     }
 
@@ -113,6 +98,7 @@ export class InlineCompletionRouter implements Configurable, Closeable {
         return new InlineCompletionRouter(
             components.contextManager,
             createInlineCompletionProviders(components.documentManager, RelationshipSchemaService.getInstance()),
+            components.documentManager,
         );
     }
 }

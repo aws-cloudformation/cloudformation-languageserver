@@ -1,7 +1,7 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
-import { Document } from '../document/Document';
-import { CfnService } from '../services/CfnService';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Document } from '../../document/Document';
+import { CfnService } from '../../services/CfnService';
+import { LoggerFactory } from '../../telemetry/LoggerFactory';
 
 const log = LoggerFactory.getLogger('CapabilityAnalyzer');
 

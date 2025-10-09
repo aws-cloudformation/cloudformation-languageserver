@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "@aws/cloudformation-languageserver@0.0.1",
-  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-0.0.1-147201fc-40c8-453e-ba6d-0926494935f2",
+  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-0.0.1-8e0d597f-1d2c-47be-b73f-09dc5561e310",
   "creationInfo": {
-    "created": "2025-09-08T20:51:24.267Z",
+    "created": "2025-10-09T15:56:33.153Z",
     "creators": [
       "Tool: npm/cli-10.9.2"
     ]
@@ -14355,30 +14355,6 @@
       ]
     },
     {
-      "name": "husky",
-      "SPDXID": "SPDXRef-Package-husky-9.1.7",
-      "versionInfo": "9.1.7",
-      "packageFileName": "node_modules/husky",
-      "description": "Modern native Git hooks",
-      "downloadLocation": "https://registry.npmjs.org/husky/-/husky-9.1.7.tgz",
-      "filesAnalyzed": false,
-      "homepage": "https://github.com/typicode/husky#readme",
-      "licenseDeclared": "MIT",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/husky@9.1.7"
-        }
-      ],
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "e60b39cad68d8c1ae1e4ec37cebbdd51463ed15c48b9654be22f62aede9fae257e06a7427e6575d4241358c8816161db5e1728f89d641df4ce52478f8420ef30"
-        }
-      ]
-    },
-    {
       "name": "iconv-lite",
       "SPDXID": "SPDXRef-Package-iconv-lite-0.6.3",
       "versionInfo": "0.6.3",
@@ -24327,11 +24303,6 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-eslint-plugin-unicorn-60.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.1",
-      "relationshipType": "DEV_DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-husky-9.1.7",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.1",
       "relationshipType": "DEV_DEPENDENCY_OF"
     },
