@@ -571,7 +571,7 @@ export class CodeActionService {
 
             const baseEditorSettings = this.settingsManager.getCurrentSettings().editor;
             const doc = this.documentManager.get(params.textDocument.uri);
-            if (!doc) return [];
+            if (!doc) return undefined;
             const docEditorSettings = doc.getEditorSettings(baseEditorSettings);
 
             const extractionResult = this.extractToParameterProvider.generateExtraction(
@@ -619,12 +619,15 @@ export class CodeActionService {
                 return undefined;
             }
 
-            const editorSettings = this.settingsManager.getCurrentSettings().editor;
+            const baseEditorSettings = this.settingsManager.getCurrentSettings().editor;
+            const doc = this.documentManager.get(params.textDocument.uri);
+            if (!doc) return undefined;
+            const docEditorSettings = doc.getEditorSettings(baseEditorSettings);
 
             const extractionResult = this.extractToParameterProvider.generateAllOccurrencesExtraction(
                 context,
                 params.range,
-                editorSettings,
+                docEditorSettings,
                 params.textDocument.uri,
             );
 
