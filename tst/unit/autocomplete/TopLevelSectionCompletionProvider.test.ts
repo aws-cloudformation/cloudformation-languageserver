@@ -364,25 +364,17 @@ describe('TopLevelSectionCompletionProvider', () => {
 
         describe('Snippet Indentation', () => {
             test('should use 2 spaces in YAML snippets when configured with tabSize 2', () => {
+                mockDocumentManager.getEditorSettingsForDocument.returns({
+                    tabSize: 2,
+                    insertSpaces: true,
+                    detectIndentation: false,
+                });
+
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
                 );
 
-                const mockSettingsManager = {
-                    getCurrentSettings: vi.fn().mockReturnValue({
-                        editor: { tabSize: 2, insertSpaces: true },
-                    }),
-                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
-                        if (settingType === 'editor') {
-                            callback({ tabSize: 2, insertSpaces: true });
-                        }
-                        return { unsubscribe: vi.fn() };
-                    }),
-                    clearSubscriptions: vi.fn(),
-                };
-
-                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
@@ -397,25 +389,17 @@ describe('TopLevelSectionCompletionProvider', () => {
             });
 
             test('should use 4 spaces in YAML snippets when configured with tabSize 4', () => {
+                mockDocumentManager.getEditorSettingsForDocument.returns({
+                    tabSize: 4,
+                    insertSpaces: true,
+                    detectIndentation: false,
+                });
+
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
                 );
 
-                const mockSettingsManager = {
-                    getCurrentSettings: vi.fn().mockReturnValue({
-                        editor: { tabSize: 4, insertSpaces: true },
-                    }),
-                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
-                        if (settingType === 'editor') {
-                            callback({ tabSize: 4, insertSpaces: true });
-                        }
-                        return { unsubscribe: vi.fn() };
-                    }),
-                    clearSubscriptions: vi.fn(),
-                };
-
-                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
@@ -432,25 +416,17 @@ describe('TopLevelSectionCompletionProvider', () => {
             });
 
             test('should use spaces for YAML even when insertSpaces is false', () => {
+                mockDocumentManager.getEditorSettingsForDocument.returns({
+                    tabSize: 3,
+                    insertSpaces: false,
+                    detectIndentation: false,
+                });
+
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
                 );
 
-                const mockSettingsManager = {
-                    getCurrentSettings: vi.fn().mockReturnValue({
-                        editor: { tabSize: 3, insertSpaces: false },
-                    }),
-                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
-                        if (settingType === 'editor') {
-                            callback({ tabSize: 3, insertSpaces: false });
-                        }
-                        return { unsubscribe: vi.fn() };
-                    }),
-                    clearSubscriptions: vi.fn(),
-                };
-
-                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
@@ -467,25 +443,17 @@ describe('TopLevelSectionCompletionProvider', () => {
             });
 
             test('should use spaces in JSON snippets when insertSpaces is true', () => {
+                mockDocumentManager.getEditorSettingsForDocument.returns({
+                    tabSize: 4,
+                    insertSpaces: true,
+                    detectIndentation: false,
+                });
+
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
                 );
 
-                const mockSettingsManager = {
-                    getCurrentSettings: vi.fn().mockReturnValue({
-                        editor: { tabSize: 4, insertSpaces: true },
-                    }),
-                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
-                        if (settingType === 'editor') {
-                            callback({ tabSize: 4, insertSpaces: true });
-                        }
-                        return { unsubscribe: vi.fn() };
-                    }),
-                    clearSubscriptions: vi.fn(),
-                };
-
-                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', {
                     text: '',
@@ -507,25 +475,17 @@ describe('TopLevelSectionCompletionProvider', () => {
             });
 
             test('should use single tab in JSON snippets when insertSpaces is false', () => {
+                mockDocumentManager.getEditorSettingsForDocument.returns({
+                    tabSize: 4,
+                    insertSpaces: false,
+                    detectIndentation: false,
+                });
+
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
                 );
 
-                const mockSettingsManager = {
-                    getCurrentSettings: vi.fn().mockReturnValue({
-                        editor: { tabSize: 4, insertSpaces: false },
-                    }),
-                    subscribe: vi.fn().mockImplementation((settingType, callback) => {
-                        if (settingType === 'editor') {
-                            callback({ tabSize: 4, insertSpaces: false });
-                        }
-                        return { unsubscribe: vi.fn() };
-                    }),
-                    clearSubscriptions: vi.fn(),
-                };
-
-                testProvider.configure(mockSettingsManager);
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', {
                     text: '',

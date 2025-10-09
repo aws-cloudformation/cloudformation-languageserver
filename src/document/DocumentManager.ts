@@ -1,15 +1,19 @@
 import { TextDocuments } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { ServerComponents } from '../server/ServerComponents';
+import { Configurable, ServerComponents } from '../server/ServerComponents';
+import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { ClientMessage } from '../telemetry/ClientMessage';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Delayer } from '../utils/Delayer';
 import { Document } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
-export class DocumentManager {
+export class DocumentManager implements Configurable {
     private readonly log = LoggerFactory.getLogger(DocumentManager);
     private readonly delayer = new Delayer(5 * 1000);
+    private editorSettings: EditorSettings = DefaultSettings.editor;
+    private settingsSubscription?: SettingsSubscription;
+    private readonly documentMap = new Map<string, Document>();
 
     constructor(
         private readonly documents: TextDocuments<TextDocument>,
@@ -19,12 +23,30 @@ export class DocumentManager {
         private readonly clientMessage?: ClientMessage,
     ) {}
 
+    configure(settingsManager: ISettingsSubscriber): void {
+        if (this.settingsSubscription) {
+            this.settingsSubscription.unsubscribe();
+        }
+
+        this.settingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
+            this.onEditorSettingsChanged(newEditorSettings);
+        });
+    }
+
     get(uri: string) {
+        let document = this.documentMap.get(uri);
+        if (document) {
+            return document;
+        }
+
         const textDocument = this.documents.get(uri);
         if (!textDocument) {
             return;
         }
-        return new Document(textDocument);
+
+        document = new Document(textDocument);
+        this.documentMap.set(uri, document);
+        return document;
     }
 
     getByName(name: string) {
@@ -34,9 +56,18 @@ export class DocumentManager {
     }
 
     allDocuments() {
-        return this.documents.all().map((doc) => {
-            return new Document(doc);
-        });
+        const allDocs: Document[] = [];
+
+        for (const textDoc of this.documents.all()) {
+            let document = this.documentMap.get(textDoc.uri);
+            if (!document) {
+                document = new Document(textDoc);
+                this.documentMap.set(textDoc.uri, document);
+            }
+            allDocs.push(document);
+        }
+
+        return allDocs;
     }
 
     isTemplate(uri: string) {
@@ -62,6 +93,37 @@ export class DocumentManager {
             .catch((error) => {
                 this.log.debug(error);
             });
+    }
+
+    getEditorSettingsForDocument(uri: string): EditorSettings {
+        const document = this.get(uri);
+        if (!document) {
+            return this.editorSettings;
+        }
+
+        return document.getEditorSettings(this.editorSettings);
+    }
+
+    removeDocument(uri: string): void {
+        this.documentMap.delete(uri);
+    }
+
+    clearAllStoredIndentation(): void {
+        for (const document of this.documentMap.values()) {
+            document.clearIndentation();
+        }
+    }
+
+    private onEditorSettingsChanged(newEditorSettings: EditorSettings): void {
+        const oldSettings = this.editorSettings;
+        this.editorSettings = newEditorSettings;
+
+        // Clear cache if detectIndentation setting changed
+        const detectIndentationChanged = oldSettings.detectIndentation !== newEditorSettings.detectIndentation;
+
+        if (detectIndentationChanged) {
+            this.clearAllStoredIndentation();
+        }
     }
 
     static create(components: ServerComponents) {

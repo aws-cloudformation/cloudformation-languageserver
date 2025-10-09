@@ -3,8 +3,7 @@ import { Context } from '../context/Context';
 import { ResourceAttributesSet, TopLevelSection, TopLevelSectionsSet } from '../context/ContextType';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentType } from '../document/Document';
-import { Closeable, Configurable } from '../server/ServerComponents';
-import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
+import { EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getIndentationString } from '../utils/IndentationUtils';
 
@@ -17,11 +16,9 @@ export interface ExtendedCompletionItem extends CompletionItem {
     data?: CompletionItemData;
 }
 
-export class CompletionFormatter implements Configurable, Closeable {
+export class CompletionFormatter {
     private static readonly log = LoggerFactory.getLogger(CompletionFormatter);
     private static instance: CompletionFormatter;
-    private editorSettings: EditorSettings = DefaultSettings.editor;
-    private editorSettingsSubscription?: SettingsSubscription;
 
     private constructor() {}
 
@@ -41,11 +38,11 @@ export class CompletionFormatter implements Configurable, Closeable {
         return `{INDENT${numberOfIndents}}`;
     }
 
-    format(completions: CompletionList, context: Context): CompletionList {
+    format(completions: CompletionList, context: Context, editorSettings: EditorSettings): CompletionList {
         try {
             const documentType = context.documentType;
 
-            const formattedItems = completions.items.map((item) => this.formatItem(item, documentType));
+            const formattedItems = completions.items.map((item) => this.formatItem(item, documentType, editorSettings));
 
             return {
                 ...completions,
@@ -57,24 +54,11 @@ export class CompletionFormatter implements Configurable, Closeable {
         }
     }
 
-    configure(settingsManager: ISettingsSubscriber): void {
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-        }
-
-        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
-            this.editorSettings = newEditorSettings;
-        });
-    }
-
-    close(): void {
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-            this.editorSettingsSubscription = undefined;
-        }
-    }
-
-    private formatItem(item: CompletionItem, documentType: DocumentType): CompletionItem {
+    private formatItem(
+        item: CompletionItem,
+        documentType: DocumentType,
+        editorSettings: EditorSettings,
+    ): CompletionItem {
         const formattedItem = { ...item };
 
         // Skip formatting for items that already have snippet format
@@ -87,7 +71,7 @@ export class CompletionFormatter implements Configurable, Closeable {
         if (documentType === DocumentType.JSON) {
             formattedItem.insertText = this.formatForJson(textToFormat);
         } else {
-            formattedItem.insertText = this.formatForYaml(textToFormat, item);
+            formattedItem.insertText = this.formatForYaml(textToFormat, item, editorSettings);
         }
 
         return formattedItem;
@@ -97,7 +81,7 @@ export class CompletionFormatter implements Configurable, Closeable {
         return label;
     }
 
-    private formatForYaml(label: string, item: CompletionItem | undefined): string {
+    private formatForYaml(label: string, item: CompletionItem | undefined, editorSettings: EditorSettings): string {
         // Intrinsic functions should not be formatted with colons
         if (
             item?.data &&
@@ -116,7 +100,7 @@ export class CompletionFormatter implements Configurable, Closeable {
             return label;
         }
 
-        const indentString = getIndentationString(this.editorSettings, DocumentType.YAML);
+        const indentString = getIndentationString(editorSettings, DocumentType.YAML);
 
         if (this.isTopLevelSection(label)) {
             if (label === String(TopLevelSection.AWSTemplateFormatVersion)) {

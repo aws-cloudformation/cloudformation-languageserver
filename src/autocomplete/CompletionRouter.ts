@@ -6,6 +6,7 @@ import { isCondition } from '../context/ContextUtils';
 import { Entity, Output, Parameter } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { DocumentType } from '../document/Document';
+import { DocumentManager } from '../document/DocumentManager';
 import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
 import { CompletionSettings, DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -17,6 +18,7 @@ import { IntrinsicFunctionArgumentCompletionProvider } from './IntrinsicFunction
 import { IntrinsicFunctionCompletionProvider } from './IntrinsicFunctionCompletionProvider';
 import { ParameterTypeValueCompletionProvider } from './ParameterTypeValueCompletionProvider';
 import { ResourceSectionCompletionProvider } from './ResourceSectionCompletionProvider';
+import { TopLevelSectionCompletionProvider } from './TopLevelSectionCompletionProvider';
 
 export type CompletionProviderType =
     | 'TopLevelSection'
@@ -35,6 +37,7 @@ export class CompletionRouter implements Configurable, Closeable {
     constructor(
         private readonly contextManager: ContextManager,
         private readonly completionProviderMap: Map<CompletionProviderType, CompletionProvider>,
+        private readonly documentManager: DocumentManager,
         private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
     ) {}
 
@@ -62,7 +65,8 @@ export class CompletionRouter implements Configurable, Closeable {
             const doc = this.completionProviderMap.get('IntrinsicFunctionArgument')?.getCompletions(context, params);
 
             if (doc && !(doc instanceof Promise) && doc.length > 0) {
-                return this.formatter.format({ isIncomplete: false, items: doc }, context);
+                const editorSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
+                return this.formatter.format({ isIncomplete: false, items: doc }, context, editorSettings);
             }
         }
 
@@ -81,6 +85,7 @@ export class CompletionRouter implements Configurable, Closeable {
         }
 
         const completions = provider?.getCompletions(context, params) ?? [];
+        const editorSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
 
         if (completions instanceof Promise) {
             return completions.then((result) => {
@@ -90,6 +95,7 @@ export class CompletionRouter implements Configurable, Closeable {
                         items: result.slice(0, this.completionSettings.maxCompletions),
                     },
                     context,
+                    editorSettings,
                 );
             });
         } else if (completions) {
@@ -98,7 +104,7 @@ export class CompletionRouter implements Configurable, Closeable {
                 items: completions.slice(0, this.completionSettings.maxCompletions),
             };
 
-            return this.formatter.format(completionList, context);
+            return this.formatter.format(completionList, context, editorSettings);
         }
         return;
     }
@@ -263,7 +269,11 @@ export class CompletionRouter implements Configurable, Closeable {
     }
 
     static create(components: ServerComponents) {
-        return new CompletionRouter(components.contextManager, createCompletionProviders(components));
+        return new CompletionRouter(
+            components.contextManager,
+            createCompletionProviders(components),
+            components.documentManager,
+        );
     }
 }
 
@@ -271,7 +281,10 @@ export function createCompletionProviders(
     components: ServerComponents,
 ): Map<CompletionProviderType, CompletionProvider> {
     const completionProviderMap = new Map<CompletionProviderType, CompletionProvider>();
-    completionProviderMap.set('TopLevelSection', components.topLevelSectionCompletionProvider);
+    completionProviderMap.set(
+        'TopLevelSection',
+        new TopLevelSectionCompletionProvider(components.syntaxTreeManager, components.documentManager),
+    );
     completionProviderMap.set(EntityType.Resource, new ResourceSectionCompletionProvider(components));
     completionProviderMap.set(EntityType.Condition, new ConditionCompletionProvider(components.syntaxTreeManager));
     completionProviderMap.set('IntrinsicFunction', new IntrinsicFunctionCompletionProvider());

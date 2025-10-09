@@ -1,8 +1,6 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { CompletionParams, CompletionItemKind, CompletionTriggerKind } from 'vscode-languageserver';
-import { ResourceEntityCompletionProvider } from '../../../src/autocomplete/ResourceEntityCompletionProvider';
 import { ResourceSectionCompletionProvider } from '../../../src/autocomplete/ResourceSectionCompletionProvider';
-import { ResourceStateCompletionProvider } from '../../../src/autocomplete/ResourceStateCompletionProvider';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { createResourceContext } from '../../utils/MockContext';
@@ -10,6 +8,7 @@ import {
     createMockComponents,
     createMockDocumentManager,
     createMockResourceStateManager,
+    createMockSettingsManager,
 } from '../../utils/MockServerComponents';
 
 describe('ResourceSectionCompletionProvider', () => {
@@ -17,23 +16,13 @@ describe('ResourceSectionCompletionProvider', () => {
     const mockDocumentManager = createMockDocumentManager();
     const mockResourceStateManager = createMockResourceStateManager();
 
-    const resourceEntityProvider = new ResourceEntityCompletionProvider(
-        mockComponents.schemaRetriever,
-        mockDocumentManager,
-    );
-
-    const resourceStateProvider = new ResourceStateCompletionProvider(
-        mockResourceStateManager,
-        mockDocumentManager,
-        mockComponents.schemaRetriever,
-    );
+    const mockSettingsManager = createMockSettingsManager();
 
     const mockTestComponents = createMockComponents({
         schemaRetriever: mockComponents.schemaRetriever,
         documentManager: mockDocumentManager,
         resourceStateManager: mockResourceStateManager,
-        resourceEntityCompletionProvider: resourceEntityProvider,
-        resourceStateCompletionProvider: resourceStateProvider,
+        settingsManager: mockSettingsManager,
     });
 
     const provider = new ResourceSectionCompletionProvider(mockTestComponents);
