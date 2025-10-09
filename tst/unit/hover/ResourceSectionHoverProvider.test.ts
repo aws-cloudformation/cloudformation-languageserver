@@ -1,7 +1,13 @@
 import { describe, it, expect, beforeEach, afterAll, beforeAll } from 'vitest';
+import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { Context } from '../../../src/context/Context';
 import { ContextManager } from '../../../src/context/ContextManager';
-import { TopLevelSection } from '../../../src/context/ContextType';
+import {
+    TopLevelSection,
+    ResourceAttribute,
+    CreationPolicyProperty,
+    ResourceSignalProperty,
+} from '../../../src/context/ContextType';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { ResourceSectionHoverProvider } from '../../../src/hover/ResourceSectionHoverProvider';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
@@ -496,6 +502,154 @@ describe('ResourceSectionHoverProvider', () => {
                         'https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-',
                     );
                 }
+            });
+        });
+
+        describe('CreationPolicy Property Hover Documentation', () => {
+            it('should return hover documentation for CreationPolicy.ResourceSignal property', () => {
+                const context = getContextAt(91, 6); // Position at "ResourceSignal:"
+
+                expect(context).toBeDefined();
+                expect(context!.isResourceAttributeProperty()).toBe(true);
+
+                const result = hoverProvider.getInformation(context!);
+                const expectedDoc = creationPolicyPropertyDocsMap.get(
+                    `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.ResourceSignal}`,
+                );
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return hover documentation for CreationPolicy.ResourceSignal.Count property', () => {
+                const context = getContextAt(92, 8); // Position at "Count:"
+
+                expect(context).toBeDefined();
+                expect(context!.isResourceAttributeProperty()).toBe(true);
+
+                const result = hoverProvider.getInformation(context!);
+                const expectedDoc = creationPolicyPropertyDocsMap.get(
+                    `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.ResourceSignal}.${ResourceSignalProperty.Count}`,
+                );
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return hover documentation for CreationPolicy.ResourceSignal.Timeout property', () => {
+                const context = getContextAt(93, 8); // Position at "Timeout:"
+
+                expect(context).toBeDefined();
+                expect(context!.isResourceAttributeProperty()).toBe(true);
+
+                const result = hoverProvider.getInformation(context!);
+                const expectedDoc = creationPolicyPropertyDocsMap.get(
+                    `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.ResourceSignal}.${ResourceSignalProperty.Timeout}`,
+                );
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return undefined for invalid CreationPolicy property paths', () => {
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'InvalidProperty',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        CreationPolicy: {
+                            InvalidProperty: 'value',
+                        },
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'CreationPolicy', 'InvalidProperty'],
+                });
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
+            });
+
+            it('should return undefined for malformed CreationPolicy property paths', () => {
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'Count',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        Properties: {
+                            BucketName: 'test-bucket',
+                        },
+                    },
+                    propertyPath: [TopLevelSection.Resources], // Too short - only 1 segment, not a resource attribute
+                });
+
+                expect(mockContext.isResourceAttribute).toBe(false);
+                expect(mockContext.isResourceAttributeProperty()).toBe(false);
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
+            });
+
+            it('should handle nested CreationPolicy properties correctly', () => {
+                const context = getContextAt(92, 8); // Position at "Count:" in the sample template
+
+                expect(context).toBeDefined();
+                expect(context!.isResourceAttributeProperty()).toBe(true);
+
+                const result = hoverProvider.getInformation(context!);
+                const expectedDoc = creationPolicyPropertyDocsMap.get(
+                    `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.ResourceSignal}.${ResourceSignalProperty.Count}`,
+                );
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return undefined when context is not a resource attribute property', () => {
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'BucketName',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        Properties: {
+                            BucketName: 'my-bucket',
+                        },
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'Properties', 'BucketName'],
+                });
+
+                expect(mockContext.isResourceAttributeProperty()).toBe(false);
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeDefined();
+                expect(result).not.toBe(
+                    creationPolicyPropertyDocsMap.get(
+                        `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.ResourceSignal}`,
+                    ),
+                );
+            });
+
+            it('should return undefined for unsupported CreationPolicy property combinations', () => {
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'NonExistentProperty',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        CreationPolicy: {
+                            ResourceSignal: {
+                                NonExistentProperty: 'value',
+                            },
+                        },
+                    },
+                    propertyPath: [
+                        TopLevelSection.Resources,
+                        'S3Bucket',
+                        'CreationPolicy',
+                        'ResourceSignal',
+                        'NonExistentProperty',
+                    ],
+                });
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
             });
         });
     });

@@ -128,6 +128,32 @@ export class Context {
         return !(this.propertyPath.at(-1) === this.text);
     }
 
+    public isResourceAttributeProperty(): boolean {
+        if (this.section !== TopLevelSection.Resources || !this.hasLogicalId) {
+            return false;
+        }
+        const resourceAttributeIndex = this.propertyPath.findIndex((segment) =>
+            ResourceAttributesSet.has(segment as string),
+        );
+
+        if (resourceAttributeIndex === -1) {
+            return false;
+        }
+        return this.propertyPath.length > resourceAttributeIndex + 1;
+    }
+
+    public getResourceAttributePropertyPath(): string[] {
+        const resourceAttributeIndex = this.propertyPath.findIndex((segment) =>
+            ResourceAttributesSet.has(segment as string),
+        );
+
+        if (resourceAttributeIndex === -1) {
+            return [];
+        }
+
+        return this.propertyPath.slice(resourceAttributeIndex) as string[];
+    }
+
     private isOnDifferentRowThanKey(): boolean {
         // Find the parent block_mapping_pair node to get the key position
         let current = this.node.parent;
