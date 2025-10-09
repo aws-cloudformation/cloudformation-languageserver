@@ -5,9 +5,6 @@ import {
     createCompletionProviders,
     createEntityFieldProviders,
 } from '../../../src/autocomplete/CompletionRouter';
-import { ResourceEntityCompletionProvider } from '../../../src/autocomplete/ResourceEntityCompletionProvider';
-import { ResourceStateCompletionProvider } from '../../../src/autocomplete/ResourceStateCompletionProvider';
-import { TopLevelSectionCompletionProvider } from '../../../src/autocomplete/TopLevelSectionCompletionProvider';
 import { ContextManager } from '../../../src/context/ContextManager';
 import { EntityType } from '../../../src/context/semantic/SemanticTypes';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
@@ -20,6 +17,7 @@ import {
     createMockComponents,
     createMockDocumentManager,
     createMockResourceStateManager,
+    createMockSettingsManager,
 } from '../../utils/MockServerComponents';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
 
@@ -186,34 +184,24 @@ describe('CompletionRouter', () => {
         const mockClientMessage = createMockClientMessage();
         const mockDocumentManager = createMockDocumentManager();
         const mockResourceStateManager = createMockResourceStateManager();
+        const mockSettingsManager = createMockSettingsManager();
+
         const syntaxTreeManager = new SyntaxTreeManager(mockClientMessage);
         const contextManager = new ContextManager(syntaxTreeManager);
-
-        const topLevelSectionProvider = new TopLevelSectionCompletionProvider(syntaxTreeManager, mockDocumentManager);
-        const resourceEntityProvider = new ResourceEntityCompletionProvider(
-            mockComponents.schemaRetriever,
-            mockDocumentManager,
-        );
-        const resourceStateProvider = new ResourceStateCompletionProvider(
-            mockResourceStateManager,
-            mockDocumentManager,
-            mockComponents.schemaRetriever,
-        );
 
         const mockTestComponents = createMockComponents({
             syntaxTreeManager,
             documentManager: mockDocumentManager,
             resourceStateManager: mockResourceStateManager,
-            topLevelSectionCompletionProvider: topLevelSectionProvider,
-            resourceEntityCompletionProvider: resourceEntityProvider,
-            resourceStateCompletionProvider: resourceStateProvider,
             schemaRetriever: mockComponents.schemaRetriever,
+            settingsManager: mockSettingsManager,
         });
         const completionProviderMap = createCompletionProviders(mockTestComponents);
         const entityFieldProviderMap = createEntityFieldProviders();
         const realCompletionRouter = new CompletionRouter(
             contextManager,
             completionProviderMap,
+            mockDocumentManager,
             entityFieldProviderMap,
         );
 

@@ -81,16 +81,15 @@ export class MockedServerComponents extends ServerComponents {
     declare readonly codeActionService: StubbedInstance<CodeActionService>;
     declare readonly documentSymbolRouter: StubbedInstance<DocumentSymbolRouter>;
 
-    declare readonly topLevelSectionCompletionProvider: StubbedInstance<TopLevelSectionCompletionProvider>;
-    declare readonly resourceEntityCompletionProvider: StubbedInstance<ResourceEntityCompletionProvider>;
-    declare readonly resourceStateCompletionProvider: StubbedInstance<ResourceStateCompletionProvider>;
-
     declare readonly validationWorkflowService: StubbedInstance<ValidationWorkflow>;
     declare readonly deploymentWorkflowService: StubbedInstance<DeploymentWorkflow>;
 }
 
-export function createMockDocumentManager() {
-    return stubInterface<DocumentManager>();
+export function createMockDocumentManager(customSettings?: Settings) {
+    const mock = stubInterface<DocumentManager>();
+    const settings = customSettings ?? DefaultSettings;
+    mock.getEditorSettingsForDocument.returns(settings.editor);
+    return mock;
 }
 
 export function createMockSyntaxTreeManager() {
@@ -339,15 +338,6 @@ export function createMockComponents(overrides: Partial<ServerComponents> = {}):
             definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
             codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
             documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
-            topLevelSectionCompletionProvider:
-                overrides.topLevelSectionCompletionProvider ??
-                createMockTopLevelSectionCompletionProvider(syntaxTreeManager, documentManager),
-            resourceEntityCompletionProvider:
-                overrides.resourceEntityCompletionProvider ??
-                createMockResourceEntityCompletionProvider(schemaRetriever, documentManager),
-            resourceStateCompletionProvider:
-                overrides.resourceStateCompletionProvider ??
-                createMockResourceStateCompletionProvider(resourceStateManager, documentManager, schemaRetriever),
             validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
             deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
             cfnAI: overrides.cfnAI ?? mockCfnAi(),

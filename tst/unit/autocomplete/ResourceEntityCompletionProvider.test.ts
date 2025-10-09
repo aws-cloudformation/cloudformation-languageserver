@@ -7,12 +7,15 @@ import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createResourceContext } from '../../utils/MockContext';
-import { createMockComponents, createMockDocumentManager } from '../../utils/MockServerComponents';
+import { createMockComponents } from '../../utils/MockServerComponents';
 import { combinedSchemas } from '../../utils/SchemaUtils';
 
 describe('ResourceEntityCompletionProvider', () => {
     const mockComponents = createMockComponents();
-    const provider = new ResourceEntityCompletionProvider(mockComponents.schemaRetriever, createMockDocumentManager());
+    const provider = new ResourceEntityCompletionProvider(
+        mockComponents.schemaRetriever,
+        mockComponents.documentManager,
+    );
 
     const mockParams: CompletionParams = {
         textDocument: { uri: 'file:///test.yaml' },

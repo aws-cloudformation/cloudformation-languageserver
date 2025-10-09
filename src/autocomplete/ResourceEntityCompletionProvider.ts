@@ -5,8 +5,7 @@ import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
-import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
+import { ServerComponents } from '../server/ServerComponents';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
 import { CompletionFormatter, ExtendedCompletionItem } from './CompletionFormatter';
@@ -14,11 +13,9 @@ import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, handleSnippetJsonQuotes } from './CompletionUtils';
 import { EntityFieldCompletionProvider } from './EntityFieldCompletionProvider';
 
-export class ResourceEntityCompletionProvider implements CompletionProvider, Configurable, Closeable {
+export class ResourceEntityCompletionProvider implements CompletionProvider {
     private readonly fuzzySearch = getFuzzySearchFunction();
     private readonly entityFieldProvider: EntityFieldCompletionProvider<Resource>;
-    private editorSettings: EditorSettings = DefaultSettings.editor;
-    private editorSettingsSubscription?: SettingsSubscription;
 
     constructor(
         private readonly schemaRetriever: SchemaRetriever,
@@ -60,7 +57,7 @@ export class ResourceEntityCompletionProvider implements CompletionProvider, Con
         context: Context,
         params: CompletionParams,
     ): ExtendedCompletionItem {
-        const snippet = this.generateRequiredPropertiesSnippet(schema, context.documentType);
+        const snippet = this.generateRequiredPropertiesSnippet(schema, context.documentType, params);
 
         const completionItem: ExtendedCompletionItem = createCompletionItem('Properties', CompletionItemKind.File, {
             insertText: snippet,
@@ -81,7 +78,11 @@ export class ResourceEntityCompletionProvider implements CompletionProvider, Con
         return completionItem;
     }
 
-    private generateRequiredPropertiesSnippet(schema: ResourceSchema, documentType: DocumentType): string {
+    private generateRequiredPropertiesSnippet(
+        schema: ResourceSchema,
+        documentType: DocumentType,
+        params: CompletionParams,
+    ): string {
         let snippet: string;
         const indent1 = CompletionFormatter.getIndentPlaceholder(1);
 
@@ -105,24 +106,9 @@ export class ResourceEntityCompletionProvider implements CompletionProvider, Con
                     : `Properties:\n${indent1}${requiredProps}`;
         }
 
-        return applySnippetIndentation(snippet, this.editorSettings, documentType);
-    }
+        const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
 
-    configure(settingsManager: ISettingsSubscriber): void {
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-        }
-
-        this.editorSettingsSubscription = settingsManager.subscribe('editor', (newEditorSettings) => {
-            this.editorSettings = newEditorSettings;
-        });
-    }
-
-    close(): void {
-        if (this.editorSettingsSubscription) {
-            this.editorSettingsSubscription.unsubscribe();
-            this.editorSettingsSubscription = undefined;
-        }
+        return applySnippetIndentation(snippet, documentSpecificSettings, documentType);
     }
 
     static create(components: ServerComponents) {
