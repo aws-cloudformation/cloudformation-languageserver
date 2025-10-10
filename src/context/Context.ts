@@ -311,6 +311,19 @@ export class Context {
             isValue: this.isValue(),
         };
     }
+
+    public isInSchemaDefinedObject(): boolean {
+        // Nested inside Properties check
+        if (
+            this.section === TopLevelSection.Resources &&
+            this.propertyPath.length > 3 &&
+            this.propertyPath[2] === 'Properties'
+        ) {
+            return true;
+        }
+
+        return false;
+    }
 }
 
 export function logicalIdAndSection(propertyPath: PropertyPath) {
