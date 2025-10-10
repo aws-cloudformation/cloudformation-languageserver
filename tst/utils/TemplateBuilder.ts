@@ -14,7 +14,6 @@ import { DocumentType } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
-import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
 import {
@@ -620,7 +619,6 @@ export class TemplateBuilder {
 
 export class ContextExpectationBuilder {
     private readonly expectation: ContextExpectation = new ContextExpectation();
-    private readonly log = LoggerFactory.getLogger(TemplateBuilder);
 
     constructor(text?: string) {
         if (text !== undefined) {
@@ -779,7 +777,6 @@ export class ContextExpectationBuilder {
     todo(comment: string): ContextExpectationBuilder {
         this.expectation.todo = true;
         this.expectation.todoComment = comment;
-        this.log.debug(comment);
         return this;
     }
 
@@ -791,7 +788,6 @@ export class ContextExpectationBuilder {
 
 export class HoverExpectationBuilder {
     private readonly expectation: HoverExpectation = new HoverExpectation();
-    private readonly log = LoggerFactory.getLogger(TemplateBuilder);
 
     static create(): HoverExpectationBuilder {
         return new HoverExpectationBuilder();
@@ -850,7 +846,6 @@ export class HoverExpectationBuilder {
     todo(comment: string): HoverExpectationBuilder {
         this.expectation.todo = true;
         this.expectation.todoComment = comment;
-        this.log.debug(comment);
         return this;
     }
 
@@ -861,7 +856,6 @@ export class HoverExpectationBuilder {
 
 export class CompletionExpectationBuilder {
     private readonly expectation: CompletionExpectation = new CompletionExpectation();
-    private readonly log = LoggerFactory.getLogger(TemplateBuilder);
 
     static create(): CompletionExpectationBuilder {
         return new CompletionExpectationBuilder();
@@ -905,7 +899,6 @@ export class CompletionExpectationBuilder {
     todo(comment: string): CompletionExpectationBuilder {
         this.expectation.todo = true;
         this.expectation.todoComment = comment;
-        this.log.debug(comment);
         return this;
     }
 
