@@ -138,6 +138,7 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
         params: InlineCompletionParams,
     ): string {
         const logicalId = 'relatedResourceLogicalId';
+        const indent0 = CompletionFormatter.getIndentPlaceholder(0);
         const indent1 = CompletionFormatter.getIndentPlaceholder(1);
 
         try {
@@ -160,12 +161,12 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
             if (propertiesSnippet) {
                 snippet =
                     documentType === DocumentType.JSON
-                        ? `"${logicalId}": {\n${indent1}"Type": "${resourceType}",\n${indent1}"Properties": {\n${propertiesSnippet}\n${indent1}}\n}`
+                        ? `"${logicalId}": {\n${indent1}"Type": "${resourceType}",\n${indent1}"Properties": {\n${propertiesSnippet}\n${indent1}}\n${indent0}}`
                         : `${logicalId}:\n${indent1}Type: ${resourceType}\n${indent1}Properties:\n${propertiesSnippet}`;
             } else {
                 snippet =
                     documentType === DocumentType.JSON
-                        ? `"${logicalId}": {\n${indent1}"Type": "${resourceType}"\n}`
+                        ? `"${logicalId}": {\n${indent1}"Type": "${resourceType}"\n${indent0}}`
                         : `${logicalId}:\n${indent1}Type: ${resourceType}`;
             }
 
@@ -211,6 +212,35 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
         params: InlineCompletionParams,
     ): string {
         const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
-        return applySnippetIndentation(snippet, documentSpecificSettings, documentType);
+        const document = this.documentManager.get(params.textDocument.uri);
+
+        if (!document) {
+            return applySnippetIndentation(snippet, documentSpecificSettings, documentType);
+        }
+
+        const lines = document.getText().split('\n');
+        const currentLine = lines[params.position.line] || '';
+
+        const currentIndent = this.getCurrentLineIndentation(currentLine);
+        const baseIndentSize = documentSpecificSettings.tabSize;
+
+        return this.applyRelativeIndentation(snippet, currentIndent, baseIndentSize);
+    }
+
+    private getCurrentLineIndentation(line: string): number {
+        const match = line.match(/^(\s*)/);
+        return match ? match[1].length : 0;
+    }
+
+    private applyRelativeIndentation(template: string, currentIndent: number, baseIndentSize: number): string {
+        const logicalIdIndent = ' '.repeat(currentIndent);
+        const resourceIndent = ' '.repeat(currentIndent + baseIndentSize);
+        const propertyIndent = ' '.repeat(currentIndent + baseIndentSize * 2);
+
+        return template
+            .replaceAll(/\n\s*{INDENT0}/g, `\n${logicalIdIndent}`)
+            .replaceAll(/\n\s*{INDENT1}/g, `\n${resourceIndent}`)
+            .replaceAll(/\n\s*{INDENT2}/g, `\n${propertyIndent}`)
+            .replaceAll(/\n\s*{INDENT3}/g, `\n${' '.repeat(currentIndent + baseIndentSize * 3)}`);
     }
 }

@@ -290,9 +290,17 @@ Resources:
 
             // Mock document with a line that has existing indentation (simulating cursor after a resource)
             const mockDocument = {
+                getText: () => `AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: test
+  `, // Line 5 (position.line) has 2 spaces indentation
                 getLine: () => '  ', // 2 spaces indentation
             };
             mockDocumentManager.get.returns(mockDocument as any);
+            mockDocumentManager.getEditorSettingsForDocument.returns({ tabSize: 2, insertSpaces: true } as any);
 
             const result = (provider as any).generatePropertySnippet(
                 resourceType,
@@ -319,9 +327,17 @@ Resources:
 
             // Mock document with a line that has existing indentation
             const mockDocument = {
+                getText: () => `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyBucket": {
+      "Type": "AWS::S3::Bucket"
+    },
+  `, // Line 5 (position.line) has 2 spaces indentation
                 getLine: () => '  ', // 2 spaces indentation
             };
             mockDocumentManager.get.returns(mockDocument as any);
+            mockDocumentManager.getEditorSettingsForDocument.returns({ tabSize: 2, insertSpaces: true } as any);
 
             const jsonContext = { ...mockContext, documentType: 'JSON' };
 
