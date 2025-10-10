@@ -406,8 +406,8 @@ describe('TextEditGenerator', () => {
 
             // Should have proper 4-space indentation for JSON
             const lines = result.newText.split('\n');
-            expect(lines[1]).toMatch(/^ {4}"/); // Parameter name line (after initial newline)
-            expect(lines[2]).toMatch(/^ {8}"/); // Type line (8 spaces = 2 levels of 4-space indentation)
+            expect(lines[1]).toMatch(/^ {8}"/); // Parameter name line (after initial newline)
+            expect(lines[2]).toMatch(/^ {12}"/); // Type line (12 spaces = 3 levels of 4-space indentation)
         });
 
         it('should maintain proper YAML indentation for nested parameter', () => {
@@ -548,8 +548,8 @@ describe('TextEditGenerator', () => {
             );
 
             const lines = result.newText.split('\n');
-            expect(lines[1]).toMatch(/^\t"/); // Parameter name line (1 tab)
-            expect(lines[2]).toMatch(/^\t\t"/); // Type line (2 tabs)
+            expect(lines[1]).toMatch(/^\t\t"/); // Parameter name line (2 tabs)
+            expect(lines[2]).toMatch(/^\t\t\t"/); // Type line (3 tabs)
         });
 
         it('should always use spaces for YAML even when insertSpaces is false', () => {

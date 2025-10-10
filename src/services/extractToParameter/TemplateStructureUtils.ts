@@ -228,22 +228,6 @@ export class TemplateStructureUtils {
                 TopLevelSection.Description,
             ]);
 
-            // Try to find AWSTemplateFormatVersion to insert after it
-            if (topLevelSections.has(TopLevelSection.AWSTemplateFormatVersion)) {
-                const versionSection = topLevelSections.get(TopLevelSection.AWSTemplateFormatVersion);
-                if (versionSection?.endIndex !== undefined) {
-                    // For JSON, we need to find the comma after the value and insert after it
-                    if (documentType === DocumentType.JSON) {
-                        const afterValue = templateContent.slice(versionSection.endIndex);
-                        const commaMatch = afterValue.match(/^(\s*,)/);
-                        if (commaMatch) {
-                            return versionSection.endIndex + commaMatch[0].length;
-                        }
-                    }
-                    return versionSection.endIndex;
-                }
-            }
-
             // Try to find Description to insert after it
             if (topLevelSections.has(TopLevelSection.Description)) {
                 const descriptionSection = topLevelSections.get(TopLevelSection.Description);
@@ -257,6 +241,22 @@ export class TemplateStructureUtils {
                         }
                     }
                     return descriptionSection.endIndex;
+                }
+            }
+
+            // Try to find AWSTemplateFormatVersion to insert after it
+            if (topLevelSections.has(TopLevelSection.AWSTemplateFormatVersion)) {
+                const versionSection = topLevelSections.get(TopLevelSection.AWSTemplateFormatVersion);
+                if (versionSection?.endIndex !== undefined) {
+                    // For JSON, we need to find the comma after the value and insert after it
+                    if (documentType === DocumentType.JSON) {
+                        const afterValue = templateContent.slice(versionSection.endIndex);
+                        const commaMatch = afterValue.match(/^(\s*,)/);
+                        if (commaMatch) {
+                            return versionSection.endIndex + commaMatch[0].length;
+                        }
+                    }
+                    return versionSection.endIndex;
                 }
             }
 

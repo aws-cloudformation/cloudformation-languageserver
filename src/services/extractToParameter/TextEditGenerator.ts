@@ -91,15 +91,8 @@ export class TextEditGenerator {
 
         const baseIndent = getIndentationString(editorSettings, DocumentType.JSON);
 
-        // When creating a new Parameters section, we need different indentation levels:
-        // - Parameters key is at root level (baseIndent)
-        // - Parameter names are one level inside Parameters (baseIndent * 2)
-        // - Properties are one level inside parameter (baseIndent * 3)
-        // When inserting into existing section, parameter is already inside Parameters:
-        // - Parameter names are at baseIndent level
-        // - Properties are one level inside parameter (baseIndent * 2)
-        const parameterIndent = withinExistingSection ? baseIndent : baseIndent.repeat(2);
-        const propertyIndent = withinExistingSection ? baseIndent.repeat(2) : baseIndent.repeat(3);
+        const parameterIndent = baseIndent.repeat(2);
+        const propertyIndent = baseIndent.repeat(3);
 
         let parameterJson = `${parameterIndent}"${parameterName}": {\n`;
         parameterJson += `${propertyIndent}"Type": "${parameterDefinition.Type}",\n`;
