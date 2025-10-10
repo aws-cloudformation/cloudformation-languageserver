@@ -506,9 +506,8 @@ Conditions:`,
                         verification: {
                             position: { line: 101, character: 25 },
                             expectation: HoverExpectationBuilder.create()
-                                //todo: hover on condition name reference for !Condition and not just Condition:
                                 .expectContainsText(['**Condition**, IsProductionOrStaging'])
-                                .todo()
+                                .todo(`hover on condition name reference for !Condition and not just Condition:`)
                                 .build(),
                         },
                     },
@@ -1088,7 +1087,7 @@ Resources:`,
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Resource:** LaunchTemplate')
                                 .expectContainsText(['LaunchTemplate', 'AWS::EC2::LaunchTemplate'])
-                                .todo()
+                                .todo(`Returns nothing`)
                                 .build(),
                         },
                     },
@@ -1116,7 +1115,7 @@ Resources:`,
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Condition:** HasMultipleAZs')
                                 .expectContainsText(['HasMultipleAZs', '!Not', '!Equals', '!Select'])
-                                .todo()
+                                .todo(`Returns nothing`)
                                 .build(),
                         },
                     },

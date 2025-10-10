@@ -311,19 +311,20 @@ Conditions:
                             position: { line: 103, character: 25 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['AWS::Region'])
-                                .todo()
-                                // todo: intrinsic functions are being suggested incorrectly!
-                                //[
-                                //   "!RefAll",
-                                //   "!GetAZs",
-                                //   "!Ref",
-                                //   "!Equals",
-                                //   "!Base64",
-                                //   "!GetAtt",
-                                //   "!Transform",
-                                //   "!EachMemberEquals",
-                                //   "!EachMemberIn",
-                                // ]
+                                .todo(
+                                    `intrinsic functions are being suggested incorrectly!
+                                [
+                                  "!RefAll",
+                                  "!GetAZs",
+                                  "!Ref",
+                                  "!Equals",
+                                  "!Base64",
+                                  "!GetAtt",
+                                  "!Transform",
+                                  "!EachMemberEquals",
+                                  "!EachMemberIn",
+                                ]`,
+                                )
                                 .build(),
                         },
                     },
@@ -393,7 +394,7 @@ Rules:
                             position: { line: 114, character: 45 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['AWS::Region'])
-                                .todo() // todo: no suggestion of pseudo-parameter after AWS:: is typed; needs the R
+                                .todo(`no suggestion of pseudo-parameter after AWS:: is typed; needs the R`)
                                 .build(),
                         },
                     },
@@ -861,7 +862,7 @@ Resources:
                                     'VPC',
                                 ])
                                 .expectExcludesItems(['AutoScalingGroup'])
-                                .todo() // todo: support autocomplete for Fn::GetAtt
+                                .todo(`support autocomplete for Fn::GetAtt`)
                                 .build(),
                         },
                     },
@@ -979,7 +980,7 @@ Resources:
                                     'IsProductionOrStaging',
                                 ])
                                 .expectExcludesItems(['ComplexCondition', 'HasMultipleAZs'])
-                                .todo() // todo: not working even when testing not on last line of YAML
+                                .todo(`not working even when testing not on last line of YAML`)
                                 .build(),
                         },
                     },
@@ -999,10 +1000,11 @@ Resources:
                             position: { line: 286, character: 40 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Snapshot'])
-                                // todo: feature to suggest Resource attribute values
-                                //  some values (Snapshot) are based on resource type; see docs below
-                                //  https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html#aws-attribute-deletionpolicy-options
-                                .todo()
+                                .todo(
+                                    `feature to suggest Resource attribute values
+                                 some values (Snapshot) are based on resource type; see docs below
+                                 https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html#aws-attribute-deletionpolicy-options`,
+                                )
                                 .build(),
                         },
                     },
@@ -1397,8 +1399,12 @@ O`,
                         description: 'suggest substitution variable in second arg of Fn::Sub based on first arg',
                         verification: {
                             position: { line: 474, character: 14 },
-                            // todo: feature to suggest variables authored in Fn::Sub first arg while typing second arg
-                            expectation: CompletionExpectationBuilder.create().expectItems(['Third']).todo().build(),
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectItems(['Third'])
+                                .todo(
+                                    `feature to suggest variables authored in Fn::Sub first arg while typing second arg`,
+                                )
+                                .build(),
                         },
                     },
                 ],

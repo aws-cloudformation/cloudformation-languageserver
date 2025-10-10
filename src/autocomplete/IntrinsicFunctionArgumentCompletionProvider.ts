@@ -247,7 +247,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         return undefined;
     }
 
-    private getPseudoParametersAsCompletionItems(pseudoParameterMap: Map<PseudoParameter, string>): CompletionItem[] {
+    private getPseudoParametersAsCompletionItems(
+        pseudoParameterMap: ReadonlyMap<PseudoParameter, string>,
+    ): CompletionItem[] {
         const completionItems: CompletionItem[] = [];
         for (const [paramName, doc] of pseudoParameterMap) {
             completionItems.push(

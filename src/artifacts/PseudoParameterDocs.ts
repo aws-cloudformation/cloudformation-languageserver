@@ -1,6 +1,6 @@
 import { PseudoParameter } from '../context/ContextType';
 
-export const pseudoParameterDocsMap = getPseudoParameterDocsMap();
+export const pseudoParameterDocsMap: ReadonlyMap<PseudoParameter, string> = getPseudoParameterDocsMap();
 
 function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
     const pseudoParameterDocsMap = new Map<PseudoParameter, string>();

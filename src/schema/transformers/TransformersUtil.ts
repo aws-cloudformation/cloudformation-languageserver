@@ -1,4 +1,5 @@
 import { ResourceStatePurpose } from '../../resourceState/ResourceStateTypes';
+import { AddWriteOnlyRequiredPropertiesTransformer } from './AddWriteOnlyRequiredPropertiesTransformer';
 import { RemoveMutuallyExclusivePropertiesTransformer } from './RemoveMutuallyExclusivePropertiesTransformer';
 import { RemoveReadonlyPropertiesTransformer } from './RemoveReadonlyPropertiesTransformer';
 import { RemoveRequiredXorPropertiesTransformer } from './RemoveRequiredXorPropertiesTransformer';
@@ -14,6 +15,7 @@ export class TransformersUtil {
                 new RemoveMutuallyExclusivePropertiesTransformer(),
                 new RemoveSystemTagsTransformer(),
                 new RemoveRequiredXorPropertiesTransformer(),
+                new AddWriteOnlyRequiredPropertiesTransformer(),
             ];
         } else if (purpose === ResourceStatePurpose.CLONE) {
             return [
@@ -22,6 +24,7 @@ export class TransformersUtil {
                 new RemoveSystemTagsTransformer(),
                 new ReplacePrimaryIdentifierTransformer(),
                 new RemoveRequiredXorPropertiesTransformer(),
+                new AddWriteOnlyRequiredPropertiesTransformer(),
             ];
         }
         return [];
