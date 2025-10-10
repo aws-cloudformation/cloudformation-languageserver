@@ -1,12 +1,13 @@
 import { resourceAttributeDocsMap } from '../artifacts/ResourceAttributeDocs';
 import { creationPolicyPropertyDocsMap } from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
+import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { templatePathToJsonPointerPath } from '../utils/PathUtils';
-import { propertyTypesToMarkdown, formatResourceHover } from './HoverFormatter';
+import { propertyTypesToMarkdown, formatResourceHover, getResourceAttributeValueDoc } from './HoverFormatter';
 import { HoverProvider } from './HoverProvider';
 
 export class ResourceSectionHoverProvider implements HoverProvider {
@@ -32,6 +33,9 @@ export class ResourceSectionHoverProvider implements HoverProvider {
         }
         if (context.isResourceAttributeProperty()) {
             return this.getResourceAttributePropertyDoc(context, resource);
+        }
+        if (context.isResourceAttributeValue()) {
+            return this.getResourceAttributeValueDoc(context);
         }
         if (context.isResourceAttribute && resource[context.text] !== undefined) {
             return this.getResourceAttributeDoc(context.text);
@@ -104,6 +108,9 @@ export class ResourceSectionHoverProvider implements HoverProvider {
             case ResourceAttribute.CreationPolicy: {
                 return this.getCreationPolicyPropertyDoc(propertyPath);
             }
+            case ResourceAttribute.DeletionPolicy: {
+                return this.getDeletionPolicyPropertyDoc(propertyPath);
+            }
             default: {
                 return undefined;
             }
@@ -113,5 +120,18 @@ export class ResourceSectionHoverProvider implements HoverProvider {
     private getCreationPolicyPropertyDoc(propertyPath: ReadonlyArray<string>): string | undefined {
         const propertyPathString = propertyPath.join('.');
         return creationPolicyPropertyDocsMap.get(propertyPathString);
+    }
+
+    private getDeletionPolicyPropertyDoc(propertyPath: ReadonlyArray<string>): string | undefined {
+        if (propertyPath.length === 2) {
+            const deletionPolicyValue = propertyPath[1];
+            return deletionPolicyValueDocsMap.get(deletionPolicyValue);
+        }
+        return undefined;
+    }
+
+    private getResourceAttributeValueDoc(context: Context): string | undefined {
+        const attributeName = context.propertyPath[2] as ResourceAttribute;
+        return getResourceAttributeValueDoc(attributeName, context.text);
     }
 }

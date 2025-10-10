@@ -1,3 +1,5 @@
+import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
+import { ResourceAttribute } from '../context/ContextType';
 import { Condition, Entity, Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { PropertyType } from '../schema/ResourceSchema';
@@ -1137,4 +1139,19 @@ export function formatResourceHover(resource: Resource): string {
 
     const result = doc.filter((item) => item.trim() !== '').join('\n\n');
     return result;
+}
+
+/**
+ * Gets documentation for resource attribute values based on the attribute type and text.
+ */
+export function getResourceAttributeValueDoc(attributeName: ResourceAttribute, text: string): string | undefined {
+    switch (attributeName) {
+        case ResourceAttribute.DeletionPolicy: {
+            return deletionPolicyValueDocsMap.get(text);
+        }
+        //TODO: add other ResourceAttribute Values as needed
+        default: {
+            return undefined;
+        }
+    }
 }

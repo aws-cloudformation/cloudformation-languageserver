@@ -5,6 +5,7 @@ import { parameterAttributeDocsMap } from '../../../src/artifacts/ParameterAttri
 import { pseudoParameterDocsMap } from '../../../src/artifacts/PseudoParameterDocs';
 import { resourceAttributeDocsMap } from '../../../src/artifacts/ResourceAttributeDocs';
 import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
+import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { templateSectionDocsMap } from '../../../src/artifacts/TemplateSectionDocs';
 import {
     TopLevelSection,
@@ -1262,6 +1263,30 @@ Resources:`,
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('### AWS::Lambda::Function')
                                 .expectContainsText(['creates a Lambda function'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 302, character: 31 },
+                        description: 'Hover Snapshot in DeletionPolicy Resource Attribute',
+                        verification: {
+                            position: { line: 286, character: 44 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(deletionPolicyValueDocsMap.get('Snapshot'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 302, character: 31 },
+                        description: 'Hover Delete in DeletionPolicy Resource Attribute',
+                        verification: {
+                            position: { line: 286, character: 52 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(deletionPolicyValueDocsMap.get('Delete'))
                                 .build(),
                         },
                     },

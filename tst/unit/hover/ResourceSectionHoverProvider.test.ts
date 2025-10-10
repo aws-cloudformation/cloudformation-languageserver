@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterAll, beforeAll } from 'vitest';
 import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
+import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { Context } from '../../../src/context/Context';
 import { ContextManager } from '../../../src/context/ContextManager';
 import {
@@ -646,6 +647,124 @@ describe('ResourceSectionHoverProvider', () => {
                         'NonExistentProperty',
                     ],
                 });
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
+            });
+        });
+
+        describe('DeletionPolicy Value Hover Documentation', () => {
+            it('should return documentation for DeletionPolicy Retain value', () => {
+                // Create a mock context for Retain value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'Retain',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        DeletionPolicy: 'Retain',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'DeletionPolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+                const expectedDoc = deletionPolicyValueDocsMap.get('Retain');
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return documentation for DeletionPolicy Delete value', () => {
+                // Create a mock context for Delete value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'Delete',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        DeletionPolicy: 'Delete',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'DeletionPolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+                const expectedDoc = deletionPolicyValueDocsMap.get('Delete');
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return documentation for DeletionPolicy Snapshot value', () => {
+                // Create a mock context for Snapshot value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'Snapshot',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        DeletionPolicy: 'Snapshot',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'DeletionPolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+                const expectedDoc = deletionPolicyValueDocsMap.get('Snapshot');
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return documentation for DeletionPolicy RetainExceptOnCreate value', () => {
+                // Create a mock context for RetainExceptOnCreate value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'RetainExceptOnCreate',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        DeletionPolicy: 'RetainExceptOnCreate',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'DeletionPolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+                const expectedDoc = deletionPolicyValueDocsMap.get('RetainExceptOnCreate');
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return undefined for invalid DeletionPolicy values', () => {
+                // Create a mock context for invalid value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'InvalidValue',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        DeletionPolicy: 'InvalidValue',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'DeletionPolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
+            });
+
+            it('should return undefined for other resource attribute values', () => {
+                // Create a mock context for Condition value (not DeletionPolicy)
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'CreateProdResources',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        Condition: 'CreateProdResources',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'Condition'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
 
                 const result = hoverProvider.getInformation(mockContext);
 
