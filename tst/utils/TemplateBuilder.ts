@@ -33,6 +33,7 @@ function expectAt(actual: any, position: Position, description?: string) {
 
 class Expectation {
     public todo: boolean = false;
+    public todoComment?: string;
 }
 
 class ContextExpectation extends Expectation {
@@ -151,7 +152,11 @@ export class TemplateBuilder {
             }
 
             if (step.verification?.expectation?.todo === true && exception === undefined) {
-                throw new Error(`TODO did not throw exception${step.description ? ` - ${step.description}` : ''}`);
+                const todoComment = step.verification.expectation.todoComment;
+                const commentSuffix = todoComment ? ` - TODO: ${todoComment}` : '';
+                throw new Error(
+                    `TODO did not throw exception${step.description ? ` - ${step.description}` : ''}${commentSuffix}`,
+                );
             } else if (step.verification?.expectation?.todo === false && exception !== undefined) {
                 throw new Error(`${extractErrorMessage(exception)}${step.description ? ` - ${step.description}` : ''}`);
             }
@@ -769,8 +774,9 @@ export class ContextExpectationBuilder {
         return this;
     }
 
-    todo(): ContextExpectationBuilder {
+    todo(comment: string): ContextExpectationBuilder {
         this.expectation.todo = true;
+        this.expectation.todoComment = comment;
         return this;
     }
 
@@ -837,8 +843,9 @@ export class HoverExpectationBuilder {
         return this;
     }
 
-    todo(): HoverExpectationBuilder {
+    todo(comment: string): HoverExpectationBuilder {
         this.expectation.todo = true;
+        this.expectation.todoComment = comment;
         return this;
     }
 
@@ -889,8 +896,9 @@ export class CompletionExpectationBuilder {
         return this;
     }
 
-    todo(): CompletionExpectationBuilder {
+    todo(comment: string): CompletionExpectationBuilder {
         this.expectation.todo = true;
+        this.expectation.todoComment = comment;
         return this;
     }
 
