@@ -1077,4 +1077,99 @@ describe('ResourcePropertyCompletionProvider', () => {
         const keyItem = result?.find((item) => item.label === 'Key');
         expect(keyItem).toBeDefined();
     });
+
+    // Resource Attribute Property Completion Tests
+    describe('Resource Attribute Property Completions', () => {
+        test('should return CreationPolicy properties for supported resource type', () => {
+            const mockContext = createResourceContext('MyInstance', {
+                text: '',
+                propertyPath: ['Resources', 'MyInstance', 'CreationPolicy', ''],
+                data: {
+                    Type: 'AWS::EC2::Instance',
+                    CreationPolicy: {},
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(2); // ResourceSignal and AutoScalingCreationPolicy
+
+            const resourceSignalItem = result!.find((item) => item.label === 'ResourceSignal');
+            expect(resourceSignalItem).toBeDefined();
+            expect(resourceSignalItem!.kind).toBe(CompletionItemKind.Property);
+
+            const autoScalingItem = result!.find((item) => item.label === 'AutoScalingCreationPolicy');
+            expect(autoScalingItem).toBeDefined();
+            expect(autoScalingItem!.kind).toBe(CompletionItemKind.Property);
+        });
+
+        test('should return different CreationPolicy properties based on resource type', () => {
+            const mockContext = createResourceContext('MyFleet', {
+                text: '',
+                propertyPath: ['Resources', 'MyFleet', 'CreationPolicy', ''],
+                data: {
+                    Type: 'AWS::AppStream::Fleet',
+                    CreationPolicy: {},
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(2); // ResourceSignal and StartFleet
+
+            const resourceSignalItem = result!.find((item) => item.label === 'ResourceSignal');
+            expect(resourceSignalItem).toBeDefined();
+
+            const startFleetItem = result!.find((item) => item.label === 'StartFleet');
+            expect(startFleetItem).toBeDefined();
+
+            // Should NOT include AutoScalingCreationPolicy for AppStream Fleet
+            const autoScalingItem = result!.find((item) => item.label === 'AutoScalingCreationPolicy');
+            expect(autoScalingItem).toBeUndefined();
+        });
+
+        test('should return nested properties for ResourceSignal', () => {
+            const mockContext = createResourceContext('MyInstance', {
+                text: '',
+                propertyPath: ['Resources', 'MyInstance', 'CreationPolicy', 'ResourceSignal', ''],
+                data: {
+                    Type: 'AWS::EC2::Instance',
+                    CreationPolicy: {
+                        ResourceSignal: {},
+                    },
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(2); // Count and Timeout
+
+            const countItem = result!.find((item) => item.label === 'Count');
+            expect(countItem).toBeDefined();
+            expect(countItem!.kind).toBe(CompletionItemKind.Property);
+
+            const timeoutItem = result!.find((item) => item.label === 'Timeout');
+            expect(timeoutItem).toBeDefined();
+            expect(timeoutItem!.kind).toBe(CompletionItemKind.Property);
+        });
+
+        test('should return empty for unsupported resource type', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                text: '',
+                propertyPath: ['Resources', 'MyBucket', 'CreationPolicy', ''],
+                data: {
+                    Type: 'AWS::S3::Bucket', // S3 buckets don't support CreationPolicy
+                    CreationPolicy: {},
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(0);
+        });
+    });
 });

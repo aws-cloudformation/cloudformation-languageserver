@@ -1,5 +1,11 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
+import {
+    supportsCreationPolicy,
+    supportsAutoScalingCreationPolicy,
+    supportsStartFleet,
+} from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { Context } from '../context/Context';
+import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
 import { CfnValue } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
@@ -41,6 +47,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             return [];
         }
 
+        if (context.isResourceAttributeProperty() || this.isAtResourceAttributeLevel(context)) {
+            return this.getResourceAttributePropertyCompletions(context, resource);
+        }
         const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
         if (!schema) {
             return [];
@@ -307,5 +316,141 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private isRefToArrayType(schema: ResourceSchema, ref: string): boolean {
         const refProperty = schema.resolveRef(ref);
         return refProperty?.type === 'array';
+    }
+
+    private isAtResourceAttributeLevel(context: Context): boolean {
+        if (context.section !== TopLevelSection.Resources || !context.hasLogicalId) {
+            return false;
+        }
+
+        const lastSegment = context.propertyPath[context.propertyPath.length - 1];
+        return ResourceAttributesSet.has(lastSegment as string);
+    }
+
+    private getResourceAttributePropertyCompletions(context: Context, resource: Resource): CompletionItem[] {
+        const propertyPath = this.getResourceAttributePropertyPath(context);
+
+        if (propertyPath.length === 0 || !resource.Type) {
+            return [];
+        }
+
+        const attributeType = propertyPath[0] as ResourceAttribute;
+        const existingProperties = this.getExistingProperties(context);
+
+        switch (attributeType) {
+            case ResourceAttribute.CreationPolicy: {
+                return this.getCreationPolicyCompletions(propertyPath, resource.Type, context, existingProperties);
+            }
+            //TODO: add other resource attributes
+            default: {
+                return [];
+            }
+        }
+    }
+
+    private getResourceAttributePropertyPath(context: Context): ReadonlyArray<string> {
+        let propertyPath = context.getResourceAttributePropertyPath();
+
+        if (propertyPath.length === 0 && this.isAtResourceAttributeLevel(context)) {
+            const lastSegment = context.propertyPath[context.propertyPath.length - 1];
+            if (ResourceAttributesSet.has(lastSegment as string)) {
+                propertyPath = [lastSegment as string];
+            }
+        }
+
+        if (context.isKey() && propertyPath.length > 1) {
+            const lastSegment = propertyPath[propertyPath.length - 1];
+
+            if (lastSegment === context.text && context.text !== '') {
+                propertyPath = propertyPath.slice(0, -1);
+            }
+        }
+
+        return propertyPath;
+    }
+    private getCreationPolicyCompletions(
+        propertyPath: ReadonlyArray<string>,
+        resourceType: string,
+        context: Context,
+        existingProperties: Set<string>,
+    ): CompletionItem[] {
+        if (!supportsCreationPolicy(resourceType)) {
+            return [];
+        }
+
+        const completions: CompletionItem[] = [];
+
+        const filteredPath = propertyPath.filter((segment) => segment !== '');
+        const depth = filteredPath.length;
+
+        // Root CreationPolicy level
+        if (depth === 1 && context.isKey()) {
+            if (!existingProperties.has('ResourceSignal')) {
+                completions.push(
+                    createCompletionItem('ResourceSignal', CompletionItemKind.Property, {
+                        data: { type: 'object' },
+                        context: context,
+                    }),
+                );
+            }
+
+            if (
+                supportsAutoScalingCreationPolicy(resourceType) &&
+                !existingProperties.has('AutoScalingCreationPolicy')
+            ) {
+                completions.push(
+                    createCompletionItem('AutoScalingCreationPolicy', CompletionItemKind.Property, {
+                        data: { type: 'object' },
+                        context: context,
+                    }),
+                );
+            }
+
+            if (supportsStartFleet(resourceType) && !existingProperties.has('StartFleet')) {
+                completions.push(
+                    createCompletionItem('StartFleet', CompletionItemKind.Property, {
+                        data: { type: 'simple' },
+                        context: context,
+                    }),
+                );
+            }
+        }
+        // Nested properties
+        else if (depth >= 2 && context.isKey()) {
+            const parentProperty = filteredPath[1];
+
+            if (parentProperty === 'ResourceSignal') {
+                if (!existingProperties.has('Count')) {
+                    completions.push(
+                        createCompletionItem('Count', CompletionItemKind.Property, {
+                            data: { type: 'simple' },
+                            context: context,
+                        }),
+                    );
+                }
+
+                if (!existingProperties.has('Timeout')) {
+                    completions.push(
+                        createCompletionItem('Timeout', CompletionItemKind.Property, {
+                            data: { type: 'simple' },
+                            context: context,
+                        }),
+                    );
+                }
+            } else if (
+                parentProperty === 'AutoScalingCreationPolicy' &&
+                supportsAutoScalingCreationPolicy(resourceType) &&
+                !existingProperties.has('MinSuccessfulInstancesPercent')
+            ) {
+                completions.push(
+                    createCompletionItem('MinSuccessfulInstancesPercent', CompletionItemKind.Property, {
+                        data: { type: 'simple' },
+                        context: context,
+                    }),
+                );
+            }
+        }
+
+        return completions;
     }
 }
