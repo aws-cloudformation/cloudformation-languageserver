@@ -225,6 +225,13 @@ export class LiteralValueDetector {
                 };
             }
 
+            case 'block_sequence': {
+                return {
+                    value: this.parseArrayLiteral(node),
+                    type: LiteralValueType.ARRAY,
+                };
+            }
+
             case 'plain_scalar': {
                 return this.parseYamlScalar(node.text);
             }
@@ -301,8 +308,20 @@ export class LiteralValueDetector {
                 child.type === ']' ||
                 child.type === ',' ||
                 child.type === 'flow_sequence_start' ||
-                child.type === 'flow_sequence_end'
+                child.type === 'flow_sequence_end' ||
+                child.type === 'block_sequence_item'
             ) {
+                // For block_sequence_item, extract its value child
+                if (child.type === 'block_sequence_item' && child.children) {
+                    for (const itemChild of child.children) {
+                        if (itemChild.type !== '-') {
+                            const childInfo = this.extractLiteralInfo(itemChild);
+                            if (childInfo?.value !== null && childInfo?.value !== undefined) {
+                                values.push(childInfo.value);
+                            }
+                        }
+                    }
+                }
                 continue;
             }
 
@@ -320,10 +339,30 @@ export class LiteralValueDetector {
             return undefined;
         }
 
-        if (text === 'true' || text === 'True' || text === 'TRUE') {
+        if (
+            text === 'true' ||
+            text === 'True' ||
+            text === 'TRUE' ||
+            text === 'yes' ||
+            text === 'Yes' ||
+            text === 'YES' ||
+            text === 'on' ||
+            text === 'On' ||
+            text === 'ON'
+        ) {
             return { value: true, type: LiteralValueType.BOOLEAN };
         }
-        if (text === 'false' || text === 'False' || text === 'FALSE') {
+        if (
+            text === 'false' ||
+            text === 'False' ||
+            text === 'FALSE' ||
+            text === 'no' ||
+            text === 'No' ||
+            text === 'NO' ||
+            text === 'off' ||
+            text === 'Off' ||
+            text === 'OFF'
+        ) {
             return { value: false, type: LiteralValueType.BOOLEAN };
         }
 
