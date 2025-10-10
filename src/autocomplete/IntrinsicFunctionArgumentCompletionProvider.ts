@@ -3,6 +3,7 @@ import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
 import { Context } from '../context/Context';
 import { IntrinsicFunction, PseudoParameter, TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
+import { propertyTypesToMarkdown } from '../hover/HoverFormatter';
 import { Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
@@ -12,7 +13,7 @@ import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';
-import { createCompletionItem, createReplacementRange } from './CompletionUtils';
+import { createCompletionItem, createMarkupContent, createReplacementRange } from './CompletionUtils';
 
 interface IntrinsicFunctionInfo {
     type: IntrinsicFunction;
@@ -344,10 +345,25 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
             const attributes = this.getResourceAttributes(resource.Type);
             for (const attributeName of attributes) {
+                const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
+                let attributeDescription = `GetAtt attribute for ${resource.Type}`;
+
+                if (schema) {
+                    const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/properties/')}`;
+
+                    try {
+                        const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
+                        if (resolvedSchemas.length > 0 && resolvedSchemas[0].description) {
+                            attributeDescription = resolvedSchemas[0].description;
+                        }
+                    } catch {
+                        attributeDescription = `${attributeName} attribute of ${resource.Type}`;
+                    }
+                }
                 completionItems.push(
                     createCompletionItem(`${resourceName}.${attributeName}`, CompletionItemKind.Property, {
                         detail: `GetAtt (${resource.Type})`,
-                        documentation: `Get attribute ${attributeName} from resource ${resourceName}`,
+                        documentation: attributeDescription,
                         data: {
                             isIntrinsicFunction: true,
                         },
@@ -648,7 +664,8 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const resource = resourceContext.entity as Resource;
-        if (!resource.Type || typeof resource.Type !== 'string') {
+        const resourceType = resource.Type;
+        if (!resourceType || typeof resourceType !== 'string') {
             return undefined;
         }
 
@@ -658,8 +675,18 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const completionItems = attributes.map((attributeName) => {
+            const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
+            let documentation;
+
+            if (schema) {                
+              documentation = createMarkupContent(schema.description);
+            } else {
+                documentation = `GettAtt for resource ${resource.Type}`;
+            }
+
             const item = createCompletionItem(attributeName, CompletionItemKind.Property, {
-                data: { isIntrinsicFunction: true },
+                documentation: documentation,
+                detail: `GetAtt attribute for ${resource.Type}`,
             });
 
             if (context.text.length > 0) {
