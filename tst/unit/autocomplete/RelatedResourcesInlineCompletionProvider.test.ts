@@ -34,11 +34,11 @@ describe('RelatedResourcesInlineCompletionProvider', () => {
         vi.restoreAllMocks();
     });
 
-    describe('getlineCompletion', () => {
+    describe('getInlineCompletion', () => {
         test('should return undefined when document is not found', () => {
             mockDocumentManager.get.returns(undefined);
 
-            const result = provider.getlineCompletion(mockContext, mockParams);
+            const result = provider.getInlineCompletion(mockContext, mockParams);
 
             expect(result).toBeUndefined();
             expect(mockDocumentManager.get.calledOnce).toBe(true);
@@ -54,7 +54,7 @@ describe('RelatedResourcesInlineCompletionProvider', () => {
             // Mock the service to return empty array for no resources
             vi.spyOn(mockRelationshipSchemaService, 'extractResourceTypesFromTemplate').mockReturnValue([]);
 
-            const result = provider.getlineCompletion(mockContext, mockParams);
+            const result = provider.getInlineCompletion(mockContext, mockParams);
 
             expect(result).toBeUndefined();
         });
@@ -76,7 +76,7 @@ Resources:
             ]);
             vi.spyOn(mockRelationshipSchemaService, 'getAllRelatedResourceTypes').mockReturnValue(new Set());
 
-            const result = provider.getlineCompletion(mockContext, mockParams);
+            const result = provider.getInlineCompletion(mockContext, mockParams);
 
             expect(result).toBeUndefined();
         });
@@ -89,6 +89,7 @@ Resources:
   MyBucket:
     Type: AWS::S3::Bucket
 `,
+                getLine: () => '  ',
             };
             mockDocumentManager.get.returns(mockDocument as any);
 
@@ -100,7 +101,7 @@ Resources:
                 new Set(['AWS::Lambda::Function', 'AWS::IAM::Role', 'AWS::CloudFront::Distribution']),
             );
 
-            const result = provider.getlineCompletion(mockContext, mockParams) as any[];
+            const result = provider.getInlineCompletion(mockContext, mockParams) as any[];
 
             expect(result).toBeDefined();
             expect(Array.isArray(result)).toBe(true);
@@ -133,7 +134,7 @@ Resources:
         test('should handle errors gracefully', () => {
             mockDocumentManager.get.throws(new Error('Document access error'));
 
-            const result = provider.getlineCompletion(mockContext, mockParams);
+            const result = provider.getInlineCompletion(mockContext, mockParams);
 
             expect(result).toBeUndefined();
         });
@@ -271,8 +272,70 @@ Resources:
             expect(result).toContain('relatedResourceLogicalId:');
             expect(result).toContain(`Type: ${resourceType}`);
             expect(result).toContain('Properties:');
-            expect(result).toContain('BucketName:');
-            expect(result).toContain('AccessControl:');
+            expect(result).toContain('BucketName: ');
+            expect(result).toContain('AccessControl: ');
+            expect(result).not.toContain('${1}');
+            expect(result).not.toContain('${2}');
+        });
+
+        test('should generate properly indented YAML snippets with cursor context', () => {
+            const resourceType = 'AWS::IAM::Role';
+            const mockSchema = {
+                required: ['AssumeRolePolicyDocument'],
+            };
+
+            mockSchemaRetriever.getDefault.returns({
+                schemas: new Map([[resourceType, mockSchema]]),
+            } as any);
+
+            // Mock document with a line that has existing indentation (simulating cursor after a resource)
+            const mockDocument = {
+                getLine: () => '  ', // 2 spaces indentation
+            };
+            mockDocumentManager.get.returns(mockDocument as any);
+
+            const result = (provider as any).generatePropertySnippet(
+                resourceType,
+                mockContext.documentType,
+                mockParams,
+            );
+
+            // Verify proper YAML structure with cursor context indentation
+            expect(result).toContain('relatedResourceLogicalId:');
+            expect(result).toContain('    Type: AWS::IAM::Role'); // 4 spaces (2 existing + 2 more)
+            expect(result).toContain('    Properties:'); // 4 spaces (2 existing + 2 more)
+            expect(result).toContain('      AssumeRolePolicyDocument: '); // 6 spaces (2 existing + 4 more)
+        });
+
+        test('should generate properly indented JSON snippets with cursor context', () => {
+            const resourceType = 'AWS::IAM::Role';
+            const mockSchema = {
+                required: ['AssumeRolePolicyDocument'],
+            };
+
+            mockSchemaRetriever.getDefault.returns({
+                schemas: new Map([[resourceType, mockSchema]]),
+            } as any);
+
+            // Mock document with a line that has existing indentation
+            const mockDocument = {
+                getLine: () => '  ', // 2 spaces indentation
+            };
+            mockDocumentManager.get.returns(mockDocument as any);
+
+            const jsonContext = { ...mockContext, documentType: 'JSON' };
+
+            const result = (provider as any).generatePropertySnippet(
+                resourceType,
+                jsonContext.documentType,
+                mockParams,
+            );
+
+            // Verify proper JSON structure with cursor context indentation
+            expect(result).toContain('"relatedResourceLogicalId": {');
+            expect(result).toContain('    "Type": "AWS::IAM::Role"'); // 4 spaces (2 existing + 2 more)
+            expect(result).toContain('    "Properties": {'); // 4 spaces (2 existing + 2 more)
+            expect(result).toContain('      "AssumeRolePolicyDocument": ""'); // 6 spaces (2 existing + 4 more)
         });
     });
 });

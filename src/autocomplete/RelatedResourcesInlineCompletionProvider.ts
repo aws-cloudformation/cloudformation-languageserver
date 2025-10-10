@@ -12,6 +12,7 @@ import { InlineCompletionProvider } from './InlineCompletionProvider';
 
 export class RelatedResourcesInlineCompletionProvider implements InlineCompletionProvider {
     private readonly log = LoggerFactory.getLogger(RelatedResourcesInlineCompletionProvider);
+    private readonly MAX_SUGGESTIONS = 5;
 
     constructor(
         private readonly relationshipSchemaService: RelationshipSchemaService,
@@ -19,7 +20,7 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
         private readonly schemaRetriever: SchemaRetriever,
     ) {}
 
-    getlineCompletion(
+    getInlineCompletion(
         context: Context,
         params: InlineCompletionParams,
     ): Promise<InlineCompletionItem[]> | InlineCompletionItem[] | undefined {
@@ -113,7 +114,7 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
     ): InlineCompletionItem[] {
         const completionItems: InlineCompletionItem[] = [];
 
-        const topSuggestions = relatedResourceTypes.slice(0, 5);
+        const topSuggestions = relatedResourceTypes.slice(0, this.MAX_SUGGESTIONS);
 
         for (const resourceType of topSuggestions) {
             const insertText = this.generatePropertySnippet(resourceType, context.documentType, params);
@@ -145,7 +146,9 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
             if (!schema) {
                 // Fallback to simple format if schema not found
                 return this.formatSnippetForDocumentType(
-                    `${logicalId}:\n${indent1}Type: ${resourceType}`,
+                    documentType === DocumentType.JSON
+                        ? `"${logicalId}": {\n${indent1}"Type": "${resourceType}"\n}`
+                        : `${logicalId}:\n${indent1}Type: ${resourceType}`,
                     documentType,
                     params,
                 );
@@ -173,7 +176,9 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
                 'Error generating property snippet, falling back to simple format',
             );
             return this.formatSnippetForDocumentType(
-                `${logicalId}:\n${indent1}Type: ${resourceType}`,
+                documentType === DocumentType.JSON
+                    ? `"${logicalId}": {\n${indent1}"Type": "${resourceType}"\n}`
+                    : `${logicalId}:\n${indent1}Type: ${resourceType}`,
                 documentType,
                 params,
             );
@@ -188,17 +193,16 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
         const indent2 = CompletionFormatter.getIndentPlaceholder(2);
 
         const requiredProps = schema.required
-            .map((propName, index) => {
-                const placeholderValue = `\${${index + 1}}`;
+            .map((propName) => {
                 if (documentType === DocumentType.JSON) {
-                    return `"${propName}": ${placeholderValue}`;
+                    return `${indent2}"${propName}": ""`;
                 } else {
-                    return `${propName}: ${placeholderValue}`;
+                    return `${indent2}${propName}: `;
                 }
             })
-            .join(documentType === DocumentType.JSON ? `,\n${indent2}` : `\n${indent2}`);
+            .join(documentType === DocumentType.JSON ? ',\n' : '\n');
 
-        return `${indent2}${requiredProps}`;
+        return requiredProps;
     }
 
     private formatSnippetForDocumentType(

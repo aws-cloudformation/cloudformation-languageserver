@@ -50,11 +50,7 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
         if (this.isAuthoringNewResource(context)) {
             const relatedResourcesProvider = this.inlineCompletionProviderMap.get('RelatedResources');
             if (relatedResourcesProvider) {
-                const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(
-                    params.textDocument.uri,
-                );
-
-                const result = relatedResourcesProvider.getlineCompletion(context, params, documentSpecificSettings);
+                const result = relatedResourcesProvider.getInlineCompletion(context, params);
 
                 if (result instanceof Promise) {
                     return result.then((items) => {
