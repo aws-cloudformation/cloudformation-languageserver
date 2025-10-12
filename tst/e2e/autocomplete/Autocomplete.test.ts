@@ -1380,8 +1380,6 @@ O`,
                         description: 'suggest Mapping second level key in deeply nested intrinsic function',
                         verification: {
                             position: { line: 471, character: 61 },
-                            // todo: fix bug in FindInMap completion where using intrinsic in second arg breaks
-                            //  suggestion for third arg
                             expectation: CompletionExpectationBuilder.create().expectItems(['AMI']).build(),
                         },
                     },
