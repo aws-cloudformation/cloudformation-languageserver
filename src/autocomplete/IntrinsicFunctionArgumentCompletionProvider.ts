@@ -3,7 +3,6 @@ import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
 import { Context } from '../context/Context';
 import { IntrinsicFunction, PseudoParameter, TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
-import { propertyTypesToMarkdown } from '../hover/HoverFormatter';
 import { Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
@@ -363,7 +362,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 completionItems.push(
                     createCompletionItem(`${resourceName}.${attributeName}`, CompletionItemKind.Property, {
                         detail: `GetAtt (${resource.Type})`,
-                        documentation: attributeDescription,
+                        documentation: createMarkupContent(attributeDescription),
                         data: {
                             isIntrinsicFunction: true,
                         },
@@ -678,10 +677,25 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
             let documentation;
 
-            if (schema) {                
-              documentation = createMarkupContent(schema.description);
-            } else {
-                documentation = `GettAtt for resource ${resource.Type}`;
+            if (schema) {
+                const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/properties/')}`;
+                documentation = createMarkupContent(
+                    `**${attributeName}** attribute of **${resource.Type}**\n\nReturns the value of this attribute when used with the GetAtt intrinsic function.`,
+                );
+
+                try {
+                    const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
+
+                    if (resolvedSchemas.length > 0) {
+                        const firstSchema = resolvedSchemas[0];
+
+                        if (firstSchema.description) {
+                            documentation = createMarkupContent(firstSchema.description);
+                        }
+                    }
+                } catch (error) {
+                    log.debug(error);
+                }
             }
 
             const item = createCompletionItem(attributeName, CompletionItemKind.Property, {
