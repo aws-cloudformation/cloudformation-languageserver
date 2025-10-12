@@ -21,7 +21,7 @@ export function codeActionHandler(
             // Generate code actions using the service
             return components.codeActionService.generateCodeActions(params);
         } catch (error) {
-            components.clientMessage.error(`Error in CodeAction handler: ${extractErrorMessage(error)}`);
+            log.error(`Error in CodeAction handler: ${extractErrorMessage(error)}`);
             return [];
         }
     };

@@ -7,13 +7,8 @@ import { RegionalSchemasType } from '../../../src/schema/RegionalSchemas';
 import { SchemaRetriever } from '../../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../../src/schema/SchemaStore';
 import { Settings } from '../../../src/settings/Settings';
-import { ClientMessage } from '../../../src/telemetry/ClientMessage';
 import { AwsRegion } from '../../../src/utils/Region';
-import {
-    createMockClientMessage,
-    createMockSchemaTaskManager,
-    createMockSettingsManager,
-} from '../../utils/MockServerComponents';
+import { createMockSchemaTaskManager, createMockSettingsManager } from '../../utils/MockServerComponents';
 
 describe('SchemaRetriever', () => {
     const key = AwsRegion.US_EAST_1;
@@ -38,7 +33,6 @@ describe('SchemaRetriever', () => {
         lastModifiedMs: 1625140800000, // 2021-07-01
     };
 
-    let clientMessage: StubbedInstance<ClientMessage>;
     let mockTaskManager: StubbedInstance<GetSchemaTaskManager>;
     let schemaStore: SchemaStore;
     let schemaRetriever: SchemaRetriever;
@@ -58,9 +52,8 @@ describe('SchemaRetriever', () => {
 
         const dataStoreFactory = new MemoryDataStoreFactoryProvider();
         schemaStore = new SchemaStore(dataStoreFactory);
-        clientMessage = createMockClientMessage();
         mockTaskManager = createMockSchemaTaskManager();
-        schemaRetriever = new SchemaRetriever(mockTaskManager, schemaStore, clientMessage);
+        schemaRetriever = new SchemaRetriever(mockTaskManager, schemaStore);
     });
 
     afterEach(() => {

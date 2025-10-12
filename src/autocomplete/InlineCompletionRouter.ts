@@ -2,17 +2,19 @@ import { InlineCompletionList, InlineCompletionParams, InlineCompletionItem } fr
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
 import { DocumentManager } from '../document/DocumentManager';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
+import { CfnInfraCore } from '../server/CfnInfraCore';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
-import { CompletionSettings, DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { CompletionSettings, DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Closeable } from '../utils/Closeable';
 import { InlineCompletionProvider } from './InlineCompletionProvider';
 import { RelatedResourcesInlineCompletionProvider } from './RelatedResourcesInlineCompletionProvider';
 
 export type InlineCompletionProviderType = 'RelatedResources' | 'ResourceBlock' | 'PropertyBlock';
 type ReturnType = InlineCompletionList | InlineCompletionItem[] | null | undefined;
 
-export class InlineCompletionRouter implements Configurable, Closeable {
+export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
     private completionSettings: CompletionSettings = DefaultSettings.completion;
     private settingsSubscription?: SettingsSubscription;
     private readonly log = LoggerFactory.getLogger(InlineCompletionRouter);
@@ -94,11 +96,11 @@ export class InlineCompletionRouter implements Configurable, Closeable {
         );
     }
 
-    static create(components: ServerComponents) {
+    static create(core: CfnInfraCore) {
         return new InlineCompletionRouter(
-            components.contextManager,
-            createInlineCompletionProviders(components.documentManager, RelationshipSchemaService.getInstance()),
-            components.documentManager,
+            core.contextManager,
+            createInlineCompletionProviders(core.documentManager, RelationshipSchemaService.getInstance()),
+            core.documentManager,
         );
     }
 }

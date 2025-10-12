@@ -221,7 +221,7 @@ Outputs:
         it('should create FileContextManager with ServerComponents', () => {
             const mockComponents = createMockComponents();
 
-            const manager = FileContextManager.create(mockComponents);
+            const manager = new FileContextManager(mockComponents.documentManager);
 
             expect(manager).toBeInstanceOf(FileContextManager);
         });
@@ -237,7 +237,7 @@ Outputs:
             mockComponents.documentManager.isTemplate.returns(true);
             MockedFileContext.mockImplementation(() => ({}) as FileContext);
 
-            const manager = FileContextManager.create(mockComponents);
+            const manager = new FileContextManager(mockComponents.documentManager);
             const result = manager.getFileContext(testUri);
 
             expect(mockComponents.documentManager.get.calledWith(testUri)).toBe(true);

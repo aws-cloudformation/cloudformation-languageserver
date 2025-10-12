@@ -10,7 +10,6 @@ import { toString } from '../src/utils/String';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { DocumentManager } from '../src/document/DocumentManager';
-import { createMockClientMessage } from '../tst/utils/MockServerComponents';
 import { TextDocuments } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument/lib/esm/main';
 
@@ -102,7 +101,7 @@ class DebugTreeTool {
     private nodeIdMap = new Map<SyntaxNode, string>();
 
     constructor() {
-        this.syntaxTreeManager = new SyntaxTreeManager(createMockClientMessage());
+        this.syntaxTreeManager = new SyntaxTreeManager();
         this.documentManager = new DocumentManager(new TextDocuments(TextDocument));
         this.contextManager = new ContextManager(this.syntaxTreeManager);
     }

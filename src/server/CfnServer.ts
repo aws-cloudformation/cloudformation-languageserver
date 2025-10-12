@@ -1,4 +1,3 @@
-import { InitializeParams } from 'vscode-languageserver/node';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import {
     bearerCredentialsDeleteHandler,
@@ -35,61 +34,84 @@ import {
     getParametersHandler,
     getCapabilitiesHandler,
 } from '../handlers/StackHandler';
-import { LspFeatures } from '../protocol/LspConnection';
+import { LspComponents } from '../protocol/LspComponents';
+import { closeSafely } from '../utils/Closeable';
+import { CfnExternal } from './CfnExternal';
+import { CfnInfraCore } from './CfnInfraCore';
+import { CfnLspProviders } from './CfnLspProviders';
 import { ServerComponents } from './ServerComponents';
 
 export class CfnServer {
+    private readonly components: ServerComponents;
+
     constructor(
-        private readonly features: LspFeatures,
-        private readonly initializeParams: InitializeParams,
-        private readonly components: ServerComponents = new ServerComponents(features),
+        private readonly lsp: LspComponents,
+        private readonly core: CfnInfraCore,
+        private readonly external = new CfnExternal(lsp, core),
+        private readonly providers = new CfnLspProviders(core, external),
     ) {
+        this.components = {
+            ...core,
+            ...external,
+            ...providers,
+        };
+
         this.setupHandlers();
     }
 
     initialized(_params: InitializedParams) {
-        initializedHandler(this.components)();
+        const configurables = [
+            ...this.core.configurables(),
+            ...this.external.configurables(),
+            ...this.providers.configurables(),
+        ];
+
+        for (const configurable of configurables) {
+            configurable.configure(this.core.settingsManager);
+        }
+
+        initializedHandler(this.lsp.workspace, this.components)();
     }
 
     private setupHandlers() {
-        this.features.documents.onDidOpen(didOpenHandler(this.components));
-        this.features.documents.onDidChangeContent(didChangeHandler(this.components));
-        this.features.documents.onDidClose(didCloseHandler(this.components));
-        this.features.documents.onDidSave(didSaveHandler(this.components));
+        this.lsp.documents.onDidOpen(didOpenHandler(this.components));
+        this.lsp.documents.onDidChangeContent(didChangeHandler(this.lsp.documents, this.components));
+        this.lsp.documents.onDidClose(didCloseHandler(this.components));
+        this.lsp.documents.onDidSave(didSaveHandler(this.components));
 
-        this.features.handlers.onCompletion(completionHandler(this.components));
-        this.features.handlers.onInlineCompletion(inlineCompletionHandler(this.components));
-        this.features.handlers.onHover(hoverHandler(this.components));
-        this.features.handlers.onExecuteCommand(executionHandler(this.components));
-        this.features.handlers.onCodeAction(codeActionHandler(this.components));
-        this.features.handlers.onDefinition(definitionHandler(this.components));
-        this.features.handlers.onDocumentSymbol(documentSymbolHandler(this.components));
-        this.features.handlers.onDidChangeConfiguration(configurationHandler(this.components));
-        this.features.handlers.onCodeLens(codeLensHandler(this.components));
+        this.lsp.handlers.onCompletion(completionHandler(this.components));
+        this.lsp.handlers.onInlineCompletion(inlineCompletionHandler(this.components));
+        this.lsp.handlers.onHover(hoverHandler(this.components));
+        this.lsp.handlers.onExecuteCommand(executionHandler(this.lsp.documents, this.components));
+        this.lsp.handlers.onCodeAction(codeActionHandler(this.components));
+        this.lsp.handlers.onDefinition(definitionHandler(this.components));
+        this.lsp.handlers.onDocumentSymbol(documentSymbolHandler(this.components));
+        this.lsp.handlers.onDidChangeConfiguration(configurationHandler(this.components));
+        this.lsp.handlers.onCodeLens(codeLensHandler(this.lsp.documents, this.components));
 
-        this.features.authHandlers.onIamCredentialsUpdate(iamCredentialsUpdateHandler(this.components));
-        this.features.authHandlers.onBearerCredentialsUpdate(bearerCredentialsUpdateHandler(this.components));
-        this.features.authHandlers.onIamCredentialsDelete(iamCredentialsDeleteHandler(this.components));
-        this.features.authHandlers.onBearerCredentialsDelete(bearerCredentialsDeleteHandler(this.components));
-        this.features.authHandlers.onSsoTokenChanged(ssoTokenChangedHandler(this.components));
+        this.lsp.authHandlers.onIamCredentialsUpdate(iamCredentialsUpdateHandler(this.components));
+        this.lsp.authHandlers.onBearerCredentialsUpdate(bearerCredentialsUpdateHandler(this.components));
+        this.lsp.authHandlers.onIamCredentialsDelete(iamCredentialsDeleteHandler(this.components));
+        this.lsp.authHandlers.onBearerCredentialsDelete(bearerCredentialsDeleteHandler(this.components));
+        this.lsp.authHandlers.onSsoTokenChanged(ssoTokenChangedHandler(this.components));
 
-        this.features.stackHandlers.onGetParameters(getParametersHandler(this.components));
-        this.features.stackHandlers.onCreateValidation(createValidationHandler(this.components));
-        this.features.stackHandlers.onGetCapabilities(getCapabilitiesHandler(this.components));
-        this.features.stackHandlers.onCreateDeployment(createDeploymentHandler(this.components));
-        this.features.stackHandlers.onGetValidationStatus(getValidationStatusHandler(this.components));
-        this.features.stackHandlers.onGetDeploymentStatus(getDeploymentStatusHandler(this.components));
-        this.features.stackHandlers.onListStacks(listStacksHandler(this.components));
-        this.features.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
+        this.lsp.stackHandlers.onGetParameters(getParametersHandler(this.components));
+        this.lsp.stackHandlers.onCreateValidation(createValidationHandler(this.components));
+        this.lsp.stackHandlers.onGetCapabilities(getCapabilitiesHandler(this.components));
+        this.lsp.stackHandlers.onCreateDeployment(createDeploymentHandler(this.components));
+        this.lsp.stackHandlers.onGetValidationStatus(getValidationStatusHandler(this.components));
+        this.lsp.stackHandlers.onGetDeploymentStatus(getDeploymentStatusHandler(this.components));
+        this.lsp.stackHandlers.onListStacks(listStacksHandler(this.components));
+        this.lsp.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
 
-        this.features.resourceHandlers.onListResources(listResourcesHandler(this.components));
-        this.features.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));
-        this.features.resourceHandlers.onGetResourceTypes(getResourceTypesHandler(this.components));
-        this.features.resourceHandlers.onResourceStateImport(importResourceStateHandler(this.components));
-        this.features.resourceHandlers.onStackMgmtInfo(getStackMgmtInfo(this.components));
+        this.lsp.resourceHandlers.onListResources(listResourcesHandler(this.components));
+        this.lsp.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));
+        this.lsp.resourceHandlers.onGetResourceTypes(getResourceTypesHandler(this.components));
+        this.lsp.resourceHandlers.onResourceStateImport(importResourceStateHandler(this.components));
+        this.lsp.resourceHandlers.onStackMgmtInfo(getStackMgmtInfo(this.components));
     }
 
     async close(): Promise<void> {
-        await this.components.close();
+        await closeSafely(this.providers, this.external, this.core);
     }
 }

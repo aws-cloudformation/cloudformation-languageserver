@@ -2,7 +2,6 @@ import { LevelWithSilent } from 'pino';
 import { DeepReadonly } from 'ts-essentials';
 import { IsAppEnvironment, isBeta, isDev } from '../utils/Environment';
 import { AwsRegion } from '../utils/Region';
-import { PartialDataObserver, Subscription } from '../utils/SubscriptionManager';
 
 // Core Settings Types
 export type Toggleable<T = Record<string, unknown>> = {
@@ -61,14 +60,14 @@ export type EditorSettings = {
     detectIndentation: boolean;
 };
 
-export type Settings = {
+export interface Settings {
     profile: ProfileSettings;
     hover: HoverSettings;
     completion: CompletionSettings;
     diagnostics: DiagnosticsSettings;
     telemetry: TelemetrySettings;
     editor: EditorSettings;
-};
+}
 
 export const DefaultSettings: DeepReadonly<Settings> = {
     profile: {
@@ -119,7 +118,6 @@ export const DefaultSettings: DeepReadonly<Settings> = {
     },
 } as const;
 
-// Settings State Implementation
 export class SettingsState implements Settings {
     profile = structuredClone(DefaultSettings.profile);
     hover = structuredClone(DefaultSettings.hover);
@@ -135,16 +133,4 @@ export class SettingsState implements Settings {
     toSettings(): Settings {
         return structuredClone(this);
     }
-}
-
-export type SettingsSubscription = Subscription;
-
-export type SettingsPathKey = keyof Settings;
-
-export interface ISettingsSubscriber {
-    subscribe<K extends SettingsPathKey>(path: K, observer: PartialDataObserver<Settings[K]>): SettingsSubscription;
-
-    clearSubscriptions(): void;
-
-    getCurrentSettings(): Settings;
 }

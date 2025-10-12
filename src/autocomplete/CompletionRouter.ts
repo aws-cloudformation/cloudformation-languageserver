@@ -7,9 +7,13 @@ import { Entity, Output, Parameter } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
-import { CompletionSettings, DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
+import { CfnExternal } from '../server/CfnExternal';
+import { CfnInfraCore } from '../server/CfnInfraCore';
+import { CfnLspProviders } from '../server/CfnLspProviders';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { CompletionSettings, DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Closeable } from '../utils/Closeable';
 import { CompletionFormatter } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
 import { ConditionCompletionProvider } from './ConditionCompletionProvider';
@@ -28,7 +32,7 @@ export type CompletionProviderType =
     | EntityType;
 const Condition = 'Condition';
 
-export class CompletionRouter implements Configurable, Closeable {
+export class CompletionRouter implements SettingsConfigurable, Closeable {
     private completionSettings: CompletionSettings = DefaultSettings.completion;
     private settingsSubscription?: SettingsSubscription;
     private readonly log = LoggerFactory.getLogger(CompletionRouter);
@@ -268,32 +272,34 @@ export class CompletionRouter implements Configurable, Closeable {
         }
     }
 
-    static create(components: ServerComponents) {
+    static create(core: CfnInfraCore, external: CfnExternal, providers: CfnLspProviders) {
         return new CompletionRouter(
-            components.contextManager,
-            createCompletionProviders(components),
-            components.documentManager,
+            core.contextManager,
+            createCompletionProviders(core, external, providers),
+            core.documentManager,
         );
     }
 }
 
 export function createCompletionProviders(
-    components: ServerComponents,
+    core: CfnInfraCore,
+    external: CfnExternal,
+    providers: CfnLspProviders,
 ): Map<CompletionProviderType, CompletionProvider> {
     const completionProviderMap = new Map<CompletionProviderType, CompletionProvider>();
     completionProviderMap.set(
         'TopLevelSection',
-        new TopLevelSectionCompletionProvider(components.syntaxTreeManager, components.documentManager),
+        new TopLevelSectionCompletionProvider(core.syntaxTreeManager, core.documentManager),
     );
-    completionProviderMap.set(EntityType.Resource, new ResourceSectionCompletionProvider(components));
-    completionProviderMap.set(EntityType.Condition, new ConditionCompletionProvider(components.syntaxTreeManager));
+    completionProviderMap.set(EntityType.Resource, new ResourceSectionCompletionProvider(core, external, providers));
+    completionProviderMap.set(EntityType.Condition, new ConditionCompletionProvider(core.syntaxTreeManager));
     completionProviderMap.set('IntrinsicFunction', new IntrinsicFunctionCompletionProvider());
     completionProviderMap.set(
         'IntrinsicFunctionArgument',
         new IntrinsicFunctionArgumentCompletionProvider(
-            components.syntaxTreeManager,
-            components.schemaRetriever,
-            components.documentManager,
+            core.syntaxTreeManager,
+            external.schemaRetriever,
+            core.documentManager,
         ),
     );
     completionProviderMap.set('ParameterTypeValue', new ParameterTypeValueCompletionProvider());

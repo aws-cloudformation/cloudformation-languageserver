@@ -57,7 +57,7 @@ describe('HoverRouter', () => {
         }));
 
         const mockComponents = createMockComponents();
-        hoverRouter = HoverRouter.create(mockComponents);
+        hoverRouter = HoverRouter.create(mockComponents.core, mockComponents.external);
         mockContextManager = mockComponents.contextManager;
     });
 
@@ -100,7 +100,7 @@ describe('HoverRouter', () => {
                 getInformation: vi.fn().mockReturnValue(undefined),
             }));
             const mockComponents = createMockComponents();
-            routerWithMockedProvider = HoverRouter.create(mockComponents);
+            routerWithMockedProvider = HoverRouter.create(mockComponents.core, mockComponents.external);
             mockContextManager = mockComponents.contextManager;
         });
 
@@ -109,7 +109,7 @@ describe('HoverRouter', () => {
                 getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
             }));
             const mockComponents = createMockComponents();
-            const routerWithResourceDoc = HoverRouter.create(mockComponents);
+            const routerWithResourceDoc = HoverRouter.create(mockComponents.core, mockComponents.external);
             const mockContextManagerWithDoc = mockComponents.contextManager;
 
             const mockContext = createResourceContext('MyResourceId', { text: 'AWS::EC2::Instance' });
@@ -172,7 +172,7 @@ describe('HoverRouter', () => {
                 getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
             }));
             const mockComponents = createMockComponents();
-            const routerWithResourceDoc = HoverRouter.create(mockComponents);
+            const routerWithResourceDoc = HoverRouter.create(mockComponents.core, mockComponents.external);
             const mockContextManagerWithDoc = mockComponents.contextManager;
 
             const resourceContext = createResourceContext('MyBucket', {

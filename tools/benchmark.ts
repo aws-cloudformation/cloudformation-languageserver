@@ -9,7 +9,6 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { JsonSyntaxTree } from '../src/context/syntaxtree/JsonSyntaxTree';
 import { YamlSyntaxTree } from '../src/context/syntaxtree/YamlSyntaxTree';
-import { createMockClientMessage } from '../tst/utils/MockServerComponents';
 
 /**
  * This script benchmarks the performance of context resolution for CloudFormation templates,
@@ -550,7 +549,7 @@ function benchmarkTemplate(templateName: string, format: 'JSON' | 'YAML'): Bench
     let errors = 0;
 
     console.log(`Running ${formatNumber(ITERATIONS)} iterations for ${templateName}...`);
-    const syntaxTreeManager = new SyntaxTreeManager(createMockClientMessage());
+    const syntaxTreeManager = new SyntaxTreeManager();
     try {
         syntaxTreeManager.add(uri, content);
     } catch (error) {

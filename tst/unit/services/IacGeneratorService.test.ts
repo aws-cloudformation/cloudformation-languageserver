@@ -13,7 +13,6 @@ import {
 } from '@aws-sdk/client-cloudformation';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ServerComponents } from '../../../src/server/ServerComponents';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { IacGeneratorService } from '../../../src/services/IacGeneratorService';
 
@@ -23,10 +22,6 @@ const mockGetCloudFormationClient = vi.fn();
 const mockClientComponent = {
     getCloudFormationClient: mockGetCloudFormationClient,
 } as unknown as AwsClient;
-
-const mockServerComponents = {
-    awsClient: mockClientComponent,
-} as unknown as ServerComponents;
 
 describe('IacGeneratorService', () => {
     let service: IacGeneratorService;
@@ -205,14 +200,6 @@ describe('IacGeneratorService', () => {
 
             const input = { GeneratedTemplateName: 'my-template' };
             await expect(service.getGeneratedTemplate(input)).rejects.toThrow(error);
-        });
-    });
-
-    describe('create()', () => {
-        it('should create IacGeneratorService instance with server components', () => {
-            const service = IacGeneratorService.create(mockServerComponents);
-
-            expect(service).toBeInstanceOf(IacGeneratorService);
         });
     });
 

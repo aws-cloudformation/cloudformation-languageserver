@@ -1,19 +1,19 @@
 import { Edit, Point } from 'tree-sitter';
 import { CloudFormationFileType, DocumentType } from '../../document/Document';
 import { detectDocumentType } from '../../document/DocumentUtils';
-import { ServerComponents } from '../../server/ServerComponents';
-import { ClientMessage } from '../../telemetry/ClientMessage';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import { JsonSyntaxTree } from './JsonSyntaxTree';
 import { SyntaxTree } from './SyntaxTree';
 import { YamlSyntaxTree } from './YamlSyntaxTree';
 
+const logger = LoggerFactory.getLogger('SyntaxTreeManager');
+
 export class SyntaxTreeManager {
     private readonly log = LoggerFactory.getLogger(SyntaxTreeManager);
     private readonly syntaxTrees: Map<string, SyntaxTree>;
 
-    constructor(private readonly clientMessage: ClientMessage) {
+    constructor() {
         this.syntaxTrees = new Map<string, SyntaxTree>();
     }
 
@@ -43,9 +43,7 @@ export class SyntaxTreeManager {
                 'Created SyntaxTree',
             );
         } catch (error) {
-            this.clientMessage.error(
-                `Failed to create tree ${uri} ${type} ${cfnFileType}: ${extractErrorMessage(error)}`,
-            );
+            logger.error(`Failed to create tree ${uri} ${type} ${cfnFileType}: ${extractErrorMessage(error)}`);
         }
     }
 
@@ -87,9 +85,5 @@ export class SyntaxTreeManager {
             tree.cleanup();
         }
         this.syntaxTrees.clear();
-    }
-
-    static create(components: ServerComponents) {
-        return new SyntaxTreeManager(components.clientMessage);
     }
 }

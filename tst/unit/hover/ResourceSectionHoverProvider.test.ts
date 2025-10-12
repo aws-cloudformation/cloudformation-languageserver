@@ -12,7 +12,7 @@ import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeMan
 import { ResourceSectionHoverProvider } from '../../../src/hover/ResourceSectionHoverProvider';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { createResourceContext } from '../../utils/MockContext';
-import { createMockClientMessage, createMockSchemaRetriever } from '../../utils/MockServerComponents';
+import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
 import { combinedSchemas, combineSchema, Schemas } from '../../utils/SchemaUtils';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
 
@@ -338,7 +338,7 @@ describe('ResourceSectionHoverProvider', () => {
         const testUri = Templates.sample.yaml.fileName;
 
         beforeAll(() => {
-            syntaxTreeManager = new SyntaxTreeManager(createMockClientMessage());
+            syntaxTreeManager = new SyntaxTreeManager();
             syntaxTreeManager.add(testUri, templateContent);
             contextManager = new ContextManager(syntaxTreeManager);
         });

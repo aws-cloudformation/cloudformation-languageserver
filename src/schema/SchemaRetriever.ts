@@ -1,7 +1,9 @@
 import { DateTime } from 'luxon';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
-import { DefaultSettings, ISettingsSubscriber, ProfileSettings, SettingsSubscription } from '../settings/Settings';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { CfnExternal } from '../server/CfnExternal';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings, ProfileSettings } from '../settings/Settings';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Closeable } from '../utils/Closeable';
 import { AwsRegion, getRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
 import { GetSchemaTaskManager } from './GetSchemaTaskManager';
@@ -11,18 +13,16 @@ import { SchemaStore } from './SchemaStore';
 
 const StaleDaysThreshold = 7;
 
-export class SchemaRetriever implements Configurable, Closeable {
+export class SchemaRetriever implements SettingsConfigurable, Closeable {
     readonly availableRegions: Set<AwsRegion> = new Set();
     private settingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
+    private readonly log = LoggerFactory.getLogger(SchemaRetriever);
 
     constructor(
         private readonly schemaTaskManager: GetSchemaTaskManager,
         private readonly schemaStore: SchemaStore,
-        private readonly clientMessage: ClientMessage,
-    ) {
-        // Settings will be initialized in configure()
-    }
+    ) {}
 
     configure(settingsManager: ISettingsSubscriber): void {
         // Clean up existing subscription if present
@@ -109,7 +109,7 @@ export class SchemaRetriever implements Configurable, Closeable {
             const existingValue = this.getRegionalSchemasFromStore(region);
 
             if (existingValue === undefined) {
-                this.clientMessage.error(`Something went wrong, cannot find existing region ${region}`);
+                this.log.error(`Something went wrong, cannot find existing region ${region}`);
                 return;
             }
 
@@ -123,7 +123,7 @@ export class SchemaRetriever implements Configurable, Closeable {
         }
     }
 
-    static create(components: ServerComponents) {
-        return new SchemaRetriever(components.schemaTaskManager, components.schemaStore, components.clientMessage);
+    static create(components: CfnExternal) {
+        return new SchemaRetriever(components.schemaTaskManager, components.schemaStore);
     }
 }
