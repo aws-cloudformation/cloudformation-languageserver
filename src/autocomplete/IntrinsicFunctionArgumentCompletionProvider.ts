@@ -53,19 +53,16 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {
-            log.debug('No syntax tree found');
             return;
         }
 
         // Only handle contexts that are inside intrinsic functions
         if (!context?.intrinsicContext?.inIntrinsic()) {
-            log.debug('Not in intrinsic context');
             return undefined;
         }
 
         const intrinsicFunction = context.intrinsicContext.intrinsicFunction();
         if (!intrinsicFunction) {
-            log.debug('No intrinsic function found');
             return undefined;
         }
 
