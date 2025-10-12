@@ -1,17 +1,13 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
-import { StubbedInstance } from 'ts-sinon';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MemoryDataStoreFactoryProvider } from '../../../src/datastore/DataStore';
 import { GetSchemaTaskManager } from '../../../src/schema/GetSchemaTaskManager';
 import { SchemaStore } from '../../../src/schema/SchemaStore';
-import { ClientMessage } from '../../../src/telemetry/ClientMessage';
 import { AwsRegion } from '../../../src/utils/Region';
-import { createMockClientMessage } from '../../utils/MockServerComponents';
 import { flushAllPromises } from '../../utils/Utils';
 
 describe('GetSchemaTaskManager', () => {
     let mockSchemaStore: SchemaStore;
-    let mockLogger: StubbedInstance<ClientMessage>;
     let manager: GetSchemaTaskManager;
     let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
     let mockGetPrivateResources: ReturnType<typeof vi.fn>;
@@ -20,7 +16,6 @@ describe('GetSchemaTaskManager', () => {
         vi.clearAllMocks();
         const dataStoreFactory = new MemoryDataStoreFactoryProvider();
         mockSchemaStore = new SchemaStore(dataStoreFactory);
-        mockLogger = createMockClientMessage();
 
         mockGetPublicSchemas = vi.fn();
         mockGetPrivateResources = vi.fn().mockResolvedValue([
@@ -30,7 +25,7 @@ describe('GetSchemaTaskManager', () => {
             } as DescribeTypeOutput,
         ]);
 
-        manager = new GetSchemaTaskManager(mockSchemaStore, mockGetPublicSchemas, mockGetPrivateResources, mockLogger);
+        manager = new GetSchemaTaskManager(mockSchemaStore, mockGetPublicSchemas, mockGetPrivateResources);
     });
 
     afterEach(() => {

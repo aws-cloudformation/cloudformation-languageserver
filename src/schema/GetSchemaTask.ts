@@ -1,7 +1,6 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
-import { MessageType } from 'vscode-languageserver';
+import { Logger } from 'pino';
 import { DataStore } from '../datastore/DataStore';
-import { ClientMessage } from '../telemetry/ClientMessage';
 import { CoralTelemetry } from '../telemetry/CoralTelemetry';
 import { MeasureLatency, Telemetry, TrackExecution } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
@@ -13,12 +12,12 @@ abstract class GetSchemaTask {
     @Telemetry
     protected readonly telemetry!: CoralTelemetry;
 
-    protected abstract runImpl(dataStore: DataStore, clientMessage?: ClientMessage): Promise<void>;
+    protected abstract runImpl(dataStore: DataStore, logger?: Logger): Promise<void>;
 
     @MeasureLatency()
     @TrackExecution()
-    async run(dataStore: DataStore, clientMessage?: ClientMessage) {
-        await this.runImpl(dataStore, clientMessage);
+    async run(dataStore: DataStore, logger?: Logger) {
+        await this.runImpl(dataStore, logger);
     }
 }
 
@@ -34,10 +33,10 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         super();
     }
 
-    override async runImpl(dataStore: DataStore, clientMessage?: ClientMessage) {
+    override async runImpl(dataStore: DataStore, logger?: Logger) {
         if (this.attempts >= GetPublicSchemaTask.MaxAttempts) {
             this.telemetry.countBoolean('task.attemptsExceeded', true, { unit: '1', description: this.region });
-            clientMessage?.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
+            logger?.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
             return;
         }
 
@@ -52,7 +51,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         };
 
         await dataStore.put<RegionalSchemasType>(this.region, value);
-        clientMessage?.info(`${schemas.length} resource schemas retrieved for ${this.region}`);
+        logger?.info(`${schemas.length} resource schemas retrieved for ${this.region}`);
     }
 }
 
@@ -66,7 +65,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
         super();
     }
 
-    override async runImpl(dataStore: DataStore, clientMessage?: ClientMessage) {
+    override async runImpl(dataStore: DataStore, logger?: Logger) {
         try {
             const profile = this.getProfile();
             if (this.processedProfiles.has(profile)) {
@@ -87,15 +86,12 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
 
             this.processedProfiles.add(profile);
             if (schemas.length > 0) {
-                void clientMessage?.showMessageNotification(
-                    MessageType.Info,
-                    `${schemas.length} private registry schemas retrieved for profile: ${profile}`,
-                );
+                void logger?.info(`${schemas.length} private registry schemas retrieved for profile: ${profile}`);
             } else {
-                clientMessage?.info(`No private registry schemas found for profile: ${profile}`);
+                logger?.info(`No private registry schemas found for profile: ${profile}`);
             }
         } catch (error) {
-            clientMessage?.error(`Failed to get private schemas: ${extractErrorMessage(error)}`);
+            logger?.error(`Failed to get private schemas: ${extractErrorMessage(error)}`);
             throw error;
         }
     }

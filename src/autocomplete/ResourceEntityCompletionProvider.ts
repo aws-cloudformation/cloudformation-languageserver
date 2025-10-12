@@ -5,7 +5,6 @@ import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
-import { ServerComponents } from '../server/ServerComponents';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
 import { CompletionFormatter, ExtendedCompletionItem } from './CompletionFormatter';
@@ -109,9 +108,5 @@ export class ResourceEntityCompletionProvider implements CompletionProvider {
         const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
 
         return applySnippetIndentation(snippet, documentSpecificSettings, documentType);
-    }
-
-    static create(components: ServerComponents) {
-        return new ResourceEntityCompletionProvider(components.schemaRetriever, components.documentManager);
     }
 }

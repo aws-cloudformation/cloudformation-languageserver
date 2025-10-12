@@ -16,7 +16,7 @@ describe('AwsClient', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockComponents = createMockComponents();
-        component = AwsClient.create(mockComponents);
+        component = new AwsClient(mockComponents.awsCredentials);
     });
 
     describe('getCloudFormationClient', () => {

@@ -1,20 +1,24 @@
 import { metrics, trace } from '@opentelemetry/api';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { Closeable, Configurable } from '../server/ServerComponents';
-import { DefaultSettings, SettingsSubscription, TelemetrySettings, ISettingsSubscriber } from '../settings/Settings';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings, TelemetrySettings } from '../settings/Settings';
+import { Closeable } from '../utils/Closeable';
 import { CoralTelemetry } from './CoralTelemetry';
-import { StdOutLogger } from './LoggerFactory';
+import { LoggerFactory } from './LoggerFactory';
 import { configureDiagnostics, setupOpenTelemetry } from './OpenTelemetryInstrumentation';
 
-export class TelemetryService implements Configurable, Closeable {
-    public static readonly instance = new TelemetryService();
+const logger = LoggerFactory.getLogger('TelemetryService');
+
+export class TelemetryService implements SettingsConfigurable, Closeable {
+    private static _instance: TelemetryService | undefined = undefined;
 
     private sdk?: NodeSDK;
     private setting: TelemetrySettings = DefaultSettings.telemetry;
     private readonly scopedTelemetry: Map<string, CoralTelemetry> = new Map();
     private settingsSubscription?: SettingsSubscription;
 
-    private constructor() {
+    private constructor(enabled?: boolean) {
+        this.setting.enabled = enabled ?? DefaultSettings.telemetry.enabled;
         configureDiagnostics();
         this.setupTelemetry();
     }
@@ -61,17 +65,17 @@ export class TelemetryService implements Configurable, Closeable {
 
             if (this.sdk) {
                 this.registerSystemMetrics();
-                StdOutLogger.info('Telemetry enabled');
+                logger.info('Telemetry enabled');
             }
         } else if (!this.setting.enabled) {
             this.sdk
                 ?.shutdown()
                 .then(() => {
                     this.sdk = undefined;
-                    StdOutLogger.info('Telemetry shutdown');
+                    logger.info('Telemetry shutdown');
                 })
                 .catch((error: unknown) => {
-                    StdOutLogger.error({ error }, 'Telemetry could not be shutdown');
+                    logger.error({ error }, 'Telemetry could not be shutdown');
                 });
         }
     }
@@ -180,7 +184,7 @@ export class TelemetryService implements Configurable, Closeable {
 
     private registerErrorHandlers(telemetry: CoralTelemetry): void {
         process.on('uncaughtExceptionMonitor', (error, origin) => {
-            StdOutLogger.error(
+            logger.error(
                 {
                     error,
                     origin,
@@ -195,7 +199,7 @@ export class TelemetryService implements Configurable, Closeable {
         });
 
         process.on('unhandledRejection', (reason, promise) => {
-            StdOutLogger.error(
+            logger.error(
                 {
                     reason,
                     promise,
@@ -208,7 +212,7 @@ export class TelemetryService implements Configurable, Closeable {
         });
 
         process.on('uncaughtException', (error, origin) => {
-            StdOutLogger.error(
+            logger.error(
                 {
                     error,
                     origin,
@@ -219,5 +223,18 @@ export class TelemetryService implements Configurable, Closeable {
                 error_type: 'uncaught_exception',
             });
         });
+    }
+
+    static create(enabled?: boolean) {
+        if (TelemetryService._instance === undefined) {
+            TelemetryService._instance = new TelemetryService(enabled);
+            return TelemetryService._instance;
+        }
+
+        throw new Error('TelemetryService has already been created');
+    }
+
+    static get instance(): TelemetryService {
+        return TelemetryService._instance ?? TelemetryService.create();
     }
 }

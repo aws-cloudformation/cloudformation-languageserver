@@ -2,10 +2,7 @@ import { GetResourceCommandOutput, ResourceNotFoundException } from '@aws-sdk/cl
 import { DateTime } from 'luxon';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResourceStateManager } from '../../../src/resourceState/ResourceStateManager';
-import { ServerComponents } from '../../../src/server/ServerComponents';
 import { CcapiService } from '../../../src/services/CcapiService';
-import { IacGeneratorService } from '../../../src/services/IacGeneratorService';
-import { ClientMessage } from '../../../src/telemetry/ClientMessage';
 import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
 
 describe('ResourceStateManager', () => {
@@ -13,24 +10,11 @@ describe('ResourceStateManager', () => {
         getResource: vi.fn(),
     } as unknown as CcapiService;
 
-    const mockIacGeneratorService = {} as unknown as IacGeneratorService;
-
-    const mockClientMessage = {
-        info: vi.fn(),
-    } as unknown as ClientMessage;
-
-    const mockServerComponents = {
-        ccapiService: mockCcapiService,
-        iacGeneratorService: mockIacGeneratorService,
-        clientMessage: mockClientMessage,
-        schemaRetriever: createMockSchemaRetriever(),
-    } as unknown as ServerComponents;
-
     let manager: ResourceStateManager;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        manager = new ResourceStateManager(mockCcapiService, mockClientMessage, createMockSchemaRetriever());
+        manager = new ResourceStateManager(mockCcapiService, createMockSchemaRetriever());
     });
 
     afterEach(() => {
@@ -87,9 +71,6 @@ describe('ResourceStateManager', () => {
             const result = await manager.getResource('AWS::S3::Bucket', 'nonexistent');
 
             expect(result).toBeUndefined();
-            expect(mockClientMessage.info).toHaveBeenCalledWith(
-                'No resource found for type AWS::S3::Bucket and identifier "nonexistent"',
-            );
         });
 
         it('should handle other errors', async () => {
@@ -115,14 +96,6 @@ describe('ResourceStateManager', () => {
             const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');
 
             expect(result).toBeUndefined();
-        });
-    });
-
-    describe('create()', () => {
-        it('should create ResourceStateManager instance with server components', () => {
-            const manager = ResourceStateManager.create(mockServerComponents);
-
-            expect(manager).toBeInstanceOf(ResourceStateManager);
         });
     });
 });

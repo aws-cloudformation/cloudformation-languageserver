@@ -1,23 +1,20 @@
 import { StructuredTool } from '@langchain/core/tools';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
-import { Closeable, Configurable } from '../server/ServerComponents';
-import { DefaultSettings, ISettingsSubscriber, ProfileSettings, SettingsSubscription } from '../settings/Settings';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Closeable } from '../utils/Closeable';
 import { extractErrorMessage } from '../utils/Errors';
 
 const logger = LoggerFactory.getLogger('McpTools');
 
-export class McpTools implements Configurable, Closeable {
+export class McpTools implements SettingsConfigurable, Closeable {
     private mcpClient?: MultiServerMCPClient;
     private settingsSubscription?: SettingsSubscription;
     private initializationPromise?: Promise<void>;
     private pendingSettingsChange = false;
 
-    constructor(
-        private readonly clientMessage: ClientMessage,
-        private profile: ProfileSettings = DefaultSettings.profile,
-    ) {
+    constructor(private profile: ProfileSettings = DefaultSettings.profile) {
         void this.initializeMCP();
     }
 

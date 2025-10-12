@@ -1,6 +1,6 @@
 import { DefinitionParams, Location, LocationLink } from 'vscode-languageserver';
 import { ContextManager } from '../context/ContextManager';
-import { ServerComponents } from '../server/ServerComponents';
+import { CfnInfraCore } from '../server/CfnInfraCore';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { pointToPosition } from '../utils/TypeConverters';
 
@@ -43,7 +43,7 @@ export class DefinitionProvider {
         return locations;
     }
 
-    static create(components: ServerComponents): DefinitionProvider {
-        return new DefinitionProvider(components.contextManager);
+    static create(core: CfnInfraCore): DefinitionProvider {
+        return new DefinitionProvider(core.contextManager);
     }
 }

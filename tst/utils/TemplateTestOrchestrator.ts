@@ -9,7 +9,6 @@ import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManage
 import { parseJson } from '../../src/document/JsonParser';
 import { parseYaml } from '../../src/document/YamlParser';
 import { removeQuotes } from '../../src/utils/String';
-import { createMockClientMessage } from './MockServerComponents';
 import { docPosition, Templates } from './TemplateUtils';
 
 export type ContextAnalysisResult = {
@@ -26,8 +25,7 @@ export type ContextAnalysisResult = {
 };
 
 export class TemplateTestOrchestrator {
-    public readonly logger = createMockClientMessage();
-    private readonly syntaxTreeManager = new SyntaxTreeManager(this.logger);
+    private readonly syntaxTreeManager = new SyntaxTreeManager();
     public readonly contextManager = new ContextManager(this.syntaxTreeManager);
 
     public fileName: string;

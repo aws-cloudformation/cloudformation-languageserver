@@ -49,7 +49,7 @@ import {
     GetTemplateCommand,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
-import { ServerComponents } from '../server/ServerComponents';
+import { CfnExternal } from '../server/CfnExternal';
 import { AwsClient } from './AwsClient';
 
 export class CfnService {
@@ -288,7 +288,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
     }
 
-    static create(components: ServerComponents) {
+    static create(components: CfnExternal) {
         return new CfnService(components.awsClient);
     }
 }

@@ -68,7 +68,6 @@ describe('GuardService', () => {
         guardService = new GuardService(
             mockComponents.documentManager,
             mockComponents.diagnosticCoordinator,
-            mockComponents.clientMessage,
             mockComponents.syntaxTreeManager,
             mockGuardEngine,
             mockRuleConfiguration,
@@ -332,7 +331,6 @@ describe('GuardService', () => {
             const disabledService = new GuardService(
                 mockComponents.documentManager,
                 mockComponents.diagnosticCoordinator,
-                mockComponents.clientMessage,
                 mockComponents.syntaxTreeManager,
                 mockGuardEngine,
                 mockRuleConfiguration,

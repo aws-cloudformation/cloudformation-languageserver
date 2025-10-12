@@ -6,8 +6,7 @@ import { contextEntitiesInSections } from '../context/SectionContextBuilder';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
-import { ServerComponents } from '../server/ServerComponents';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { CfnInfraCore } from '../server/CfnInfraCore';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { nodeToRange, pointToPosition } from '../utils/TypeConverters';
@@ -90,14 +89,12 @@ const SECTION_CONFIGS: SectionConfig[] = [
         entitySymbolKind: SymbolKind.Namespace,
     },
 ];
+const log = LoggerFactory.getLogger('DocumentSymbolRouter');
 
 export class DocumentSymbolRouter {
     private readonly log = LoggerFactory.getLogger(DocumentSymbolRouter);
 
-    constructor(
-        private readonly syntaxTreeManager: SyntaxTreeManager,
-        private readonly clientMessage: ClientMessage,
-    ) {}
+    constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
     getDocumentSymbols(params: DocumentSymbolParams): DocumentSymbol[] {
         this.log.debug(
@@ -133,9 +130,7 @@ export class DocumentSymbolRouter {
 
             return symbols;
         } catch (error) {
-            this.clientMessage.error(
-                `Error creating document symbols for ${params.textDocument.uri}: ${extractErrorMessage(error)}`,
-            );
+            log.error(`Error creating document symbols for ${params.textDocument.uri}: ${extractErrorMessage(error)}`);
             return [];
         }
     }
@@ -260,7 +255,7 @@ export class DocumentSymbolRouter {
         return keyNode ? nodeToRange(keyNode) : undefined;
     }
 
-    static create(components: ServerComponents): DocumentSymbolRouter {
-        return new DocumentSymbolRouter(components.syntaxTreeManager, components.clientMessage);
+    static create(core: CfnInfraCore): DocumentSymbolRouter {
+        return new DocumentSymbolRouter(core.syntaxTreeManager);
     }
 }

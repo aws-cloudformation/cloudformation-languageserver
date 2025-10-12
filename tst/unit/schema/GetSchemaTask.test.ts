@@ -1,16 +1,15 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
-import { StubbedInstance } from 'ts-sinon';
+import { Logger } from 'pino';
+import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DataStore } from '../../../src/datastore/DataStore';
 import { MemoryStore } from '../../../src/datastore/MemoryStore';
 import { GetPublicSchemaTask, GetPrivateSchemasTask } from '../../../src/schema/GetSchemaTask';
-import { ClientMessage } from '../../../src/telemetry/ClientMessage';
 import { AwsRegion } from '../../../src/utils/Region';
-import { createMockClientMessage } from '../../utils/MockServerComponents';
 
 describe('GetSchemaTask', () => {
     let mockDataStore: DataStore;
-    let mockLogger: StubbedInstance<ClientMessage>;
+    let mockLogger: StubbedInstance<Logger>;
 
     const mockSchemas = [
         {
@@ -23,7 +22,7 @@ describe('GetSchemaTask', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockDataStore = new MemoryStore();
-        mockLogger = createMockClientMessage();
+        mockLogger = stubInterface<Logger>();
 
         // Setup Sinon stubs
         mockLogger.info.resolves();

@@ -13,7 +13,6 @@ import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createResourceContext, createTopLevelContext } from '../../utils/MockContext';
 import {
-    createMockClientMessage,
     createMockComponents,
     createMockDocumentManager,
     createMockResourceStateManager,
@@ -24,7 +23,11 @@ import { docPosition, Templates } from '../../utils/TemplateUtils';
 /* eslint-disable vitest/expect-expect */
 describe('CompletionRouter', () => {
     const mockComponents = createMockComponents();
-    const completionRouter = CompletionRouter.create(mockComponents);
+    const completionRouter = CompletionRouter.create(
+        mockComponents.core,
+        mockComponents.external,
+        mockComponents.providers,
+    );
     const mockParams: CompletionParams = {
         textDocument: { uri: 'file:///test.yaml' },
         position: { line: 0, character: 0 },
@@ -181,12 +184,11 @@ describe('CompletionRouter', () => {
     });
 
     describe('Reference in template', () => {
-        const mockClientMessage = createMockClientMessage();
         const mockDocumentManager = createMockDocumentManager();
         const mockResourceStateManager = createMockResourceStateManager();
         const mockSettingsManager = createMockSettingsManager();
 
-        const syntaxTreeManager = new SyntaxTreeManager(mockClientMessage);
+        const syntaxTreeManager = new SyntaxTreeManager();
         const contextManager = new ContextManager(syntaxTreeManager);
 
         const mockTestComponents = createMockComponents({
@@ -196,7 +198,11 @@ describe('CompletionRouter', () => {
             schemaRetriever: mockComponents.schemaRetriever,
             settingsManager: mockSettingsManager,
         });
-        const completionProviderMap = createCompletionProviders(mockTestComponents);
+        const completionProviderMap = createCompletionProviders(
+            mockTestComponents.core,
+            mockTestComponents.external,
+            mockTestComponents.providers,
+        );
         const entityFieldProviderMap = createEntityFieldProviders();
         const realCompletionRouter = new CompletionRouter(
             contextManager,

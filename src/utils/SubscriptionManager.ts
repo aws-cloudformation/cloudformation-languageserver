@@ -13,8 +13,8 @@ interface SubscriptionEntry<Data> {
     isActive: boolean;
 }
 
-export interface Subscription {
-    unsubscribe(): void;
+export interface Subscription<T = unknown> {
+    unsubscribe(): T;
 
     isActive(): boolean;
 }

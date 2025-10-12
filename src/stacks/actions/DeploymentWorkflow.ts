@@ -1,7 +1,8 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { DocumentManager } from '../../document/DocumentManager';
 import { Identifiable } from '../../protocol/LspTypes';
-import { ServerComponents } from '../../server/ServerComponents';
+import { CfnExternal } from '../../server/CfnExternal';
+import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnService } from '../../services/CfnService';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { processChangeSet, waitForValidation, waitForDeployment } from './StackActionOperations';
@@ -22,10 +23,6 @@ export class DeploymentWorkflow implements StackActionWorkflow {
         private readonly cfnService: CfnService,
         private readonly documentManager: DocumentManager,
     ) {}
-
-    static create(components: ServerComponents): DeploymentWorkflow {
-        return new DeploymentWorkflow(components.cfnService, components.documentManager);
-    }
 
     async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
         // Check if stack exists to determine CREATE vs UPDATE
@@ -135,5 +132,9 @@ export class DeploymentWorkflow implements StackActionWorkflow {
                 changes: validationResult?.changes,
             });
         }
+    }
+
+    static create(core: CfnInfraCore, external: CfnExternal): DeploymentWorkflow {
+        return new DeploymentWorkflow(external.cfnService, core.documentManager);
     }
 }
