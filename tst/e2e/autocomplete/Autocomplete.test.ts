@@ -1451,6 +1451,42 @@ O`,
             };
             template.executeScenario(scenario);
         });
+
+        it('test nested object property completion', () => {
+            const template = new TemplateBuilder(DocumentType.YAML);
+            const scenario: TemplateScenario = {
+                name: 'Nested object property completion',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      NotificationConfiguration:
+        `,
+                        position: { line: 0, character: 0 },
+                        description: 'Test autocomplete in nested object within Properties',
+                        verification: {
+                            position: { line: 6, character: 8 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['TopicConfigurations', 'QueueConfigurations', 'LambdaConfigurations'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `TopicConfigurations:
+          - Topic: arn:aws:sns:us-east-1:123456789012:my-topic
+            Event: s3:ObjectCreated:*`,
+                        position: { line: 6, character: 8 },
+                        description: 'Complete the nested object structure',
+                    },
+                ],
+            };
+            template.executeScenario(scenario);
+        });
     });
 
     describe('JSON', () => {
@@ -1472,6 +1508,39 @@ O`,
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Description', 'Resources', 'Rules', 'Resources'])
                                 .expectExcludesItems(['AWSTemplateFormatVersion'])
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            template.executeScenario(scenario);
+        });
+
+        it('test nested object property completion', () => {
+            const template = new TemplateBuilder(DocumentType.JSON, '');
+            const scenario: TemplateScenario = {
+                name: 'Nested object property completion',
+                steps: [
+                    {
+                        action: 'type',
+                        position: { line: 0, character: 0 },
+                        content: `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "NotificationConfiguration": {
+          ""
+        }
+      }
+    }
+  }
+}`,
+                        verification: {
+                            position: { line: 7, character: 11 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['TopicConfigurations', 'QueueConfigurations', 'LambdaConfigurations'])
                                 .build(),
                         },
                     },

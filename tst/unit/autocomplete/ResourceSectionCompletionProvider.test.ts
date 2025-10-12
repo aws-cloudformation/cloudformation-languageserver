@@ -194,13 +194,15 @@ describe('ResourceSectionCompletionProvider', () => {
         spy.mockRestore();
     });
 
-    test('should delegate to property provider when entitySection is a resource attribute (CreationPolicy)', async () => {
-        const mockContext = createResourceContext('MyInstance', {
-            text: '',
-            propertyPath: ['Resources', 'MyInstance', 'CreationPolicy', ''],
+    test('should delegate to property provider when in nested object within Properties (matchPathWithLogicalIds)', async () => {
+        const mockContext = createResourceContext('MyBucket', {
+            text: 'Topic',
+            propertyPath: ['Resources', 'MyBucket', 'Properties', 'NotificationConfiguration', 'Topic'],
             data: {
-                Type: 'AWS::EC2::Instance',
-                CreationPolicy: {},
+                Type: 'AWS::S3::Bucket',
+                Properties: {
+                    NotificationConfiguration: {}
+                },
             },
         });
 
@@ -209,8 +211,10 @@ describe('ResourceSectionCompletionProvider', () => {
 
         const propertyProvider = resourceProviders.get('Property' as any)!;
         const mockCompletions = [
-            { label: 'ResourceSignal', kind: CompletionItemKind.Property },
-            { label: 'AutoScalingCreationPolicy', kind: CompletionItemKind.Property },
+            { label: 'TopicConfigurations', kind: CompletionItemKind.Property },
+            { label: 'QueueConfigurations', kind: CompletionItemKind.Property },
+            { label: 'LambdaConfigurations', kind: CompletionItemKind.Property },
+            { label: 'EventBridgeConfiguration', kind: CompletionItemKind.Property },
         ];
         const spy = vi.spyOn(propertyProvider, 'getCompletions').mockReturnValue(mockCompletions);
 
