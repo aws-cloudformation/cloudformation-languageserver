@@ -6,7 +6,6 @@ import { contextEntitiesInSections } from '../context/SectionContextBuilder';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
-import { CfnInfraCore } from '../server/CfnInfraCore';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { nodeToRange, pointToPosition } from '../utils/TypeConverters';

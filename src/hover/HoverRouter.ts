@@ -5,8 +5,6 @@ import { TopLevelSection } from '../context/ContextType';
 import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntities';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
-import { CfnExternal } from '../server/CfnExternal';
-import { CfnInfraCore } from '../server/CfnInfraCore';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, HoverSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';

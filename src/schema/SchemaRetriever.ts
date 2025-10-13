@@ -1,5 +1,4 @@
 import { DateTime } from 'luxon';
-import { CfnExternal } from '../server/CfnExternal';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
