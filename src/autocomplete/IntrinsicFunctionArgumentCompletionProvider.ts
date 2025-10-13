@@ -355,7 +355,8 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                         if (resolvedSchemas.length > 0 && resolvedSchemas[0].description) {
                             attributeDescription = resolvedSchemas[0].description;
                         }
-                    } catch {
+                    } catch (error) {
+                        log.error({ error }, 'Error resolving JSON Pointer path');
                     }
                 }
                 completionItems.push(
