@@ -33,6 +33,8 @@ import {
     getDeploymentStatusHandler,
     getParametersHandler,
     getCapabilitiesHandler,
+    describeValidationStatusHandler,
+    describeDeploymentStatusHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
 import { closeSafely } from '../utils/Closeable';
@@ -101,6 +103,8 @@ export class CfnServer {
         this.lsp.stackHandlers.onCreateDeployment(createDeploymentHandler(this.components));
         this.lsp.stackHandlers.onGetValidationStatus(getValidationStatusHandler(this.components));
         this.lsp.stackHandlers.onGetDeploymentStatus(getDeploymentStatusHandler(this.components));
+        this.lsp.stackHandlers.onDescribeValidationStatus(describeValidationStatusHandler(this.components));
+        this.lsp.stackHandlers.onDescribeDeploymentStatus(describeDeploymentStatusHandler(this.components));
         this.lsp.stackHandlers.onListStacks(listStacksHandler(this.components));
         this.lsp.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
 
