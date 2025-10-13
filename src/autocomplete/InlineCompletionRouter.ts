@@ -96,13 +96,10 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
     }
 
     static create(core: CfnInfraCore) {
+        const relationshipSchemaService = new RelationshipSchemaService();
         return new InlineCompletionRouter(
             core.contextManager,
-            createInlineCompletionProviders(
-                core.documentManager,
-                RelationshipSchemaService.getInstance(),
-                core.schemaRetriever,
-            ),
+            createInlineCompletionProviders(core.documentManager, relationshipSchemaService, core.schemaRetriever),
             core.documentManager,
         );
     }

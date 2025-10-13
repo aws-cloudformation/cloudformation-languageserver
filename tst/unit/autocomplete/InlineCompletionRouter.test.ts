@@ -5,12 +5,12 @@ import {
     createInlineCompletionProviders,
 } from '../../../src/autocomplete/InlineCompletionRouter';
 import { DocumentType } from '../../../src/document/Document';
-import { RelationshipSchemaService } from '../../../src/services/RelationshipSchemaService';
 import { DefaultSettings } from '../../../src/settings/Settings';
 import { createTopLevelContext } from '../../utils/MockContext';
 import {
     createMockContextManager,
     createMockDocumentManager,
+    createMockRelationshipSchemaService,
     createMockSchemaRetriever,
     createMockSettingsManager,
 } from '../../utils/MockServerComponents';
@@ -20,7 +20,7 @@ describe('InlineCompletionRouter', () => {
     const mockDocumentManager = createMockDocumentManager();
     const mockSettingsManager = createMockSettingsManager();
     const mockSchemaRetriever = createMockSchemaRetriever();
-    const mockRelationshipSchemaService = RelationshipSchemaService.getInstance();
+    const mockRelationshipSchemaService = createMockRelationshipSchemaService();
     let router: InlineCompletionRouter;
 
     const mockParams: InlineCompletionParams = {

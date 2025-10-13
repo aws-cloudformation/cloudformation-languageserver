@@ -218,7 +218,7 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
             return applySnippetIndentation(snippet, documentSpecificSettings, documentType);
         }
 
-        const lines = document.getText().split('\n');
+        const lines = document.getLines();
         const currentLine = lines[params.position.line] || '';
 
         const currentIndent = this.getCurrentLineIndentation(currentLine);

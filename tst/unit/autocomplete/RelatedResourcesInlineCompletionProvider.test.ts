@@ -1,13 +1,16 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { InlineCompletionParams, InlineCompletionTriggerKind } from 'vscode-languageserver-protocol';
 import { RelatedResourcesInlineCompletionProvider } from '../../../src/autocomplete/RelatedResourcesInlineCompletionProvider';
-import { RelationshipSchemaService } from '../../../src/services/RelationshipSchemaService';
 import { createTopLevelContext } from '../../utils/MockContext';
-import { createMockDocumentManager, createMockSchemaRetriever } from '../../utils/MockServerComponents';
+import {
+    createMockDocumentManager,
+    createMockRelationshipSchemaService,
+    createMockSchemaRetriever,
+} from '../../utils/MockServerComponents';
 
 describe('RelatedResourcesInlineCompletionProvider', () => {
     const mockDocumentManager = createMockDocumentManager();
-    const mockRelationshipSchemaService = RelationshipSchemaService.getInstance();
+    const mockRelationshipSchemaService = createMockRelationshipSchemaService();
     const mockSchemaRetriever = createMockSchemaRetriever();
     let provider: RelatedResourcesInlineCompletionProvider;
 
@@ -89,7 +92,14 @@ Resources:
   MyBucket:
     Type: AWS::S3::Bucket
 `,
-                getLine: () => '  ',
+                getLines: () => [
+                    '',
+                    'AWSTemplateFormatVersion: "2010-09-09"',
+                    'Resources:',
+                    '  MyBucket:',
+                    '    Type: AWS::S3::Bucket',
+                    '',
+                ],
             };
             mockDocumentManager.get.returns(mockDocument as any);
 
@@ -297,7 +307,15 @@ Resources:
     Properties:
       BucketName: test
   `, // Line 5 (position.line) has 2 spaces indentation
-                getLine: () => '  ', // 2 spaces indentation
+                getLines: () => [
+                    `AWSTemplateFormatVersion: "2010-09-09"`,
+                    'Resources:',
+                    '  MyBucket:',
+                    '    Type: AWS::S3::Bucket',
+                    '    Properties:',
+                    '      BucketName: test',
+                    '  ',
+                ],
             };
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.getEditorSettingsForDocument.returns({ tabSize: 2, insertSpaces: true } as any);
@@ -334,7 +352,15 @@ Resources:
       "Type": "AWS::S3::Bucket"
     },
   `, // Line 5 (position.line) has 2 spaces indentation
-                getLine: () => '  ', // 2 spaces indentation
+                getLines: () => [
+                    '{',
+                    '  "AWSTemplateFormatVersion": "2010-09-09",',
+                    '  "Resources": {',
+                    '    "MyBucket": {',
+                    '      "Type": "AWS::S3::Bucket"',
+                    '    },',
+                    '  ',
+                ],
             };
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.getEditorSettingsForDocument.returns({ tabSize: 2, insertSpaces: true } as any);

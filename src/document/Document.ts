@@ -57,6 +57,10 @@ export class Document {
         return this.textDocument.getText(range);
     }
 
+    public getLines(): string[] {
+        return this.getText().split('\n');
+    }
+
     public positionAt(offset: number) {
         return this.textDocument.positionAt(offset);
     }
