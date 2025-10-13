@@ -348,7 +348,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 let attributeDescription = `${attributeName} attribute of ${resource.Type}`;
 
                 if (schema) {
-                    const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/properties/')}`;
+                    const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/')}`;
 
                     try {
                         const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
