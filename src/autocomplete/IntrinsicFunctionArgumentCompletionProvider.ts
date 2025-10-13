@@ -567,7 +567,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             return mappingEntity.getSecondLevelKeys(topLevelKey);
         } else {
             // For dynamic references, get all possible keys
-            return mappingEntity.getSecondLevelKeysDynamic(mappingEntity);
+            return mappingEntity.getSecondLevelKeys();
         }
     }
 

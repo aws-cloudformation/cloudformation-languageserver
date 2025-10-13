@@ -140,22 +140,22 @@ export class Mapping extends Entity {
         return Object.keys(this.value);
     }
 
-    public getSecondLevelKeys(topLevelKey: string): string[] {
-        if (this.value[topLevelKey]) {
+    public getSecondLevelKeys(topLevelKey?: string): string[] {
+        if(topLevelKey != undefined) {
+          if (this.value[topLevelKey]) {
             return Object.keys(this.value[topLevelKey]);
+          }
+        } else {
+            const allKeys = new Set<string>();
+            const topLevelKeys = this.getTopLevelKeys();
+
+            for (const tlKey of topLevelKeys) {
+                const keys = this.getSecondLevelKeys(tlKey);
+                for (const key of keys) allKeys.add(key);
+            }
+            return [...allKeys];
         }
         return [];
-    }
-
-    public getSecondLevelKeysDynamic(mappingEntity: Mapping): string[] {
-        const allKeys = new Set<string>();
-        const topLevelKeys = mappingEntity.getTopLevelKeys();
-
-        for (const tlKey of topLevelKeys) {
-            const keys = mappingEntity.getSecondLevelKeys(tlKey);
-            for (const key of keys) allKeys.add(key);
-        }
-        return [...allKeys];
     }
 
     public getValue(topLevelKey: string, secondLevelKey: string): MappingValueType | undefined {
