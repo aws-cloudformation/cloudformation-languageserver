@@ -286,6 +286,34 @@ describe('Context', () => {
             });
         });
 
+        describe('isResourceAttributeValue method', () => {
+            it('should return true when positioned at resource attribute value', () => {
+                const context = getContextAt(94, 20); // Position at "Retain" in "DeletionPolicy: Retain"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Resources);
+                expect(context!.hasLogicalId).toBe(true);
+                expect(context!.isResourceAttributeValue()).toBe(true);
+            });
+
+            it('should return false when positioned at resource attribute key', () => {
+                const context = getContextAt(94, 4); // Position at "DeletionPolicy:"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Resources);
+                expect(context!.text).toBe('DeletionPolicy');
+                expect(context!.isResourceAttributeValue()).toBe(false);
+            });
+
+            it('should return false when not in Resources section', () => {
+                const context = getContextAt(21, 4); // Position at "EnvironmentType:" in Parameters section
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Parameters);
+                expect(context!.isResourceAttributeValue()).toBe(false);
+            });
+        });
+
         describe('Comprehensive Resource Entity with All Attributes', () => {
             it('should create comprehensive resource entity with all resource attributes', () => {
                 const context = getContextAt(88, 4); // ComprehensiveResource
