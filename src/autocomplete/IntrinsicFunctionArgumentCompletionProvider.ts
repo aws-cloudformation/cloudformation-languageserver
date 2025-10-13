@@ -345,7 +345,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             const attributes = this.getResourceAttributes(resource.Type);
             for (const attributeName of attributes) {
                 const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
-                let attributeDescription = `GetAtt attribute for ${resource.Type}`;
+                let attributeDescription = `${attributeName} attribute of ${resource.Type}`;
 
                 if (schema) {
                     const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/properties/')}`;
@@ -356,7 +356,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                             attributeDescription = resolvedSchemas[0].description;
                         }
                     } catch {
-                        attributeDescription = `${attributeName} attribute of ${resource.Type}`;
                     }
                 }
                 completionItems.push(
