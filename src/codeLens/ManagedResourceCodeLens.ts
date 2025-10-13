@@ -4,7 +4,6 @@ import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Resource } from '../context/semantic/Entity';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
-import { CfnInfraCore } from '../server/CfnInfraCore';
 
 const MANAGED_RESOURCE_CONSTANTS = {
     COMMAND_TITLE: 'Open Stack Template',
