@@ -1471,7 +1471,11 @@ Resources:
                         verification: {
                             position: { line: 6, character: 8 },
                             expectation: CompletionExpectationBuilder.create()
-                                .expectContainsItems(['TopicConfigurations', 'QueueConfigurations', 'LambdaConfigurations'])
+                                .expectContainsItems([
+                                    'TopicConfigurations',
+                                    'QueueConfigurations',
+                                    'LambdaConfigurations',
+                                ])
                                 .build(),
                         },
                     },
@@ -1540,7 +1544,11 @@ Resources:
                         verification: {
                             position: { line: 7, character: 11 },
                             expectation: CompletionExpectationBuilder.create()
-                                .expectContainsItems(['TopicConfigurations', 'QueueConfigurations', 'LambdaConfigurations'])
+                                .expectContainsItems([
+                                    'TopicConfigurations',
+                                    'QueueConfigurations',
+                                    'LambdaConfigurations',
+                                ])
                                 .build(),
                         },
                     },

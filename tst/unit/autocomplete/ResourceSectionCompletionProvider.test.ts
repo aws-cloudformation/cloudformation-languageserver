@@ -201,7 +201,7 @@ describe('ResourceSectionCompletionProvider', () => {
             data: {
                 Type: 'AWS::S3::Bucket',
                 Properties: {
-                    NotificationConfiguration: {}
+                    NotificationConfiguration: {},
                 },
             },
         });
