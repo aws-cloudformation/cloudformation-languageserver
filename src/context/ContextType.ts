@@ -84,6 +84,42 @@ export enum AutoScalingCreationPolicyProperty {
     MinSuccessfulInstancesPercent = 'MinSuccessfulInstancesPercent',
 }
 
+export enum UpdatePolicyProperty {
+    AutoScalingRollingUpdate = 'AutoScalingRollingUpdate',
+    AutoScalingReplacingUpdate = 'AutoScalingReplacingUpdate',
+    AutoScalingScheduledAction = 'AutoScalingScheduledAction',
+    UseOnlineResharding = 'UseOnlineResharding',
+    EnableVersionUpgrade = 'EnableVersionUpgrade',
+    CodeDeployLambdaAliasUpdate = 'CodeDeployLambdaAliasUpdate',
+    StopBeforeUpdate = 'StopBeforeUpdate',
+    StartAfterUpdate = 'StartAfterUpdate',
+}
+
+export enum AutoScalingRollingUpdateProperty {
+    MaxBatchSize = 'MaxBatchSize',
+    MinActiveInstancesPercent = 'MinActiveInstancesPercent',
+    MinInstancesInService = 'MinInstancesInService',
+    MinSuccessfulInstancesPercent = 'MinSuccessfulInstancesPercent',
+    PauseTime = 'PauseTime',
+    SuspendProcesses = 'SuspendProcesses',
+    WaitOnResourceSignals = 'WaitOnResourceSignals',
+}
+
+export enum AutoScalingReplacingUpdateProperty {
+    WillReplace = 'WillReplace',
+}
+
+export enum AutoScalingScheduledActionProperty {
+    IgnoreUnmodifiedGroupSizeProperties = 'IgnoreUnmodifiedGroupSizeProperties',
+}
+
+export enum CodeDeployLambdaAliasUpdateProperty {
+    ApplicationName = 'ApplicationName',
+    DeploymentGroupName = 'DeploymentGroupName',
+    BeforeAllowTrafficHook = 'BeforeAllowTrafficHook',
+    AfterAllowTrafficHook = 'AfterAllowTrafficHook',
+}
+
 export const Intrinsics: ReadonlyArray<string> = Object.values(IntrinsicFunction);
 export const PseudoParameters: ReadonlyArray<string> = Object.values(PseudoParameter);
 export const TopLevelSections: ReadonlyArray<string> = Object.values(TopLevelSection);

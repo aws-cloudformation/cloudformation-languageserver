@@ -6,6 +6,7 @@ import { pseudoParameterDocsMap } from '../../../src/artifacts/PseudoParameterDo
 import { resourceAttributeDocsMap } from '../../../src/artifacts/ResourceAttributeDocs';
 import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
+import { updatePolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
 import { templateSectionDocsMap } from '../../../src/artifacts/TemplateSectionDocs';
 import {
     TopLevelSection,
@@ -14,6 +15,8 @@ import {
     ResourceAttribute,
     CreationPolicyProperty,
     ResourceSignalProperty,
+    UpdatePolicyProperty,
+    AutoScalingRollingUpdateProperty,
 } from '../../../src/context/ContextType';
 import { DocumentType } from '../../../src/document/Document';
 import { HoverExpectationBuilder, TemplateBuilder, TemplateScenario } from '../../utils/TemplateBuilder';
@@ -1144,6 +1147,80 @@ Resources:`,
                             position: { line: 252, character: 11 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContainsText(['UpdatePolicy', 'updates', 'AutoScalingRollingUpdate'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 257, character: 35 },
+                        description: 'Hover on AutoScalingRollingUpdate in UpdatePolicy',
+                        verification: {
+                            position: { line: 253, character: 12 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(
+                                    updatePolicyPropertyDocsMap.get(UpdatePolicyProperty.AutoScalingRollingUpdate),
+                                )
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 257, character: 35 },
+                        description: 'Hover on MinInstancesInService in AutoScalingRollingUpdate inside UpdatePolicy',
+                        verification: {
+                            position: { line: 254, character: 12 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(
+                                    updatePolicyPropertyDocsMap.get(
+                                        AutoScalingRollingUpdateProperty.MinInstancesInService,
+                                    ),
+                                )
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 257, character: 35 },
+                        description: 'Hover on MaxBatchSize in AutoScalingRollingUpdate inside UpdatePolicy',
+                        verification: {
+                            position: { line: 255, character: 12 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(
+                                    updatePolicyPropertyDocsMap.get(AutoScalingRollingUpdateProperty.MaxBatchSize),
+                                )
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 257, character: 35 },
+                        description: 'Hover on PauseTime in AutoScalingRollingUpdate inside UpdatePolicy',
+                        verification: {
+                            position: { line: 256, character: 12 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(
+                                    updatePolicyPropertyDocsMap.get(AutoScalingRollingUpdateProperty.PauseTime),
+                                )
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 257, character: 35 },
+                        description: 'Hover on WaitonResourceSignals in AutoScalingRollingUpdate inside UpdatePolicy',
+                        verification: {
+                            position: { line: 257, character: 12 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(
+                                    updatePolicyPropertyDocsMap.get(
+                                        AutoScalingRollingUpdateProperty.WaitOnResourceSignals,
+                                    ),
+                                )
                                 .build(),
                         },
                     },

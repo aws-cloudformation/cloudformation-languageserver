@@ -1,6 +1,7 @@
 import { resourceAttributeDocsMap } from '../artifacts/ResourceAttributeDocs';
 import { creationPolicyPropertyDocsMap } from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
+import { updatePolicyPropertyDocsMap } from '../artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
@@ -111,6 +112,9 @@ export class ResourceSectionHoverProvider implements HoverProvider {
             case ResourceAttribute.DeletionPolicy: {
                 return this.getDeletionPolicyPropertyDoc(propertyPath);
             }
+            case ResourceAttribute.UpdatePolicy: {
+                return this.getUpdatePolicyPropertyDoc(propertyPath);
+            }
             default: {
                 return undefined;
             }
@@ -128,6 +132,11 @@ export class ResourceSectionHoverProvider implements HoverProvider {
             return deletionPolicyValueDocsMap.get(deletionPolicyValue);
         }
         return undefined;
+    }
+
+    private getUpdatePolicyPropertyDoc(propertyPath: ReadonlyArray<string>): string | undefined {
+        const propertyPathString = propertyPath.join('.');
+        return updatePolicyPropertyDocsMap.get(propertyPathString);
     }
 
     private getResourceAttributeValueDoc(context: Context): string | undefined {
