@@ -298,12 +298,15 @@ describe('InlineCompletionRouter', () => {
 
     describe('Static Factory Method', () => {
         test('should create router with components', () => {
-            const mockComponents = {
+            const mockCore = {
                 contextManager: mockContextManager,
                 documentManager: mockDocumentManager,
             } as any;
+            const mockExternal = {
+                schemaRetriever: mockSchemaRetriever,
+            } as any;
 
-            const createdRouter = InlineCompletionRouter.create(mockComponents);
+            const createdRouter = InlineCompletionRouter.create(mockCore, mockExternal);
 
             expect(createdRouter).toBeInstanceOf(InlineCompletionRouter);
         });

@@ -3,6 +3,7 @@ import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
 import { DocumentManager } from '../document/DocumentManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
@@ -95,11 +96,11 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
         );
     }
 
-    static create(core: CfnInfraCore) {
+    static create(core: CfnInfraCore, external: CfnExternal) {
         const relationshipSchemaService = new RelationshipSchemaService();
         return new InlineCompletionRouter(
             core.contextManager,
-            createInlineCompletionProviders(core.documentManager, relationshipSchemaService, core.schemaRetriever),
+            createInlineCompletionProviders(core.documentManager, relationshipSchemaService, external.schemaRetriever),
             core.documentManager,
         );
     }
