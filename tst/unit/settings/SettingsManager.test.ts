@@ -1,16 +1,15 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { SettingsManager } from '../../../src/settings/SettingsManager';
 import { AwsRegion } from '../../../src/utils/Region';
-import { mockViClientMessage, createMockLspWorkspace } from '../../utils/MockServerComponents';
+import { createMockLspWorkspace } from '../../utils/MockServerComponents';
 
 describe('SettingsManager', () => {
     let manager: SettingsManager;
-    const mockLogger = mockViClientMessage();
     const mockWorkspace = createMockLspWorkspace();
 
     beforeEach(() => {
         vi.clearAllMocks();
-        manager = new SettingsManager(mockWorkspace, mockLogger);
+        manager = new SettingsManager(mockWorkspace);
     });
 
     describe('syncConfiguration', () => {

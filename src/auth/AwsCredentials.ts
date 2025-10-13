@@ -2,7 +2,6 @@ import { AwsCredentialIdentity } from '@aws-sdk/types';
 import { DeepReadonly } from 'ts-essentials';
 import { MessageType } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { LspAuthHandlers } from '../protocol/LspAuthHandlers';
-import { ServerComponents } from '../server/ServerComponents';
 import { DefaultSettings } from '../settings/Settings';
 import { SettingsManager } from '../settings/SettingsManager';
 import { parseProfile } from '../settings/SettingsParser';
@@ -46,7 +45,9 @@ export class AwsCredentials {
         private readonly awsHandlers: LspAuthHandlers,
         private readonly settingsManager: SettingsManager,
         private readonly clientMessage: ClientMessage,
-        private readonly getIAMFromSdk: (profile: string) => Promise<DeepReadonly<AwsCredentialIdentity>>,
+        private readonly getIAMFromSdk: (
+            profile: string,
+        ) => Promise<DeepReadonly<AwsCredentialIdentity>> = sdkIAMCredentials,
     ) {}
 
     getIAM(): Promise<DeepReadonly<AwsCredentialIdentity>> {
@@ -210,14 +211,5 @@ export class AwsCredentials {
         } catch (error) {
             this.logger.error({ error }, 'Error handling SSO token change');
         }
-    }
-
-    static create(components: ServerComponents) {
-        return new AwsCredentials(
-            components.authHandlers,
-            components.settingsManager,
-            components.clientMessage,
-            sdkIAMCredentials,
-        );
     }
 }

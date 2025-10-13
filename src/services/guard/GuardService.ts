@@ -4,10 +4,11 @@ import { NodeType } from '../../context/syntaxtree/utils/NodeType';
 import { FieldNames } from '../../context/syntaxtree/utils/TreeSitterTypes';
 import { CloudFormationFileType } from '../../document/Document';
 import { DocumentManager } from '../../document/DocumentManager';
-import { ServerComponents, Configurable, Closeable } from '../../server/ServerComponents';
-import { DefaultSettings, GuardSettings, ISettingsSubscriber, SettingsSubscription } from '../../settings/Settings';
-import { ClientMessage } from '../../telemetry/ClientMessage';
+import { ServerComponents } from '../../server/ServerComponents';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../../settings/ISettingsSubscriber';
+import { DefaultSettings, GuardSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
@@ -37,7 +38,7 @@ interface ValidationQueueEntry {
     reject: (error: Error) => void;
 }
 
-export class GuardService implements Configurable, Closeable {
+export class GuardService implements SettingsConfigurable, Closeable {
     private static readonly CFN_GUARD_SOURCE = 'cfn-guard';
 
     private settings: GuardSettings;
@@ -58,7 +59,6 @@ export class GuardService implements Configurable, Closeable {
     constructor(
         private readonly documentManager: DocumentManager,
         private readonly diagnosticCoordinator: DiagnosticCoordinator,
-        private readonly clientMessage: ClientMessage,
         private readonly syntaxTreeManager: SyntaxTreeManager,
         guardEngine?: GuardEngine,
         ruleConfiguration?: RuleConfiguration,
@@ -366,7 +366,7 @@ export class GuardService implements Configurable, Closeable {
         this.diagnosticCoordinator
             .publishDiagnostics(GuardService.CFN_GUARD_SOURCE, uri, diagnostics)
             .catch((reason) => {
-                this.clientMessage.error(`Error publishing Guard diagnostics: ${extractErrorMessage(reason)}`);
+                this.log.error(`Error publishing Guard diagnostics: ${extractErrorMessage(reason)}`);
             });
     }
 
@@ -685,7 +685,6 @@ export class GuardService implements Configurable, Closeable {
         return new GuardService(
             components.documentManager,
             components.diagnosticCoordinator,
-            components.clientMessage,
             components.syntaxTreeManager,
             guardEngine,
             ruleConfiguration,

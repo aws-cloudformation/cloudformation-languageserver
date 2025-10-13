@@ -2,7 +2,8 @@ import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
 import { Identifiable } from '../../protocol/LspTypes';
-import { ServerComponents } from '../../server/ServerComponents';
+import { CfnExternal } from '../../server/CfnExternal';
+import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnService } from '../../services/CfnService';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
@@ -31,16 +32,6 @@ export class ValidationWorkflow implements StackActionWorkflow {
         private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly validationManager: ValidationManager,
     ) {}
-
-    static create(components: ServerComponents): ValidationWorkflow {
-        return new ValidationWorkflow(
-            components.cfnService,
-            components.documentManager,
-            components.diagnosticCoordinator,
-            components.syntaxTreeManager,
-            components.validationManager,
-        );
-    }
 
     async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
         // Check if stack exists to determine CREATE vs UPDATE
@@ -150,5 +141,15 @@ export class ValidationWorkflow implements StackActionWorkflow {
                 await deleteChangeSet(this.cfnService, existingWorkflow, workflowId);
             }
         }
+    }
+
+    static create(core: CfnInfraCore, external: CfnExternal): ValidationWorkflow {
+        return new ValidationWorkflow(
+            external.cfnService,
+            core.documentManager,
+            core.diagnosticCoordinator,
+            core.syntaxTreeManager,
+            new ValidationManager(),
+        );
     }
 }

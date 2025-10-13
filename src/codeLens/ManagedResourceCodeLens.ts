@@ -4,7 +4,6 @@ import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Resource } from '../context/semantic/Entity';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
-import { ServerComponents } from '../server/ServerComponents';
 
 const MANAGED_RESOURCE_CONSTANTS = {
     COMMAND_TITLE: 'Open Stack Template',
@@ -63,9 +62,5 @@ export class ManagedResourceCodeLens {
         }
 
         return lenses;
-    }
-
-    static create(components: ServerComponents): ManagedResourceCodeLens {
-        return new ManagedResourceCodeLens(components.syntaxTreeManager);
     }
 }

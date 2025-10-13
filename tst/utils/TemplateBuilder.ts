@@ -17,7 +17,6 @@ import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
 import {
-    createMockClientMessage,
     createMockComponents,
     createMockResourceStateManager,
     createMockSchemaRetriever,
@@ -106,8 +105,6 @@ export type TemplateScenario = {
 };
 
 export class TemplateBuilder {
-    public readonly logger = createMockClientMessage();
-
     private readonly textDocuments: TextDocuments<TextDocument>;
     private readonly syntaxTreeManager: SyntaxTreeManager;
     private readonly documentManager: DocumentManager;
@@ -121,7 +118,7 @@ export class TemplateBuilder {
     constructor(format: DocumentType, startingContent: string = '') {
         this.uri = `file:///test-template.${format}`;
         this.textDocuments = new TextDocuments(TextDocument);
-        this.syntaxTreeManager = new SyntaxTreeManager(this.logger);
+        this.syntaxTreeManager = new SyntaxTreeManager();
         this.documentManager = new DocumentManager(this.textDocuments);
         this.contextManager = new ContextManager(this.syntaxTreeManager);
         this.schemaRetriever = createMockSchemaRetriever(combinedSchemas());
@@ -133,7 +130,8 @@ export class TemplateBuilder {
             resourceStateManager: createMockResourceStateManager(),
         });
 
-        const completionProviders = createCompletionProviders(mockTestComponents);
+        const { core, external, providers } = createMockComponents(mockTestComponents);
+        const completionProviders = createCompletionProviders(core, external, providers);
 
         this.completionRouter = new CompletionRouter(this.contextManager, completionProviders, this.documentManager);
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever);

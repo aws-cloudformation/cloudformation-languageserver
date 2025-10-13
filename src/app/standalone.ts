@@ -2,14 +2,13 @@ import { createConnection, InitializeParams, ProposedFeatures } from 'vscode-lan
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';
+import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnServer } from '../server/CfnServer';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { TelemetryService } from '../telemetry/TelemetryService';
 
 let server: CfnServer | undefined;
 
 function onInitialize(params: InitializeParams) {
-    server = new CfnServer(lsp.features, params);
+    server = new CfnServer(lsp.components, new CfnInfraCore(lsp.components, params));
     return LspCapabilities;
 }
 
@@ -22,10 +21,6 @@ function onShutdown() {
 }
 
 function onExit() {}
-
-// Startup telemetry and loggers before LSP creation
-const _logger = LoggerFactory.instance; // eslint-disable-line @typescript-eslint/no-unused-vars
-const _telemetry = TelemetryService.instance; // eslint-disable-line @typescript-eslint/no-unused-vars
 
 const lsp = new LspConnection(createConnection(ProposedFeatures.all), {
     onInitialize,

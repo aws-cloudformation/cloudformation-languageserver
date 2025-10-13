@@ -47,9 +47,9 @@ import {
     waitUntilStackCreateComplete,
     DescribeChangeSetCommandOutput,
     GetTemplateCommand,
+    StackEvent,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
-import { ServerComponents } from '../server/ServerComponents';
 import { AwsClient } from './AwsClient';
 
 export class CfnService {
@@ -139,11 +139,47 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DetectStackDriftCommand(params)));
     }
 
-    public async describeStackEvents(params: {
-        StackName: string;
-        NextToken?: string;
-    }): Promise<DescribeStackEventsCommandOutput> {
-        return await this.withClient((client) => client.send(new DescribeStackEventsCommand(params)));
+    public async describeStackEvents(
+        params: {
+            StackName: string;
+        },
+        clientRequestToken: string,
+    ): Promise<DescribeStackEventsCommandOutput> {
+        return await this.withClient(async (client) => {
+            let nextToken: string | undefined;
+            let result: DescribeStackEventsCommandOutput | undefined;
+            const stackEvents: StackEvent[] = [];
+
+            do {
+                const response = await client.send(
+                    new DescribeStackEventsCommand({
+                        StackName: params.StackName,
+                        NextToken: nextToken,
+                    }),
+                );
+
+                if (result) {
+                    stackEvents.push(...(response.StackEvents ?? []));
+                } else {
+                    result = response;
+                    stackEvents.push(...(result.StackEvents ?? []));
+                }
+
+                // Stop if no more events in a page match the client request token parameter
+                const hasMatchingToken = response.StackEvents?.some(
+                    (event) => event.ClientRequestToken === clientRequestToken,
+                );
+                if (!hasMatchingToken) {
+                    break;
+                }
+
+                nextToken = response.NextToken;
+            } while (nextToken);
+
+            result.StackEvents = stackEvents.filter((event) => event.ClientRequestToken === clientRequestToken);
+            result.NextToken = undefined;
+            return result;
+        });
     }
 
     public async describeStackResources(params: {
@@ -286,10 +322,6 @@ export class CfnService {
 
     public async validateTemplate(params: ValidateTemplateInput): Promise<ValidateTemplateOutput> {
         return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
-    }
-
-    static create(components: ServerComponents) {
-        return new CfnService(components.awsClient);
     }
 }
 

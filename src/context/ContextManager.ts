@@ -1,6 +1,5 @@
 import { SyntaxNode } from 'tree-sitter';
 import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
-import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { Context } from './Context';
@@ -143,10 +142,6 @@ export class ContextManager {
         }
 
         return [tree, getFromTree(tree, ...args)];
-    }
-
-    static create(components: ServerComponents) {
-        return new ContextManager(components.syntaxTreeManager);
     }
 }
 

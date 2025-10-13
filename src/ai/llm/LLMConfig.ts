@@ -2,7 +2,6 @@ import { readFileSync, existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { DeepReadonly } from 'ts-essentials';
-import { ServerComponents } from '../../server/ServerComponents';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import { parseWithPrettyError } from '../../utils/ZodErrorWrapper';
@@ -34,10 +33,6 @@ export class LLMConfig {
 
     get(): undefined | DeepReadonly<LLMConfigType> {
         return this.config === undefined ? undefined : structuredClone(this.config);
-    }
-
-    static create(_components: ServerComponents) {
-        return new LLMConfig();
     }
 }
 

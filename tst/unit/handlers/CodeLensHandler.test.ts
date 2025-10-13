@@ -11,7 +11,7 @@ describe('CodeLensHandler', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockComponents = createMockComponents();
-        handler = codeLensHandler(mockComponents);
+        handler = codeLensHandler(mockComponents.documents, mockComponents);
     });
 
     it('should return empty array when document is not found', async () => {

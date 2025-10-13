@@ -1,5 +1,4 @@
 import { DocumentManager } from '../document/DocumentManager';
-import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { FileContext } from './FileContext';
 
@@ -29,9 +28,5 @@ export class FileContextManager {
             this.log.error({ error, uri }, 'Failed to create file context');
             return undefined;
         }
-    }
-
-    static create(components: ServerComponents): FileContextManager {
-        return new FileContextManager(components.documentManager);
     }
 }

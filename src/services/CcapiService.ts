@@ -6,7 +6,6 @@ import {
     ListResourcesInput,
     ListResourcesOutput,
 } from '@aws-sdk/client-cloudcontrol';
-import { ServerComponents } from '../server/ServerComponents';
 import { AwsClient } from './AwsClient';
 
 export class CcapiService {
@@ -48,9 +47,5 @@ export class CcapiService {
             };
             return await client.send(new GetResourceCommand(getResourceInput));
         });
-    }
-
-    static create(components: ServerComponents) {
-        return new CcapiService(components.awsClient);
     }
 }

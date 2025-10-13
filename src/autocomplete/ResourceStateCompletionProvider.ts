@@ -17,7 +17,9 @@ import { ResourceStatePurpose } from '../resourceState/ResourceStateTypes';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { TransformersUtil } from '../schema/transformers/TransformersUtil';
-import { ServerComponents } from '../server/ServerComponents';
+import { CfnExternal } from '../server/CfnExternal';
+import { CfnInfraCore } from '../server/CfnInfraCore';
+import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, handleSnippetJsonQuotes } from './CompletionUtils';
@@ -168,11 +170,11 @@ export class ResourceStateCompletionProvider implements CompletionProvider {
         textEdit.range.start.character = textEdit.range.start.character - tabSize;
     }
 
-    static create(components: ServerComponents) {
+    static create(core: CfnInfraCore, external: CfnExternal, providers: CfnLspProviders) {
         return new ResourceStateCompletionProvider(
-            components.resourceStateManager,
-            components.documentManager,
-            components.schemaRetriever,
+            providers.resourceStateManager,
+            core.documentManager,
+            external.schemaRetriever,
         );
     }
 }

@@ -10,6 +10,7 @@ import { ExtensionName } from '../utils/ExtensionConfig';
 import { LspAuthHandlers } from './LspAuthHandlers';
 import { LspCapabilities } from './LspCapabilities';
 import { LspCommunication } from './LspCommunication';
+import { LspComponents } from './LspComponents';
 import { LspDiagnostics } from './LspDiagnostics';
 import { LspDocuments } from './LspDocuments';
 import { LspHandlers } from './LspHandlers';
@@ -22,17 +23,6 @@ type LspConnectionHandlers = {
     onInitialized?: (params: InitializedParams) => unknown;
     onShutdown?: () => unknown;
     onExit?: () => unknown;
-};
-
-export type LspFeatures = {
-    diagnostics: LspDiagnostics;
-    workspace: LspWorkspace;
-    documents: LspDocuments;
-    communication: LspCommunication;
-    handlers: LspHandlers;
-    authHandlers: LspAuthHandlers;
-    stackHandlers: LspStackHandlers;
-    resourceHandlers: LspResourceHandlers;
 };
 
 export class LspConnection {
@@ -70,7 +60,7 @@ export class LspConnection {
         this.communication.console.info(`${ExtensionName} launched from ${__dirname}`);
 
         this.connection.onInitialize((params: InitializeParams): InitializeResult => {
-            this.communication.console.info(`Initializing ${ExtensionName}...`);
+            this.communication.console.info(`${ExtensionName} initializing...`);
             this.initializeParams = params;
             return onInitialize(params);
         });
@@ -92,17 +82,17 @@ export class LspConnection {
         });
     }
 
-    get features(): LspFeatures {
-        return {
-            diagnostics: this.diagnostics,
-            workspace: this.workspace,
-            documents: this.documents,
-            communication: this.communication,
-            handlers: this.handlers,
-            authHandlers: this.authHandlers,
-            stackHandlers: this.stackHandlers,
-            resourceHandlers: this.resourceHandlers,
-        };
+    get components(): LspComponents {
+        return new LspComponents(
+            this.diagnostics,
+            this.workspace,
+            this.documents,
+            this.communication,
+            this.handlers,
+            this.authHandlers,
+            this.stackHandlers,
+            this.resourceHandlers,
+        );
     }
 
     public listen() {

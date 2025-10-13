@@ -14,7 +14,7 @@ export function configurationHandler(components: ServerComponents): (params: Did
 
         // Pull configuration from LSP workspace and notify all components via subscriptions (fire-and-forget)
         components.settingsManager.syncConfiguration().catch((error) => {
-            components.clientMessage.error(`Failed to sync configuration: ${extractErrorMessage(error)}`);
+            log.error(`Failed to sync configuration: ${extractErrorMessage(error)}`);
         });
     };
 }

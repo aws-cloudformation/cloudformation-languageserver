@@ -125,7 +125,7 @@ describe('DocumentHandler', () => {
             const textDocument = createTextDocument();
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
 
-            const handler = didChangeHandler(mockServices);
+            const handler = didChangeHandler(mockServices.documents, mockServices);
 
             handler(
                 createParams({
@@ -148,7 +148,7 @@ describe('DocumentHandler', () => {
             const textDocument = createTextDocument();
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
 
-            const handler = didChangeHandler(mockServices);
+            const handler = didChangeHandler(mockServices.documents, mockServices);
 
             handler(
                 createParams({
@@ -170,7 +170,7 @@ describe('DocumentHandler', () => {
             mockServices.syntaxTreeManager.getSyntaxTree.returns({} as any); // Mock existing tree
             mockServices.syntaxTreeManager.updateWithEdit.throws(new Error('Update failed'));
 
-            const handler = didChangeHandler(mockServices);
+            const handler = didChangeHandler(mockServices.documents, mockServices);
             handler(
                 createParams({
                     textDocument: { uri: testUri },
@@ -192,7 +192,7 @@ describe('DocumentHandler', () => {
             mockServices.cfnLintService.lintDelayed.rejects(new Error('Request cancelled'));
             mockServices.guardService.validateDelayed.rejects(new Error('Request cancelled'));
 
-            const handler = didChangeHandler(mockServices);
+            const handler = didChangeHandler(mockServices.documents, mockServices);
 
             expect(() =>
                 handler(
@@ -213,7 +213,7 @@ describe('DocumentHandler', () => {
         it('should handle missing text document gracefully', () => {
             mockDocuments({ get: vi.fn().mockReturnValue(undefined) });
 
-            const handler = didChangeHandler(mockServices);
+            const handler = didChangeHandler(mockServices.documents, mockServices);
             expect(() =>
                 handler(
                     createParams({

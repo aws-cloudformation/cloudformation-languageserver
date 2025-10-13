@@ -10,11 +10,7 @@ import {
     ResourceStateParams,
     ResourceStatePurpose,
 } from '../../../src/resourceState/ResourceStateTypes';
-import {
-    createMockClientMessage,
-    createMockSchemaRetriever,
-    createMockStackManagementInfoProvider,
-} from '../../utils/MockServerComponents';
+import { createMockSchemaRetriever, createMockStackManagementInfoProvider } from '../../utils/MockServerComponents';
 import { combinedSchemas } from '../../utils/SchemaUtils';
 import { createMockResourceState, MockResourceStates } from './MockResourceState';
 import { TestScenarios, getImportExpectation, getCloneExpectation } from './StateImportExpectation';
@@ -22,7 +18,7 @@ import { TestScenarios, getImportExpectation, getCloneExpectation } from './Stat
 describe('ResourceStateImporter', () => {
     let mockResourceStateManager: any;
     const documentManager = new DocumentManager(new TextDocuments(TextDocument));
-    const syntaxTreeManager = new SyntaxTreeManager(createMockClientMessage());
+    const syntaxTreeManager = new SyntaxTreeManager();
     const schemaRetriever = createMockSchemaRetriever(combinedSchemas());
     const mockStackManagementInfoProvider = createMockStackManagementInfoProvider();
     let importer: ResourceStateImporter;

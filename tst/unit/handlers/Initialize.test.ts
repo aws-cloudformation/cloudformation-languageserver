@@ -28,7 +28,7 @@ describe('InitializeHandler', () => {
 
         const syncConfigSpy = vi.spyOn(mockServices.settingsManager, 'syncConfiguration').mockResolvedValue();
 
-        const handler = initializedHandler(mockServices);
+        const handler = initializedHandler(mockServices.lsp.workspace, mockServices);
         handler();
 
         // Wait for all async operations to complete

@@ -2,10 +2,10 @@ import { CloudControlClient } from '@aws-sdk/client-cloudcontrol';
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation';
 import { AwsCredentialIdentity } from '@aws-sdk/types';
 import { AwsCredentials } from '../auth/AwsCredentials';
-import { Configurable, ServerComponents } from '../server/ServerComponents';
-import { DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings } from '../settings/Settings';
 
-export class AwsClient implements Configurable {
+export class AwsClient implements SettingsConfigurable {
     constructor(
         private readonly credentialsProvider: AwsCredentials,
         private region: string = DefaultSettings.profile.region,
@@ -37,9 +37,5 @@ export class AwsClient implements Configurable {
             region: this.region,
             credentials: data,
         };
-    }
-
-    static create(components: ServerComponents) {
-        return new AwsClient(components.awsCredentials, DefaultSettings.profile.region);
     }
 }

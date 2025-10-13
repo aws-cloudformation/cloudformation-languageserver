@@ -1,3 +1,4 @@
+import { Closeable } from '../utils/Closeable';
 import { LMDBStoreFactory } from './LMDB';
 import { MemoryStoreFactory } from './MemoryStore';
 
@@ -20,20 +21,16 @@ export interface DataStore {
     stats(): unknown;
 }
 
-export interface DataStoreFactory {
+export interface DataStoreFactory extends Closeable {
     getOrCreate(store: string): DataStore;
 
     storeNames(): ReadonlyArray<string>;
 
     stats(): unknown;
-
-    close(): Promise<void>;
 }
 
-export interface DataStoreFactoryProvider {
+export interface DataStoreFactoryProvider extends Closeable {
     get(store: string, persistence: Persistence): DataStore;
-
-    close(): Promise<void>;
 }
 
 export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider {

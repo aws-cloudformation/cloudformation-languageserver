@@ -1,5 +1,6 @@
 import { ExecuteCommandParams, MessageType } from 'vscode-languageserver';
 import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
@@ -8,6 +9,7 @@ import { toString } from '../utils/String';
 const log = LoggerFactory.getLogger('ExecutionHandler');
 
 export function executionHandler(
+    documents: LspDocuments,
     components: ServerComponents,
 ): ServerRequestHandler<ExecuteCommandParams, unknown, never, void> {
     return (params): unknown => {
@@ -43,7 +45,7 @@ export function executionHandler(
                         params.arguments?.[1],
                     );
                     if (message) {
-                        await components.documents.sendDocumentPreview({
+                        await documents.sendDocumentPreview({
                             content: `# AI Overview: Fix Diagnostics\n${toString(message.content)}`,
                             language: 'markdown',
                             viewColumn: -2,
@@ -65,9 +67,7 @@ export function executionHandler(
                     const diagnosticId = args[1] as string;
                     components.diagnosticCoordinator
                         .handleClearCfnDiagnostic(uri, diagnosticId)
-                        .catch((err) =>
-                            components.clientMessage.error(`Error clearing diagnostic: ${extractErrorMessage(err)}`),
-                        );
+                        .catch((err) => log.error(`Error clearing diagnostic: ${extractErrorMessage(err)}`));
                 }
                 break;
             }
