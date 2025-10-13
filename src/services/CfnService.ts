@@ -266,6 +266,7 @@ export class CfnService {
     public async executeChangeSet(params: {
         ChangeSetName: string;
         StackName?: string;
+        ClientRequestToken: string;
     }): Promise<ExecuteChangeSetCommandOutput> {
         return await this.withClient((client) => client.send(new ExecuteChangeSetCommand(params)));
     }

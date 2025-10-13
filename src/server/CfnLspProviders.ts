@@ -10,6 +10,11 @@ import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../resourceState/StackManagementInfoProvider';
 import { CodeActionService } from '../services/CodeActionService';
 import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
+import {
+    DescribeDeploymentStatusResult,
+    DescribeValidationStatusResult,
+} from '../stacks/actions/StackActionRequestType';
+import { StackActionWorkflow } from '../stacks/actions/StackActionWorkflowType';
 import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
@@ -19,8 +24,8 @@ import { CfnInfraCore } from './CfnInfraCore';
 export class CfnLspProviders implements Configurables, Closeable {
     // Business logic
     readonly stackManagementInfoProvider: StackManagementInfoProvider;
-    readonly validationWorkflowService: ValidationWorkflow;
-    readonly deploymentWorkflowService: DeploymentWorkflow;
+    readonly validationWorkflowService: StackActionWorkflow<DescribeValidationStatusResult>;
+    readonly deploymentWorkflowService: StackActionWorkflow<DescribeDeploymentStatusResult>;
     readonly resourceStateManager: ResourceStateManager;
     readonly resourceStateImporter: ResourceStateImporter;
 

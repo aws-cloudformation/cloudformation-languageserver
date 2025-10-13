@@ -63,7 +63,7 @@ export async function waitForValidation(
                 phase: StackActionPhase.VALIDATION_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
                 changes: mapChangesToStackChanges(response.Changes),
-                reason: result.reason ? String(result.reason) : undefined,
+                failureReason: result.reason ? String(result.reason) : undefined,
             };
         } else {
             logger.warn(
@@ -73,7 +73,7 @@ export async function waitForValidation(
             return {
                 phase: StackActionPhase.VALIDATION_FAILED,
                 state: StackActionState.FAILED,
-                reason: result.reason ? String(result.reason) : undefined, // TODO: Return reason as part of LSP Response
+                failureReason: result.reason ? String(result.reason) : undefined,
             };
         }
     } catch (error) {
@@ -81,7 +81,7 @@ export async function waitForValidation(
         return {
             phase: StackActionPhase.VALIDATION_FAILED,
             state: StackActionState.FAILED,
-            reason: extractErrorMessage(error),
+            failureReason: extractErrorMessage(error),
         };
     }
 }
@@ -105,7 +105,7 @@ export async function waitForDeployment(
             return {
                 phase: StackActionPhase.DEPLOYMENT_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
-                reason: result.reason ? String(result.reason) : undefined,
+                failureReason: result.reason ? String(result.reason) : undefined,
             };
         } else {
             logger.warn(
@@ -115,7 +115,7 @@ export async function waitForDeployment(
             return {
                 phase: StackActionPhase.DEPLOYMENT_FAILED,
                 state: StackActionState.FAILED,
-                reason: result.reason ? String(result.reason) : undefined, // TODO: Return reason as part of LSP Response
+                failureReason: result.reason ? String(result.reason) : undefined,
             };
         }
     } catch (error) {
@@ -123,7 +123,7 @@ export async function waitForDeployment(
         return {
             phase: StackActionPhase.DEPLOYMENT_FAILED,
             state: StackActionState.FAILED,
-            reason: extractErrorMessage(error),
+            failureReason: extractErrorMessage(error),
         };
     }
 }
@@ -213,4 +213,18 @@ export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | un
               }
             : undefined,
     }));
+}
+
+export function processWorkflowUpdates(
+    workflows: Map<string, StackActionWorkflowState>,
+    existingWorkflow: StackActionWorkflowState,
+    workflowUpdates: Partial<StackActionWorkflowState>,
+): StackActionWorkflowState {
+    existingWorkflow = {
+        ...existingWorkflow,
+        ...workflowUpdates,
+    };
+    workflows.set(existingWorkflow.id, existingWorkflow);
+
+    return existingWorkflow;
 }
