@@ -2709,7 +2709,7 @@ Resources:
                             position: { line: 114, character: 28 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContainsText(['**Condition**, IsProductionOrStaging'])
-                                .todo("hover on condition name reference for !Condition and not just Condition:")
+                                .todo('hover on condition name reference for !Condition and not just Condition:')
                                 .build(),
                         },
                     },
@@ -3382,7 +3382,7 @@ Resources:
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Resource:** LaunchTemplate')
                                 .expectContainsText(['LaunchTemplate', 'AWS::EC2::LaunchTemplate'])
-                                .todo("Hover returns nothing")
+                                .todo('Hover returns nothing')
                                 .build(),
                         },
                     },
@@ -3408,7 +3408,7 @@ Resources:
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Condition:** HasMultipleAZs')
                                 .expectContainsText(['HasMultipleAZs', '!Not', '!Equals', '!Select'])
-                                .todo("Hover returns nothing")
+                                .todo('Hover returns nothing')
                                 .build(),
                         },
                     },
@@ -3624,7 +3624,7 @@ Resources:
                                     'Creates a new role for your AWS-account',
                                     'AssumeRolePolicyDocument',
                                 ])
-                                .todo("Hover returns nothing")
+                                .todo('Hover returns nothing')
                                 .build(),
                         },
                     },
