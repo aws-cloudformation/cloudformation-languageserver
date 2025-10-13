@@ -95,7 +95,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
             return completions.then((result) => {
                 return this.formatter.format(
                     {
-                        isIncomplete: false,
+                        isIncomplete: result.length > this.completionSettings.maxCompletions,
                         items: result.slice(0, this.completionSettings.maxCompletions),
                     },
                     context,
@@ -104,7 +104,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
             });
         } else if (completions) {
             const completionList = {
-                isIncomplete: false,
+                isIncomplete: completions.length > this.completionSettings.maxCompletions,
                 items: completions.slice(0, this.completionSettings.maxCompletions),
             };
 
