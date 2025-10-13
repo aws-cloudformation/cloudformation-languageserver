@@ -1,8 +1,6 @@
 import { BaseMessage } from '@langchain/core/messages';
 import { StructuredTool } from '@langchain/core/tools';
 import { DocumentManager } from '../document/DocumentManager';
-import { CfnExternal } from '../server/CfnExternal';
-import { CfnInfraCore } from '../server/CfnInfraCore';
 import { AwsClient } from '../services/AwsClient';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
 import { getFilteredScannedResources, formatScannedResourcesForAI } from '../services/ResourceScanService';
@@ -27,7 +25,7 @@ export class CfnAI implements SettingsConfigurable, Closeable {
         private readonly documentManager: DocumentManager,
         private readonly awsClient: AwsClient,
     ) {
-        this.llmConfig = LLMConfig.create();
+        this.llmConfig = new LLMConfig();
     }
 
     configure(settingsManager: ISettingsSubscriber): void {
@@ -38,7 +36,7 @@ export class CfnAI implements SettingsConfigurable, Closeable {
         if (this.agent === undefined) {
             const config = this.llmConfig.get();
             if (config !== undefined) {
-                this.agent = Agent.create(config);
+                this.agent = new Agent(config);
                 this.mcpTools = new McpTools();
             }
         }
@@ -159,9 +157,5 @@ export class CfnAI implements SettingsConfigurable, Closeable {
 
     close() {
         return this.mcpTools?.close();
-    }
-
-    static create(core: CfnInfraCore, external: CfnExternal): CfnAI {
-        return new CfnAI(core.documentManager, external.awsClient);
     }
 }

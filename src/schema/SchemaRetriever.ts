@@ -122,8 +122,4 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             }
         }
     }
-
-    static create(components: CfnExternal) {
-        return new SchemaRetriever(components.schemaTaskManager, components.schemaStore);
-    }
 }

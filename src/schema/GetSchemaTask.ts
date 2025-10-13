@@ -1,12 +1,14 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { Logger } from 'pino';
 import { DataStore } from '../datastore/DataStore';
+import { CfnService } from '../services/CfnService';
 import { CoralTelemetry } from '../telemetry/CoralTelemetry';
 import { MeasureLatency, Telemetry, TrackExecution } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
+import { cfnResourceSchemaLink, downloadFile, unZipFile } from './RemoteSchemaHelper';
 
 abstract class GetSchemaTask {
     @Telemetry
@@ -95,4 +97,12 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
             throw error;
         }
     }
+}
+
+export function getRemotePublicSchemas(region: AwsRegion) {
+    return unZipFile(downloadFile(cfnResourceSchemaLink(region)));
+}
+
+export function getRemotePrivateSchemas(cfnService: CfnService) {
+    return cfnService.getAllPrivateResourceSchemas();
 }

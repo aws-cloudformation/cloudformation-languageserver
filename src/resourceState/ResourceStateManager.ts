@@ -34,7 +34,6 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     private settingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
     private isRefreshing = false;
-    private readonly logger = LoggerFactory.getLogger(ResourceStateManager);
 
     // Map of TypeName to Map of Identifier to ResourceState
     private readonly resourceStateMap: ResourceStateMap = new Map();
@@ -57,7 +56,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         } catch (error) {
             log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
             if (error instanceof ResourceNotFoundException) {
-                this.logger.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
+                log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
             }
             return;
         }
