@@ -794,4 +794,46 @@ describe('CompletionRouter', () => {
             });
         });
     });
+
+    describe('isIncomplete handling', () => {
+        test('should set isIncomplete to true when results exceed maxCompletions', () => {
+            const mockProvider = {
+                getCompletions: vi
+                    .fn()
+                    .mockReturnValue(Array.from({ length: 150 }, (_, i) => ({ label: `Item${i}`, kind: 1 }))),
+            };
+
+            completionRouter['completionProviderMap'].set('TopLevelSection', mockProvider);
+            completionRouter['completionSettings'] = { ...completionRouter['completionSettings'], maxCompletions: 100 };
+
+            const mockContext = createTopLevelContext('Unknown', { text: '' });
+            mockComponents.contextManager.getContext.returns(mockContext);
+
+            const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+
+            expect(result).toBeDefined();
+            expect(result!.isIncomplete).toBe(true);
+            expect(result!.items.length).toBe(100);
+        });
+
+        test('should set isIncomplete to false when results are within maxCompletions', () => {
+            const mockProvider = {
+                getCompletions: vi
+                    .fn()
+                    .mockReturnValue(Array.from({ length: 50 }, (_, i) => ({ label: `Item${i}`, kind: 1 }))),
+            };
+
+            completionRouter['completionProviderMap'].set('TopLevelSection', mockProvider);
+            completionRouter['completionSettings'] = { ...completionRouter['completionSettings'], maxCompletions: 100 };
+
+            const mockContext = createTopLevelContext('Unknown', { text: '' });
+            mockComponents.contextManager.getContext.returns(mockContext);
+
+            const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+
+            expect(result).toBeDefined();
+            expect(result!.isIncomplete).toBe(false);
+            expect(result!.items.length).toBe(50);
+        });
+    });
 });
