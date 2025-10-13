@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { ResourceAttributesSet } from '../context/ContextType';
+import { ResourceAttributesSet, TopLevelSection } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
@@ -63,8 +63,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
 
             if (
                 params.context?.triggerKind === CompletionTriggerKind.Invoked &&
-                context.propertyPath.length === 3 &&
-                context.entitySection === 'Properties'
+                context.matchPathWithLogicalId(TopLevelSection.Resources, 'Properties')
             ) {
                 const resource = context.entity as Resource;
                 if (resource.Type) {

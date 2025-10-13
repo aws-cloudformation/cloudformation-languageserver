@@ -1,8 +1,8 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
 import {
     supportsCreationPolicy,
-    supportsAutoScalingCreationPolicy,
-    supportsStartFleet,
+    CREATION_POLICY_SCHEMA,
+    CreationPolicyPropertySchema,
 } from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
@@ -378,76 +378,88 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             return [];
         }
 
-        const completions: CompletionItem[] = [];
+        return this.getSchemaBasedCompletions(
+            CREATION_POLICY_SCHEMA,
+            propertyPath,
+            resourceType,
+            context,
+            existingProperties,
+        );
+    }
 
+    private getSchemaBasedCompletions(
+        schema: Record<string, CreationPolicyPropertySchema>,
+        propertyPath: ReadonlyArray<string>,
+        resourceType: string,
+        context: Context,
+        existingProperties: Set<string>,
+    ): CompletionItem[] {
+        const completions: CompletionItem[] = [];
         const filteredPath = propertyPath.filter((segment) => segment !== '');
         const depth = filteredPath.length;
 
-        // Root CreationPolicy level
-        if (depth === 1 && context.isKey()) {
-            if (!existingProperties.has('ResourceSignal')) {
-                completions.push(
-                    createCompletionItem('ResourceSignal', CompletionItemKind.Property, {
-                        data: { type: 'object' },
-                        context: context,
-                    }),
-                );
-            }
+        if (!context.isKey()) {
+            return completions;
+        }
 
-            if (
-                supportsAutoScalingCreationPolicy(resourceType) &&
-                !existingProperties.has('AutoScalingCreationPolicy')
-            ) {
-                completions.push(
-                    createCompletionItem('AutoScalingCreationPolicy', CompletionItemKind.Property, {
-                        data: { type: 'object' },
-                        context: context,
-                    }),
-                );
-            }
+        // Root level
+        if (depth === 1) {
+            for (const [propertyName, propertySchema] of Object.entries(schema)) {
+                if (existingProperties.has(propertyName)) {
+                    continue;
+                }
 
-            if (supportsStartFleet(resourceType) && !existingProperties.has('StartFleet')) {
+                if (
+                    propertySchema.supportedResourceTypes &&
+                    !propertySchema.supportedResourceTypes.includes(resourceType)
+                ) {
+                    continue;
+                }
+
                 completions.push(
-                    createCompletionItem('StartFleet', CompletionItemKind.Property, {
-                        data: { type: 'simple' },
+                    createCompletionItem(propertyName, CompletionItemKind.Property, {
+                        data: { type: propertySchema.type },
                         context: context,
                     }),
                 );
             }
         }
-        // Nested properties
-        else if (depth >= 2 && context.isKey()) {
-            const parentProperty = filteredPath[1];
+        // Nested levels
+        else if (depth >= 2) {
+            const parentPropertyName = filteredPath[1];
+            const parentSchema = schema[parentPropertyName];
 
-            if (parentProperty === 'ResourceSignal') {
-                if (!existingProperties.has('Count')) {
+            if (parentSchema?.properties) {
+                if (
+                    parentSchema.supportedResourceTypes &&
+                    !parentSchema.supportedResourceTypes.includes(resourceType)
+                ) {
+                    return completions;
+                }
+
+                let currentSchema = parentSchema.properties;
+                for (let i = 2; i < depth - 1; i++) {
+                    const segmentName = filteredPath[i];
+                    const segmentSchema = currentSchema[segmentName];
+                    if (segmentSchema?.properties) {
+                        currentSchema = segmentSchema.properties;
+                    } else {
+                        return completions;
+                    }
+                }
+
+                for (const [propertyName, propertySchema] of Object.entries(currentSchema)) {
+                    if (existingProperties.has(propertyName)) {
+                        continue;
+                    }
+
                     completions.push(
-                        createCompletionItem('Count', CompletionItemKind.Property, {
-                            data: { type: 'simple' },
+                        createCompletionItem(propertyName, CompletionItemKind.Property, {
+                            data: { type: propertySchema.type },
                             context: context,
                         }),
                     );
                 }
-
-                if (!existingProperties.has('Timeout')) {
-                    completions.push(
-                        createCompletionItem('Timeout', CompletionItemKind.Property, {
-                            data: { type: 'simple' },
-                            context: context,
-                        }),
-                    );
-                }
-            } else if (
-                parentProperty === 'AutoScalingCreationPolicy' &&
-                supportsAutoScalingCreationPolicy(resourceType) &&
-                !existingProperties.has('MinSuccessfulInstancesPercent')
-            ) {
-                completions.push(
-                    createCompletionItem('MinSuccessfulInstancesPercent', CompletionItemKind.Property, {
-                        data: { type: 'simple' },
-                        context: context,
-                    }),
-                );
             }
         }
 
