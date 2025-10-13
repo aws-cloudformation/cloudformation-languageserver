@@ -175,10 +175,6 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
 
         return undefined;
     }
-
-    static create(core: CfnInfraCore, external: CfnExternal) {
-        return new HoverRouter(core.contextManager, external.schemaRetriever);
-    }
 }
 
 enum HoverType {

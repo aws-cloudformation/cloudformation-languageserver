@@ -64,8 +64,4 @@ export class ManagedResourceCodeLens {
 
         return lenses;
     }
-
-    static create(core: CfnInfraCore): ManagedResourceCodeLens {
-        return new ManagedResourceCodeLens(core.syntaxTreeManager);
-    }
 }

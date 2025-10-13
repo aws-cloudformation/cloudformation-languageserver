@@ -1,13 +1,12 @@
 import { DefinitionParams, Location, LocationLink } from 'vscode-languageserver';
 import { ContextManager } from '../context/ContextManager';
-import { CfnInfraCore } from '../server/CfnInfraCore';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { pointToPosition } from '../utils/TypeConverters';
 
 export class DefinitionProvider {
     private readonly log = LoggerFactory.getLogger(DefinitionProvider);
 
-    private constructor(private readonly contextManager: ContextManager) {}
+    constructor(private readonly contextManager: ContextManager) {}
 
     getDefinitions(params: DefinitionParams): Location | Location[] | LocationLink[] | undefined {
         const context = this.contextManager.getContextAndRelatedEntities(params);
@@ -41,9 +40,5 @@ export class DefinitionProvider {
             return locations[0];
         }
         return locations;
-    }
-
-    static create(core: CfnInfraCore): DefinitionProvider {
-        return new DefinitionProvider(core.contextManager);
     }
 }

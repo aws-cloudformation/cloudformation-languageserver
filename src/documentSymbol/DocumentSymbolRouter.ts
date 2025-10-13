@@ -254,8 +254,4 @@ export class DocumentSymbolRouter {
         const keyNode = node.childForFieldName(FieldNames.KEY);
         return keyNode ? nodeToRange(keyNode) : undefined;
     }
-
-    static create(core: CfnInfraCore): DocumentSymbolRouter {
-        return new DocumentSymbolRouter(core.syntaxTreeManager);
-    }
 }

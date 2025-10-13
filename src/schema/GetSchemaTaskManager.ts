@@ -1,5 +1,4 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
-import { CfnExternal } from '../server/CfnExternal';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -7,7 +6,6 @@ import { Closeable } from '../utils/Closeable';
 import { AwsRegion } from '../utils/Region';
 import { GetPrivateSchemasTask, GetPublicSchemaTask } from './GetSchemaTask';
 import { SchemaFileType } from './RegionalSchemas';
-import { cfnResourceSchemaLink, downloadFile, unZipFile } from './RemoteSchemaHelper';
 import { SchemaStore } from './SchemaStore';
 
 const TenSeconds = 10 * 1000;
@@ -107,16 +105,5 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
 
         clearTimeout(this.timeout);
         clearInterval(this.interval);
-    }
-
-    static create(components: CfnExternal) {
-        return new GetSchemaTaskManager(
-            components.schemaStore,
-            (region: AwsRegion) => {
-                return unZipFile(downloadFile(cfnResourceSchemaLink(region)));
-            },
-            () => components.cfnService.getAllPrivateResourceSchemas(),
-            DefaultSettings.profile.profile,
-        );
     }
 }

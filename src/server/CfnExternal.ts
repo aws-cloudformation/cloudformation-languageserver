@@ -1,4 +1,5 @@
 import { LspComponents } from '../protocol/LspComponents';
+import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
 import { GetSchemaTaskManager } from '../schema/GetSchemaTaskManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { SchemaStore } from '../schema/SchemaStore';
@@ -37,8 +38,13 @@ export class CfnExternal implements Configurables, Closeable {
         this.iacGeneratorService = overrides.iacGeneratorService ?? new IacGeneratorService(this.awsClient);
 
         this.schemaStore = overrides.schemaStore ?? new SchemaStore(core.dataStoreFactory);
-        this.schemaTaskManager = overrides.schemaTaskManager ?? GetSchemaTaskManager.create(this);
-        this.schemaRetriever = overrides.schemaRetriever ?? SchemaRetriever.create(this);
+        this.schemaTaskManager =
+            overrides.schemaTaskManager ??
+            new GetSchemaTaskManager(this.schemaStore, getRemotePublicSchemas, () => {
+                return getRemotePrivateSchemas(this.cfnService);
+            });
+        this.schemaRetriever =
+            overrides.schemaRetriever ?? new SchemaRetriever(this.schemaTaskManager, this.schemaStore);
 
         this.cfnLintService =
             overrides.cfnLintService ??

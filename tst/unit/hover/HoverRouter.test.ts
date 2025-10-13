@@ -57,7 +57,7 @@ describe('HoverRouter', () => {
         }));
 
         const mockComponents = createMockComponents();
-        hoverRouter = HoverRouter.create(mockComponents.core, mockComponents.external);
+        hoverRouter = new HoverRouter(mockComponents.core.contextManager, mockComponents.external.schemaRetriever);
         mockContextManager = mockComponents.contextManager;
     });
 
@@ -100,7 +100,10 @@ describe('HoverRouter', () => {
                 getInformation: vi.fn().mockReturnValue(undefined),
             }));
             const mockComponents = createMockComponents();
-            routerWithMockedProvider = HoverRouter.create(mockComponents.core, mockComponents.external);
+            routerWithMockedProvider = new HoverRouter(
+                mockComponents.core.contextManager,
+                mockComponents.external.schemaRetriever,
+            );
             mockContextManager = mockComponents.contextManager;
         });
 
@@ -109,7 +112,10 @@ describe('HoverRouter', () => {
                 getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
             }));
             const mockComponents = createMockComponents();
-            const routerWithResourceDoc = HoverRouter.create(mockComponents.core, mockComponents.external);
+            const routerWithResourceDoc = new HoverRouter(
+                mockComponents.core.contextManager,
+                mockComponents.external.schemaRetriever,
+            );
             const mockContextManagerWithDoc = mockComponents.contextManager;
 
             const mockContext = createResourceContext('MyResourceId', { text: 'AWS::EC2::Instance' });
@@ -172,7 +178,10 @@ describe('HoverRouter', () => {
                 getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
             }));
             const mockComponents = createMockComponents();
-            const routerWithResourceDoc = HoverRouter.create(mockComponents.core, mockComponents.external);
+            const routerWithResourceDoc = new HoverRouter(
+                mockComponents.core.contextManager,
+                mockComponents.external.schemaRetriever,
+            );
             const mockContextManagerWithDoc = mockComponents.contextManager;
 
             const resourceContext = createResourceContext('MyBucket', {

@@ -34,10 +34,6 @@ export class LLMConfig {
     get(): undefined | DeepReadonly<LLMConfigType> {
         return this.config === undefined ? undefined : structuredClone(this.config);
     }
-
-    static create() {
-        return new LLMConfig();
-    }
 }
 
 const logger = LoggerFactory.getLogger(LLMConfig);

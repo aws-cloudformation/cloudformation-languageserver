@@ -47,16 +47,17 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.resourceStateImporter =
             overrides.resourceStateImporter ?? ResourceStateImporter.create(core, external, this);
 
-        this.hoverRouter = overrides.hoverRouter ?? HoverRouter.create(core, external);
+        this.hoverRouter = overrides.hoverRouter ?? new HoverRouter(core.contextManager, external.schemaRetriever);
         this.completionRouter = overrides.completionRouter ?? CompletionRouter.create(core, external, this);
 
         this.inlineCompletionRouter = overrides.inlineCompletionRouter ?? InlineCompletionRouter.create(core);
-        this.definitionProvider = overrides.definitionProvider ?? DefinitionProvider.create(core);
+        this.definitionProvider = overrides.definitionProvider ?? new DefinitionProvider(core.contextManager);
         this.codeActionService = overrides.codeActionService ?? CodeActionService.create(core);
-        this.documentSymbolRouter = overrides.documentSymbolRouter ?? DocumentSymbolRouter.create(core);
-        this.managedResourceCodeLens = overrides.managedResourceCodeLens ?? ManagedResourceCodeLens.create(core);
+        this.documentSymbolRouter = overrides.documentSymbolRouter ?? new DocumentSymbolRouter(core.syntaxTreeManager);
+        this.managedResourceCodeLens =
+            overrides.managedResourceCodeLens ?? new ManagedResourceCodeLens(core.syntaxTreeManager);
 
-        this.cfnAI = overrides.cfnAI ?? CfnAI.create(core, external);
+        this.cfnAI = overrides.cfnAI ?? new CfnAI(core.documentManager, external.awsClient);
     }
 
     configurables(): Configurable[] {
