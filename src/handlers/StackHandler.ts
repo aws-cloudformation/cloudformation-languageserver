@@ -14,6 +14,8 @@ import {
     CreateStackActionParams,
     CreateStackActionResult,
     GetStackActionStatusResult,
+    DescribeValidationStatusResult,
+    DescribeDeploymentStatusResult,
 } from '../stacks/actions/StackActionRequestType';
 import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -106,6 +108,36 @@ export function getDeploymentStatusHandler(
             return components.deploymentWorkflowService.getStatus(params);
         } catch (error) {
             handleStackActionError(error, 'Failed to get deployment status');
+        }
+    };
+}
+
+export function describeValidationStatusHandler(
+    components: ServerComponents,
+): RequestHandler<Identifiable, DescribeValidationStatusResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'describeValidationStatusHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseIdentifiable, rawParams);
+            return components.validationWorkflowService.describeStatus(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to describe validation status');
+        }
+    };
+}
+
+export function describeDeploymentStatusHandler(
+    components: ServerComponents,
+): RequestHandler<Identifiable, DescribeDeploymentStatusResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'describeDeploymentStatusHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseIdentifiable, rawParams);
+            return components.deploymentWorkflowService.describeStatus(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to describe deployment status');
         }
     };
 }

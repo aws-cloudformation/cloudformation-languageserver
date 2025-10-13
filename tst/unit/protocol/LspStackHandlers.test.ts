@@ -10,6 +10,8 @@ import {
     CreateDeploymentRequest,
     GetValidationStatusRequest,
     GetDeploymentStatusRequest,
+    DescribeValidationStatusRequest,
+    DescribeDeploymentStatusRequest,
 } from '../../../src/stacks/actions/StackActionProtocol';
 import {
     GetCapabilitiesResult,
@@ -18,6 +20,8 @@ import {
     CreateStackActionParams,
     CreateStackActionResult,
     GetStackActionStatusResult,
+    DescribeValidationStatusResult,
+    DescribeDeploymentStatusResult,
 } from '../../../src/stacks/actions/StackActionRequestType';
 
 describe('LspTemplateHandlers', () => {
@@ -45,7 +49,7 @@ describe('LspTemplateHandlers', () => {
         expect(connection.onRequest.calledWith(GetCapabilitiesRequest.method)).toBe(true);
     });
 
-    it('should register onTemplateValidate handler', () => {
+    it('should register onCreateValidation handler', () => {
         const mockHandler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void> = vi.fn();
 
         stackActionHandlers.onCreateValidation(mockHandler);
@@ -53,7 +57,7 @@ describe('LspTemplateHandlers', () => {
         expect(connection.onRequest.calledWith(CreateValidationRequest.method)).toBe(true);
     });
 
-    it('should register onTemplateDeploy handler', () => {
+    it('should register onCreateDeployment handler', () => {
         const mockHandler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void> = vi.fn();
 
         stackActionHandlers.onCreateDeployment(mockHandler);
@@ -61,7 +65,7 @@ describe('LspTemplateHandlers', () => {
         expect(connection.onRequest.calledWith(CreateDeploymentRequest.method)).toBe(true);
     });
 
-    it('should register onTemplateValidatePoll handler', () => {
+    it('should register onGetValidationStatus handler', () => {
         const mockHandler: RequestHandler<Identifiable, GetStackActionStatusResult, void> = vi.fn();
 
         stackActionHandlers.onGetValidationStatus(mockHandler);
@@ -69,11 +73,27 @@ describe('LspTemplateHandlers', () => {
         expect(connection.onRequest.calledWith(GetValidationStatusRequest.method)).toBe(true);
     });
 
-    it('should register onTemplateDeployPoll handler', () => {
+    it('should register onGetDeploymentStatus handler', () => {
         const mockHandler: RequestHandler<Identifiable, GetStackActionStatusResult, void> = vi.fn();
 
         stackActionHandlers.onGetDeploymentStatus(mockHandler);
 
         expect(connection.onRequest.calledWith(GetDeploymentStatusRequest.method)).toBe(true);
+    });
+
+    it('should register onDescribeValidationStatus handler', () => {
+        const mockHandler: RequestHandler<Identifiable, DescribeValidationStatusResult, void> = vi.fn();
+
+        stackActionHandlers.onDescribeValidationStatus(mockHandler);
+
+        expect(connection.onRequest.calledWith(DescribeValidationStatusRequest.method)).toBe(true);
+    });
+
+    it('should register onDescribeDeploymentStatus handler', () => {
+        const mockHandler: RequestHandler<Identifiable, DescribeDeploymentStatusResult, void> = vi.fn();
+
+        stackActionHandlers.onDescribeDeploymentStatus(mockHandler);
+
+        expect(connection.onRequest.calledWith(DescribeDeploymentStatusRequest.method)).toBe(true);
     });
 });
