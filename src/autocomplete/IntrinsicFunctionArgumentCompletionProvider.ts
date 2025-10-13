@@ -701,6 +701,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             const item = createCompletionItem(attributeName, CompletionItemKind.Property, {
                 documentation: documentation,
                 detail: `GetAtt attribute for ${resource.Type}`,
+                data: {
+                    isIntrinsicFunction: true,
+                },
             });
 
             if (context.text.length > 0) {
