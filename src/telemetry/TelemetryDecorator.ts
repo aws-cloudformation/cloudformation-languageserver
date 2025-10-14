@@ -5,14 +5,14 @@ import { TelemetryService } from './TelemetryService';
 
 type TelemetryDecoratorOptions = {
     name?: string;
+    scope?: string;
     options?: MetricOptions;
     attributes?: Attributes;
-    recordArgs?: boolean;
 };
 
 type MethodNames = {
-    sync: 'time' | 'trackExecution';
-    async: 'timeAsync' | 'trackExecutionAsync';
+    sync: 'trackExecution' | 'measure';
+    async: 'trackExecutionAsync' | 'measureAsync';
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
@@ -23,46 +23,6 @@ function isAsyncFunction(fn: Function): boolean {
 function scopeName(target: any): string {
     const name = (typeof target === 'function' ? target.name : target?.constructor?.name) ?? '';
     return name && name !== 'Object' ? name : 'Unknown';
-}
-
-function isPrimitive(value: any): boolean {
-    const type = typeof value;
-    return type === 'string' || type === 'number' || type === 'boolean' || value === null;
-}
-
-function getTypeName(value: any): string {
-    if (value === null) return 'null';
-    if (Array.isArray(value)) return 'array';
-    return typeof value;
-}
-
-function sanitizeArgument(baseKey: string, value: any): Attributes {
-    if (isPrimitive(value)) {
-        return { [baseKey]: value };
-    }
-
-    if (Array.isArray(value)) {
-        let isAllPrimitive = true;
-        const types: string[] = [];
-
-        for (const item of value) {
-            types.push(getTypeName(item));
-            if (!isPrimitive(item)) {
-                isAllPrimitive = false;
-            }
-        }
-
-        if (isAllPrimitive) {
-            return { [baseKey]: value };
-        } else {
-            return {
-                [`${baseKey}_length`]: value.length,
-                [`${baseKey}_types`]: types.join(','),
-            };
-        }
-    }
-
-    return { [baseKey]: `[${getTypeName(value)}]` };
 }
 
 export function Telemetry(target: any, propertyKey: string) {
@@ -80,18 +40,19 @@ function createTelemetryMethodDecorator(methodNames: MethodNames) {
         return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
             const originalMethod = descriptor.value;
             const metricName = decoratorOptions?.name ?? propertyKey;
+            const scope = scopeName(target);
+
+            if (scope === 'Unknown' && !decoratorOptions?.scope) {
+                throw new Error(
+                    `@${methodNames.sync}() decorator on standalone function '${propertyKey}' requires explicit scope. ` +
+                        `Use: @${methodNames.sync}({ scope: 'YourScopeName' })`,
+                );
+            }
 
             descriptor.value = function (this: any, ...args: any[]) {
-                const telemetry = TelemetryService.instance.get(scopeName(target));
+                const telemetry = TelemetryService.instance.get(decoratorOptions?.scope ?? scope);
 
                 const attributes: Attributes = { ...decoratorOptions?.attributes };
-                if (decoratorOptions?.recordArgs) {
-                    for (const [index, arg] of args.entries()) {
-                        const baseKey = `arg_${index}`;
-                        const argumentAttributes = sanitizeArgument(baseKey, arg);
-                        Object.assign(attributes, argumentAttributes);
-                    }
-                }
 
                 if (isAsyncFunction(originalMethod)) {
                     const asyncMethod = telemetry[methodNames.async].bind(telemetry);
@@ -117,12 +78,12 @@ function createTelemetryMethodDecorator(methodNames: MethodNames) {
     };
 }
 
-export const MeasureLatency = createTelemetryMethodDecorator({
-    sync: 'time',
-    async: 'timeAsync',
-});
-
-export const TrackExecution = createTelemetryMethodDecorator({
+export const Track = createTelemetryMethodDecorator({
     sync: 'trackExecution',
     async: 'trackExecutionAsync',
+});
+
+export const Measure = createTelemetryMethodDecorator({
+    sync: 'measure',
+    async: 'measureAsync',
 });
