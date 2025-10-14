@@ -1549,6 +1549,7 @@ Resources:
                                     'TopicConfigurations',
                                     'QueueConfigurations',
                                     'LambdaConfigurations',
+                                    'EventBridgeConfiguration',
                                 ])
                                 .build(),
                         },
