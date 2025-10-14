@@ -4,11 +4,10 @@ import { ContextManager } from '../../../src/context/ContextManager';
 import { TopLevelSection } from '../../../src/context/ContextType';
 import { Parameter, Resource, Condition, Mapping, Unknown } from '../../../src/context/semantic/Entity';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
-import { createMockClientMessage } from '../../utils/MockServerComponents';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
 
 describe('Context', () => {
-    const syntaxTreeManager = new SyntaxTreeManager(createMockClientMessage());
+    const syntaxTreeManager = new SyntaxTreeManager();
     const contextManager = new ContextManager(syntaxTreeManager);
     const templateContent = Templates.sample.yaml.contents;
     const testUri = Templates.sample.yaml.fileName;
@@ -284,6 +283,34 @@ describe('Context', () => {
                 expect(context!.section).toBe(TopLevelSection.Resources);
                 expect(context!.text).toBe('BucketName');
                 expect(context!.isResourceAttribute).toBe(false);
+            });
+        });
+
+        describe('isResourceAttributeValue method', () => {
+            it('should return true when positioned at resource attribute value', () => {
+                const context = getContextAt(94, 20); // Position at "Retain" in "DeletionPolicy: Retain"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Resources);
+                expect(context!.hasLogicalId).toBe(true);
+                expect(context!.isResourceAttributeValue()).toBe(true);
+            });
+
+            it('should return false when positioned at resource attribute key', () => {
+                const context = getContextAt(94, 4); // Position at "DeletionPolicy:"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Resources);
+                expect(context!.text).toBe('DeletionPolicy');
+                expect(context!.isResourceAttributeValue()).toBe(false);
+            });
+
+            it('should return false when not in Resources section', () => {
+                const context = getContextAt(21, 4); // Position at "EnvironmentType:" in Parameters section
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Parameters);
+                expect(context!.isResourceAttributeValue()).toBe(false);
             });
         });
 

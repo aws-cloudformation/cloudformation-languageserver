@@ -8,7 +8,9 @@ import { InlineCompletionRouter } from '../../src/autocomplete/InlineCompletionR
 import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
 import { ResourceStateCompletionProvider } from '../../src/autocomplete/ResourceStateCompletionProvider';
 import { TopLevelSectionCompletionProvider } from '../../src/autocomplete/TopLevelSectionCompletionProvider';
+import { ManagedResourceCodeLens } from '../../src/codeLens/ManagedResourceCodeLens';
 import { ContextManager } from '../../src/context/ContextManager';
+import { FileContextManager } from '../../src/context/FileContextManager';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { DataStoreFactoryProvider, MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
@@ -17,6 +19,7 @@ import { DocumentSymbolRouter } from '../../src/documentSymbol/DocumentSymbolRou
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { LspAuthHandlers } from '../../src/protocol/LspAuthHandlers';
 import { LspCommunication } from '../../src/protocol/LspCommunication';
+import { LspComponents } from '../../src/protocol/LspComponents';
 import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
 import { LspDocuments } from '../../src/protocol/LspDocuments';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
@@ -29,7 +32,13 @@ import { StackManagementInfoProvider } from '../../src/resourceState/StackManage
 import { CombinedSchemas } from '../../src/schema/CombinedSchemas';
 import { GetSchemaTaskManager } from '../../src/schema/GetSchemaTaskManager';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
-import { ServerComponents } from '../../src/server/ServerComponents';
+import { SchemaStore } from '../../src/schema/SchemaStore';
+import {
+    CfnExternalType,
+    CfnInfraCoreType,
+    CfnLspProvidersType,
+    CfnLspServerComponentsType,
+} from '../../src/server/ServerComponents';
 import { AwsClient } from '../../src/services/AwsClient';
 import { CcapiService } from '../../src/services/CcapiService';
 import { CfnLintService } from '../../src/services/cfnLint/CfnLintService';
@@ -43,47 +52,8 @@ import { SettingsManager } from '../../src/settings/SettingsManager';
 import { DeploymentWorkflow } from '../../src/stacks/actions/DeploymentWorkflow';
 import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow';
 import { ClientMessage } from '../../src/telemetry/ClientMessage';
-
-export class MockedServerComponents extends ServerComponents {
-    declare readonly diagnostics: StubbedInstance<LspDiagnostics>;
-    declare readonly diagnosticCoordinator: StubbedInstance<DiagnosticCoordinator>;
-    declare readonly workspace: StubbedInstance<LspWorkspace>;
-    declare readonly documents: StubbedInstance<LspDocuments>;
-    declare readonly communication: StubbedInstance<LspCommunication>;
-    declare readonly authHandlers: StubbedInstance<LspAuthHandlers>;
-
-    declare readonly dataStoreFactory: DataStoreFactoryProvider;
-    declare readonly clientMessage: StubbedInstance<ClientMessage>;
-
-    declare readonly settingsManager: StubbedInstance<SettingsManager>;
-    declare readonly syntaxTreeManager: StubbedInstance<SyntaxTreeManager>;
-    declare readonly documentManager: StubbedInstance<DocumentManager>;
-    declare readonly contextManager: StubbedInstance<ContextManager>;
-
-    declare readonly awsCredentials: StubbedInstance<AwsCredentials>;
-    declare readonly awsClient: StubbedInstance<AwsClient>;
-    declare readonly cfnService: StubbedInstance<CfnService>;
-    declare readonly ccapiService: StubbedInstance<CcapiService>;
-    declare readonly stackManagementInfoProvider: StubbedInstance<StackManagementInfoProvider>;
-    declare readonly iacGeneratorService: StubbedInstance<IacGeneratorService>;
-
-    declare readonly schemaTaskManager: StubbedInstance<GetSchemaTaskManager>;
-    declare readonly schemaRetriever: StubbedInstance<SchemaRetriever>;
-    declare readonly cfnLintService: StubbedInstance<CfnLintService>;
-    declare readonly guardService: StubbedInstance<GuardService>;
-    declare readonly resourceStateManager: StubbedInstance<ResourceStateManager>;
-    declare readonly resourceStateImporter: StubbedInstance<ResourceStateImporter>;
-
-    declare readonly hoverRouter: StubbedInstance<HoverRouter>;
-    declare readonly completionRouter: StubbedInstance<CompletionRouter>;
-    declare readonly inlineCompletionRouter: StubbedInstance<InlineCompletionRouter>;
-    declare readonly definitionProvider: StubbedInstance<DefinitionProvider>;
-    declare readonly codeActionService: StubbedInstance<CodeActionService>;
-    declare readonly documentSymbolRouter: StubbedInstance<DocumentSymbolRouter>;
-
-    declare readonly validationWorkflowService: StubbedInstance<ValidationWorkflow>;
-    declare readonly deploymentWorkflowService: StubbedInstance<DeploymentWorkflow>;
-}
+import { Closeable } from '../../src/utils/Closeable';
+import { Configurables } from '../../src/utils/Configurable';
 
 export function createMockDocumentManager(customSettings?: Settings) {
     const mock = stubInterface<DocumentManager>();
@@ -165,12 +135,16 @@ export function createMockCodeActionService() {
     return stubInterface<CodeActionService>();
 }
 
-export function createMockClientMessage() {
+function createMockClientMessage() {
     return stubInterface<ClientMessage>();
 }
 
 export function createMockContextManager() {
     return stubInterface<ContextManager>();
+}
+
+export function createMockFileContextManager() {
+    return stubInterface<FileContextManager>();
 }
 
 export function createMockSchemaTaskManager() {
@@ -230,6 +204,10 @@ export function createMockInlineCompletionRouter() {
 
 export function createMockDocumentSymbolRouter() {
     return stubInterface<DocumentSymbolRouter>();
+}
+
+export function createMockManagedResourceCodeLens() {
+    return stubInterface<ManagedResourceCodeLens>();
 }
 
 export function createMockTopLevelSectionCompletionProvider(
@@ -299,48 +277,100 @@ export function mockCfnAi() {
     return stubInterface<CfnAI>();
 }
 
-export function createMockComponents(overrides: Partial<ServerComponents> = {}): MockedServerComponents {
-    const syntaxTreeManager = overrides.syntaxTreeManager ?? createMockSyntaxTreeManager();
-    const documentManager = overrides.documentManager ?? createMockDocumentManager();
-    const schemaRetriever = overrides.schemaRetriever ?? createMockSchemaRetriever();
-    const resourceStateManager = overrides.resourceStateManager ?? createMockResourceStateManager();
+type StubbedInstanceProps<T, Exclude extends keyof T = never> = Omit<
+    {
+        [P in keyof T]: T[P] extends object ? StubbedInstance<T[P]> : T[P];
+    },
+    Exclude
+>;
 
-    return new MockedServerComponents(
-        {
-            diagnostics: overrides.diagnostics ?? createMockLspDiagnostics(),
-            workspace: overrides.workspace ?? createMockLspWorkspace(),
-            documents: overrides.documents ?? createMockLspDocuments(),
-            communication: overrides.communication ?? createMockLspCommunication(),
-            authHandlers: overrides.authHandlers ?? createMockAuthHandlers(),
-        },
-        {
-            dataStoreFactory: overrides.dataStoreFactory ?? createMockDataStore(),
-            clientMessage: overrides.clientMessage ?? createMockClientMessage(),
-            diagnosticCoordinator: overrides.diagnosticCoordinator ?? createMockDiagnosticCoordinator(),
-            settingsManager: overrides.settingsManager ?? createMockSettingsManager(),
-            syntaxTreeManager,
-            documentManager,
-            contextManager: overrides.contextManager ?? createMockContextManager(),
-            awsCredentials: overrides.awsCredentials ?? createMockAwsCredentials(),
-            awsClient: overrides.awsClient ?? createMockAwsApiClientComponent(),
-            cfnService: overrides.cfnService ?? createMockCfnService(),
-            ccapiService: overrides.ccapiService ?? createMockCcapiService(),
-            iacGeneratorService: overrides.iacGeneratorService ?? createMockIacGeneratorService(),
-            resourceStateManager,
-            resourceStateImporter: overrides.resourceStateImporter ?? createMockResourceStateImporter(),
-            schemaTaskManager: overrides.schemaTaskManager ?? createMockSchemaTaskManager(),
-            schemaRetriever,
-            cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
-            guardService: overrides.guardService ?? createMockGuardService(),
-            hoverRouter: overrides.hoverRouter ?? createMockHoverRouter(),
-            completionRouter: overrides.completionRouter ?? createMockCompletionRouter(),
-            inlineCompletionRouter: overrides.inlineCompletionRouter ?? createMockInlineCompletionRouter(),
-            definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
-            codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
-            documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
-            validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
-            deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
-            cfnAI: overrides.cfnAI ?? mockCfnAi(),
-        },
-    );
+type MockLspComponents = StubbedInstanceProps<LspComponents>;
+type MockInfraCoreComponents = StubbedInstanceProps<CfnInfraCoreType, 'dataStoreFactory'> & {
+    dataStoreFactory: DataStoreFactoryProvider;
+} & Closeable<Promise<void>> &
+    Configurables;
+type MockExternalComponents = StubbedInstanceProps<CfnExternalType> & Closeable<Promise<void>> & Configurables;
+type MockLspProviders = StubbedInstanceProps<CfnLspProvidersType> & Closeable<Promise<void>> & Configurables;
+export type MockedServerComponents = {
+    lsp: MockLspComponents;
+    core: MockInfraCoreComponents;
+    external: MockExternalComponents;
+    providers: MockLspProviders;
+} & MockLspComponents &
+    MockInfraCoreComponents &
+    MockExternalComponents &
+    MockLspProviders;
+
+export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}): MockedServerComponents {
+    const overrides = o as Partial<MockedServerComponents>;
+    const dataStoreFactory = overrides.dataStoreFactory ?? createMockDataStore();
+
+    const lsp: MockLspComponents = {
+        diagnostics: overrides.diagnostics ?? createMockLspDiagnostics(),
+        workspace: overrides.workspace ?? createMockLspWorkspace(),
+        documents: overrides.documents ?? createMockLspDocuments(),
+        communication: overrides.communication ?? createMockLspCommunication(),
+        handlers: overrides.handlers ?? stubInterface<LspHandlers>(),
+        authHandlers: overrides.authHandlers ?? createMockAuthHandlers(),
+        stackHandlers: overrides.stackHandlers ?? stubInterface<LspStackHandlers>(),
+        resourceHandlers: overrides.resourceHandlers ?? stubInterface<LspResourceHandlers>(),
+    };
+
+    const core: MockInfraCoreComponents = {
+        dataStoreFactory,
+        clientMessage: overrides.clientMessage ?? createMockClientMessage(),
+        settingsManager: overrides.settingsManager ?? createMockSettingsManager(),
+        syntaxTreeManager: overrides.syntaxTreeManager ?? createMockSyntaxTreeManager(),
+        documentManager: overrides.documentManager ?? createMockDocumentManager(),
+        fileContextManager: overrides.fileContextManager ?? createMockFileContextManager(),
+        contextManager: overrides.contextManager ?? createMockContextManager(),
+        awsCredentials: overrides.awsCredentials ?? createMockAwsCredentials(),
+        diagnosticCoordinator: overrides.diagnosticCoordinator ?? createMockDiagnosticCoordinator(),
+        close: () => Promise.resolve(),
+        configurables: () => [],
+    };
+
+    const external: MockExternalComponents = {
+        awsClient: overrides.awsClient ?? createMockAwsApiClientComponent(),
+        cfnService: overrides.cfnService ?? createMockCfnService(),
+        ccapiService: overrides.ccapiService ?? createMockCcapiService(),
+        iacGeneratorService: overrides.iacGeneratorService ?? createMockIacGeneratorService(),
+        schemaStore: overrides.schemaStore ?? new SchemaStore(dataStoreFactory),
+        schemaTaskManager: overrides.schemaTaskManager ?? createMockSchemaTaskManager(),
+        schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
+        cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
+        guardService: overrides.guardService ?? createMockGuardService(),
+        close: () => Promise.resolve(),
+        configurables: () => [],
+    };
+
+    const providers: MockLspProviders = {
+        stackManagementInfoProvider:
+            overrides.stackManagementInfoProvider ?? stubInterface<StackManagementInfoProvider>(),
+        validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
+        deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
+        resourceStateManager: overrides.resourceStateManager ?? createMockResourceStateManager(),
+        resourceStateImporter: overrides.resourceStateImporter ?? createMockResourceStateImporter(),
+        hoverRouter: overrides.hoverRouter ?? createMockHoverRouter(),
+        completionRouter: overrides.completionRouter ?? createMockCompletionRouter(),
+        inlineCompletionRouter: overrides.inlineCompletionRouter ?? createMockInlineCompletionRouter(),
+        definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
+        codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
+        documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
+        managedResourceCodeLens: overrides.managedResourceCodeLens ?? createMockManagedResourceCodeLens(),
+        cfnAI: overrides.cfnAI ?? mockCfnAi(),
+        close: () => Promise.resolve(),
+        configurables: () => [],
+    };
+
+    return {
+        lsp,
+        core,
+        external,
+        providers,
+        ...lsp,
+        ...core,
+        ...external,
+        ...providers,
+    };
 }

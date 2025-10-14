@@ -225,8 +225,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         syntaxTree: SyntaxTree,
         intrinsicFunction: IntrinsicFunctionInfo,
     ): CompletionItem[] | undefined {
-        log.debug({ provider: 'GetAtt Completion', context: context.record() }, 'Processing GetAtt completion request');
-
         const resourceEntities = getEntityMap(syntaxTree, TopLevelSection.Resources);
         if (!resourceEntities || resourceEntities.size === 0) {
             return undefined;
@@ -243,7 +241,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         return undefined;
     }
 
-    private getPseudoParametersAsCompletionItems(pseudoParameterMap: Map<PseudoParameter, string>): CompletionItem[] {
+    private getPseudoParametersAsCompletionItems(
+        pseudoParameterMap: ReadonlyMap<PseudoParameter, string>,
+    ): CompletionItem[] {
         const completionItems: CompletionItem[] = [];
         for (const [paramName, doc] of pseudoParameterMap) {
             completionItems.push(
@@ -562,21 +562,17 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
     private determineGetAttPosition(args: unknown, context: Context): number {
         if (typeof args === 'string') {
-            // String format
             const dotIndex = args.indexOf('.');
             if (dotIndex === -1) {
-                //resource name
                 return 1;
             }
 
             const resourcePart = args.slice(0, dotIndex);
 
-            // If context text matches the resource part
             if (context.text === resourcePart) {
                 return 1;
             }
 
-            // If context text is a prefix of the resource part
             if (context.text.length > 0 && resourcePart.startsWith(context.text)) {
                 return 1;
             }
@@ -588,17 +584,14 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             return 0;
         }
 
-        // Array format
         if (args.length === 0) {
             return 1;
         }
 
-        // resource name
         if (args.length === 1 && args[0] === context.text) {
             return 1;
         }
 
-        // attribute name
         if (args.length >= 2 && args[1] === context.text) {
             return 2;
         }
@@ -665,14 +658,16 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const completionItems = attributes.map((attributeName) => {
-            const item = createCompletionItem(attributeName, CompletionItemKind.Property);
+            const item = createCompletionItem(attributeName, CompletionItemKind.Property, {
+                data: { isIntrinsicFunction: true },
+            });
 
             if (context.text.length > 0) {
                 const range = createReplacementRange(context);
                 if (range) {
                     if (typeof args === 'string' && args.includes('.')) {
                         item.textEdit = TextEdit.replace(range, resourceLogicalId + '.' + attributeName);
-                        item.filterText = resourceLogicalId + attributeName;
+                        item.filterText = `${resourceLogicalId}.${attributeName}`;
                     } else {
                         item.textEdit = TextEdit.replace(range, attributeName);
                     }

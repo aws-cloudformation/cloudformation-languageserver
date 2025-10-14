@@ -301,7 +301,7 @@ describe('StackActionWorkflowOperations', () => {
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
             expect(result.state).toBe(StackActionState.FAILED);
-            expect(result.reason).toBe('Test failure');
+            expect(result.failureReason).toBe('Test failure');
         });
 
         it('should handle exceptions with error message', async () => {
@@ -311,7 +311,7 @@ describe('StackActionWorkflowOperations', () => {
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
             expect(result.state).toBe(StackActionState.FAILED);
-            expect(result.reason).toBe('Network error');
+            expect(result.failureReason).toBe('Network error');
         });
 
         it('should handle non-Error exceptions', async () => {
@@ -321,7 +321,7 @@ describe('StackActionWorkflowOperations', () => {
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
             expect(result.state).toBe(StackActionState.FAILED);
-            expect(result.reason).toBe('String error');
+            expect(result.failureReason).toBe('String error');
         });
     });
 });

@@ -13,7 +13,6 @@ import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createResourceContext, createTopLevelContext } from '../../utils/MockContext';
 import {
-    createMockClientMessage,
     createMockComponents,
     createMockDocumentManager,
     createMockResourceStateManager,
@@ -24,7 +23,11 @@ import { docPosition, Templates } from '../../utils/TemplateUtils';
 /* eslint-disable vitest/expect-expect */
 describe('CompletionRouter', () => {
     const mockComponents = createMockComponents();
-    const completionRouter = CompletionRouter.create(mockComponents);
+    const completionRouter = CompletionRouter.create(
+        mockComponents.core,
+        mockComponents.external,
+        mockComponents.providers,
+    );
     const mockParams: CompletionParams = {
         textDocument: { uri: 'file:///test.yaml' },
         position: { line: 0, character: 0 },
@@ -181,12 +184,11 @@ describe('CompletionRouter', () => {
     });
 
     describe('Reference in template', () => {
-        const mockClientMessage = createMockClientMessage();
         const mockDocumentManager = createMockDocumentManager();
         const mockResourceStateManager = createMockResourceStateManager();
         const mockSettingsManager = createMockSettingsManager();
 
-        const syntaxTreeManager = new SyntaxTreeManager(mockClientMessage);
+        const syntaxTreeManager = new SyntaxTreeManager();
         const contextManager = new ContextManager(syntaxTreeManager);
 
         const mockTestComponents = createMockComponents({
@@ -196,7 +198,11 @@ describe('CompletionRouter', () => {
             schemaRetriever: mockComponents.schemaRetriever,
             settingsManager: mockSettingsManager,
         });
-        const completionProviderMap = createCompletionProviders(mockTestComponents);
+        const completionProviderMap = createCompletionProviders(
+            mockTestComponents.core,
+            mockTestComponents.external,
+            mockTestComponents.providers,
+        );
         const entityFieldProviderMap = createEntityFieldProviders();
         const realCompletionRouter = new CompletionRouter(
             contextManager,
@@ -786,6 +792,48 @@ describe('CompletionRouter', () => {
                     expectParameterCompletionProvider(63, 40, uri, 'Yaml PseudoParam Ref');
                 });
             });
+        });
+    });
+
+    describe('isIncomplete handling', () => {
+        test('should set isIncomplete to true when results exceed maxCompletions', () => {
+            const mockProvider = {
+                getCompletions: vi
+                    .fn()
+                    .mockReturnValue(Array.from({ length: 150 }, (_, i) => ({ label: `Item${i}`, kind: 1 }))),
+            };
+
+            completionRouter['completionProviderMap'].set('TopLevelSection', mockProvider);
+            completionRouter['completionSettings'] = { ...completionRouter['completionSettings'], maxCompletions: 100 };
+
+            const mockContext = createTopLevelContext('Unknown', { text: '' });
+            mockComponents.contextManager.getContext.returns(mockContext);
+
+            const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+
+            expect(result).toBeDefined();
+            expect(result!.isIncomplete).toBe(true);
+            expect(result!.items.length).toBe(100);
+        });
+
+        test('should set isIncomplete to false when results are within maxCompletions', () => {
+            const mockProvider = {
+                getCompletions: vi
+                    .fn()
+                    .mockReturnValue(Array.from({ length: 50 }, (_, i) => ({ label: `Item${i}`, kind: 1 }))),
+            };
+
+            completionRouter['completionProviderMap'].set('TopLevelSection', mockProvider);
+            completionRouter['completionSettings'] = { ...completionRouter['completionSettings'], maxCompletions: 100 };
+
+            const mockContext = createTopLevelContext('Unknown', { text: '' });
+            mockComponents.contextManager.getContext.returns(mockContext);
+
+            const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+
+            expect(result).toBeDefined();
+            expect(result!.isIncomplete).toBe(false);
+            expect(result!.items.length).toBe(50);
         });
     });
 });

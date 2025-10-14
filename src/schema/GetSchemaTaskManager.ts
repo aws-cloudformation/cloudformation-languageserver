@@ -1,20 +1,21 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
-import { DefaultSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings } from '../settings/Settings';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Closeable } from '../utils/Closeable';
 import { AwsRegion } from '../utils/Region';
 import { GetPrivateSchemasTask, GetPublicSchemaTask } from './GetSchemaTask';
 import { SchemaFileType } from './RegionalSchemas';
-import { cfnResourceSchemaLink, downloadFile, unZipFile } from './RemoteSchemaHelper';
 import { SchemaStore } from './SchemaStore';
 
 const TenSeconds = 10 * 1000;
 const OneHour = 60 * 60 * 1000;
 
-export class GetSchemaTaskManager implements Configurable, Closeable {
+export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
     private readonly tasks: GetPublicSchemaTask[] = [];
     private readonly privateTask: GetPrivateSchemasTask;
     private settingsSubscription?: SettingsSubscription;
+    private readonly log = LoggerFactory.getLogger(GetSchemaTaskManager);
 
     private isRunning: boolean = false;
 
@@ -25,7 +26,6 @@ export class GetSchemaTaskManager implements Configurable, Closeable {
         private readonly schemas: SchemaStore,
         private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
         private readonly getPrivateResources: () => Promise<DescribeTypeOutput[]>,
-        private readonly clientMessage: ClientMessage,
         private profile: string = DefaultSettings.profile.profile,
     ) {
         this.privateTask = new GetPrivateSchemasTask(this.getPrivateResources, () => this.profile);
@@ -68,7 +68,7 @@ export class GetSchemaTaskManager implements Configurable, Closeable {
     }
 
     runPrivateTask() {
-        this.privateTask.run(this.schemas.privateSchemas, this.clientMessage).catch(() => {});
+        this.privateTask.run(this.schemas.privateSchemas, this.log).catch(() => {});
     }
 
     public currentRegionalTasks() {
@@ -85,7 +85,7 @@ export class GetSchemaTaskManager implements Configurable, Closeable {
     private run() {
         const task = this.tasks.shift();
         if (task) {
-            task.run(this.schemas.publicSchemas, this.clientMessage)
+            task.run(this.schemas.publicSchemas, this.log)
                 .catch(() => {
                     this.tasks.push(task);
                 })
@@ -105,17 +105,5 @@ export class GetSchemaTaskManager implements Configurable, Closeable {
 
         clearTimeout(this.timeout);
         clearInterval(this.interval);
-    }
-
-    static create(components: ServerComponents) {
-        return new GetSchemaTaskManager(
-            components.schemaStore,
-            (region: AwsRegion) => {
-                return unZipFile(downloadFile(cfnResourceSchemaLink(region)));
-            },
-            () => components.cfnService.getAllPrivateResourceSchemas(),
-            components.clientMessage,
-            DefaultSettings.profile.profile,
-        );
     }
 }

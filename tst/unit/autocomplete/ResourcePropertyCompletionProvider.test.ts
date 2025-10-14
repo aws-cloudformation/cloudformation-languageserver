@@ -1046,4 +1046,35 @@ describe('ResourcePropertyCompletionProvider', () => {
             expect(privateItem!.filterText).toBe("'Private'");
         });
     });
+
+    test('should exclude existing properties from array item when in array context', () => {
+        const testSchemas = combinedSchemas([Schemas.S3Bucket]);
+        mockComponents.schemaRetriever.getDefault.returns(testSchemas);
+
+        const context = createContextFromYamlContentAndPath(
+            `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      Tags:
+        - Key: test
+          Value: test
+        - 
+          Value: test`,
+            { line: 7, character: 10 }, // Position at the cursor location before "Value: test"
+        );
+
+        const result = provider.getCompletions(context, mockParams);
+
+        expect(result).toBeDefined();
+        expect(result!.length).toBeGreaterThan(0);
+
+        // Value should be filtered out since it exists in the array item
+        const valueItem = result?.find((item) => item.label === 'Value');
+        expect(valueItem).toBeUndefined();
+
+        // Key should be included since it doesn't exist in the array item
+        const keyItem = result?.find((item) => item.label === 'Key');
+        expect(keyItem).toBeDefined();
+    });
 });

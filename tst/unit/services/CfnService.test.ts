@@ -328,11 +328,165 @@ describe('CfnService', () => {
         it('should successfully call describeStackEvents and return response', async () => {
             cloudFormationMock.on(DescribeStackEventsCommand).resolves(MOCK_RESPONSES.DESCRIBE_STACK_EVENTS);
 
-            const result = await service.describeStackEvents({
-                StackName: TEST_CONSTANTS.STACK_NAME,
-            });
+            const result = await service.describeStackEvents(
+                {
+                    StackName: TEST_CONSTANTS.STACK_NAME,
+                },
+                'test-token',
+            );
 
             expect(result).toEqual(MOCK_RESPONSES.DESCRIBE_STACK_EVENTS);
+        });
+
+        it('should fetch all pages when paginated', async () => {
+            const page1 = {
+                ...MOCK_RESPONSES.DESCRIBE_STACK_EVENTS,
+                StackEvents: [
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-1',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource1',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:00:00Z'),
+                        ClientRequestToken: 'test-token',
+                    },
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-2',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource2',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:01:00Z'),
+                        ClientRequestToken: 'test-token',
+                    },
+                ],
+                NextToken: 'token1',
+            };
+            const page2 = {
+                ...MOCK_RESPONSES.DESCRIBE_STACK_EVENTS,
+                StackEvents: [
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-3',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource3',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:02:00Z'),
+                        ClientRequestToken: 'test-token',
+                    },
+                ],
+                NextToken: undefined,
+            };
+
+            cloudFormationMock.on(DescribeStackEventsCommand).resolvesOnce(page1).resolvesOnce(page2);
+
+            const result = await service.describeStackEvents(
+                {
+                    StackName: TEST_CONSTANTS.STACK_NAME,
+                },
+                'test-token',
+            );
+
+            expect(result.StackEvents).toHaveLength(3);
+            expect(result.StackEvents?.[0].EventId).toBe('event-1');
+            expect(result.StackEvents?.[2].EventId).toBe('event-3');
+            expect(result.NextToken).toBeUndefined();
+        });
+
+        it('should stop pagination when clientToken no longer matches', async () => {
+            const page1 = {
+                ...MOCK_RESPONSES.DESCRIBE_STACK_EVENTS,
+                StackEvents: [
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-1',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource1',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:00:00Z'),
+                        ClientRequestToken: 'test-token',
+                    },
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-2',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource2',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:01:00Z'),
+                        ClientRequestToken: 'test-token',
+                    },
+                ],
+                NextToken: 'token1',
+            };
+            const page2 = {
+                ...MOCK_RESPONSES.DESCRIBE_STACK_EVENTS,
+                StackEvents: [
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-3',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource3',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:02:00Z'),
+                        ClientRequestToken: 'test-token',
+                    },
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-4',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource4',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:03:00Z'),
+                        ClientRequestToken: 'different-token',
+                    },
+                ],
+                NextToken: 'token2',
+            };
+            const page3 = {
+                ...MOCK_RESPONSES.DESCRIBE_STACK_EVENTS,
+                StackEvents: [
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-5',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource5',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:04:00Z'),
+                        ClientRequestToken: 'different-token',
+                    },
+                    {
+                        StackId: TEST_CONSTANTS.STACK_ID,
+                        EventId: 'event-6',
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                        LogicalResourceId: 'Resource6',
+                        ResourceStatus: 'CREATE_COMPLETE' as const,
+                        Timestamp: new Date('2023-01-01T00:05:00Z'),
+                        ClientRequestToken: 'different-token',
+                    },
+                ],
+                NextToken: undefined,
+            };
+
+            cloudFormationMock
+                .on(DescribeStackEventsCommand)
+                .resolvesOnce(page1)
+                .resolvesOnce(page2)
+                .resolvesOnce(page3);
+
+            const result = await service.describeStackEvents(
+                {
+                    StackName: TEST_CONSTANTS.STACK_NAME,
+                },
+                'test-token',
+            );
+
+            expect(result.StackEvents).toHaveLength(3); // Only events with matching token (event-1, event-2, event-3)
+            expect(result.StackEvents?.[0].EventId).toBe('event-1');
+            expect(result.StackEvents?.[1].EventId).toBe('event-2');
+            expect(result.StackEvents?.[2].EventId).toBe('event-3');
+            expect(result.NextToken).toBeUndefined();
+            expect(cloudFormationMock.commandCalls(DescribeStackEventsCommand)).toHaveLength(3); // Should have made 3 calls
         });
 
         it('should throw StackNotFoundException when API call fails', async () => {
@@ -340,9 +494,12 @@ describe('CfnService', () => {
             cloudFormationMock.on(DescribeStackEventsCommand).rejects(error);
 
             await expect(
-                service.describeStackEvents({
-                    StackName: TEST_CONSTANTS.STACK_NAME,
-                }),
+                service.describeStackEvents(
+                    {
+                        StackName: TEST_CONSTANTS.STACK_NAME,
+                    },
+                    'test-token',
+                ),
             ).rejects.toThrow(error);
         });
     });

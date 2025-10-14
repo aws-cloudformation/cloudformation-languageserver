@@ -1,13 +1,12 @@
 import { BaseMessage } from '@langchain/core/messages';
 import { StructuredTool } from '@langchain/core/tools';
 import { DocumentManager } from '../document/DocumentManager';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
 import { AwsClient } from '../services/AwsClient';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
 import { getFilteredScannedResources, formatScannedResourcesForAI } from '../services/ResourceScanService';
-import { ISettingsSubscriber } from '../settings/Settings';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { SettingsConfigurable, ISettingsSubscriber } from '../settings/ISettingsSubscriber';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Closeable } from '../utils/Closeable';
 import { extractErrorMessage } from '../utils/Errors';
 import { toString } from '../utils/String';
 import { Agent } from './Agent';
@@ -17,18 +16,16 @@ import { Prompts } from './Prompts';
 
 const logger = LoggerFactory.getLogger('CfnAI');
 
-export class CfnAI implements Closeable, Configurable {
+export class CfnAI implements SettingsConfigurable, Closeable {
     private readonly llmConfig: LLMConfig;
     private agent?: Agent;
     private mcpTools?: McpTools;
 
     constructor(
-        components: ServerComponents,
-        private readonly documentManager: DocumentManager = components.documentManager,
-        private readonly clientMessage: ClientMessage = components.clientMessage,
-        private readonly awsClient: AwsClient = components.awsClient,
+        private readonly documentManager: DocumentManager,
+        private readonly awsClient: AwsClient,
     ) {
-        this.llmConfig = LLMConfig.create(components);
+        this.llmConfig = new LLMConfig();
     }
 
     configure(settingsManager: ISettingsSubscriber): void {
@@ -39,8 +36,8 @@ export class CfnAI implements Closeable, Configurable {
         if (this.agent === undefined) {
             const config = this.llmConfig.get();
             if (config !== undefined) {
-                this.agent = Agent.create(config);
-                this.mcpTools = new McpTools(this.clientMessage);
+                this.agent = new Agent(config);
+                this.mcpTools = new McpTools();
             }
         }
     }
@@ -160,9 +157,5 @@ export class CfnAI implements Closeable, Configurable {
 
     close() {
         return this.mcpTools?.close();
-    }
-
-    static create(components: ServerComponents): CfnAI {
-        return new CfnAI(components);
     }
 }

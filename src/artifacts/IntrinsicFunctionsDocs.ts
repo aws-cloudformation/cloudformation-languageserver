@@ -1,6 +1,6 @@
 import { IntrinsicFunction } from '../context/ContextType';
 
-export const intrinsicFunctionsDocsMap = getIntrinsicFunctionsDocsMap();
+export const intrinsicFunctionsDocsMap: ReadonlyMap<IntrinsicFunction, string> = getIntrinsicFunctionsDocsMap();
 
 function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
     const intrinsicFunctionsDocsMap = new Map<IntrinsicFunction, string>();

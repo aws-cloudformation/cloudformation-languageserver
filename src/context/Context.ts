@@ -142,6 +142,27 @@ export class Context {
         return this.propertyPath.length > resourceAttributeIndex + 1;
     }
 
+    public isResourceAttributeValue(): boolean {
+        if (this.section !== TopLevelSection.Resources || !this.hasLogicalId) {
+            return false;
+        }
+
+        if (this.propertyPath.length !== 3) {
+            return false;
+        }
+
+        const attributeName = this.propertyPath[2] as string;
+        if (!ResourceAttributesSet.has(attributeName)) {
+            return false;
+        }
+
+        if (this.text === attributeName) {
+            return false;
+        }
+
+        return this.isValue();
+    }
+
     public getResourceAttributePropertyPath(): string[] {
         const resourceAttributeIndex = this.propertyPath.findIndex((segment) =>
             ResourceAttributesSet.has(segment as string),

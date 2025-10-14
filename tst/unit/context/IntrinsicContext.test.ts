@@ -2,12 +2,11 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { ContextManager } from '../../../src/context/ContextManager';
 import { IntrinsicFunction } from '../../../src/context/ContextType';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
-import { createMockClientMessage } from '../../utils/MockServerComponents';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
 
 /* eslint-disable vitest/expect-expect */
 describe('IntrinsicContext', () => {
-    const syntaxTreeManager = new SyntaxTreeManager(createMockClientMessage());
+    const syntaxTreeManager = new SyntaxTreeManager();
     const contextManager = new ContextManager(syntaxTreeManager);
 
     const sampleYamlUri = Templates.sample.yaml.fileName;

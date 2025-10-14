@@ -13,9 +13,8 @@ import { NodeSearch } from '../context/syntaxtree/utils/NodeSearch';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
 import { ANALYZE_DIAGNOSTIC } from '../handlers/ExecutionHandler';
-import { ServerComponents } from '../server/ServerComponents';
+import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
-import { ClientMessage } from '../telemetry/ClientMessage';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { pointToPosition } from '../utils/TypeConverters';
@@ -36,7 +35,6 @@ export class CodeActionService {
     constructor(
         private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly documentManager: DocumentManager,
-        private readonly clientMessage: ClientMessage,
         private readonly diagnosticCoordinator: DiagnosticCoordinator,
     ) {}
 
@@ -88,7 +86,7 @@ export class CodeActionService {
                 fixes.push(...this.generateCfnValidationFixes(diagnostic, uri));
             }
         } catch (error) {
-            this.clientMessage.error(`Error generating fixes for diagnostic: ${extractErrorMessage(error)}`);
+            this.log.error(`Error generating fixes for diagnostic: ${extractErrorMessage(error)}`);
         }
 
         return fixes;
@@ -190,7 +188,7 @@ export class CodeActionService {
                 ],
             });
         } else {
-            this.clientMessage.debug(`Skipping quickfix for '${propertyName}' - could not determine proper range`);
+            this.log.debug(`Skipping quickfix for '${propertyName}' - could not determine proper range`);
         }
 
         return fixes;
@@ -214,13 +212,11 @@ export class CodeActionService {
                 }
             }
         } catch (error) {
-            this.clientMessage.warn(
-                `Could not determine key-pair range from syntax tree: ${extractErrorMessage(error)}`,
-            );
+            this.log.warn(`Could not determine key-pair range from syntax tree: ${extractErrorMessage(error)}`);
         }
 
         // Fallback to the diagnostic range as provided by cfn-lint
-        this.clientMessage.debug(`Using fallback diagnostic range`);
+        this.log.debug(`Using fallback diagnostic range`);
         return diagnostic.range;
     }
 
@@ -256,13 +252,13 @@ export class CodeActionService {
                 return { start, end };
             }
 
-            this.clientMessage.debug(`No key-value pair found after traversal`);
+            this.log.debug(`No key-value pair found after traversal`);
             return {
                 start: pointToPosition(node.startPosition),
                 end: pointToPosition(node.endPosition),
             };
         } catch (error) {
-            this.clientMessage.warn(`Error finding key-pair boundaries in syntax tree: ${extractErrorMessage(error)}`);
+            this.log.warn(`Error finding key-pair boundaries in syntax tree: ${extractErrorMessage(error)}`);
             return undefined;
         }
     }
@@ -297,7 +293,7 @@ export class CodeActionService {
             }
             // If we can't find a proper insertion point using syntax tree, don't generate a fix
         } catch (error) {
-            this.clientMessage.warn(`Error generating add required property fix: ${extractErrorMessage(error)}`);
+            this.log.warn(`Error generating add required property fix: ${extractErrorMessage(error)}`);
             // If we can't generate a proper fix using syntax tree, don't generate a fix
         }
 
@@ -330,7 +326,7 @@ export class CodeActionService {
 
             return codeAction;
         } catch (error) {
-            this.clientMessage.error(`Error creating code action: ${extractErrorMessage(error)}`);
+            this.log.error(`Error creating code action: ${extractErrorMessage(error)}`);
             return undefined;
         }
     }
@@ -379,15 +375,13 @@ export class CodeActionService {
 
                 // If no children exist, we can't determine proper indentation from the structure
                 // This shouldn't happen for valid YAML where we're adding a required property
-                this.clientMessage.debug(
-                    `No child properties found in block mapping pair - cannot determine indentation`,
-                );
+                this.log.debug(`No child properties found in block mapping pair - cannot determine indentation`);
                 return undefined;
             }
 
             return undefined;
         } catch (error) {
-            this.clientMessage.warn(`Error finding first child insertion point: ${extractErrorMessage(error)}`);
+            this.log.warn(`Error finding first child insertion point: ${extractErrorMessage(error)}`);
             return undefined;
         }
     }
@@ -412,9 +406,7 @@ export class CodeActionService {
 
             return undefined;
         } catch (error) {
-            this.clientMessage.warn(
-                `Error finding first child position using syntax tree: ${extractErrorMessage(error)}`,
-            );
+            this.log.warn(`Error finding first child position using syntax tree: ${extractErrorMessage(error)}`);
             return undefined;
         }
     }
@@ -484,12 +476,7 @@ export class CodeActionService {
         return match ? match[1] : undefined;
     }
 
-    static create(components: ServerComponents) {
-        return new CodeActionService(
-            components.syntaxTreeManager,
-            components.documentManager,
-            components.clientMessage,
-            components.diagnosticCoordinator,
-        );
+    static create(core: CfnInfraCore) {
+        return new CodeActionService(core.syntaxTreeManager, core.documentManager, core.diagnosticCoordinator);
     }
 }

@@ -1,7 +1,7 @@
 import { Context } from '../context/Context';
-import { IntrinsicFunction } from '../context/ContextType';
+import { IntrinsicFunction, ResourceAttribute, ResourceAttributesSet } from '../context/ContextType';
 import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntities';
-import { formatIntrinsicArgumentHover } from './HoverFormatter';
+import { formatIntrinsicArgumentHover, getResourceAttributeValueDoc } from './HoverFormatter';
 import { HoverProvider } from './HoverProvider';
 
 export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
@@ -18,7 +18,11 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
             return undefined;
         }
 
-        // Handle different intrinsic function types
+        const resourceAttributeValueDoc = this.getResourceAttributeValueDoc(context);
+        if (resourceAttributeValueDoc) {
+            return resourceAttributeValueDoc;
+        }
+
         switch (intrinsicFunction.type) {
             case IntrinsicFunction.Ref: {
                 return this.handleRefArgument(context);
@@ -59,5 +63,21 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
 
     private buildSchemaAndFormat(relatedContext: Context): string | undefined {
         return formatIntrinsicArgumentHover(relatedContext.entity);
+    }
+
+    /**
+     * Check if we're inside an intrinsic function that's providing a value for a resource attribute
+     * and return documentation for that value if applicable.
+     */
+    private getResourceAttributeValueDoc(context: Context): string | undefined {
+        // Find the resource attribute in the property path
+        for (const pathSegment of context.propertyPath) {
+            if (ResourceAttributesSet.has(pathSegment as string)) {
+                const attributeName = pathSegment as ResourceAttribute;
+                return getResourceAttributeValueDoc(attributeName, context.text);
+            }
+        }
+
+        return undefined;
     }
 }

@@ -25,7 +25,11 @@ describe('ResourceSectionCompletionProvider', () => {
         settingsManager: mockSettingsManager,
     });
 
-    const provider = new ResourceSectionCompletionProvider(mockTestComponents);
+    const provider = new ResourceSectionCompletionProvider(
+        mockTestComponents.core,
+        mockTestComponents.external,
+        mockTestComponents.providers,
+    );
 
     const resourceProviders = provider['resourceProviders'];
 

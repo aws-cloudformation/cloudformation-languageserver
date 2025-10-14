@@ -4,10 +4,12 @@ import { ExtensionName } from '../../utils/ExtensionConfig';
 import {
     CreateStackActionParams,
     CreateStackActionResult,
+    DeploymentEvent,
     GetStackActionStatusResult,
     StackActionPhase,
     StackActionState,
     StackChange,
+    ValidationDetail,
 } from './StackActionRequestType';
 
 export type StackActionWorkflowState = {
@@ -18,25 +20,29 @@ export type StackActionWorkflowState = {
     state: StackActionState;
     phase: StackActionPhase;
     changes?: StackChange[];
+    deploymentEvents?: DeploymentEvent[];
+    validationDetails?: ValidationDetail[];
     lastPolled?: number;
+    failureReason?: string;
 };
 
 export type ValidationWaitForResult = {
     state: StackActionState;
     phase: StackActionPhase;
     changes?: StackChange[];
-    reason?: string;
+    failureReason?: string;
 };
 
 export type DeploymentWaitForResult = {
     state: StackActionState;
     phase: StackActionPhase;
-    reason?: string;
+    failureReason?: string;
 };
 
 export const changeSetNamePrefix = `${ExtensionName}-${AwsEnv}`.replaceAll(' ', '-');
 
-export interface StackActionWorkflow {
+export interface StackActionWorkflow<TDescribeResult> {
     start(params: CreateStackActionParams): Promise<CreateStackActionResult>;
     getStatus(params: Identifiable): GetStackActionStatusResult;
+    describeStatus(params: Identifiable): TDescribeResult;
 }

@@ -1,12 +1,12 @@
 import { GetResourceCommandOutput, ListResourcesOutput, ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
 import { DateTime } from 'luxon';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
-import { Closeable, Configurable, ServerComponents } from '../server/ServerComponents';
+import { CfnExternal } from '../server/CfnExternal';
 import { CcapiService } from '../services/CcapiService';
-import { DefaultSettings, ProfileSettings, SettingsSubscription } from '../settings/Settings';
-import { SettingsManager } from '../settings/SettingsManager';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Closeable } from '../utils/Closeable';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
 
 const log = LoggerFactory.getLogger('ResourceStateManager');
@@ -30,7 +30,7 @@ type ResourceId = string;
 type ResourceStateMap = Map<ResourceType, Map<ResourceId, ResourceState>>;
 type ResourceListMap = Map<ResourceType, ResourceList>;
 
-export class ResourceStateManager implements Configurable, Closeable {
+export class ResourceStateManager implements SettingsConfigurable, Closeable {
     private settingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
     private isRefreshing = false;
@@ -41,7 +41,6 @@ export class ResourceStateManager implements Configurable, Closeable {
 
     constructor(
         private readonly ccapiService: CcapiService,
-        private readonly clientMessage: ClientMessage,
         private readonly schemaRetriever: SchemaRetriever,
     ) {}
 
@@ -57,7 +56,7 @@ export class ResourceStateManager implements Configurable, Closeable {
         } catch (error) {
             log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
             if (error instanceof ResourceNotFoundException) {
-                this.clientMessage.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
+                log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
             }
             return;
         }
@@ -193,7 +192,7 @@ export class ResourceStateManager implements Configurable, Closeable {
         }
     }
 
-    configure(settingsManager: SettingsManager) {
+    configure(settingsManager: ISettingsSubscriber) {
         if (this.settingsSubscription) {
             this.settingsSubscription.unsubscribe();
         }
@@ -219,7 +218,7 @@ export class ResourceStateManager implements Configurable, Closeable {
         this.settings = newSettings;
     }
 
-    static create(components: ServerComponents) {
-        return new ResourceStateManager(components.ccapiService, components.clientMessage, components.schemaRetriever);
+    static create(external: CfnExternal) {
+        return new ResourceStateManager(external.ccapiService, external.schemaRetriever);
     }
 }

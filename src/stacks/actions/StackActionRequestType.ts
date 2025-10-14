@@ -1,4 +1,11 @@
-import { Parameter, Capability, ResourceChangeDetail } from '@aws-sdk/client-cloudformation';
+import {
+    Parameter,
+    Capability,
+    ResourceChangeDetail,
+    ResourceStatus,
+    DetailedStatus,
+} from '@aws-sdk/client-cloudformation';
+import { DateTime } from 'luxon';
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
 import { Identifiable } from '../../protocol/LspTypes';
 
@@ -59,5 +66,32 @@ export enum StackActionState {
 export type GetStackActionStatusResult = Identifiable & {
     state: StackActionState;
     phase: StackActionPhase;
-    changes?: StackChange[];
+    changes?: StackChange[]; // TODO: move this property to the describe call results
+};
+
+export type ValidationDetail = {
+    ValidationName: string;
+    LogicalId?: string;
+    ResourcePropertyPath?: string;
+    Timestamp: DateTime;
+    Severity: 'INFO' | 'ERROR';
+    Message: string;
+};
+
+export type DeploymentEvent = {
+    LogicalResourceId?: string;
+    ResourceType?: string;
+    Timestamp?: DateTime;
+    ResourceStatus?: ResourceStatus;
+    ResourceStatusReason?: string;
+    DetailedStatus?: DetailedStatus;
+};
+
+export type DescribeValidationStatusResult = GetStackActionStatusResult & {
+    ValidationDetails?: ValidationDetail[];
+    FailureReason?: string;
+};
+
+export type DescribeDeploymentStatusResult = DescribeValidationStatusResult & {
+    DeploymentEvents?: DeploymentEvent[];
 };

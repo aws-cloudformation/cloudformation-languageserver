@@ -13,7 +13,7 @@ describe('DefinitionProvider', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockComponents = createMockComponents();
-        definitionProvider = DefinitionProvider.create(mockComponents);
+        definitionProvider = new DefinitionProvider(mockComponents.core.contextManager);
         params = {
             textDocument: { uri: 'file:///test.yaml' },
             position: { line: 0, character: 0 },

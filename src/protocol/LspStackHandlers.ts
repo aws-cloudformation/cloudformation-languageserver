@@ -6,6 +6,8 @@ import {
     GetValidationStatusRequest,
     GetCapabilitiesRequest,
     GetParametersRequest,
+    DescribeValidationStatusRequest,
+    DescribeDeploymentStatusRequest,
 } from '../stacks/actions/StackActionProtocol';
 import {
     TemplateUri,
@@ -14,8 +16,17 @@ import {
     GetStackActionStatusResult,
     GetParametersResult,
     GetCapabilitiesResult,
+    DescribeValidationStatusResult,
+    DescribeDeploymentStatusResult,
 } from '../stacks/actions/StackActionRequestType';
-import { ListStacksParams, ListStacksRequest, ListStacksResult } from '../stacks/StackRequestType';
+import {
+    ListStacksParams,
+    ListStacksResult,
+    ListStacksRequest,
+    GetStackTemplateParams,
+    GetStackTemplateResult,
+    GetStackTemplateRequest,
+} from '../stacks/StackRequestType';
 import { Identifiable } from './LspTypes';
 
 export class LspStackHandlers {
@@ -37,6 +48,14 @@ export class LspStackHandlers {
         this.connection.onRequest(GetDeploymentStatusRequest.method, handler);
     }
 
+    onDescribeValidationStatus(handler: RequestHandler<Identifiable, DescribeValidationStatusResult, void>) {
+        this.connection.onRequest(DescribeValidationStatusRequest.method, handler);
+    }
+
+    onDescribeDeploymentStatus(handler: RequestHandler<Identifiable, DescribeDeploymentStatusResult, void>) {
+        this.connection.onRequest(DescribeDeploymentStatusRequest.method, handler);
+    }
+
     onGetParameters(handler: RequestHandler<TemplateUri, GetParametersResult, void>) {
         this.connection.onRequest(GetParametersRequest.method, handler);
     }
@@ -47,5 +66,9 @@ export class LspStackHandlers {
 
     onListStacks(handler: RequestHandler<ListStacksParams, ListStacksResult, void>) {
         this.connection.onRequest(ListStacksRequest.method, handler);
+    }
+
+    onGetStackTemplate(handler: RequestHandler<GetStackTemplateParams, GetStackTemplateResult | undefined, void>) {
+        this.connection.onRequest(GetStackTemplateRequest.method, handler);
     }
 }
