@@ -48,10 +48,6 @@ describe('SettingsState', () => {
                         defaultSeverity: 'warning',
                     },
                 },
-                telemetry: {
-                    enabled: true,
-                    logLevel: 'debug',
-                },
                 editor: {
                     tabSize: 2,
                     insertSpaces: false,
