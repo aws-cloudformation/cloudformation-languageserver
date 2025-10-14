@@ -4,13 +4,14 @@ import { Resource } from '../context/semantic/Entity';
 import { CfnValue } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../context/syntaxtree/utils/TreeSitterTypes';
+import { propertyTypesToMarkdown } from '../hover/HoverFormatter';
 import { PropertyType, ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { templatePathToJsonPointerPath } from '../utils/PathUtils';
 import { CompletionItemData, ExtendedCompletionItem } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
-import { createCompletionItem } from './CompletionUtils';
+import { createCompletionItem, createMarkupContent } from './CompletionUtils';
 
 export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private readonly fuzzySearch = getFuzzySearchFunction();
@@ -237,7 +238,6 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         context: Context,
     ): CompletionItem[] {
         const result: CompletionItem[] = [];
-
         const availableRequiredProperties = [...requiredProperties].filter(
             (propName) => allProperties.has(propName) && !existingProperties.has(propName),
         );
@@ -255,10 +255,22 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
 
             const itemData = this.getPropertyType(schema, propertyDef);
 
+            // Generate rich markdown documentation for the property
+            let documentation;
+            if (propertyDef.description || propertyDef.properties || propertyDef.type) {
+                // Use the rich markdown formatter from hover system
+                const markdownDoc = propertyTypesToMarkdown(propertyName, [propertyDef]);
+                documentation = createMarkupContent(markdownDoc);
+            } else {
+                // Fallback to simple description for properties without schema details
+                documentation = `${propertyName} property of ${schema.typeName}`;
+            }
+
             const completionItem: ExtendedCompletionItem = createCompletionItem(
                 propertyName,
                 CompletionItemKind.Property,
                 {
+                    documentation: documentation,
                     data: itemData,
                     context: context,
                 },

@@ -147,6 +147,8 @@ export class ScopedTelemetry implements Closeable {
         } else if (Array.isArray(result)) {
             responseType = 'array';
             this.histogram(`${name}.response.type.array.size`, result.length, { unit: '1', ...options }, attributes);
+        } else if (typeof result === 'object') {
+            responseType = 'object';
         }
 
         this.count(`${name}.response.type.${responseType}`, 1, { unit: '1', ...options }, attributes);

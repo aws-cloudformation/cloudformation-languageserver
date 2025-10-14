@@ -2,6 +2,7 @@ import { Edit, Point } from 'tree-sitter';
 import { CloudFormationFileType, DocumentType } from '../../document/Document';
 import { detectDocumentType } from '../../document/DocumentUtils';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { Measure } from '../../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../../utils/Errors';
 import { JsonSyntaxTree } from './JsonSyntaxTree';
 import { SyntaxTree } from './SyntaxTree';
@@ -27,24 +28,26 @@ export class SyntaxTreeManager {
             return;
         }
 
-        this.log.info({ type, cfnFileType }, `Created tree ${uri}`);
         try {
-            if (type === DocumentType.YAML) {
-                this.createYamlSyntaxTree(uri, content);
-            } else {
-                this.createJsonSyntaxTree(uri, content);
-            }
-            this.log.debug(
-                {
-                    uri,
-                    type,
-                    cfnFileType,
-                },
-                'Created SyntaxTree',
-            );
+            this.createTree(uri, content, type, cfnFileType);
         } catch (error) {
             logger.error(`Failed to create tree ${uri} ${type} ${cfnFileType}: ${extractErrorMessage(error)}`);
         }
+    }
+
+    @Measure({ name: 'createTree' })
+    private createTree(uri: string, content: string, type: DocumentType, cfnFileType: CloudFormationFileType) {
+        if (cfnFileType !== CloudFormationFileType.Template) {
+            throw new Error('Syntax tree can only be created for CloudFormation templates');
+        }
+
+        if (type === DocumentType.YAML) {
+            this.createYamlSyntaxTree(uri, content);
+        } else {
+            this.createJsonSyntaxTree(uri, content);
+        }
+
+        this.log.info({ type, cfnFileType }, `Created tree ${uri}`);
     }
 
     private createJsonSyntaxTree(uri: string, content: string) {

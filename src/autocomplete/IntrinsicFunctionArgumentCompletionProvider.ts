@@ -12,7 +12,7 @@ import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';
-import { createCompletionItem, createReplacementRange } from './CompletionUtils';
+import { createCompletionItem, createMarkupContent, createReplacementRange } from './CompletionUtils';
 
 interface IntrinsicFunctionInfo {
     type: IntrinsicFunction;
@@ -345,10 +345,25 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
             const attributes = this.getResourceAttributes(resource.Type);
             for (const attributeName of attributes) {
+                const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
+                let attributeDescription = `${attributeName} attribute of ${resource.Type}`;
+
+                if (schema) {
+                    const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/')}`;
+
+                    try {
+                        const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
+                        if (resolvedSchemas.length > 0 && resolvedSchemas[0].description) {
+                            attributeDescription = resolvedSchemas[0].description;
+                        }
+                    } catch (error) {
+                        log.error({ error }, 'Error resolving JSON Pointer path');
+                    }
+                }
                 completionItems.push(
                     createCompletionItem(`${resourceName}.${attributeName}`, CompletionItemKind.Property, {
                         detail: `GetAtt (${resource.Type})`,
-                        documentation: `Get attribute ${attributeName} from resource ${resourceName}`,
+                        documentation: createMarkupContent(attributeDescription),
                         data: {
                             isIntrinsicFunction: true,
                         },
@@ -709,7 +724,8 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const resource = resourceContext.entity as Resource;
-        if (!resource.Type || typeof resource.Type !== 'string') {
+        const resourceType = resource.Type;
+        if (!resourceType || typeof resourceType !== 'string') {
             return undefined;
         }
 
@@ -719,8 +735,36 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const completionItems = attributes.map((attributeName) => {
+            const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
+            let documentation;
+
+            if (schema) {
+                const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/properties/')}`;
+                documentation = createMarkupContent(
+                    `**${attributeName}** attribute of **${resource.Type}**\n\nReturns the value of this attribute when used with the GetAtt intrinsic function.`,
+                );
+
+                try {
+                    const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
+
+                    if (resolvedSchemas.length > 0) {
+                        const firstSchema = resolvedSchemas[0];
+
+                        if (firstSchema.description) {
+                            documentation = createMarkupContent(firstSchema.description);
+                        }
+                    }
+                } catch (error) {
+                    log.debug(error);
+                }
+            }
+
             const item = createCompletionItem(attributeName, CompletionItemKind.Property, {
-                data: { isIntrinsicFunction: true },
+                documentation: documentation,
+                detail: `GetAtt attribute for ${resource.Type}`,
+                data: {
+                    isIntrinsicFunction: true,
+                },
             });
 
             if (context.text.length > 0) {

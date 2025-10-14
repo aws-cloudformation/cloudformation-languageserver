@@ -71,7 +71,6 @@ import { CfnInfraCore } from '../../src/server/CfnInfraCore';
 import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
-import { TelemetryService } from '../../src/telemetry/TelemetryService';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
 import { createMockCfnLintService, createMockGuardService, mockCfnAi } from './MockServerComponents';
@@ -117,12 +116,6 @@ export class TestExtension implements Closeable {
                 onInitialize: (params) => {
                     const lsp = this.serverConnection.components;
                     LoggerFactory.initialize(params.initializationOptions['clientInfo']);
-
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    if (TelemetryService._instance === undefined) {
-                        TelemetryService.initialize(params.clientInfo, params.initializationOptions['clientInfo']);
-                    }
 
                     const dataStoreFactory = new MemoryDataStoreFactoryProvider();
                     this.core = new CfnInfraCore(lsp, params, {

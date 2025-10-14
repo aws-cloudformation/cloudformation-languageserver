@@ -16,6 +16,7 @@ import { ANALYZE_DIAGNOSTIC } from '../handlers/ExecutionHandler';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Track } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { pointToPosition } from '../utils/TypeConverters';
 import { DiagnosticCoordinator } from './DiagnosticCoordinator';
@@ -41,6 +42,7 @@ export class CodeActionService {
     /**
      * Process diagnostics and generate code actions with fixes
      */
+    @Track({ name: 'generateCodeActions' })
     public generateCodeActions(params: CodeActionParams): CodeAction[] {
         this.log.debug(
             {

@@ -3,12 +3,14 @@ import { Attributes } from '@opentelemetry/api';
 import { MetricOptions } from '@opentelemetry/api/build/src/metrics/Metric';
 import { TelemetryService } from './TelemetryService';
 
-type TelemetryDecoratorOptions = {
-    name?: string;
+type ScopeDecoratorOptions = {
     scope?: string;
+};
+type ScopedMetricsDecoratorOptions = {
+    name: string;
     options?: MetricOptions;
     attributes?: Attributes;
-};
+} & ScopeDecoratorOptions;
 
 type MethodNames = {
     sync: 'trackExecution' | 'measure';
@@ -20,37 +22,38 @@ function isAsyncFunction(fn: Function): boolean {
     return fn.constructor.name === 'AsyncFunction' || Object.prototype.toString.call(fn) === '[object AsyncFunction]';
 }
 
-function scopeName(target: any): string {
+function scopeName(target: any, providedScope?: string): string {
+    if (providedScope !== undefined) {
+        return providedScope;
+    }
     const name = (typeof target === 'function' ? target.name : target?.constructor?.name) ?? '';
-    return name && name !== 'Object' ? name : 'Unknown';
+    if (name && name !== 'Object') {
+        return name;
+    }
+
+    throw new Error(`Scope could not be derived from target ${target} and providedScope ${providedScope}`);
 }
 
-export function Telemetry(target: any, propertyKey: string) {
-    Object.defineProperty(target, propertyKey, {
-        get: () => {
-            return TelemetryService.instance.get(scopeName(target));
-        },
-        enumerable: false,
-        configurable: false,
-    });
+export function Telemetry(decoratorOptions?: ScopeDecoratorOptions) {
+    return function (target: any, propertyKey: string) {
+        Object.defineProperty(target, propertyKey, {
+            get: () => {
+                return TelemetryService.instance.get(scopeName(target, decoratorOptions?.scope));
+            },
+            enumerable: false,
+            configurable: false,
+        });
+    };
 }
 
 function createTelemetryMethodDecorator(methodNames: MethodNames) {
-    return function (decoratorOptions?: TelemetryDecoratorOptions) {
+    return function (decoratorOptions: ScopedMetricsDecoratorOptions) {
         return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
             const originalMethod = descriptor.value;
-            const metricName = decoratorOptions?.name ?? propertyKey;
-            const scope = scopeName(target);
-
-            if (scope === 'Unknown' && !decoratorOptions?.scope) {
-                throw new Error(
-                    `@${methodNames.sync}() decorator on standalone function '${propertyKey}' requires explicit scope. ` +
-                        `Use: @${methodNames.sync}({ scope: 'YourScopeName' })`,
-                );
-            }
+            const metricName = decoratorOptions.name;
 
             descriptor.value = function (this: any, ...args: any[]) {
-                const telemetry = TelemetryService.instance.get(decoratorOptions?.scope ?? scope);
+                const telemetry = TelemetryService.instance.get(scopeName(target, decoratorOptions.scope));
 
                 const attributes: Attributes = { ...decoratorOptions?.attributes };
 
