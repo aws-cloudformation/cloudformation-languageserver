@@ -3,7 +3,6 @@ import { intrinsicFunctionsDocsMap } from '../../../src/artifacts/IntrinsicFunct
 import { outputSectionFieldDocsMap } from '../../../src/artifacts/OutputSectionFieldDocs';
 import { parameterAttributeDocsMap } from '../../../src/artifacts/ParameterAttributeDocs';
 import { pseudoParameterDocsMap } from '../../../src/artifacts/PseudoParameterDocs';
-import { resourceAttributeDocsMap } from '../../../src/artifacts/ResourceAttributeDocs';
 import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { updatePolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
@@ -12,7 +11,6 @@ import {
     TopLevelSection,
     IntrinsicFunction,
     PseudoParameter,
-    ResourceAttribute,
     CreationPolicyProperty,
     ResourceSignalProperty,
     UpdatePolicyProperty,
