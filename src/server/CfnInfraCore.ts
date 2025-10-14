@@ -10,7 +10,6 @@ import { LspComponents } from '../protocol/LspComponents';
 import { DiagnosticCoordinator } from '../services/DiagnosticCoordinator';
 import { SettingsManager } from '../settings/SettingsManager';
 import { ClientMessage } from '../telemetry/ClientMessage';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
@@ -60,7 +59,7 @@ export class CfnInfraCore implements Configurables, Closeable {
     }
 
     configurables(): Configurable[] {
-        return [LoggerFactory.instance, TelemetryService.instance, this.documentManager];
+        return [this.documentManager];
     }
 
     async close() {

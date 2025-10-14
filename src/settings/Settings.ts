@@ -1,6 +1,5 @@
 import { LevelWithSilent } from 'pino';
 import { DeepReadonly } from 'ts-essentials';
-import { IsAppEnvironment, isBeta, isDev } from '../utils/Environment';
 import { AwsRegion } from '../utils/Region';
 
 // Core Settings Types
@@ -65,7 +64,6 @@ export interface Settings {
     hover: HoverSettings;
     completion: CompletionSettings;
     diagnostics: DiagnosticsSettings;
-    telemetry: TelemetrySettings;
     editor: EditorSettings;
 }
 
@@ -107,10 +105,6 @@ export const DefaultSettings: DeepReadonly<Settings> = {
             defaultSeverity: 'information', // Default severity for Guard rules
         },
     },
-    telemetry: {
-        enabled: isDev || isBeta,
-        logLevel: IsAppEnvironment ? 'info' : 'silent',
-    },
     editor: {
         tabSize: 2,
         insertSpaces: true,
@@ -123,7 +117,6 @@ export class SettingsState implements Settings {
     hover = structuredClone(DefaultSettings.hover);
     completion = structuredClone(DefaultSettings.completion);
     diagnostics = structuredClone(DefaultSettings.diagnostics);
-    telemetry = structuredClone(DefaultSettings.telemetry);
     editor = structuredClone(DefaultSettings.editor);
 
     update(settings: Settings): void {

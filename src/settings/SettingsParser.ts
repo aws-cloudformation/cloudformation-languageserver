@@ -1,12 +1,8 @@
-import { LevelWithSilent } from 'pino';
 import { z } from 'zod';
-import { LogLevel } from '../telemetry/LoggerFactory';
 import { AwsRegion } from '../utils/Region';
 import { ProfileSettings, Settings } from './Settings';
 
 const AwsRegionSchema = z.enum(Object.values(AwsRegion));
-
-const LogLevelSchema = z.enum(Object.keys(LogLevel) as LevelWithSilent[]);
 
 function createProfileSchema(defaults: Settings['profile']) {
     return z
@@ -87,19 +83,6 @@ function createDiagnosticsSchema(defaults: Settings['diagnostics']) {
         .default(defaults);
 }
 
-function createTelemetrySchema(defaults: Settings['telemetry']) {
-    return z
-        .object({
-            enabled: z
-                .boolean()
-                .nullish()
-                .transform((val) => val ?? defaults.enabled),
-            logLevel: LogLevelSchema.nullish().transform((val) => val ?? defaults.logLevel),
-        })
-        .nullish()
-        .transform((val) => val ?? defaults);
-}
-
 function createEditorSchema(defaults: Settings['editor']) {
     return z
         .object({
@@ -117,7 +100,6 @@ function createSettingsSchema(defaults: Settings) {
             hover: createHoverSchema(defaults.hover),
             completion: createCompletionSchema(defaults.completion),
             diagnostics: createDiagnosticsSchema(defaults.diagnostics),
-            telemetry: createTelemetrySchema(defaults.telemetry),
             editor: createEditorSchema(defaults.editor),
         })
         .default(defaults);

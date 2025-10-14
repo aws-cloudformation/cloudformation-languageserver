@@ -19,7 +19,7 @@ import { LspStackHandlers } from './LspStackHandlers';
 import { LspWorkspace } from './LspWorkspace';
 
 type LspConnectionHandlers = {
-    onInitialize?: (params: InitializeParams) => InitializeResult;
+    onInitialize?: (params: InitializeParams) => Promise<InitializeResult> | InitializeResult;
     onInitialized?: (params: InitializedParams) => unknown;
     onShutdown?: () => unknown;
     onExit?: () => unknown;
@@ -59,7 +59,7 @@ export class LspConnection {
 
         this.communication.console.info(`${ExtensionName} launched from ${__dirname}`);
 
-        this.connection.onInitialize((params: InitializeParams): InitializeResult => {
+        this.connection.onInitialize((params: InitializeParams): InitializeResult | Promise<InitializeResult> => {
             this.communication.console.info(`${ExtensionName} initializing...`);
             this.initializeParams = params;
             return onInitialize(params);
