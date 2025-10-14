@@ -157,10 +157,7 @@ export class AwsCredentials {
                 newRegion = profile.region;
             }
         } catch (error) {
-            void this.clientMessage.showMessageNotification(
-                MessageType.Error,
-                `Failed to update IAM profile: ${extractErrorMessage(error)}`,
-            );
+            this.logger.error(`Failed to update IAM profile: ${extractErrorMessage(error)}`);
         } finally {
             this.profileName = newProfileName;
             this.settingsManager.updateProfileSettings(newProfileName, newRegion);
