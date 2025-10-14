@@ -2,22 +2,31 @@ import { createConnection, InitializeParams, ProposedFeatures } from 'vscode-lan
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';
-import { CfnInfraCore } from '../server/CfnInfraCore';
-import { CfnServer } from '../server/CfnServer';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { TelemetryService } from '../telemetry/TelemetryService';
 
-let server: CfnServer | undefined;
+let server: unknown;
 
-function onInitialize(params: InitializeParams) {
-    server = new CfnServer(lsp.components, new CfnInfraCore(lsp.components, params));
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+async function onInitialize(params: InitializeParams) {
+    LoggerFactory.initialize(params.initializationOptions['clientInfo']);
+    TelemetryService.initialize(params.clientInfo, params.initializationOptions['clientInfo']);
+
+    // Dynamically load these modules so that OTEL can instrument all the libraries first
+    const { CfnInfraCore } = await import('../server/CfnInfraCore');
+    const { CfnServer } = await import('../server/CfnServer');
+
+    const core = new CfnInfraCore(lsp.components, params);
+    server = new CfnServer(lsp.components, core);
     return LspCapabilities;
 }
 
 function onInitialized(params: InitializedParams) {
-    server?.initialized(params);
+    (server as any).initialized(params);
 }
 
 function onShutdown() {
-    return server?.close();
+    return (server as any).close();
 }
 
 function onExit() {}
