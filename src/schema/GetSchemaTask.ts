@@ -2,6 +2,7 @@ import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { Logger } from 'pino';
 import { DataStore } from '../datastore/DataStore';
 import { CfnService } from '../services/CfnService';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
@@ -28,6 +29,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         super();
     }
 
+    @Measure({ name: 'getSchemas' })
     override async runImpl(dataStore: DataStore, logger?: Logger) {
         if (this.attempts >= GetPublicSchemaTask.MaxAttempts) {
             logger?.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
@@ -59,6 +61,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
         super();
     }
 
+    @Measure({ name: 'getSchemas' })
     override async runImpl(dataStore: DataStore, logger?: Logger) {
         try {
             const profile = this.getProfile();

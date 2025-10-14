@@ -12,3 +12,4 @@ tools/*
 !tools/*.ts
 **/.aws-cfn-storage
 /oss-attribution
+/tmp-tst

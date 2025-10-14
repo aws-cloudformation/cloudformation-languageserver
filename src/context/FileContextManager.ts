@@ -1,5 +1,6 @@
 import { DocumentManager } from '../document/DocumentManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Track } from '../telemetry/TelemetryDecorator';
 import { FileContext } from './FileContext';
 
 /**
@@ -10,6 +11,7 @@ export class FileContextManager {
 
     constructor(private readonly documentManager: DocumentManager) {}
 
+    @Track({ name: 'getFileContext' })
     public getFileContext(uri: string): FileContext | undefined {
         const document = this.documentManager.get(uri);
         if (!document) {

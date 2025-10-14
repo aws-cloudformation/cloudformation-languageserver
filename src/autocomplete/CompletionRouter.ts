@@ -13,6 +13,7 @@ import { CfnLspProviders } from '../server/CfnLspProviders';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { CompletionSettings, DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Track } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { CompletionFormatter } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
@@ -45,6 +46,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
     ) {}
 
+    @Track({ name: 'getCompletions' })
     getCompletions(params: CompletionParams): Promise<CompletionList> | CompletionList | undefined {
         if (!this.completionSettings.enabled) return;
 

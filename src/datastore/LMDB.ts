@@ -1,4 +1,6 @@
 import { open, Database, RootDatabase } from 'lmdb';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { DataStore, DataStoreFactory } from './DataStore';
 
@@ -31,6 +33,8 @@ export class LMDBStore implements DataStore {
 }
 
 export class LMDBStoreFactory implements DataStoreFactory {
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
+
     private readonly rootDir = pathToArtifact('lmdb');
     private readonly storePath = `${this.rootDir}/${Version}`;
 
@@ -42,6 +46,10 @@ export class LMDBStoreFactory implements DataStoreFactory {
     });
 
     private readonly stores = new Map<string, LMDBStore>();
+
+    constructor() {
+        this.registerLMDBGauges();
+    }
 
     getOrCreate(store: string): DataStore {
         let val = this.stores.get(store);
@@ -84,6 +92,16 @@ export class LMDBStoreFactory implements DataStoreFactory {
         // LMDB will close them when we close the environment
         this.stores.clear();
         await this.env.close();
+    }
+
+    private registerLMDBGauges(): void {
+        this.telemetry.registerGaugeProvider('lmdb.global.size_mb', () => stats(this.env).totalSizeMB, { unit: 'MB' });
+        this.telemetry.registerGaugeProvider('lmdb.global.max_size_mb', () => stats(this.env).maxSizeMB, {
+            unit: 'MB',
+        });
+        this.telemetry.registerGaugeProvider('lmdb.global.entries', () => stats(this.env).entries, { unit: '1' });
+        this.telemetry.registerGaugeProvider('lmdb.global.readers', () => stats(this.env).numReaders, { unit: '1' });
+        this.telemetry.registerGaugeProvider('lmdb.stores.count', () => this.stores.size, { unit: '1' });
     }
 }
 

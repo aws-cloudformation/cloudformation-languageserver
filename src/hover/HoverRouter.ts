@@ -8,6 +8,7 @@ import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, HoverSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Track } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { ConditionHoverProvider } from './ConditionHoverProvider';
 import { HoverProvider } from './HoverProvider';
@@ -55,6 +56,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
         this.settings = settings;
     }
 
+    @Track({ name: 'getHoverDoc' })
     getHoverDoc(textDocPosParams: TextDocumentPositionParams): string | undefined {
         if (!this.settings.enabled) {
             return undefined;
