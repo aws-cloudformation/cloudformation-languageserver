@@ -10,22 +10,22 @@ export class TelemetryService implements Closeable {
     private static _instance: TelemetryService | undefined = undefined;
 
     private readonly logger = LoggerFactory.getLogger('TelemetryService');
-    private readonly sdk: NodeSDK;
+    private readonly sdk?: NodeSDK;
     private readonly enabled: boolean;
 
     private readonly scopedTelemetry: Map<string, ScopedTelemetry> = new Map();
 
     private constructor(client?: ClientInfo, metadata?: ExtendedClientMetadata) {
-        this.sdk = otelSdk(client, metadata);
         this.enabled = metadata?.telemetryEnabled ?? TelemetrySettings.isEnabled;
 
         if (this.enabled) {
+            this.sdk = otelSdk(client, metadata);
             this.sdk.start();
             this.logger.info('Telemetry enabled');
             this.registerSystemMetrics();
         } else {
             this.logger.info('Telemetry disabled');
-            this.sdk.shutdown().catch(this.logger.error);
+            this.sdk?.shutdown().catch(this.logger.error);
         }
     }
 
@@ -35,7 +35,7 @@ export class TelemetryService implements Closeable {
             return telemetry;
         }
 
-        if (this.enabled) {
+        if (this.enabled && this.sdk) {
             telemetry = new ScopedTelemetry(scope, metrics.getMeter(scope), trace.getTracer(scope));
         } else {
             // NoOp init when telemetry is disabled
@@ -47,7 +47,7 @@ export class TelemetryService implements Closeable {
     }
 
     async close(): Promise<void> {
-        await this.sdk.shutdown().catch(this.logger.error);
+        await this.sdk?.shutdown().catch(this.logger.error);
     }
 
     private registerSystemMetrics(): void {

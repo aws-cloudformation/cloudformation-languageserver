@@ -1,6 +1,7 @@
 import { DefinitionParams, Location, LocationLink } from 'vscode-languageserver';
 import { ContextManager } from '../context/ContextManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Track } from '../telemetry/TelemetryDecorator';
 import { pointToPosition } from '../utils/TypeConverters';
 
 export class DefinitionProvider {
@@ -8,6 +9,7 @@ export class DefinitionProvider {
 
     constructor(private readonly contextManager: ContextManager) {}
 
+    @Track({ name: 'getDefinitions' })
     getDefinitions(params: DefinitionParams): Location | Location[] | LocationLink[] | undefined {
         const context = this.contextManager.getContextAndRelatedEntities(params);
         this.log.debug(

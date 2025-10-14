@@ -3,12 +3,16 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Delayer } from '../utils/Delayer';
-import { Document } from './Document';
+import { CloudFormationFileType, Document, DocumentType, Extension } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
 export class DocumentManager implements SettingsConfigurable {
     private readonly log = LoggerFactory.getLogger(DocumentManager);
+
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private readonly delayer = new Delayer(5 * 1000);
 
     private editorSettings: EditorSettings = DefaultSettings.editor;
@@ -21,7 +25,9 @@ export class DocumentManager implements SettingsConfigurable {
         private readonly sendDocuments: (docs: DocumentMetadata[]) => Promise<void> = () => {
             return Promise.resolve();
         },
-    ) {}
+    ) {
+        this.registerDocumentGauges();
+    }
 
     configure(settingsManager: ISettingsSubscriber): void {
         if (this.settingsSubscription) {
@@ -124,5 +130,53 @@ export class DocumentManager implements SettingsConfigurable {
         if (detectIndentationChanged) {
             this.clearAllStoredIndentation();
         }
+    }
+
+    private registerDocumentGauges(): void {
+        this.telemetry.registerGaugeProvider('documents.open.total', () => this.documentMap.size, {
+            unit: '1',
+        });
+
+        for (const type of Object.values(CloudFormationFileType)) {
+            this.telemetry.registerGaugeProvider(
+                `documents.open.cfn.type.${type}`,
+                () => this.countDocumentsByCfnType(type),
+                {
+                    unit: '1',
+                },
+            );
+        }
+
+        for (const type of Object.values(DocumentType)) {
+            this.telemetry.registerGaugeProvider(
+                `documents.open.doc.type.${type}`,
+                () => this.countDocumentsByDocType(type),
+                {
+                    unit: '1',
+                },
+            );
+        }
+
+        for (const type of Object.values(Extension)) {
+            this.telemetry.registerGaugeProvider(
+                `documents.open.extension.type.${type}`,
+                () => this.countDocumentsByExtension(type),
+                {
+                    unit: '1',
+                },
+            );
+        }
+    }
+
+    private countDocumentsByCfnType(cfnType: CloudFormationFileType): number {
+        return [...this.documentMap.values()].filter((doc) => doc.cfnFileType === cfnType).length;
+    }
+
+    private countDocumentsByDocType(docType: DocumentType): number {
+        return [...this.documentMap.values()].filter((doc) => doc.documentType === docType).length;
+    }
+
+    private countDocumentsByExtension(extension: Extension): number {
+        return [...this.documentMap.values()].filter((doc) => doc.extension === extension).length;
     }
 }

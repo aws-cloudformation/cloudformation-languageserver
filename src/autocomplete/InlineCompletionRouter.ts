@@ -7,6 +7,7 @@ import { RelationshipSchemaService } from '../services/RelationshipSchemaService
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { CompletionSettings, DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Track } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { InlineCompletionProvider } from './InlineCompletionProvider';
 import { RelatedResourcesInlineCompletionProvider } from './RelatedResourcesInlineCompletionProvider';
@@ -25,6 +26,7 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
         private readonly documentManager: DocumentManager,
     ) {}
 
+    @Track({ name: 'getInlineCompletions' })
     getInlineCompletions(params: InlineCompletionParams): Promise<ReturnType> | ReturnType {
         if (!this.completionSettings.enabled) return;
 
