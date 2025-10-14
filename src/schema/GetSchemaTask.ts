@@ -2,8 +2,6 @@ import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { Logger } from 'pino';
 import { DataStore } from '../datastore/DataStore';
 import { CfnService } from '../services/CfnService';
-import { CoralTelemetry } from '../telemetry/CoralTelemetry';
-import { MeasureLatency, Telemetry, TrackExecution } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
@@ -11,13 +9,8 @@ import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from './Regional
 import { cfnResourceSchemaLink, downloadFile, unZipFile } from './RemoteSchemaHelper';
 
 abstract class GetSchemaTask {
-    @Telemetry
-    protected readonly telemetry!: CoralTelemetry;
-
     protected abstract runImpl(dataStore: DataStore, logger?: Logger): Promise<void>;
 
-    @MeasureLatency()
-    @TrackExecution()
     async run(dataStore: DataStore, logger?: Logger) {
         await this.runImpl(dataStore, logger);
     }
@@ -37,7 +30,6 @@ export class GetPublicSchemaTask extends GetSchemaTask {
 
     override async runImpl(dataStore: DataStore, logger?: Logger) {
         if (this.attempts >= GetPublicSchemaTask.MaxAttempts) {
-            this.telemetry.countBoolean('task.attemptsExceeded', true, { unit: '1', description: this.region });
             logger?.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
             return;
         }

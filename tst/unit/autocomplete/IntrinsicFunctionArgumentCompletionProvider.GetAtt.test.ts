@@ -385,6 +385,29 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
                 expect(labels.some((label) => label.includes('Domain'))).toBe(true);
             });
 
+            it('should format completion items correctly for intrinsic functions', () => {
+                setupResourceEntitiesWithSchema({ MyS3Bucket: { Type: 'AWS::S3::Bucket' } });
+                const mockContext = createMockGetAttContext('MyS3Bucket.Arn', 'MyS3Bucket.Arn');
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                const arnItem = result!.find((item) => item.label === 'Arn');
+                expect(arnItem).toBeDefined();
+
+                // Should have isIntrinsicFunction flag to prevent colon formatting
+                expect(arnItem!.data).toEqual({ isIntrinsicFunction: true });
+
+                // FilterText should be the full path for proper matching
+                expect(arnItem!.filterText).toBe('MyS3Bucket.Arn');
+
+                // TextEdit should replace with full path
+                expect(arnItem!.textEdit).toBeDefined();
+                if (arnItem!.textEdit && 'newText' in arnItem!.textEdit) {
+                    expect(arnItem!.textEdit.newText).toBe('MyS3Bucket.Arn');
+                }
+            });
+
             it('should return resource completions for string format without dot', () => {
                 setupResourceEntitiesWithSchema({ MyS3Bucket: { Type: 'AWS::S3::Bucket' } });
                 const mockContext = createMockGetAttContext('MyS3', 'MyS3');

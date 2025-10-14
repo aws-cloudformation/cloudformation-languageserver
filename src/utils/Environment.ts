@@ -13,9 +13,10 @@ const NodeEnvironment = {
 export const AwsEnv = getAwsEnv();
 export const NodeEnv = getNodeEnv();
 
+export const isTest = getNodeEnv() === NodeEnvironment.test;
 export const isProd = getAwsEnv() === AwsEnvironment.PROD;
 export const isBeta = getAwsEnv() === AwsEnvironment.BETA;
-export const isDev = getAwsEnv() === AwsEnvironment.ALPHA;
+export const isAlpha = getAwsEnv() === AwsEnvironment.ALPHA;
 export const IsAppEnvironment = Object.values(AwsEnvironment).includes(AwsEnv);
 
 function getAwsEnv() {

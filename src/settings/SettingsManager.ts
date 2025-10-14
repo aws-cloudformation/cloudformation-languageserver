@@ -1,14 +1,13 @@
 import { diff } from 'deep-object-diff';
 import { LspWorkspace } from '../protocol/LspWorkspace';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { isBeta, isDev } from '../utils/Environment';
 import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { toString } from '../utils/String';
 import { PartialDataObserver, SubscriptionManager } from '../utils/SubscriptionManager';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import { ISettingsSubscriber, SettingsPathKey } from './ISettingsSubscriber';
-import { DefaultSettings, Settings, SettingsState } from './Settings';
+import { Settings, SettingsState } from './Settings';
 import { parseSettings } from './SettingsParser';
 
 const logger = LoggerFactory.getLogger('SettingsManager');
@@ -82,9 +81,6 @@ export class SettingsManager implements ISettingsSubscriber {
      */
     private validateAndUpdate(newSettings: Settings): void {
         const oldSettings = this.settingsState.toSettings();
-        if (isDev || isBeta) {
-            newSettings.telemetry.enabled = DefaultSettings.telemetry.enabled;
-        }
 
         newSettings.diagnostics.cfnLint.initialization.maxDelayMs = clipNumber(
             newSettings.diagnostics.cfnLint.initialization.maxDelayMs,

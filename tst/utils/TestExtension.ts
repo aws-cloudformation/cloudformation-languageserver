@@ -70,10 +70,14 @@ import { CfnExternal } from '../../src/server/CfnExternal';
 import { CfnInfraCore } from '../../src/server/CfnInfraCore';
 import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
+import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
+import { TelemetryService } from '../../src/telemetry/TelemetryService';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
 import { createMockCfnLintService, createMockGuardService, mockCfnAi } from './MockServerComponents';
 import { schemaFileType } from './SchemaUtils';
+
+const clientInfo = { name: `Test ${ExtensionName}`, version: '1.0.0-test' };
 
 export class TestExtension implements Closeable {
     private readonly readStream = new PassThrough();
@@ -96,8 +100,15 @@ export class TestExtension implements Closeable {
             processId: process.pid,
             rootUri: null,
             capabilities: {},
-            clientInfo: { name: `Test ${ExtensionName}`, version: '1.0.0' },
+            clientInfo,
             workspaceFolders: [],
+            initializationOptions: {
+                clientInfo: {
+                    clientId: 'SomeClientId',
+                    telemetryEnabled: false,
+                    logLevel: 'info',
+                },
+            },
         } as InitializeParams,
     ) {
         this.serverConnection = new LspConnection(
@@ -105,6 +116,13 @@ export class TestExtension implements Closeable {
             {
                 onInitialize: (params) => {
                     const lsp = this.serverConnection.components;
+                    LoggerFactory.initialize(params.initializationOptions['clientInfo']);
+
+                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                    // @ts-ignore
+                    if (TelemetryService._instance === undefined) {
+                        TelemetryService.initialize(params.clientInfo, params.initializationOptions['clientInfo']);
+                    }
 
                     const dataStoreFactory = new MemoryDataStoreFactoryProvider();
                     this.core = new CfnInfraCore(lsp, params, {
