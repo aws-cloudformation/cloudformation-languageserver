@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"cfn-init/internal/config"
+	"cfn-init/internal/permissions"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,15 +17,14 @@ func Init(projectName, basePath string) error {
 		return fmt.Errorf("cfn-project directory already exists at %s", projectDir)
 	}
 
-	if err := os.MkdirAll(projectDir, 0755); err != nil {
+	if err := os.MkdirAll(projectDir, permissions.ProjectDir); err != nil {
 		return fmt.Errorf("failed to create cfn-project directory: %w", err)
 	}
 	fmt.Printf("✓ Created %s\n", projectDir)
 
 	projectConfig := generateInitialConfig(projectName)
-	configPath := filepath.Join(projectDir, "cfn-config.json")
 
-	if err := config.WriteConfigFile(configPath, projectConfig); err != nil {
+	if err := config.WriteConfigFile(basePath, projectConfig); err != nil {
 		return fmt.Errorf("failed to write config file: %w", err)
 	}
 	fmt.Printf("✓ Created cfn-config.json\n")

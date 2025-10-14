@@ -1,6 +1,8 @@
 package config
 
 import (
+	"cfn-init/internal/permissions"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -10,7 +12,10 @@ import (
 
 func TestWriteConfigFile(t *testing.T) {
 	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, "test-config.json")
+	
+	// Create cfn-project directory
+	err := os.MkdirAll(filepath.Join(tempDir, "cfn-project"), permissions.ProjectDir)
+	assert.NoError(t, err)
 	
 	config := &ProjectConfig{
 		Version: "1.0",
@@ -21,14 +26,17 @@ func TestWriteConfigFile(t *testing.T) {
 		Environments: make(map[string]Environment),
 	}
 	
-	err := WriteConfigFile(configPath, config)
+	err = WriteConfigFile(tempDir, config)
 	assert.NoError(t, err)
-	assert.FileExists(t, configPath)
+	assert.FileExists(t, filepath.Join(tempDir, "cfn-project", "cfn-config.json"))
 }
 
 func TestReadConfigFile(t *testing.T) {
 	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, "test-config.json")
+	
+	// Create cfn-project directory
+	err := os.MkdirAll(filepath.Join(tempDir, "cfn-project"), permissions.ProjectDir)
+	assert.NoError(t, err)
 	
 	// Write a config first
 	originalConfig := &ProjectConfig{
@@ -40,11 +48,11 @@ func TestReadConfigFile(t *testing.T) {
 		Environments: make(map[string]Environment),
 	}
 	
-	err := WriteConfigFile(configPath, originalConfig)
+	err = WriteConfigFile(tempDir, originalConfig)
 	assert.NoError(t, err)
 	
 	// Read it back
-	readConfig, err := ReadConfigFile(configPath)
+	readConfig, err := ReadConfigFile(tempDir)
 	assert.NoError(t, err)
 	assert.Equal(t, "1.0", readConfig.Version)
 	assert.Equal(t, "test-project", readConfig.Project.Name)
@@ -52,7 +60,7 @@ func TestReadConfigFile(t *testing.T) {
 }
 
 func TestReadConfigFile_NotFound(t *testing.T) {
-	_, err := ReadConfigFile("/nonexistent/path/config.json")
+	_, err := ReadConfigFile("/nonexistent/path")
 	assert.Error(t, err)
 }
 
@@ -63,6 +71,6 @@ func TestWriteConfigFile_InvalidPath(t *testing.T) {
 		Environments: make(map[string]Environment),
 	}
 	
-	err := WriteConfigFile("/nonexistent/path/config.json", config)
+	err := WriteConfigFile("/nonexistent/path", config)
 	assert.Error(t, err)
 }

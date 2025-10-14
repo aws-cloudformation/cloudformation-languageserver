@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"cfn-init/internal/permissions"
 	"os"
 	"path/filepath"
 	"strings"
@@ -94,7 +95,7 @@ func TestValidateInputs_EmptyProjectName(t *testing.T) {
 func TestValidateInputs_DirectoryExists(t *testing.T) {
 	tempDir := t.TempDir()
 	projectDir := filepath.Join(tempDir, "cfn-project")
-	os.MkdirAll(projectDir, 0755)
+	os.MkdirAll(projectDir, permissions.ProjectDir)
 	
 	inputs := &CreateInputs{
 		ProjectName: "test-project",
