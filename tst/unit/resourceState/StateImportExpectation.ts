@@ -1,4 +1,5 @@
 import { DocumentType } from '../../../src/document/Document';
+import { DeletionPolicyOnImport } from '../../../src/resourceState/ResourceStateTypes';
 import { getMockResourceProperties } from './MockResourceState';
 
 export interface TestScenario {
@@ -141,6 +142,7 @@ export function getImportExpectation(scenario: TestScenario, resourceType: strin
             return `,
     "${logicalName}": {
       "Type": "${resourceType}",
+      "DeletionPolicy": "${DeletionPolicyOnImport}",
       "Properties": ${formatPropertiesForJson(properties)},
       "Metadata": {
         "PrimaryIdentifier": "${identifier}",
@@ -153,6 +155,7 @@ export function getImportExpectation(scenario: TestScenario, resourceType: strin
   "Resources": {
     "${logicalName}": {
       "Type": "${resourceType}",
+      "DeletionPolicy": "${DeletionPolicyOnImport}",
       "Properties": ${formatPropertiesForJson(properties)},
       "Metadata": {
         "PrimaryIdentifier": "${identifier}",
@@ -167,6 +170,7 @@ export function getImportExpectation(scenario: TestScenario, resourceType: strin
             return `
   ${logicalName}:
     Type: ${resourceType}
+    DeletionPolicy: ${DeletionPolicyOnImport}
     Properties:
 ${formatPropertiesForYaml(properties)}
     Metadata:
@@ -178,6 +182,7 @@ ${formatPropertiesForYaml(properties)}
 Resources:
   ${logicalName}:
     Type: ${resourceType}
+    DeletionPolicy: ${DeletionPolicyOnImport}
     Properties:
 ${formatPropertiesForYaml(properties)}
     Metadata:
