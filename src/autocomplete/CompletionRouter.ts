@@ -89,6 +89,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
 
         const completions = provider?.getCompletions(context, params) ?? [];
         const editorSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
+        const lineContent = this.documentManager.getLine(params.textDocument.uri, context.startPosition.row);
 
         if (completions instanceof Promise) {
             return await completions.then((result) => {
@@ -99,6 +100,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                     },
                     context,
                     editorSettings,
+                    lineContent
                 );
             });
         } else if (completions) {
@@ -107,7 +109,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                 items: completions.slice(0, this.completionSettings.maxCompletions),
             };
 
-            return this.formatter.format(completionList, context, editorSettings);
+            return this.formatter.format(completionList, context, editorSettings, lineContent);
         }
         return;
     }

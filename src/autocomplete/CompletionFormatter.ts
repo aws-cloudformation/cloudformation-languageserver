@@ -1,8 +1,9 @@
-import { CompletionItem, CompletionItemKind, CompletionList, InsertTextFormat } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, CompletionList, InsertTextFormat, Range, Position, TextEdit } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { ResourceAttributesSet, TopLevelSection, TopLevelSectionsSet } from '../context/ContextType';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentType } from '../document/Document';
+import { createReplacementRange } from './CompletionUtils';
 import { EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getIndentationString } from '../utils/IndentationUtils';
@@ -38,11 +39,11 @@ export class CompletionFormatter {
         return `{INDENT${numberOfIndents}}`;
     }
 
-    format(completions: CompletionList, context: Context, editorSettings: EditorSettings): CompletionList {
+    format(completions: CompletionList, context: Context, editorSettings: EditorSettings, lineContent?: string): CompletionList {
         try {
             const documentType = context.documentType;
 
-            const formattedItems = completions.items.map((item) => this.formatItem(item, documentType, editorSettings));
+            const formattedItems = completions.items.map((item) => this.formatItem(item, documentType, editorSettings, context, lineContent));
 
             return {
                 ...completions,
@@ -58,6 +59,8 @@ export class CompletionFormatter {
         item: CompletionItem,
         documentType: DocumentType,
         editorSettings: EditorSettings,
+        context: Context,
+        lineContent?: string,
     ): CompletionItem {
         const formattedItem = { ...item };
 
@@ -69,7 +72,18 @@ export class CompletionFormatter {
         const textToFormat = item.insertText ?? item.label;
 
         if (documentType === DocumentType.JSON) {
-            formattedItem.insertText = this.formatForJson(textToFormat);
+          console.log("DEBUG");
+          const formattedText = this.formatForJson(textToFormat, item, context, lineContent);
+          if (formattedText.range) {
+              console.log("have a range")
+              console.log(formattedText);
+              formattedItem.textEdit = TextEdit.replace(formattedText.range, formattedText.text);
+              formattedItem.insertText = undefined;
+          } else {
+              console.log("No range")
+              formattedItem.insertText = formattedText.text;
+          }
+          
         } else {
             formattedItem.insertText = this.formatForYaml(textToFormat, item, editorSettings);
         }
@@ -77,8 +91,75 @@ export class CompletionFormatter {
         return formattedItem;
     }
 
-    private formatForJson(label: string): string {
-        return label;
+    private formatForJson(label: string, item: CompletionItem, context: Context, lineContent?: string): {text: string, range?: Range} {
+      // Check if data.type equals 'object'
+      if(!lineContent){
+        console.log("No lineContent");
+        return {
+          text: label, 
+        };
+      }
+
+      console.log("Line content is " + lineContent);
+      console.log("Data type is " + item.data?.type )
+      if(item.data?.type == 'object'){ 
+        console.log("Data type is object");
+        return this.enhancedFormatForJson(label, context, lineContent);
+      }
+
+        return {
+          text: label,
+        };
+    }
+
+
+    private enhancedFormatForJson (label: string, context: Context, lineContent: string) {
+      const afterCursor = lineContent.substring(context.endPosition.column).trimStart();
+      const beforeCursor = lineContent.substring(0, context.startPosition.column);
+    
+      if (afterCursor.startsWith(': {')) {
+          return {
+            text: label, 
+          }; // ": {" already exists
+      } else if (afterCursor.startsWith(':')) {
+          const restOfLine = afterCursor.substring(1).trimStart();
+          if (restOfLine.startsWith('{') || restOfLine === '') {
+              return {
+                text: label, 
+              }; // Colon exists, braces exist
+          }
+          return {
+            text: label, 
+          }; // Let existing colon handle it
+      } else if (afterCursor.startsWith('{')) {
+        const quoteStart = beforeCursor.lastIndexOf('"');
+        const quoteEnd = afterCursor.indexOf('"') + context.endPosition.column;
+        
+        const range = Range.create(
+            Position.create(context.startPosition.row, quoteStart),
+            Position.create(context.startPosition.row, quoteEnd + 1)
+        );
+        
+        return {
+            text: `"${label}":`,
+            range: range
+        };
+      } else {
+          // Check if we're inside quotes
+          const inQuotes = (beforeCursor.match(/"/g) || []).length % 2 === 1;
+          const hasClosingQuote = afterCursor.trimStart().startsWith('"');
+          if (inQuotes && !hasClosingQuote){
+              return {
+                text: `${label}": {}`, 
+                range: createReplacementRange(context, true),
+              } // Close quote, add colon and braces
+          } else {
+              return {
+                text: `"${label}:" {}`, 
+                range: createReplacementRange(context, false),
+              } // In quotes or no quotes, do a full replace
+          }
+      }
     }
 
     private formatForYaml(label: string, item: CompletionItem | undefined, editorSettings: EditorSettings): string {

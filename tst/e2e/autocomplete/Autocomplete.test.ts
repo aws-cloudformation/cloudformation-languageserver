@@ -1917,7 +1917,7 @@ Resources:
                         range: { start: { line: 2, character: 3 }, end: { line: 2, character: 4 } },
                         description: 'Suggest top level sections',
                         verification: {
-                            position: { line: 2, character: 6 },
+                            position: { line: 7, character: 4 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Description', 'Resources', 'Rules', 'Resources'])
                                 .build(),
