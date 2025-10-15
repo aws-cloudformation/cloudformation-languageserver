@@ -89,7 +89,7 @@ export class CfnServer {
         this.lsp.handlers.onDefinition(definitionHandler(this.components));
         this.lsp.handlers.onDocumentSymbol(documentSymbolHandler(this.components));
         this.lsp.handlers.onDidChangeConfiguration(configurationHandler(this.components));
-        this.lsp.handlers.onCodeLens(codeLensHandler(this.lsp.documents, this.components));
+        this.lsp.handlers.onCodeLens(codeLensHandler(this.components));
 
         this.lsp.authHandlers.onIamCredentialsUpdate(iamCredentialsUpdateHandler(this.components));
         this.lsp.authHandlers.onBearerCredentialsUpdate(bearerCredentialsUpdateHandler(this.components));

@@ -8,6 +8,7 @@ import { InlineCompletionRouter } from '../../src/autocomplete/InlineCompletionR
 import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
 import { ResourceStateCompletionProvider } from '../../src/autocomplete/ResourceStateCompletionProvider';
 import { TopLevelSectionCompletionProvider } from '../../src/autocomplete/TopLevelSectionCompletionProvider';
+import { CodeLensProvider } from '../../src/codeLens/CodeLensProvider';
 import { ManagedResourceCodeLens } from '../../src/codeLens/ManagedResourceCodeLens';
 import { ContextManager } from '../../src/context/ContextManager';
 import { FileContextManager } from '../../src/context/FileContextManager';
@@ -357,7 +358,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
         codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
         documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
-        managedResourceCodeLens: overrides.managedResourceCodeLens ?? createMockManagedResourceCodeLens(),
+        codeLensProvider: overrides.codeLensProvider ?? stubInterface<CodeLensProvider>(),
         cfnAI: overrides.cfnAI ?? mockCfnAi(),
         close: () => Promise.resolve(),
         configurables: () => [],

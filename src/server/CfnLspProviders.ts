@@ -1,7 +1,7 @@
 import { CfnAI } from '../ai/CfnAI';
 import { CompletionRouter } from '../autocomplete/CompletionRouter';
 import { InlineCompletionRouter } from '../autocomplete/InlineCompletionRouter';
-import { ManagedResourceCodeLens } from '../codeLens/ManagedResourceCodeLens';
+import { CodeLensProvider } from '../codeLens/CodeLensProvider';
 import { DefinitionProvider } from '../definition/DefinitionProvider';
 import { DocumentSymbolRouter } from '../documentSymbol/DocumentSymbolRouter';
 import { HoverRouter } from '../hover/HoverRouter';
@@ -36,7 +36,7 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly definitionProvider: DefinitionProvider;
     readonly codeActionService: CodeActionService;
     readonly documentSymbolRouter: DocumentSymbolRouter;
-    readonly managedResourceCodeLens: ManagedResourceCodeLens;
+    readonly codeLensProvider: CodeLensProvider;
 
     // AI
     readonly cfnAI: CfnAI;
@@ -59,8 +59,8 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.definitionProvider = overrides.definitionProvider ?? new DefinitionProvider(core.contextManager);
         this.codeActionService = overrides.codeActionService ?? CodeActionService.create(core);
         this.documentSymbolRouter = overrides.documentSymbolRouter ?? new DocumentSymbolRouter(core.syntaxTreeManager);
-        this.managedResourceCodeLens =
-            overrides.managedResourceCodeLens ?? new ManagedResourceCodeLens(core.syntaxTreeManager);
+        this.codeLensProvider =
+            overrides.codeLensProvider ?? new CodeLensProvider(core.syntaxTreeManager, core.documentManager);
 
         this.cfnAI = overrides.cfnAI ?? new CfnAI(core.documentManager, external.awsClient);
     }
