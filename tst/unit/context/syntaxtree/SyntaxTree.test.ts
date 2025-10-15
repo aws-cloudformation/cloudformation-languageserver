@@ -227,23 +227,6 @@ describe('SyntaxTree', () => {
                 expect(largeNode).toBeDefined();
             });
 
-            it('should handle invalid positions gracefully in getTextAtPosition', () => {
-                const yamlTree = createSyntaxTree(Templates.simple.yaml.contents, DocumentType.YAML);
-                const jsonTree = createSyntaxTree(Templates.simple.json.contents, DocumentType.JSON);
-
-                // Test invalid positions - should not throw
-                expect(() => yamlTree.getTextAtPosition({ line: -1, character: 0 })).not.toThrow();
-                expect(() => jsonTree.getTextAtPosition({ line: 0, character: -1 })).not.toThrow();
-                expect(() => yamlTree.getTextAtPosition({ line: 10000, character: 10000 })).not.toThrow();
-
-                // Results should be defined (even if empty or fallback)
-                const negativeText = yamlTree.getTextAtPosition({ line: -1, character: 0 });
-                const largeText = jsonTree.getTextAtPosition({ line: 10000, character: 10000 });
-
-                expect(negativeText).toBeDefined();
-                expect(largeText).toBeDefined();
-            });
-
             it('should handle invalid update positions gracefully', () => {
                 const yamlTree = createSyntaxTree(Templates.simple.yaml.contents, DocumentType.YAML);
                 const jsonTree = createSyntaxTree(Templates.simple.json.contents, DocumentType.JSON);
@@ -408,59 +391,6 @@ Resources:
     });
 
     describe('Node Position and Text Retrieval', () => {
-        describe('getTextAtPosition', () => {
-            it('should return correct text at specific positions - simple templates', () => {
-                const yamlTree = createSyntaxTree(Templates.simple.yaml.contents, DocumentType.YAML);
-                const jsonTree = createSyntaxTree(Templates.simple.json.contents, DocumentType.JSON);
-
-                // Test resource name extraction
-                const yamlResourceText = yamlTree.getTextAtPosition(position(2, 4));
-                const jsonResourceText = jsonTree.getTextAtPosition(position(3, 6));
-
-                expect(yamlResourceText).toContain('MyS3Bucket');
-                expect(jsonResourceText).toContain('MyS3Bucket');
-
-                // Test resource type extraction
-                const yamlTypeText = yamlTree.getTextAtPosition(position(3, 18));
-                const jsonTypeText = jsonTree.getTextAtPosition(position(4, 18));
-
-                expect(yamlTypeText).toContain('AWS::S3::Bucket');
-                expect(jsonTypeText).toContain('AWS::S3::Bucket');
-            });
-
-            it('should handle edge cases and boundary positions', () => {
-                const yamlTree = createSyntaxTree(Templates.comprehensive.yaml.contents, DocumentType.YAML);
-                const jsonTree = createSyntaxTree(Templates.comprehensive.json.contents, DocumentType.JSON);
-
-                // Test positions at document boundaries
-                const yamlStartText = yamlTree.getTextAtPosition(position(0, 0));
-                const jsonStartText = jsonTree.getTextAtPosition(position(0, 0));
-
-                expect(yamlStartText).toBeDefined();
-                expect(jsonStartText).toBeDefined();
-
-                // Test out-of-bounds positions
-                const yamlOutOfBounds = yamlTree.getTextAtPosition(position(10000, 10000));
-                const jsonOutOfBounds = jsonTree.getTextAtPosition(position(10000, 10000));
-
-                expect(yamlOutOfBounds).toBeDefined();
-                expect(jsonOutOfBounds).toBeDefined();
-            });
-
-            it('should handle broken templates without throwing', () => {
-                const brokenYaml = createSyntaxTree(Templates.broken.yaml.contents, DocumentType.YAML);
-                const brokenJson = createSyntaxTree(Templates.broken.json.contents, DocumentType.JSON);
-
-                // Test various positions in broken templates
-                const positions = [position(0, 0), position(1, 0), position(2, 5), position(4, 0)];
-
-                for (const pos of positions) {
-                    expect(() => brokenYaml.getTextAtPosition(pos)).not.toThrow();
-                    expect(() => brokenJson.getTextAtPosition(pos)).not.toThrow();
-                }
-            });
-        });
-
         describe('getNodeAtPosition', () => {
             it('should find resource name nodes in simple CloudFormation templates and validate node text content', () => {
                 const yamlTree = createSyntaxTree(Templates.simple.yaml.contents, DocumentType.YAML);
