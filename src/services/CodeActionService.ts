@@ -17,13 +17,11 @@ import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
 import { ANALYZE_DIAGNOSTIC } from '../handlers/ExecutionHandler';
 import { CfnInfraCore } from '../server/CfnInfraCore';
-import { SettingsManager } from '../settings/SettingsManager';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Track } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { pointToPosition } from '../utils/TypeConverters';
-import { DiagnosticCoordinator } from './DiagnosticCoordinator';
 import { ExtractToParameterProvider } from './extractToParameter/ExtractToParameterProvider';
 
 export interface CodeActionFix {
@@ -41,8 +39,6 @@ export class CodeActionService {
     constructor(
         private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly documentManager: DocumentManager,
-        private readonly diagnosticCoordinator: DiagnosticCoordinator,
-        private readonly settingsManager: SettingsManager,
         private readonly contextManager: ContextManager,
         private readonly extractToParameterProvider?: ExtractToParameterProvider,
     ) {}
@@ -654,8 +650,6 @@ export class CodeActionService {
         return new CodeActionService(
             core.syntaxTreeManager,
             core.documentManager,
-            core.diagnosticCoordinator,
-            core.settingsManager,
             core.contextManager,
             extractToParameterProvider,
         );

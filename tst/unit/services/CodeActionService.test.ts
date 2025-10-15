@@ -8,8 +8,6 @@ import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CodeActionService } from '../../../src/services/CodeActionService';
-import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
-import { SettingsManager } from '../../../src/settings/SettingsManager';
 import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
 
 /* eslint-disable vitest/expect-expect */
@@ -23,14 +21,10 @@ describe('CodeActionService', () => {
         mockSyntaxTreeManager = stubInterface<SyntaxTreeManager>();
         mockDocumentManager = stubInterface<DocumentManager>();
         mockSyntaxTree = stubInterface<SyntaxTree>();
-        const mockDiagnosticCoordinator = stubInterface<DiagnosticCoordinator>();
-        const mockSettingsManager = stubInterface<SettingsManager>();
         const mockContextManager = stubInterface<ContextManager>();
         codeActionService = new CodeActionService(
             mockSyntaxTreeManager,
             mockDocumentManager,
-            mockDiagnosticCoordinator,
-            mockSettingsManager,
             mockContextManager,
         );
     });

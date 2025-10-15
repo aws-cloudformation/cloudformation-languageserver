@@ -8,10 +8,8 @@ import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeMan
 import { Document, DocumentType } from '../../../src/document/Document';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CodeActionService } from '../../../src/services/CodeActionService';
-import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import { ExtractToParameterProvider } from '../../../src/services/extractToParameter/ExtractToParameterProvider';
 import { ExtractToParameterResult } from '../../../src/services/extractToParameter/ExtractToParameterTypes';
-import { SettingsManager } from '../../../src/settings/SettingsManager';
 
 describe('CodeActionService - Extract to Parameter Integration', () => {
     let codeActionService: CodeActionService;
@@ -22,8 +20,6 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
     let mockSyntaxTree: ReturnType<typeof stubInterface<SyntaxTree>>;
     let mockDocument: ReturnType<typeof stubInterface<Document>>;
     let mockContext: ReturnType<typeof stubInterface<Context>>;
-    let mockDiagnosticCoordinator: ReturnType<typeof stubInterface<DiagnosticCoordinator>>;
-    let mockSettingsManager: ReturnType<typeof stubInterface<SettingsManager>>;
 
     beforeEach(() => {
         mockSyntaxTreeManager = stubInterface<SyntaxTreeManager>();
@@ -33,15 +29,11 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
         mockSyntaxTree = stubInterface<SyntaxTree>();
         mockDocument = stubInterface<Document>();
         mockContext = stubInterface<Context>();
-        mockDiagnosticCoordinator = stubInterface<DiagnosticCoordinator>();
-        mockSettingsManager = stubInterface<SettingsManager>();
 
         // Create CodeActionService with mocked dependencies
         codeActionService = new CodeActionService(
             mockSyntaxTreeManager,
             mockDocumentManager,
-            mockDiagnosticCoordinator,
-            mockSettingsManager,
             mockContextManager,
             mockExtractToParameterProvider,
         );
@@ -70,9 +62,6 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
             mockContextManager.getContext.returns(mockContext);
             (mockContext.documentType as any) = DocumentType.YAML;
             mockExtractToParameterProvider.canExtract.returns(true);
-            mockSettingsManager.getCurrentSettings.returns({
-                editor: { tabSize: 2, insertSpaces: true },
-            } as any);
 
             const mockExtractionResult: ExtractToParameterResult = {
                 parameterName: 'TestParameter',
@@ -129,9 +118,6 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockContextManager.getContext.returns(mockContext);
             mockExtractToParameterProvider.canExtract.returns(false);
-            mockSettingsManager.getCurrentSettings.returns({
-                editor: { tabSize: 2, insertSpaces: true },
-            } as any);
 
             const result = codeActionService.generateCodeActions(params);
 
@@ -183,9 +169,6 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockContextManager.getContext.returns(mockContext);
             mockExtractToParameterProvider.canExtract.returns(true);
-            mockSettingsManager.getCurrentSettings.returns({
-                editor: { tabSize: 2, insertSpaces: true },
-            } as any);
 
             const mockExtractionResult: ExtractToParameterResult = {
                 parameterName: 'InstanceTypeParameter',
@@ -241,9 +224,6 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockContextManager.getContext.returns(mockContext);
             mockExtractToParameterProvider.canExtract.returns(true);
-            mockSettingsManager.getCurrentSettings.returns({
-                editor: { tabSize: 2, insertSpaces: true },
-            } as any);
 
             const mockExtractionResult: ExtractToParameterResult = {
                 parameterName: 'InstanceTypeParameter',
