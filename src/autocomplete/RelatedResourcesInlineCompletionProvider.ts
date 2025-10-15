@@ -1,6 +1,6 @@
 import { InlineCompletionItem, InlineCompletionParams } from 'vscode-languageserver-protocol';
 import { Context } from '../context/Context';
-import { DocumentType } from '../document/Document';
+import { Document, DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
@@ -9,6 +9,8 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
 import { CompletionFormatter } from './CompletionFormatter';
 import { InlineCompletionProvider } from './InlineCompletionProvider';
+
+type RelatedResource = { type: string; relatedTo: string };
 
 export class RelatedResourcesInlineCompletionProvider implements InlineCompletionProvider {
     private readonly log = LoggerFactory.getLogger(RelatedResourcesInlineCompletionProvider);
@@ -54,29 +56,36 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
                 return undefined;
             }
 
-            return this.generateInlineCompletionItems(relatedResourceTypes, params, context);
+            return this.generateInlineCompletionItems(relatedResourceTypes, params);
         } catch (error) {
             this.log.error({ error: String(error) }, 'Error generating related resources inline completion');
             return undefined;
         }
     }
 
-    private getRelatedResourceTypes(existingResourceTypes: string[]): string[] {
+    private getRelatedResourceTypes(existingResourceTypes: string[]): RelatedResource[] {
         const existingRelationships = new Map<string, Set<string>>();
         const allRelatedTypes = new Set<string>();
+        const typeToRelatedMap = new Map<string, string>();
 
         for (const resourceType of existingResourceTypes) {
             const relatedTypes = this.relationshipSchemaService.getAllRelatedResourceTypes(resourceType);
             existingRelationships.set(resourceType, relatedTypes);
             for (const type of relatedTypes) {
                 allRelatedTypes.add(type);
+                typeToRelatedMap.set(type, typeToRelatedMap.get(type) ?? resourceType);
             }
         }
 
         const existingTypesSet = new Set(existingResourceTypes);
         const suggestedTypes = [...allRelatedTypes].filter((type) => !existingTypesSet.has(type));
 
-        return this.rankSuggestionsByFrequency(suggestedTypes, existingRelationships);
+        const rankedTypes = this.rankSuggestionsByFrequency(suggestedTypes, existingRelationships);
+
+        return rankedTypes.map((type) => ({
+            type,
+            relatedTo: typeToRelatedMap.get(type) ?? type,
+        }));
     }
 
     private rankSuggestionsByFrequency(
@@ -108,36 +117,39 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
     }
 
     private generateInlineCompletionItems(
-        relatedResourceTypes: string[],
+        relatedResourceTypes: RelatedResource[],
         params: InlineCompletionParams,
-        context: Context,
     ): InlineCompletionItem[] {
-        const completionItems: InlineCompletionItem[] = [];
-
+        const document = this.documentManager.get(params.textDocument.uri);
         const topSuggestions = relatedResourceTypes.slice(0, this.MAX_SUGGESTIONS);
 
-        for (const resourceType of topSuggestions) {
-            const insertText = this.generatePropertySnippet(resourceType, context.documentType, params);
+        return topSuggestions.map(({ type: resourceType, relatedTo }) => {
+            const insertText = this.generatePropertySnippet(resourceType, relatedTo, params, document);
 
-            completionItems.push({
+            return {
                 insertText,
                 range: {
                     start: params.position,
                     end: params.position,
                 },
-                filterText: `${resourceType}`,
-            });
-        }
-
-        return completionItems;
+                filterText: resourceType,
+            };
+        });
     }
 
     private generatePropertySnippet(
         resourceType: string,
-        documentType: DocumentType,
+        relatedToType: string,
         params: InlineCompletionParams,
+        document: Document | undefined,
     ): string {
-        const logicalId = 'relatedResourceLogicalId';
+        const documentType = document?.documentType ?? DocumentType.YAML;
+        const baseLogicalId = `RelatedTo${relatedToType
+            .split('::')
+            .slice(1)
+            .join('')
+            .replaceAll(/[^a-zA-Z0-9]/g, '')}`;
+        const logicalId = this.getUniqueLogicalId(baseLogicalId, document);
         const indent0 = CompletionFormatter.getIndentPlaceholder(0);
         const indent1 = CompletionFormatter.getIndentPlaceholder(1);
 
@@ -242,5 +254,25 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
             .replaceAll(/\n\s*{INDENT1}/g, `\n${resourceIndent}`)
             .replaceAll(/\n\s*{INDENT2}/g, `\n${propertyIndent}`)
             .replaceAll(/\n\s*{INDENT3}/g, `\n${' '.repeat(currentIndent + baseIndentSize * 3)}`);
+    }
+
+    private getUniqueLogicalId(baseId: string, document: Document | undefined): string {
+        const logicalId = `${baseId}LogicalId`;
+
+        if (!document) {
+            return logicalId;
+        }
+
+        const templateText = document.getText();
+
+        let counter = 0;
+        let candidateId = logicalId;
+
+        while (templateText.includes(candidateId)) {
+            counter++;
+            candidateId = `${baseId}${counter}LogicalId`;
+        }
+
+        return candidateId;
     }
 }

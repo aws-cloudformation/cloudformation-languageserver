@@ -125,7 +125,7 @@ Resources:
             // Verify that suggested resources are from the expected set
             for (const item of result) {
                 expect(item.insertText).toBeDefined();
-                expect(item.insertText).toContain('relatedResourceLogicalId:');
+                expect(item.insertText).toContain('RelatedToS3BucketLogicalId:');
                 expect(item.insertText).toContain('Type:');
                 expect(item.range).toBeDefined();
                 expect(item.range.start).toEqual(mockParams.position);
@@ -164,7 +164,7 @@ Resources:
             expect(result).toBeDefined();
             expect(Array.isArray(result)).toBe(true);
             // Should only include AWS::IAM::Role (not the existing S3 and Lambda)
-            expect(result).toEqual(['AWS::IAM::Role']);
+            expect(result).toEqual([{ type: 'AWS::IAM::Role', relatedTo: 'AWS::S3::Bucket' }]);
         });
 
         test('should rank suggestions by frequency', () => {
@@ -181,21 +181,21 @@ Resources:
             expect(result).toBeDefined();
             expect(Array.isArray(result)).toBe(true);
             // AWS::IAM::Role should be first (appears in all 3), others alphabetically
-            expect(result[0]).toBe('AWS::IAM::Role');
+            expect(result[0].type).toBe('AWS::IAM::Role');
         });
     });
 
     describe('generateInlineCompletionItems', () => {
         test('should limit suggestions to top 5', () => {
             const manyResourceTypes = [
-                'AWS::IAM::Role',
-                'AWS::CloudFront::Distribution',
-                'AWS::API::Gateway',
-                'AWS::EC2::SecurityGroup',
-                'AWS::RDS::DBInstance',
-                'AWS::DynamoDB::Table',
-                'AWS::SNS::Topic',
-                'AWS::SQS::Queue',
+                { type: 'AWS::IAM::Role', relatedTo: 'AWS::S3::Bucket' },
+                { type: 'AWS::CloudFront::Distribution', relatedTo: 'AWS::S3::Bucket' },
+                { type: 'AWS::API::Gateway', relatedTo: 'AWS::Lambda::Function' },
+                { type: 'AWS::EC2::SecurityGroup', relatedTo: 'AWS::EC2::Instance' },
+                { type: 'AWS::RDS::DBInstance', relatedTo: 'AWS::EC2::Instance' },
+                { type: 'AWS::DynamoDB::Table', relatedTo: 'AWS::Lambda::Function' },
+                { type: 'AWS::SNS::Topic', relatedTo: 'AWS::Lambda::Function' },
+                { type: 'AWS::SQS::Queue', relatedTo: 'AWS::Lambda::Function' },
             ];
 
             const result = (provider as any).generateInlineCompletionItems(manyResourceTypes, mockParams, mockContext);
@@ -206,7 +206,10 @@ Resources:
         });
 
         test('should create proper completion items structure', () => {
-            const resourceTypes = ['AWS::IAM::Role', 'AWS::CloudFront::Distribution'];
+            const resourceTypes = [
+                { type: 'AWS::IAM::Role', relatedTo: 'AWS::S3::Bucket' },
+                { type: 'AWS::CloudFront::Distribution', relatedTo: 'AWS::S3::Bucket' },
+            ];
 
             const result = (provider as any).generateInlineCompletionItems(resourceTypes, mockParams, mockContext);
 
@@ -215,7 +218,7 @@ Resources:
 
             for (const item of result) {
                 expect(item.insertText).toBeDefined();
-                expect(item.insertText).toContain('relatedResourceLogicalId:');
+                expect(item.insertText).toContain('RelatedToS3BucketLogicalId:');
                 expect(item.range).toBeDefined();
                 expect(item.range.start).toEqual(mockParams.position);
                 expect(item.range.end).toEqual(mockParams.position);
@@ -235,34 +238,48 @@ Resources:
     describe('generatePropertySnippet', () => {
         test('should generate basic property snippet', () => {
             const resourceType = 'AWS::S3::Bucket';
+            const relatedToType = 'AWS::Lambda::Function';
 
             const result = (provider as any).generatePropertySnippet(
                 resourceType,
-                mockContext.documentType,
+                relatedToType,
                 mockParams,
+                undefined,
             );
 
             expect(result).toBeDefined();
-            expect(result).toContain('relatedResourceLogicalId:');
+            expect(result).toContain('RelatedToLambdaFunctionLogicalId:');
             expect(result).toContain('Type: AWS::S3::Bucket');
         });
 
         test('should handle different resource types', () => {
-            const testCases = ['AWS::Lambda::Function', 'AWS::IAM::Role', 'AWS::EC2::Instance', 'AWS::RDS::DBInstance'];
+            const testCases = [
+                { resourceType: 'AWS::Lambda::Function', relatedTo: 'AWS::S3::Bucket' },
+                { resourceType: 'AWS::IAM::Role', relatedTo: 'AWS::Lambda::Function' },
+                { resourceType: 'AWS::EC2::Instance', relatedTo: 'AWS::IAM::Role' },
+                { resourceType: 'AWS::RDS::DBInstance', relatedTo: 'AWS::EC2::Instance' },
+            ];
 
-            for (const resourceType of testCases) {
+            for (const { resourceType, relatedTo } of testCases) {
                 const result = (provider as any).generatePropertySnippet(
                     resourceType,
-                    mockContext.documentType,
+                    relatedTo,
                     mockParams,
+                    undefined,
                 );
-                expect(result).toContain('relatedResourceLogicalId:');
+                const expectedLogicalId = `RelatedTo${relatedTo
+                    .split('::')
+                    .slice(1)
+                    .join('')
+                    .replaceAll(/[^a-zA-Z0-9]/g, '')}LogicalId`;
+                expect(result).toContain(`${expectedLogicalId}:`);
                 expect(result).toContain(`Type: ${resourceType}`);
             }
         });
 
         test('should include required properties when schema has required fields', () => {
             const resourceType = 'AWS::S3::Bucket';
+            const relatedToType = 'AWS::Lambda::Function';
 
             // Mock schema with required properties
             const mockSchema = {
@@ -275,11 +292,12 @@ Resources:
 
             const result = (provider as any).generatePropertySnippet(
                 resourceType,
-                mockContext.documentType,
+                relatedToType,
                 mockParams,
+                undefined,
             );
 
-            expect(result).toContain('relatedResourceLogicalId:');
+            expect(result).toContain('RelatedToLambdaFunctionLogicalId:');
             expect(result).toContain(`Type: ${resourceType}`);
             expect(result).toContain('Properties:');
             expect(result).toContain('BucketName: ');
@@ -290,6 +308,7 @@ Resources:
 
         test('should generate properly indented YAML snippets with cursor context', () => {
             const resourceType = 'AWS::IAM::Role';
+            const relatedToType = 'AWS::S3::Bucket';
             const mockSchema = {
                 required: ['AssumeRolePolicyDocument'],
             };
@@ -316,18 +335,20 @@ Resources:
                     '      BucketName: test',
                     '  ',
                 ],
+                documentType: 'YAML',
             };
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.getEditorSettingsForDocument.returns({ tabSize: 2, insertSpaces: true } as any);
 
             const result = (provider as any).generatePropertySnippet(
                 resourceType,
-                mockContext.documentType,
+                relatedToType,
                 mockParams,
+                mockDocument,
             );
 
             // Verify proper YAML structure with cursor context indentation
-            expect(result).toContain('relatedResourceLogicalId:');
+            expect(result).toContain('RelatedToS3BucketLogicalId:');
             expect(result).toContain('    Type: AWS::IAM::Role'); // 4 spaces (2 existing + 2 more)
             expect(result).toContain('    Properties:'); // 4 spaces (2 existing + 2 more)
             expect(result).toContain('      AssumeRolePolicyDocument: '); // 6 spaces (2 existing + 4 more)
@@ -335,6 +356,7 @@ Resources:
 
         test('should generate properly indented JSON snippets with cursor context', () => {
             const resourceType = 'AWS::IAM::Role';
+            const relatedToType = 'AWS::S3::Bucket';
             const mockSchema = {
                 required: ['AssumeRolePolicyDocument'],
             };
@@ -361,20 +383,20 @@ Resources:
                     '    },',
                     '  ',
                 ],
+                documentType: 'JSON',
             };
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.getEditorSettingsForDocument.returns({ tabSize: 2, insertSpaces: true } as any);
 
-            const jsonContext = { ...mockContext, documentType: 'JSON' };
-
             const result = (provider as any).generatePropertySnippet(
                 resourceType,
-                jsonContext.documentType,
+                relatedToType,
                 mockParams,
+                mockDocument,
             );
 
             // Verify proper JSON structure with cursor context indentation
-            expect(result).toContain('"relatedResourceLogicalId": {');
+            expect(result).toContain('"RelatedToS3BucketLogicalId": {');
             expect(result).toContain('    "Type": "AWS::IAM::Role"'); // 4 spaces (2 existing + 2 more)
             expect(result).toContain('    "Properties": {'); // 4 spaces (2 existing + 2 more)
             expect(result).toContain('      "AssumeRolePolicyDocument": ""'); // 6 spaces (2 existing + 4 more)
