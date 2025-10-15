@@ -51,7 +51,7 @@ export class TelemetryService implements Closeable {
     }
 
     private registerSystemMetrics(): void {
-        const systemTelemetry = this.get('system');
+        const systemTelemetry = this.get('System');
         this.registerMemoryMetrics(systemTelemetry);
         this.registerCpuMetrics(systemTelemetry);
         this.registerProcessMetrics(systemTelemetry);
@@ -64,7 +64,7 @@ export class TelemetryService implements Closeable {
             () => {
                 return process.memoryUsage().heapUsed;
             },
-            { description: 'Process heap memory used', unit: 'By' },
+            { unit: 'By' },
         );
 
         telemetry.registerGaugeProvider(
@@ -72,7 +72,7 @@ export class TelemetryService implements Closeable {
             () => {
                 return process.memoryUsage().heapTotal;
             },
-            { description: 'Process heap memory total', unit: 'By' },
+            { unit: 'By' },
         );
 
         telemetry.registerGaugeProvider(
@@ -80,7 +80,7 @@ export class TelemetryService implements Closeable {
             () => {
                 return process.memoryUsage().external;
             },
-            { description: 'Process external memory', unit: 'By' },
+            { unit: 'By' },
         );
 
         telemetry.registerGaugeProvider(
@@ -88,7 +88,7 @@ export class TelemetryService implements Closeable {
             () => {
                 return process.memoryUsage().rss;
             },
-            { description: 'Process resident set size', unit: 'By' },
+            { unit: 'By' },
         );
 
         telemetry.registerGaugeProvider(
@@ -97,7 +97,7 @@ export class TelemetryService implements Closeable {
                 const usage = process.memoryUsage();
                 return Math.round((usage.heapUsed / usage.heapTotal) * 100);
             },
-            { description: 'Heap memory usage percentage', unit: '%' },
+            { unit: '%' },
         );
     }
 
@@ -126,7 +126,7 @@ export class TelemetryService implements Closeable {
                 }
                 return 0;
             },
-            { description: 'CPU utilization percentage', unit: '%' },
+            { unit: '%' },
         );
     }
 
@@ -136,7 +136,7 @@ export class TelemetryService implements Closeable {
             () => {
                 return Math.round(process.uptime());
             },
-            { description: 'Process uptime', unit: 's' },
+            { unit: 's' },
         );
     }
 
@@ -149,11 +149,8 @@ export class TelemetryService implements Closeable {
                 },
                 'Uncaught exception monitor',
             );
-            telemetry.count('process.uncaught_exception_monitor', 1, undefined, {
-                origin,
-                error_name: error?.name ?? 'Unknown',
-                error_type: 'uncaught_exception_monitor',
-            });
+
+            telemetry.count('process.exception.monitor.uncaught', 1, { unit: '1' });
         });
 
         process.on('unhandledRejection', (reason, promise) => {
@@ -164,9 +161,8 @@ export class TelemetryService implements Closeable {
                 },
                 'Unhandled promise rejection',
             );
-            telemetry.count('process.unhandled_rejection', 1, undefined, {
-                error_type: 'unhandled_rejection',
-            });
+
+            telemetry.count('process.promise.unhandled', 1, { unit: '1' });
         });
 
         process.on('uncaughtException', (error, origin) => {
@@ -177,9 +173,7 @@ export class TelemetryService implements Closeable {
                 },
                 'Uncaught exception',
             );
-            telemetry.count('process.uncaught_exception', 1, undefined, {
-                error_type: 'uncaught_exception',
-            });
+            telemetry.count('process.exception.uncaught', 1, { unit: '1' });
         });
     }
 
