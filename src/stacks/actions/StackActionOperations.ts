@@ -57,6 +57,7 @@ export async function waitForValidation(
             const response = await cfnService.describeChangeSet({
                 StackName: stackName,
                 ChangeSetName: changeSetName,
+                IncludePropertyValues: true,
             });
 
             return {
@@ -209,6 +210,8 @@ export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | un
                   resourceType: change.ResourceChange.ResourceType,
                   replacement: change.ResourceChange.Replacement,
                   scope: change.ResourceChange.Scope,
+                  beforeContext: change.ResourceChange.BeforeContext,
+                  afterContext: change.ResourceChange.AfterContext,
                   details: change.ResourceChange.Details,
               }
             : undefined,
