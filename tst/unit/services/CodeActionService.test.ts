@@ -22,11 +22,7 @@ describe('CodeActionService', () => {
         mockDocumentManager = stubInterface<DocumentManager>();
         mockSyntaxTree = stubInterface<SyntaxTree>();
         const mockContextManager = stubInterface<ContextManager>();
-        codeActionService = new CodeActionService(
-            mockSyntaxTreeManager,
-            mockDocumentManager,
-            mockContextManager,
-        );
+        codeActionService = new CodeActionService(mockSyntaxTreeManager, mockDocumentManager, mockContextManager);
     });
 
     function verifyCodeAction(params: CodeActionParams, actual: CodeAction[], ...expected: CodeAction[]) {
