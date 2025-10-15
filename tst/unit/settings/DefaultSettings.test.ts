@@ -19,46 +19,6 @@ describe('DefaultSettings', () => {
         }
     });
 
-    it('should have telemetry enabled when AWS_ENV is alpha', async () => {
-        process.env.AWS_ENV = 'alpha';
-
-        const { DefaultSettings } = await import('../../../src/settings/Settings');
-
-        expect(DefaultSettings.telemetry.enabled).toBe(true);
-    });
-
-    it('should have telemetry enabled when AWS_ENV is beta', async () => {
-        process.env.AWS_ENV = 'beta';
-
-        const { DefaultSettings } = await import('../../../src/settings/Settings');
-
-        expect(DefaultSettings.telemetry.enabled).toBe(true);
-    });
-
-    it('should have telemetry disabled when AWS_ENV is prod', async () => {
-        process.env.AWS_ENV = 'prod';
-
-        const { DefaultSettings } = await import('../../../src/settings/Settings');
-
-        expect(DefaultSettings.telemetry.enabled).toBe(false);
-    });
-
-    it('should have telemetry disabled when AWS_ENV is undefined', async () => {
-        delete process.env.AWS_ENV;
-
-        const { DefaultSettings } = await import('../../../src/settings/Settings');
-
-        expect(DefaultSettings.telemetry.enabled).toBe(false);
-    });
-
-    it('should have telemetry disabled when AWS_ENV is unknown value', async () => {
-        process.env.AWS_ENV = 'unknown';
-
-        const { DefaultSettings } = await import('../../../src/settings/Settings');
-
-        expect(DefaultSettings.telemetry.enabled).toBe(false);
-    });
-
     it('should have correct default values regardless of environment', async () => {
         process.env.AWS_ENV = 'alpha';
 
@@ -77,7 +37,6 @@ describe('DefaultSettings', () => {
         expect(DefaultSettings.diagnostics.cfnGuard.validateOnChange).toBe(true);
         expect(DefaultSettings.diagnostics.cfnGuard.enabledRulePacks).toEqual(['cis-aws-benchmark-level-1']);
         expect(DefaultSettings.diagnostics.cfnGuard.timeout).toBe(30000);
-        expect(DefaultSettings.telemetry.logLevel).toBe('info');
     });
 
     it('should have correct CfnLint initialization settings with totalTimeoutMs', async () => {

@@ -1,6 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Track } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { Context } from './Context';
 import { ContextWithRelatedEntities } from './ContextWithRelatedEntities';
@@ -12,6 +13,7 @@ export class ContextManager {
 
     constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
+    @Track({ name: 'getContext' })
     public getContext(params: TextDocumentPositionParams): Context | undefined {
         const contextParams = this.getContextParams(params);
         if (!contextParams) {
@@ -40,6 +42,7 @@ export class ContextManager {
         return undefined;
     }
 
+    @Track({ name: 'getContextWithEntities' })
     public getContextAndRelatedEntities(
         params: TextDocumentPositionParams,
         fullEntitySearch: boolean = true,

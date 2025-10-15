@@ -1,6 +1,15 @@
+import { readdirSync, rmSync } from 'fs';
+import { join } from 'path';
 import { open, Database, RootDatabase } from 'lmdb';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { pathToArtifact } from '../utils/ArtifactsDir';
+import { extractErrorMessage } from '../utils/Errors';
+import { stableMachineSpecificKey } from '../utils/MachineKey';
 import { DataStore, DataStoreFactory } from './DataStore';
+
+const log = LoggerFactory.getLogger('LMDB');
 
 export class LMDBStore implements DataStore {
     constructor(private readonly store: Database<unknown, string>) {}
@@ -30,18 +39,35 @@ export class LMDBStore implements DataStore {
     }
 }
 
+const LmdbKey = stableMachineSpecificKey('lmdb-static-salt', 'lmdb-encryption-key-derivation', 16).toString('hex');
+
 export class LMDBStoreFactory implements DataStoreFactory {
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
+
     private readonly rootDir = pathToArtifact('lmdb');
-    private readonly storePath = `${this.rootDir}/${Version}`;
+    private readonly storePath = join(this.rootDir, Version);
+    private readonly timeout: NodeJS.Timeout;
 
     private readonly env: RootDatabase = open({
         path: this.storePath,
         maxDbs: 10, // 10 max databases
         mapSize: 100 * 1024 * 1024, // 100MB max size
         encoding: Encoding,
+        encryptionKey: LmdbKey,
     });
 
     private readonly stores = new Map<string, LMDBStore>();
+
+    constructor() {
+        this.registerLMDBGauges();
+
+        this.timeout = setTimeout(
+            () => {
+                this.cleanupOldVersions();
+            },
+            2 * 60 * 1000,
+        );
+    }
 
     getOrCreate(store: string): DataStore {
         let val = this.stores.get(store);
@@ -82,8 +108,35 @@ export class LMDBStoreFactory implements DataStoreFactory {
     async close(): Promise<void> {
         // Clear the stores map but don't close individual stores
         // LMDB will close them when we close the environment
+        clearTimeout(this.timeout);
         this.stores.clear();
         await this.env.close();
+    }
+
+    private cleanupOldVersions(): void {
+        const entries = readdirSync(this.rootDir, { withFileTypes: true });
+        for (const entry of entries) {
+            try {
+                if (entry.isDirectory() && entry.name !== Version) {
+                    this.telemetry.count('oldVersion.cleanup.count', 1, { unit: '1' });
+                    rmSync(join(this.rootDir, entry.name), { recursive: true, force: true });
+                }
+            } catch (error) {
+                log.error({ error: extractErrorMessage(error) }, 'Failed to cleanup old LMDB versions');
+                this.telemetry.count('oldVersion.cleanup.error', 1, { unit: '1' });
+            }
+        }
+    }
+
+    private registerLMDBGauges(): void {
+        this.telemetry.registerGaugeProvider('version', () => VersionNumber, { unit: '1' });
+        this.telemetry.registerGaugeProvider('global.size_mb', () => stats(this.env).totalSizeMB, { unit: 'MB' });
+        this.telemetry.registerGaugeProvider('global.max_size_mb', () => stats(this.env).maxSizeMB, {
+            unit: 'MB',
+        });
+        this.telemetry.registerGaugeProvider('global.entries', () => stats(this.env).entries, { unit: '1' });
+        this.telemetry.registerGaugeProvider('global.readers', () => stats(this.env).numReaders, { unit: '1' });
+        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size, { unit: '1' });
     }
 }
 
@@ -91,7 +144,8 @@ function bytesToMB(bytes: number) {
     return Number((bytes / (1024 * 1024)).toFixed(4));
 }
 
-const Version = 'v1';
+const VersionNumber = 2;
+const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
 
 function stats(store: RootDatabase | Database): StoreStatsType {

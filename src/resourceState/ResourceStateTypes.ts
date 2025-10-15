@@ -75,9 +75,12 @@ export const RefreshResourceListRequest = new RequestType<RefreshResourcesParams
     'aws/cfn/resources/refresh',
 );
 
+export const DeletionPolicyOnImport = 'Retain';
+
 export interface ResourceTemplateFormat {
     [key: string]: {
         Type: string;
+        DeletionPolicy: string | undefined;
         Properties: Record<string, string>;
         Metadata: {
             PrimaryIdentifier: string;

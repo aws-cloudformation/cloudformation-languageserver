@@ -140,3 +140,30 @@ export function supportsAutoScalingCreationPolicy(resourceType: string): boolean
 export function supportsStartFleet(resourceType: string): boolean {
     return START_FLEET_SUPPORTED_RESOURCE_TYPES.includes(resourceType);
 }
+
+export interface CreationPolicyPropertySchema {
+    type: 'object' | 'simple';
+    supportedResourceTypes?: ReadonlyArray<string>;
+    properties?: Record<string, CreationPolicyPropertySchema>;
+}
+
+export const CREATION_POLICY_SCHEMA: Record<string, CreationPolicyPropertySchema> = {
+    [CreationPolicyProperty.ResourceSignal]: {
+        type: 'object',
+        properties: {
+            [ResourceSignalProperty.Count]: { type: 'simple' },
+            [ResourceSignalProperty.Timeout]: { type: 'simple' },
+        },
+    },
+    [CreationPolicyProperty.AutoScalingCreationPolicy]: {
+        type: 'object',
+        supportedResourceTypes: AUTO_SCALING_CREATION_POLICY_SUPPORTED_RESOURCE_TYPES,
+        properties: {
+            [AutoScalingCreationPolicyProperty.MinSuccessfulInstancesPercent]: { type: 'simple' },
+        },
+    },
+    [CreationPolicyProperty.StartFleet]: {
+        type: 'simple',
+        supportedResourceTypes: START_FLEET_SUPPORTED_RESOURCE_TYPES,
+    },
+};

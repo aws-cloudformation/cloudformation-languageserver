@@ -3,16 +3,18 @@ import { Attributes } from '@opentelemetry/api';
 import { MetricOptions } from '@opentelemetry/api/build/src/metrics/Metric';
 import { TelemetryService } from './TelemetryService';
 
-type TelemetryDecoratorOptions = {
-    name?: string;
+type ScopeDecoratorOptions = {
+    scope?: string;
+};
+type ScopedMetricsDecoratorOptions = {
+    name: string;
     options?: MetricOptions;
     attributes?: Attributes;
-    recordArgs?: boolean;
-};
+} & ScopeDecoratorOptions;
 
 type MethodNames = {
-    sync: 'time' | 'trackExecution';
-    async: 'timeAsync' | 'trackExecutionAsync';
+    sync: 'trackExecution' | 'measure';
+    async: 'trackExecutionAsync' | 'measureAsync';
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
@@ -20,78 +22,40 @@ function isAsyncFunction(fn: Function): boolean {
     return fn.constructor.name === 'AsyncFunction' || Object.prototype.toString.call(fn) === '[object AsyncFunction]';
 }
 
-function scopeName(target: any): string {
+function scopeName(target: any, providedScope?: string): string {
+    if (providedScope !== undefined) {
+        return providedScope;
+    }
     const name = (typeof target === 'function' ? target.name : target?.constructor?.name) ?? '';
-    return name && name !== 'Object' ? name : 'Unknown';
-}
-
-function isPrimitive(value: any): boolean {
-    const type = typeof value;
-    return type === 'string' || type === 'number' || type === 'boolean' || value === null;
-}
-
-function getTypeName(value: any): string {
-    if (value === null) return 'null';
-    if (Array.isArray(value)) return 'array';
-    return typeof value;
-}
-
-function sanitizeArgument(baseKey: string, value: any): Attributes {
-    if (isPrimitive(value)) {
-        return { [baseKey]: value };
+    if (name && name !== 'Object') {
+        return name;
     }
 
-    if (Array.isArray(value)) {
-        let isAllPrimitive = true;
-        const types: string[] = [];
-
-        for (const item of value) {
-            types.push(getTypeName(item));
-            if (!isPrimitive(item)) {
-                isAllPrimitive = false;
-            }
-        }
-
-        if (isAllPrimitive) {
-            return { [baseKey]: value };
-        } else {
-            return {
-                [`${baseKey}_length`]: value.length,
-                [`${baseKey}_types`]: types.join(','),
-            };
-        }
-    }
-
-    return { [baseKey]: `[${getTypeName(value)}]` };
+    throw new Error(`Scope could not be derived from target ${target} and providedScope ${providedScope}`);
 }
 
-export function Telemetry(target: any, propertyKey: string) {
-    Object.defineProperty(target, propertyKey, {
-        get: () => {
-            return TelemetryService.instance.get(scopeName(target));
-        },
-        enumerable: false,
-        configurable: false,
-    });
+export function Telemetry(decoratorOptions?: ScopeDecoratorOptions) {
+    return function (target: any, propertyKey: string) {
+        Object.defineProperty(target, propertyKey, {
+            get: () => {
+                return TelemetryService.instance.get(scopeName(target, decoratorOptions?.scope));
+            },
+            enumerable: false,
+            configurable: false,
+        });
+    };
 }
 
 function createTelemetryMethodDecorator(methodNames: MethodNames) {
-    return function (decoratorOptions?: TelemetryDecoratorOptions) {
+    return function (decoratorOptions: ScopedMetricsDecoratorOptions) {
         return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
             const originalMethod = descriptor.value;
-            const metricName = decoratorOptions?.name ?? propertyKey;
+            const metricName = decoratorOptions.name;
 
             descriptor.value = function (this: any, ...args: any[]) {
-                const telemetry = TelemetryService.instance.get(scopeName(target));
+                const telemetry = TelemetryService.instance.get(scopeName(target, decoratorOptions.scope));
 
                 const attributes: Attributes = { ...decoratorOptions?.attributes };
-                if (decoratorOptions?.recordArgs) {
-                    for (const [index, arg] of args.entries()) {
-                        const baseKey = `arg_${index}`;
-                        const argumentAttributes = sanitizeArgument(baseKey, arg);
-                        Object.assign(attributes, argumentAttributes);
-                    }
-                }
 
                 if (isAsyncFunction(originalMethod)) {
                     const asyncMethod = telemetry[methodNames.async].bind(telemetry);
@@ -117,12 +81,12 @@ function createTelemetryMethodDecorator(methodNames: MethodNames) {
     };
 }
 
-export const MeasureLatency = createTelemetryMethodDecorator({
-    sync: 'time',
-    async: 'timeAsync',
-});
-
-export const TrackExecution = createTelemetryMethodDecorator({
+export const Track = createTelemetryMethodDecorator({
     sync: 'trackExecution',
     async: 'trackExecutionAsync',
+});
+
+export const Measure = createTelemetryMethodDecorator({
+    sync: 'measure',
+    async: 'measureAsync',
 });

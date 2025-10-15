@@ -7,6 +7,7 @@ import { EntityType } from '../context/semantic/SemanticTypes';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Track } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { nodeToRange, pointToPosition } from '../utils/TypeConverters';
 
@@ -95,6 +96,7 @@ export class DocumentSymbolRouter {
 
     constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
+    @Track({ name: 'getDocumentSymbols' })
     getDocumentSymbols(params: DocumentSymbolParams): DocumentSymbol[] {
         this.log.debug(
             {

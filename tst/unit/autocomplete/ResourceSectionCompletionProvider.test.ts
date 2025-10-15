@@ -194,6 +194,33 @@ describe('ResourceSectionCompletionProvider', () => {
         spy.mockRestore();
     });
 
+    test('should delegate to property provider when entitySection is a resource attribute (CreationPolicy)', async () => {
+        const mockContext = createResourceContext('MyInstance', {
+            text: '',
+            propertyPath: ['Resources', 'MyInstance', 'CreationPolicy', ''],
+            data: {
+                Type: 'AWS::EC2::Instance',
+                CreationPolicy: {},
+            },
+        });
+
+        const mockSchemas = createMockResourceSchemas();
+        setupMockSchemas(mockSchemas);
+
+        const propertyProvider = resourceProviders.get('Property' as any)!;
+        const mockCompletions = [
+            { label: 'ResourceSignal', kind: CompletionItemKind.Property },
+            { label: 'AutoScalingCreationPolicy', kind: CompletionItemKind.Property },
+        ];
+        const spy = vi.spyOn(propertyProvider, 'getCompletions').mockReturnValue(mockCompletions);
+
+        const result = await provider.getCompletions(mockContext, mockParams);
+
+        expect(spy).toHaveBeenCalledWith(mockContext, mockParams);
+        expect(result).toEqual(mockCompletions);
+        spy.mockRestore();
+    });
+
     test('should return empty array when no provider matches', async () => {
         const mockContext = createResourceContext('MyResource', {
             text: '',
