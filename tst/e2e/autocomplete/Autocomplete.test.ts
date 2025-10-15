@@ -916,9 +916,41 @@ Resources:
                     {
                         action: 'type',
                         content: `reationPolicy:
-      ResourceSignal:
-        Count: !Ref InstanceCount
-        Timeout: PT10M
+      R`,
+                        position: { line: 258, character: 5 },
+                        description: 'Test CreationPolicy suggests ResourceSignal',
+                        verification: {
+                            position: { line: 259, character: 7 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['ResourceSignal'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `esourceSignal:
+        C`,
+                        position: { line: 259, character: 7 },
+                        description: 'Test CreationPolicy suggests Count',
+                        verification: {
+                            position: { line: 260, character: 9 },
+                            expectation: CompletionExpectationBuilder.create().expectContainsItems(['Count']).build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `ount: !Ref InstanceCount
+        T`,
+                        position: { line: 260, character: 9 },
+                        description: 'Test CreationPolicy suggests Timeout',
+                        verification: {
+                            position: { line: 261, character: 9 },
+                            expectation: CompletionExpectationBuilder.create().expectContainsItems(['Timeout']).build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `imeout: PT10M
 
   # Test RDS with complex conditional properties
   Database:
@@ -929,7 +961,7 @@ Resources:
       Engine: mysql
       EngineVersion: "8.0"
       AllocatedStorage: !If [Is]`,
-                        position: { line: 258, character: 5 },
+                        position: { line: 261, character: 9 },
                         description: 'Suggest condition in first argument of !If',
                         verification: {
                             position: { line: 271, character: 31 },

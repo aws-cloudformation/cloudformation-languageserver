@@ -1,5 +1,6 @@
 import { CompletionItem, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import { Context } from '../context/Context';
+import { ResourceAttributesSet, TopLevelSection } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
@@ -36,6 +37,10 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
             {
                 provider: 'Resource Completion',
                 position: params.position,
+                entitySection: context.entitySection,
+                propertyPath: context.propertyPath,
+                atEntityKeyLevel: context.atEntityKeyLevel(),
+                text: context.text,
             },
             'Processing resource completion request',
         );
@@ -48,12 +53,18 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
             return this.resourceProviders
                 .get(ResourceCompletionType.Type)
                 ?.getCompletions(context, params) as CompletionItem[];
-        } else if (context.entitySection === 'Properties') {
+        } else if (
+            context.entitySection === 'Properties' ||
+            ResourceAttributesSet.has(context.entitySection as string)
+        ) {
             const schemaPropertyCompletions = this.resourceProviders
                 .get(ResourceCompletionType.Property)
                 ?.getCompletions(context, params) as CompletionItem[];
 
-            if (params.context?.triggerKind === CompletionTriggerKind.Invoked && context.propertyPath.length === 3) {
+            if (
+                params.context?.triggerKind === CompletionTriggerKind.Invoked &&
+                context.matchPathWithLogicalId(TopLevelSection.Resources, 'Properties')
+            ) {
                 const resource = context.entity as Resource;
                 if (resource.Type) {
                     const stateCompletionPromise = this.resourceProviders
