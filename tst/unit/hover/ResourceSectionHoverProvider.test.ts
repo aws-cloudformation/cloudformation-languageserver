@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterAll, beforeAll } from 'vitest';
 import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
+import { updatePolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
 import { Context } from '../../../src/context/Context';
 import { ContextManager } from '../../../src/context/ContextManager';
 import {
@@ -8,6 +9,8 @@ import {
     ResourceAttribute,
     CreationPolicyProperty,
     ResourceSignalProperty,
+    UpdatePolicyProperty,
+    AutoScalingRollingUpdateProperty,
 } from '../../../src/context/ContextType';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { ResourceSectionHoverProvider } from '../../../src/hover/ResourceSectionHoverProvider';
@@ -765,6 +768,95 @@ describe('ResourceSectionHoverProvider', () => {
                 });
 
                 expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
+            });
+        });
+
+        describe('UpdatePolicy Property Hover Documentation', () => {
+            it('should return hover documentation for UpdatePolicy.AutoScalingRollingUpdate property', () => {
+                const context = getContextAt(96, 6); // Position at "AutoScalingRollingUpdate:"
+
+                expect(context).toBeDefined();
+                expect(context!.isResourceAttributeProperty()).toBe(true);
+
+                const result = hoverProvider.getInformation(context!);
+                const expectedDoc = updatePolicyPropertyDocsMap.get(
+                    `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}`,
+                );
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return hover documentation for UpdatePolicy.AutoScalingRollingUpdate.MaxBatchSize property', () => {
+                const context = getContextAt(97, 8); // Position at "MaxBatchSize:"
+
+                expect(context).toBeDefined();
+                expect(context!.isResourceAttributeProperty()).toBe(true);
+
+                const result = hoverProvider.getInformation(context!);
+                const expectedDoc = updatePolicyPropertyDocsMap.get(
+                    `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.MaxBatchSize}`,
+                );
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return hover documentation for UpdatePolicy.AutoScalingRollingUpdate.MinInstancesInService property', () => {
+                const context = getContextAt(98, 8); // Position at "MinInstancesInService:"
+
+                expect(context).toBeDefined();
+                expect(context!.isResourceAttributeProperty()).toBe(true);
+
+                const result = hoverProvider.getInformation(context!);
+                const expectedDoc = updatePolicyPropertyDocsMap.get(
+                    `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.MinInstancesInService}`,
+                );
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return undefined for invalid UpdatePolicy property paths', () => {
+                const mockContext = createResourceContext('AutoScalingGroup', {
+                    text: 'InvalidProperty',
+                    data: {
+                        Type: 'AWS::AutoScaling::AutoScalingGroup',
+                        UpdatePolicy: {
+                            InvalidProperty: 'value',
+                        },
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'AutoScalingGroup', 'UpdatePolicy', 'InvalidProperty'],
+                });
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
+            });
+
+            it('should return undefined for unsupported UpdatePolicy property combinations', () => {
+                const mockContext = createResourceContext('AutoScalingGroup', {
+                    text: 'NonExistentProperty',
+                    data: {
+                        Type: 'AWS::AutoScaling::AutoScalingGroup',
+                        UpdatePolicy: {
+                            AutoScalingRollingUpdate: {
+                                NonExistentProperty: 'value',
+                            },
+                        },
+                    },
+                    propertyPath: [
+                        TopLevelSection.Resources,
+                        'AutoScalingGroup',
+                        'UpdatePolicy',
+                        'AutoScalingRollingUpdate',
+                        'NonExistentProperty',
+                    ],
+                });
 
                 const result = hoverProvider.getInformation(mockContext);
 

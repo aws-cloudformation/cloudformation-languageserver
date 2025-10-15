@@ -16,6 +16,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { ResourceStateManager } from './ResourceStateManager';
 import {
+    DeletionPolicyOnImport,
     ResourceIdentifier,
     ResourceSelection,
     ResourceStateParams,
@@ -130,6 +131,8 @@ export class ResourceStateImporter {
                         fetchedResourceStates.push({
                             [logicalId]: {
                                 Type: resourceType,
+                                DeletionPolicy:
+                                    purpose === ResourceStatePurpose.IMPORT ? DeletionPolicyOnImport : undefined,
                                 Properties: this.applyTransformations(resourceState.properties, schema, purpose),
                                 Metadata: await this.createMetadata(resourceIdentifier, purpose),
                             },

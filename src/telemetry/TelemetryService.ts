@@ -1,95 +1,53 @@
 import { metrics, trace } from '@opentelemetry/api';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
-import { DefaultSettings, TelemetrySettings } from '../settings/Settings';
 import { Closeable } from '../utils/Closeable';
-import { CoralTelemetry } from './CoralTelemetry';
 import { LoggerFactory } from './LoggerFactory';
-import { configureDiagnostics, setupOpenTelemetry } from './OpenTelemetryInstrumentation';
+import { otelSdk } from './OTELInstrumentation';
+import { ScopedTelemetry } from './ScopedTelemetry';
+import { ExtendedClientMetadata, ClientInfo, TelemetrySettings } from './TelemetryConfig';
 
-const logger = LoggerFactory.getLogger('TelemetryService');
-
-export class TelemetryService implements SettingsConfigurable, Closeable {
+export class TelemetryService implements Closeable {
     private static _instance: TelemetryService | undefined = undefined;
 
-    private sdk?: NodeSDK;
-    private setting: TelemetrySettings = DefaultSettings.telemetry;
-    private readonly scopedTelemetry: Map<string, CoralTelemetry> = new Map();
-    private settingsSubscription?: SettingsSubscription;
+    private readonly logger = LoggerFactory.getLogger('TelemetryService');
+    private readonly sdk?: NodeSDK;
+    private readonly enabled: boolean;
 
-    private constructor(enabled?: boolean) {
-        this.setting.enabled = enabled ?? DefaultSettings.telemetry.enabled;
-        configureDiagnostics();
-        this.setupTelemetry();
-    }
+    private readonly scopedTelemetry: Map<string, ScopedTelemetry> = new Map();
 
-    configure(settingsManager: ISettingsSubscriber): void {
-        // Clean up existing subscription if present
-        if (this.settingsSubscription) {
-            this.settingsSubscription.unsubscribe();
+    private constructor(client?: ClientInfo, metadata?: ExtendedClientMetadata) {
+        this.enabled = metadata?.telemetryEnabled ?? TelemetrySettings.isEnabled;
+
+        if (this.enabled) {
+            this.sdk = otelSdk(client, metadata);
+            this.sdk.start();
+            this.logger.info('Telemetry enabled');
+            this.registerSystemMetrics();
+        } else {
+            this.logger.info('Telemetry disabled');
+            this.sdk?.shutdown().catch(this.logger.error);
         }
-
-        // Get initial settings
-        this.setting = settingsManager.getCurrentSettings().telemetry;
-        this.setupTelemetry();
-
-        // Subscribe to telemetry settings changes
-        this.settingsSubscription = settingsManager.subscribe('telemetry', (newTelemetrySettings) => {
-            this.onSettingsChanged(newTelemetrySettings);
-        });
     }
 
-    private onSettingsChanged(settings: TelemetrySettings): void {
-        this.setting = settings;
-        this.setupTelemetry();
-    }
-
-    get(scope: string): CoralTelemetry {
+    get(scope: string): ScopedTelemetry {
         let telemetry = this.scopedTelemetry.get(scope);
         if (telemetry !== undefined) {
             return telemetry;
         }
 
-        if (this.setting.enabled) {
-            telemetry = new CoralTelemetry(scope, metrics.getMeter(scope), trace.getTracer(scope));
-            this.scopedTelemetry.set(scope, telemetry);
-            return telemetry;
+        if (this.enabled && this.sdk) {
+            telemetry = new ScopedTelemetry(scope, metrics.getMeter(scope), trace.getTracer(scope));
+        } else {
+            // NoOp init when telemetry is disabled
+            telemetry = new ScopedTelemetry(scope);
         }
 
-        return new CoralTelemetry(scope);
-    }
-
-    private setupTelemetry() {
-        if (this.setting.enabled && this.sdk === undefined) {
-            this.sdk = setupOpenTelemetry();
-
-            if (this.sdk) {
-                this.registerSystemMetrics();
-                logger.info('Telemetry enabled');
-            }
-        } else if (!this.setting.enabled) {
-            this.sdk
-                ?.shutdown()
-                .then(() => {
-                    this.sdk = undefined;
-                    logger.info('Telemetry shutdown');
-                })
-                .catch((error: unknown) => {
-                    logger.error({ error }, 'Telemetry could not be shutdown');
-                });
-        }
+        this.scopedTelemetry.set(scope, telemetry);
+        return telemetry;
     }
 
     async close(): Promise<void> {
-        if (this.settingsSubscription) {
-            this.settingsSubscription.unsubscribe();
-            this.settingsSubscription = undefined;
-        }
-
-        if (this.sdk) {
-            await this.sdk.shutdown();
-            this.sdk = undefined;
-        }
+        await this.sdk?.shutdown().catch(this.logger.error);
     }
 
     private registerSystemMetrics(): void {
@@ -100,7 +58,7 @@ export class TelemetryService implements SettingsConfigurable, Closeable {
         this.registerErrorHandlers(systemTelemetry);
     }
 
-    private registerMemoryMetrics(telemetry: CoralTelemetry): void {
+    private registerMemoryMetrics(telemetry: ScopedTelemetry): void {
         telemetry.registerGaugeProvider(
             'process.memory.heap.used',
             () => {
@@ -143,7 +101,7 @@ export class TelemetryService implements SettingsConfigurable, Closeable {
         );
     }
 
-    private registerCpuMetrics(telemetry: CoralTelemetry): void {
+    private registerCpuMetrics(telemetry: ScopedTelemetry): void {
         let lastCpuUsage = process.cpuUsage();
         let lastTime = performance.now();
 
@@ -172,7 +130,7 @@ export class TelemetryService implements SettingsConfigurable, Closeable {
         );
     }
 
-    private registerProcessMetrics(telemetry: CoralTelemetry): void {
+    private registerProcessMetrics(telemetry: ScopedTelemetry): void {
         telemetry.registerGaugeProvider(
             'process.uptime',
             () => {
@@ -182,9 +140,9 @@ export class TelemetryService implements SettingsConfigurable, Closeable {
         );
     }
 
-    private registerErrorHandlers(telemetry: CoralTelemetry): void {
+    private registerErrorHandlers(telemetry: ScopedTelemetry): void {
         process.on('uncaughtExceptionMonitor', (error, origin) => {
-            logger.error(
+            this.logger.error(
                 {
                     error,
                     origin,
@@ -199,7 +157,7 @@ export class TelemetryService implements SettingsConfigurable, Closeable {
         });
 
         process.on('unhandledRejection', (reason, promise) => {
-            logger.error(
+            this.logger.error(
                 {
                     reason,
                     promise,
@@ -212,7 +170,7 @@ export class TelemetryService implements SettingsConfigurable, Closeable {
         });
 
         process.on('uncaughtException', (error, origin) => {
-            logger.error(
+            this.logger.error(
                 {
                     error,
                     origin,
@@ -225,16 +183,16 @@ export class TelemetryService implements SettingsConfigurable, Closeable {
         });
     }
 
-    static create(enabled?: boolean) {
-        if (TelemetryService._instance === undefined) {
-            TelemetryService._instance = new TelemetryService(enabled);
-            return TelemetryService._instance;
-        }
-
-        throw new Error('TelemetryService has already been created');
+    public static get instance(): TelemetryService {
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        return TelemetryService._instance!;
     }
 
-    static get instance(): TelemetryService {
-        return TelemetryService._instance ?? TelemetryService.create();
+    public static initialize(client?: ClientInfo, metadata?: ExtendedClientMetadata) {
+        if (TelemetryService._instance !== undefined) {
+            throw new Error('TelemetryService was already created');
+        }
+
+        TelemetryService._instance = new TelemetryService(client, metadata);
     }
 }

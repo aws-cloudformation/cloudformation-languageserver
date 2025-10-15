@@ -4,6 +4,8 @@ import {
     CompletionParams,
     InsertTextFormat,
     InsertTextMode,
+    MarkupContent,
+    MarkupKind,
     Position,
     Range,
     TextEdit,
@@ -34,6 +36,20 @@ export function createReplacementRange(context: Context, includeQuotes?: boolean
 }
 
 /**
+ * Creates a MarkupContent object from a markdown string.
+ * This ensures consistent formatting for completion documentation.
+ *
+ * @param markdown The markdown content string
+ * @returns A MarkupContent object with markdown formatting
+ */
+export function createMarkupContent(markdown: string): MarkupContent {
+    return {
+        kind: MarkupKind.Markdown,
+        value: markdown,
+    };
+}
+
+/**
  * Creates a base completion item with common properties.
  * This reduces duplication across different completion providers.
  *
@@ -51,7 +67,7 @@ export function createCompletionItem(
         insertTextFormat?: InsertTextFormat;
         insertTextMode?: InsertTextMode;
         sortText?: string;
-        documentation?: string;
+        documentation?: string | MarkupContent;
         data?: Record<string, unknown>;
         context?: Context;
     },
@@ -70,6 +86,23 @@ export function createCompletionItem(
         }
     }
 
+    // Handle documentation - support both string and MarkupContent
+    let documentation: string | MarkupContent | undefined;
+    if (options?.documentation) {
+        if (typeof options.documentation === 'string') {
+            // For string documentation, add the source attribution
+            documentation = `${options.documentation}\n\nSource: ${ExtensionName}`;
+        } else {
+            // For MarkupContent, add source attribution to the markdown value
+            documentation = {
+                kind: options.documentation.kind,
+                value: `${options.documentation.value}\n\n**Source:** ${ExtensionName}`,
+            };
+        }
+    } else {
+        documentation = `Source: ${ExtensionName}`;
+    }
+
     return {
         label,
         kind,
@@ -80,7 +113,7 @@ export function createCompletionItem(
         textEdit: textEdit,
         filterText: filterText,
         sortText: options?.sortText,
-        documentation: `${options?.documentation ? `${options?.documentation}\n` : ''}Source: ${ExtensionName}`,
+        documentation: documentation,
         data: options?.data,
     };
 }

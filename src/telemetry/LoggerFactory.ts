@@ -1,9 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import pino, { LevelWithSilent, Logger } from 'pino';
-import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
-import { DefaultSettings, TelemetrySettings } from '../settings/Settings';
-import { isDev } from '../utils/Environment';
 import { ExtensionName } from '../utils/ExtensionConfig';
+import { ExtendedClientMetadata, TelemetrySettings } from './TelemetryConfig';
 
 export const LogLevel: Record<LevelWithSilent, number> = {
     silent: 0,
@@ -15,42 +13,29 @@ export const LogLevel: Record<LevelWithSilent, number> = {
     trace: 6,
 } as const;
 
-export class LoggerFactory implements SettingsConfigurable {
-    private static _instance: LoggerFactory | undefined = undefined;
+export class LoggerFactory {
+    private static readonly _instance: LoggerFactory = new LoggerFactory();
 
     private readonly baseLogger: Logger;
+    private readonly logLevel: LevelWithSilent;
     private readonly loggers = new Map<string, Logger>();
-    private settingsSubscription?: SettingsSubscription;
 
     private constructor(level?: LevelWithSilent) {
+        this.logLevel = level ?? TelemetrySettings.logLevel;
+
         this.baseLogger = pino({
             name: ExtensionName,
-            level: level ?? DefaultSettings.telemetry.logLevel,
+            level: this.logLevel,
             transport: {
                 target: 'pino-pretty',
                 options: {
                     colorize: false,
                     translateTime: 'SYS:hh:MM:ss TT',
-                    ignore: 'pid,hostname,name',
+                    ignore: 'pid,hostname,name,clazz',
+                    messageFormat: '[{clazz}] {msg}',
                 },
             },
         });
-    }
-
-    configure(settingsManager: ISettingsSubscriber): void {
-        // Subscribe to telemetry settings changes
-        this.settingsSubscription = settingsManager.subscribe(
-            'telemetry',
-            (newTelemetrySettings: TelemetrySettings) => {
-                this.onSettingsChanged(newTelemetrySettings);
-            },
-        );
-    }
-
-    private onSettingsChanged(settings: TelemetrySettings): void {
-        if (isDev && this.baseLogger.level !== settings.logLevel) {
-            this.reconfigure(settings.logLevel);
-        }
     }
 
     private reconfigure(newLevel: LevelWithSilent) {
@@ -71,21 +56,15 @@ export class LoggerFactory implements SettingsConfigurable {
         return logger;
     }
 
-    static create(level?: LevelWithSilent) {
-        if (LoggerFactory._instance === undefined) {
-            LoggerFactory._instance = new LoggerFactory(level);
-            return LoggerFactory._instance;
-        }
-
-        throw new Error('LoggerFactory has already been created');
-    }
-
     static getLogger(clazz: string | Function): Logger {
-        return LoggerFactory.instance.getLogger(clazz);
+        return LoggerFactory._instance.getLogger(clazz);
     }
 
-    static get instance(): LoggerFactory {
-        return LoggerFactory._instance ?? LoggerFactory.create();
+    static initialize(metadata?: ExtendedClientMetadata) {
+        const newLevel = metadata?.logLevel ?? TelemetrySettings.logLevel;
+        if (Object.keys(LogLevel).includes(newLevel) && LoggerFactory._instance.logLevel !== newLevel) {
+            LoggerFactory._instance.reconfigure(newLevel);
+        }
     }
 }
 

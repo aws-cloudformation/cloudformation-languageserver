@@ -6,6 +6,7 @@ export default defineConfig({
     environment: 'node',
     include: ['tst/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/out/**'],
+    setupFiles: ['tst/setup.ts'],
     coverage: {
       provider: 'v8',
       reporter: ['cobertura', 'html', 'text'],

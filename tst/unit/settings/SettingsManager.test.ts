@@ -53,8 +53,6 @@ describe('SettingsManager', () => {
             expect(settings.diagnostics.cfnGuard.validateOnChange).toBe(false);
             expect(settings.diagnostics.cfnGuard.enabledRulePacks).toEqual(['test-pack']);
             expect(settings.diagnostics.cfnGuard.timeout).toBe(45000);
-            expect(settings.telemetry.enabled).toBe(true);
-            expect(settings.telemetry.logLevel).toBe('debug');
         });
 
         test('should handle LSP workspace errors gracefully', async () => {
@@ -65,8 +63,6 @@ describe('SettingsManager', () => {
             const settings = manager.getCurrentSettings();
             expect(settings.profile.region).toBe(AwsRegion.US_EAST_1);
             expect(settings.hover.enabled).toBe(true);
-            expect(settings.telemetry.enabled).toBe(false);
-            expect(settings.telemetry.logLevel).toBe('silent');
         });
     });
 
@@ -185,20 +181,6 @@ describe('SettingsManager', () => {
             const initSettings = settings.diagnostics.cfnLint.initialization;
 
             expect(initSettings.maxDelayMs).toBe(30000); // Should use default value
-        });
-
-        test('should force telemetry enabled in dev/beta environments', async () => {
-            const config = {
-                telemetry: {
-                    enabled: false, // Try to disable
-                },
-            };
-
-            mockWorkspace.getConfiguration.resolves(config);
-            await manager.syncConfiguration();
-
-            const settings = manager.getCurrentSettings();
-            expect(settings.telemetry.enabled).toBe(false); // Should be forced to default (false in test env)
         });
 
         test('should handle partial configuration updates correctly', async () => {
