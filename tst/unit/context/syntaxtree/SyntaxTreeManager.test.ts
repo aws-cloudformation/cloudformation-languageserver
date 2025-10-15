@@ -4,7 +4,6 @@ import { JsonSyntaxTree } from '../../../../src/context/syntaxtree/JsonSyntaxTre
 import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { YamlSyntaxTree } from '../../../../src/context/syntaxtree/YamlSyntaxTree';
 import { DocumentType } from '../../../../src/document/Document';
-import { createMockClientMessage } from '../../../utils/MockServerComponents';
 import { point } from '../../../utils/TemplateUtils';
 
 vi.mock('../../../../src/context/syntaxtree/JsonSyntaxTree');
@@ -38,7 +37,7 @@ describe('SyntaxTreeManager', () => {
         MockedJsonSyntaxTree.mockImplementation(() => mockJsonTree);
         MockedYamlSyntaxTree.mockImplementation(() => mockYamlTree);
 
-        syntaxTreeManager = new SyntaxTreeManager(createMockClientMessage());
+        syntaxTreeManager = new SyntaxTreeManager();
     });
 
     afterEach(() => {

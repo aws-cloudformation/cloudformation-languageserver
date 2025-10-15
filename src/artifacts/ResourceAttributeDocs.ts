@@ -1,6 +1,6 @@
 import { ResourceAttribute } from '../context/ContextType';
 
-export const resourceAttributeDocsMap = getResourceAttributeDocsMap();
+export const resourceAttributeDocsMap: ReadonlyMap<ResourceAttribute, string> = getResourceAttributeDocsMap();
 
 function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
     const resourceAttributeDocsMap = new Map<ResourceAttribute, string>();

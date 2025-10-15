@@ -1,24 +1,23 @@
 import { diff } from 'deep-object-diff';
 import { LspWorkspace } from '../protocol/LspWorkspace';
-import { ServerComponents } from '../server/ServerComponents';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { isBeta, isDev } from '../utils/Environment';
 import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { toString } from '../utils/String';
 import { PartialDataObserver, SubscriptionManager } from '../utils/SubscriptionManager';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
-import { DefaultSettings, ISettingsSubscriber, Settings, SettingsPathKey, SettingsState } from './Settings';
+import { ISettingsSubscriber, SettingsPathKey } from './ISettingsSubscriber';
+import { DefaultSettings, Settings, SettingsState } from './Settings';
 import { parseSettings } from './SettingsParser';
+
+const logger = LoggerFactory.getLogger('SettingsManager');
 
 export class SettingsManager implements ISettingsSubscriber {
     private readonly settingsState = new SettingsState();
     private readonly subscriptionManager = new SubscriptionManager<Settings>();
 
-    constructor(
-        private readonly workspace: LspWorkspace,
-        private readonly clientMessage: ClientMessage,
-    ) {}
+    constructor(private readonly workspace: LspWorkspace) {}
 
     /**
      * Get current settings synchronously
@@ -56,9 +55,7 @@ export class SettingsManager implements ISettingsSubscriber {
             const settings = parseWithPrettyError(parseSettings, mergedConfig, this.getCurrentSettings());
             this.validateAndUpdate(settings);
         } catch (error) {
-            this.clientMessage.error(
-                `Failed to sync configuration, keeping previous settings: ${extractErrorMessage(error)}`,
-            );
+            logger.error(`Failed to sync configuration, keeping previous settings: ${extractErrorMessage(error)}`);
         }
     }
 
@@ -73,17 +70,10 @@ export class SettingsManager implements ISettingsSubscriber {
                 },
             });
         } catch (error) {
-            this.clientMessage.error(
+            logger.error(
                 `Failed to update profile configuration, keeping previous settings: ${extractErrorMessage(error)}`,
             );
         }
-    }
-
-    /**
-     * Clear all subscriptions (useful for cleanup)
-     */
-    clearSubscriptions(): void {
-        this.subscriptionManager.clear();
     }
 
     /**
@@ -138,13 +128,9 @@ export class SettingsManager implements ISettingsSubscriber {
 
         if (hasChanged) {
             this.settingsState.update(newSettings);
-            this.clientMessage.info(`Settings updated: ${toString(difference)}`);
+            logger.info(`Settings updated: ${toString(difference)}`);
             this.subscriptionManager.notify(newSettings, oldSettings);
         }
-    }
-
-    static create(components: ServerComponents): SettingsManager {
-        return new SettingsManager(components.workspace, components.clientMessage);
     }
 }
 

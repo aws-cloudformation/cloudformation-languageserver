@@ -1,6 +1,6 @@
 import { TopLevelSection } from '../context/ContextType';
 
-export const templateSectionDocsMap = getTemplateSectionDocsMap();
+export const templateSectionDocsMap: ReadonlyMap<TopLevelSection, string> = getTemplateSectionDocsMap();
 
 function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
     const templateSectionDocsMap = new Map<TopLevelSection, string>();

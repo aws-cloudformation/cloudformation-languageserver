@@ -2,17 +2,15 @@ import { describe, expect, test, beforeEach, it } from 'vitest';
 import { DocumentSymbolParams, SymbolKind } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentSymbolRouter } from '../../../src/documentSymbol/DocumentSymbolRouter';
-import { createMockClientMessage } from '../../utils/MockServerComponents';
 import { getYamlTemplate } from '../../utils/Utils';
 
 describe('DocumentSymbolRouter', () => {
     let router: DocumentSymbolRouter;
     let syntaxTreeManager: SyntaxTreeManager;
-    const mockClientMessage = createMockClientMessage();
 
     beforeEach(() => {
-        syntaxTreeManager = new SyntaxTreeManager(mockClientMessage);
-        router = new DocumentSymbolRouter(syntaxTreeManager, mockClientMessage);
+        syntaxTreeManager = new SyntaxTreeManager();
+        router = new DocumentSymbolRouter(syntaxTreeManager);
     });
 
     test('should extract resource symbols from CloudFormation template', () => {

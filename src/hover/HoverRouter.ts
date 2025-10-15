@@ -5,9 +5,10 @@ import { TopLevelSection } from '../context/ContextType';
 import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntities';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
-import { ServerComponents, Configurable, Closeable } from '../server/ServerComponents';
-import { DefaultSettings, HoverSettings, SettingsSubscription, ISettingsSubscriber } from '../settings/Settings';
+import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings, HoverSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Closeable } from '../utils/Closeable';
 import { ConditionHoverProvider } from './ConditionHoverProvider';
 import { HoverProvider } from './HoverProvider';
 import { IntrinsicFunctionArgumentHoverProvider } from './IntrinsicFunctionArgumentHoverProvider';
@@ -20,7 +21,7 @@ import { PseudoParameterHoverProvider } from './PseudoParameterHoverProvider';
 import { ResourceSectionHoverProvider } from './ResourceSectionHoverProvider';
 import { TemplateSectionHoverProvider } from './TemplateSectionHoverProvider';
 
-export class HoverRouter implements Configurable, Closeable {
+export class HoverRouter implements SettingsConfigurable, Closeable {
     private readonly hoverProviderMap: Map<HoverType, HoverProvider>;
     private readonly log = LoggerFactory.getLogger(HoverRouter);
     private settings: HoverSettings = DefaultSettings.hover;
@@ -171,10 +172,6 @@ export class HoverRouter implements Configurable, Closeable {
         }
 
         return undefined;
-    }
-
-    static create(components: ServerComponents) {
-        return new HoverRouter(components.contextManager, components.schemaRetriever);
     }
 }
 

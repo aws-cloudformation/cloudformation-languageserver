@@ -4,10 +4,11 @@ import { URI } from 'vscode-uri';
 import { CloudFormationFileType } from '../../document/Document';
 import { DocumentManager } from '../../document/DocumentManager';
 import { LspWorkspace } from '../../protocol/LspWorkspace';
-import { ServerComponents, Configurable, Closeable } from '../../server/ServerComponents';
-import { DefaultSettings, CfnLintSettings, ISettingsSubscriber, SettingsSubscription } from '../../settings/Settings';
-import { ClientMessage } from '../../telemetry/ClientMessage';
+import { CfnLspServerComponentsType } from '../../server/ServerComponents';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../../settings/ISettingsSubscriber';
+import { DefaultSettings, CfnLintSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
@@ -38,7 +39,7 @@ export function sleep(ms: number): Promise<void> {
     });
 }
 
-export class CfnLintService implements Configurable, Closeable {
+export class CfnLintService implements SettingsConfigurable, Closeable {
     private static readonly CFN_LINT_SOURCE = 'cfn-lint';
 
     private status: STATUS = STATUS.Uninitialized;
@@ -65,7 +66,6 @@ export class CfnLintService implements Configurable, Closeable {
         private readonly documentManager: DocumentManager,
         private readonly workspace: LspWorkspace,
         private readonly diagnosticCoordinator: DiagnosticCoordinator,
-        private readonly clientMessage: ClientMessage,
         workerManager?: PyodideWorkerManager,
         delayer?: Delayer<void>,
     ) {
@@ -140,7 +140,7 @@ export class CfnLintService implements Configurable, Closeable {
         try {
             await this.workerManager.mountFolder(fsDir, mountDir);
         } catch (error) {
-            this.clientMessage.error(`Error mounting folder: ${extractErrorMessage(error)}`);
+            this.log.error(`Error mounting folder: ${extractErrorMessage(error)}`);
             throw error; // Re-throw to notify caller
         }
     }
@@ -197,7 +197,7 @@ export class CfnLintService implements Configurable, Closeable {
         this.diagnosticCoordinator
             .publishDiagnostics(CfnLintService.CFN_LINT_SOURCE, uri, diagnostics)
             .catch((reason) => {
-                this.clientMessage.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
+                this.log.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
             });
     }
 
@@ -231,12 +231,12 @@ export class CfnLintService implements Configurable, Closeable {
      */
     private async lintStandaloneFile(content: string, uri: string, fileType: CloudFormationFileType): Promise<void> {
         try {
-            this.clientMessage.debug(`Begin linting of ${fileType} ${uri} by string`);
+            this.log.debug(`Begin linting of ${fileType} ${uri} by string`);
 
             // Use worker to lint template
             const diagnosticPayloads = await this.workerManager.lintTemplate(content, uri, fileType);
 
-            this.clientMessage.debug(`End linting of ${fileType} ${uri} by string`);
+            this.log.debug(`End linting of ${fileType} ${uri} by string`);
 
             if (!diagnosticPayloads || diagnosticPayloads.length === 0) {
                 // If no diagnostics were returned, publish empty diagnostics to clear any previous issues
@@ -247,13 +247,13 @@ export class CfnLintService implements Configurable, Closeable {
                     await this.diagnosticCoordinator
                         .publishDiagnostics(CfnLintService.CFN_LINT_SOURCE, payload.uri, payload.diagnostics)
                         .catch((reason) => {
-                            this.clientMessage.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
+                            this.log.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
                         });
                 }
             }
         } catch (error) {
             const errorMessage = extractErrorMessage(error);
-            this.clientMessage.error(`Error linting ${fileType} by string: ${errorMessage}`);
+            this.log.error(`Error linting ${fileType} by string: ${errorMessage}`);
             this.publishErrorDiagnostics(uri, errorMessage);
         }
     }
@@ -271,7 +271,7 @@ export class CfnLintService implements Configurable, Closeable {
                 ? deploymentFile['template-file-path']
                 : undefined;
         } catch (error) {
-            this.clientMessage.error(`Error parsing deployment file: ${extractErrorMessage(error)}`);
+            this.log.error(`Error parsing deployment file: ${extractErrorMessage(error)}`);
             return undefined;
         }
     }
@@ -293,12 +293,12 @@ export class CfnLintService implements Configurable, Closeable {
         try {
             const relativePath = uri.replace(folder.uri, '/'.concat(folder.name));
 
-            this.clientMessage.debug(`Begin linting of ${fileType} ${uri} by file`);
+            this.log.debug(`Begin linting of ${fileType} ${uri} by file`);
 
             // Use worker to lint file
             const diagnosticPayloads = await this.workerManager.lintFile(relativePath, uri, fileType);
 
-            this.clientMessage.debug(`End linting of ${fileType} ${uri} by file`);
+            this.log.debug(`End linting of ${fileType} ${uri} by file`);
 
             if (!diagnosticPayloads || diagnosticPayloads.length === 0) {
                 // Handle empty result case
@@ -306,7 +306,7 @@ export class CfnLintService implements Configurable, Closeable {
                     // For GitSync deployment files, extract template path and publish empty diagnostics
                     const templatePath = this.extractTemplatePathFromDeploymentFile(content);
                     if (templatePath) {
-                        this.clientMessage.debug(`Found template path in deployment file: ${templatePath}`);
+                        this.log.debug(`Found template path in deployment file: ${templatePath}`);
                         // Publish empty diagnostics for the template file
                         const templateUri = URI.file(templatePath).toString();
                         this.publishDiagnostics(templateUri, []);
@@ -320,13 +320,13 @@ export class CfnLintService implements Configurable, Closeable {
                     await this.diagnosticCoordinator
                         .publishDiagnostics(CfnLintService.CFN_LINT_SOURCE, payload.uri, payload.diagnostics)
                         .catch((reason) => {
-                            this.clientMessage.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
+                            this.log.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
                         });
                 }
             }
         } catch (error) {
             const errorMessage = extractErrorMessage(error);
-            this.clientMessage.error(`Error linting ${fileType} by file: ${errorMessage}`);
+            this.log.error(`Error linting ${fileType} by file: ${errorMessage}`);
             this.publishErrorDiagnostics(uri, errorMessage);
         }
     }
@@ -353,7 +353,7 @@ export class CfnLintService implements Configurable, Closeable {
      */
     public async lint(content: string, uri: string, forceUseContent: boolean = false): Promise<void> {
         // Check if this file should be processed by cfn-lint
-        this.clientMessage.debug(`Lint: ${uri} with ${forceUseContent}`);
+        this.log.debug(`Lint: ${uri} with ${forceUseContent}`);
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
         if (!fileType || fileType === CloudFormationFileType.Unknown) {
@@ -365,7 +365,7 @@ export class CfnLintService implements Configurable, Closeable {
         try {
             await this.waitForInitialization();
         } catch (error) {
-            this.clientMessage.error(`Failed to wait for CfnLintService initialization: ${extractErrorMessage(error)}`);
+            this.log.error(`Failed to wait for CfnLintService initialization: ${extractErrorMessage(error)}`);
             throw error;
         }
 
@@ -437,7 +437,7 @@ export class CfnLintService implements Configurable, Closeable {
                 }
                 this.processQueuedRequests();
             } catch (error) {
-                this.clientMessage.error(`Initialization failed: ${extractErrorMessage(error)}`);
+                this.log.error(`Initialization failed: ${extractErrorMessage(error)}`);
                 // Re-throw to let callers know initialization failed
                 throw error;
             }
@@ -490,9 +490,7 @@ export class CfnLintService implements Configurable, Closeable {
                     request.resolve();
                 })
                 .catch((reason: unknown) => {
-                    this.clientMessage.error(
-                        `Error processing queued request for ${uri}: ${extractErrorMessage(reason)}`,
-                    );
+                    this.log.error(`Error processing queued request for ${uri}: ${extractErrorMessage(reason)}`);
                     request.reject(reason);
                 });
         }
@@ -537,13 +535,13 @@ export class CfnLintService implements Configurable, Closeable {
             }
             case LintTrigger.OnChange: {
                 if (!this.settings.lintOnChange) {
-                    this.clientMessage.debug('CfnLint lintOnChange is disabled, skipping linting');
+                    this.log.debug('CfnLint lintOnChange is disabled, skipping linting');
                     return;
                 }
                 break;
             }
             default: {
-                this.clientMessage.warn(`Unknown lint trigger: ${trigger as string}`);
+                this.log.warn(`Unknown lint trigger: ${trigger as string}`);
                 return;
             }
         }
@@ -562,7 +560,7 @@ export class CfnLintService implements Configurable, Closeable {
 
                 // Trigger initialization if needed (but don't await it here)
                 this.ensureInitialized().catch((error) => {
-                    this.clientMessage.error(`Failed to ensure initialization: ${extractErrorMessage(error)}`);
+                    this.log.error(`Failed to ensure initialization: ${extractErrorMessage(error)}`);
                 });
             });
         }
@@ -636,12 +634,15 @@ export class CfnLintService implements Configurable, Closeable {
         }
     }
 
-    static create(components: ServerComponents, workerManager?: PyodideWorkerManager, delayer?: Delayer<void>) {
+    static create(
+        components: CfnLspServerComponentsType,
+        workerManager?: PyodideWorkerManager,
+        delayer?: Delayer<void>,
+    ) {
         return new CfnLintService(
             components.documentManager,
             components.workspace,
             components.diagnosticCoordinator,
-            components.clientMessage,
             workerManager,
             delayer,
         );

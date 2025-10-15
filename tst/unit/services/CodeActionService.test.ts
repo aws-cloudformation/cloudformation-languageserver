@@ -11,8 +11,6 @@ import { CodeActionService } from '../../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import { SettingsManager } from '../../../src/settings/SettingsManager';
 import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
-import { ClientMessage } from '../../../src/telemetry/ClientMessage';
-import { createMockClientMessage } from '../../utils/MockServerComponents';
 
 /* eslint-disable vitest/expect-expect */
 describe('CodeActionService', () => {
@@ -20,10 +18,8 @@ describe('CodeActionService', () => {
     let mockSyntaxTreeManager: ReturnType<typeof stubInterface<SyntaxTreeManager>>;
     let mockDocumentManager: ReturnType<typeof stubInterface<DocumentManager>>;
     let mockSyntaxTree: ReturnType<typeof stubInterface<SyntaxTree>>;
-    let mockLog: ReturnType<typeof stubInterface<ClientMessage>>;
 
     beforeEach(() => {
-        mockLog = createMockClientMessage();
         mockSyntaxTreeManager = stubInterface<SyntaxTreeManager>();
         mockDocumentManager = stubInterface<DocumentManager>();
         mockSyntaxTree = stubInterface<SyntaxTree>();
@@ -33,7 +29,6 @@ describe('CodeActionService', () => {
         codeActionService = new CodeActionService(
             mockSyntaxTreeManager,
             mockDocumentManager,
-            mockLog,
             mockDiagnosticCoordinator,
             mockSettingsManager,
             mockContextManager,

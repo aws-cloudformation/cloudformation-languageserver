@@ -7,12 +7,6 @@ import { Entity } from './semantic/Entity';
 import { createEntityFromObject } from './semantic/EntityBuilder';
 import { parseObject } from './syntaxtree/utils/NodeParse';
 
-export type SectionInfo = {
-    readonly section: TopLevelSection;
-    readonly data: unknown;
-    readonly entities: readonly Entity[];
-};
-
 /**
  * File-based context for CloudFormation documents providing access to all sections and entities.
  */

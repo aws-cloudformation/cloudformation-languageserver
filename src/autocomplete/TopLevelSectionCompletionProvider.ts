@@ -4,7 +4,6 @@ import { TopLevelSection, TopLevelSections } from '../context/ContextType';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
-import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
@@ -162,9 +161,5 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
         }
 
         return completionItem;
-    }
-
-    static create(components: ServerComponents) {
-        return new TopLevelSectionCompletionProvider(components.syntaxTreeManager, components.documentManager);
     }
 }

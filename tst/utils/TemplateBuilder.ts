@@ -17,7 +17,6 @@ import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
 import {
-    createMockClientMessage,
     createMockComponents,
     createMockResourceStateManager,
     createMockSchemaRetriever,
@@ -33,6 +32,7 @@ function expectAt(actual: any, position: Position, description?: string) {
 
 class Expectation {
     public todo: boolean = false;
+    public todoComment?: string;
 }
 
 class ContextExpectation extends Expectation {
@@ -105,8 +105,6 @@ export type TemplateScenario = {
 };
 
 export class TemplateBuilder {
-    public readonly logger = createMockClientMessage();
-
     private readonly textDocuments: TextDocuments<TextDocument>;
     private readonly syntaxTreeManager: SyntaxTreeManager;
     private readonly documentManager: DocumentManager;
@@ -120,7 +118,7 @@ export class TemplateBuilder {
     constructor(format: DocumentType, startingContent: string = '') {
         this.uri = `file:///test-template.${format}`;
         this.textDocuments = new TextDocuments(TextDocument);
-        this.syntaxTreeManager = new SyntaxTreeManager(this.logger);
+        this.syntaxTreeManager = new SyntaxTreeManager();
         this.documentManager = new DocumentManager(this.textDocuments);
         this.contextManager = new ContextManager(this.syntaxTreeManager);
         this.schemaRetriever = createMockSchemaRetriever(combinedSchemas());
@@ -132,7 +130,8 @@ export class TemplateBuilder {
             resourceStateManager: createMockResourceStateManager(),
         });
 
-        const completionProviders = createCompletionProviders(mockTestComponents);
+        const { core, external, providers } = createMockComponents(mockTestComponents);
+        const completionProviders = createCompletionProviders(core, external, providers);
 
         this.completionRouter = new CompletionRouter(this.contextManager, completionProviders, this.documentManager);
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever);
@@ -151,7 +150,11 @@ export class TemplateBuilder {
             }
 
             if (step.verification?.expectation?.todo === true && exception === undefined) {
-                throw new Error(`TODO did not throw exception${step.description ? ` - ${step.description}` : ''}`);
+                const todoComment = step.verification.expectation.todoComment;
+                const commentSuffix = todoComment ? ` - TODO: ${todoComment}` : '';
+                throw new Error(
+                    `TODO did not throw exception${step.description ? ` - ${step.description}` : ''}${commentSuffix}`,
+                );
             } else if (step.verification?.expectation?.todo === false && exception !== undefined) {
                 throw new Error(`${extractErrorMessage(exception)}${step.description ? ` - ${step.description}` : ''}`);
             }
@@ -769,8 +772,9 @@ export class ContextExpectationBuilder {
         return this;
     }
 
-    todo(): ContextExpectationBuilder {
+    todo(comment: string): ContextExpectationBuilder {
         this.expectation.todo = true;
+        this.expectation.todoComment = comment;
         return this;
     }
 
@@ -837,8 +841,9 @@ export class HoverExpectationBuilder {
         return this;
     }
 
-    todo(): HoverExpectationBuilder {
+    todo(comment: string): HoverExpectationBuilder {
         this.expectation.todo = true;
+        this.expectation.todoComment = comment;
         return this;
     }
 
@@ -889,8 +894,9 @@ export class CompletionExpectationBuilder {
         return this;
     }
 
-    todo(): CompletionExpectationBuilder {
+    todo(comment: string): CompletionExpectationBuilder {
         this.expectation.todo = true;
+        this.expectation.todoComment = comment;
         return this;
     }
 

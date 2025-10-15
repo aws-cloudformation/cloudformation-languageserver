@@ -12,8 +12,6 @@ import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinat
 import { ExtractToParameterProvider } from '../../../src/services/extractToParameter/ExtractToParameterProvider';
 import { ExtractToParameterResult } from '../../../src/services/extractToParameter/ExtractToParameterTypes';
 import { SettingsManager } from '../../../src/settings/SettingsManager';
-import { ClientMessage } from '../../../src/telemetry/ClientMessage';
-import { createMockClientMessage } from '../../utils/MockServerComponents';
 
 describe('CodeActionService - Extract to Parameter Integration', () => {
     let codeActionService: CodeActionService;
@@ -24,12 +22,10 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
     let mockSyntaxTree: ReturnType<typeof stubInterface<SyntaxTree>>;
     let mockDocument: ReturnType<typeof stubInterface<Document>>;
     let mockContext: ReturnType<typeof stubInterface<Context>>;
-    let mockLog: ReturnType<typeof stubInterface<ClientMessage>>;
     let mockDiagnosticCoordinator: ReturnType<typeof stubInterface<DiagnosticCoordinator>>;
     let mockSettingsManager: ReturnType<typeof stubInterface<SettingsManager>>;
 
     beforeEach(() => {
-        mockLog = createMockClientMessage();
         mockSyntaxTreeManager = stubInterface<SyntaxTreeManager>();
         mockDocumentManager = stubInterface<DocumentManager>();
         mockContextManager = stubInterface<ContextManager>();
@@ -44,7 +40,6 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
         codeActionService = new CodeActionService(
             mockSyntaxTreeManager,
             mockDocumentManager,
-            mockLog,
             mockDiagnosticCoordinator,
             mockSettingsManager,
             mockContextManager,
@@ -346,8 +341,6 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
                 const result = codeActionService.generateCodeActions(params);
                 expect(result).toHaveLength(0);
             }).not.toThrow();
-
-            expect(mockLog.error.called).toBe(true);
         });
 
         it('should handle missing context gracefully', () => {

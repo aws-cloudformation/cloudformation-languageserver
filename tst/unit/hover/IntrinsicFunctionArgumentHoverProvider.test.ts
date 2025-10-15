@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { IntrinsicFunction, TopLevelSection } from '../../../src/context/ContextType';
 import { IntrinsicFunctionArgumentHoverProvider } from '../../../src/hover/IntrinsicFunctionArgumentHoverProvider';
 import { createResourceContext, createParameterContext } from '../../utils/MockContext';
@@ -193,6 +194,138 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
             expect(result).toBeDefined();
             expect(result).toContain('AWS::S3::Bucket');
             expect(result).toContain('MyBucket');
+        });
+    });
+
+    describe('DeletionPolicy values inside If intrinsic functions', () => {
+        it('should return documentation for valid DeletionPolicy value "Delete" inside !If', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider();
+
+            const mockContext = createResourceContext('MyBucket', {
+                text: 'Delete',
+                data: { Type: 'AWS::S3::Bucket', DeletionPolicy: 'Delete' },
+                propertyPath: [TopLevelSection.Resources, 'MyBucket', 'DeletionPolicy'],
+            });
+
+            // Mock the intrinsicContext for an If function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.If,
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+            const expectedDoc = deletionPolicyValueDocsMap.get('Delete');
+
+            expect(result).toBe(expectedDoc);
+        });
+
+        it('should return documentation for valid DeletionPolicy value "Retain" inside !If', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider();
+
+            const mockContext = createResourceContext('MyBucket', {
+                text: 'Retain',
+                data: { Type: 'AWS::S3::Bucket', DeletionPolicy: 'Retain' },
+                propertyPath: [TopLevelSection.Resources, 'MyBucket', 'DeletionPolicy'],
+            });
+
+            // Mock the intrinsicContext for an If function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.If,
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+            const expectedDoc = deletionPolicyValueDocsMap.get('Retain');
+
+            expect(result).toBe(expectedDoc);
+        });
+
+        it('should return documentation for valid DeletionPolicy value "Snapshot" inside !If', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider();
+
+            const mockContext = createResourceContext('MyBucket', {
+                text: 'Snapshot',
+                data: { Type: 'AWS::S3::Bucket', DeletionPolicy: 'Snapshot' },
+                propertyPath: [TopLevelSection.Resources, 'MyBucket', 'DeletionPolicy'],
+            });
+
+            // Mock the intrinsicContext for an If function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.If,
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+            const expectedDoc = deletionPolicyValueDocsMap.get('Snapshot');
+
+            expect(result).toBe(expectedDoc);
+        });
+
+        it('should return documentation for valid DeletionPolicy value "RetainExceptOnCreate" inside !If', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider();
+
+            const mockContext = createResourceContext('MyBucket', {
+                text: 'RetainExceptOnCreate',
+                data: { Type: 'AWS::S3::Bucket', DeletionPolicy: 'RetainExceptOnCreate' },
+                propertyPath: [TopLevelSection.Resources, 'MyBucket', 'DeletionPolicy'],
+            });
+
+            // Mock the intrinsicContext for an If function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.If,
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+            const expectedDoc = deletionPolicyValueDocsMap.get('RetainExceptOnCreate');
+
+            expect(result).toBe(expectedDoc);
+        });
+
+        it('should return undefined for invalid DeletionPolicy value inside !If', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider();
+
+            const mockContext = createResourceContext('MyBucket', {
+                text: 'InvalidValue',
+                data: { Type: 'AWS::S3::Bucket', DeletionPolicy: 'InvalidValue' },
+                propertyPath: [TopLevelSection.Resources, 'MyBucket', 'DeletionPolicy'],
+            });
+
+            // Mock the intrinsicContext for an If function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.If,
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when not in DeletionPolicy context inside !If', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider();
+
+            const mockContext = createResourceContext('MyBucket', {
+                text: 'Retain',
+                data: { Type: 'AWS::S3::Bucket' },
+                propertyPath: [TopLevelSection.Resources, 'MyBucket', 'Properties', 'BucketName'],
+            });
+
+            // Mock the intrinsicContext for an If function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.If,
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeUndefined();
         });
     });
 

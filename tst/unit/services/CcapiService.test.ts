@@ -7,7 +7,6 @@ import {
 } from '@aws-sdk/client-cloudcontrol';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ServerComponents } from '../../../src/server/ServerComponents';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { CcapiService } from '../../../src/services/CcapiService';
 
@@ -17,10 +16,6 @@ const mockGetCloudControlClient = vi.fn();
 const mockClientComponent = {
     getCloudControlClient: mockGetCloudControlClient,
 } as unknown as AwsClient;
-
-const mockServerComponents = {
-    awsClient: mockClientComponent,
-} as unknown as ServerComponents;
 
 describe('CcapiService', () => {
     let service: CcapiService;
@@ -96,14 +91,6 @@ describe('CcapiService', () => {
             cloudControlMock.on(GetResourceCommand).rejects(error);
 
             await expect(service.getResource('AWS::S3::Bucket', 'nonexistent')).rejects.toThrow(error);
-        });
-    });
-
-    describe('create()', () => {
-        it('should create CcapiService instance with server components', () => {
-            const service = CcapiService.create(mockServerComponents);
-
-            expect(service).toBeInstanceOf(CcapiService);
         });
     });
 

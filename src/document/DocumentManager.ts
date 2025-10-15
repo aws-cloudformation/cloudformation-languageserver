@@ -1,26 +1,26 @@
 import { TextDocuments } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { Configurable, ServerComponents } from '../server/ServerComponents';
-import { DefaultSettings, EditorSettings, ISettingsSubscriber, SettingsSubscription } from '../settings/Settings';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings, EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Delayer } from '../utils/Delayer';
 import { Document } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
-export class DocumentManager implements Configurable {
+export class DocumentManager implements SettingsConfigurable {
     private readonly log = LoggerFactory.getLogger(DocumentManager);
     private readonly delayer = new Delayer(5 * 1000);
+
     private editorSettings: EditorSettings = DefaultSettings.editor;
-    private settingsSubscription?: SettingsSubscription;
     private readonly documentMap = new Map<string, Document>();
+
+    private settingsSubscription?: SettingsSubscription;
 
     constructor(
         private readonly documents: TextDocuments<TextDocument>,
         private readonly sendDocuments: (docs: DocumentMetadata[]) => Promise<void> = () => {
             return Promise.resolve();
         },
-        private readonly clientMessage?: ClientMessage,
     ) {}
 
     configure(settingsManager: ISettingsSubscriber): void {
@@ -124,15 +124,5 @@ export class DocumentManager implements Configurable {
         if (detectIndentationChanged) {
             this.clearAllStoredIndentation();
         }
-    }
-
-    static create(components: ServerComponents) {
-        return new DocumentManager(
-            components.documents.documents,
-            (docs: DocumentMetadata[]) => {
-                return components.documents.sendDocumentsMetadata(docs);
-            },
-            components.clientMessage,
-        );
     }
 }

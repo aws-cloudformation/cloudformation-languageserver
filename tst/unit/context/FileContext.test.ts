@@ -14,14 +14,9 @@ import {
 import { ParameterType } from '../../../src/context/semantic/parameter/ParameterType';
 import { CfnValue } from '../../../src/context/semantic/SemanticTypes';
 import { DocumentType } from '../../../src/document/Document';
-import { createMockClientMessage } from '../../utils/MockServerComponents';
 import { Templates } from '../../utils/TemplateUtils';
 
 describe('FileContext', () => {
-    beforeEach(() => {
-        createMockClientMessage();
-    });
-
     describe('Constructor and Basic Setup', () => {
         it('should create FileContext with JSON document type', () => {
             const uri = 'file://test.json';

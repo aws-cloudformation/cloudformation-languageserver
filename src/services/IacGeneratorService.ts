@@ -18,7 +18,6 @@ import {
     UpdateGeneratedTemplateCommand,
     UpdateGeneratedTemplateCommandInput,
 } from '@aws-sdk/client-cloudformation';
-import { ServerComponents } from '../server/ServerComponents';
 import { AwsClient } from './AwsClient';
 
 export class IacGeneratorService {
@@ -106,9 +105,5 @@ export class IacGeneratorService {
         return await this.withClient(async (client) => {
             return await client.send(new GetGeneratedTemplateCommand(input));
         });
-    }
-
-    static create(components: ServerComponents): IacGeneratorService {
-        return new IacGeneratorService(components.awsClient);
     }
 }

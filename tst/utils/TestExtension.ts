@@ -66,15 +66,13 @@ import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
 import { GetSchemaTaskManager } from '../../src/schema/GetSchemaTaskManager';
 import { SchemaStore } from '../../src/schema/SchemaStore';
+import { CfnExternal } from '../../src/server/CfnExternal';
+import { CfnInfraCore } from '../../src/server/CfnInfraCore';
+import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
-import { Closeable, ServerComponents } from '../../src/server/ServerComponents';
+import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
-import {
-    createMockCfnLintService,
-    createMockGuardService,
-    mockCfnAi,
-    mockViClientMessage,
-} from './MockServerComponents';
+import { createMockCfnLintService, createMockGuardService, mockCfnAi } from './MockServerComponents';
 import { schemaFileType } from './SchemaUtils';
 
 export class TestExtension implements Closeable {
@@ -85,8 +83,12 @@ export class TestExtension implements Closeable {
         new StreamMessageWriter(this.readStream),
     );
     private readonly serverConnection: LspConnection;
-    private _components!: ServerComponents;
-    private server!: CfnServer;
+
+    core!: CfnInfraCore;
+    external!: CfnExternal;
+    providers!: CfnLspProviders;
+    server!: CfnServer;
+
     private isReady = false;
 
     constructor(
@@ -102,26 +104,29 @@ export class TestExtension implements Closeable {
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
             {
                 onInitialize: (params) => {
-                    const features = this.serverConnection.features;
+                    const lsp = this.serverConnection.components;
 
                     const dataStoreFactory = new MemoryDataStoreFactoryProvider();
-                    const schemaStore = new SchemaStore(dataStoreFactory);
+                    this.core = new CfnInfraCore(lsp, params, {
+                        dataStoreFactory: new MemoryDataStoreFactoryProvider(),
+                    });
 
-                    this._components = new ServerComponents(features, {
-                        dataStoreFactory,
-                        cfnLintService: createMockCfnLintService(),
-                        guardService: createMockGuardService(),
+                    const schemaStore = new SchemaStore(dataStoreFactory);
+                    this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
                         schemaTaskManager: new GetSchemaTaskManager(
                             schemaStore,
                             () => Promise.resolve(schemaFileType()),
                             () => Promise.resolve([]),
-                            mockViClientMessage(),
                         ),
-                        cfnAI: mockCfnAi(),
+                        cfnLintService: createMockCfnLintService(),
+                        guardService: createMockGuardService(),
                     });
 
-                    this.server = new CfnServer(features, params, this._components);
+                    this.providers = new CfnLspProviders(this.core, this.external, {
+                        cfnAI: mockCfnAi(),
+                    });
+                    this.server = new CfnServer(lsp, this.core, this.external, this.providers);
                     return LspCapabilities;
                 },
                 onInitialized: (params) => this.server.initialized(params),
@@ -134,7 +139,11 @@ export class TestExtension implements Closeable {
     }
 
     get components() {
-        return this._components;
+        return {
+            ...this.core,
+            ...this.external,
+            ...this.providers,
+        };
     }
 
     async ready() {
@@ -165,8 +174,10 @@ export class TestExtension implements Closeable {
     // HELPERS
     // ====================================================================
 
-    openDocument(params: DidOpenTextDocumentParams) {
-        return this.notify(DidOpenTextDocumentNotification.method, params);
+    async openDocument(params: DidOpenTextDocumentParams) {
+        await this.notify(DidOpenTextDocumentNotification.method, params);
+        // Give server time to process the notification
+        await new Promise((resolve) => setTimeout(resolve, 10));
     }
 
     changeDocument(params: DidChangeTextDocumentParams) {

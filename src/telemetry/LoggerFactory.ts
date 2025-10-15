@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import pino, { LevelWithSilent, Logger } from 'pino';
-import { Configurable, Closeable } from '../server/ServerComponents';
-import { DefaultSettings, SettingsSubscription, TelemetrySettings, ISettingsSubscriber } from '../settings/Settings';
+import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
+import { DefaultSettings, TelemetrySettings } from '../settings/Settings';
 import { isDev } from '../utils/Environment';
 import { ExtensionName } from '../utils/ExtensionConfig';
 
@@ -15,37 +15,29 @@ export const LogLevel: Record<LevelWithSilent, number> = {
     trace: 6,
 } as const;
 
-export const StdOutLogger = pino({
-    name: ExtensionName,
-    level: DefaultSettings.telemetry.logLevel,
-});
+export class LoggerFactory implements SettingsConfigurable {
+    private static _instance: LoggerFactory | undefined = undefined;
 
-export class LoggerFactory implements Configurable, Closeable {
-    static readonly instance = new LoggerFactory();
-
+    private readonly baseLogger: Logger;
     private readonly loggers = new Map<string, Logger>();
     private settingsSubscription?: SettingsSubscription;
 
-    private readonly baseLogger = pino({
-        name: ExtensionName,
-        level: DefaultSettings.telemetry.logLevel,
-        transport: isDev ? devTransport() : betaOrProdTransport(),
-    });
-
-    private constructor() {
-        // Private constructor for singleton
+    private constructor(level?: LevelWithSilent) {
+        this.baseLogger = pino({
+            name: ExtensionName,
+            level: level ?? DefaultSettings.telemetry.logLevel,
+            transport: {
+                target: 'pino-pretty',
+                options: {
+                    colorize: false,
+                    translateTime: 'SYS:hh:MM:ss TT',
+                    ignore: 'pid,hostname,name',
+                },
+            },
+        });
     }
 
     configure(settingsManager: ISettingsSubscriber): void {
-        // Clean up existing subscription if present
-        if (this.settingsSubscription) {
-            this.settingsSubscription.unsubscribe();
-        }
-
-        // Get initial settings
-        const currentSettings = settingsManager.getCurrentSettings().telemetry;
-        this.onSettingsChanged(currentSettings);
-
         // Subscribe to telemetry settings changes
         this.settingsSubscription = settingsManager.subscribe(
             'telemetry',
@@ -53,13 +45,6 @@ export class LoggerFactory implements Configurable, Closeable {
                 this.onSettingsChanged(newTelemetrySettings);
             },
         );
-    }
-
-    close(): void {
-        if (this.settingsSubscription) {
-            this.settingsSubscription.unsubscribe();
-            this.settingsSubscription = undefined;
-        }
     }
 
     private onSettingsChanged(settings: TelemetrySettings): void {
@@ -77,7 +62,7 @@ export class LoggerFactory implements Configurable, Closeable {
 
     private getLogger(clazz: string | Function): Logger {
         const name = getLoggerName(clazz);
-        let logger = this.loggers.get(name);
+        let logger: Logger | undefined = this.loggers.get(name);
         if (!logger) {
             logger = this.baseLogger.child({ clazz: name });
             this.loggers.set(name, logger);
@@ -86,29 +71,22 @@ export class LoggerFactory implements Configurable, Closeable {
         return logger;
     }
 
+    static create(level?: LevelWithSilent) {
+        if (LoggerFactory._instance === undefined) {
+            LoggerFactory._instance = new LoggerFactory(level);
+            return LoggerFactory._instance;
+        }
+
+        throw new Error('LoggerFactory has already been created');
+    }
+
     static getLogger(clazz: string | Function): Logger {
         return LoggerFactory.instance.getLogger(clazz);
     }
-}
 
-function devTransport() {
-    return {
-        target: 'pino-pretty',
-        options: {
-            colorize: false,
-            translateTime: 'SYS:hh:MM:ss TT',
-            ignore: 'pid,hostname,name',
-        },
-    };
-}
-
-function betaOrProdTransport() {
-    return {
-        target: 'pino-opentelemetry-transport',
-        options: {
-            messageKey: 'msg',
-        },
-    };
+    static get instance(): LoggerFactory {
+        return LoggerFactory._instance ?? LoggerFactory.create();
+    }
 }
 
 function getLoggerName(clazz: string | Function): string {

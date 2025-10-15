@@ -8,8 +8,11 @@ import { logResponse, timeout } from './Utils';
 
 export class Agent {
     private readonly timeout: number = 2 * 60 * 1000; // 2 minutes
+    private readonly model: BaseChatModel;
 
-    constructor(private readonly model: BaseChatModel) {}
+    constructor(config: LLMConfigType) {
+        this.model = llmProvider(config);
+    }
 
     async execute(input: string, tools?: StructuredTool[]): Promise<BaseMessage | undefined> {
         const operation = async () => {
@@ -28,9 +31,5 @@ export class Agent {
         };
 
         return await timeout(operation(), this.timeout);
-    }
-
-    static create(config: LLMConfigType): Agent {
-        return new Agent(llmProvider(config));
     }
 }

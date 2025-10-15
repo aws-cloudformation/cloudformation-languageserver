@@ -1,7 +1,9 @@
 import { CompletionItem, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { Resource } from '../context/semantic/Entity';
-import { ServerComponents } from '../server/ServerComponents';
+import { CfnExternal } from '../server/CfnExternal';
+import { CfnInfraCore } from '../server/CfnInfraCore';
+import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { CompletionProvider } from './CompletionProvider';
 import { ResourceEntityCompletionProvider } from './ResourceEntityCompletionProvider';
@@ -20,8 +22,10 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
     private readonly log = LoggerFactory.getLogger(ResourceSectionCompletionProvider);
 
     constructor(
-        components: ServerComponents,
-        private readonly resourceProviders = createResourceCompletionProviders(components),
+        core: CfnInfraCore,
+        external: CfnExternal,
+        providers: CfnLspProviders,
+        private readonly resourceProviders = createResourceCompletionProviders(core, external, providers),
     ) {}
 
     getCompletions(
@@ -74,27 +78,26 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
 }
 
 export function createResourceCompletionProviders(
-    components: ServerComponents,
+    core: CfnInfraCore,
+    external: CfnExternal,
+    providers: CfnLspProviders,
 ): Map<ResourceCompletionType, CompletionProvider> {
     const resourceProviderMap = new Map<ResourceCompletionType, CompletionProvider>();
     resourceProviderMap.set(
         ResourceCompletionType.Entity,
-        new ResourceEntityCompletionProvider(components.schemaRetriever, components.documentManager),
+        new ResourceEntityCompletionProvider(external.schemaRetriever, core.documentManager),
     );
-    resourceProviderMap.set(
-        ResourceCompletionType.Type,
-        new ResourceTypeCompletionProvider(components.schemaRetriever),
-    );
+    resourceProviderMap.set(ResourceCompletionType.Type, new ResourceTypeCompletionProvider(external.schemaRetriever));
     resourceProviderMap.set(
         ResourceCompletionType.Property,
-        new ResourcePropertyCompletionProvider(components.schemaRetriever),
+        new ResourcePropertyCompletionProvider(external.schemaRetriever),
     );
     resourceProviderMap.set(
         ResourceCompletionType.State,
         new ResourceStateCompletionProvider(
-            components.resourceStateManager,
-            components.documentManager,
-            components.schemaRetriever,
+            providers.resourceStateManager,
+            core.documentManager,
+            external.schemaRetriever,
         ),
     );
     return resourceProviderMap;

@@ -6,6 +6,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { Document } from '../document/Document';
 import { createEdit } from '../document/DocumentUtils';
+import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
 import { LintTrigger } from '../services/cfnLint/CfnLintService';
 import { ValidationTrigger } from '../services/guard/GuardService';
@@ -36,9 +37,9 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
         components.cfnLintService.lintDelayed(content, uri, LintTrigger.OnOpen).catch((reason) => {
             // Handle cancellation gracefully - user might have closed/changed the document
             if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                components.clientMessage.debug(`Linting cancelled for ${uri}: ${reason.message}`);
+                log.debug(`Linting cancelled for ${uri}: ${reason.message}`);
             } else {
-                components.clientMessage.error(`Linting error for ${uri}: ${extractErrorMessage(reason)}`);
+                log.error(`Linting error for ${uri}: ${extractErrorMessage(reason)}`);
             }
         });
 
@@ -46,9 +47,9 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
         components.guardService.validateDelayed(content, uri, ValidationTrigger.OnOpen).catch((reason) => {
             // Handle cancellation gracefully - user might have closed/changed the document
             if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                components.clientMessage.debug(`Guard validation cancelled for ${uri}: ${reason.message}`);
+                log.debug(`Guard validation cancelled for ${uri}: ${reason.message}`);
             } else {
-                components.clientMessage.error(`Guard validation error for ${uri}: ${extractErrorMessage(reason)}`);
+                log.error(`Guard validation error for ${uri}: ${extractErrorMessage(reason)}`);
             }
         });
 
@@ -56,10 +57,13 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
     };
 }
 
-export function didChangeHandler(components: ServerComponents): NotificationHandler<DidChangeTextDocumentParams> {
+export function didChangeHandler(
+    documents: LspDocuments,
+    components: ServerComponents,
+): NotificationHandler<DidChangeTextDocumentParams> {
     return (params) => {
         const documentUri = params.textDocument.uri;
-        const textDocument = components.documents.documents.get(documentUri);
+        const textDocument = documents.documents.get(documentUri);
 
         if (!textDocument) {
             log.error(`No document found for file with changes ${documentUri}`);
@@ -102,11 +106,9 @@ export function didChangeHandler(components: ServerComponents): NotificationHand
         components.cfnLintService.lintDelayed(content, documentUri, LintTrigger.OnChange, true).catch((reason) => {
             // Handle both getTextDocument and linting errors
             if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                components.clientMessage.debug(`Linting cancelled for ${documentUri}: ${reason.message}`);
+                log.debug(`Linting cancelled for ${documentUri}: ${reason.message}`);
             } else {
-                components.clientMessage.error(
-                    `Error in didChange processing for ${documentUri}: ${extractErrorMessage(reason)}`,
-                );
+                log.error(`Error in didChange processing for ${documentUri}: ${extractErrorMessage(reason)}`);
             }
         });
 
@@ -116,11 +118,9 @@ export function didChangeHandler(components: ServerComponents): NotificationHand
             .catch((reason) => {
                 // Handle both getTextDocument and validation errors
                 if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                    components.clientMessage.debug(`Guard validation cancelled for ${documentUri}: ${reason.message}`);
+                    log.debug(`Guard validation cancelled for ${documentUri}: ${reason.message}`);
                 } else {
-                    components.clientMessage.error(
-                        `Error in Guard didChange processing for ${documentUri}: ${extractErrorMessage(reason)}`,
-                    );
+                    log.error(`Error in Guard didChange processing for ${documentUri}: ${extractErrorMessage(reason)}`);
                 }
             });
 
@@ -145,9 +145,7 @@ export function didCloseHandler(components: ServerComponents): (event: TextDocum
 
         // Clear all diagnostics for this document from all sources
         components.diagnosticCoordinator.clearDiagnosticsForUri(documentUri).catch((reason) => {
-            components.clientMessage.error(
-                `Error clearing diagnostics for ${documentUri}: ${extractErrorMessage(reason)}`,
-            );
+            log.error(`Error clearing diagnostics for ${documentUri}: ${extractErrorMessage(reason)}`);
         });
 
         components.documentManager.sendDocumentMetadata(0);
@@ -162,9 +160,9 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
         // Trigger cfn-lint validation
         components.cfnLintService.lintDelayed(documentContent, documentUri, LintTrigger.OnSave).catch((reason) => {
             if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                components.clientMessage.debug(`Linting cancelled for ${documentUri}: ${reason.message}`);
+                log.debug(`Linting cancelled for ${documentUri}: ${reason.message}`);
             } else {
-                components.clientMessage.error(`Linting error for ${documentUri}: ${extractErrorMessage(reason)}`);
+                log.error(`Linting error for ${documentUri}: ${extractErrorMessage(reason)}`);
             }
         });
 
@@ -173,11 +171,9 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
             .validateDelayed(documentContent, documentUri, ValidationTrigger.OnSave)
             .catch((reason) => {
                 if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                    components.clientMessage.debug(`Guard validation cancelled for ${documentUri}: ${reason.message}`);
+                    log.debug(`Guard validation cancelled for ${documentUri}: ${reason.message}`);
                 } else {
-                    components.clientMessage.error(
-                        `Guard validation error for ${documentUri}: ${extractErrorMessage(reason)}`,
-                    );
+                    log.error(`Guard validation error for ${documentUri}: ${extractErrorMessage(reason)}`);
                 }
             });
 
