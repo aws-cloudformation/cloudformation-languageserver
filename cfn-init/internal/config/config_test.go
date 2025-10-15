@@ -12,11 +12,11 @@ import (
 
 func TestWriteConfigFile(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create cfn-project directory
 	err := os.MkdirAll(filepath.Join(tempDir, "cfn-project"), permissions.ProjectDir)
 	assert.NoError(t, err)
-	
+
 	config := &ProjectConfig{
 		Version: "1.0",
 		Project: ProjectInfo{
@@ -25,7 +25,7 @@ func TestWriteConfigFile(t *testing.T) {
 		},
 		Environments: make(map[string]Environment),
 	}
-	
+
 	err = WriteConfigFile(tempDir, config)
 	assert.NoError(t, err)
 	assert.FileExists(t, filepath.Join(tempDir, "cfn-project", "cfn-config.json"))
@@ -33,11 +33,11 @@ func TestWriteConfigFile(t *testing.T) {
 
 func TestReadConfigFile(t *testing.T) {
 	tempDir := t.TempDir()
-	
+
 	// Create cfn-project directory
 	err := os.MkdirAll(filepath.Join(tempDir, "cfn-project"), permissions.ProjectDir)
 	assert.NoError(t, err)
-	
+
 	// Write a config first
 	originalConfig := &ProjectConfig{
 		Version: "1.0",
@@ -47,10 +47,10 @@ func TestReadConfigFile(t *testing.T) {
 		},
 		Environments: make(map[string]Environment),
 	}
-	
+
 	err = WriteConfigFile(tempDir, originalConfig)
 	assert.NoError(t, err)
-	
+
 	// Read it back
 	readConfig, err := ReadConfigFile(tempDir)
 	assert.NoError(t, err)
@@ -66,11 +66,11 @@ func TestReadConfigFile_NotFound(t *testing.T) {
 
 func TestWriteConfigFile_InvalidPath(t *testing.T) {
 	config := &ProjectConfig{
-		Version: "1.0",
-		Project: ProjectInfo{Name: "test"},
+		Version:      "1.0",
+		Project:      ProjectInfo{Name: "test"},
 		Environments: make(map[string]Environment),
 	}
-	
+
 	err := WriteConfigFile("/nonexistent/path", config)
 	assert.Error(t, err)
 }
