@@ -8,6 +8,8 @@ import { ServerComponents } from '../../server/ServerComponents';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../../settings/ISettingsSubscriber';
 import { DefaultSettings, GuardSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
+import { Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
@@ -55,6 +57,8 @@ export class GuardService implements SettingsConfigurable, Closeable {
     private readonly validationQueue: ValidationQueueEntry[] = [];
     private readonly activeValidations = new Map<string, Promise<GuardViolation[]>>();
     private isProcessingQueue = false;
+
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
     constructor(
         private readonly documentManager: DocumentManager,
@@ -126,8 +130,10 @@ export class GuardService implements SettingsConfigurable, Closeable {
         try {
             // Initialize Guard engine only - rules are now statically available
             await this.guardEngine.initialize();
+            this.telemetry.count('initialized', 1, { unit: '1' });
         } catch (error) {
             this.log.error(`Failed to initialize Guard service: ${extractErrorMessage(error)}`);
+            this.telemetry.count('uninitialized', 1, { unit: '1' });
             throw error;
         }
     }
@@ -143,6 +149,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
         if (!fileType || fileType === CloudFormationFileType.Unknown) {
+            this.telemetry.count(`validate.file.${CloudFormationFileType.Unknown}`, 1, { unit: '1' });
             // Not a CloudFormation file, publish empty diagnostics to clear any previous issues
             this.publishDiagnostics(uri, []);
             return;
@@ -150,9 +157,12 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         // Guard doesn't support GitSync deployment files (similar to cfn-lint handling)
         if (fileType === CloudFormationFileType.GitSyncDeployment) {
+            this.telemetry.count(`validate.file.${CloudFormationFileType.GitSyncDeployment}`, 1, { unit: '1' });
             this.publishDiagnostics(uri, []);
             return;
         }
+
+        this.telemetry.count(`validate.file.${CloudFormationFileType.Template}`, 1, { unit: '1' });
 
         try {
             // Ensure Guard service is initialized
