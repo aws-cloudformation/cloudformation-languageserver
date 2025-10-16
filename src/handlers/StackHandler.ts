@@ -221,22 +221,14 @@ function buildPrimaryIdentifierFromMetadata(
     metadataValue: unknown,
     keys: string[],
 ): Record<string, string> | undefined {
-    if (!metadataValue || keys.length === 0) return undefined;
+    if (!metadataValue || keys.length === 0 || typeof metadataValue !== 'string') return undefined;
 
-    if (typeof metadataValue === 'string') {
-        const values = metadataValue.split('|').map((v) => v.trim());
-        const identifier: Record<string, string> = {};
-        for (const [index, key] of keys.entries()) {
-            identifier[key] = values[index] || values[0];
-        }
-        return identifier;
+    const values = metadataValue.split('|').map((v) => v.trim());
+    const identifier: Record<string, string> = {};
+    for (const [index, key] of keys.entries()) {
+        identifier[key] = values[index] || values[0];
     }
-
-    if (typeof metadataValue === 'object') {
-        return metadataValue as Record<string, string>;
-    }
-
-    return undefined;
+    return identifier;
 }
 
 export function listStacksHandler(
