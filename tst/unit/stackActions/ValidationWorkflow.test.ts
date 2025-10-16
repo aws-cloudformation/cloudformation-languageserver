@@ -87,6 +87,78 @@ describe('ValidationWorkflow', () => {
         });
     });
 
+    it('should start validation workflow with IMPORT when resourcesToImport has items', async () => {
+        const params: CreateStackActionParams = {
+            id: 'test-id',
+            uri: 'file:///test.yaml',
+            stackName: 'test-stack',
+            resourcesToImport: [
+                {
+                    ResourceType: 'AWS::S3::Bucket',
+                    LogicalResourceId: 'MyBucket',
+                    ResourceIdentifier: { BucketName: 'my-bucket' },
+                },
+            ],
+        };
+
+        (processChangeSet as any).mockResolvedValue('changeset-123');
+
+        const result = await validationWorkflow.start(params);
+
+        expect(result).toEqual({
+            id: 'test-id',
+            changeSetName: 'changeset-123',
+            stackName: 'test-stack',
+        });
+
+        expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'IMPORT');
+        expect(mockCfnService.describeStacks).not.toHaveBeenCalled();
+    });
+
+    it('should start validation workflow with CREATE when resourcesToImport is empty array', async () => {
+        const params: CreateStackActionParams = {
+            id: 'test-id',
+            uri: 'file:///test.yaml',
+            stackName: 'test-stack',
+            resourcesToImport: [],
+        };
+
+        mockCfnService.describeStacks = vi.fn().mockRejectedValue(new Error('Stack does not exist'));
+        (processChangeSet as any).mockResolvedValue('changeset-123');
+
+        const result = await validationWorkflow.start(params);
+
+        expect(result).toEqual({
+            id: 'test-id',
+            changeSetName: 'changeset-123',
+            stackName: 'test-stack',
+        });
+
+        expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'CREATE');
+    });
+
+    it('should start validation workflow with UPDATE when resourcesToImport is undefined and stack exists', async () => {
+        const params: CreateStackActionParams = {
+            id: 'test-id',
+            uri: 'file:///test.yaml',
+            stackName: 'test-stack',
+            resourcesToImport: undefined,
+        };
+
+        mockCfnService.describeStacks = vi.fn().mockResolvedValue({ Stacks: [{ StackName: 'test-stack' }] });
+        (processChangeSet as any).mockResolvedValue('changeset-123');
+
+        const result = await validationWorkflow.start(params);
+
+        expect(result).toEqual({
+            id: 'test-id',
+            changeSetName: 'changeset-123',
+            stackName: 'test-stack',
+        });
+
+        expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'UPDATE');
+    });
+
     describe('getStatus', () => {
         it('should return workflow status', () => {
             const params = { id: 'test-id' };
