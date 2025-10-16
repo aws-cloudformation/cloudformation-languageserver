@@ -1,6 +1,7 @@
 import { diff } from 'deep-object-diff';
 import { LspWorkspace } from '../protocol/LspWorkspace';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { toString } from '../utils/String';
@@ -79,6 +80,7 @@ export class SettingsManager implements ISettingsSubscriber {
      * Validate and update settings with notification support
      * Maintains all existing validation logic from SettingsManager
      */
+    @Measure({ name: 'settingsUpdate' })
     private validateAndUpdate(newSettings: Settings): void {
         const oldSettings = this.settingsState.toSettings();
 

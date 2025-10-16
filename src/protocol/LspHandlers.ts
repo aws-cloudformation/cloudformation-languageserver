@@ -132,7 +132,7 @@ export class LspHandlers {
         this.connection.onDidChangeConfiguration(handler);
     }
 
-    onCodeLens(handler: ServerRequestHandler<CodeLensParams, CodeLens[], never, void>) {
+    onCodeLens(handler: ServerRequestHandler<CodeLensParams, CodeLens[] | undefined | null, CodeLens[], void>) {
         this.connection.onCodeLens(handler);
     }
 }

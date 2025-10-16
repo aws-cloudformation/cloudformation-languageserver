@@ -1,9 +1,9 @@
 import { CodeLens, Position, Range } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Resource } from '../context/semantic/Entity';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
+import { Document } from '../document/Document';
 
 const MANAGED_RESOURCE_CONSTANTS = {
     COMMAND_TITLE: 'Open Stack Template',
@@ -14,7 +14,7 @@ const MANAGED_RESOURCE_CONSTANTS = {
 export class ManagedResourceCodeLens {
     constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
-    getCodeLenses(uri: string, document: TextDocument): CodeLens[] {
+    getCodeLenses(uri: string, document: Document): CodeLens[] {
         const lenses: CodeLens[] = [];
 
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);

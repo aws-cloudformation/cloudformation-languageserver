@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { ManagedResourceCodeLens } from '../../../src/codeLens/ManagedResourceCodeLens';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
+import { Document } from '../../../src/document/Document';
 import { createMockSyntaxTreeManager } from '../../utils/MockServerComponents';
 
 // Mock the SectionContextBuilder module
@@ -24,11 +25,8 @@ describe('ManagedResourceCodeLens', () => {
     it('should return empty array when syntax tree is not found', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({} as any);
 
-        const document = TextDocument.create(
-            'file:///test.yaml',
-            'yaml',
-            1,
-            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
+        const document = new Document(
+            TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
         );
         const result = codeLens.getCodeLenses('file:///test.yaml', document);
 
@@ -39,7 +37,9 @@ describe('ManagedResourceCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({} as any);
         mockGetEntityMap.mockReturnValue(undefined);
 
-        const document = TextDocument.create('file:///test.yaml', 'yaml', 1, 'AWSTemplateFormatVersion: "2010-09-09"');
+        const document = new Document(
+            TextDocument.create('file:///test.yaml', 'yaml', 1, 'AWSTemplateFormatVersion: "2010-09-09"'),
+        );
         const result = codeLens.getCodeLenses('file:///test.yaml', document);
 
         expect(result).toEqual([]);
@@ -54,7 +54,7 @@ describe('ManagedResourceCodeLens', () => {
       StackName: test-stack
       PrimaryIdentifier: bucket-id`;
 
-        const document = TextDocument.create('file:///test.yaml', 'yaml', 1, yamlContent);
+        const document = new Document(TextDocument.create('file:///test.yaml', 'yaml', 1, yamlContent));
 
         const mockResourceContext = {
             entity: {
@@ -88,7 +88,7 @@ describe('ManagedResourceCodeLens', () => {
       StackName: test-stack
       PrimaryIdentifier: bucket-id`;
 
-        const document = TextDocument.create('file:///test.yaml', 'yaml', 1, yamlContent);
+        const document = new Document(TextDocument.create('file:///test.yaml', 'yaml', 1, yamlContent));
 
         const mockResourceContext = {
             entity: {
@@ -118,7 +118,7 @@ describe('ManagedResourceCodeLens', () => {
       ManagedByStack: true
       StackName: test-stack`;
 
-        const document = TextDocument.create('file:///test.yaml', 'yaml', 1, yamlContent);
+        const document = new Document(TextDocument.create('file:///test.yaml', 'yaml', 1, yamlContent));
 
         const mockResourceContext = {
             entity: {

@@ -25,20 +25,12 @@ export type RelationshipSchemaData = Record<string, RelationshipGroupData[]>;
 export type RelationshipGroupData = Record<string, RelatedResourceType[]>;
 
 export class RelationshipSchemaService {
-    private static instance: RelationshipSchemaService;
     private readonly relationshipCache: Map<string, ResourceTypeRelationships> = new Map();
     private readonly schemaFilePath: string;
 
     constructor(schemaFilePath?: string) {
         this.schemaFilePath = schemaFilePath ?? join(__dirname, 'resources/relationship_schemas.json');
         this.loadAllSchemas();
-    }
-
-    static getInstance(schemaFilePath?: string): RelationshipSchemaService {
-        if (!RelationshipSchemaService.instance) {
-            RelationshipSchemaService.instance = new RelationshipSchemaService(schemaFilePath);
-        }
-        return RelationshipSchemaService.instance;
     }
 
     private loadAllSchemas(): void {

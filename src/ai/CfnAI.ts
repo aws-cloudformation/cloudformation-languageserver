@@ -24,6 +24,7 @@ export class CfnAI implements SettingsConfigurable, Closeable {
     constructor(
         private readonly documentManager: DocumentManager,
         private readonly awsClient: AwsClient,
+        private readonly relationshipSchemaService: RelationshipSchemaService = new RelationshipSchemaService(),
     ) {
         this.llmConfig = new LLMConfig();
     }
@@ -108,9 +109,8 @@ export class CfnAI implements SettingsConfigurable, Closeable {
 
             const templateContent = document.contents();
 
-            const relationshipService = RelationshipSchemaService.getInstance();
-            const resourceTypes = relationshipService.extractResourceTypesFromTemplate(templateContent);
-            const relationshipContext = relationshipService.getRelationshipContext(resourceTypes);
+            const resourceTypes = this.relationshipSchemaService.extractResourceTypesFromTemplate(templateContent);
+            const relationshipContext = this.relationshipSchemaService.getRelationshipContext(resourceTypes);
 
             let scannedResourcesInfo: string | undefined;
             let hasResourceScan = false;
@@ -119,7 +119,7 @@ export class CfnAI implements SettingsConfigurable, Closeable {
                 const filteredResources = await getFilteredScannedResources(
                     this.awsClient,
                     resourceTypes,
-                    relationshipService,
+                    this.relationshipSchemaService,
                 );
                 if (filteredResources) {
                     scannedResourcesInfo = formatScannedResourcesForAI(filteredResources);

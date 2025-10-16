@@ -9,11 +9,18 @@ import { DateTime } from 'luxon';
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
 import { Identifiable } from '../../protocol/LspTypes';
 
+export type ResourceToImport = {
+    ResourceType: string;
+    LogicalResourceId: string;
+    ResourceIdentifier: Record<string, string>;
+};
+
 export type CreateStackActionParams = Identifiable & {
     uri: string;
     stackName: string;
     parameters?: Parameter[];
     capabilities?: Capability[];
+    resourcesToImport?: ResourceToImport[];
 };
 
 export type CreateStackActionResult = Identifiable & {
@@ -31,6 +38,17 @@ export type GetCapabilitiesResult = {
     capabilities: Capability[];
 };
 
+export type TemplateResource = {
+    logicalId: string;
+    type: string;
+    primaryIdentifierKeys?: string[];
+    primaryIdentifier?: Record<string, string>;
+};
+
+export type GetTemplateResourcesResult = {
+    resources: TemplateResource[];
+};
+
 export type StackChange = {
     type?: string;
     resourceChange?: {
@@ -40,6 +58,8 @@ export type StackChange = {
         resourceType?: string;
         replacement?: string;
         scope?: string[];
+        beforeContext?: string;
+        afterContext?: string;
         details?: ResourceChangeDetail[];
     };
 };

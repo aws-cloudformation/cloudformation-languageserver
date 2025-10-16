@@ -33,6 +33,7 @@ import {
     Capability,
     StackResourceDriftStatus,
     Parameter,
+    ResourceToImport,
     RegistryType,
     ValidateTemplateCommand,
     ValidateTemplateInput,
@@ -45,7 +46,9 @@ import {
     waitUntilChangeSetCreateComplete,
     waitUntilStackUpdateComplete,
     waitUntilStackCreateComplete,
+    waitUntilStackImportComplete,
     DescribeChangeSetCommandOutput,
+    Change,
     GetTemplateCommand,
     StackEvent,
 } from '@aws-sdk/client-cloudformation';
@@ -121,15 +124,38 @@ export class CfnService {
         Parameters?: Parameter[];
         Capabilities?: Capability[];
         ChangeSetType?: 'CREATE' | 'UPDATE' | 'IMPORT';
+        ResourcesToImport?: ResourceToImport[];
     }): Promise<CreateChangeSetCommandOutput> {
         return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)));
     }
 
     public async describeChangeSet(params: {
         ChangeSetName: string;
+        IncludePropertyValues: boolean;
         StackName?: string;
     }): Promise<DescribeChangeSetCommandOutput> {
-        return await this.withClient((client) => client.send(new DescribeChangeSetCommand(params)));
+        return await this.withClient(async (client) => {
+            let nextToken: string | undefined;
+            let result: DescribeChangeSetCommandOutput | undefined;
+            const changes: Change[] = [];
+
+            do {
+                const response = await client.send(new DescribeChangeSetCommand({ ...params, NextToken: nextToken }));
+
+                if (result) {
+                    changes.push(...(response.Changes ?? []));
+                } else {
+                    result = response;
+                    changes.push(...(result.Changes ?? []));
+                }
+
+                nextToken = response.NextToken;
+            } while (nextToken);
+
+            result.Changes = changes;
+            result.NextToken = undefined;
+            return result;
+        });
     }
 
     public async detectStackDrift(params: {
@@ -318,6 +344,19 @@ export class CfnService {
                 maxWaitTime: timeoutMinutes * 60,
             };
             return await waitUntilStackUpdateComplete(waiterConfig, params);
+        });
+    }
+
+    public async waitUntilStackImportComplete(
+        params: DescribeStacksCommandInput,
+        timeoutMinutes: number = 30,
+    ): Promise<WaiterResult> {
+        return await this.withClient(async (client) => {
+            const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
+                client,
+                maxWaitTime: timeoutMinutes * 60,
+            };
+            return await waitUntilStackImportComplete(waiterConfig, params);
         });
     }
 

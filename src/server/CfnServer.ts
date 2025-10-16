@@ -35,6 +35,7 @@ import {
     getCapabilitiesHandler,
     describeValidationStatusHandler,
     describeDeploymentStatusHandler,
+    getTemplateResourcesHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
 import { closeSafely } from '../utils/Closeable';
@@ -89,7 +90,7 @@ export class CfnServer {
         this.lsp.handlers.onDefinition(definitionHandler(this.components));
         this.lsp.handlers.onDocumentSymbol(documentSymbolHandler(this.components));
         this.lsp.handlers.onDidChangeConfiguration(configurationHandler(this.components));
-        this.lsp.handlers.onCodeLens(codeLensHandler(this.lsp.documents, this.components));
+        this.lsp.handlers.onCodeLens(codeLensHandler(this.components));
 
         this.lsp.authHandlers.onIamCredentialsUpdate(iamCredentialsUpdateHandler(this.components));
         this.lsp.authHandlers.onBearerCredentialsUpdate(bearerCredentialsUpdateHandler(this.components));
@@ -100,6 +101,7 @@ export class CfnServer {
         this.lsp.stackHandlers.onGetParameters(getParametersHandler(this.components));
         this.lsp.stackHandlers.onCreateValidation(createValidationHandler(this.components));
         this.lsp.stackHandlers.onGetCapabilities(getCapabilitiesHandler(this.components));
+        this.lsp.stackHandlers.onGetTemplateResources(getTemplateResourcesHandler(this.components));
         this.lsp.stackHandlers.onCreateDeployment(createDeploymentHandler(this.components));
         this.lsp.stackHandlers.onGetValidationStatus(getValidationStatusHandler(this.components));
         this.lsp.stackHandlers.onGetDeploymentStatus(getDeploymentStatusHandler(this.components));

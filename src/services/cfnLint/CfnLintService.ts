@@ -8,6 +8,8 @@ import { CfnLspServerComponentsType } from '../../server/ServerComponents';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../../settings/ISettingsSubscriber';
 import { DefaultSettings, CfnLintSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
+import { Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
@@ -49,6 +51,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     private initializationPromise?: Promise<void>;
     private readonly workerManager: PyodideWorkerManager;
     private readonly log = LoggerFactory.getLogger(CfnLintService);
+
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
     // Request queue for handling requests during initialization
     private readonly requestQueue = new Map<
@@ -116,8 +120,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             // Initialize the worker manager
             await this.workerManager.initialize();
             this.status = STATUS.Initialized;
+            this.telemetry.count('initialized', 1, { unit: '1' });
         } catch (error) {
             this.status = STATUS.Uninitialized;
+            this.telemetry.count('uninitialized', 1, { unit: '1' });
             throw new Error(`Failed to initialize Pyodide worker: ${extractErrorMessage(error)}`);
         }
     }
@@ -139,8 +145,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
 
         try {
             await this.workerManager.mountFolder(fsDir, mountDir);
+            this.telemetry.count('mount.success', 1, { unit: '1' });
         } catch (error) {
             this.log.error(`Error mounting folder: ${extractErrorMessage(error)}`);
+            this.telemetry.count('mount.fault', 1, { unit: '1' });
             throw error; // Re-throw to notify caller
         }
     }
@@ -357,6 +365,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
         if (!fileType || fileType === CloudFormationFileType.Unknown) {
+            this.telemetry.count(`lint.file.${CloudFormationFileType.Unknown}`, 1, { unit: '1' });
             this.publishDiagnostics(uri, []);
             return;
         }
@@ -365,12 +374,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         try {
             await this.waitForInitialization();
         } catch (error) {
+            this.telemetry.count('lint.uninitialized', 1, { unit: '1' });
             this.log.error(`Failed to wait for CfnLintService initialization: ${extractErrorMessage(error)}`);
             throw error;
         }
 
         // Redundant check but clears up TypeScript errors
         if (this.status === STATUS.Uninitialized) {
+            this.telemetry.count('lint.uninitialized', 1, { unit: '1' });
             throw new Error('CfnLintService not initialized. Call initialize() first.');
         }
 
@@ -378,10 +389,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         if (folder === undefined || folder === null || forceUseContent) {
             // GitSync deployment files require workspace context to resolve relative template paths
             if (fileType === CloudFormationFileType.GitSyncDeployment) {
+                this.telemetry.count(`lint.file.${CloudFormationFileType.GitSyncDeployment}`, 1, { unit: '1' });
+
                 this.log.error(`GitSync deployment file ${uri} cannot be processed outside of a workspace context`);
                 this.publishDiagnostics(uri, []);
                 return;
             }
+
+            this.telemetry.count(`lint.file.${CloudFormationFileType.Template}`, 1, { unit: '1' });
             // Standalone file (not in workspace) or forced to use content - lint as string
             await this.lintStandaloneFile(content, uri, fileType);
         } else {

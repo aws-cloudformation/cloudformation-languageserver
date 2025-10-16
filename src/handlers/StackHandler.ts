@@ -1,7 +1,7 @@
 import { ResponseError, ErrorCodes, RequestHandler } from 'vscode-languageserver';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
-import { Parameter } from '../context/semantic/Entity';
+import { Parameter, Resource } from '../context/semantic/Entity';
 import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
@@ -16,6 +16,7 @@ import {
     GetStackActionStatusResult,
     DescribeValidationStatusResult,
     DescribeDeploymentStatusResult,
+    GetTemplateResourcesResult,
 } from '../stacks/actions/StackActionRequestType';
 import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -162,6 +163,72 @@ export function getCapabilitiesHandler(
             handleStackActionError(error, 'Failed to analyze template capabilities');
         }
     };
+}
+
+export function getTemplateResourcesHandler(
+    components: ServerComponents,
+): RequestHandler<TemplateUri, GetTemplateResourcesResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'getTemplateResourcesHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
+            const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params);
+            if (!syntaxTree) return { resources: [] };
+
+            const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
+            if (!resourcesMap) return { resources: [] };
+
+            const schemas = components.schemaRetriever.getDefault();
+            const resources = [...resourcesMap.values()].flatMap((context) => {
+                const resource = context.entity as Resource;
+                const resourceType = resource.Type ?? '';
+                if (!resourceType) return [];
+
+                const schema = schemas.schemas.get(resourceType);
+                const primaryIdentifierKeys = extractPrimaryIdentifierKeys(schema?.primaryIdentifier);
+                const primaryIdentifier = primaryIdentifierKeys
+                    ? buildPrimaryIdentifierFromMetadata(resource.Metadata?.PrimaryIdentifier, primaryIdentifierKeys)
+                    : undefined;
+
+                return [
+                    {
+                        logicalId: resource.name,
+                        type: resourceType,
+                        primaryIdentifierKeys,
+                        primaryIdentifier,
+                    },
+                ];
+            });
+
+            return { resources };
+        } catch (error) {
+            handleStackActionError(error, 'Failed to get template resources');
+        }
+    };
+}
+
+function extractPrimaryIdentifierKeys(primaryIdentifierPaths?: string[]): string[] | undefined {
+    return primaryIdentifierPaths
+        ?.map((path) => {
+            const match = path.match(/\/properties\/(.+)/);
+            return match?.[1];
+        })
+        .filter((key): key is string => key !== undefined);
+}
+
+function buildPrimaryIdentifierFromMetadata(
+    metadataValue: unknown,
+    keys: string[],
+): Record<string, string> | undefined {
+    if (!metadataValue || keys.length === 0 || typeof metadataValue !== 'string') return undefined;
+
+    const values = metadataValue.split('|').map((v) => v.trim());
+    const identifier: Record<string, string> = {};
+    for (const [index, key] of keys.entries()) {
+        identifier[key] = values[index] || values[0];
+    }
+    return identifier;
 }
 
 export function listStacksHandler(

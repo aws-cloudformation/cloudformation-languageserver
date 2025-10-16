@@ -1,5 +1,11 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
+import {
+    supportsCreationPolicy,
+    CREATION_POLICY_SCHEMA,
+    CreationPolicyPropertySchema,
+} from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { Context } from '../context/Context';
+import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
 import { CfnValue } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
@@ -41,6 +47,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             return [];
         }
 
+        if (context.isResourceAttributeProperty() || this.isAtResourceAttributeLevel(context)) {
+            return this.getResourceAttributePropertyCompletions(context, resource);
+        }
         const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
         if (!schema) {
             return [];
@@ -307,5 +316,153 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private isRefToArrayType(schema: ResourceSchema, ref: string): boolean {
         const refProperty = schema.resolveRef(ref);
         return refProperty?.type === 'array';
+    }
+
+    private isAtResourceAttributeLevel(context: Context): boolean {
+        if (context.section !== TopLevelSection.Resources || !context.hasLogicalId) {
+            return false;
+        }
+
+        const lastSegment = context.propertyPath[context.propertyPath.length - 1];
+        return ResourceAttributesSet.has(lastSegment as string);
+    }
+
+    private getResourceAttributePropertyCompletions(context: Context, resource: Resource): CompletionItem[] {
+        const propertyPath = this.getResourceAttributePropertyPath(context);
+
+        if (propertyPath.length === 0 || !resource.Type) {
+            return [];
+        }
+
+        const attributeType = propertyPath[0] as ResourceAttribute;
+        const existingProperties = this.getExistingProperties(context);
+
+        switch (attributeType) {
+            case ResourceAttribute.CreationPolicy: {
+                return this.getCreationPolicyCompletions(propertyPath, resource.Type, context, existingProperties);
+            }
+            //TODO: add other resource attributes
+            default: {
+                return [];
+            }
+        }
+    }
+
+    private getResourceAttributePropertyPath(context: Context): ReadonlyArray<string> {
+        let propertyPath = context.getResourceAttributePropertyPath();
+
+        if (propertyPath.length === 0 && this.isAtResourceAttributeLevel(context)) {
+            const lastSegment = context.propertyPath[context.propertyPath.length - 1];
+            if (ResourceAttributesSet.has(lastSegment as string)) {
+                propertyPath = [lastSegment as string];
+            }
+        }
+
+        if (context.isKey() && propertyPath.length > 1) {
+            const lastSegment = propertyPath[propertyPath.length - 1];
+
+            if (lastSegment === context.text && context.text !== '') {
+                propertyPath = propertyPath.slice(0, -1);
+            }
+        }
+
+        return propertyPath;
+    }
+    private getCreationPolicyCompletions(
+        propertyPath: ReadonlyArray<string>,
+        resourceType: string,
+        context: Context,
+        existingProperties: Set<string>,
+    ): CompletionItem[] {
+        if (!supportsCreationPolicy(resourceType)) {
+            return [];
+        }
+
+        return this.getSchemaBasedCompletions(
+            CREATION_POLICY_SCHEMA,
+            propertyPath,
+            resourceType,
+            context,
+            existingProperties,
+        );
+    }
+
+    private getSchemaBasedCompletions(
+        schema: Record<string, CreationPolicyPropertySchema>,
+        propertyPath: ReadonlyArray<string>,
+        resourceType: string,
+        context: Context,
+        existingProperties: Set<string>,
+    ): CompletionItem[] {
+        const completions: CompletionItem[] = [];
+        const filteredPath = propertyPath.filter((segment) => segment !== '');
+        const depth = filteredPath.length;
+
+        if (!context.isKey()) {
+            return completions;
+        }
+
+        // Root level
+        if (depth === 1) {
+            for (const [propertyName, propertySchema] of Object.entries(schema)) {
+                if (existingProperties.has(propertyName)) {
+                    continue;
+                }
+
+                if (
+                    propertySchema.supportedResourceTypes &&
+                    !propertySchema.supportedResourceTypes.includes(resourceType)
+                ) {
+                    continue;
+                }
+
+                completions.push(
+                    createCompletionItem(propertyName, CompletionItemKind.Property, {
+                        data: { type: propertySchema.type },
+                        context: context,
+                    }),
+                );
+            }
+        }
+        // Nested levels
+        else if (depth >= 2) {
+            const parentPropertyName = filteredPath[1];
+            const parentSchema = schema[parentPropertyName];
+
+            if (parentSchema?.properties) {
+                if (
+                    parentSchema.supportedResourceTypes &&
+                    !parentSchema.supportedResourceTypes.includes(resourceType)
+                ) {
+                    return completions;
+                }
+
+                let currentSchema = parentSchema.properties;
+                for (let i = 2; i < depth - 1; i++) {
+                    const segmentName = filteredPath[i];
+                    const segmentSchema = currentSchema[segmentName];
+                    if (segmentSchema?.properties) {
+                        currentSchema = segmentSchema.properties;
+                    } else {
+                        return completions;
+                    }
+                }
+
+                for (const [propertyName, propertySchema] of Object.entries(currentSchema)) {
+                    if (existingProperties.has(propertyName)) {
+                        continue;
+                    }
+
+                    completions.push(
+                        createCompletionItem(propertyName, CompletionItemKind.Property, {
+                            data: { type: propertySchema.type },
+                            context: context,
+                        }),
+                    );
+                }
+            }
+        }
+
+        return completions;
     }
 }
