@@ -4,6 +4,7 @@ import { RequestType } from 'vscode-languageserver-protocol';
 export type ListStacksParams = {
     statusToInclude?: StackStatus[];
     statusToExclude?: StackStatus[];
+    region?: string;
 };
 
 export type ListStacksResult = {
@@ -15,6 +16,7 @@ export const ListStacksRequest = new RequestType<ListStacksParams, ListStacksRes
 export type GetStackTemplateParams = {
     stackName: string;
     primaryIdentifier?: string;
+    region?: string;
 };
 
 export type GetStackTemplateResult = {

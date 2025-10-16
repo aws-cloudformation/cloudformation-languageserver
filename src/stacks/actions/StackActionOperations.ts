@@ -45,15 +45,18 @@ export async function processChangeSet(
 
     const changeSetName = `${changeSetNamePrefix}-${params.id}-${uuidv4()}`;
 
-    await cfnService.createChangeSet({
-        StackName: params.stackName,
-        ChangeSetName: changeSetName,
-        TemplateBody: document.contents(),
-        Parameters: params.parameters,
-        Capabilities: params.capabilities,
-        ChangeSetType: changeSetType,
-        ResourcesToImport: params.resourcesToImport,
-    });
+    await cfnService.createChangeSet(
+        {
+            StackName: params.stackName,
+            ChangeSetName: changeSetName,
+            TemplateBody: document.contents(),
+            Parameters: params.parameters,
+            Capabilities: params.capabilities,
+            ChangeSetType: changeSetType,
+            ResourcesToImport: params.resourcesToImport,
+        },
+        params.region,
+    );
 
     return changeSetName;
 }
@@ -62,20 +65,27 @@ export async function waitForChangeSetValidation(
     cfnService: CfnService,
     changeSetName: string,
     stackName: string,
+    region?: string,
 ): Promise<ValidationWaitForResult> {
     try {
         // TODO: change to waitForChangeSetCreateComplete, which will not throw error on create change set failure
         const result = await cfnService.waitUntilChangeSetCreateComplete({
-            StackName: stackName,
-            ChangeSetName: changeSetName,
-        });
-
-        if (result.state === WaiterState.SUCCESS) {
-            const response = await cfnService.describeChangeSet({
                 StackName: stackName,
                 ChangeSetName: changeSetName,
-                IncludePropertyValues: true,
-            });
+            },
+            undefined,
+            region,
+        );
+
+        if (result.state === WaiterState.SUCCESS) {
+            const response = await cfnService.describeChangeSet(
+                {
+                    StackName: stackName,
+                    ChangeSetName: changeSetName,
+                    IncludePropertyValues: true,
+                },
+                region,
+            );
 
             return {
                 phase: StackActionPhase.VALIDATION_COMPLETE,

@@ -327,7 +327,11 @@ describe('StackActionHandler', () => {
             const handler = listStacksHandler(mockComponents);
             await handler(paramsWithInclude, mockToken);
 
-            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith([StackStatus.CREATE_COMPLETE], undefined);
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(
+                [StackStatus.CREATE_COMPLETE],
+                undefined,
+                undefined,
+            );
         });
 
         it('should pass statusToExclude to cfnService', async () => {
@@ -345,7 +349,34 @@ describe('StackActionHandler', () => {
             const handler = listStacksHandler(mockComponents);
             await handler(paramsWithExclude, mockToken);
 
-            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(undefined, [StackStatus.DELETE_COMPLETE]);
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(
+                undefined,
+                [StackStatus.DELETE_COMPLETE],
+                undefined,
+            );
+        });
+
+        it('should pass region parameter to cfnService', async () => {
+            const mockStacks: StackSummary[] = [];
+            const mockComponents = {
+                cfnService: {
+                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                },
+            } as any;
+
+            const handler = listStacksHandler(mockComponents);
+            const paramsWithRegion: ListStacksParams = {
+                statusToInclude: [StackStatus.CREATE_COMPLETE],
+                region: 'us-west-2',
+            };
+
+            await handler(paramsWithRegion, mockToken);
+
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(
+                [StackStatus.CREATE_COMPLETE],
+                undefined,
+                'us-west-2',
+            );
         });
 
         it('should return empty array when both statusToInclude and statusToExclude are provided', async () => {

@@ -376,7 +376,12 @@ describe('ValidationWorkflow', () => {
 
             expect(result.changeSetName).toBe('changeset-123');
             expect(mockValidationManager.add).toHaveBeenCalled();
-            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(
+                mockCfnService,
+                'changeset-123',
+                'test-stack',
+                undefined,
+            );
 
             const workflow = (validationWorkflow as any).workflows.get('test-id');
             expect(workflow.changes).toEqual(mockChanges);

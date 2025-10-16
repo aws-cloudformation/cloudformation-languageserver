@@ -79,12 +79,16 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         return value;
     }
 
-    public async listResources(typeName: string, updateFromLive?: boolean): Promise<ResourceList | undefined> {
+    public async listResources(
+        typeName: string,
+        updateFromLive?: boolean,
+        region?: string,
+    ): Promise<ResourceList | undefined> {
         const cachedResourceList = this.resourceListMap.get(typeName);
         if (cachedResourceList && !updateFromLive) {
             return cachedResourceList;
         }
-        const resourceList = await this.retrieveResourceList(typeName);
+        const resourceList = await this.retrieveResourceList(typeName, region);
         if (!resourceList) {
             return;
         }
@@ -113,11 +117,11 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         return resourceIdToStateMap?.get(identifier);
     }
 
-    private async retrieveResourceList(typeName: string): Promise<ResourceList | undefined> {
+    private async retrieveResourceList(typeName: string, region?: string): Promise<ResourceList | undefined> {
         let output: ListResourcesOutput | undefined = undefined;
 
         try {
-            output = await this.ccapiService.listResources(typeName);
+            output = await this.ccapiService.listResources(typeName, region);
         } catch (error) {
             log.error(error, `CCAPI ListResource failed for type ${typeName}`);
             return;

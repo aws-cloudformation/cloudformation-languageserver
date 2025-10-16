@@ -30,6 +30,7 @@ export enum ResourceStatePurpose {
 export interface ResourceStateParams extends CodeActionParams {
     resourceSelections?: ResourceSelection[];
     purpose: ResourceStatePurpose;
+    region?: string;
 }
 
 export interface ResourceStateResult extends CodeAction {
@@ -48,6 +49,7 @@ export type ResourceIdentifier = string;
 
 export type ListResourcesParams = {
     resourceTypes?: string[];
+    region?: string;
 };
 
 export type ResourceSummary = {

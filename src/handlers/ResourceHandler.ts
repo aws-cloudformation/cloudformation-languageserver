@@ -49,7 +49,11 @@ export function listResourcesHandler(
             const resources: ResourceSummary[] = [];
 
             for (const typeName of resourceTypes) {
-                const resourceList = await components.resourceStateManager.listResources(typeName);
+                const resourceList = await components.resourceStateManager.listResources(
+                    typeName,
+                    false,
+                    params.region,
+                );
                 if (resourceList) {
                     resources.push({
                         typeName: resourceList.typeName,
@@ -107,7 +111,7 @@ export function getManagedResourceStackTemplateHandler(
 ): RequestHandler<GetStackTemplateParams, GetStackTemplateResult | undefined, void> {
     return async (params, _token) => {
         try {
-            const template = await components.cfnService.getTemplate({ StackName: params.stackName });
+            const template = await components.cfnService.getTemplate({ StackName: params.stackName }, params.region);
             if (!template) {
                 return;
             }
@@ -115,7 +119,10 @@ export function getManagedResourceStackTemplateHandler(
             let lineNumber: number | undefined;
 
             if (params.primaryIdentifier) {
-                const resources = await components.cfnService.describeStackResources({ StackName: params.stackName });
+                const resources = await components.cfnService.describeStackResources(
+                    { StackName: params.stackName },
+                    params.region,
+                );
                 const resource = resources.StackResources?.find(
                     (r) => r.PhysicalResourceId === params.primaryIdentifier,
                 );

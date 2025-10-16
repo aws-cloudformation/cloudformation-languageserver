@@ -11,12 +11,12 @@ import { AwsClient } from './AwsClient';
 export class CcapiService {
     constructor(private readonly awsClient: AwsClient) {}
 
-    private async withClient<T>(request: (client: CloudControlClient) => Promise<T>): Promise<T> {
-        const client = await this.awsClient.getCloudControlClient();
+    private async withClient<T>(request: (client: CloudControlClient) => Promise<T>, region?: string): Promise<T> {
+        const client = await this.awsClient.getCloudControlClient(region);
         return await request(client);
     }
 
-    public async listResources(typeName: string) {
+    public async listResources(typeName: string, region?: string) {
         return await this.withClient(async (client) => {
             let nextToken: string | undefined;
             const resourceList: ListResourcesOutput = {
@@ -36,16 +36,16 @@ export class CcapiService {
             } while (nextToken);
 
             return resourceList;
-        });
+        }, region);
     }
 
-    public async getResource(typeName: string, identifier: string) {
+    public async getResource(typeName: string, identifier: string, region?: string) {
         return await this.withClient(async (client) => {
             const getResourceInput: GetResourceInput = {
                 TypeName: typeName,
                 Identifier: identifier,
             };
             return await client.send(new GetResourceCommand(getResourceInput));
-        });
+        }, region);
     }
 }

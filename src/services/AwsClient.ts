@@ -24,22 +24,22 @@ export class AwsClient implements SettingsConfigurable {
     }
 
     // By default, clients will retry on throttling exceptions 3 times
-    public async getCloudFormationClient() {
-        return new CloudFormationClient(await this.iamClientConfig());
+    public async getCloudFormationClient(region?: string) {
+        return new CloudFormationClient(await this.iamClientConfig(region));
     }
 
-    public async getCloudControlClient() {
-        return new CloudControlClient(await this.iamClientConfig());
+    public async getCloudControlClient(region?: string) {
+        return new CloudControlClient(await this.iamClientConfig(region));
     }
 
-    private async iamClientConfig(): Promise<{
+    private async iamClientConfig(region?: string): Promise<{
         region: string;
         credentials: AwsCredentialIdentity;
         customUserAgent: string;
     }> {
         const data = await this.credentialsProvider.getIAM();
         return {
-            region: this.region,
+            region: region ?? this.region,
             credentials: data,
             customUserAgent: `${ExtensionId}/${ExtensionVersion}`,
         };

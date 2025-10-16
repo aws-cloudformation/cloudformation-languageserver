@@ -94,6 +94,15 @@ describe('CcapiService', () => {
         });
     });
 
+    it('should pass region parameter to AwsClient', async () => {
+        const mockResponse = { ResourceDescriptions: [], TypeName: 'AWS::S3::Bucket' };
+        cloudControlMock.on(ListResourcesCommand).resolves(mockResponse);
+
+        await service.listResources('AWS::S3::Bucket', 'ap-southeast-1');
+
+        expect(mockGetCloudControlClient).toHaveBeenCalledWith('ap-southeast-1');
+    });
+
     describe('error handling', () => {
         it('should throw error when client creation fails', async () => {
             mockGetCloudControlClient.mockImplementation(() => {

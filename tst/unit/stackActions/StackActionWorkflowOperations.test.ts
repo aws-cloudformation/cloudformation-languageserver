@@ -73,14 +73,17 @@ describe('StackActionWorkflowOperations', () => {
             const result = await processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE');
 
             expect(result).toContain('AWS-CloudFormation');
-            expect(mockCfnService.createChangeSet).toHaveBeenCalledWith({
-                StackName: 'test-stack',
-                ChangeSetName: expect.stringContaining(ExtensionName.replaceAll(' ', '-')),
-                TemplateBody: 'template content',
-                Parameters: undefined,
-                Capabilities: undefined,
-                ChangeSetType: 'CREATE',
-            });
+            expect(mockCfnService.createChangeSet).toHaveBeenCalledWith(
+                {
+                    StackName: 'test-stack',
+                    ChangeSetName: expect.stringContaining(ExtensionName.replaceAll(' ', '-')),
+                    TemplateBody: 'template content',
+                    Parameters: undefined,
+                    Capabilities: undefined,
+                    ChangeSetType: 'CREATE',
+                },
+                undefined,
+            );
         });
 
         it('should throw error when document not found', async () => {
@@ -288,15 +291,22 @@ describe('StackActionWorkflowOperations', () => {
             expect(result.phase).toBe(StackActionPhase.VALIDATION_COMPLETE);
             expect(result.state).toBe(StackActionState.SUCCESSFUL);
             expect(result.changes).toBeDefined();
-            expect(mockCfnService.waitUntilChangeSetCreateComplete).toHaveBeenCalledWith({
-                ChangeSetName: 'test-changeset',
-                StackName: 'test-stack',
-            });
-            expect(mockCfnService.describeChangeSet).toHaveBeenCalledWith({
-                ChangeSetName: 'test-changeset',
-                StackName: 'test-stack',
-                IncludePropertyValues: true,
-            });
+            expect(mockCfnService.waitUntilChangeSetCreateComplete).toHaveBeenCalledWith(
+                {
+                    ChangeSetName: 'test-changeset',
+                    StackName: 'test-stack',
+                },
+                undefined,
+                undefined,
+            );
+            expect(mockCfnService.describeChangeSet).toHaveBeenCalledWith(
+                {
+                    ChangeSetName: 'test-changeset',
+                    StackName: 'test-stack',
+                    IncludePropertyValues: true,
+                },
+                undefined,
+            );
         });
 
         it('should return failed result when changeset creation fails', async () => {

@@ -239,7 +239,13 @@ export function listStacksHandler(
             if (params.statusToInclude?.length && params.statusToExclude?.length) {
                 throw new Error('Cannot specify both statusToInclude and statusToExclude');
             }
-            return { stacks: await components.cfnService.listStacks(params.statusToInclude, params.statusToExclude) };
+            return {
+                stacks: await components.cfnService.listStacks(
+                    params.statusToInclude,
+                    params.statusToExclude,
+                    params.region,
+                ),
+            };
         } catch (error) {
             log.error({ error: extractErrorMessage(error) }, 'Error listing stacks');
             return { stacks: [] };

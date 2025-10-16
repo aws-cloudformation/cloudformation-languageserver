@@ -64,6 +64,14 @@ describe('CfnService', () => {
         vi.clearAllMocks();
     });
 
+    it('should pass region parameter to AwsClient', async () => {
+        cloudFormationMock.on(ListStacksCommand).resolves({ StackSummaries: [] });
+
+        await service.listStacks(undefined, undefined, 'eu-central-1');
+
+        expect(mockGetCloudFormationClient).toHaveBeenCalledWith('eu-central-1');
+    });
+
     const createStackNotFoundError = () =>
         new StackNotFoundException({
             message: TEST_CONSTANTS.ERROR_MESSAGES.STACK_NOT_FOUND,

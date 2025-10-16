@@ -58,12 +58,16 @@ import { AwsClient } from './AwsClient';
 export class CfnService {
     public constructor(private readonly awsClient: AwsClient) {}
 
-    protected async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
-        const client = await this.awsClient.getCloudFormationClient();
+    protected async withClient<T>(request: (client: CloudFormationClient) => Promise<T>, region?: string): Promise<T> {
+        const client = await this.awsClient.getCloudFormationClient(region);
         return await request(client);
     }
 
-    public async listStacks(statusToInclude?: StackStatus[], statusToExclude?: StackStatus[]): Promise<StackSummary[]> {
+    public async listStacks(
+        statusToInclude?: StackStatus[],
+        statusToExclude?: StackStatus[],
+        region?: string,
+    ): Promise<StackSummary[]> {
         return await this.withClient(async (client) => {
             const allStacks: StackSummary[] = [];
             let nextToken: string | undefined;
@@ -91,49 +95,61 @@ export class CfnService {
             } while (nextToken);
 
             return allStacks;
-        });
+        }, region);
     }
 
-    public async createStack(params: {
-        StackName: string;
-        TemplateBody?: string;
-        TemplateURL?: string;
-        Parameters?: Parameter[];
-        Capabilities?: Capability[];
-    }): Promise<CreateStackCommandOutput> {
-        return await this.withClient((client) => client.send(new CreateStackCommand(params)));
+    public async createStack(
+        params: {
+            StackName: string;
+            TemplateBody?: string;
+            TemplateURL?: string;
+            Parameters?: Parameter[];
+            Capabilities?: Capability[];
+        },
+        region?: string,
+    ): Promise<CreateStackCommandOutput> {
+        return await this.withClient((client) => client.send(new CreateStackCommand(params)), region);
     }
 
-    public async describeStacks(params?: {
-        StackName?: string;
-        NextToken?: string;
-    }): Promise<DescribeStacksCommandOutput> {
-        return await this.withClient((client) => client.send(new DescribeStacksCommand(params ?? {})));
+    public async describeStacks(
+        params?: {
+            StackName?: string;
+            NextToken?: string;
+        },
+        region?: string,
+    ): Promise<DescribeStacksCommandOutput> {
+        return await this.withClient((client) => client.send(new DescribeStacksCommand(params ?? {})), region);
     }
 
-    public async getTemplate(params: { StackName: string }): Promise<string | undefined> {
-        const response = await this.withClient((client) => client.send(new GetTemplateCommand(params)));
+    public async getTemplate(params: { StackName: string }, region?: string): Promise<string | undefined> {
+        const response = await this.withClient((client) => client.send(new GetTemplateCommand(params)), region);
         return response.TemplateBody;
     }
 
-    public async createChangeSet(params: {
-        StackName: string;
-        ChangeSetName: string;
-        TemplateBody?: string;
-        TemplateURL?: string;
-        Parameters?: Parameter[];
-        Capabilities?: Capability[];
-        ChangeSetType?: 'CREATE' | 'UPDATE' | 'IMPORT';
-        ResourcesToImport?: ResourceToImport[];
-    }): Promise<CreateChangeSetCommandOutput> {
-        return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)));
+    public async createChangeSet(
+        params: {
+            StackName: string;
+            ChangeSetName: string;
+            TemplateBody?: string;
+            TemplateURL?: string;
+            Parameters?: Parameter[];
+            Capabilities?: Capability[];
+            ChangeSetType?: 'CREATE' | 'UPDATE' | 'IMPORT';
+            ResourcesToImport?: ResourceToImport[];
+        },
+        region?: string,
+    ): Promise<CreateChangeSetCommandOutput> {
+        return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)), region);
     }
 
-    public async describeChangeSet(params: {
-        ChangeSetName: string;
-        IncludePropertyValues: boolean;
-        StackName?: string;
-    }): Promise<DescribeChangeSetCommandOutput> {
+    public async describeChangeSet(
+        params: {
+            ChangeSetName: string;
+            IncludePropertyValues: boolean;
+            StackName?: string;
+        },
+        region?: string,
+    ): Promise<DescribeChangeSetCommandOutput> {
         return await this.withClient(async (client) => {
             let nextToken: string | undefined;
             let result: DescribeChangeSetCommandOutput | undefined;
@@ -155,7 +171,7 @@ export class CfnService {
             result.Changes = changes;
             result.NextToken = undefined;
             return result;
-        });
+        }, region);
     }
 
     public async detectStackDrift(params: {
@@ -208,12 +224,15 @@ export class CfnService {
         });
     }
 
-    public async describeStackResources(params: {
-        StackName?: string;
-        LogicalResourceId?: string;
-        PhysicalResourceId?: string;
-    }): Promise<DescribeStackResourcesCommandOutput> {
-        return await this.withClient((client) => client.send(new DescribeStackResourcesCommand(params)));
+    public async describeStackResources(
+        params: {
+            StackName?: string;
+            LogicalResourceId?: string;
+            PhysicalResourceId?: string;
+        },
+        region?: string,
+    ): Promise<DescribeStackResourcesCommandOutput> {
+        return await this.withClient((client) => client.send(new DescribeStackResourcesCommand(params)), region);
     }
 
     public async describeStackResource(params: {
@@ -311,6 +330,7 @@ export class CfnService {
     public async waitUntilChangeSetCreateComplete(
         params: DescribeChangeSetCommandInput,
         timeoutMinutes: number = 5,
+        region?: string,
     ): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
@@ -318,7 +338,7 @@ export class CfnService {
                 maxWaitTime: timeoutMinutes * 60,
             };
             return await waitUntilChangeSetCreateComplete(waiterConfig, params);
-        });
+        }, region);
     }
 
     public async waitUntilStackCreateComplete(
@@ -350,6 +370,7 @@ export class CfnService {
     public async waitUntilStackImportComplete(
         params: DescribeStacksCommandInput,
         timeoutMinutes: number = 30,
+        region?: string,
     ): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
@@ -357,11 +378,11 @@ export class CfnService {
                 maxWaitTime: timeoutMinutes * 60,
             };
             return await waitUntilStackImportComplete(waiterConfig, params);
-        });
+        }, region);
     }
 
-    public async validateTemplate(params: ValidateTemplateInput): Promise<ValidateTemplateOutput> {
-        return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
+    public async validateTemplate(params: ValidateTemplateInput, region?: string): Promise<ValidateTemplateOutput> {
+        return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)), region);
     }
 }
 

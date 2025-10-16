@@ -21,6 +21,7 @@ export type CreateStackActionParams = Identifiable & {
     parameters?: Parameter[];
     capabilities?: Capability[];
     resourcesToImport?: ResourceToImport[];
+    region?: string;
 };
 
 export type CreateStackActionResult = Identifiable & {

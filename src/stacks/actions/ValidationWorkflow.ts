@@ -81,7 +81,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
             state: StackActionState.IN_PROGRESS,
         });
 
-        void this.runValidationAsync(params, changeSetName, changeSetType);
+        void this.runValidationAsync(params, changeSetName, changeSetType, params.region);
 
         return {
             id: params.id,
@@ -121,6 +121,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
         params: CreateStackActionParams,
         changeSetName: string,
         changeSetType: ChangeSetType,
+        region?: string,
     ): Promise<void> {
         const workflowId = params.id;
         const stackName = params.stackName;
@@ -132,7 +133,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
         }
 
         try {
-            const result = await waitForChangeSetValidation(this.cfnService, changeSetName, stackName);
+            const result = await waitForChangeSetValidation(this.cfnService, changeSetName, stackName, region);
 
             const validation = this.validationManager.get(stackName);
             if (validation) {
