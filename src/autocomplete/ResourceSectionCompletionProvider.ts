@@ -55,7 +55,8 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
                 ?.getCompletions(context, params) as CompletionItem[];
         } else if (
             context.entitySection === 'Properties' ||
-            ResourceAttributesSet.has(context.entitySection as string)
+            ResourceAttributesSet.has(context.entitySection as string) ||
+            (context.matchPathWithLogicalId(TopLevelSection.Resources, 'Properties') && context.propertyPath.length > 3)
         ) {
             const schemaPropertyCompletions = this.resourceProviders
                 .get(ResourceCompletionType.Property)
