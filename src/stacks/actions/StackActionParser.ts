@@ -15,12 +15,19 @@ const ParameterSchema = z.object({
     ResolvedValue: z.string().optional(),
 });
 
+const ResourceToImportSchema = z.object({
+    ResourceType: z.string(),
+    LogicalResourceId: z.string(),
+    ResourceIdentifier: z.record(z.string(), z.string()),
+});
+
 const StackActionParamsSchema = z.object({
     id: z.string().min(1),
     uri: z.string().min(1),
     stackName: z.string().min(1).max(128),
     parameters: z.array(ParameterSchema).optional(),
     capabilities: z.array(CapabilitySchema).optional(),
+    resourcesToImport: z.array(ResourceToImportSchema).optional(),
 });
 
 const TemplateUriSchema = z.string().min(1);

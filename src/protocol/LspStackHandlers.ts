@@ -8,6 +8,7 @@ import {
     GetParametersRequest,
     DescribeValidationStatusRequest,
     DescribeDeploymentStatusRequest,
+    GetTemplateResourcesRequest,
 } from '../stacks/actions/StackActionProtocol';
 import {
     TemplateUri,
@@ -18,6 +19,7 @@ import {
     GetCapabilitiesResult,
     DescribeValidationStatusResult,
     DescribeDeploymentStatusResult,
+    GetTemplateResourcesResult,
 } from '../stacks/actions/StackActionRequestType';
 import {
     ListStacksParams,
@@ -62,6 +64,10 @@ export class LspStackHandlers {
 
     onGetCapabilities(handler: RequestHandler<TemplateUri, GetCapabilitiesResult, void>) {
         this.connection.onRequest(GetCapabilitiesRequest.method, handler);
+    }
+
+    onGetTemplateResources(handler: RequestHandler<TemplateUri, GetTemplateResourcesResult, void>) {
+        this.connection.onRequest(GetTemplateResourcesRequest.method, handler);
     }
 
     onListStacks(handler: RequestHandler<ListStacksParams, ListStacksResult, void>) {

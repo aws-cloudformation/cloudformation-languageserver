@@ -35,13 +35,18 @@ export class DeploymentWorkflow implements StackActionWorkflow<DescribeDeploymen
     ) {}
 
     async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
-        // Check if stack exists to determine CREATE vs UPDATE
-        let changeSetType: ChangeSetType = ChangeSetType.CREATE;
-        try {
-            await this.cfnService.describeStacks({ StackName: params.stackName });
-            changeSetType = ChangeSetType.UPDATE;
-        } catch {
-            changeSetType = ChangeSetType.CREATE;
+        // Determine ChangeSet type based on resourcesToImport and stack existence
+        let changeSetType: ChangeSetType;
+
+        if (params.resourcesToImport && params.resourcesToImport.length > 0) {
+            changeSetType = ChangeSetType.IMPORT;
+        } else {
+            try {
+                await this.cfnService.describeStacks({ StackName: params.stackName });
+                changeSetType = ChangeSetType.UPDATE;
+            } catch {
+                changeSetType = ChangeSetType.CREATE;
+            }
         }
 
         const changeSetName = await processChangeSet(this.cfnService, this.documentManager, params, changeSetType);

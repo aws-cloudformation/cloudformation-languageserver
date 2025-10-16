@@ -33,6 +33,7 @@ import {
     Capability,
     StackResourceDriftStatus,
     Parameter,
+    ResourceToImport,
     RegistryType,
     ValidateTemplateCommand,
     ValidateTemplateInput,
@@ -45,6 +46,7 @@ import {
     waitUntilChangeSetCreateComplete,
     waitUntilStackUpdateComplete,
     waitUntilStackCreateComplete,
+    waitUntilStackImportComplete,
     DescribeChangeSetCommandOutput,
     Change,
     GetTemplateCommand,
@@ -122,6 +124,7 @@ export class CfnService {
         Parameters?: Parameter[];
         Capabilities?: Capability[];
         ChangeSetType?: 'CREATE' | 'UPDATE' | 'IMPORT';
+        ResourcesToImport?: ResourceToImport[];
     }): Promise<CreateChangeSetCommandOutput> {
         return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)));
     }
@@ -341,6 +344,19 @@ export class CfnService {
                 maxWaitTime: timeoutMinutes * 60,
             };
             return await waitUntilStackUpdateComplete(waiterConfig, params);
+        });
+    }
+
+    public async waitUntilStackImportComplete(
+        params: DescribeStacksCommandInput,
+        timeoutMinutes: number = 30,
+    ): Promise<WaiterResult> {
+        return await this.withClient(async (client) => {
+            const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
+                client,
+                maxWaitTime: timeoutMinutes * 60,
+            };
+            return await waitUntilStackImportComplete(waiterConfig, params);
         });
     }
 

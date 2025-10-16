@@ -37,6 +37,7 @@ export async function processChangeSet(
         Parameters: params.parameters,
         Capabilities: params.capabilities,
         ChangeSetType: changeSetType,
+        ResourcesToImport: params.resourcesToImport,
     });
 
     return changeSetName;
@@ -98,9 +99,13 @@ export async function waitForDeployment(
                 ? await cfnService.waitUntilStackCreateComplete({
                       StackName: stackName,
                   })
-                : await cfnService.waitUntilStackUpdateComplete({
-                      StackName: stackName,
-                  });
+                : changeSetType === ChangeSetType.IMPORT
+                  ? await cfnService.waitUntilStackImportComplete({
+                        StackName: stackName,
+                    })
+                  : await cfnService.waitUntilStackUpdateComplete({
+                        StackName: stackName,
+                    });
 
         if (result.state === WaiterState.SUCCESS) {
             return {
