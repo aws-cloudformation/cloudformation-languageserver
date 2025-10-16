@@ -2,6 +2,8 @@ import { InlineCompletionList, InlineCompletionParams, InlineCompletionItem } fr
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
 import { DocumentManager } from '../document/DocumentManager';
+import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
@@ -49,11 +51,7 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
         if (this.isAuthoringNewResource(context)) {
             const relatedResourcesProvider = this.inlineCompletionProviderMap.get('RelatedResources');
             if (relatedResourcesProvider) {
-                const documentSpecificSettings = this.documentManager.getEditorSettingsForDocument(
-                    params.textDocument.uri,
-                );
-
-                const result = relatedResourcesProvider.getlineCompletion(context, params, documentSpecificSettings);
+                const result = relatedResourcesProvider.getInlineCompletion(context, params);
 
                 if (result instanceof Promise) {
                     return result.then((items) => {
@@ -98,10 +96,11 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
         );
     }
 
-    static create(core: CfnInfraCore) {
+    static create(core: CfnInfraCore, external: CfnExternal) {
+        const relationshipSchemaService = new RelationshipSchemaService();
         return new InlineCompletionRouter(
             core.contextManager,
-            createInlineCompletionProviders(core.documentManager, RelationshipSchemaService.getInstance()),
+            createInlineCompletionProviders(core.documentManager, relationshipSchemaService, external.schemaRetriever),
             core.documentManager,
         );
     }
@@ -110,12 +109,13 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
 export function createInlineCompletionProviders(
     documentManager: DocumentManager,
     relationshipSchemaService: RelationshipSchemaService,
+    schemaRetriever: SchemaRetriever,
 ): Map<InlineCompletionProviderType, InlineCompletionProvider> {
     const inlineCompletionProviderMap = new Map<InlineCompletionProviderType, InlineCompletionProvider>();
 
     inlineCompletionProviderMap.set(
         'RelatedResources',
-        new RelatedResourcesInlineCompletionProvider(relationshipSchemaService, documentManager),
+        new RelatedResourcesInlineCompletionProvider(relationshipSchemaService, documentManager, schemaRetriever),
     );
 
     return inlineCompletionProviderMap;

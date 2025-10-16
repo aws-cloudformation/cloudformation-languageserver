@@ -5,12 +5,13 @@ import {
     createInlineCompletionProviders,
 } from '../../../src/autocomplete/InlineCompletionRouter';
 import { DocumentType } from '../../../src/document/Document';
-import { RelationshipSchemaService } from '../../../src/services/RelationshipSchemaService';
 import { DefaultSettings } from '../../../src/settings/Settings';
 import { createTopLevelContext } from '../../utils/MockContext';
 import {
     createMockContextManager,
     createMockDocumentManager,
+    createMockRelationshipSchemaService,
+    createMockSchemaRetriever,
     createMockSettingsManager,
 } from '../../utils/MockServerComponents';
 
@@ -18,7 +19,8 @@ describe('InlineCompletionRouter', () => {
     const mockContextManager = createMockContextManager();
     const mockDocumentManager = createMockDocumentManager();
     const mockSettingsManager = createMockSettingsManager();
-    const mockRelationshipSchemaService = RelationshipSchemaService.getInstance();
+    const mockSchemaRetriever = createMockSchemaRetriever();
+    const mockRelationshipSchemaService = createMockRelationshipSchemaService();
     let router: InlineCompletionRouter;
 
     const mockParams: InlineCompletionParams = {
@@ -31,7 +33,11 @@ describe('InlineCompletionRouter', () => {
 
     beforeEach(() => {
         mockContextManager.getContext.reset();
-        const providers = createInlineCompletionProviders(mockDocumentManager, mockRelationshipSchemaService);
+        const providers = createInlineCompletionProviders(
+            mockDocumentManager,
+            mockRelationshipSchemaService,
+            mockSchemaRetriever,
+        );
         router = new InlineCompletionRouter(mockContextManager, providers, mockDocumentManager);
         router.configure(mockSettingsManager);
         vi.restoreAllMocks();
@@ -292,12 +298,15 @@ describe('InlineCompletionRouter', () => {
 
     describe('Static Factory Method', () => {
         test('should create router with components', () => {
-            const mockComponents = {
+            const mockCore = {
                 contextManager: mockContextManager,
                 documentManager: mockDocumentManager,
             } as any;
+            const mockExternal = {
+                schemaRetriever: mockSchemaRetriever,
+            } as any;
 
-            const createdRouter = InlineCompletionRouter.create(mockComponents);
+            const createdRouter = InlineCompletionRouter.create(mockCore, mockExternal);
 
             expect(createdRouter).toBeInstanceOf(InlineCompletionRouter);
         });

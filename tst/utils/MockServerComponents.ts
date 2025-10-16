@@ -48,6 +48,7 @@ import { CodeActionService } from '../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import { GuardService } from '../../src/services/guard/GuardService';
 import { IacGeneratorService } from '../../src/services/IacGeneratorService';
+import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
 import { DeploymentWorkflow } from '../../src/stacks/actions/DeploymentWorkflow';
@@ -157,6 +158,15 @@ export function createMockSchemaRetriever(schemas?: CombinedSchemas) {
     if (schemas) {
         mock.getDefault.returns(schemas);
     }
+    return mock;
+}
+
+export function createMockRelationshipSchemaService() {
+    const mock = stubInterface<RelationshipSchemaService>();
+    mock.extractResourceTypesFromTemplate.returns([]);
+    mock.getAllRelatedResourceTypes.returns(new Set<string>());
+    mock.getRelationshipsForResourceType.returns(undefined);
+    mock.getRelationshipContext.returns('');
     return mock;
 }
 
