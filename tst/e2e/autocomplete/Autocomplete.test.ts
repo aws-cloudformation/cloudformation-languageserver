@@ -1520,17 +1520,16 @@ Resources:
             };
             template.executeScenario(scenario);
         });
-    });
 
-    it('test nested object property completion', () => {
-        const template = new TemplateBuilder(DocumentType.JSON, '');
-        const scenario: TemplateScenario = {
-            name: 'Nested object property completion',
-            steps: [
-                {
-                    action: 'type',
-                    position: { line: 0, character: 0 },
-                    content: `{
+        it('test nested object property completion', () => {
+            const template = new TemplateBuilder(DocumentType.JSON, '');
+            const scenario: TemplateScenario = {
+                name: 'Nested object property completion',
+                steps: [
+                    {
+                        action: 'type',
+                        position: { line: 0, character: 0 },
+                        content: `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
     "MyBucket": {
@@ -1543,20 +1542,21 @@ Resources:
     }
   }
 }`,
-                    verification: {
-                        position: { line: 7, character: 11 },
-                        expectation: CompletionExpectationBuilder.create()
-                            .expectContainsItems([
-                                'TopicConfigurations',
-                                'QueueConfigurations',
-                                'LambdaConfigurations',
-                                'EventBridgeConfiguration',
-                            ])
-                            .build(),
+                        verification: {
+                            position: { line: 7, character: 11 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems([
+                                    'TopicConfigurations',
+                                    'QueueConfigurations',
+                                    'LambdaConfigurations',
+                                    'EventBridgeConfiguration',
+                                ])
+                                .build(),
+                        },
                     },
-                },
-            ],
-        };
-        template.executeScenario(scenario);
+                ],
+            };
+            template.executeScenario(scenario);
+        });
     });
 });
