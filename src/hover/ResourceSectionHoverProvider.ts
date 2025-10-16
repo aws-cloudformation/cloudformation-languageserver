@@ -2,6 +2,7 @@ import { resourceAttributeDocsMap } from '../artifacts/ResourceAttributeDocs';
 import { creationPolicyPropertyDocsMap } from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { updatePolicyPropertyDocsMap } from '../artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
+import { updateReplacePolicyValueDocsMap } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
@@ -115,6 +116,9 @@ export class ResourceSectionHoverProvider implements HoverProvider {
             case ResourceAttribute.UpdatePolicy: {
                 return this.getUpdatePolicyPropertyDoc(propertyPath);
             }
+            case ResourceAttribute.UpdateReplacePolicy: {
+                return this.getUpdateReplacePolicyPropertyDoc(propertyPath);
+            }
             default: {
                 return undefined;
             }
@@ -137,6 +141,14 @@ export class ResourceSectionHoverProvider implements HoverProvider {
     private getUpdatePolicyPropertyDoc(propertyPath: ReadonlyArray<string>): string | undefined {
         const propertyPathString = propertyPath.join('.');
         return updatePolicyPropertyDocsMap.get(propertyPathString);
+    }
+
+    private getUpdateReplacePolicyPropertyDoc(propertyPath: ReadonlyArray<string>): string | undefined {
+        if (propertyPath.length === 2) {
+            const updateReplacePolicyValue = propertyPath[1];
+            return updateReplacePolicyValueDocsMap.get(updateReplacePolicyValue);
+        }
+        return undefined;
     }
 
     private getResourceAttributeValueDoc(context: Context): string | undefined {

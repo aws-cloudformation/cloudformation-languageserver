@@ -6,6 +6,7 @@ import { pseudoParameterDocsMap } from '../../../src/artifacts/PseudoParameterDo
 import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { updatePolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
+import { updateReplacePolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { templateSectionDocsMap } from '../../../src/artifacts/TemplateSectionDocs';
 import {
     TopLevelSection,
@@ -1362,6 +1363,30 @@ Resources:`,
                             position: { line: 286, character: 52 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContent(deletionPolicyValueDocsMap.get('Delete'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 302, character: 31 },
+                        description: 'Hover Snapshot in UpdateReplacePolicy Resource Attribute',
+                        verification: {
+                            position: { line: 287, character: 47 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(updateReplacePolicyValueDocsMap.get('Snapshot'))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 302, character: 31 },
+                        description: 'Hover Delete in UpdateReplacePolicy Resource Attribute',
+                        verification: {
+                            position: { line: 287, character: 57 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(updateReplacePolicyValueDocsMap.get('Delete'))
                                 .build(),
                         },
                     },
