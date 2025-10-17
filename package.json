@@ -36,7 +36,8 @@
     "bundle:alpha": "rm -rf out && webpack --env mode=production --env env=alpha",
     "bundle:beta": "rm -rf out && webpack --env mode=production --env env=beta",
     "bundle:prod": "rm -rf out && webpack --env mode=production --env env=prod",
-    "benchmark": "node --max-old-space-size=16384 --expose-gc -r ts-node/register tools/benchmark.ts",
+    "benchmark": "NODE_ENV=test AWS_ENV=alpha node --max-old-space-size=16384 --expose-gc -r ts-node/register tools/benchmark.ts",
+    "generate-metrics": "NODE_ENV=development AWS_ENV=alpha node --max-old-space-size=16384 -r ts-node/register tools/telemetry-generator.ts",
     "debug-tree": "node -r ts-node/register tools/debug_tree.ts",
     "build:guard-wasm": "node -r ts-node/register tools/build-guard-wasm.ts",
     "generate:guard-rules": "node -r ts-node/register tools/generate-guard-rules.ts"

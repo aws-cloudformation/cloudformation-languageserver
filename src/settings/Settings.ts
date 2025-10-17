@@ -1,4 +1,3 @@
-import { LevelWithSilent } from 'pino';
 import { DeepReadonly } from 'ts-essentials';
 import { AwsRegion } from '../utils/Region';
 
@@ -48,10 +47,6 @@ export type DiagnosticsSettings = {
     cfnLint: CfnLintSettings;
     cfnGuard: GuardSettings;
 };
-
-export type TelemetrySettings = Toggleable<{
-    logLevel: LevelWithSilent;
-}>;
 
 export type EditorSettings = {
     tabSize: number;
