@@ -9,6 +9,7 @@ import { CfnLintService } from '../services/cfnLint/CfnLintService';
 import { CfnService } from '../services/CfnService';
 import { GuardService } from '../services/guard/GuardService';
 import { IacGeneratorService } from '../services/IacGeneratorService';
+import { OnlineStatus } from '../services/OnlineStatus';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
 import { CfnInfraCore } from './CfnInfraCore';
@@ -29,6 +30,8 @@ export class CfnExternal implements Configurables, Closeable {
 
     readonly cfnLintService: CfnLintService;
     readonly guardService: GuardService;
+
+    readonly onlineStatus: OnlineStatus;
 
     constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Partial<CfnExternal> = {}) {
         this.awsClient = overrides.awsClient ?? new AwsClient(core.awsCredentials);
@@ -52,6 +55,8 @@ export class CfnExternal implements Configurables, Closeable {
         this.guardService =
             overrides.guardService ??
             new GuardService(core.documentManager, core.diagnosticCoordinator, core.syntaxTreeManager);
+
+        this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus(core.clientMessage);
     }
 
     configurables(): Configurable[] {
@@ -59,6 +64,12 @@ export class CfnExternal implements Configurables, Closeable {
     }
 
     async close() {
-        return await closeSafely(this.cfnLintService, this.guardService, this.schemaTaskManager, this.schemaRetriever);
+        return await closeSafely(
+            this.cfnLintService,
+            this.guardService,
+            this.schemaTaskManager,
+            this.schemaRetriever,
+            this.onlineStatus,
+        );
     }
 }
