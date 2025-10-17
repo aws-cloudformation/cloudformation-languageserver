@@ -7,8 +7,10 @@ import { join, extname, resolve, basename, dirname } from 'path';
 import { EntityType } from '../src/context/semantic/SemanticTypes';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { JsonSyntaxTree } from '../src/context/syntaxtree/JsonSyntaxTree';
-import { YamlSyntaxTree } from '../src/context/syntaxtree/YamlSyntaxTree';
+import { discoverTemplateFiles, generatePositions, TestPosition } from './utils';
+import { DocumentType } from '../src/document/Document';
+import { TelemetryService } from '../src/telemetry/TelemetryService';
+import { LoggerFactory } from '../src/telemetry/LoggerFactory';
 
 /**
  * This script benchmarks the performance of context resolution for CloudFormation templates,
@@ -64,10 +66,7 @@ import { YamlSyntaxTree } from '../src/context/syntaxtree/YamlSyntaxTree';
  */
 function generateDefaultOutputPath(): string {
     const now = new Date();
-    const timestamp = now.toISOString()
-        .replace(/:/g, '')
-        .replace(/\..+/, '')
-        .replace('T', '-');
+    const timestamp = now.toISOString().replace(/:/g, '').replace(/\..+/, '').replace('T', '-');
     return join(__dirname, `benchmark-results-${timestamp}.md`);
 }
 
@@ -123,7 +122,7 @@ const argv = yargs(hideBin(process.argv))
         default: generateDefaultOutputPath(),
         coerce: (value: string) => {
             const resolvedPath = resolve(value);
-            
+
             // Ensure the directory exists
             const outputDir = dirname(resolvedPath);
             if (!existsSync(outputDir)) {
@@ -133,13 +132,13 @@ const argv = yargs(hideBin(process.argv))
                     throw new Error(`Cannot create output directory: ${outputDir} - ${error}`);
                 }
             }
-            
+
             // Validate file extension
             const ext = extname(resolvedPath).toLowerCase();
             if (ext !== '.md') {
                 throw new Error(`Output file must have .md extension: ${resolvedPath}`);
             }
-            
+
             return resolvedPath;
         },
     })
@@ -157,19 +156,6 @@ const argv = yargs(hideBin(process.argv))
 const ITERATIONS = argv.iterations;
 const TEMPLATE_PATHS = argv.templates as string[];
 const OUTPUT_PATH = argv.output as string;
-
-type TemplateFile = {
-    name: string;
-    format: 'JSON' | 'YAML';
-    size: number;
-    path: string;
-};
-
-type TestPosition = {
-    line: number;
-    character: number;
-    depth: number;
-};
 
 type Percentiles = {
     p50: number;
@@ -221,21 +207,7 @@ interface BenchmarkResult {
     };
 }
 
-function discoverTemplateFiles(): TemplateFile[] {
-    return TEMPLATE_PATHS.map((filePath) => {
-        const stats = statSync(filePath);
-        const fileName = basename(filePath);
-        const data: TemplateFile = {
-            name: fileName,
-            format: extname(filePath).toLowerCase() === '.json' ? 'JSON' : 'YAML',
-            size: stats.size,
-            path: filePath,
-        };
-        return data;
-    }).sort((a, b) => a.size - b.size);
-}
-
-const templateFiles: TemplateFile[] = discoverTemplateFiles();
+const templateFiles = discoverTemplateFiles(TEMPLATE_PATHS);
 
 const templates = new Map<string, string>();
 
@@ -266,156 +238,6 @@ function loadTemplates(): void {
         const content = readFileSync(path, 'utf8');
         templates.set(name, content);
     });
-}
-
-function generateTestPositions(content: string): TestPosition[] {
-    const lines = content.split('\n');
-    const positions: TestPosition[] = [];
-
-    // Detect if this is JSON or YAML based on content
-    const isJson = content.trim().startsWith('{') || content.trim().startsWith('[');
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        const trimmedLine = line.trim();
-
-        // Skip empty lines and comments
-        if (trimmedLine.length === 0 || trimmedLine.startsWith('#') || trimmedLine.startsWith('//')) {
-            continue;
-        }
-
-        // Calculate depth based on indentation
-        const indentLevel = line.length - line.trimStart().length;
-        let depth: number;
-
-        if (isJson) {
-            // For JSON, count braces and brackets to determine nesting
-            const beforeLine = content.substring(0, content.indexOf(line));
-            const openBraces = (beforeLine.match(/[{[]/g) || []).length;
-            const closeBraces = (beforeLine.match(/[}\]]/g) || []).length;
-            depth = Math.max(1, openBraces - closeBraces + 1);
-        } else {
-            // For YAML, use indentation (handle both 2-space and 4-space, and tabs)
-            const tabCount = line.match(/^\t*/)?.[0]?.length || 0;
-            const spaceCount = indentLevel - tabCount;
-
-            if (tabCount > 0) {
-                depth = tabCount + 1;
-            } else {
-                // Auto-detect indentation (2 or 4 spaces most common)
-                const indentSize = spaceCount > 0 ? (spaceCount <= 2 ? 2 : 4) : 2;
-                depth = Math.floor(spaceCount / indentSize) + 1;
-            }
-        }
-
-        // Generate multiple positions per line for better coverage
-        const linePositions: TestPosition[] = [];
-
-        // Position 1: At the start of content (after indentation)
-        linePositions.push({
-            line: i,
-            character: indentLevel,
-            depth,
-        });
-
-        // Position 2: After colon (for key-value pairs)
-        const colonIndex = line.indexOf(':');
-        if (colonIndex > 0 && colonIndex < line.length - 1) {
-            linePositions.push({
-                line: i,
-                character: colonIndex + 2, // After ": "
-                depth,
-            });
-        }
-
-        // Position 3: In the middle of values (for strings, numbers)
-        const valueMatch = trimmedLine.match(/:\s*(.+)$/);
-        if (valueMatch && valueMatch[1].length > 3) {
-            const valueStart = line.indexOf(valueMatch[1]);
-            const midValue = valueStart + Math.floor(valueMatch[1].length / 2);
-            linePositions.push({
-                line: i,
-                character: midValue,
-                depth,
-            });
-        }
-
-        // Position 4: At array/object indicators
-        if (trimmedLine.includes('[') || trimmedLine.includes('{')) {
-            const bracketIndex = Math.max(line.indexOf('['), line.indexOf('{'));
-            if (bracketIndex > 0) {
-                linePositions.push({
-                    line: i,
-                    character: bracketIndex + 1,
-                    depth: depth + 1,
-                });
-            }
-        }
-
-        positions.push(...linePositions);
-    }
-
-    if (positions.length === 0) {
-        // Fallback: generate basic positions
-        for (let i = 0; i < Math.min(lines.length, 10); i++) {
-            if (lines[i].trim().length > 0) {
-                positions.push({
-                    line: i,
-                    character: 0,
-                    depth: 1,
-                });
-            }
-        }
-    }
-
-    // Group positions by depth for balanced testing
-    const positionsByDepth = new Map<number, TestPosition[]>();
-    positions.forEach((pos) => {
-        if (!positionsByDepth.has(pos.depth)) {
-            positionsByDepth.set(pos.depth, []);
-        }
-        positionsByDepth.get(pos.depth)!.push(pos);
-    });
-
-    // Generate test positions with deterministic, balanced depth distribution
-    const testPositions: TestPosition[] = [];
-    const depths = Array.from(positionsByDepth.keys()).sort((a, b) => b - a); // Deepest first
-
-    // Calculate weights for each depth (deeper positions get higher weight)
-    const depthWeights = new Map<number, number>();
-    depths.forEach((depth) => {
-        // Give higher weight to deeper positions (exponential weighting)
-        const weight = Math.pow(1.5, depth - 1);
-        depthWeights.set(depth, weight);
-    });
-
-    // Calculate total weight
-    const totalWeight = Array.from(depthWeights.values()).reduce((sum, weight) => sum + weight, 0);
-
-    // Distribute iterations deterministically based on weights
-    for (let i = 0; i < ITERATIONS; i++) {
-        // Use deterministic distribution based on iteration index
-        const weightRatio = (i / ITERATIONS) * totalWeight;
-        let accumulatedWeight = 0;
-        let selectedDepth = depths[0];
-
-        for (const depth of depths) {
-            const weight = depthWeights.get(depth)!;
-            accumulatedWeight += weight;
-            if (weightRatio <= accumulatedWeight) {
-                selectedDepth = depth;
-                break;
-            }
-        }
-
-        const depthPositions = positionsByDepth.get(selectedDepth)!;
-        // Use deterministic selection based on iteration index
-        const positionIndex = i % depthPositions.length;
-        const selectedPosition = depthPositions[positionIndex];
-        testPositions.push(selectedPosition);
-    }
-
-    return testPositions;
 }
 
 function calculatePercentiles(latencies: number[]): Percentiles {
@@ -517,7 +339,7 @@ function formatBytes(bytes: number): string {
     return `${size.toFixed(2)} ${sizes[i]}`;
 }
 
-function benchmarkTemplate(templateName: string, format: 'JSON' | 'YAML'): BenchmarkResult | null {
+function benchmarkTemplate(templateName: string, format: DocumentType): BenchmarkResult | null {
     // @ts-ignore
     global.gc();
     const content = templates.get(templateName);
@@ -530,7 +352,7 @@ function benchmarkTemplate(templateName: string, format: 'JSON' | 'YAML'): Bench
 
     let testPositions: TestPosition[];
     try {
-        testPositions = generateTestPositions(content);
+        testPositions = generatePositions(content, ITERATIONS);
     } catch (error) {
         console.error(`❌ Failed to generate test positions for ${templateName}: ${error}, skipping...`);
         return null;
@@ -552,8 +374,7 @@ function benchmarkTemplate(templateName: string, format: 'JSON' | 'YAML'): Bench
     const syntaxTreeManager = new SyntaxTreeManager();
     try {
         syntaxTreeManager.add(uri, content);
-    } catch (error) {
-    }
+    } catch (error) {}
     const contextManager = new ContextManager(syntaxTreeManager);
 
     // Get initial resource usage
@@ -572,11 +393,7 @@ function benchmarkTemplate(templateName: string, format: 'JSON' | 'YAML'): Bench
         // Try syntax tree creation
         try {
             const syntaxTreeStartTime = performance.now();
-            if (format === 'JSON') {
-                new JsonSyntaxTree(content);
-            } else {
-                new YamlSyntaxTree(content);
-            }
+            syntaxTreeManager.add(uri, content);
             syntaxTreeLatencies.push((performance.now() - syntaxTreeStartTime) * 1000);
             syntaxTreeSuccess = true;
         } catch (error) {
@@ -835,7 +652,7 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         const contextP99Latencies = validResults.map((r) => r.percentiles.context.p99);
 
         report.push('### Latency Distribution Ranges\n');
-        
+
         report.push('| Component | P50 Range (μs) | P99 Range (μs) |');
         report.push('|-----------|----------------|----------------|');
         report.push(
@@ -863,16 +680,16 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
     });
 
     report.push('### Component Overhead Analysis\n');
-    
+
     report.push('| Template | Syntax Tree Overhead | Context Resolution Overhead |');
     report.push('|----------|---------------------|----------------------------|');
-    
+
     sortedResults.forEach((result) => {
         const syntaxTreeP50Pct = safeFormatPercentage(result.percentiles.syntaxTree.p50, result.percentiles.total.p50);
         const syntaxTreeP99Pct = safeFormatPercentage(result.percentiles.syntaxTree.p99, result.percentiles.total.p99);
         const contextP50Pct = safeFormatPercentage(result.percentiles.context.p50, result.percentiles.total.p50);
         const contextP99Pct = safeFormatPercentage(result.percentiles.context.p99, result.percentiles.total.p99);
-        
+
         report.push(
             `| **${result.templateName}** | ${syntaxTreeP50Pct}% (P50) / ${syntaxTreeP99Pct}% (P99) | ${contextP50Pct}% (P50) / ${contextP99Pct}% (P99) |`,
         );
@@ -943,7 +760,7 @@ function main(): void {
         console.log('📁 Discovering template files...');
 
         if (TEMPLATE_PATHS.length === 0) {
-            console.error('❌ No template files specified and no JSON or YAML files found in current directory');
+            console.error(`❌ No template files found in ${TEMPLATE_PATHS}`);
             console.error(`   Current directory: ${__dirname}`);
             process.exit(1);
         }
@@ -954,18 +771,25 @@ function main(): void {
             process.exit(1);
         }
 
+        LoggerFactory.initialize({
+            logLevel: 'silent',
+        });
+        TelemetryService.initialize(undefined, {
+            telemetryEnabled: false,
+        });
+
         console.log(`📋 Found ${templateFiles.length} template files (sorted by size):`);
-        templateFiles.forEach(({ name, format, size }) => {
+        templateFiles.forEach(({ name, documentType, size }) => {
             const sizeKB = (size / 1024).toFixed(2);
-            console.log(`   - ${name} (${format}) - ${sizeKB} KB`);
+            console.log(`   - ${name} (${documentType}) - ${sizeKB} KB`);
         });
 
         loadTemplates();
 
-        for (const { name, format } of templateFiles) {
-            console.log(`\n📈 Benchmarking ${name} (${format})`);
+        for (const { name, documentType } of templateFiles) {
+            console.log(`\n📈 Benchmarking ${name} (${documentType})`);
             try {
-                const result = benchmarkTemplate(name, format);
+                const result = benchmarkTemplate(name, documentType);
                 if (result) {
                     results.push(result);
                     console.log(`✅ Completed ${name}`);
