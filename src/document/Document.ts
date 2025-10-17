@@ -1,12 +1,11 @@
 import { TextDocument, Position, Range, DocumentUri } from 'vscode-languageserver-textdocument';
-import { EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { detectCfnFileType } from './CloudFormationDetection';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
 
-export type Indentation = {
+type Indentation = {
     tabSize: number;
     detectedFromContent: boolean;
 };
@@ -90,40 +89,33 @@ export class Document {
         };
     }
 
-    public getEditorSettings(baseSettings: EditorSettings): EditorSettings {
-        if (!baseSettings.detectIndentation) {
-            return baseSettings;
-        }
-
-        const detectedIndentation = this.getIndentation(baseSettings);
-
-        return {
-            ...baseSettings,
-            tabSize: detectedIndentation.tabSize,
-        };
+    public processIndentation<T>(processor: (indentation: number | undefined) => T): T {
+        const detectedTabSize = this.getDetectedIndentation();
+        return processor(detectedTabSize);
     }
 
-    private getIndentation(editorSettings: EditorSettings): Indentation {
-        if (!editorSettings.detectIndentation) {
-            return {
-                tabSize: editorSettings.tabSize,
-                detectedFromContent: false,
+    private getDetectedIndentation(): number | undefined {
+        if (this.indentation?.detectedFromContent) {
+            return this.indentation.tabSize;
+        }
+
+        const detected = this.detectIndentationFromContent();
+        if (detected !== undefined) {
+            this.indentation = {
+                tabSize: detected,
+                detectedFromContent: true,
             };
+            return detected;
         }
 
-        if (this.indentation) {
-            return this.indentation;
-        }
-
-        this.indentation = this.detectIndentationFromContent(editorSettings);
-        return this.indentation;
+        return undefined;
     }
 
     public clearIndentation(): void {
         this.indentation = undefined;
     }
 
-    private detectIndentationFromContent(fallbackSettings: EditorSettings): Indentation {
+    private detectIndentationFromContent(): number | undefined {
         const content = this.contents();
         const lines = content.split('\n');
 
@@ -139,18 +131,11 @@ export class Document {
             const leadingSpaces = line.match(/^( *)/)?.[1]?.length ?? 0;
 
             if (leadingSpaces > 0) {
-                return {
-                    tabSize: leadingSpaces,
-                    detectedFromContent: true,
-                };
+                return leadingSpaces;
             }
         }
 
-        // If no indented lines found, use fallback settings
-        return {
-            tabSize: fallbackSettings.tabSize,
-            detectedFromContent: false,
-        };
+        return undefined; // No indentation detected
     }
 }
 

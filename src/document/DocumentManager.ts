@@ -103,11 +103,16 @@ export class DocumentManager implements SettingsConfigurable {
 
     getEditorSettingsForDocument(uri: string): EditorSettings {
         const document = this.get(uri);
-        if (!document) {
+        if (!document || !this.editorSettings.detectIndentation) {
             return this.editorSettings;
         }
 
-        return document.getEditorSettings(this.editorSettings);
+        return document.processIndentation((detectedTabSize) => {
+            return {
+                ...this.editorSettings,
+                tabSize: detectedTabSize ?? this.editorSettings.tabSize,
+            };
+        });
     }
 
     removeDocument(uri: string): void {
