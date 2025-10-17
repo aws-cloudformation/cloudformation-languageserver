@@ -1,6 +1,7 @@
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, vi, MockedClass } from 'vitest';
 import { AwsClient } from '../../../src/services/AwsClient';
+import { ExtensionId, ExtensionVersion } from '../../../src/utils/ExtensionConfig';
 import { AwsRegion } from '../../../src/utils/Region';
 import { createMockComponents } from '../../utils/MockServerComponents';
 
@@ -36,6 +37,7 @@ describe('AwsClient', () => {
                     secretAccessKey: 'test-secret-key',
                     sessionToken: 'test-session-token',
                 },
+                customUserAgent: `${ExtensionId}/${ExtensionVersion}`,
             });
             expect(client).toBeInstanceOf(CloudFormationClient);
         });
