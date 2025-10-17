@@ -1,6 +1,5 @@
 import { AwsCredentialIdentity } from '@aws-sdk/types';
 import { DeepReadonly } from 'ts-essentials';
-import { MessageType } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { LspAuthHandlers } from '../protocol/LspAuthHandlers';
 import { DefaultSettings } from '../settings/Settings';
 import { SettingsManager } from '../settings/SettingsManager';
@@ -176,10 +175,7 @@ export class AwsCredentials {
                 this.logger.info('Updated bearer credentials');
             }
         } catch (error) {
-            void this.clientMessage.showMessageNotification(
-                MessageType.Error,
-                `Failed to update Bearer token: ${extractErrorMessage(error)}`,
-            );
+            this.logger.error(`Failed to update Bearer token: ${extractErrorMessage(error)}`);
             this.bearerCredentials = undefined;
             this.connectionMetadata = undefined;
         }
