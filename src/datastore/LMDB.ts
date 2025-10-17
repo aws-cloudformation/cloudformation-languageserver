@@ -6,8 +6,8 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { extractErrorMessage } from '../utils/Errors';
-import { stableMachineSpecificKey } from '../utils/MachineKey';
 import { DataStore, DataStoreFactory } from './DataStore';
+import { encryptionStrategy } from './lmdb/Utils';
 
 const log = LoggerFactory.getLogger('LMDB');
 
@@ -39,8 +39,6 @@ export class LMDBStore implements DataStore {
     }
 }
 
-const LmdbKey = stableMachineSpecificKey('lmdb-static-salt', 'lmdb-encryption-key-derivation', 16).toString('hex');
-
 export class LMDBStoreFactory implements DataStoreFactory {
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
@@ -53,7 +51,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
         maxDbs: 10, // 10 max databases
         mapSize: 100 * 1024 * 1024, // 100MB max size
         encoding: Encoding,
-        encryptionKey: LmdbKey,
+        encryptionKey: encryptionStrategy(Version),
     });
 
     private readonly stores = new Map<string, LMDBStore>();
