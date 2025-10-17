@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { propertyTypesToMarkdown } from '../../../src/hover/HoverFormatter';
+import { ResourceAttribute } from '../../../src/context/ContextType';
+import { propertyTypesToMarkdown, getResourceAttributeValueDoc } from '../../../src/hover/HoverFormatter';
 import { PropertyType } from '../../../src/schema/ResourceSchema';
 
 describe('HoverFormatter', () => {
@@ -1028,6 +1029,97 @@ describe('HoverFormatter', () => {
                 // This is expected behavior for concise display in type signatures
                 expect(typeSignatureLine).toContain('nestedObject?: object');
             });
+        });
+    });
+
+    describe('getResourceAttributeValueDoc', () => {
+        it('should return documentation for UpdateReplacePolicy Delete value', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.UpdateReplacePolicy, 'Delete');
+
+            expect(result).toBeDefined();
+            expect(result).toContain('**Delete**');
+            expect(result).toContain('CloudFormation deletes the resource');
+            expect(result).toContain('and all its content if applicable during resource replacement');
+            expect(result).toContain('Source Documentation');
+        });
+
+        it('should return documentation for UpdateReplacePolicy Retain value', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.UpdateReplacePolicy, 'Retain');
+
+            expect(result).toBeDefined();
+            expect(result).toContain('**Retain**');
+            expect(result).toContain('CloudFormation keeps the resource');
+            expect(result).toContain('without deleting the resource or its contents when the resource is replaced');
+            expect(result).toContain('Source Documentation');
+        });
+
+        it('should return documentation for UpdateReplacePolicy Snapshot value', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.UpdateReplacePolicy, 'Snapshot');
+
+            expect(result).toBeDefined();
+            expect(result).toContain('**Snapshot**');
+            expect(result).toContain('CloudFormation creates a snapshot for the resource before deleting it');
+            expect(result).toContain('Resources that support snapshots include:');
+            expect(result).toContain('AWS::EC2::Volume');
+            expect(result).toContain('Source Documentation');
+        });
+
+        it('should return undefined for invalid UpdateReplacePolicy values', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.UpdateReplacePolicy, 'InvalidValue');
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should return documentation for DeletionPolicy Delete value', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.DeletionPolicy, 'Delete');
+
+            expect(result).toBeDefined();
+            expect(result).toContain('**Delete**');
+        });
+
+        it('should return documentation for DeletionPolicy Retain value', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.DeletionPolicy, 'Retain');
+
+            expect(result).toBeDefined();
+            expect(result).toContain('**Retain**');
+        });
+
+        it('should return documentation for DeletionPolicy Snapshot value', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.DeletionPolicy, 'Snapshot');
+
+            expect(result).toBeDefined();
+            expect(result).toContain('**Snapshot**');
+        });
+
+        it('should return documentation for DeletionPolicy RetainExceptOnCreate value', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.DeletionPolicy, 'RetainExceptOnCreate');
+
+            expect(result).toBeDefined();
+            expect(result).toContain('**RetainExceptOnCreate**');
+        });
+
+        it('should return undefined for invalid DeletionPolicy values', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.DeletionPolicy, 'InvalidValue');
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined for unsupported resource attributes', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.Condition, 'SomeValue');
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined for CreationPolicy attribute (not supported)', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.CreationPolicy, 'SomeValue');
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined for UpdatePolicy attribute (not supported)', () => {
+            const result = getResourceAttributeValueDoc(ResourceAttribute.UpdatePolicy, 'SomeValue');
+
+            expect(result).toBeUndefined();
         });
     });
 });
