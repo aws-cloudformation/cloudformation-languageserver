@@ -563,23 +563,20 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
                             properties: {
                                 Address: {
                                     type: 'string',
-                                    description: 'The connection endpoint for the database instance'
+                                    description: 'The connection endpoint for the database instance',
                                 },
                                 Port: {
                                     type: 'string',
-                                    description: 'The port number on which the database accepts connections'
-                                }
-                            }
-                        }
+                                    description: 'The port number on which the database accepts connections',
+                                },
+                            },
+                        },
                     },
-                    readOnlyProperties: [
-                        '/properties/Endpoint/Address',
-                        '/properties/Endpoint/Port'
-                    ],
+                    readOnlyProperties: ['/properties/Endpoint/Address', '/properties/Endpoint/Port'],
                 });
 
                 const mockRdsSchema = new ResourceSchema(mockSchemaWithNestedAttributes);
-                
+
                 // Mock the resolveJsonPointerPath method to track what paths are requested
                 const resolveJsonPointerPathSpy = vi.spyOn(mockRdsSchema, 'resolveJsonPointerPath');
                 resolveJsonPointerPathSpy.mockImplementation((path: string) => {
@@ -612,7 +609,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
 
                 expect(resolveJsonPointerPathSpy).toHaveBeenCalledWith('/properties/Endpoint/Address');
                 expect(resolveJsonPointerPathSpy).toHaveBeenCalledWith('/properties/Endpoint/Port');
-                
+
                 expect(resolveJsonPointerPathSpy).not.toHaveBeenCalledWith('/properties/Endpoint/properties/Address');
                 expect(resolveJsonPointerPathSpy).not.toHaveBeenCalledWith('/properties/Endpoint/properties/Port');
 
@@ -622,10 +619,10 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
 
                 const addressItem = result!.find((item) => item.label === 'Endpoint.Address');
                 const portItem = result!.find((item) => item.label === 'Endpoint.Port');
-                
+
                 expect(addressItem).toBeDefined();
                 expect(portItem).toBeDefined();
-                
+
                 // Check that documentation was set
                 expect(addressItem!.documentation).toBeDefined();
                 expect(portItem!.documentation).toBeDefined();
