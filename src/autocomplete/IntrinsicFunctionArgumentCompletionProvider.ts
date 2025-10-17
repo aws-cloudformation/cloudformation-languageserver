@@ -739,7 +739,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             let documentation;
 
             if (schema) {
-                const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/properties/')}`;
+                const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/')}`;
                 documentation = createMarkupContent(
                     `**${attributeName}** attribute of **${resource.Type}**\n\nReturns the value of this attribute when used with the GetAtt intrinsic function.`,
                 );
