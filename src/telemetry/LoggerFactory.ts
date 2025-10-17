@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import pino, { LevelWithSilent, Logger } from 'pino';
 import { ExtensionName } from '../utils/ExtensionConfig';
-import { ExtendedClientMetadata, TelemetrySettings } from './TelemetryConfig';
+import { AwsMetadata, TelemetrySettings } from './TelemetryConfig';
 
 export const LogLevel: Record<LevelWithSilent, number> = {
     silent: 0,
@@ -60,7 +60,7 @@ export class LoggerFactory {
         return LoggerFactory._instance.getLogger(clazz);
     }
 
-    static initialize(metadata?: ExtendedClientMetadata) {
+    static initialize(metadata?: AwsMetadata) {
         const newLevel = metadata?.logLevel ?? TelemetrySettings.logLevel;
         if (Object.keys(LogLevel).includes(newLevel) && LoggerFactory._instance.logLevel !== newLevel) {
             LoggerFactory._instance.reconfigure(newLevel);

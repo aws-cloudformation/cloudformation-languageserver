@@ -146,7 +146,13 @@ async function main() {
     });
     TelemetryService.initialize(undefined, {
         telemetryEnabled: true,
-        clientId: id,
+        clientInfo: {
+            extension: {
+                name: 'Test Telemetry Generator',
+                version: '0.0.0',
+            },
+            clientId: id,
+        },
     });
 
     const templates = discoverTemplateFiles(TEMPLATE_PATHS);
