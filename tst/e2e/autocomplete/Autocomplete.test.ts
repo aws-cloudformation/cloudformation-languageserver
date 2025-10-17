@@ -1336,7 +1336,7 @@ Resources:
                     {
                         action: 'type',
                         content: `
-`,
+          `,
                         position: { line: 406, character: 18 },
                         description: 'Suggest enum values when in nested value position',
                         verification: {
