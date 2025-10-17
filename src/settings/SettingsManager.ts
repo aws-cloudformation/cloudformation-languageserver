@@ -1,7 +1,8 @@
 import { diff } from 'deep-object-diff';
 import { LspWorkspace } from '../protocol/LspWorkspace';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { Measure } from '../telemetry/TelemetryDecorator';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { toString } from '../utils/String';
@@ -14,10 +15,13 @@ import { parseSettings } from './SettingsParser';
 const logger = LoggerFactory.getLogger('SettingsManager');
 
 export class SettingsManager implements ISettingsSubscriber {
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private readonly settingsState = new SettingsState();
     private readonly subscriptionManager = new SubscriptionManager<Settings>();
 
-    constructor(private readonly workspace: LspWorkspace) {}
+    constructor(private readonly workspace: LspWorkspace) {
+        this.registerSettingsGauges();
+    }
 
     /**
      * Get current settings synchronously
@@ -129,6 +133,29 @@ export class SettingsManager implements ISettingsSubscriber {
             logger.info(`Settings updated: ${toString(difference)}`);
             this.subscriptionManager.notify(newSettings, oldSettings);
         }
+    }
+
+    private registerSettingsGauges(): void {
+        const settings = this.getCurrentSettings();
+
+        this.telemetry.registerGaugeProvider('settings.hover.enabled', () => (settings.hover.enabled ? 1 : 0), {
+            unit: '1',
+        });
+        this.telemetry.registerGaugeProvider(
+            'settings.completion.enabled',
+            () => (settings.completion.enabled ? 1 : 0),
+            { unit: '1' },
+        );
+        this.telemetry.registerGaugeProvider(
+            'settings.diagnostics.cfnLint.enabled',
+            () => (settings.diagnostics.cfnLint.enabled ? 1 : 0),
+            { unit: '1' },
+        );
+        this.telemetry.registerGaugeProvider(
+            'settings.diagnostics.cfnGuard.enabled',
+            () => (settings.diagnostics.cfnGuard.enabled ? 1 : 0),
+            { unit: '1' },
+        );
     }
 }
 
