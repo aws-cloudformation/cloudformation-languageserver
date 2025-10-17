@@ -916,9 +916,41 @@ Resources:
                     {
                         action: 'type',
                         content: `reationPolicy:
-      ResourceSignal:
-        Count: !Ref InstanceCount
-        Timeout: PT10M
+      R`,
+                        position: { line: 258, character: 5 },
+                        description: 'Test CreationPolicy suggests ResourceSignal',
+                        verification: {
+                            position: { line: 259, character: 7 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['ResourceSignal'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `esourceSignal:
+        C`,
+                        position: { line: 259, character: 7 },
+                        description: 'Test CreationPolicy suggests Count',
+                        verification: {
+                            position: { line: 260, character: 9 },
+                            expectation: CompletionExpectationBuilder.create().expectContainsItems(['Count']).build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `ount: !Ref InstanceCount
+        T`,
+                        position: { line: 260, character: 9 },
+                        description: 'Test CreationPolicy suggests Timeout',
+                        verification: {
+                            position: { line: 261, character: 9 },
+                            expectation: CompletionExpectationBuilder.create().expectContainsItems(['Timeout']).build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `imeout: PT10M
 
   # Test RDS with complex conditional properties
   Database:
@@ -929,7 +961,7 @@ Resources:
       Engine: mysql
       EngineVersion: "8.0"
       AllocatedStorage: !If [Is]`,
-                        position: { line: 258, character: 5 },
+                        position: { line: 261, character: 9 },
                         description: 'Suggest condition in first argument of !If',
                         verification: {
                             position: { line: 271, character: 31 },
@@ -1419,6 +1451,47 @@ O`,
             };
             template.executeScenario(scenario);
         });
+
+        it('test nested object property completion', () => {
+            const template = new TemplateBuilder(DocumentType.YAML);
+            const scenario: TemplateScenario = {
+                name: 'Nested object property completion',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      NotificationConfiguration:
+        `,
+                        position: { line: 0, character: 0 },
+                        description: 'Test autocomplete in nested object within Properties',
+                        verification: {
+                            position: { line: 6, character: 8 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems([
+                                    'TopicConfigurations',
+                                    'QueueConfigurations',
+                                    'LambdaConfigurations',
+                                    'EventBridgeConfiguration',
+                                ])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `TopicConfigurations:
+          - Topic: arn:aws:sns:us-east-1:123456789012:my-topic
+            Event: s3:ObjectCreated:*`,
+                        position: { line: 6, character: 8 },
+                        description: 'Complete the nested object structure',
+                    },
+                ],
+            };
+            template.executeScenario(scenario);
+        });
     });
 
     describe('JSON', () => {
@@ -1440,6 +1513,44 @@ O`,
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Description', 'Resources', 'Rules', 'Resources'])
                                 .expectExcludesItems(['AWSTemplateFormatVersion'])
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            template.executeScenario(scenario);
+        });
+
+        it('test nested object property completion', () => {
+            const template = new TemplateBuilder(DocumentType.JSON, '');
+            const scenario: TemplateScenario = {
+                name: 'Nested object property completion',
+                steps: [
+                    {
+                        action: 'type',
+                        position: { line: 0, character: 0 },
+                        content: `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "NotificationConfiguration": {
+          ""
+        }
+      }
+    }
+  }
+}`,
+                        verification: {
+                            position: { line: 7, character: 11 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems([
+                                    'TopicConfigurations',
+                                    'QueueConfigurations',
+                                    'LambdaConfigurations',
+                                    'EventBridgeConfiguration',
+                                ])
                                 .build(),
                         },
                     },

@@ -1,25 +1,35 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CodeLensParams, CancellationToken } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
+import { CodeLensProvider } from '../../../src/codeLens/CodeLensProvider';
+import { Document } from '../../../src/document/Document';
 import { codeLensHandler } from '../../../src/handlers/CodeLensHandler';
-import { createMockComponents } from '../../utils/MockServerComponents';
+import {
+    createMockComponents,
+    createMockDocumentManager,
+    createMockManagedResourceCodeLens,
+    createMockSyntaxTreeManager,
+} from '../../utils/MockServerComponents';
 
 describe('CodeLensHandler', () => {
-    let mockComponents: ReturnType<typeof createMockComponents>;
+    const managedCodeLens = createMockManagedResourceCodeLens();
+    const docManager = createMockDocumentManager();
+    const codeLensProvider = new CodeLensProvider(createMockSyntaxTreeManager(), docManager, managedCodeLens);
+
     let handler: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockComponents = createMockComponents();
-        handler = codeLensHandler(mockComponents.documents, mockComponents);
+
+        handler = codeLensHandler(
+            createMockComponents({
+                codeLensProvider,
+            }),
+        );
     });
 
-    it('should return empty array when document is not found', async () => {
-        // Mock documents.documents.get to return undefined
-        const mockDocuments = {
-            get: vi.fn().mockReturnValue(undefined),
-        };
-        (mockComponents.documents as any).documents = mockDocuments;
+    it('should return undefined when document is not found', async () => {
+        docManager.get.returns(undefined);
 
         const params: CodeLensParams = {
             textDocument: { uri: 'file:///test.yaml' },
@@ -27,24 +37,17 @@ describe('CodeLensHandler', () => {
 
         const result = await handler(params, CancellationToken.None);
 
-        expect(result).toEqual([]);
+        expect(result).toBeUndefined();
     });
 
     it('should return stack actions and managed resource code lenses', async () => {
-        const document = TextDocument.create(
-            'file:///test.yaml',
-            'yaml',
-            1,
-            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
+        const document = new Document(
+            TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
         );
 
-        // Mock documents.documents.get to return the document
-        const mockDocuments = {
-            get: vi.fn().mockReturnValue(document),
-        };
-        (mockComponents.documents as any).documents = mockDocuments;
+        docManager.get.returns(document);
 
-        mockComponents.managedResourceCodeLens.getCodeLenses.returns([
+        managedCodeLens.getCodeLenses.returns([
             {
                 range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
                 command: {
@@ -68,20 +71,12 @@ describe('CodeLensHandler', () => {
     });
 
     it('should pass correct arguments to stack action commands', async () => {
-        const document = TextDocument.create(
-            'file:///test.yaml',
-            'yaml',
-            1,
-            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
+        const document = new Document(
+            TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
         );
 
-        // Mock documents.documents.get to return the document
-        const mockDocuments = {
-            get: vi.fn().mockReturnValue(document),
-        };
-        (mockComponents.documents as any).documents = mockDocuments;
-
-        mockComponents.managedResourceCodeLens.getCodeLenses.returns([]);
+        docManager.get.returns(document);
+        managedCodeLens.getCodeLenses.returns([]);
 
         const params: CodeLensParams = {
             textDocument: { uri: 'file:///test.yaml' },

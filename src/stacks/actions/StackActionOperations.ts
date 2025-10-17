@@ -37,6 +37,7 @@ export async function processChangeSet(
         Parameters: params.parameters,
         Capabilities: params.capabilities,
         ChangeSetType: changeSetType,
+        ResourcesToImport: params.resourcesToImport,
     });
 
     return changeSetName;
@@ -57,6 +58,7 @@ export async function waitForValidation(
             const response = await cfnService.describeChangeSet({
                 StackName: stackName,
                 ChangeSetName: changeSetName,
+                IncludePropertyValues: true,
             });
 
             return {
@@ -97,9 +99,13 @@ export async function waitForDeployment(
                 ? await cfnService.waitUntilStackCreateComplete({
                       StackName: stackName,
                   })
-                : await cfnService.waitUntilStackUpdateComplete({
-                      StackName: stackName,
-                  });
+                : changeSetType === ChangeSetType.IMPORT
+                  ? await cfnService.waitUntilStackImportComplete({
+                        StackName: stackName,
+                    })
+                  : await cfnService.waitUntilStackUpdateComplete({
+                        StackName: stackName,
+                    });
 
         if (result.state === WaiterState.SUCCESS) {
             return {
@@ -209,6 +215,8 @@ export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | un
                   resourceType: change.ResourceChange.ResourceType,
                   replacement: change.ResourceChange.Replacement,
                   scope: change.ResourceChange.Scope,
+                  beforeContext: change.ResourceChange.BeforeContext,
+                  afterContext: change.ResourceChange.AfterContext,
                   details: change.ResourceChange.Details,
               }
             : undefined,

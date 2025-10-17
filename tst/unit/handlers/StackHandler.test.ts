@@ -17,12 +17,14 @@ import {
     listStacksHandler,
     describeValidationStatusHandler,
     describeDeploymentStatusHandler,
+    getTemplateResourcesHandler,
 } from '../../../src/handlers/StackHandler';
 import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
 import {
     TemplateUri,
     GetCapabilitiesResult,
     GetParametersResult,
+    GetTemplateResourcesResult,
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
@@ -32,6 +34,7 @@ import {
     createMockSyntaxTreeManager,
     MockedServerComponents,
 } from '../../utils/MockServerComponents';
+import { combinedSchemas } from '../../utils/SchemaUtils';
 
 vi.mock('../../../src/context/SectionContextBuilder', () => ({
     getEntityMap: vi.fn(),
@@ -362,6 +365,190 @@ describe('StackActionHandler', () => {
 
             expect(result.stacks).toEqual([]);
             expect(mockComponents.cfnService.listStacks).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('getTemplateResourcesHandler', () => {
+        it('returns empty array when no syntax tree found', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(undefined);
+
+            const handler = getTemplateResourcesHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
+
+            expect(result).toEqual({ resources: [] });
+        });
+
+        it('returns empty array when getEntityMap returns undefined', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockSyntaxTree = {} as SyntaxTree;
+
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
+            getEntityMapSpy.mockReturnValue(undefined);
+
+            const handler = getTemplateResourcesHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
+
+            expect(result).toEqual({ resources: [] });
+        });
+
+        it('returns resources with primary identifier keys from schema', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockSyntaxTree = {} as SyntaxTree;
+            const mockResource = {
+                name: 'MyBucket',
+                Type: 'AWS::S3::Bucket',
+                Metadata: undefined,
+            };
+            const mockContext = { entity: mockResource } as unknown as Context;
+            const resourcesMap = new Map([['MyBucket', mockContext]]);
+
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
+            getEntityMapSpy.mockReturnValue(resourcesMap);
+
+            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas());
+
+            const handler = getTemplateResourcesHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
+
+            expect(result.resources).toHaveLength(1);
+            expect(result.resources[0]).toEqual({
+                logicalId: 'MyBucket',
+                type: 'AWS::S3::Bucket',
+                primaryIdentifierKeys: ['BucketName'],
+                primaryIdentifier: undefined,
+            });
+        });
+
+        it('returns resources with primary identifier from metadata string', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockSyntaxTree = {} as SyntaxTree;
+            const mockResource = {
+                name: 'MyBucket',
+                Type: 'AWS::S3::Bucket',
+                Metadata: {
+                    PrimaryIdentifier: 'my-existing-bucket',
+                },
+            };
+            const mockContext = { entity: mockResource } as unknown as Context;
+            const resourcesMap = new Map([['MyBucket', mockContext]]);
+
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
+            getEntityMapSpy.mockReturnValue(resourcesMap);
+
+            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas());
+
+            const handler = getTemplateResourcesHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
+
+            expect(result.resources).toHaveLength(1);
+            expect(result.resources[0]).toEqual({
+                logicalId: 'MyBucket',
+                type: 'AWS::S3::Bucket',
+                primaryIdentifierKeys: ['BucketName'],
+                primaryIdentifier: {
+                    BucketName: 'my-existing-bucket',
+                },
+            });
+        });
+
+        it('ignores non-string primary identifier in metadata', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockSyntaxTree = {} as SyntaxTree;
+            const mockResource = {
+                name: 'MyBucket',
+                Type: 'AWS::S3::Bucket',
+                Metadata: {
+                    PrimaryIdentifier: { BucketName: 'invalid-object' },
+                },
+            };
+            const mockContext = { entity: mockResource } as unknown as Context;
+            const resourcesMap = new Map([['MyBucket', mockContext]]);
+
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
+            getEntityMapSpy.mockReturnValue(resourcesMap);
+
+            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas());
+
+            const handler = getTemplateResourcesHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
+
+            expect(result.resources).toHaveLength(1);
+            expect(result.resources[0]).toEqual({
+                logicalId: 'MyBucket',
+                type: 'AWS::S3::Bucket',
+                primaryIdentifierKeys: ['BucketName'],
+                primaryIdentifier: undefined,
+            });
+        });
+
+        it('handles multiple primary identifier keys with pipe-separated values', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockSyntaxTree = {} as SyntaxTree;
+            const mockResource = {
+                name: 'MyDevice',
+                Type: 'AWS::SageMaker::Device',
+                Metadata: {
+                    PrimaryIdentifier: 'my-device|my-fleet',
+                },
+            };
+            const mockContext = { entity: mockResource } as unknown as Context;
+            const resourcesMap = new Map([['MyDevice', mockContext]]);
+
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
+            getEntityMapSpy.mockReturnValue(resourcesMap);
+
+            // the actual schema does not have composite primary id; simulating for testing
+            const mockSchema = {
+                primaryIdentifier: ['/properties/Device/DeviceName', '/properties/DeviceFleetName'],
+            };
+            mockComponents.schemaRetriever.getDefault.returns({
+                schemas: new Map([['AWS::SageMaker::Device', mockSchema]]),
+            } as any);
+
+            const handler = getTemplateResourcesHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
+
+            expect(result.resources).toHaveLength(1);
+            expect(result.resources[0]).toEqual({
+                logicalId: 'MyDevice',
+                type: 'AWS::SageMaker::Device',
+                primaryIdentifierKeys: ['Device/DeviceName', 'DeviceFleetName'],
+                primaryIdentifier: {
+                    'Device/DeviceName': 'my-device',
+                    DeviceFleetName: 'my-fleet',
+                },
+            });
+        });
+
+        it('filters out resources without Type', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockSyntaxTree = {} as SyntaxTree;
+            const mockResource1 = {
+                name: 'MyBucket',
+                Type: 'AWS::S3::Bucket',
+            };
+            const mockResource2 = {
+                name: 'InvalidResource',
+                Type: undefined,
+            };
+            const mockContext1 = { entity: mockResource1 } as unknown as Context;
+            const mockContext2 = { entity: mockResource2 } as unknown as Context;
+            const resourcesMap = new Map([
+                ['MyBucket', mockContext1],
+                ['InvalidResource', mockContext2],
+            ]);
+
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
+            getEntityMapSpy.mockReturnValue(resourcesMap);
+
+            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas());
+
+            const handler = getTemplateResourcesHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
+
+            expect(result.resources).toHaveLength(1);
+            expect(result.resources[0].logicalId).toBe('MyBucket');
         });
     });
 });

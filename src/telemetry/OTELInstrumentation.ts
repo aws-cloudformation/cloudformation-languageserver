@@ -10,23 +10,30 @@ import {
     ViewOptions,
 } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { v4 } from 'uuid';
 import { isBeta, isAlpha, isProd, isTest } from '../utils/Environment';
 import { ExtensionName, ExtensionVersion } from '../utils/ExtensionConfig';
-import { ExtendedClientMetadata, ClientInfo } from './TelemetryConfig';
+import { ClientInfo } from './TelemetryConfig';
 
 const DurationHistogramBoundaries = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16_384, 32_768, 65_536,
 ]; // Boundaries for buckets - latency (ms) usually grows exponentially
 const ExportIntervalSeconds = 15;
 
-export function otelSdk(client?: ClientInfo, metadata?: ExtendedClientMetadata) {
+export function otelSdk(clientId: string, client?: ClientInfo) {
     configureDiagnostics();
-    const url = telemetryBaseUrl();
+    const telemetryUrl = telemetryBaseUrl();
 
-    return new NodeSDK({
+    const metricsReader = new PeriodicExportingMetricReader({
+        exporter: new OTLPMetricExporter({
+            url: `${telemetryUrl}/v1/metrics`,
+            temporalityPreference: AggregationTemporality.DELTA,
+        }),
+        exportIntervalMillis: ExportIntervalSeconds * 1000,
+    });
+
+    const sdk = new NodeSDK({
         resource: resourceFromAttributes({
-            ['service.clientId']: metadata?.clientId ?? v4(),
+            ['service.clientId']: clientId,
             ['service.name']: ExtensionName,
             ['service.version']: ExtensionVersion,
             ['service.NODE_ENV']: process.env.NODE_ENV,
@@ -43,13 +50,7 @@ export function otelSdk(client?: ClientInfo, metadata?: ExtendedClientMetadata) 
             ['process.version']: process.version,
         }),
         resourceDetectors: [],
-        metricReader: new PeriodicExportingMetricReader({
-            exporter: new OTLPMetricExporter({
-                url: `${url}/v1/metrics`,
-                temporalityPreference: AggregationTemporality.DELTA,
-            }),
-            exportIntervalMillis: ExportIntervalSeconds * 1000,
-        }),
+        metricReader: metricsReader,
         views: [
             {
                 instrumentName: '*.duration',
@@ -77,9 +78,19 @@ export function otelSdk(client?: ClientInfo, metadata?: ExtendedClientMetadata) 
                 '@opentelemetry/instrumentation-pino': {
                     enabled: false,
                 },
+                '@opentelemetry/instrumentation-http': {
+                    ignoreOutgoingRequestHook: (request) => {
+                        return request.hostname === telemetryUrl;
+                    },
+                },
+                '@opentelemetry/instrumentation-runtime-node': {
+                    monitoringPrecision: 60 * 1000,
+                },
             }),
         ],
     });
+
+    return { sdk, metricsReader };
 }
 
 function configureDiagnostics() {

@@ -3,6 +3,7 @@ import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
 import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { TelemetryService } from '../telemetry/TelemetryService';
 import { extractErrorMessage } from '../utils/Errors';
 import { toString } from '../utils/String';
 
@@ -13,6 +14,8 @@ export function executionHandler(
     components: ServerComponents,
 ): ServerRequestHandler<ExecuteCommandParams, unknown, never, void> {
     return (params): unknown => {
+        TelemetryService.instance.get('ExecutionHandler').count(`execute.${params.command}`, 1, { unit: '1' });
+
         log.debug({
             Handler: 'Execution',
             Command: params.command,

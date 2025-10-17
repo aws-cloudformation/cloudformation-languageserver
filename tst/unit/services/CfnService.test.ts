@@ -218,9 +218,48 @@ describe('CfnService', () => {
             const result = await service.describeChangeSet({
                 StackName: TEST_CONSTANTS.STACK_NAME,
                 ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
+                IncludePropertyValues: true,
             });
 
             expect(result).toEqual(MOCK_RESPONSES.DESCRIBE_CHANGE_SET);
+        });
+
+        it('should fetch all pages when paginated', async () => {
+            const page1 = {
+                ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
+                Changes: [
+                    { Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource1' } },
+                    { Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource2' } },
+                    { Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource3' } },
+                ],
+                NextToken: 'token1',
+            };
+            const page2 = {
+                ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
+                Changes: [
+                    { Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource4' } },
+                    { Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource5' } },
+                ],
+                NextToken: 'token2',
+            };
+            const page3 = {
+                ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
+                Changes: [{ Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource6' } }],
+                NextToken: undefined,
+            };
+
+            cloudFormationMock.on(DescribeChangeSetCommand).resolvesOnce(page1).resolvesOnce(page2).resolvesOnce(page3);
+
+            const result = await service.describeChangeSet({
+                StackName: TEST_CONSTANTS.STACK_NAME,
+                ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
+                IncludePropertyValues: true,
+            });
+
+            expect(result.Changes).toHaveLength(6);
+            expect(result.Changes?.[0].ResourceChange?.LogicalResourceId).toBe('Resource1');
+            expect(result.Changes?.[5].ResourceChange?.LogicalResourceId).toBe('Resource6');
+            expect(result.NextToken).toBeUndefined();
         });
 
         it('should throw ChangeSetNotFoundException when API call fails', async () => {
@@ -231,6 +270,7 @@ describe('CfnService', () => {
                 service.describeChangeSet({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
+                    IncludePropertyValues: true,
                 }),
             ).rejects.toThrow(error);
         });

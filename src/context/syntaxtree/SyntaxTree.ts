@@ -1,9 +1,10 @@
 import YamlGrammar from '@tree-sitter-grammars/tree-sitter-yaml';
-import Parser, { Edit, Point, Query, SyntaxNode, Tree, Language } from 'tree-sitter';
+import Parser, { Edit, Point, SyntaxNode, Tree, Language } from 'tree-sitter';
 import JsonGrammar from 'tree-sitter-json';
 import { Position } from 'vscode-languageserver-textdocument';
 import { DocumentType } from '../../document/Document';
 import { createEdit } from '../../document/DocumentUtils';
+import { Measure } from '../../telemetry/TelemetryDecorator';
 import { TopLevelSection, TopLevelSections, IntrinsicsSet } from '../ContextType';
 import { normalizeIntrinsicFunction } from '../semantic/Intrinsics';
 import { extractEntityFromNodeTextYaml } from './utils/NodeParse';
@@ -54,6 +55,7 @@ export abstract class SyntaxTree {
         return this._lines;
     }
 
+    @Measure({ name: 'updateWithEdit' })
     public updateWithEdit(content: string, edit: Edit) {
         this._lines = undefined; // Invalidate cache
         this.rawContent = content; // Update raw content
@@ -61,32 +63,13 @@ export abstract class SyntaxTree {
         this.tree = this.parser.parse(content, this.tree);
     }
 
+    @Measure({ name: 'update' })
     public update(textToInsert: string, start: Point, end: Point) {
         const { newContent, edit } = createEdit(this.content(), textToInsert, start, end);
         this.updateWithEdit(newContent, edit);
     }
 
-    private query(queryString: string, startPosition?: Point, endPosition?: Point): SyntaxNode[] {
-        const query = new Query(this.parser.getLanguage(), queryString);
-        const queryResult = query.matches(this.tree.rootNode, {
-            startPosition,
-            endPosition,
-        });
-
-        const resultNodes: SyntaxNode[] = [];
-        for (const { captures } of queryResult) {
-            for (const capture of captures) {
-                resultNodes.push(capture.node);
-            }
-        }
-
-        return resultNodes;
-    }
-
-    public getTextAtPosition(position: Position): string | undefined {
-        return this.getNodeAtPosition(position)?.text;
-    }
-
+    @Measure({ name: 'getNodeAtPosition' })
     public getNodeAtPosition(position: Position): SyntaxNode {
         const point: Point = {
             row: position.line,
@@ -436,6 +419,7 @@ export abstract class SyntaxTree {
      * Analyzes a node to determine its semantic path within the document.
      * It walks up the tree from the given node, building a property path and identifying the entity root.
      */
+    @Measure({ name: 'getPathAndEntityInfo' })
     public getPathAndEntityInfo(node: SyntaxNode): PathAndEntity {
         if (!node) {
             return {
@@ -655,6 +639,7 @@ export abstract class SyntaxTree {
      * @param pathSegments Array like ["Resources", "MyBucket", "Properties", "BucketName"] or ["Resources", "MyBucket", "Properties", 0]
      * @returns Object with the node and whether the full path was resolved
      */
+    @Measure({ name: 'getNodeByPath' })
     getNodeByPath(pathSegments: ReadonlyArray<string | number>): {
         node: SyntaxNode | undefined;
         fullyResolved: boolean;
@@ -774,7 +759,17 @@ export abstract class SyntaxTree {
     }
 
     // Finds CloudFormation sections (Parameters, Resources, etc.)
-    abstract findTopLevelSections(sectionsToFind: TopLevelSection[]): Map<TopLevelSection, SyntaxNode>;
+    @Measure({ name: 'findTopLevelSections' })
+    public findTopLevelSections(sectionsToFind: TopLevelSection[]): Map<TopLevelSection, SyntaxNode> {
+        const result = new Map<TopLevelSection, SyntaxNode>();
+        if (sectionsToFind.length === 0) {
+            return result;
+        }
+
+        const sectionsSet = new Set(sectionsToFind);
+        NodeSearch.findSectionsInAllMappingPairs(this.tree.rootNode, sectionsSet, this.type, result);
+        return result;
+    }
 
     topLevelSections() {
         return [...this.findTopLevelSections(TopLevelSections as TopLevelSection[]).keys()];
