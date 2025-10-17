@@ -1,5 +1,7 @@
 import { metrics, trace } from '@opentelemetry/api';
+import { MetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
+import { v4 } from 'uuid';
 import { Closeable } from '../utils/Closeable';
 import { LoggerFactory } from './LoggerFactory';
 import { otelSdk } from './OTELInstrumentation';
@@ -10,6 +12,7 @@ export class TelemetryService implements Closeable {
     private static _instance: TelemetryService | undefined = undefined;
 
     private readonly logger = LoggerFactory.getLogger('TelemetryService');
+    private readonly metricsReader?: MetricReader;
     private readonly sdk?: NodeSDK;
     private readonly enabled: boolean;
 
@@ -19,9 +22,13 @@ export class TelemetryService implements Closeable {
         this.enabled = metadata?.telemetryEnabled ?? TelemetrySettings.isEnabled;
 
         if (this.enabled) {
-            this.sdk = otelSdk(client, metadata);
+            const id = metadata?.clientId ?? v4();
+            const { metricsReader, sdk } = otelSdk(id, client);
+
+            this.metricsReader = metricsReader;
+            this.sdk = sdk;
             this.sdk.start();
-            this.logger.info('Telemetry enabled');
+            this.logger.info(`Telemetry enabled for ${id}`);
             this.registerSystemMetrics();
         } else {
             this.logger.info('Telemetry disabled');
@@ -47,6 +54,7 @@ export class TelemetryService implements Closeable {
     }
 
     async close(): Promise<void> {
+        await this.metricsReader?.forceFlush();
         await this.sdk?.shutdown().catch(this.logger.error);
     }
 
