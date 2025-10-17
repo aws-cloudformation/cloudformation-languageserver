@@ -2832,8 +2832,7 @@ Resources:
                         description: 'Complete IAM role, add new resource',
                         verification: {
                             position: { line: 422, character: 14 },
-                            expectation: CompletionExpectationBuilder.create().expectItems([])
-                            .build(),
+                            expectation: CompletionExpectationBuilder.create().expectItems([]).build(),
                         },
                     },
                     {
@@ -2883,9 +2882,9 @@ Resources:
                         },
                     },
                     {
-                      action: 'type',
-                      position: { line: 449, character: 63 },
-                      content: `egion`
+                        action: 'type',
+                        position: { line: 449, character: 63 },
+                        content: `egion`,
                     },
                     {
                         action: 'type',
@@ -2916,9 +2915,7 @@ Resources:
                         description: 'Suggest Keys inside If',
                         verification: {
                             position: { line: 473, character: 15 },
-                            expectation: CompletionExpectationBuilder.create()
-                                .expectItems(['Value', 'Name'])
-                                .build(),
+                            expectation: CompletionExpectationBuilder.create().expectItems(['Value', 'Name']).build(),
                         },
                     },
                     {
@@ -2933,9 +2930,7 @@ Resources:
                         description: 'Suggest Keys inside but filter out existing keys',
                         verification: {
                             position: { line: 478, character: 15 },
-                            expectation: CompletionExpectationBuilder.create()
-                                .expectItems(['Value'])
-                                .build(),
+                            expectation: CompletionExpectationBuilder.create().expectItems(['Value']).build(),
                         },
                     },
                     {
@@ -3016,7 +3011,7 @@ Resources:
                                 .build(),
                         },
                     },
-                    { 
+                    {
                         action: 'type',
                         content: ` "Enabled"`,
                         position: { line: 512, character: 20 },
@@ -3025,7 +3020,7 @@ Resources:
                     {
                         action: 'type',
                         position: { line: 514, character: 9 },
-                        description: "Nested object property completion",
+                        description: 'Nested object property completion',
                         content: `,
         "NotificationConfiguration": {
           ""
@@ -3043,10 +3038,10 @@ Resources:
                         },
                     },
                     {
-                      action: 'type',
-                      content: `TopicConfigurations`,
-                      position: { line: 516, character: 11 },
-                      description: 'Suggest nested array item completion',
+                        action: 'type',
+                        content: `TopicConfigurations`,
+                        position: { line: 516, character: 11 },
+                        description: 'Suggest nested array item completion',
                     },
                     {
                         action: 'type',
