@@ -48,6 +48,7 @@ import { CodeActionService } from '../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import { GuardService } from '../../src/services/guard/GuardService';
 import { IacGeneratorService } from '../../src/services/IacGeneratorService';
+import { OnlineStatus } from '../../src/services/OnlineStatus';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
@@ -351,6 +352,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
         cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
         guardService: overrides.guardService ?? createMockGuardService(),
+        onlineStatus: overrides.onlineStatus ?? stubInterface<OnlineStatus>(),
         close: () => Promise.resolve(),
         configurables: () => [],
     };
