@@ -550,6 +550,89 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
                 expect(labels).not.toContain('MetadataTableConfiguration/S3TablesDestination/TableNamespace');
             });
 
+            it('should use correct JSON pointer path for nested attribute schema resolution', () => {
+                // Create a mock schema with nested attributes that have descriptions
+                const mockSchemaWithNestedAttributes = JSON.stringify({
+                    typeName: 'AWS::RDS::DBInstance',
+                    description: 'Mock RDS DBInstance schema',
+                    additionalProperties: false,
+                    primaryIdentifier: ['/properties/DBInstanceIdentifier'],
+                    properties: {
+                        Endpoint: {
+                            type: 'object',
+                            properties: {
+                                Address: {
+                                    type: 'string',
+                                    description: 'The connection endpoint for the database instance'
+                                },
+                                Port: {
+                                    type: 'string',
+                                    description: 'The port number on which the database accepts connections'
+                                }
+                            }
+                        }
+                    },
+                    readOnlyProperties: [
+                        '/properties/Endpoint/Address',
+                        '/properties/Endpoint/Port'
+                    ],
+                });
+
+                const mockRdsSchema = new ResourceSchema(mockSchemaWithNestedAttributes);
+                
+                // Mock the resolveJsonPointerPath method to track what paths are requested
+                const resolveJsonPointerPathSpy = vi.spyOn(mockRdsSchema, 'resolveJsonPointerPath');
+                resolveJsonPointerPathSpy.mockImplementation((path: string) => {
+                    if (path === '/properties/Endpoint/Address') {
+                        return [{ description: 'The connection endpoint for the database instance' }];
+                    } else if (path === '/properties/Endpoint/Port') {
+                        return [{ description: 'The port number on which the database accepts connections' }];
+                    }
+                    return [];
+                });
+
+                const mockSchemasWithRds = new Map([['AWS::RDS::DBInstance', mockRdsSchema]]);
+                const mockCombinedSchemasWithRds = new CombinedSchemas();
+                (mockCombinedSchemasWithRds as any).schemas = mockSchemasWithRds;
+                const mockSchemaRetrieverWithRds = createMockSchemaRetriever(mockCombinedSchemasWithRds);
+
+                provider = new IntrinsicFunctionArgumentCompletionProvider(
+                    mockSyntaxTreeManager,
+                    mockSchemaRetrieverWithRds,
+                    mockDocumentManager,
+                );
+
+                setupResourceEntitiesWithSchema({ DatabaseInstance: { Type: 'AWS::RDS::DBInstance' } });
+                const mockContext = createMockGetAttContext('', 'DatabaseInstance.');
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                expect(resolveJsonPointerPathSpy).toHaveBeenCalledWith('/properties/Endpoint/Address');
+                expect(resolveJsonPointerPathSpy).toHaveBeenCalledWith('/properties/Endpoint/Port');
+                
+                expect(resolveJsonPointerPathSpy).not.toHaveBeenCalledWith('/properties/Endpoint/properties/Address');
+                expect(resolveJsonPointerPathSpy).not.toHaveBeenCalledWith('/properties/Endpoint/properties/Port');
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('Endpoint.Address');
+                expect(labels).toContain('Endpoint.Port');
+
+                const addressItem = result!.find((item) => item.label === 'Endpoint.Address');
+                const portItem = result!.find((item) => item.label === 'Endpoint.Port');
+                
+                expect(addressItem).toBeDefined();
+                expect(portItem).toBeDefined();
+                
+                // Check that documentation was set
+                expect(addressItem!.documentation).toBeDefined();
+                expect(portItem!.documentation).toBeDefined();
+
+                resolveJsonPointerPathSpy.mockRestore();
+            });
+
             it('should remove duplicate attribute names', () => {
                 // Setup mock schema with duplicates
                 const duplicateSchemaJson = JSON.stringify({
