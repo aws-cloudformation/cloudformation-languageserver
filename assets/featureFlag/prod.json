@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "description": "Feature flags for prod environment",
+  "features": {
+  }
+}
