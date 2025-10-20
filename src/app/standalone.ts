@@ -9,8 +9,8 @@ let server: unknown;
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
 async function onInitialize(params: InitializeParams) {
-    LoggerFactory.initialize(params.initializationOptions['clientInfo']);
-    TelemetryService.initialize(params.clientInfo, params.initializationOptions['clientInfo']);
+    LoggerFactory.initialize(params.initializationOptions['aws']);
+    TelemetryService.initialize(params.clientInfo, params.initializationOptions['aws']);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
     const { CfnInfraCore } = await import('../server/CfnInfraCore');

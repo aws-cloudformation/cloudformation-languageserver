@@ -5,7 +5,16 @@ import { TelemetryService } from '../src/telemetry/TelemetryService';
 
 const id = v4();
 LoggerFactory.initialize({ logLevel: 'silent' });
-TelemetryService.initialize(undefined, { telemetryEnabled: true, clientId: id });
+TelemetryService.initialize(undefined, {
+    telemetryEnabled: true,
+    clientInfo: {
+        extension: {
+            name: 'Test Telemetry Generator',
+            version: '0.0.0',
+        },
+        clientId: id,
+    },
+});
 
 import { readdirSync } from 'fs';
 import { join, extname, resolve } from 'path';
