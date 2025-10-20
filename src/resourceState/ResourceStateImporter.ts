@@ -66,6 +66,12 @@ export class ResourceStateImporter {
             syntaxTree,
             purpose,
         );
+
+        let warning: string | undefined;
+        if (purpose === ResourceStatePurpose.IMPORT) {
+            warning = this.checkAndWarnManagedResources(fetchedResourceStates);
+        }
+
         const resourceSection = this.getResourceSection(syntaxTree);
         const insertPosition = this.getInsertPosition(resourceSection, document);
         const docFormattedText = this.combineResourcesToDocumentFormat(
@@ -84,6 +90,7 @@ export class ResourceStateImporter {
 
         return {
             ...importResult,
+            warning,
             kind: CodeActionKind.Refactor,
             edit: {
                 changes: {
@@ -91,6 +98,16 @@ export class ResourceStateImporter {
                 },
             },
         };
+    }
+
+    private checkAndWarnManagedResources(fetchedResourceStates: ResourceTemplateFormat[]): string | undefined {
+        const managedLogicalIds = fetchedResourceStates
+            .filter((state) => Object.values(state)[0]?.Metadata?.ManagedByStack === 'true')
+            .map((state) => Object.keys(state)[0]);
+
+        if (managedLogicalIds.length > 0) {
+            return `Cannot import resources that are already managed by a stack. Remove these resources from their current stack (set DeletionPolicy to Retain before removing). Managed resources: ${managedLogicalIds.join(', ')}`;
+        }
     }
 
     private async getResourceStates(

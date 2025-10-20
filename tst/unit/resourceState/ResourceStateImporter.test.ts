@@ -217,5 +217,107 @@ describe('ResourceStateImporter', () => {
             expect(Object.keys(result.successfulImports)).toHaveLength(0);
             expect(Object.keys(result.failedImports)).toHaveLength(1);
         });
+
+        it('should include warning when importing managed resources', async () => {
+            const uri = 'test://test-managed-resources.template';
+            const scenario = TestScenarios[0];
+
+            createAndRegisterDocument(uri, scenario.initialContent, scenario.documentType);
+
+            mockStackManagementInfoProvider.getResourceManagementState.resolves({
+                physicalResourceId: 'test-bucket',
+                managedByStack: true,
+                stackName: 'test-stack',
+                stackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/test-stack/guid',
+            });
+
+            const mockResource = createMockResourceState('AWS::S3::Bucket');
+            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+
+            const params: ResourceStateParams = {
+                resourceSelections: [
+                    {
+                        resourceType: 'AWS::S3::Bucket',
+                        resourceIdentifiers: [mockResource.identifier],
+                    },
+                ],
+                textDocument: { uri } as any,
+                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+                context: { diagnostics: [], only: [], triggerKind: 1 },
+                purpose: ResourceStatePurpose.IMPORT,
+            };
+
+            const result = await importer.importResourceState(params);
+
+            expect(result.warning).toBeDefined();
+            expect(result.warning).toContain('Cannot import resources that are already managed by a stack');
+            expect(result.warning).toContain('Bucket');
+        });
+
+        it('should not include warning when cloning managed resources', async () => {
+            const uri = 'test://test-clone-managed.template';
+            const scenario = TestScenarios[0];
+
+            createAndRegisterDocument(uri, scenario.initialContent, scenario.documentType);
+
+            mockStackManagementInfoProvider.getResourceManagementState.resolves({
+                physicalResourceId: 'test-bucket',
+                managedByStack: true,
+                stackName: 'test-stack',
+                stackId: 'arn:aws:cloudformation:us-east-1:123456789012:stack/test-stack/guid',
+            });
+
+            const mockResource = createMockResourceState('AWS::S3::Bucket');
+            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+
+            const params: ResourceStateParams = {
+                resourceSelections: [
+                    {
+                        resourceType: 'AWS::S3::Bucket',
+                        resourceIdentifiers: [mockResource.identifier],
+                    },
+                ],
+                textDocument: { uri } as any,
+                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+                context: { diagnostics: [], only: [], triggerKind: 1 },
+                purpose: ResourceStatePurpose.CLONE,
+            };
+
+            const result = await importer.importResourceState(params);
+
+            expect(result.warning).toBeUndefined();
+        });
+
+        it('should not include warning when importing unmanaged resources', async () => {
+            const uri = 'test://test-unmanaged-resources.template';
+            const scenario = TestScenarios[0];
+
+            createAndRegisterDocument(uri, scenario.initialContent, scenario.documentType);
+
+            mockStackManagementInfoProvider.getResourceManagementState.resolves({
+                physicalResourceId: 'test-bucket',
+                managedByStack: false,
+            });
+
+            const mockResource = createMockResourceState('AWS::S3::Bucket');
+            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+
+            const params: ResourceStateParams = {
+                resourceSelections: [
+                    {
+                        resourceType: 'AWS::S3::Bucket',
+                        resourceIdentifiers: [mockResource.identifier],
+                    },
+                ],
+                textDocument: { uri } as any,
+                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+                context: { diagnostics: [], only: [], triggerKind: 1 },
+                purpose: ResourceStatePurpose.IMPORT,
+            };
+
+            const result = await importer.importResourceState(params);
+
+            expect(result.warning).toBeUndefined();
+        });
     });
 });
