@@ -451,3 +451,65 @@ export function supportsLambdaUpdatePolicy(resourceType: string): boolean {
 export function supportsAppStreamUpdatePolicy(resourceType: string): boolean {
     return APPSTREAM_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES.includes(resourceType);
 }
+
+export interface UpdatePolicyPropertySchema {
+    type: 'object' | 'simple';
+    supportedResourceTypes?: ReadonlyArray<string>;
+    properties?: Record<string, UpdatePolicyPropertySchema>;
+}
+
+export const UPDATE_POLICY_SCHEMA: Record<string, UpdatePolicyPropertySchema> = {
+    [UpdatePolicyProperty.AutoScalingRollingUpdate]: {
+        type: 'object',
+        supportedResourceTypes: AUTO_SCALING_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES,
+        properties: {
+            [AutoScalingRollingUpdateProperty.MaxBatchSize]: { type: 'simple' },
+            [AutoScalingRollingUpdateProperty.MinActiveInstancesPercent]: { type: 'simple' },
+            [AutoScalingRollingUpdateProperty.MinInstancesInService]: { type: 'simple' },
+            [AutoScalingRollingUpdateProperty.MinSuccessfulInstancesPercent]: { type: 'simple' },
+            [AutoScalingRollingUpdateProperty.PauseTime]: { type: 'simple' },
+            [AutoScalingRollingUpdateProperty.SuspendProcesses]: { type: 'simple' },
+            [AutoScalingRollingUpdateProperty.WaitOnResourceSignals]: { type: 'simple' },
+        },
+    },
+    [UpdatePolicyProperty.AutoScalingReplacingUpdate]: {
+        type: 'object',
+        supportedResourceTypes: AUTO_SCALING_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES,
+        properties: {
+            [AutoScalingReplacingUpdateProperty.WillReplace]: { type: 'simple' },
+        },
+    },
+    [UpdatePolicyProperty.AutoScalingScheduledAction]: {
+        type: 'object',
+        supportedResourceTypes: AUTO_SCALING_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES,
+        properties: {
+            [AutoScalingScheduledActionProperty.IgnoreUnmodifiedGroupSizeProperties]: { type: 'simple' },
+        },
+    },
+    [UpdatePolicyProperty.UseOnlineResharding]: {
+        type: 'simple',
+        supportedResourceTypes: ELASTICACHE_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES,
+    },
+    [UpdatePolicyProperty.EnableVersionUpgrade]: {
+        type: 'simple',
+        supportedResourceTypes: OPENSEARCH_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES,
+    },
+    [UpdatePolicyProperty.CodeDeployLambdaAliasUpdate]: {
+        type: 'object',
+        supportedResourceTypes: LAMBDA_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES,
+        properties: {
+            [CodeDeployLambdaAliasUpdateProperty.ApplicationName]: { type: 'simple' },
+            [CodeDeployLambdaAliasUpdateProperty.DeploymentGroupName]: { type: 'simple' },
+            [CodeDeployLambdaAliasUpdateProperty.BeforeAllowTrafficHook]: { type: 'simple' },
+            [CodeDeployLambdaAliasUpdateProperty.AfterAllowTrafficHook]: { type: 'simple' },
+        },
+    },
+    [UpdatePolicyProperty.StopBeforeUpdate]: {
+        type: 'simple',
+        supportedResourceTypes: APPSTREAM_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES,
+    },
+    [UpdatePolicyProperty.StartAfterUpdate]: {
+        type: 'simple',
+        supportedResourceTypes: APPSTREAM_UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES,
+    },
+};

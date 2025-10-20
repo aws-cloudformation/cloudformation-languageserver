@@ -1171,6 +1171,106 @@ describe('ResourcePropertyCompletionProvider', () => {
             expect(result).toBeDefined();
             expect(result!.length).toBe(0);
         });
+
+        describe('UpdatePolicy Completions', () => {
+            test('should return AutoScaling update policy properties for AutoScaling group', () => {
+                const mockContext = createResourceContext('MyAutoScalingGroup', {
+                    text: '',
+                    propertyPath: ['Resources', 'MyAutoScalingGroup', 'UpdatePolicy', ''],
+                    data: {
+                        Type: 'AWS::AutoScaling::AutoScalingGroup',
+                        UpdatePolicy: {},
+                    },
+                });
+
+                const result = provider.getCompletions(mockContext, mockParams);
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(3); // AutoScalingRollingUpdate, AutoScalingReplacingUpdate, AutoScalingScheduledAction
+
+                const rollingUpdateItem = result!.find((item) => item.label === 'AutoScalingRollingUpdate');
+                expect(rollingUpdateItem).toBeDefined();
+                expect(rollingUpdateItem!.kind).toBe(CompletionItemKind.Property);
+
+                const replacingUpdateItem = result!.find((item) => item.label === 'AutoScalingReplacingUpdate');
+                expect(replacingUpdateItem).toBeDefined();
+                expect(replacingUpdateItem!.kind).toBe(CompletionItemKind.Property);
+
+                const scheduledActionItem = result!.find((item) => item.label === 'AutoScalingScheduledAction');
+                expect(scheduledActionItem).toBeDefined();
+                expect(scheduledActionItem!.kind).toBe(CompletionItemKind.Property);
+            });
+
+            test('should return different UpdatePolicy properties based on resource type', () => {
+                const mockContext = createResourceContext('MyReplicationGroup', {
+                    text: '',
+                    propertyPath: ['Resources', 'MyReplicationGroup', 'UpdatePolicy', ''],
+                    data: {
+                        Type: 'AWS::ElastiCache::ReplicationGroup',
+                        UpdatePolicy: {},
+                    },
+                });
+
+                const result = provider.getCompletions(mockContext, mockParams);
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(1); // UseOnlineResharding
+
+                const useOnlineReshardingItem = result!.find((item) => item.label === 'UseOnlineResharding');
+                expect(useOnlineReshardingItem).toBeDefined();
+                expect(useOnlineReshardingItem!.kind).toBe(CompletionItemKind.Property);
+
+                // Should NOT include AutoScaling properties for ElastiCache
+                const rollingUpdateItem = result!.find((item) => item.label === 'AutoScalingRollingUpdate');
+                expect(rollingUpdateItem).toBeUndefined();
+            });
+
+            test('should return nested properties for AutoScalingRollingUpdate', () => {
+                const mockContext = createResourceContext('MyAutoScalingGroup', {
+                    text: '',
+                    propertyPath: ['Resources', 'MyAutoScalingGroup', 'UpdatePolicy', 'AutoScalingRollingUpdate', ''],
+                    data: {
+                        Type: 'AWS::AutoScaling::AutoScalingGroup',
+                        UpdatePolicy: {
+                            AutoScalingRollingUpdate: {},
+                        },
+                    },
+                });
+
+                const result = provider.getCompletions(mockContext, mockParams);
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(7); // MaxBatchSize, MinActiveInstancesPercent, MinInstancesInService, MinSuccessfulInstancesPercent, PauseTime, SuspendProcesses, WaitOnResourceSignals
+
+                const maxBatchSizeItem = result!.find((item) => item.label === 'MaxBatchSize');
+                expect(maxBatchSizeItem).toBeDefined();
+                expect(maxBatchSizeItem!.kind).toBe(CompletionItemKind.Property);
+
+                const minInstancesInServiceItem = result!.find((item) => item.label === 'MinInstancesInService');
+                expect(minInstancesInServiceItem).toBeDefined();
+                expect(minInstancesInServiceItem!.kind).toBe(CompletionItemKind.Property);
+
+                const waitOnResourceSignalsItem = result!.find((item) => item.label === 'WaitOnResourceSignals');
+                expect(waitOnResourceSignalsItem).toBeDefined();
+                expect(waitOnResourceSignalsItem!.kind).toBe(CompletionItemKind.Property);
+            });
+
+            test('should return empty for unsupported resource type', () => {
+                const mockContext = createResourceContext('MyBucket', {
+                    text: '',
+                    propertyPath: ['Resources', 'MyBucket', 'UpdatePolicy', ''],
+                    data: {
+                        Type: 'AWS::S3::Bucket', // S3 buckets don't support UpdatePolicy
+                        UpdatePolicy: {},
+                    },
+                });
+
+                const result = provider.getCompletions(mockContext, mockParams);
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(0);
+            });
+        });
     });
 
     describe('DeletionPolicy Completions', () => {
