@@ -50,7 +50,7 @@ export class DocumentManager implements SettingsConfigurable {
             return;
         }
 
-        document = new Document(textDocument);
+        document = new Document(textDocument, this.editorSettings.detectIndentation, this.editorSettings.tabSize);
         this.documentMap.set(uri, document);
         return document;
     }
@@ -67,7 +67,7 @@ export class DocumentManager implements SettingsConfigurable {
         for (const textDoc of this.documents.all()) {
             let document = this.documentMap.get(textDoc.uri);
             if (!document) {
-                document = new Document(textDoc);
+                document = new Document(textDoc, this.editorSettings.detectIndentation, this.editorSettings.tabSize);
                 this.documentMap.set(textDoc.uri, document);
             }
             allDocs.push(document);
@@ -103,37 +103,32 @@ export class DocumentManager implements SettingsConfigurable {
 
     getEditorSettingsForDocument(uri: string): EditorSettings {
         const document = this.get(uri);
-        if (!document || !this.editorSettings.detectIndentation) {
+        if (!document) {
             return this.editorSettings;
         }
 
-        return document.processIndentation((detectedTabSize) => {
-            return {
-                ...this.editorSettings,
-                tabSize: detectedTabSize ?? this.editorSettings.tabSize,
-            };
-        });
+        return {
+            ...this.editorSettings,
+            tabSize: document.getTabSize(),
+        };
     }
 
     removeDocument(uri: string): void {
         this.documentMap.delete(uri);
     }
 
-    clearAllStoredIndentation(): void {
-        for (const document of this.documentMap.values()) {
-            document.clearIndentation();
-        }
-    }
-
     private onEditorSettingsChanged(newEditorSettings: EditorSettings): void {
         const oldSettings = this.editorSettings;
         this.editorSettings = newEditorSettings;
 
-        // Clear cache if detectIndentation setting changed
+        // Update indentation for all tracked documents when settings change
         const detectIndentationChanged = oldSettings.detectIndentation !== newEditorSettings.detectIndentation;
+        const tabSizeChanged = oldSettings.tabSize !== newEditorSettings.tabSize;
 
-        if (detectIndentationChanged) {
-            this.clearAllStoredIndentation();
+        if (detectIndentationChanged || tabSizeChanged) {
+            for (const document of this.documentMap.values()) {
+                document.processIndentation(newEditorSettings.detectIndentation, newEditorSettings.tabSize);
+            }
         }
     }
 

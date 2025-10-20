@@ -1,14 +1,10 @@
 import { TextDocument, Position, Range, DocumentUri } from 'vscode-languageserver-textdocument';
+import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { detectCfnFileType } from './CloudFormationDetection';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
-
-type Indentation = {
-    tabSize: number;
-    detectedFromContent: boolean;
-};
 
 export class Document {
     private readonly log = LoggerFactory.getLogger(Document);
@@ -16,10 +12,12 @@ export class Document {
     public readonly documentType: DocumentType;
     public readonly cfnFileType: CloudFormationFileType;
     public readonly fileName: string;
-    private indentation?: Indentation;
+    private tabSize: number;
 
     constructor(
         private readonly textDocument: TextDocument,
+        detectIndentation: boolean = true,
+        fallbackTabSize: number = DefaultSettings.editor.tabSize,
         public readonly uri: DocumentUri = textDocument.uri,
         public readonly languageId: string = textDocument.languageId,
         public readonly version: number = textDocument.version,
@@ -43,6 +41,8 @@ export class Document {
                 'Failed to detect CloudFormation file type',
             );
         }
+        this.tabSize = fallbackTabSize;
+        this.processIndentation(detectIndentation, fallbackTabSize);
     }
 
     public getLine(lineNumber: number): string | undefined {
@@ -89,30 +89,18 @@ export class Document {
         };
     }
 
-    public processIndentation<T>(processor: (indentation: number | undefined) => T): T {
-        const detectedTabSize = this.getDetectedIndentation();
-        return processor(detectedTabSize);
+    public getTabSize() {
+        return this.tabSize;
     }
 
-    private getDetectedIndentation(): number | undefined {
-        if (this.indentation?.detectedFromContent) {
-            return this.indentation.tabSize;
+    public processIndentation(detectIndentation: boolean, fallbackTabSize: number) {
+        if (!detectIndentation) {
+            this.tabSize = fallbackTabSize;
+            return;
         }
 
         const detected = this.detectIndentationFromContent();
-        if (detected !== undefined) {
-            this.indentation = {
-                tabSize: detected,
-                detectedFromContent: true,
-            };
-            return detected;
-        }
-
-        return undefined;
-    }
-
-    public clearIndentation(): void {
-        this.indentation = undefined;
+        this.tabSize = detected ?? fallbackTabSize;
     }
 
     private detectIndentationFromContent(): number | undefined {
