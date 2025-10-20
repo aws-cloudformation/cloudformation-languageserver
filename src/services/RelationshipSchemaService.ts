@@ -63,8 +63,6 @@ export class RelationshipSchemaService {
                     );
                 }
             }
-
-            logger.info(`Loaded ${this.relationshipCache.size} relationship schemas`);
         } catch (error) {
             logger.error({ error: extractErrorMessage(error) }, 'Failed to load relationship schemas');
         }

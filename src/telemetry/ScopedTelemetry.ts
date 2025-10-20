@@ -99,8 +99,13 @@ export class ScopedTelemetry implements Closeable {
         options?: MetricOptions,
         attributes?: Attributes,
     ): T {
+        if (!this.meter) {
+            return fn();
+        }
+
         const startTime = performance.now();
         this.count(`${name}.count`, 1, { unit: '1', ...options }, attributes);
+        this.count(`${name}.fault`, 0, { unit: '1', ...options }, attributes);
 
         try {
             const result = fn();
@@ -122,8 +127,13 @@ export class ScopedTelemetry implements Closeable {
         options?: MetricOptions,
         attributes?: Attributes,
     ): Promise<T> {
+        if (!this.meter) {
+            return await fn();
+        }
+
         const startTime = performance.now();
         this.count(`${name}.count`, 1, { unit: '1', ...options }, attributes);
+        this.count(`${name}.fault`, 0, { unit: '1', ...options }, attributes);
 
         try {
             const result = await fn();

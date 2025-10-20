@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TextDocumentSyncKind } from 'vscode-languageserver';
+import { TextDocumentSyncKind, CodeActionKind } from 'vscode-languageserver';
 import {
     DESCRIBE_TEMPLATE,
     OPTIMIZE_TEMPLATE,
@@ -35,6 +35,7 @@ describe('LspCapabilities', () => {
             expect(codeActionProvider).toBeDefined();
             if (typeof codeActionProvider === 'object' && codeActionProvider !== null) {
                 expect((codeActionProvider as any).resolveProvider).toBe(false);
+                expect((codeActionProvider as any).codeActionKinds).toEqual([CodeActionKind.RefactorExtract]);
             }
         });
 

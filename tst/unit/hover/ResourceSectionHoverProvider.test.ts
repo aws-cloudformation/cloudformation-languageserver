@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterAll, beforeAll } from 'vitest';
 import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { updatePolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
+import { updateReplacePolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { Context } from '../../../src/context/Context';
 import { ContextManager } from '../../../src/context/ContextManager';
 import {
@@ -758,6 +759,104 @@ describe('ResourceSectionHoverProvider', () => {
 
             it('should return undefined for other resource attribute values', () => {
                 // Create a mock context for Condition value (not DeletionPolicy)
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'CreateProdResources',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        Condition: 'CreateProdResources',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'Condition'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
+            });
+        });
+
+        describe('UpdateReplacePolicy Value Hover Documentation', () => {
+            it('should return documentation for UpdateReplacePolicy Delete value', () => {
+                // Create a mock context for Delete value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'Delete',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        UpdateReplacePolicy: 'Delete',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'UpdateReplacePolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+                const expectedDoc = updateReplacePolicyValueDocsMap.get('Delete');
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return documentation for UpdateReplacePolicy Retain value', () => {
+                // Create a mock context for Retain value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'Retain',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        UpdateReplacePolicy: 'Retain',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'UpdateReplacePolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+                const expectedDoc = updateReplacePolicyValueDocsMap.get('Retain');
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return documentation for UpdateReplacePolicy Snapshot value', () => {
+                // Create a mock context for Snapshot value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'Snapshot',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        UpdateReplacePolicy: 'Snapshot',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'UpdateReplacePolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+                const expectedDoc = updateReplacePolicyValueDocsMap.get('Snapshot');
+
+                expect(result).toBeDefined();
+                expect(result).toBe(expectedDoc);
+            });
+
+            it('should return undefined for invalid UpdateReplacePolicy values', () => {
+                // Create a mock context for invalid value
+                const mockContext = createResourceContext('S3Bucket', {
+                    text: 'InvalidValue',
+                    data: {
+                        Type: 'AWS::S3::Bucket',
+                        UpdateReplacePolicy: 'InvalidValue',
+                    },
+                    propertyPath: [TopLevelSection.Resources, 'S3Bucket', 'UpdateReplacePolicy'],
+                });
+
+                expect(mockContext.isResourceAttributeValue()).toBe(true);
+
+                const result = hoverProvider.getInformation(mockContext);
+
+                expect(result).toBeUndefined();
+            });
+
+            it('should return undefined for other resource attribute values (not UpdateReplacePolicy)', () => {
+                // Create a mock context for Condition value (not UpdateReplacePolicy)
                 const mockContext = createResourceContext('S3Bucket', {
                     text: 'CreateProdResources',
                     data: {
