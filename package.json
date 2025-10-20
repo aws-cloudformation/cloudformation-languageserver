@@ -2,6 +2,7 @@
   "name": "@aws/cloudformation-languageserver",
   "displayName": "AWS CloudFormation",
   "version": "0.0.2",
+  "id": "aws-cloudformation-languageserver",
   "description": "AWS CloudFormation Language Server implementation",
   "publisher": "aws",
   "author": "Amazon Web Services (AWS)",

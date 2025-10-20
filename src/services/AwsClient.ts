@@ -4,6 +4,7 @@ import { AwsCredentialIdentity } from '@aws-sdk/types';
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings } from '../settings/Settings';
+import { ExtensionId, ExtensionVersion } from '../utils/ExtensionConfig';
 
 export class AwsClient implements SettingsConfigurable {
     constructor(
@@ -31,11 +32,16 @@ export class AwsClient implements SettingsConfigurable {
         return new CloudControlClient(await this.iamClientConfig());
     }
 
-    private async iamClientConfig(): Promise<{ region: string; credentials: AwsCredentialIdentity }> {
+    private async iamClientConfig(): Promise<{
+        region: string;
+        credentials: AwsCredentialIdentity;
+        customUserAgent: string;
+    }> {
         const data = await this.credentialsProvider.getIAM();
         return {
             region: this.region,
             credentials: data,
+            customUserAgent: `${ExtensionId}/${ExtensionVersion}`,
         };
     }
 }
