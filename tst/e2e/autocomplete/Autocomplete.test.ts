@@ -1029,18 +1029,25 @@ Resources:
           Value: !Sub "\${EnvironmentName}-database"
         - Key: Environment
           Value: !Ref EnvironmentName
-    DeletionPolicy: !If [IsProduction, S]`,
+    DeletionPolicy: `,
                         position: { line: 279, character: 28 },
+                        description: 'Suggest DeletionPolicy options',
+                        verification: {
+                            position: { line: 286, character: 20 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['Delete', 'Retain', 'RetainExceptOnCreate', 'Snapshot'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `!If [IsProduction, S]`,
+                        position: { line: 286, character: 20 },
                         description: 'Suggest DeletionPolicy option Snapshot for resources that support snapshot',
                         verification: {
                             position: { line: 286, character: 40 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Snapshot'])
-                                .todo(
-                                    `feature to suggest Resource attribute values
-                                 some values (Snapshot) are based on resource type; see docs below
-                                 https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html#aws-attribute-deletionpolicy-options`,
-                                )
                                 .build(),
                         },
                     },
@@ -1051,7 +1058,22 @@ Resources:
                     },
                     {
                         action: 'type',
-                        content: `napshot, Delete]
+                        content: `napshot, D]`,
+                        position: { line: 286, character: 40 },
+                        description: 'Suggest DeletionPolicy option Delete',
+                        verification: {
+                            position: { line: 286, character: 50 },
+                            expectation: CompletionExpectationBuilder.create().expectContainsItems(['Delete']).build(),
+                        },
+                    },
+                    {
+                        action: 'delete',
+                        range: { start: { line: 286, character: 50 }, end: { line: 286, character: 51 } },
+                        description: 'remove ]',
+                    },
+                    {
+                        action: 'type',
+                        content: `elete]
     UpdateReplacePolicy: !If [IsProduction, Snapshot, Delete]
 
   DatabaseSecurityGroup:
@@ -1091,7 +1113,7 @@ Resources:
         Variables:
           ENVIRONMENT: !Ref EnvironmentName
           DATABASE_ENDPOINT: !GetAtt Database.`,
-                        position: { line: 286, character: 40 },
+                        position: { line: 286, character: 50 },
                         description: 'Suggest readonly properties of Resource as Fn::GetAtt value',
                         verification: {
                             position: { line: 325, character: 46 },
