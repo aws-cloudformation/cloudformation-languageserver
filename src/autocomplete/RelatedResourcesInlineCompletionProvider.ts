@@ -1,5 +1,8 @@
 import { InlineCompletionItem, InlineCompletionParams } from 'vscode-languageserver-protocol';
 import { Context } from '../context/Context';
+import { TopLevelSection } from '../context/ContextType';
+import { getEntityMap } from '../context/SectionContextBuilder';
+import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { Document, DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
@@ -20,6 +23,7 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
         private readonly relationshipSchemaService: RelationshipSchemaService,
         private readonly documentManager: DocumentManager,
         private readonly schemaRetriever: SchemaRetriever,
+        private readonly syntaxTreeManager: SyntaxTreeManager,
     ) {}
 
     getInlineCompletion(
@@ -144,12 +148,8 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
         document: Document | undefined,
     ): string {
         const documentType = document?.documentType ?? DocumentType.YAML;
-        const baseLogicalId = `RelatedTo${relatedToType
-            .split('::')
-            .slice(1)
-            .join('')
-            .replaceAll(/[^a-zA-Z0-9]/g, '')}`;
-        const logicalId = this.getUniqueLogicalId(baseLogicalId, document);
+        const baseLogicalId = this.generateBaseLogicalId(resourceType, relatedToType);
+        const logicalId = this.getUniqueLogicalId(baseLogicalId, params);
         const indent0 = CompletionFormatter.getIndentPlaceholder(0);
         const indent1 = CompletionFormatter.getIndentPlaceholder(1);
 
@@ -256,21 +256,39 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
             .replaceAll(/\n\s*{INDENT3}/g, `\n${' '.repeat(currentIndent + baseIndentSize * 3)}`);
     }
 
-    private getUniqueLogicalId(baseId: string, document: Document | undefined): string {
-        const logicalId = `${baseId}LogicalId`;
+    private generateBaseLogicalId(resourceType: string, relatedToType: string): string {
+        const resourceTypeName = resourceType
+            .split('::')
+            .slice(1)
+            .join('')
+            .replaceAll(/[^a-zA-Z0-9]/g, '');
+        const relatedToTypeName = relatedToType
+            .split('::')
+            .slice(1)
+            .join('')
+            .replaceAll(/[^a-zA-Z0-9]/g, '');
+        return `${resourceTypeName}RelatedTo${relatedToTypeName}`;
+    }
 
-        if (!document) {
+    private getUniqueLogicalId(baseId: string, params: InlineCompletionParams): string {
+        const logicalId = baseId;
+
+        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
+        if (!syntaxTree) {
             return logicalId;
         }
 
-        const templateText = document.getText();
+        const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
+        if (!resourcesMap) {
+            return logicalId;
+        }
 
         let counter = 0;
         let candidateId = logicalId;
 
-        while (templateText.includes(candidateId)) {
+        while (resourcesMap.has(candidateId)) {
             counter++;
-            candidateId = `${baseId}${counter}LogicalId`;
+            candidateId = `${baseId}${counter}`;
         }
 
         return candidateId;

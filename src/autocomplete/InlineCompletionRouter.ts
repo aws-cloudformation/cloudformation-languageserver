@@ -1,6 +1,7 @@
 import { InlineCompletionList, InlineCompletionParams, InlineCompletionItem } from 'vscode-languageserver-protocol';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
+import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../document/DocumentManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { CfnExternal } from '../server/CfnExternal';
@@ -100,7 +101,12 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
         const relationshipSchemaService = new RelationshipSchemaService();
         return new InlineCompletionRouter(
             core.contextManager,
-            createInlineCompletionProviders(core.documentManager, relationshipSchemaService, external.schemaRetriever),
+            createInlineCompletionProviders(
+                core.documentManager,
+                relationshipSchemaService,
+                external.schemaRetriever,
+                core.syntaxTreeManager,
+            ),
             core.documentManager,
         );
     }
@@ -110,12 +116,18 @@ export function createInlineCompletionProviders(
     documentManager: DocumentManager,
     relationshipSchemaService: RelationshipSchemaService,
     schemaRetriever: SchemaRetriever,
+    syntaxTreeManager: SyntaxTreeManager,
 ): Map<InlineCompletionProviderType, InlineCompletionProvider> {
     const inlineCompletionProviderMap = new Map<InlineCompletionProviderType, InlineCompletionProvider>();
 
     inlineCompletionProviderMap.set(
         'RelatedResources',
-        new RelatedResourcesInlineCompletionProvider(relationshipSchemaService, documentManager, schemaRetriever),
+        new RelatedResourcesInlineCompletionProvider(
+            relationshipSchemaService,
+            documentManager,
+            schemaRetriever,
+            syntaxTreeManager,
+        ),
     );
 
     return inlineCompletionProviderMap;

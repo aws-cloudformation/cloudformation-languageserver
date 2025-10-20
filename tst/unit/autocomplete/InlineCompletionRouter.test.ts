@@ -13,6 +13,7 @@ import {
     createMockRelationshipSchemaService,
     createMockSchemaRetriever,
     createMockSettingsManager,
+    createMockSyntaxTreeManager,
 } from '../../utils/MockServerComponents';
 
 describe('InlineCompletionRouter', () => {
@@ -21,6 +22,7 @@ describe('InlineCompletionRouter', () => {
     const mockSettingsManager = createMockSettingsManager();
     const mockSchemaRetriever = createMockSchemaRetriever();
     const mockRelationshipSchemaService = createMockRelationshipSchemaService();
+    const mockSyntaxTreeManager = createMockSyntaxTreeManager();
     let router: InlineCompletionRouter;
 
     const mockParams: InlineCompletionParams = {
@@ -37,6 +39,7 @@ describe('InlineCompletionRouter', () => {
             mockDocumentManager,
             mockRelationshipSchemaService,
             mockSchemaRetriever,
+            mockSyntaxTreeManager,
         );
         router = new InlineCompletionRouter(mockContextManager, providers, mockDocumentManager);
         router.configure(mockSettingsManager);
@@ -301,6 +304,7 @@ describe('InlineCompletionRouter', () => {
             const mockCore = {
                 contextManager: mockContextManager,
                 documentManager: mockDocumentManager,
+                syntaxTreeManager: mockSyntaxTreeManager,
             } as any;
             const mockExternal = {
                 schemaRetriever: mockSchemaRetriever,
