@@ -1,4 +1,4 @@
-import { ExecuteCommandParams, MessageType } from 'vscode-languageserver';
+import { ExecuteCommandParams, MessageType, Range } from 'vscode-languageserver';
 import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
 import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
@@ -67,9 +67,10 @@ export function executionHandler(
                 const args = params.arguments ?? [];
                 if (args.length >= 2) {
                     const uri = args[0] as string;
-                    const diagnosticId = args[1] as string;
+                    const diagnosticRange = args[1] as Range;
+                    const diagnosticMessage = args[2] as string;
                     components.diagnosticCoordinator
-                        .handleClearCfnDiagnostic(uri, diagnosticId)
+                        .handleClearCfnDiagnostic(uri, diagnosticRange, diagnosticMessage)
                         .catch((err) => log.error(`Error clearing diagnostic: ${extractErrorMessage(err)}`));
                 }
                 break;

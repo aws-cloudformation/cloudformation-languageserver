@@ -1,4 +1,4 @@
-import { Diagnostic, PublishDiagnosticsParams } from 'vscode-languageserver';
+import { Diagnostic, PublishDiagnosticsParams, Range } from 'vscode-languageserver';
 import { LspDiagnostics } from '../protocol/LspDiagnostics';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -92,16 +92,23 @@ export class DiagnosticCoordinator {
     }
 
     /**
-     * Handle clearing a CFN diagnostic by ID.
+     * Handle clearing a CFN diagnostic by range and message.
      */
-    async handleClearCfnDiagnostic(uri: string, diagnosticId: string): Promise<void> {
+    async handleClearCfnDiagnostic(uri: string, range: Range, message: string): Promise<void> {
         const collection = this.urisToDiagnostics.get(uri);
         if (!collection) return;
 
         const sourceDiagnostics = collection.get(CFN_VALIDATION_SOURCE);
         if (!sourceDiagnostics) return;
 
-        const filteredDiagnostics = sourceDiagnostics.filter((d) => d.data !== diagnosticId);
+        const filteredDiagnostics = sourceDiagnostics.filter(
+            (d) =>
+                !(
+                    d.range.start.line === range.start.line &&
+                    d.range.start.character === range.start.character &&
+                    d.message === message
+                ),
+        );
         collection.set(CFN_VALIDATION_SOURCE, filteredDiagnostics);
 
         const mergedDiagnostics = this.mergeDiagnostics(collection);

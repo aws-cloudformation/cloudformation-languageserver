@@ -15,7 +15,7 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeSearch } from '../context/syntaxtree/utils/NodeSearch';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
-import { ANALYZE_DIAGNOSTIC } from '../handlers/ExecutionHandler';
+import { ANALYZE_DIAGNOSTIC, CLEAR_DIAGNOSTIC } from '../handlers/ExecutionHandler';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -127,8 +127,8 @@ export class CodeActionService {
                 textEdits: [],
                 command: {
                     title: CodeActionService.REMOVE_ERROR_TITLE,
-                    command: '/command/template/clear-diagnostic',
-                    arguments: [uri, diagnostic.data],
+                    command: CLEAR_DIAGNOSTIC,
+                    arguments: [uri, diagnostic.range, diagnostic.message],
                 },
             },
         ];

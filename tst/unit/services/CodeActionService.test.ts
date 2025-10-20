@@ -243,7 +243,6 @@ describe('CodeActionService', () => {
                 message: 'Validation failed',
                 severity: DiagnosticSeverity.Error,
                 source: CFN_VALIDATION_SOURCE,
-                data: 'test-uuid-123',
             };
 
             const params: CodeActionParams = {
@@ -266,7 +265,7 @@ describe('CodeActionService', () => {
                 command: {
                     title: 'Remove validation error',
                     command: '/command/template/clear-diagnostic',
-                    arguments: [params.textDocument.uri, 'test-uuid-123'],
+                    arguments: [params.textDocument.uri, diagnostic.range, diagnostic.message],
                 },
             });
         });

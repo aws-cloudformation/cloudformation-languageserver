@@ -379,14 +379,14 @@ describe('DiagnosticCoordinator', () => {
     });
 
     describe('handleClearCfnDiagnostic', () => {
-        it('should clear diagnostic by ID', async () => {
-            const diagnostic1 = { ...createDiagnostic(0, 0, 'Error 1'), data: 'id-1' };
-            const diagnostic2 = { ...createDiagnostic(1, 0, 'Error 2'), data: 'id-2' };
+        it('should clear diagnostic by range and message', async () => {
+            const diagnostic1 = createDiagnostic(0, 0, 'Error 1');
+            const diagnostic2 = createDiagnostic(1, 0, 'Error 2');
 
             await coordinator.publishDiagnostics(CFN_VALIDATION_SOURCE, testUri, [diagnostic1, diagnostic2]);
             vi.clearAllMocks();
 
-            await coordinator.handleClearCfnDiagnostic(testUri, 'id-1');
+            await coordinator.handleClearCfnDiagnostic(testUri, diagnostic1.range, 'Error 1');
 
             expect(mockPublishDiagnostics).toHaveBeenCalledWith({
                 uri: testUri,
@@ -395,16 +395,18 @@ describe('DiagnosticCoordinator', () => {
         });
 
         it('should handle non-existent URI gracefully', async () => {
-            await coordinator.handleClearCfnDiagnostic('non-existent', 'id-1');
+            const range = Range.create(Position.create(0, 0), Position.create(0, 10));
+            await coordinator.handleClearCfnDiagnostic('non-existent', range, 'Error');
             expect(mockPublishDiagnostics).not.toHaveBeenCalled();
         });
 
-        it('should handle non-existent diagnostic ID gracefully', async () => {
-            const diagnostic = { ...createDiagnostic(0, 0, 'Error'), data: 'id-1' };
+        it('should handle non-matching diagnostic gracefully', async () => {
+            const diagnostic = createDiagnostic(0, 0, 'Error');
             await coordinator.publishDiagnostics(CFN_VALIDATION_SOURCE, testUri, [diagnostic]);
             vi.clearAllMocks();
 
-            await coordinator.handleClearCfnDiagnostic(testUri, 'non-existent-id');
+            const differentRange = Range.create(Position.create(1, 0), Position.create(1, 10));
+            await coordinator.handleClearCfnDiagnostic(testUri, differentRange, 'Different Error');
 
             expect(mockPublishDiagnostics).toHaveBeenCalledWith({
                 uri: testUri,
