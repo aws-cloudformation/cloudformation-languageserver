@@ -1,17 +1,24 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { InlineCompletionParams, InlineCompletionTriggerKind } from 'vscode-languageserver-protocol';
 import { RelatedResourcesInlineCompletionProvider } from '../../../src/autocomplete/RelatedResourcesInlineCompletionProvider';
+import { getEntityMap } from '../../../src/context/SectionContextBuilder';
 import { createTopLevelContext } from '../../utils/MockContext';
 import {
     createMockDocumentManager,
     createMockRelationshipSchemaService,
     createMockSchemaRetriever,
+    createMockSyntaxTreeManager,
 } from '../../utils/MockServerComponents';
+
+vi.mock('../../../src/context/SectionContextBuilder', () => ({
+    getEntityMap: vi.fn(),
+}));
 
 describe('RelatedResourcesInlineCompletionProvider', () => {
     const mockDocumentManager = createMockDocumentManager();
     const mockRelationshipSchemaService = createMockRelationshipSchemaService();
     const mockSchemaRetriever = createMockSchemaRetriever();
+    const mockSyntaxTreeManager = createMockSyntaxTreeManager();
     let provider: RelatedResourcesInlineCompletionProvider;
 
     const mockParams: InlineCompletionParams = {
@@ -33,9 +40,14 @@ describe('RelatedResourcesInlineCompletionProvider', () => {
             mockRelationshipSchemaService,
             mockDocumentManager,
             mockSchemaRetriever,
+            mockSyntaxTreeManager,
         );
         vi.restoreAllMocks();
     });
+
+    function mockGetEntityMap(result: Map<string, any> = new Map()) {
+        (getEntityMap as any).mockReturnValue(result);
+    }
 
     describe('getInlineCompletion', () => {
         test('should return undefined when document is not found', () => {
@@ -125,7 +137,7 @@ Resources:
             // Verify that suggested resources are from the expected set
             for (const item of result) {
                 expect(item.insertText).toBeDefined();
-                expect(item.insertText).toContain('RelatedToS3BucketLogicalId:');
+                expect(item.insertText).toContain('RelatedToS3Bucket:');
                 expect(item.insertText).toContain('Type:');
                 expect(item.range).toBeDefined();
                 expect(item.range.start).toEqual(mockParams.position);
@@ -218,7 +230,7 @@ Resources:
 
             for (const item of result) {
                 expect(item.insertText).toBeDefined();
-                expect(item.insertText).toContain('RelatedToS3BucketLogicalId:');
+                expect(item.insertText).toContain('RelatedToS3Bucket:');
                 expect(item.range).toBeDefined();
                 expect(item.range.start).toEqual(mockParams.position);
                 expect(item.range.end).toEqual(mockParams.position);
@@ -248,7 +260,7 @@ Resources:
             );
 
             expect(result).toBeDefined();
-            expect(result).toContain('RelatedToLambdaFunctionLogicalId:');
+            expect(result).toContain('S3BucketRelatedToLambdaFunction:');
             expect(result).toContain('Type: AWS::S3::Bucket');
         });
 
@@ -267,11 +279,15 @@ Resources:
                     mockParams,
                     undefined,
                 );
-                const expectedLogicalId = `RelatedTo${relatedTo
+                const expectedLogicalId = `${resourceType
                     .split('::')
                     .slice(1)
                     .join('')
-                    .replaceAll(/[^a-zA-Z0-9]/g, '')}LogicalId`;
+                    .replaceAll(/[^a-zA-Z0-9]/g, '')}RelatedTo${relatedTo
+                    .split('::')
+                    .slice(1)
+                    .join('')
+                    .replaceAll(/[^a-zA-Z0-9]/g, '')}`;
                 expect(result).toContain(`${expectedLogicalId}:`);
                 expect(result).toContain(`Type: ${resourceType}`);
             }
@@ -297,7 +313,7 @@ Resources:
                 undefined,
             );
 
-            expect(result).toContain('RelatedToLambdaFunctionLogicalId:');
+            expect(result).toContain('S3BucketRelatedToLambdaFunction:');
             expect(result).toContain(`Type: ${resourceType}`);
             expect(result).toContain('Properties:');
             expect(result).toContain('BucketName: ');
@@ -316,6 +332,10 @@ Resources:
             mockSchemaRetriever.getDefault.returns({
                 schemas: new Map([[resourceType, mockSchema]]),
             } as any);
+
+            const mockSyntaxTree = {};
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree as any);
+            mockGetEntityMap(new Map([['MyBucket', {}]]));
 
             // Mock document with a line that has existing indentation (simulating cursor after a resource)
             const mockDocument = {
@@ -348,7 +368,7 @@ Resources:
             );
 
             // Verify proper YAML structure with cursor context indentation
-            expect(result).toContain('RelatedToS3BucketLogicalId:');
+            expect(result).toContain('IAMRoleRelatedToS3Bucket:');
             expect(result).toContain('    Type: AWS::IAM::Role'); // 4 spaces (2 existing + 2 more)
             expect(result).toContain('    Properties:'); // 4 spaces (2 existing + 2 more)
             expect(result).toContain('      AssumeRolePolicyDocument: '); // 6 spaces (2 existing + 4 more)
@@ -364,6 +384,11 @@ Resources:
             mockSchemaRetriever.getDefault.returns({
                 schemas: new Map([[resourceType, mockSchema]]),
             } as any);
+
+            // Mock syntax tree to return existing resources
+            const mockSyntaxTree = {};
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree as any);
+            mockGetEntityMap(new Map([['MyBucket', {}]]));
 
             // Mock document with a line that has existing indentation
             const mockDocument = {
@@ -396,7 +421,7 @@ Resources:
             );
 
             // Verify proper JSON structure with cursor context indentation
-            expect(result).toContain('"RelatedToS3BucketLogicalId": {');
+            expect(result).toContain('"IAMRoleRelatedToS3Bucket": {');
             expect(result).toContain('    "Type": "AWS::IAM::Role"'); // 4 spaces (2 existing + 2 more)
             expect(result).toContain('    "Properties": {'); // 4 spaces (2 existing + 2 more)
             expect(result).toContain('      "AssumeRolePolicyDocument": ""'); // 6 spaces (2 existing + 4 more)
