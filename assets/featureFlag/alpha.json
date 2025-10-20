@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "description": "Feature flags for alpha environment",
+  "features": {
+    "EnhancedDryRun": {
+      "enabled": true
+    },
+    "AnotherFeature": {
+      "enabled": false,
+      "fleetPercentage": 10.5
+    }
+  }
+}
