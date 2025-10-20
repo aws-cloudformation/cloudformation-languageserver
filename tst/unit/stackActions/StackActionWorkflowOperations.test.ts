@@ -6,7 +6,7 @@ import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
 import {
     processChangeSet,
-    waitForValidation,
+    waitForChangeSetValidation,
     waitForDeployment,
     deleteStackAndChangeSet,
     deleteChangeSet,
@@ -275,7 +275,7 @@ describe('StackActionWorkflowOperations', () => {
                 ],
             });
 
-            const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
+            const result = await waitForChangeSetValidation(mockCfnService, 'test-changeset', 'test-stack');
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_COMPLETE);
             expect(result.state).toBe(StackActionState.SUCCESSFUL);
@@ -297,7 +297,7 @@ describe('StackActionWorkflowOperations', () => {
                 reason: 'Test failure',
             });
 
-            const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
+            const result = await waitForChangeSetValidation(mockCfnService, 'test-changeset', 'test-stack');
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
             expect(result.state).toBe(StackActionState.FAILED);
@@ -307,7 +307,7 @@ describe('StackActionWorkflowOperations', () => {
         it('should handle exceptions with error message', async () => {
             (mockCfnService.waitUntilChangeSetCreateComplete as any).mockRejectedValue(new Error('Network error'));
 
-            const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
+            const result = await waitForChangeSetValidation(mockCfnService, 'test-changeset', 'test-stack');
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
             expect(result.state).toBe(StackActionState.FAILED);
@@ -317,7 +317,7 @@ describe('StackActionWorkflowOperations', () => {
         it('should handle non-Error exceptions', async () => {
             (mockCfnService.waitUntilChangeSetCreateComplete as any).mockRejectedValue('String error');
 
-            const result = await waitForValidation(mockCfnService, 'test-changeset', 'test-stack');
+            const result = await waitForChangeSetValidation(mockCfnService, 'test-changeset', 'test-stack');
 
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
             expect(result.state).toBe(StackActionState.FAILED);

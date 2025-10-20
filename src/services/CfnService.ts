@@ -58,7 +58,7 @@ import { AwsClient } from './AwsClient';
 export class CfnService {
     public constructor(private readonly awsClient: AwsClient) {}
 
-    private async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
+    protected async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
         const client = await this.awsClient.getCloudFormationClient();
         return await request(client);
     }

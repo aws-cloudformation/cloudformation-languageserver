@@ -1,3 +1,6 @@
+import { existsSync } from 'fs';
+import { homedir } from 'os';
+import { join } from 'path';
 import { CfnAI } from '../ai/CfnAI';
 import { CompletionRouter } from '../autocomplete/CompletionRouter';
 import { InlineCompletionRouter } from '../autocomplete/InlineCompletionRouter';
@@ -16,6 +19,7 @@ import {
 } from '../stacks/actions/StackActionRequestType';
 import { StackActionWorkflow } from '../stacks/actions/StackActionWorkflowType';
 import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
+import { ValidationWorkflowV2 } from '../stacks/actions/ValidationWorkflowV2';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
 import { CfnExternal } from './CfnExternal';
@@ -45,7 +49,10 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.stackManagementInfoProvider =
             overrides.stackManagementInfoProvider ?? new StackManagementInfoProvider(external.cfnService);
         this.validationWorkflowService =
-            overrides.validationWorkflowService ?? ValidationWorkflow.create(core, external);
+            overrides.validationWorkflowService ??
+            (existsSync(join(homedir(), 'client-cloudformation-v2'))
+                ? ValidationWorkflowV2.create(core, external)
+                : ValidationWorkflow.create(core, external));
         this.deploymentWorkflowService =
             overrides.deploymentWorkflowService ?? DeploymentWorkflow.create(core, external);
         this.resourceStateManager = overrides.resourceStateManager ?? ResourceStateManager.create(external);

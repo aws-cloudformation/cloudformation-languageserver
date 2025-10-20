@@ -43,12 +43,13 @@ export async function processChangeSet(
     return changeSetName;
 }
 
-export async function waitForValidation(
+export async function waitForChangeSetValidation(
     cfnService: CfnService,
     changeSetName: string,
     stackName: string,
 ): Promise<ValidationWaitForResult> {
     try {
+        // TODO: change to waitForChangeSetCreateComplete, which will not throw error on create change set failure
         const result = await cfnService.waitUntilChangeSetCreateComplete({
             StackName: stackName,
             ChangeSetName: changeSetName,

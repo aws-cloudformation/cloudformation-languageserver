@@ -9,7 +9,7 @@ import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
     processChangeSet,
-    waitForValidation,
+    waitForChangeSetValidation,
     waitForDeployment,
     processWorkflowUpdates,
 } from './StackActionOperations';
@@ -112,7 +112,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<DescribeDeploymen
         }
 
         try {
-            validationResult = await waitForValidation(this.cfnService, changeSetName, stackName);
+            validationResult = await waitForChangeSetValidation(this.cfnService, changeSetName, stackName);
 
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: validationResult.phase,

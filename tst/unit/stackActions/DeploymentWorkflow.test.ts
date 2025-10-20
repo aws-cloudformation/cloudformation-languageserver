@@ -5,7 +5,7 @@ import { CfnService } from '../../../src/services/CfnService';
 import { DeploymentWorkflow } from '../../../src/stacks/actions/DeploymentWorkflow';
 import {
     processChangeSet,
-    waitForValidation,
+    waitForChangeSetValidation,
     waitForDeployment,
     processWorkflowUpdates,
 } from '../../../src/stacks/actions/StackActionOperations';
@@ -259,7 +259,7 @@ describe('DeploymentWorkflow', () => {
 
             (processChangeSet as any).mockResolvedValue('test-changeset');
 
-            (waitForValidation as any).mockResolvedValue({
+            (waitForChangeSetValidation as any).mockResolvedValue({
                 phase: StackActionPhase.VALIDATION_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
                 changes: [],
@@ -297,7 +297,7 @@ describe('DeploymentWorkflow', () => {
                 params,
                 ChangeSetType.CREATE,
             );
-            expect(waitForValidation).toHaveBeenCalledWith(mockCfnService, 'test-changeset', 'test-stack');
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'test-changeset', 'test-stack');
             expect(mockCfnService.executeChangeSet).toHaveBeenCalledWith({
                 StackName: 'test-stack',
                 ChangeSetName: 'test-changeset',
@@ -324,7 +324,7 @@ describe('DeploymentWorkflow', () => {
 
         it('should handle waitForValidation returning failed', async () => {
             // Override the default mock for this test
-            (waitForValidation as any).mockResolvedValueOnce({
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
                 phase: StackActionPhase.VALIDATION_FAILED,
                 state: StackActionState.FAILED,
                 failureReason: 'Invalid template',
@@ -349,7 +349,7 @@ describe('DeploymentWorkflow', () => {
 
         it('should handle waitForValidation throwing exception', async () => {
             // Override the default mock for this test
-            (waitForValidation as any).mockRejectedValueOnce(new Error('Validation service error'));
+            (waitForChangeSetValidation as any).mockRejectedValueOnce(new Error('Validation service error'));
 
             const workflowId = 'test-workflow-id';
             const params: CreateStackActionParams = {

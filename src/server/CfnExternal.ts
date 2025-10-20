@@ -8,6 +8,7 @@ import { AwsClient } from '../services/AwsClient';
 import { CcapiService } from '../services/CcapiService';
 import { CfnLintService } from '../services/cfnLint/CfnLintService';
 import { CfnService } from '../services/CfnService';
+import { CfnServiceV2 } from '../services/CfnServiceV2';
 import { GuardService } from '../services/guard/GuardService';
 import { IacGeneratorService } from '../services/IacGeneratorService';
 import { OnlineStatus } from '../services/OnlineStatus';
@@ -22,6 +23,7 @@ export class CfnExternal implements Configurables, Closeable {
     readonly awsClient: AwsClient;
 
     readonly cfnService: CfnService;
+    readonly cfnServiceV2: CfnServiceV2;
     readonly ccapiService: CcapiService;
     readonly iacGeneratorService: IacGeneratorService;
 
@@ -39,6 +41,7 @@ export class CfnExternal implements Configurables, Closeable {
         this.awsClient = overrides.awsClient ?? new AwsClient(core.awsCredentials);
 
         this.cfnService = overrides.cfnService ?? new CfnService(this.awsClient);
+        this.cfnServiceV2 = overrides.cfnServiceV2 ?? new CfnServiceV2(this.awsClient);
         this.ccapiService = overrides.ccapiService ?? new CcapiService(this.awsClient);
         this.iacGeneratorService = overrides.iacGeneratorService ?? new IacGeneratorService(this.awsClient);
 

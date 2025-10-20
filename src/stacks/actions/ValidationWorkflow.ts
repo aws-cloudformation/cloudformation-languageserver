@@ -13,7 +13,7 @@ import {
     deleteStackAndChangeSet,
     deleteChangeSet,
     processChangeSet,
-    waitForValidation,
+    waitForChangeSetValidation,
     processWorkflowUpdates,
 } from './StackActionOperations';
 import {
@@ -32,15 +32,15 @@ export const CFN_VALIDATION_SOURCE = 'CFN Dry-Run';
 export const DRY_RUN_VALIDATION_NAME = 'Change Set Dry-Run';
 
 export class ValidationWorkflow implements StackActionWorkflow<DescribeValidationStatusResult> {
-    private readonly workflows = new Map<string, StackActionWorkflowState>();
-    private readonly log = LoggerFactory.getLogger(ValidationWorkflow);
+    protected readonly workflows = new Map<string, StackActionWorkflowState>();
+    protected readonly log = LoggerFactory.getLogger(ValidationWorkflow);
 
     constructor(
-        private readonly cfnService: CfnService,
-        private readonly documentManager: DocumentManager,
-        private readonly diagnosticCoordinator: DiagnosticCoordinator,
-        private readonly syntaxTreeManager: SyntaxTreeManager,
-        private readonly validationManager: ValidationManager,
+        protected readonly cfnService: CfnService,
+        protected readonly documentManager: DocumentManager,
+        protected readonly diagnosticCoordinator: DiagnosticCoordinator,
+        protected readonly syntaxTreeManager: SyntaxTreeManager,
+        protected readonly validationManager: ValidationManager,
     ) {}
 
     async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
@@ -81,7 +81,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
             state: StackActionState.IN_PROGRESS,
         });
 
-        void this.runValidationAsync(params.id, changeSetName, params.stackName, changeSetType);
+        void this.runValidationAsync(params, changeSetName, changeSetType);
 
         return {
             id: params.id,
@@ -118,11 +118,13 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
     }
 
     protected async runValidationAsync(
-        workflowId: string,
+        params: CreateStackActionParams,
         changeSetName: string,
-        stackName: string,
         changeSetType: ChangeSetType,
     ): Promise<void> {
+        const workflowId = params.id;
+        const stackName = params.stackName;
+
         let existingWorkflow = this.workflows.get(workflowId);
         if (!existingWorkflow) {
             this.log.error({ workflowId }, 'Workflow not found during async execution');
@@ -130,7 +132,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
         }
 
         try {
-            const result = await waitForValidation(this.cfnService, changeSetName, stackName);
+            const result = await waitForChangeSetValidation(this.cfnService, changeSetName, stackName);
 
             const validation = this.validationManager.get(stackName);
             if (validation) {

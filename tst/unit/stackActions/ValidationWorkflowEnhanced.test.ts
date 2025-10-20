@@ -80,7 +80,15 @@ describe('ValidationWorkflow Enhanced Features', () => {
             state: StackActionState.IN_PROGRESS,
         });
 
-        await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
+        await workflow['runValidationAsync'](
+            {
+                uri: 'test-uri',
+                id: 'test-id',
+                stackName: 'test-stack',
+            },
+            'test-changeset',
+            ChangeSetType.CREATE,
+        );
 
         expect(mockValidation.setPhase).toHaveBeenCalledWith(StackActionPhase.VALIDATION_COMPLETE);
         expect(mockValidation.setChanges).toHaveBeenCalled();
@@ -104,7 +112,15 @@ describe('ValidationWorkflow Enhanced Features', () => {
             state: StackActionState.IN_PROGRESS,
         });
 
-        await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
+        await workflow['runValidationAsync'](
+            {
+                uri: 'test-uri',
+                id: 'test-id',
+                stackName: 'test-stack',
+            },
+            'test-changeset',
+            ChangeSetType.CREATE,
+        );
 
         expect(mockValidation.setPhase).toHaveBeenCalledWith(StackActionPhase.VALIDATION_FAILED);
     });
@@ -127,7 +143,15 @@ describe('ValidationWorkflow Enhanced Features', () => {
             state: StackActionState.IN_PROGRESS,
         });
 
-        await workflow['runValidationAsync']('test-id', 'test-changeset', 'test-stack', ChangeSetType.CREATE);
+        await workflow['runValidationAsync'](
+            {
+                uri: 'test-uri',
+                id: 'test-id',
+                stackName: 'test-stack',
+            },
+            'test-changeset',
+            ChangeSetType.CREATE,
+        );
 
         expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
     });
