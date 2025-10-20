@@ -125,6 +125,8 @@ var addMultipleEnvCmd = &cobra.Command{
 }
 
 func init() {
+	addEnvCmd.Flags().String("environments", "", "JSON configuration for environments")
+	
 	updateEnvCmd.Flags().String("name", "", "New environment name")
 	updateEnvCmd.Flags().String("profile", "", "New AWS profile")
 
