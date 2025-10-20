@@ -185,8 +185,10 @@ export class TestExtension implements Closeable {
     // HELPERS
     // ====================================================================
 
-    openDocument(params: DidOpenTextDocumentParams) {
-        return this.notify(DidOpenTextDocumentNotification.method, params);
+    async openDocument(params: DidOpenTextDocumentParams) {
+        await this.notify(DidOpenTextDocumentNotification.method, params);
+        // Give server time to process the notification
+        await new Promise((resolve) => setTimeout(resolve, 10));
     }
 
     changeDocument(params: DidChangeTextDocumentParams) {

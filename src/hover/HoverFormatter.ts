@@ -1,4 +1,5 @@
 import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
+import { updateReplacePolicyValueDocsMap } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { ResourceAttribute } from '../context/ContextType';
 import { Condition, Entity, Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
@@ -1149,7 +1150,9 @@ export function getResourceAttributeValueDoc(attributeName: ResourceAttribute, t
         case ResourceAttribute.DeletionPolicy: {
             return deletionPolicyValueDocsMap.get(text);
         }
-        //TODO: add other ResourceAttribute Values as needed
+        case ResourceAttribute.UpdateReplacePolicy: {
+            return updateReplacePolicyValueDocsMap.get(text);
+        }
         default: {
             return undefined;
         }

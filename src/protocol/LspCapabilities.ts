@@ -1,4 +1,4 @@
-import { InitializeResult, TextDocumentSyncKind } from 'vscode-languageserver';
+import { InitializeResult, TextDocumentSyncKind, CodeActionKind } from 'vscode-languageserver';
 import {
     ANALYZE_DIAGNOSTIC,
     CLEAR_DIAGNOSTIC,
@@ -22,6 +22,7 @@ export const LspCapabilities: InitializeResult = {
         hoverProvider: true,
         codeActionProvider: {
             resolveProvider: false,
+            codeActionKinds: [CodeActionKind.RefactorExtract],
         },
         completionProvider: {
             triggerCharacters: ['.', '!', ':', '\n', '\t', '"'],
