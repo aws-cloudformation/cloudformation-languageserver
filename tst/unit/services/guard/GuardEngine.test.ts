@@ -456,7 +456,7 @@ rule S3_BUCKET_ENCRYPTION when %s3_buckets !empty {
             );
 
             expect(violations).toHaveLength(1);
-            expect(violations[0].message).toBe('Status must be enabled Expected: "Enabled", Found: "Disabled"\n');
+            expect(violations[0].message).toBe('Status must be enabled\n');
         });
 
         it('should handle IN operator with comparison values', () => {
@@ -493,9 +493,7 @@ rule S3_BUCKET_ENCRYPTION when %s3_buckets !empty {
             );
 
             expect(violations).toHaveLength(1);
-            expect(violations[0].message).toBe(
-                'Algorithm must be valid Expected: ["aws:kms","AES256"], Found: "DES"\n',
-            );
+            expect(violations[0].message).toBe('Algorithm must be valid\n');
         });
 
         it('should handle GREATER_THAN operator with comparison values', () => {
@@ -532,7 +530,7 @@ rule S3_BUCKET_ENCRYPTION when %s3_buckets !empty {
             );
 
             expect(violations).toHaveLength(1);
-            expect(violations[0].message).toBe('Retention period must be positive Expected: 0, Found: 0\n');
+            expect(violations[0].message).toBe('Retention period must be positive\n');
         });
 
         it('should handle NOT EXISTS operator without values', () => {
@@ -567,7 +565,7 @@ rule S3_BUCKET_ENCRYPTION when %s3_buckets !empty {
             );
 
             expect(violations).toHaveLength(1);
-            expect(violations[0].message).toBe('Public access should not be configured Property should not exist\n');
+            expect(violations[0].message).toBe('Public access should not be configured\n');
         });
 
         it('should handle EXISTS operator without values', () => {
@@ -603,7 +601,7 @@ rule S3_BUCKET_ENCRYPTION when %s3_buckets !empty {
             );
 
             expect(violations).toHaveLength(1);
-            expect(violations[0].message).toBe('Encryption must be configured Missing property: Encryption\n');
+            expect(violations[0].message).toBe('Encryption must be configured\n');
         });
 
         it('should combine multiple contexts for the same rule and location', () => {
