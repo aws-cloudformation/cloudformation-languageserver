@@ -4,6 +4,11 @@ import {
     CREATION_POLICY_SCHEMA,
     CreationPolicyPropertySchema,
 } from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
+import {
+    deletionPolicyValueDocsMap,
+    DELETION_POLICY_VALUES,
+    supportsSnapshot,
+} from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
@@ -341,6 +346,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             case ResourceAttribute.CreationPolicy: {
                 return this.getCreationPolicyCompletions(propertyPath, resource.Type, context, existingProperties);
             }
+            case ResourceAttribute.DeletionPolicy: {
+                return this.getDeletionPolicyCompletions(resource.Type, context);
+            }
             //TODO: add other resource attributes
             default: {
                 return [];
@@ -384,6 +392,24 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             resourceType,
             context,
             existingProperties,
+        );
+    }
+
+    private getDeletionPolicyCompletions(resourceType: string, context: Context): CompletionItem[] {
+        if (!context.isValue()) {
+            return [];
+        }
+
+        return DELETION_POLICY_VALUES.filter((value) => value !== 'Snapshot' || supportsSnapshot(resourceType)).map(
+            (value, index) => {
+                const documentation = deletionPolicyValueDocsMap.get(value);
+                return createCompletionItem(value, CompletionItemKind.EnumMember, {
+                    sortText: `${index}`,
+                    documentation: documentation ? createMarkupContent(documentation) : undefined,
+                    data: { type: 'simple' },
+                    context: context,
+                });
+            },
         );
     }
 
