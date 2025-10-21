@@ -35,6 +35,7 @@ export interface ResourceStateParams extends CodeActionParams {
 export interface ResourceStateResult extends CodeAction {
     successfulImports: Record<ResourceType, ResourceIdentifier[]>;
     failedImports: Record<ResourceType, ResourceIdentifier[]>;
+    warning?: string;
 }
 
 export const ResourceStateRequest = new RequestType<ResourceStateParams, ResourceStateResult, void>(
