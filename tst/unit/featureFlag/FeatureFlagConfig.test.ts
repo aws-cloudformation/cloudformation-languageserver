@@ -5,52 +5,52 @@ describe('FeatureFlagConfig', () => {
     describe('constructor', () => {
         it('should create with default disabled flags when no config provided', () => {
             const config = new FeatureFlagConfig();
-            expect(config.get('EnhancedDryRun').isEnabled()).toBe(false);
-            expect(config.get('AnotherFeature').isEnabled()).toBe(false);
+            expect(config.get('StaticFlag').isEnabled()).toBe(false);
+            expect(config.getTargeted('EnhancedDryRun').isEnabled('us-east-1')).toBe(false);
         });
 
-        it('should enable static feature from config', () => {
+        it('should enable EnhancedDryRun with full config', () => {
             const config = new FeatureFlagConfig({
                 version: 1,
                 description: 'test',
                 features: {
-                    EnhancedDryRun: { enabled: true },
+                    EnhancedDryRun: { enabled: true, fleetPercentage: 100, allowlistedRegions: ['us-east-1'] },
                 },
             });
-            expect(config.get('EnhancedDryRun').isEnabled()).toBe(true);
+            expect(config.getTargeted('EnhancedDryRun').isEnabled('us-east-1')).toBe(true);
         });
 
-        it('should enable localhost targeted feature with 100% fleet', () => {
+        it('should disable EnhancedDryRun for non-allowlisted region', () => {
             const config = new FeatureFlagConfig({
                 version: 1,
                 description: 'test',
                 features: {
-                    AnotherFeature: { enabled: true, fleetPercentage: 100 },
+                    EnhancedDryRun: { enabled: true, fleetPercentage: 100, allowlistedRegions: ['us-east-1'] },
                 },
             });
-            expect(config.get('AnotherFeature').isEnabled()).toBe(true);
+            expect(config.getTargeted('EnhancedDryRun').isEnabled('us-west-2')).toBe(false);
         });
 
-        it('should disable localhost targeted feature when static disabled', () => {
+        it('should disable EnhancedDryRun when static disabled', () => {
             const config = new FeatureFlagConfig({
                 version: 1,
                 description: 'test',
                 features: {
-                    AnotherFeature: { enabled: false, fleetPercentage: 100 },
+                    EnhancedDryRun: { enabled: false, fleetPercentage: 100, allowlistedRegions: ['us-east-1'] },
                 },
             });
-            expect(config.get('AnotherFeature').isEnabled()).toBe(false);
+            expect(config.getTargeted('EnhancedDryRun').isEnabled('us-east-1')).toBe(false);
         });
 
-        it('should disable localhost targeted feature with 0% fleet', () => {
+        it('should disable EnhancedDryRun with 0% fleet', () => {
             const config = new FeatureFlagConfig({
                 version: 1,
                 description: 'test',
                 features: {
-                    AnotherFeature: { enabled: true, fleetPercentage: 0 },
+                    EnhancedDryRun: { enabled: true, fleetPercentage: 0, allowlistedRegions: ['us-east-1'] },
                 },
             });
-            expect(config.get('AnotherFeature').isEnabled()).toBe(false);
+            expect(config.getTargeted('EnhancedDryRun').isEnabled('us-east-1')).toBe(false);
         });
 
         it('should throw error for invalid config schema', () => {
@@ -61,7 +61,7 @@ describe('FeatureFlagConfig', () => {
     describe('get', () => {
         it('should return feature flag by key', () => {
             const config = new FeatureFlagConfig();
-            const flag = config.get('EnhancedDryRun');
+            const flag = config.get('StaticFlag');
             expect(flag).toBeDefined();
             expect(flag.isEnabled).toBeDefined();
         });
@@ -70,7 +70,7 @@ describe('FeatureFlagConfig', () => {
     describe('getTargeted', () => {
         it('should return targeted feature flag by key', () => {
             const config = new FeatureFlagConfig();
-            const flag = config.getTargeted('AnotherFeature');
+            const flag = config.getTargeted('EnhancedDryRun');
             expect(flag).toBeDefined();
             expect(flag.isEnabled).toBeDefined();
         });
@@ -82,21 +82,21 @@ describe('FeatureFlagConfig', () => {
                 version: 1,
                 description: 'test',
                 features: {
-                    EnhancedDryRun: { enabled: true },
+                    EnhancedDryRun: { enabled: true, fleetPercentage: 100, allowlistedRegions: ['us-east-1'] },
                 },
             });
             const config = FeatureFlagConfig.fromJsonString(json);
-            expect(config.get('EnhancedDryRun').isEnabled()).toBe(true);
+            expect(config.getTargeted('EnhancedDryRun').isEnabled('us-east-1')).toBe(true);
         });
 
         it('should create default config when no string provided', () => {
             const config = FeatureFlagConfig.fromJsonString();
-            expect(config.get('EnhancedDryRun').isEnabled()).toBe(false);
+            expect(config.get('StaticFlag').isEnabled()).toBe(false);
         });
 
         it('should create default config when undefined provided', () => {
             const config = FeatureFlagConfig.fromJsonString(undefined);
-            expect(config.get('EnhancedDryRun').isEnabled()).toBe(false);
+            expect(config.get('StaticFlag').isEnabled()).toBe(false);
         });
 
         it('should throw error for invalid JSON', () => {

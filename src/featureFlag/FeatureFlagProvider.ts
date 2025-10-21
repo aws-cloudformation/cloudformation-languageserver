@@ -4,8 +4,8 @@ import axios from 'axios';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
-import { FeatureFlagConfig, FeatureFlagConfigKey } from './FeatureFlagConfig';
-import { Describable } from './FeatureFlagI';
+import { FeatureFlagConfig, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey } from './FeatureFlagConfig';
+import { Describable, FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 
 const log = LoggerFactory.getLogger('FeatureFlagProvider');
 
@@ -27,21 +27,21 @@ export class FeatureFlagProvider implements Closeable {
 
         // https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api?apiVersion=2022-11-28#primary-rate-limit-for-unauthenticated-users
         // GitHub rate limits unauthenticated users to 60 requests per minute, so our refresh cycle has to be less than that
-        // Using 2 mins i.e. 30 requests in 1 hour
+        // Using 5 mins i.e. 12 requests in 1 hour
         this.timeout = setInterval(
             () => {
                 this.refresh().catch(log.error);
             },
-            2 * 60 * 1000,
+            5 * 60 * 1000,
         );
     }
 
-    get(key: FeatureFlagConfigKey): boolean {
-        return this.config.get(key).isEnabled();
+    get(key: FeatureFlagConfigKey): FeatureFlag {
+        return this.config.get(key);
     }
 
-    getTargeted<T>(key: FeatureFlagConfigKey, target: T): boolean {
-        return this.config.getTargeted(key).isEnabled(target);
+    getTargeted<T>(key: TargetedFeatureFlagConfigKey): TargetedFeatureFlag<T> {
+        return this.config.getTargeted(key);
     }
 
     private async refresh() {
