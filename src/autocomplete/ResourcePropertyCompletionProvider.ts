@@ -5,15 +5,15 @@ import {
     CreationPolicyPropertySchema,
 } from '../artifacts/resourceAttributes/CreationPolicyPropertyDocs';
 import {
-    supportsUpdatePolicy,
-    UPDATE_POLICY_SCHEMA,
-    UpdatePolicyPropertySchema,
-} from '../artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
-import {
     deletionPolicyValueDocsMap,
     DELETION_POLICY_VALUES,
     supportsSnapshot,
 } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
+import {
+    supportsUpdatePolicy,
+    UPDATE_POLICY_SCHEMA,
+    UpdatePolicyPropertySchema,
+} from '../artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
