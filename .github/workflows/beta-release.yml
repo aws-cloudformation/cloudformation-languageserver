@@ -3,11 +3,6 @@ run-name: Release Beta ${{ inputs.version }} ${{ github.actor }} ${{ github.even
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'The version to release. Can be the same as or higher than the version in main.'
-        required: true
-        type: string
 
 jobs:
   get-configs:
@@ -42,24 +37,8 @@ jobs:
         id: version-and-tag
         run: |
           PKG_VERSION=$(jq -r .version package.json)
-          INPUT_VERSION="${{ inputs.version }}"
-          HIGHEST_VERSION=$(printf "%s\n%s" "$PKG_VERSION" "$INPUT_VERSION" | sort -V | tail -n1)
 
-          if [ "$INPUT_VERSION" == "$PKG_VERSION" ]; then
-            echo "Input version matches package.json. No version bump needed on main."
-          elif [ "$HIGHEST_VERSION" == "$INPUT_VERSION" ]; then
-            echo "Bumping version on the main branch..."
-            npm version --no-git-tag-version "$INPUT_VERSION"
-
-            git add package.json package-lock.json
-            git commit -m "chore(release): Bump version to $INPUT_VERSION"
-            git push origin main
-          else
-            echo "::error::Input version ($INPUT_VERSION) must be >= current version ($PKG_VERSION)."
-            exit 1
-          fi
-
-          FULL_TAG="v${INPUT_VERSION}-beta"
+          FULL_TAG="v${PKG_VERSION}-beta"
           git tag "$FULL_TAG"
           git push origin "$FULL_TAG"
           echo "Created tag from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
