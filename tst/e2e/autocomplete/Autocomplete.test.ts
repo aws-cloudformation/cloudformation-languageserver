@@ -894,13 +894,73 @@ Resources:
                     {
                         action: 'type',
                         content: `datePolicy:
-      AutoScalingRollingUpdate:
-        MinInstancesInService: 1
-        MaxBatchSize: 2
-        PauseTime: PT5M
-        WaitOnResourceSignals: true
-    C`,
+      A`,
                         position: { line: 252, character: 6 },
+                        description: 'Suggest AutoScalingRollingUpdate in UpdatePolicy',
+                        verification: {
+                            position: { line: 253, character: 7 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['AutoScalingRollingUpdate'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `utoScalingRollingUpdate:
+        M`,
+                        position: { line: 253, character: 7 },
+                        description: 'Suggest MinInstancesInService in UpdatePolicy',
+                        verification: {
+                            position: { line: 254, character: 9 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['MinInstancesInService'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `inInstancesInService: 1
+        M`,
+                        position: { line: 254, character: 9 },
+                        description: 'Suggest MaxBatchSize in UpdatePolicy',
+                        verification: {
+                            position: { line: 255, character: 9 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['MaxBatchSize'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `axBatchSize: 2
+        P`,
+                        position: { line: 255, character: 9 },
+                        description: 'Suggest PauseTime in UpdatePolicy',
+                        verification: {
+                            position: { line: 256, character: 9 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['PauseTime'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `auseTime: PT5M
+        W`,
+                        position: { line: 256, character: 9 },
+                        description: 'Suggest WaitOnResourceSignals in UpdatePolicy',
+                        verification: {
+                            position: { line: 257, character: 9 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['WaitOnResourceSignals'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `aitOnResourceSignals: true
+    C`,
+                        position: { line: 257, character: 9 },
                         description: 'Suggest Resource entity field UpdatePolicy',
                         verification: {
                             position: { line: 258, character: 5 },

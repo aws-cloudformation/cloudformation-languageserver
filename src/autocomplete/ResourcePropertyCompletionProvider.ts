@@ -9,6 +9,11 @@ import {
     DELETION_POLICY_VALUES,
     supportsSnapshot,
 } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
+import {
+    supportsUpdatePolicy,
+    UPDATE_POLICY_SCHEMA,
+    UpdatePolicyPropertySchema,
+} from '../artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
@@ -346,6 +351,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             case ResourceAttribute.CreationPolicy: {
                 return this.getCreationPolicyCompletions(propertyPath, resource.Type, context, existingProperties);
             }
+            case ResourceAttribute.UpdatePolicy: {
+                return this.getUpdatePolicyCompletions(propertyPath, resource.Type, context, existingProperties);
+            }
             case ResourceAttribute.DeletionPolicy: {
                 return this.getDeletionPolicyCompletions(resource.Type, context);
             }
@@ -395,6 +403,25 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         );
     }
 
+    private getUpdatePolicyCompletions(
+        propertyPath: ReadonlyArray<string>,
+        resourceType: string,
+        context: Context,
+        existingProperties: Set<string>,
+    ): CompletionItem[] {
+        if (!supportsUpdatePolicy(resourceType)) {
+            return [];
+        }
+
+        return this.getSchemaBasedCompletions(
+            UPDATE_POLICY_SCHEMA,
+            propertyPath,
+            resourceType,
+            context,
+            existingProperties,
+        );
+    }
+
     private getDeletionPolicyCompletions(resourceType: string, context: Context): CompletionItem[] {
         if (!context.isValue()) {
             return [];
@@ -414,7 +441,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     }
 
     private getSchemaBasedCompletions(
-        schema: Record<string, CreationPolicyPropertySchema>,
+        schema: Record<string, CreationPolicyPropertySchema | UpdatePolicyPropertySchema>,
         propertyPath: ReadonlyArray<string>,
         resourceType: string,
         context: Context,
