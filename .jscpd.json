@@ -1,0 +1,26 @@
+{
+  "ignore": [
+    "assets/**",
+    "bundle/**",
+    "coverage/**",
+    "**/node_modules/**",
+    "out/**",
+    "sbom/**",
+    "tools/**",
+    "tsconfig*",
+    "*.md",
+    "*.d.ts"
+  ],
+  "path": [
+    "src"
+  ],
+  "gitignore": true,
+  "threshold": 1,
+  "minLines": 10,
+  "output": "./jscpd",
+  "reporters": [
+    "console",
+    "json",
+    "markdown"
+  ]
+}

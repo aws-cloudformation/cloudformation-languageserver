@@ -41,7 +41,8 @@
     "generate-metrics": "NODE_ENV=development AWS_ENV=alpha node --max-old-space-size=16384 -r ts-node/register tools/telemetry-generator.ts",
     "debug-tree": "node -r ts-node/register tools/debug_tree.ts",
     "build:guard-wasm": "node -r ts-node/register tools/build-guard-wasm.ts",
-    "generate:guard-rules": "node -r ts-node/register tools/generate-guard-rules.ts"
+    "generate:guard-rules": "node -r ts-node/register tools/generate-guard-rules.ts",
+    "check:duplicates": "jscpd"
   },
   "dependencies": {
     "@aws-sdk/client-cloudcontrol": "3.873.0",
@@ -110,6 +111,7 @@
     "eslint-plugin-promise": "7.2.1",
     "eslint-plugin-security": "3.0.1",
     "eslint-plugin-unicorn": "60.0.0",
+    "jscpd": "4.0.5",
     "minimatch": "10.0.3",
     "node-loader": "2.1.0",
     "prettier": "3.6.2",
@@ -117,6 +119,7 @@
     "ts-loader": "9.5.4",
     "ts-node": "10.9.2",
     "ts-sinon": "2.0.2",
+    "tsx": "4.20.6",
     "typescript": "5.9.2",
     "typescript-eslint": "8.41.0",
     "vitest": "3.2.4",
