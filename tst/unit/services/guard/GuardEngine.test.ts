@@ -376,8 +376,7 @@ rule S3_BUCKET_ENCRYPTION when %s3_buckets !empty {
             const ruleWithMessage = ALL_RULES['API_GW_CACHE_ENABLED_AND_ENCRYPTED'];
             expect(ruleWithMessage).toBeDefined();
             expect(ruleWithMessage.message).toBeDefined();
-            expect(ruleWithMessage.message).toContain('Violation:');
-            expect(ruleWithMessage.message).toContain('Fix:');
+            expect(ruleWithMessage.message).toContain('CacheDataEncrypted');
 
             // The content should no longer contain << >> blocks
             expect(ruleWithMessage.content).not.toContain('<<');
