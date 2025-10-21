@@ -1964,7 +1964,7 @@ Resources:
         {
           "Assert": {"Fn::Contains": [
             ["t3.micro", "t3.small", "t3.medium"],
-            {"Fi"}
+            {"Fn::Fi"}
           ]}
         }
       ]
@@ -1973,28 +1973,26 @@ Resources:
                         position: { line: 119, character: 2 },
                         description: 'FindInMap intrinsic function name',
                         verification: {
-                            position: { line: 127, character: 15 },
+                            position: { line: 127, character: 20 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Fn::FindInMap'])
-                                .todo('Completion provider not recognizing this as inIntrinsicFunction')
                                 .build(),
                         },
                     },
                     {
                         action: 'delete',
-                        range: { start: { line: 132, character: 2 }, end: { line: 132, character: 3 } },
+                        range: { start: { line: 132, character: 3 }, end: { line: 132, character: 4 } },
                         description: 'Remove trailing }',
                     },
                     {
                         action: 'replace',
                         content: `"Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "I"]`,
-                        range: { start: { line: 127, character: 13 }, end: { line: 127, character: 17 } },
-                        description: 'Complete FindInMap function with mapping name, region, and start of key',
+                        range: { start: { line: 127, character: 13 }, end: { line: 127, character: 21 } },
+                        description: 'Complete FindInMap second level key',
                         verification: {
                             position: { line: 127, character: 69 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['InstanceType'])
-                                .todo('Dynamic topLevelKey making secondLevelKey invalid')
                                 .build(),
                         },
                     },
@@ -2722,7 +2720,6 @@ Resources:
                             position: { line: 364, character: 53 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Snapshot'])
-                                .todo('Returns nothing in valid JSON')
                                 .build(),
                         },
                     },
@@ -3038,19 +3035,24 @@ Resources:
                         },
                     },
                     {
-                        action: 'type',
-                        content: `TopicConfigurations`,
-                        position: { line: 516, character: 11 },
+                        action: 'replace',
+                        content: `TopicConfigurations": [
+            {
+              "Topic": "arn:aws:sns:us-east-1:123456789012:my-topic",
+              "Event": "s3:ObjectCreated:*"
+            }
+          ]`,
+                        range: { start: { line: 516, character: 11 }, end: { line: 516, character: 12 } },
                         description: 'Suggest nested array item completion',
                     },
                     {
                         action: 'type',
                         content: `,
   "O"`,
-                        position: { line: 520, character: 3 },
+                        position: { line: 525, character: 3 },
                         description: 'Suggest Outputs top-level-section and omit authored sections',
                         verification: {
-                            position: { line: 521, character: 3 },
+                            position: { line: 526, character: 3 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Outputs'])
                                 .expectExcludesItems(['Conditions', 'Resources', 'Transform', 'Description'])
@@ -3065,14 +3067,11 @@ Resources:
       "V"
     }
   }`,
-                        range: { start: { line: 521, character: 2 }, end: { line: 521, character: 5 } },
+                        range: { start: { line: 526, character: 2 }, end: { line: 526, character: 5 } },
                         description: 'Suggest Output entity field Value',
                         verification: {
-                            position: { line: 524, character: 8 },
-                            expectation: CompletionExpectationBuilder.create()
-                                .expectItems(['Value'])
-                                .todo('Works in functional testing for both comprehensive.json and current doc')
-                                .build(),
+                            position: { line: 529, character: 8 },
+                            expectation: CompletionExpectationBuilder.create().expectItems(['Value']).build(),
                         },
                     },
                     {
@@ -3096,10 +3095,10 @@ Resources:
         "Name": {"Fn::Sub": "\${EnvironmentName}-Database-Endpoint"}
       },
       "Condition": "Is"`,
-                        range: { start: { line: 524, character: 6 }, end: { line: 524, character: 9 } },
+                        range: { start: { line: 529, character: 6 }, end: { line: 529, character: 9 } },
                         description: 'Condition usage within Outputs',
                         verification: {
-                            position: { line: 542, character: 22 },
+                            position: { line: 547, character: 22 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems([
                                     'IsProduction',
@@ -3114,7 +3113,7 @@ Resources:
                     {
                         action: 'type',
                         content: `ProductionOrStaging`,
-                        position: { line: 542, character: 22 },
+                        position: { line: 547, character: 22 },
                     },
                     {
                         action: 'type',
@@ -3128,10 +3127,10 @@ Resources:
         }
       ]}
     }`,
-                        position: { line: 543, character: 5 },
+                        position: { line: 548, character: 5 },
                         description: 'Ref parameter inside Fn::Sub',
                         verification: {
-                            position: { line: 549, character: 35 },
+                            position: { line: 554, character: 35 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['EnvironmentName'])
                                 .build(),
@@ -3142,10 +3141,10 @@ Resources:
                         content: `nvironmentName"},
           "VpcId": {"Ref": "VPC"},
           "VpcCidr": {"Fn::GetAtt": ["VPC", ""]}`,
-                        range: { start: { line: 549, character: 35 }, end: { line: 549, character: 37 } },
+                        range: { start: { line: 554, character: 35 }, end: { line: 554, character: 37 } },
                         description: 'GetAtt attribute returns all attributes',
                         verification: {
-                            position: { line: 551, character: 45 },
+                            position: { line: 556, character: 45 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['DefaultNetworkAcl', 'CidrBlockAssociations'])
                                 .build(),
@@ -3157,10 +3156,10 @@ Resources:
           "SubnetList": {"Fn::Join": [", ", {"Ref": "SubnetCidrs"}]},
           "DbEndpoint": {"Fn::GetAtt": ["Database", "Endpoint.Address"]},
           "DbPort": {"Fn::GetAtt": ["Database", "Endpoint."]}`,
-                        range: { start: { line: 551, character: 45 }, end: { line: 551, character: 48 } },
+                        range: { start: { line: 556, character: 45 }, end: { line: 556, character: 48 } },
                         description: 'Ref parameter inside Fn::Sub',
                         verification: {
-                            position: { line: 554, character: 54 },
+                            position: { line: 559, character: 54 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['Endpoint.Address', 'Endpoint.Port'])
                                 .build(),
@@ -3168,7 +3167,7 @@ Resources:
                     },
                     {
                         action: 'replace',
-                        range: { start: { line: 554, character: 58 }, end: { line: 554, character: 61 } },
+                        range: { start: { line: 559, character: 58 }, end: { line: 559, character: 61 } },
                         content: `Port"]},
           "InstanceCount": {"Ref": "InstanceCount"},
           "AvailabilityZones": {"Fn::Join": [", ", {"Ref": "AvailabilityZones"}]}`,
@@ -3207,19 +3206,16 @@ Resources:
         ]}
       ]}
     }`,
-                        position: { line: 559, character: 5 },
+                        position: { line: 564, character: 5 },
                         description: 'suggest Mapping second level key in deeply nested intrinsic function',
                         verification: {
-                            position: { line: 584, character: 79 },
-                            expectation: CompletionExpectationBuilder.create()
-                                .expectItems(['AMI'])
-                                .todo('Dynamic first level key making second key invalid')
-                                .build(),
+                            position: { line: 589, character: 79 },
+                            expectation: CompletionExpectationBuilder.create().expectItems(['AMI']).build(),
                         },
                     },
                     {
                         action: 'delete',
-                        range: { start: { line: 584, character: 81 }, end: { line: 584, character: 84 } },
+                        range: { start: { line: 589, character: 81 }, end: { line: 589, character: 84 } },
                         description: 'Remove "]}',
                     },
 
@@ -3228,10 +3224,10 @@ Resources:
                         content: `MI"]},
               "Second": {"Fn::GetAtt": ["Database", "Endpoint.Address"]},
               "Th`,
-                        position: { line: 584, character: 81 },
+                        position: { line: 589, character: 81 },
                         description: 'suggest substitution variable in second arg of Fn::Sub based on first arg',
                         verification: {
-                            position: { line: 586, character: 17 },
+                            position: { line: 591, character: 17 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectItems(['Third'])
                                 .todo('Returns nothing')
@@ -3241,10 +3237,10 @@ Resources:
                     {
                         action: 'type',
                         content: `ird": "placeholder"`,
-                        position: { line: 586, character: 18 },
+                        position: { line: 591, character: 18 },
                         description: 'Complete the JSON template',
                         verification: {
-                            position: { line: 580, character: 35 },
+                            position: { line: 585, character: 35 },
                             expectation: CompletionExpectationBuilder.create().expectItems([]).build(),
                         },
                     },
