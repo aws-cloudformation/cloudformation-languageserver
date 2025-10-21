@@ -6,7 +6,7 @@ import { Closeable } from '../utils/Closeable';
 import { LoggerFactory } from './LoggerFactory';
 import { otelSdk } from './OTELInstrumentation';
 import { ScopedTelemetry } from './ScopedTelemetry';
-import { ExtendedClientMetadata, ClientInfo, TelemetrySettings } from './TelemetryConfig';
+import { AwsMetadata, ClientInfo, TelemetrySettings } from './TelemetryConfig';
 
 export class TelemetryService implements Closeable {
     private static _instance: TelemetryService | undefined = undefined;
@@ -18,11 +18,11 @@ export class TelemetryService implements Closeable {
 
     private readonly scopedTelemetry: Map<string, ScopedTelemetry> = new Map();
 
-    private constructor(client?: ClientInfo, metadata?: ExtendedClientMetadata) {
+    private constructor(client?: ClientInfo, metadata?: AwsMetadata) {
         this.enabled = metadata?.telemetryEnabled ?? TelemetrySettings.isEnabled;
 
         if (this.enabled) {
-            const id = metadata?.clientId ?? v4();
+            const id = metadata?.clientInfo?.clientId ?? v4();
             const { metricsReader, sdk } = otelSdk(id, client);
 
             this.metricsReader = metricsReader;
@@ -190,7 +190,7 @@ export class TelemetryService implements Closeable {
         return TelemetryService._instance!;
     }
 
-    public static initialize(client?: ClientInfo, metadata?: ExtendedClientMetadata) {
+    public static initialize(client?: ClientInfo, metadata?: AwsMetadata) {
         if (TelemetryService._instance !== undefined) {
             throw new Error('TelemetryService was already created');
         }

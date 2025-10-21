@@ -8,6 +8,7 @@ export function stableMachineSpecificKey(salt: string, info: string, keyLen: num
         cpus().length > 0
             ? cpus()
                   .map((cpu) => cpu.model)
+                  .sort()
                   .join('-')
                   .trim()
             : 'unknown-cpu';

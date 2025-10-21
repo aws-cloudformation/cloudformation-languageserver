@@ -1,13 +1,17 @@
 import { LevelWithSilent } from 'pino';
+import { _InitializeParams } from 'vscode-languageserver-protocol';
 import { isAlpha, IsAppEnvironment, isBeta } from '../utils/Environment';
 
-export type ClientInfo = {
-    name: string;
-    version?: string;
-};
+export type ClientInfo = _InitializeParams['clientInfo'];
 
-export type ExtendedClientMetadata = {
-    clientId?: string;
+export type AwsMetadata = {
+    clientInfo?: {
+        extension: {
+            name: string;
+            version: string;
+        };
+        clientId: string;
+    };
     telemetryEnabled?: boolean;
     logLevel?: LevelWithSilent;
 };

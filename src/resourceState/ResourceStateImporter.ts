@@ -66,6 +66,12 @@ export class ResourceStateImporter {
             syntaxTree,
             purpose,
         );
+
+        let warning: string | undefined;
+        if (purpose === ResourceStatePurpose.IMPORT) {
+            warning = this.checkAndWarnManagedResources(fetchedResourceStates);
+        }
+
         const resourceSection = this.getResourceSection(syntaxTree);
         const insertPosition = this.getInsertPosition(resourceSection, document);
         const docFormattedText = this.combineResourcesToDocumentFormat(
@@ -84,6 +90,7 @@ export class ResourceStateImporter {
 
         return {
             ...importResult,
+            warning,
             kind: CodeActionKind.Refactor,
             edit: {
                 changes: {
@@ -91,6 +98,16 @@ export class ResourceStateImporter {
                 },
             },
         };
+    }
+
+    private checkAndWarnManagedResources(fetchedResourceStates: ResourceTemplateFormat[]): string | undefined {
+        const managedLogicalIds = fetchedResourceStates
+            .filter((state) => Object.values(state)[0]?.Metadata?.ManagedByStack === 'true')
+            .map((state) => Object.keys(state)[0]);
+
+        if (managedLogicalIds.length > 0) {
+            return `Cannot import resources that are already managed by a stack. Remove these resources from their current stack (set DeletionPolicy to Retain before removing). Managed resources: ${managedLogicalIds.join(', ')}`;
+        }
     }
 
     private async getResourceStates(
@@ -172,21 +189,18 @@ export class ResourceStateImporter {
     }
 
     private generateLogicalId(resourceType: string, identifier: string, existingLogicalIds?: Set<string>): string {
-        // get Bucket from AWS::S3::Bucket or if malformed just the resourceType sanitized
-        const resourceTypeParts = resourceType.split('::');
-        const resourceTypeThirdPartOrFull = resourceTypeParts.pop() ?? resourceType.replaceAll(/[^a-zA-Z]/g, '');
-        if (!existingLogicalIds?.has(resourceTypeThirdPartOrFull)) {
-            return resourceTypeThirdPartOrFull;
+        const parts = resourceType.split('::');
+        const baseName = parts.length >= 3 ? parts[1] + parts[2] : parts[parts.length - 1];
+
+        if (!existingLogicalIds?.has(baseName)) {
+            return baseName;
         }
-        const cleanIdentifier = identifier.replaceAll(/[^a-zA-Z]/g, '');
-        const typeAndId = resourceTypeThirdPartOrFull + cleanIdentifier.slice(0, 10);
-        if (!existingLogicalIds?.has(typeAndId)) {
-            return typeAndId;
+
+        let count = 1;
+        while (existingLogicalIds.has(`${baseName}${count}`)) {
+            count++;
         }
-        return crypto
-            .randomUUID()
-            .replaceAll(/[^a-zA-Z]/g, '')
-            .slice(0, 10);
+        return `${baseName}${count}`;
     }
 
     private getResourceSection(syntaxTree: SyntaxTree): ResourcesSection | undefined {

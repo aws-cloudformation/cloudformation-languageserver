@@ -1,3 +1,4 @@
+import { FeatureFlagProvider } from '../featureFlag/FeatureFlagProvider';
 import { LspComponents } from '../protocol/LspComponents';
 import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
 import { GetSchemaTaskManager } from '../schema/GetSchemaTaskManager';
@@ -32,6 +33,7 @@ export class CfnExternal implements Configurables, Closeable {
     readonly guardService: GuardService;
 
     readonly onlineStatus: OnlineStatus;
+    readonly featureFlags: FeatureFlagProvider;
 
     constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Partial<CfnExternal> = {}) {
         this.awsClient = overrides.awsClient ?? new AwsClient(core.awsCredentials);
@@ -57,6 +59,7 @@ export class CfnExternal implements Configurables, Closeable {
             new GuardService(core.documentManager, core.diagnosticCoordinator, core.syntaxTreeManager);
 
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus(core.clientMessage);
+        this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider();
     }
 
     configurables(): Configurable[] {
@@ -70,6 +73,7 @@ export class CfnExternal implements Configurables, Closeable {
             this.schemaTaskManager,
             this.schemaRetriever,
             this.onlineStatus,
+            this.featureFlags,
         );
     }
 }

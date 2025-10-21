@@ -58,22 +58,8 @@ Resources:
 ];
 
 function getResourceLogicalName(resourceType: string): string {
-    const typeMap: Record<string, string> = {
-        'AWS::S3::Bucket': 'Bucket',
-        'AWS::EC2::Instance': 'Instance',
-        'AWS::IAM::Role': 'Role',
-        'AWS::Lambda::Function': 'Function',
-        'AWS::EC2::VPC': 'VPC',
-        'AWS::EC2::Subnet': 'Subnet',
-        'AWS::EC2::SecurityGroup': 'SecurityGroup',
-        'AWS::EC2::LaunchTemplate': 'LaunchTemplate',
-        'AWS::AutoScaling::AutoScalingGroup': 'AutoScalingGroup',
-        'AWS::RDS::DBInstance': 'DBInstance',
-        'AWS::CloudWatch::Alarm': 'Alarm',
-        'AWS::SNS::Topic': 'Topic',
-        'AWS::SSM::Parameter': 'Parameter',
-    };
-    return typeMap[resourceType] || 'Resource';
+    const parts = resourceType.split('::');
+    return parts.length >= 3 ? parts[1] + parts[2] : parts[parts.length - 1];
 }
 
 function formatPropertiesForJson(properties: any, indent: number = 6): string {

@@ -1,14 +1,14 @@
-const AwsEnvironment = {
+const AwsEnvironment = Object.freeze({
     ALPHA: 'alpha',
     BETA: 'beta',
     PROD: 'prod',
-};
+} as const);
 
-const NodeEnvironment = {
+const NodeEnvironment = Object.freeze({
     development: 'development',
     production: 'production',
     test: 'test',
-};
+} as const);
 
 export const AwsEnv = getAwsEnv();
 export const NodeEnv = getNodeEnv();
@@ -17,6 +17,9 @@ export const isTest = getNodeEnv() === NodeEnvironment.test;
 export const isProd = getAwsEnv() === AwsEnvironment.PROD;
 export const isBeta = getAwsEnv() === AwsEnvironment.BETA;
 export const isAlpha = getAwsEnv() === AwsEnvironment.ALPHA;
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 export const IsAppEnvironment = Object.values(AwsEnvironment).includes(AwsEnv);
 
 function getAwsEnv() {

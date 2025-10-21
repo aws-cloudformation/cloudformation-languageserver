@@ -17,6 +17,7 @@ import { DataStoreFactoryProvider, MemoryDataStoreFactoryProvider } from '../../
 import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { DocumentSymbolRouter } from '../../src/documentSymbol/DocumentSymbolRouter';
+import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { LspAuthHandlers } from '../../src/protocol/LspAuthHandlers';
 import { LspCommunication } from '../../src/protocol/LspCommunication';
@@ -353,6 +354,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
         guardService: overrides.guardService ?? createMockGuardService(),
         onlineStatus: overrides.onlineStatus ?? stubInterface<OnlineStatus>(),
+        featureFlags: overrides.featureFlags ?? stubInterface<FeatureFlagProvider>(),
         close: () => Promise.resolve(),
         configurables: () => [],
     };

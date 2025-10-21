@@ -1,15 +1,43 @@
 #!/usr/bin/env node
-
-import { ContextManager } from '../src/context/ContextManager';
-import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
+import { v4 } from 'uuid';
+import { LoggerFactory } from '../src/telemetry/LoggerFactory';
 import { TelemetryService } from '../src/telemetry/TelemetryService';
+
+const id = v4();
+LoggerFactory.initialize({ logLevel: 'silent' });
+TelemetryService.initialize(undefined, {
+    telemetryEnabled: true,
+    clientInfo: {
+        extension: {
+            name: 'Test Telemetry Generator',
+            version: '0.0.0',
+        },
+        clientId: id,
+    },
+});
+
 import { readdirSync } from 'fs';
 import { join, extname, resolve } from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { generatePositions, TestPosition, discoverTemplateFiles } from './utils';
-import { v4 } from 'uuid';
-import { LoggerFactory } from '../src/telemetry/LoggerFactory';
+import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
+import { ContextManager } from '../src/context/ContextManager';
+import { DocumentManager } from '../src/document/DocumentManager';
+import { TextDocuments } from 'vscode-languageserver/node';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import {
+    createMockComponents,
+    createMockSchemaRetriever,
+    createMockResourceStateManager,
+} from '../tst/utils/MockServerComponents';
+import { combinedSchemas } from '../tst/utils/SchemaUtils';
+import { CompletionRouter, createCompletionProviders } from '../src/autocomplete/CompletionRouter';
+import { HoverRouter } from '../src/hover/HoverRouter';
+import { MultiDataStoreFactoryProvider } from '../src/datastore/DataStore';
+import { SchemaStore } from '../src/schema/SchemaStore';
+import { GetSchemaTaskManager } from '../src/schema/GetSchemaTaskManager';
+import { getRemotePublicSchemas } from '../src/schema/GetSchemaTask';
 
 const argv = yargs(hideBin(process.argv))
     .option('templates', {
@@ -49,77 +77,27 @@ const argv = yargs(hideBin(process.argv))
 const TEMPLATE_PATHS = argv.templates as string[];
 const INTERVAL_MS = argv.interval;
 
-type MetricStats = {
-    count: number;
-    sum: number;
-    min: number;
-    max: number;
-};
-
-const stats = {
-    syntaxTree: new Map<string, MetricStats>(),
-    context: new Map<string, MetricStats>(),
-};
-
-function updateStats(map: Map<string, MetricStats>, key: string, value: number): void {
-    let stat = map.get(key);
-    if (!stat) {
-        stat = { count: 0, sum: 0, min: Infinity, max: -Infinity };
-        map.set(key, stat);
-    }
-    stat.count++;
-    stat.sum += value;
-    stat.min = Math.min(stat.min, value);
-    stat.max = Math.max(stat.max, value);
-}
-
-function printStats(): void {
-    console.log('\n📊 Local Statistics Summary:');
-    console.log('\n=== Syntax Tree Creation ===');
-    for (const [key, stat] of stats.syntaxTree.entries()) {
-        const avg = stat.sum / stat.count;
-        console.log(`${key}:`);
-        console.log(`  Count: ${stat.count}`);
-        console.log(`  Min: ${stat.min.toFixed(2)} ms`);
-        console.log(`  Max: ${stat.max.toFixed(2)} ms`);
-        console.log(`  Avg: ${avg.toFixed(2)} ms`);
-    }
-
-    console.log('\n=== Context Resolution ===');
-    for (const [key, stat] of stats.context.entries()) {
-        const avg = stat.sum / stat.count;
-        console.log(`${key}:`);
-        console.log(`  Count: ${stat.count}`);
-        console.log(`  Min: ${stat.min.toFixed(2)} ms`);
-        console.log(`  Max: ${stat.max.toFixed(2)} ms`);
-        console.log(`  Avg: ${avg.toFixed(2)} ms`);
-    }
-    console.log('');
-}
-
 function sleep(ms: number) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function processTemplate(
-    uri: string,
-    content: string,
-    pos: TestPosition,
-    syntaxTreeManager: SyntaxTreeManager,
-    contextManager: ContextManager,
-) {
-    const syntaxStart = performance.now();
-    syntaxTreeManager.add(uri, content);
-    const syntaxDuration = performance.now() - syntaxStart;
-    updateStats(stats.syntaxTree, uri, syntaxDuration);
+const textDocuments = new TextDocuments(TextDocument);
 
-    const contextStart = performance.now();
-    contextManager.getContext({
-        textDocument: { uri },
-        position: { line: pos.line, character: pos.character },
-    });
-    const contextDuration = performance.now() - contextStart;
-    updateStats(stats.context, uri, contextDuration);
+async function processTemplate(uri: string, content: string, pos: TestPosition, components: any) {
+    const position = { line: pos.line, character: pos.character };
+    const params = { textDocument: { uri }, position };
+
+    const textDocument = TextDocument.create(uri, '', 1, content);
+    (textDocuments as any)._syncedDocuments.set(uri, textDocument);
+
+    components.syntaxTreeManager.add(uri, content);
+    components.contextManager.getContext(params);
+    components.contextManager.getContextAndRelatedEntities(params);
+    components.hoverRouter.getHoverDoc(params);
+    components.completionRouter.getCompletions({ ...params, context: { triggerKind: 2 } });
+    components.definitionProvider.getDefinitions(params);
+    components.inlineCompletionRouter.getInlineCompletions({ ...params, context: { triggerKind: 0 } });
+
     await sleep(INTERVAL_MS);
 }
 
@@ -138,22 +116,45 @@ async function main() {
         process.exit(1);
     }
 
-    const id = v4();
-
     console.log(`Using id ${id}`);
-    LoggerFactory.initialize({
-        logLevel: 'silent',
+
+    const syntaxTreeManager = new SyntaxTreeManager();
+    const documentManager = new DocumentManager(textDocuments);
+    const contextManager = new ContextManager(syntaxTreeManager);
+    const schemaRetriever = createMockSchemaRetriever(combinedSchemas());
+
+    const dataStoreFactory = new MultiDataStoreFactoryProvider();
+    const schemaStore = new SchemaStore(dataStoreFactory);
+    const schemaTaskManager = new GetSchemaTaskManager(schemaStore, getRemotePublicSchemas, () => {
+        return Promise.resolve([]);
     });
-    TelemetryService.initialize(undefined, {
-        telemetryEnabled: true,
-        clientId: id,
+
+    const mockTestComponents = createMockComponents({
+        schemaRetriever,
+        syntaxTreeManager,
+        documentManager,
+        dataStoreFactory,
+        schemaStore,
+        schemaTaskManager,
+        resourceStateManager: createMockResourceStateManager(),
     });
+
+    const { core, external, providers } = createMockComponents(mockTestComponents);
+    const completionProviders = createCompletionProviders(core, external, providers);
+    const completionRouter = new CompletionRouter(contextManager, completionProviders, documentManager);
+    const hoverRouter = new HoverRouter(contextManager, schemaRetriever);
+
+    const components = {
+        syntaxTreeManager,
+        contextManager,
+        hoverRouter,
+        completionRouter,
+        definitionProvider: providers.definitionProvider,
+        inlineCompletionRouter: providers.inlineCompletionRouter,
+    };
 
     const templates = discoverTemplateFiles(TEMPLATE_PATHS);
     console.log(`📋 Found ${templates.length} template files`);
-
-    const syntaxTreeManager = new SyntaxTreeManager();
-    const contextManager = new ContextManager(syntaxTreeManager);
 
     const positions = new Map<string, TestPosition[]>();
     for (const template of templates) {
@@ -164,7 +165,7 @@ async function main() {
     setInterval(async () => {
         const template = pickRandom(templates);
         const pos = pickRandom(positions.get(template.path)!);
-        await processTemplate(template.path, template.content, pos, syntaxTreeManager, contextManager);
+        await processTemplate(template.path, template.content, pos, components);
 
         iteration++;
         if (iteration % 100 === 0) {
@@ -174,7 +175,6 @@ async function main() {
 
     process.on('SIGINT', async () => {
         console.log('\n\n🛑 Shutting down...');
-        printStats();
         await TelemetryService.instance.close();
         process.exit(0);
     });

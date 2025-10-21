@@ -28,8 +28,8 @@ export class RelationshipSchemaService {
     private readonly relationshipCache: Map<string, ResourceTypeRelationships> = new Map();
     private readonly schemaFilePath: string;
 
-    constructor(schemaFilePath?: string) {
-        this.schemaFilePath = schemaFilePath ?? join(__dirname, 'resources/relationship_schemas.json');
+    constructor() {
+        this.schemaFilePath = join(__dirname, 'assets', 'relationship_schemas.json');
         this.loadAllSchemas();
     }
 

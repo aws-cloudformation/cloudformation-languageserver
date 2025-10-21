@@ -1,15 +1,10 @@
 import { TextDocument, Position, Range, DocumentUri } from 'vscode-languageserver-textdocument';
-import { EditorSettings } from '../settings/Settings';
+import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { detectCfnFileType } from './CloudFormationDetection';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
-
-export type Indentation = {
-    tabSize: number;
-    detectedFromContent: boolean;
-};
 
 export class Document {
     private readonly log = LoggerFactory.getLogger(Document);
@@ -17,10 +12,12 @@ export class Document {
     public readonly documentType: DocumentType;
     public readonly cfnFileType: CloudFormationFileType;
     public readonly fileName: string;
-    private indentation?: Indentation;
+    private tabSize: number;
 
     constructor(
         private readonly textDocument: TextDocument,
+        detectIndentation: boolean = true,
+        fallbackTabSize: number = DefaultSettings.editor.tabSize,
         public readonly uri: DocumentUri = textDocument.uri,
         public readonly languageId: string = textDocument.languageId,
         public readonly version: number = textDocument.version,
@@ -44,6 +41,8 @@ export class Document {
                 'Failed to detect CloudFormation file type',
             );
         }
+        this.tabSize = fallbackTabSize;
+        this.processIndentation(detectIndentation, fallbackTabSize);
     }
 
     public getLine(lineNumber: number): string | undefined {
@@ -90,40 +89,21 @@ export class Document {
         };
     }
 
-    public getEditorSettings(baseSettings: EditorSettings): EditorSettings {
-        if (!baseSettings.detectIndentation) {
-            return baseSettings;
-        }
-
-        const detectedIndentation = this.getIndentation(baseSettings);
-
-        return {
-            ...baseSettings,
-            tabSize: detectedIndentation.tabSize,
-        };
+    public getTabSize() {
+        return this.tabSize;
     }
 
-    private getIndentation(editorSettings: EditorSettings): Indentation {
-        if (!editorSettings.detectIndentation) {
-            return {
-                tabSize: editorSettings.tabSize,
-                detectedFromContent: false,
-            };
+    public processIndentation(detectIndentation: boolean, fallbackTabSize: number) {
+        if (!detectIndentation) {
+            this.tabSize = fallbackTabSize;
+            return;
         }
 
-        if (this.indentation) {
-            return this.indentation;
-        }
-
-        this.indentation = this.detectIndentationFromContent(editorSettings);
-        return this.indentation;
+        const detected = this.detectIndentationFromContent();
+        this.tabSize = detected ?? fallbackTabSize;
     }
 
-    public clearIndentation(): void {
-        this.indentation = undefined;
-    }
-
-    private detectIndentationFromContent(fallbackSettings: EditorSettings): Indentation {
+    private detectIndentationFromContent(): number | undefined {
         const content = this.contents();
         const lines = content.split('\n');
 
@@ -139,18 +119,11 @@ export class Document {
             const leadingSpaces = line.match(/^( *)/)?.[1]?.length ?? 0;
 
             if (leadingSpaces > 0) {
-                return {
-                    tabSize: leadingSpaces,
-                    detectedFromContent: true,
-                };
+                return leadingSpaces;
             }
         }
 
-        // If no indented lines found, use fallback settings
-        return {
-            tabSize: fallbackSettings.tabSize,
-            detectedFromContent: false,
-        };
+        return undefined; // No indentation detected
     }
 }
 

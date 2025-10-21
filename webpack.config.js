@@ -82,8 +82,8 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                     to: 'assets/guard_bg.wasm',
                 },
                 {
-                    from: 'src/resources/relationship_schemas.json',
-                    to: 'resources/relationship_schemas.json',
+                    from: 'assets',
+                    to: 'assets',
                 },
             ],
         }),

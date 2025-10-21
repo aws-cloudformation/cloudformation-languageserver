@@ -17,7 +17,7 @@ import { ClientInfo } from './TelemetryConfig';
 const DurationHistogramBoundaries = [
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16_384, 32_768, 65_536,
 ]; // Boundaries for buckets - latency (ms) usually grows exponentially
-const ExportIntervalSeconds = 15;
+const ExportIntervalSeconds = 30;
 
 export function otelSdk(clientId: string, client?: ClientInfo) {
     configureDiagnostics();
@@ -33,21 +33,13 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
 
     const sdk = new NodeSDK({
         resource: resourceFromAttributes({
-            ['service.clientId']: clientId,
-            ['service.name']: ExtensionName,
-            ['service.version']: ExtensionVersion,
-            ['service.NODE_ENV']: process.env.NODE_ENV,
-            ['service.AWS_ENV']: process.env.AWS_ENV,
-            ['lspClient.name']: client?.name,
-            ['lspClient.version']: client?.version,
-            ['os.type']: type(),
-            ['os.release']: release(),
-            ['os.arch']: arch(),
-            ['os.platform']: platform(),
-            ['os.machine']: machine(),
-            ['process.arch']: process.arch,
-            ['process.platform']: process.platform,
-            ['process.version']: process.version,
+            ['service']: `${ExtensionName}-${ExtensionVersion}`,
+            ['service.env']: `${process.env.NODE_ENV}-${process.env.AWS_ENV}`,
+            ['client.id']: clientId,
+            ['client.type']: `${client?.name ?? 'Unknown'}-${client?.version ?? 'Unknown'}`,
+            ['machine.type']: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
+            ['process.type']: `${process.platform}-${process.arch}`,
+            ['process.version']: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
         }),
         resourceDetectors: [],
         metricReader: metricsReader,
@@ -80,11 +72,15 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
                 },
                 '@opentelemetry/instrumentation-http': {
                     ignoreOutgoingRequestHook: (request) => {
-                        return request.hostname === telemetryUrl;
+                        if (!request.hostname) {
+                            return false;
+                        }
+
+                        return telemetryUrl.includes(request.hostname);
                     },
                 },
                 '@opentelemetry/instrumentation-runtime-node': {
-                    monitoringPrecision: 60 * 1000,
+                    monitoringPrecision: ExportIntervalSeconds * 1000,
                 },
             }),
         ],
