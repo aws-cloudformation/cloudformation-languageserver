@@ -320,4 +320,98 @@ describe('ResourceStateImporter', () => {
             expect(result.warning).toBeUndefined();
         });
     });
+
+    describe('Logical ID uniqueness', () => {
+        it('should generate unique logical IDs with numeric suffixes', async () => {
+            const uri = 'test://test-unique-ids.template';
+            const initialContent = `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "IAMRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "ExistingRole"
+      }
+    },
+    "IAMRole1": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "ExistingRole1"
+      }
+    }
+  }
+}`;
+
+            createAndRegisterDocument(uri, initialContent, DocumentType.JSON);
+
+            const mockResource = createMockResourceState('AWS::IAM::Role');
+            const resourceSelections: ResourceSelection[] = [
+                {
+                    resourceType: 'AWS::IAM::Role',
+                    resourceIdentifiers: [mockResource.identifier],
+                },
+            ];
+
+            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+
+            const params: ResourceStateParams = {
+                resourceSelections,
+                textDocument: { uri } as any,
+                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+                context: { diagnostics: [], only: [], triggerKind: 1 },
+                purpose: ResourceStatePurpose.IMPORT,
+            };
+
+            const result = await importer.importResourceState(params);
+
+            expect(result.edit).toBeDefined();
+            expect(result.edit!.changes![uri]).toBeDefined();
+
+            const textEdit = result.edit!.changes![uri][0];
+            expect(textEdit.newText).toContain('"IAMRole2"');
+            expect(textEdit.newText).not.toContain('"IAMRole"');
+            expect(textEdit.newText).not.toContain('"IAMRole1"');
+        });
+
+        it('should generate multiple unique logical IDs in same import', async () => {
+            const uri = 'test://test-multiple-unique-ids.template';
+            const initialContent = `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {}
+}`;
+
+            createAndRegisterDocument(uri, initialContent, DocumentType.JSON);
+
+            const mockResource1 = createMockResourceState('AWS::IAM::Role');
+            const mockResource2 = createMockResourceState('AWS::IAM::Role');
+            const mockResource3 = createMockResourceState('AWS::IAM::Role');
+
+            const resourceSelections: ResourceSelection[] = [
+                {
+                    resourceType: 'AWS::IAM::Role',
+                    resourceIdentifiers: [mockResource1.identifier, mockResource2.identifier, mockResource3.identifier],
+                },
+            ];
+
+            mockResourceStateManager.getResource.mockResolvedValue(mockResource1);
+
+            const params: ResourceStateParams = {
+                resourceSelections,
+                textDocument: { uri } as any,
+                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+                context: { diagnostics: [], only: [], triggerKind: 1 },
+                purpose: ResourceStatePurpose.IMPORT,
+            };
+
+            const result = await importer.importResourceState(params);
+
+            expect(result.edit).toBeDefined();
+            expect(result.edit!.changes![uri]).toBeDefined();
+
+            const textEdit = result.edit!.changes![uri][0];
+            expect(textEdit.newText).toContain('"IAMRole"');
+            expect(textEdit.newText).toContain('"IAMRole1"');
+            expect(textEdit.newText).toContain('"IAMRole2"');
+        });
+    });
 });
