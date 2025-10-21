@@ -3,11 +3,13 @@
   "description": "Feature flags for alpha environment",
   "features": {
     "EnhancedDryRun": {
-      "enabled": true
-    },
-    "AnotherFeature": {
-      "enabled": false,
-      "fleetPercentage": 10.5
+      "enabled": true,
+      "fleetPercentage": 100,
+      "allowlistedRegions": [
+        "us-east-1",
+        "us-west-2",
+        "eu-west-1"
+      ]
     }
   }
 }

@@ -50,32 +50,29 @@ describe('FleetTargetedFeatureFlag', () => {
 
 describe('RegionAllowlistFeatureFlag', () => {
     it('should enable for allowlisted region', () => {
-        const flag = new RegionAllowlistFeatureFlag('test-feature', new Set([AwsRegion.US_EAST_1]));
+        const flag = new RegionAllowlistFeatureFlag('test-feature', [AwsRegion.US_EAST_1]);
         expect(flag.isEnabled('us-east-1')).toBe(true);
     });
 
     it('should disable for non-allowlisted region', () => {
-        const flag = new RegionAllowlistFeatureFlag('test-feature', new Set([AwsRegion.US_EAST_1]));
+        const flag = new RegionAllowlistFeatureFlag('test-feature', [AwsRegion.US_EAST_1]);
         expect(flag.isEnabled('us-west-2')).toBe(false);
     });
 
     it('should handle multiple allowlisted regions', () => {
-        const flag = new RegionAllowlistFeatureFlag(
-            'test-feature',
-            new Set([AwsRegion.US_EAST_1, AwsRegion.EU_WEST_1]),
-        );
+        const flag = new RegionAllowlistFeatureFlag('test-feature', [AwsRegion.US_EAST_1, AwsRegion.EU_WEST_1]);
         expect(flag.isEnabled('us-east-1')).toBe(true);
         expect(flag.isEnabled('eu-west-1')).toBe(true);
         expect(flag.isEnabled('ap-south-1')).toBe(false);
     });
 
     it('should return false for invalid region', () => {
-        const flag = new RegionAllowlistFeatureFlag('test-feature', new Set([AwsRegion.US_EAST_1]));
+        const flag = new RegionAllowlistFeatureFlag('test-feature', [AwsRegion.US_EAST_1]);
         expect(flag.isEnabled('invalid-region')).toBe(false);
     });
 
     it('should describe itself correctly', () => {
-        const flag = new RegionAllowlistFeatureFlag('my-feature', new Set([AwsRegion.US_EAST_1, AwsRegion.EU_WEST_1]));
+        const flag = new RegionAllowlistFeatureFlag('my-feature', [AwsRegion.US_EAST_1, AwsRegion.EU_WEST_1]);
         const description = flag.describe();
         expect(description).toContain('RegionAllowlistFeatureFlag');
         expect(description).toContain('my-feature');

@@ -1,7 +1,16 @@
 import * as os from 'os';
 import { describe, it, expect, vi } from 'vitest';
-import { LocalHostTargetedFeatureFlag, AndFeatureFlag } from '../../../src/featureFlag/CombinedFeatureFlags';
-import { FleetTargetedFeatureFlag, StaticFeatureFlag } from '../../../src/featureFlag/FeatureFlag';
+import {
+    LocalHostTargetedFeatureFlag,
+    AndFeatureFlag,
+    CompoundFeatureFlag,
+} from '../../../src/featureFlag/CombinedFeatureFlags';
+import {
+    FleetTargetedFeatureFlag,
+    StaticFeatureFlag,
+    RegionAllowlistFeatureFlag,
+} from '../../../src/featureFlag/FeatureFlag';
+import { AwsRegion } from '../../../src/utils/Region';
 
 vi.mock('os', () => ({
     hostname: vi.fn(),
@@ -91,5 +100,37 @@ describe('AndFeatureFlag', () => {
         const description = andFlag.describe();
         expect(description).toContain('feature1');
         expect(description).toContain('feature2');
+    });
+});
+
+describe('CompoundFeatureFlag', () => {
+    it('should enable when both flags are enabled', () => {
+        const staticFlag = new StaticFeatureFlag('test', true);
+        const regionalFlag = new RegionAllowlistFeatureFlag('test', [AwsRegion.US_EAST_1]);
+        const compound = new CompoundFeatureFlag(staticFlag, regionalFlag);
+        expect(compound.isEnabled('us-east-1')).toBe(true);
+    });
+
+    it('should disable when base flag is disabled', () => {
+        const staticFlag = new StaticFeatureFlag('test', false);
+        const regionalFlag = new RegionAllowlistFeatureFlag('test', [AwsRegion.US_EAST_1]);
+        const compound = new CompoundFeatureFlag(staticFlag, regionalFlag);
+        expect(compound.isEnabled('us-east-1')).toBe(false);
+    });
+
+    it('should disable when targeted flag is disabled', () => {
+        const staticFlag = new StaticFeatureFlag('test', true);
+        const regionalFlag = new RegionAllowlistFeatureFlag('test', [AwsRegion.US_EAST_1]);
+        const compound = new CompoundFeatureFlag(staticFlag, regionalFlag);
+        expect(compound.isEnabled('us-west-2')).toBe(false);
+    });
+
+    it('should describe both flags', () => {
+        const staticFlag = new StaticFeatureFlag('test', true);
+        const regionalFlag = new RegionAllowlistFeatureFlag('test', [AwsRegion.US_EAST_1]);
+        const compound = new CompoundFeatureFlag(staticFlag, regionalFlag);
+        const description = compound.describe();
+        expect(description).toContain('StaticFeatureFlag');
+        expect(description).toContain('RegionAllowlistFeatureFlag');
     });
 });

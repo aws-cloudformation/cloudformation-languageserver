@@ -1,17 +1,16 @@
-import { z } from 'zod';
-import { AwsRegion } from '../utils/Region';
-import { AndFeatureFlag, LocalHostTargetedFeatureFlag } from './CombinedFeatureFlags';
-import { FleetTargetedFeatureFlag, StaticFeatureFlag } from './FeatureFlag';
+import { CompoundFeatureFlag } from './CombinedFeatureFlags';
+import { StaticFeatureFlag } from './FeatureFlag';
+import { buildLocalHost, buildRegional, FeatureFlagConfigSchema, FeatureFlagConfigType } from './FeatureFlagBuilder';
 import { Describable, FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 
 export class FeatureFlagConfig implements Describable {
-    private readonly EnhancedDryRun: FeatureFlag;
-    private readonly AnotherFeature: FeatureFlag;
+    private readonly StaticFlag = new StaticFeatureFlag('TestFlag', false); // Here to generate types
+    private readonly EnhancedDryRun: TargetedFeatureFlag<string>;
 
     private readonly describables: Describable[];
 
     constructor(config?: unknown) {
-        let features: Record<string, FeatureFlagType>;
+        let features: Record<string, FeatureFlagConfigType>;
 
         if (config) {
             const parsed = FeatureFlagConfigSchema.parse(config);
@@ -20,17 +19,19 @@ export class FeatureFlagConfig implements Describable {
             features = {};
         }
 
-        this.EnhancedDryRun = buildStatic('EnhancedDryRun', features);
-        this.AnotherFeature = buildLocalHost('AnotherFeature', features);
+        this.EnhancedDryRun = new CompoundFeatureFlag(
+            buildLocalHost('EnhancedDryRun', features['EnhancedDryRun']),
+            buildRegional('EnhancedDryRun', features['EnhancedDryRun']),
+        );
 
-        this.describables = [this.EnhancedDryRun, this.AnotherFeature];
+        this.describables = [this.EnhancedDryRun];
     }
 
     get(key: FeatureFlagConfigKey): FeatureFlag {
         return this[key];
     }
 
-    getTargeted<T>(key: FeatureFlagConfigKey): TargetedFeatureFlag<T> {
+    getTargeted(key: TargetedFeatureFlagConfigKey): TargetedFeatureFlag<unknown> {
         return this[key];
     }
 
@@ -51,40 +52,5 @@ export class FeatureFlagConfig implements Describable {
     }
 }
 
-export type FeatureFlagConfigKey = 'EnhancedDryRun' | 'AnotherFeature';
-
-const FeatureFlagSchema = z.object({
-    enabled: z.boolean(),
-    fleetPercentage: z.number().optional(),
-    allowlistedRegions: z.array(z.enum(Object.values(AwsRegion))).optional(),
-});
-
-const FeatureFlagConfigSchema = z.object({
-    version: z.number(),
-    description: z.string(),
-    features: z.record(z.string(), FeatureFlagSchema),
-});
-type FeatureFlagType = z.infer<typeof FeatureFlagSchema>;
-
-function buildStatic(name: string, features: Record<string, FeatureFlagType>) {
-    let enabled = false;
-
-    if (features[name] !== undefined) {
-        enabled = features[name].enabled;
-    }
-
-    return new StaticFeatureFlag(name, enabled);
-}
-
-function buildLocalHost(name: string, features: Record<string, FeatureFlagType>) {
-    let pct = 0;
-
-    if (features[name]?.fleetPercentage !== undefined) {
-        pct = features[name].fleetPercentage;
-    }
-
-    return new AndFeatureFlag(
-        buildStatic(name, features),
-        new LocalHostTargetedFeatureFlag(new FleetTargetedFeatureFlag(name, pct)),
-    );
-}
+export type TargetedFeatureFlagConfigKey = 'EnhancedDryRun';
+export type FeatureFlagConfigKey = 'StaticFlag';

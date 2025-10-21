@@ -37,20 +37,24 @@ export class FleetTargetedFeatureFlag implements TargetedFeatureFlag<string> {
 }
 
 export class RegionAllowlistFeatureFlag implements TargetedFeatureFlag<string> {
+    private readonly allowlist: Set<AwsRegion>;
+
     constructor(
         private readonly featureName: string,
-        private readonly allowedRegions: Set<AwsRegion>,
-    ) {}
+        allowedRegions: AwsRegion[],
+    ) {
+        this.allowlist = new Set(allowedRegions);
+    }
 
     isEnabled(region: string): boolean {
         try {
-            return this.allowedRegions.has(getRegion(region));
+            return this.allowlist.has(getRegion(region));
         } catch {
             return false;
         }
     }
 
     describe(): string {
-        return `RegionAllowlistFeatureFlag(feature=${this.featureName}, regions=[${[...this.allowedRegions].join(', ')}])`;
+        return `RegionAllowlistFeatureFlag(feature=${this.featureName}, regions=[${[...this.allowlist].join(', ')}])`;
     }
 }
