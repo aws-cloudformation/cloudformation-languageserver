@@ -5,7 +5,7 @@ import { CfnService } from '../../../src/services/CfnService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import {
     processChangeSet,
-    waitForValidation,
+    waitForChangeSetValidation,
     processWorkflowUpdates,
     deleteStackAndChangeSet,
     deleteChangeSet,
@@ -333,7 +333,7 @@ describe('ValidationWorkflow', () => {
 
             (processChangeSet as any).mockResolvedValue('changeset-123');
 
-            (waitForValidation as any).mockResolvedValue({
+            (waitForChangeSetValidation as any).mockResolvedValue({
                 phase: StackActionPhase.VALIDATION_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
                 changes: [],
@@ -365,7 +365,7 @@ describe('ValidationWorkflow', () => {
             };
 
             const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
-            (waitForValidation as any).mockResolvedValueOnce({
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
                 phase: StackActionPhase.VALIDATION_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
                 changes: mockChanges,
@@ -376,7 +376,7 @@ describe('ValidationWorkflow', () => {
 
             expect(result.changeSetName).toBe('changeset-123');
             expect(mockValidationManager.add).toHaveBeenCalled();
-            expect(waitForValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
 
             const workflow = (validationWorkflow as any).workflows.get('test-id');
             expect(workflow.changes).toEqual(mockChanges);
@@ -393,7 +393,7 @@ describe('ValidationWorkflow', () => {
                 stackName: 'test-stack',
             };
 
-            (waitForValidation as any).mockResolvedValueOnce({
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
                 phase: StackActionPhase.VALIDATION_FAILED,
                 state: StackActionState.FAILED,
                 failureReason: 'Template validation failed',
@@ -420,7 +420,7 @@ describe('ValidationWorkflow', () => {
                 stackName: 'test-stack',
             };
 
-            (waitForValidation as any).mockRejectedValueOnce(new Error('Validation service error'));
+            (waitForChangeSetValidation as any).mockRejectedValueOnce(new Error('Validation service error'));
 
             await validationWorkflow.start(params);
             await waitForWorkflowCompletion('test-id');

@@ -10,12 +10,15 @@ import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../resourceState/StackManagementInfoProvider';
 import { CodeActionService } from '../services/CodeActionService';
 import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
+import { DeploymentWorkflowV2 } from '../stacks/actions/DeploymentWorkflowV2';
 import {
     DescribeDeploymentStatusResult,
     DescribeValidationStatusResult,
 } from '../stacks/actions/StackActionRequestType';
 import { StackActionWorkflow } from '../stacks/actions/StackActionWorkflowType';
 import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
+import { ValidationWorkflowV2 } from '../stacks/actions/ValidationWorkflowV2';
+import { localCfnClientExists } from '../utils/ClientUtil';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
 import { CfnExternal } from './CfnExternal';
@@ -45,9 +48,15 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.stackManagementInfoProvider =
             overrides.stackManagementInfoProvider ?? new StackManagementInfoProvider(external.cfnService);
         this.validationWorkflowService =
-            overrides.validationWorkflowService ?? ValidationWorkflow.create(core, external);
+            overrides.validationWorkflowService ??
+            (localCfnClientExists()
+                ? ValidationWorkflowV2.create(core, external)
+                : ValidationWorkflow.create(core, external));
         this.deploymentWorkflowService =
-            overrides.deploymentWorkflowService ?? DeploymentWorkflow.create(core, external);
+            overrides.deploymentWorkflowService ??
+            (localCfnClientExists()
+                ? DeploymentWorkflowV2.create(core, external)
+                : DeploymentWorkflow.create(core, external));
         this.resourceStateManager = overrides.resourceStateManager ?? ResourceStateManager.create(external);
         this.resourceStateImporter =
             overrides.resourceStateImporter ?? ResourceStateImporter.create(core, external, this);
