@@ -14,6 +14,11 @@ import {
     UPDATE_POLICY_SCHEMA,
     UpdatePolicyPropertySchema,
 } from '../artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
+import {
+    updateReplacePolicyValueDocsMap,
+    UPDATE_REPLACE_POLICY_VALUES,
+    supportsSnapshotOnReplace,
+} from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
@@ -357,7 +362,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             case ResourceAttribute.DeletionPolicy: {
                 return this.getDeletionPolicyCompletions(resource.Type, context);
             }
-            //TODO: add other resource attributes
+            case ResourceAttribute.UpdateReplacePolicy: {
+                return this.getUpdateReplacePolicyCompletions(resource.Type, context);
+            }
             default: {
                 return [];
             }
@@ -423,21 +430,47 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     }
 
     private getDeletionPolicyCompletions(resourceType: string, context: Context): CompletionItem[] {
+        return this.getPolicyCompletions(
+            DELETION_POLICY_VALUES,
+            deletionPolicyValueDocsMap,
+            supportsSnapshot,
+            resourceType,
+            context,
+        );
+    }
+
+    private getUpdateReplacePolicyCompletions(resourceType: string, context: Context): CompletionItem[] {
+        return this.getPolicyCompletions(
+            UPDATE_REPLACE_POLICY_VALUES,
+            updateReplacePolicyValueDocsMap,
+            supportsSnapshotOnReplace,
+            resourceType,
+            context,
+        );
+    }
+
+    private getPolicyCompletions(
+        values: ReadonlyArray<string>,
+        docsMap: ReadonlyMap<string, string>,
+        supportsSnapshotFn: (resourceType: string) => boolean,
+        resourceType: string,
+        context: Context,
+    ): CompletionItem[] {
         if (!context.isValue()) {
             return [];
         }
 
-        return DELETION_POLICY_VALUES.filter((value) => value !== 'Snapshot' || supportsSnapshot(resourceType)).map(
-            (value, index) => {
-                const documentation = deletionPolicyValueDocsMap.get(value);
+        return values
+            .filter((value) => value !== 'Snapshot' || supportsSnapshotFn(resourceType))
+            .map((value, index) => {
+                const documentation = docsMap.get(value);
                 return createCompletionItem(value, CompletionItemKind.EnumMember, {
                     sortText: `${index}`,
                     documentation: documentation ? createMarkupContent(documentation) : undefined,
                     data: { type: 'simple' },
                     context: context,
                 });
-            },
-        );
+            });
     }
 
     private getSchemaBasedCompletions(
