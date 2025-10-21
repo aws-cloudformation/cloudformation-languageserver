@@ -45,7 +45,6 @@ import { AwsClient } from '../../src/services/AwsClient';
 import { CcapiService } from '../../src/services/CcapiService';
 import { CfnLintService } from '../../src/services/cfnLint/CfnLintService';
 import { CfnService } from '../../src/services/CfnService';
-import { CfnServiceV2 } from '../../src/services/CfnServiceV2';
 import { CodeActionService } from '../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import { GuardService } from '../../src/services/guard/GuardService';
@@ -175,10 +174,6 @@ export function createMockRelationshipSchemaService() {
 
 export function createMockCfnService() {
     return stubInterface<CfnService>();
-}
-
-export function createMockCfnServiceV2() {
-    return stubInterface<CfnServiceV2>();
 }
 
 export function createMockCcapiService() {
@@ -351,7 +346,6 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
     const external: MockExternalComponents = {
         awsClient: overrides.awsClient ?? createMockAwsApiClientComponent(),
         cfnService: overrides.cfnService ?? createMockCfnService(),
-        cfnServiceV2: overrides.cfnServiceV2 ?? createMockCfnServiceV2(),
         ccapiService: overrides.ccapiService ?? createMockCcapiService(),
         iacGeneratorService: overrides.iacGeneratorService ?? createMockIacGeneratorService(),
         schemaStore: overrides.schemaStore ?? new SchemaStore(dataStoreFactory),

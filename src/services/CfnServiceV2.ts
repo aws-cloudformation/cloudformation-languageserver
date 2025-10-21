@@ -1,13 +1,6 @@
-/*!
- * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
-import { existsSync } from 'fs';
-import { homedir } from 'os';
-import { join } from 'path';
+import { CFN_CLIENT_PATH } from '../utils/ClientUtil';
 import { DynamicModuleLoader } from '../utils/DynamicModuleLoader';
 import { CfnService } from './CfnService';
 
@@ -27,17 +20,11 @@ export type DescribeEventsOutput = {
 
 export class CfnServiceV2 extends CfnService {
     public async describeEvents(params: { ChangeSetName: string; StackName: string }): Promise<DescribeEventsOutput> {
-        const cfnPath = join(homedir(), 'client-cloudformation-v2');
-
-        if (!existsSync(cfnPath)) {
-            throw new Error('DescribeEventsCommand not available - client-cloudformation-v2 not found');
-        }
-
         type CfnClient = typeof import('@aws-sdk/client-cloudformation') & {
             DescribeEventsCommand: new (input: { ChangeSetName: string; StackName: string; NextToken?: string }) => any;
         };
 
-        const cfn = DynamicModuleLoader.load<CfnClient>(cfnPath);
+        const cfn = DynamicModuleLoader.load<CfnClient>(CFN_CLIENT_PATH);
 
         if (!cfn?.DescribeEventsCommand) {
             throw new Error('DescribeEventsCommand not available in loaded module');

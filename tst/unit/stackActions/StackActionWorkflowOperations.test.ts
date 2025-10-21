@@ -1,7 +1,9 @@
 import { Change, ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
+import { DateTime } from 'luxon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ResponseError } from 'vscode-languageserver';
+import { DiagnosticSeverity, ResponseError } from 'vscode-languageserver';
+import { getEntityMap } from '../../../src/context/SectionContextBuilder';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
 import {
@@ -11,6 +13,8 @@ import {
     deleteStackAndChangeSet,
     deleteChangeSet,
     mapChangesToStackChanges,
+    parseValidationEvents,
+    publishValidationDiagnostics,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateStackActionParams,
@@ -22,6 +26,10 @@ import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 
 vi.mock('../../../src/utils/Retry', () => ({
     retryWithExponentialBackoff: vi.fn(),
+}));
+
+vi.mock('../../../src/context/SectionContextBuilder', () => ({
+    getEntityMap: vi.fn(),
 }));
 
 describe('StackActionWorkflowOperations', () => {
@@ -322,6 +330,171 @@ describe('StackActionWorkflowOperations', () => {
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
             expect(result.state).toBe(StackActionState.FAILED);
             expect(result.failureReason).toBe('String error');
+        });
+    });
+
+    describe('parseValidationEvents', () => {
+        it('should parse validation events correctly', () => {
+            const events = {
+                OperationEvents: [
+                    {
+                        EventId: 'event-1',
+                        EventType: 'VALIDATION_ERROR',
+                        Timestamp: '2023-01-01T00:00:00Z',
+                        LogicalResourceId: 'MyS3Bucket',
+                        ValidationPath: '/Resources/MyS3Bucket/Properties/BucketName',
+                        ValidationFailureMode: 'FAIL',
+                        ValidationName: 'S3BucketValidation',
+                        ValidationStatusReason: 'Bucket name must be globally unique',
+                    },
+                    {
+                        EventId: 'event-2',
+                        EventType: 'VALIDATION_ERROR',
+                        Timestamp: '2023-01-01T00:01:00Z',
+                        LogicalResourceId: 'MyLambda',
+                        ValidationFailureMode: 'WARN',
+                        ValidationName: 'LambdaValidation',
+                        ValidationStatusReason: 'Runtime version is deprecated',
+                    },
+                    {
+                        EventId: 'event-3',
+                        EventType: 'OTHER_EVENT',
+                        Timestamp: '2023-01-01T00:02:00Z',
+                        LogicalResourceId: 'MyResource',
+                    },
+                ],
+            };
+
+            const validationName = 'Enhanced Validation';
+            const result = parseValidationEvents(events, validationName);
+
+            expect(result).toHaveLength(2); // Only VALIDATION_ERROR events
+
+            expect(result[0]).toEqual({
+                Timestamp: expect.any(Object), // DateTime object
+                ValidationName: validationName,
+                LogicalId: 'MyS3Bucket',
+                Message: 'S3BucketValidation: Bucket name must be globally unique',
+                Severity: 'ERROR',
+                ResourcePropertyPath: '/Resources/MyS3Bucket/Properties/BucketName',
+            });
+
+            expect(result[1]).toEqual({
+                Timestamp: expect.any(Object), // DateTime object
+                ValidationName: validationName,
+                LogicalId: 'MyLambda',
+                Message: 'LambdaValidation: Runtime version is deprecated',
+                Severity: 'INFO',
+                ResourcePropertyPath: undefined,
+            });
+        });
+
+        it('should handle empty events', () => {
+            const events = {
+                OperationEvents: [],
+            };
+
+            const result = parseValidationEvents(events, 'Test Validation');
+
+            expect(result).toHaveLength(0);
+        });
+    });
+
+    describe('publishValidationDiagnostics', () => {
+        let mockSyntaxTreeManager: any;
+        let mockDiagnosticCoordinator: any;
+
+        beforeEach(() => {
+            mockSyntaxTreeManager = {
+                getSyntaxTree: vi.fn(),
+            };
+            mockDiagnosticCoordinator = {
+                publishDiagnostics: vi.fn().mockResolvedValue(undefined),
+            };
+        });
+
+        it('should publish diagnostics with position information', async () => {
+            const mockSyntaxTree = {
+                getNodeByPath: vi.fn().mockReturnValue({
+                    node: {
+                        startPosition: { row: 5, column: 10 },
+                        endPosition: { row: 5, column: 20 },
+                    },
+                }),
+            };
+            mockSyntaxTreeManager.getSyntaxTree.mockReturnValue(mockSyntaxTree);
+
+            // Mock getEntityMap for fallback case
+            const mockResourcesMap = new Map([
+                [
+                    'MyLambda',
+                    {
+                        startPosition: { row: 10, column: 5 },
+                        endPosition: { row: 15, column: 10 },
+                    },
+                ],
+            ]);
+            (getEntityMap as any).mockReturnValue(mockResourcesMap);
+
+            const validationDetails = [
+                {
+                    Timestamp: DateTime.fromISO('2023-01-01T00:00:00.000Z'),
+                    ValidationName: 'Enhanced Validation',
+                    LogicalId: 'MyS3Bucket',
+                    Message: 'S3BucketValidation: Bucket name must be globally unique',
+                    Severity: 'ERROR',
+                    ResourcePropertyPath: '/Resources/MyS3Bucket/Properties/BucketName',
+                },
+                {
+                    Timestamp: DateTime.fromISO('2023-01-01T00:01:00.000Z'),
+                    ValidationName: 'Enhanced Validation',
+                    LogicalId: 'MyLambda',
+                    Message: 'LambdaValidation: Runtime version is deprecated',
+                    Severity: 'WARNING',
+                    ResourcePropertyPath: undefined, // No property path - should use fallback
+                },
+            ] as any;
+
+            await publishValidationDiagnostics(
+                'file:///test.yaml',
+                validationDetails,
+                mockSyntaxTreeManager,
+                mockDiagnosticCoordinator,
+            );
+
+            expect(mockSyntaxTree.getNodeByPath).toHaveBeenCalledWith([
+                'Resources',
+                'MyS3Bucket',
+                'Properties',
+                'BucketName',
+            ]);
+
+            expect(getEntityMap).toHaveBeenCalledWith(mockSyntaxTree, 'Resources');
+
+            expect(mockDiagnosticCoordinator.publishDiagnostics).toHaveBeenCalledWith(
+                'CFN Dry-Run',
+                'file:///test.yaml',
+                [
+                    expect.objectContaining({
+                        severity: DiagnosticSeverity.Error,
+                        range: {
+                            start: { line: 5, character: 10 },
+                            end: { line: 5, character: 20 },
+                        },
+                        message: 'S3BucketValidation: Bucket name must be globally unique',
+                        source: 'CFN Dry-Run',
+                    }),
+                    expect.objectContaining({
+                        severity: DiagnosticSeverity.Warning,
+                        range: {
+                            start: { line: 10, character: 5 },
+                            end: { line: 15, character: 10 },
+                        },
+                        message: 'LambdaValidation: Runtime version is deprecated',
+                        source: 'CFN Dry-Run',
+                    }),
+                ],
+            );
         });
     });
 });

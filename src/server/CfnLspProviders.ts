@@ -1,6 +1,3 @@
-import { existsSync } from 'fs';
-import { homedir } from 'os';
-import { join } from 'path';
 import { CfnAI } from '../ai/CfnAI';
 import { CompletionRouter } from '../autocomplete/CompletionRouter';
 import { InlineCompletionRouter } from '../autocomplete/InlineCompletionRouter';
@@ -13,6 +10,7 @@ import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../resourceState/StackManagementInfoProvider';
 import { CodeActionService } from '../services/CodeActionService';
 import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
+import { DeploymentWorkflowV2 } from '../stacks/actions/DeploymentWorkflowV2';
 import {
     DescribeDeploymentStatusResult,
     DescribeValidationStatusResult,
@@ -20,6 +18,7 @@ import {
 import { StackActionWorkflow } from '../stacks/actions/StackActionWorkflowType';
 import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
 import { ValidationWorkflowV2 } from '../stacks/actions/ValidationWorkflowV2';
+import { localCfnClientExists } from '../utils/ClientUtil';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
 import { CfnExternal } from './CfnExternal';
@@ -50,11 +49,14 @@ export class CfnLspProviders implements Configurables, Closeable {
             overrides.stackManagementInfoProvider ?? new StackManagementInfoProvider(external.cfnService);
         this.validationWorkflowService =
             overrides.validationWorkflowService ??
-            (existsSync(join(homedir(), 'client-cloudformation-v2'))
+            (localCfnClientExists()
                 ? ValidationWorkflowV2.create(core, external)
                 : ValidationWorkflow.create(core, external));
         this.deploymentWorkflowService =
-            overrides.deploymentWorkflowService ?? DeploymentWorkflow.create(core, external);
+            overrides.deploymentWorkflowService ??
+            (localCfnClientExists()
+                ? DeploymentWorkflowV2.create(core, external)
+                : DeploymentWorkflow.create(core, external));
         this.resourceStateManager = overrides.resourceStateManager ?? ResourceStateManager.create(external);
         this.resourceStateImporter =
             overrides.resourceStateImporter ?? ResourceStateImporter.create(core, external, this);

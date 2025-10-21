@@ -1,39 +1,24 @@
-/*!
- * Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
-import { DateTime } from 'luxon';
-import Parser from 'tree-sitter';
-import { v4 as uuidv4 } from 'uuid';
-import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
-import { TopLevelSection } from '../../context/ContextType';
 import { FileContextManager } from '../../context/FileContextManager';
-import { getEntityMap } from '../../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
 import { CfnExternal } from '../../server/CfnExternal';
 import { CfnInfraCore } from '../../server/CfnInfraCore';
-import { CfnServiceV2, DescribeEventsOutput } from '../../services/CfnServiceV2';
+import { CfnServiceV2 } from '../../services/CfnServiceV2';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
-import { pointToPosition } from '../../utils/TypeConverters';
 import {
     deleteStackAndChangeSet,
     deleteChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
+    parseValidationEvents,
+    publishValidationDiagnostics,
 } from './StackActionOperations';
-import {
-    CreateStackActionParams,
-    StackActionPhase,
-    StackActionState,
-    ValidationDetail,
-} from './StackActionRequestType';
+import { CreateStackActionParams, StackActionPhase, StackActionState } from './StackActionRequestType';
 import { ValidationManager } from './ValidationManager';
-import { CFN_VALIDATION_SOURCE, ValidationWorkflow } from './ValidationWorkflow';
+import { ValidationWorkflow } from './ValidationWorkflow';
 
 export const VALIDATION_V2_NAME = 'Enhanced Validation';
 
@@ -94,13 +79,18 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
                 StackName: stackName,
             });
 
-            const validationDetails: ValidationDetail[] = this.parseEvents(describeEventsResponse);
+            const validationDetails = parseValidationEvents(describeEventsResponse, VALIDATION_V2_NAME);
 
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 validationDetails: validationDetails,
             });
 
-            this.publishDiagnostics(uri, validationDetails);
+            await publishValidationDiagnostics(
+                uri,
+                validationDetails,
+                this.syntaxTreeManager,
+                this.diagnosticCoordinator,
+            );
         } catch (error) {
             this.log.error({ error, workflowId }, 'Validation workflow threw exception');
 
@@ -126,77 +116,9 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
         }
     }
 
-    private parseEvents(events: DescribeEventsOutput): ValidationDetail[] {
-        const validEvents = events.OperationEvents.filter((event) => event.EventType === 'VALIDATION_ERROR');
-
-        return validEvents.map((event) => {
-            const timestamp = event.Timestamp instanceof Date ? event.Timestamp.toISOString() : event.Timestamp;
-            return {
-                Timestamp: DateTime.fromISO(timestamp),
-                ValidationName: VALIDATION_V2_NAME,
-                LogicalId: event.LogicalResourceId,
-                Message: [event.ValidationName, event.ValidationStatusReason].filter(Boolean).join(': '),
-                Severity: event.ValidationFailureMode === 'FAIL' ? 'ERROR' : 'INFO',
-                ResourcePropertyPath: event.ValidationPath,
-            };
-        });
-    }
-
-    private publishDiagnostics(uri: string, events: ValidationDetail[]): void {
-        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);
-        if (!syntaxTree) {
-            this.log.error('No syntax tree found');
-            return;
-        }
-
-        const diagnostics: Diagnostic[] = [];
-        for (const event of events) {
-            let startPosition: Parser.Point | undefined;
-            let endPosition: Parser.Point | undefined;
-
-            if (event.ResourcePropertyPath) {
-                this.log.debug({ event }, 'Getting property-specific start and end positions');
-
-                // Parse ValidationPath like "/Resources/S3Bucket" or "/Resources/S3Bucket/Properties/BucketName"
-                const pathSegments = event.ResourcePropertyPath.split('/').filter(Boolean);
-
-                const nodeByPath = syntaxTree.getNodeByPath(pathSegments);
-
-                startPosition = nodeByPath.node?.startPosition;
-                endPosition = nodeByPath.node?.endPosition;
-            } else if (event.LogicalId) {
-                // fall back to using LogicalId and underlining entire resource
-                this.log.debug({ event }, 'No ResourcePropertyPath found, falling back to using LogicalId');
-                const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
-
-                startPosition = resourcesMap?.get(event.LogicalId)?.startPosition;
-                endPosition = resourcesMap?.get(event.LogicalId)?.endPosition;
-            }
-
-            if (startPosition && endPosition) {
-                diagnostics.push({
-                    severity: event.Severity === 'ERROR' ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
-                    range: {
-                        start: pointToPosition(startPosition),
-                        end: pointToPosition(endPosition),
-                    },
-                    message: event.Message,
-                    source: CFN_VALIDATION_SOURCE,
-                    data: uuidv4(), // TODO: Figure out why the
-                });
-            }
-        }
-
-        this.diagnosticCoordinator
-            .publishDiagnostics(CFN_VALIDATION_SOURCE, uri, diagnostics)
-            .catch((error: unknown) => {
-                this.log.error({ error }, 'Error publishing validation diagnostics');
-            });
-    }
-
     static override create(core: CfnInfraCore, external: CfnExternal): ValidationWorkflowV2 {
         return new ValidationWorkflowV2(
-            external.cfnServiceV2,
+            new CfnServiceV2(external.awsClient),
             core.documentManager,
             core.diagnosticCoordinator,
             core.syntaxTreeManager,

@@ -1,19 +1,34 @@
 import { Change, ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
+import { DateTime } from 'luxon';
+import Parser from 'tree-sitter';
 import { v4 as uuidv4 } from 'uuid';
-import { ResponseError, ErrorCodes } from 'vscode-languageserver';
+import { ResponseError, ErrorCodes, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { TopLevelSection } from '../../context/ContextType';
+import { getEntityMap } from '../../context/SectionContextBuilder';
+import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
 import { CfnService } from '../../services/CfnService';
+import { DescribeEventsOutput } from '../../services/CfnServiceV2';
+import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
-import { StackChange, StackActionPhase, StackActionState, CreateStackActionParams } from './StackActionRequestType';
+import { pointToPosition } from '../../utils/TypeConverters';
+import {
+    StackChange,
+    StackActionPhase,
+    StackActionState,
+    CreateStackActionParams,
+    ValidationDetail,
+} from './StackActionRequestType';
 import {
     StackActionWorkflowState,
     ValidationWaitForResult,
     DeploymentWaitForResult,
     changeSetNamePrefix,
 } from './StackActionWorkflowType';
+import { CFN_VALIDATION_SOURCE } from './ValidationWorkflow';
 
 const logger = LoggerFactory.getLogger('StackActionOperations');
 
@@ -236,4 +251,73 @@ export function processWorkflowUpdates(
     workflows.set(existingWorkflow.id, existingWorkflow);
 
     return existingWorkflow;
+}
+
+export function parseValidationEvents(events: DescribeEventsOutput, validationName: string): ValidationDetail[] {
+    const validEvents = events.OperationEvents.filter((event) => event.EventType === 'VALIDATION_ERROR');
+
+    return validEvents.map((event) => {
+        const timestamp = event.Timestamp instanceof Date ? event.Timestamp.toISOString() : event.Timestamp;
+        return {
+            Timestamp: DateTime.fromISO(timestamp),
+            ValidationName: validationName,
+            LogicalId: event.LogicalResourceId,
+            Message: [event.ValidationName, event.ValidationStatusReason].filter(Boolean).join(': '),
+            Severity: event.ValidationFailureMode === 'FAIL' ? 'ERROR' : 'INFO',
+            ResourcePropertyPath: event.ValidationPath,
+        };
+    });
+}
+
+export async function publishValidationDiagnostics(
+    uri: string,
+    events: ValidationDetail[],
+    syntaxTreeManager: SyntaxTreeManager,
+    diagnosticCoordinator: DiagnosticCoordinator,
+): Promise<void> {
+    const syntaxTree = syntaxTreeManager.getSyntaxTree(uri);
+    if (!syntaxTree) {
+        logger.error('No syntax tree found');
+        return;
+    }
+
+    const diagnostics: Diagnostic[] = [];
+    for (const event of events) {
+        let startPosition: Parser.Point | undefined;
+        let endPosition: Parser.Point | undefined;
+
+        if (event.ResourcePropertyPath) {
+            logger.debug({ event }, 'Getting property-specific start and end positions');
+
+            // Parse ValidationPath like "/Resources/S3Bucket" or "/Resources/S3Bucket/Properties/BucketName"
+            const pathSegments = event.ResourcePropertyPath.split('/').filter(Boolean);
+
+            const nodeByPath = syntaxTree.getNodeByPath(pathSegments);
+
+            startPosition = nodeByPath.node?.startPosition;
+            endPosition = nodeByPath.node?.endPosition;
+        } else if (event.LogicalId) {
+            // fall back to using LogicalId and underlining entire resource
+            logger.debug({ event }, 'No ResourcePropertyPath found, falling back to using LogicalId');
+            const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
+
+            startPosition = resourcesMap?.get(event.LogicalId)?.startPosition;
+            endPosition = resourcesMap?.get(event.LogicalId)?.endPosition;
+        }
+
+        if (startPosition && endPosition) {
+            diagnostics.push({
+                severity: event.Severity === 'ERROR' ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
+                range: {
+                    start: pointToPosition(startPosition),
+                    end: pointToPosition(endPosition),
+                },
+                message: event.Message,
+                source: CFN_VALIDATION_SOURCE,
+                data: uuidv4(),
+            });
+        }
+    }
+
+    await diagnosticCoordinator.publishDiagnostics(CFN_VALIDATION_SOURCE, uri, diagnostics);
 }
