@@ -407,10 +407,6 @@ Rules:
                             position: { line: 114, character: 54 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['InstanceType'])
-                                .todo(
-                                    `second level of Mapping not being suggested when using !Ref for first level key
-                                works using 'us-east-1'`,
-                                )
                                 .build(),
                         },
                     },
@@ -1438,13 +1434,7 @@ O`,
                         description: 'suggest Mapping second level key in deeply nested intrinsic function',
                         verification: {
                             position: { line: 471, character: 61 },
-                            expectation: CompletionExpectationBuilder.create()
-                                .expectItems(['AMI'])
-                                .todo(
-                                    `fix bug in FindInMap completion where using intrinsic in second arg breaks
-                             suggestion for third arg`,
-                                )
-                                .build(),
+                            expectation: CompletionExpectationBuilder.create().expectItems(['AMI']).build(),
                         },
                     },
                     {

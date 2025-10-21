@@ -140,9 +140,20 @@ export class Mapping extends Entity {
         return Object.keys(this.value);
     }
 
-    public getSecondLevelKeys(topLevelKey: string): string[] {
-        if (this.value[topLevelKey]) {
-            return Object.keys(this.value[topLevelKey]);
+    public getSecondLevelKeys(topLevelKey?: string): string[] {
+        if (topLevelKey === undefined) {
+            const allKeys = new Set<string>();
+            const topLevelKeys = this.getTopLevelKeys();
+
+            for (const tlKey of topLevelKeys) {
+                const keys = this.getSecondLevelKeys(tlKey);
+                for (const key of keys) allKeys.add(key);
+            }
+            return [...allKeys];
+        } else {
+            if (this.value[topLevelKey]) {
+                return Object.keys(this.value[topLevelKey]);
+            }
         }
         return [];
     }
