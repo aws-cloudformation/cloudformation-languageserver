@@ -289,7 +289,7 @@ describe('StackActionHandler', () => {
 
             const mockComponents = {
                 cfnService: {
-                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                    listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
                 },
             } as any;
 
@@ -316,7 +316,7 @@ describe('StackActionHandler', () => {
             const mockStacks: StackSummary[] = [];
             const mockComponents = {
                 cfnService: {
-                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                    listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
                 },
             } as any;
 
@@ -327,14 +327,18 @@ describe('StackActionHandler', () => {
             const handler = listStacksHandler(mockComponents);
             await handler(paramsWithInclude, mockToken);
 
-            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith([StackStatus.CREATE_COMPLETE], undefined);
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(
+                [StackStatus.CREATE_COMPLETE],
+                undefined,
+                { nextToken: undefined },
+            );
         });
 
         it('should pass statusToExclude to cfnService', async () => {
             const mockStacks: StackSummary[] = [];
             const mockComponents = {
                 cfnService: {
-                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                    listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
                 },
             } as any;
 
@@ -345,7 +349,11 @@ describe('StackActionHandler', () => {
             const handler = listStacksHandler(mockComponents);
             await handler(paramsWithExclude, mockToken);
 
-            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(undefined, [StackStatus.DELETE_COMPLETE]);
+            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(
+                undefined,
+                [StackStatus.DELETE_COMPLETE],
+                { nextToken: undefined },
+            );
         });
 
         it('should return empty array when both statusToInclude and statusToExclude are provided', async () => {

@@ -95,7 +95,10 @@ describe('CfnService', () => {
             cloudFormationMock.on(ListStacksCommand).resolves(MOCK_RESPONSES.LIST_STACKS);
 
             const result = await service.listStacks();
-            expect(result).toEqual(MOCK_RESPONSES.LIST_STACKS.StackSummaries);
+            expect(result).toEqual({
+                stacks: MOCK_RESPONSES.LIST_STACKS.StackSummaries,
+                nextToken: undefined,
+            });
         });
 
         it('should throw CloudFormationServiceException when API call fails', async () => {
@@ -234,21 +237,8 @@ describe('CfnService', () => {
                 ],
                 NextToken: 'token1',
             };
-            const page2 = {
-                ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
-                Changes: [
-                    { Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource4' } },
-                    { Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource5' } },
-                ],
-                NextToken: 'token2',
-            };
-            const page3 = {
-                ...MOCK_RESPONSES.DESCRIBE_CHANGE_SET,
-                Changes: [{ Type: 'Resource' as const, ResourceChange: { LogicalResourceId: 'Resource6' } }],
-                NextToken: undefined,
-            };
 
-            cloudFormationMock.on(DescribeChangeSetCommand).resolvesOnce(page1).resolvesOnce(page2).resolvesOnce(page3);
+            cloudFormationMock.on(DescribeChangeSetCommand).resolvesOnce(page1);
 
             const result = await service.describeChangeSet({
                 StackName: TEST_CONSTANTS.STACK_NAME,
@@ -256,10 +246,10 @@ describe('CfnService', () => {
                 IncludePropertyValues: true,
             });
 
-            expect(result.Changes).toHaveLength(6);
+            expect(result.Changes).toHaveLength(3);
             expect(result.Changes?.[0].ResourceChange?.LogicalResourceId).toBe('Resource1');
-            expect(result.Changes?.[5].ResourceChange?.LogicalResourceId).toBe('Resource6');
-            expect(result.NextToken).toBeUndefined();
+            expect(result.Changes?.[2].ResourceChange?.LogicalResourceId).toBe('Resource3');
+            expect(result.NextToken).toBe('token1');
         });
 
         it('should throw ChangeSetNotFoundException when API call fails', async () => {
@@ -332,7 +322,7 @@ describe('CfnService', () => {
                 {
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 },
-                'test-token',
+                { nextToken: 'test-token' },
             );
 
             expect(result).toEqual(MOCK_RESPONSES.DESCRIBE_STACK_EVENTS);
@@ -363,35 +353,20 @@ describe('CfnService', () => {
                 ],
                 NextToken: 'token1',
             };
-            const page2 = {
-                ...MOCK_RESPONSES.DESCRIBE_STACK_EVENTS,
-                StackEvents: [
-                    {
-                        StackId: TEST_CONSTANTS.STACK_ID,
-                        EventId: 'event-3',
-                        StackName: TEST_CONSTANTS.STACK_NAME,
-                        LogicalResourceId: 'Resource3',
-                        ResourceStatus: 'CREATE_COMPLETE' as const,
-                        Timestamp: new Date('2023-01-01T00:02:00Z'),
-                        ClientRequestToken: 'test-token',
-                    },
-                ],
-                NextToken: undefined,
-            };
 
-            cloudFormationMock.on(DescribeStackEventsCommand).resolvesOnce(page1).resolvesOnce(page2);
+            cloudFormationMock.on(DescribeStackEventsCommand).resolvesOnce(page1);
 
             const result = await service.describeStackEvents(
                 {
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 },
-                'test-token',
+                { nextToken: undefined },
             );
 
-            expect(result.StackEvents).toHaveLength(3);
+            expect(result.StackEvents).toHaveLength(2);
             expect(result.StackEvents?.[0].EventId).toBe('event-1');
-            expect(result.StackEvents?.[2].EventId).toBe('event-3');
-            expect(result.NextToken).toBeUndefined();
+            expect(result.StackEvents?.[1].EventId).toBe('event-2');
+            expect(result.NextToken).toBe('token1');
         });
 
         it('should stop pagination when clientToken no longer matches', async () => {
@@ -419,74 +394,21 @@ describe('CfnService', () => {
                 ],
                 NextToken: 'token1',
             };
-            const page2 = {
-                ...MOCK_RESPONSES.DESCRIBE_STACK_EVENTS,
-                StackEvents: [
-                    {
-                        StackId: TEST_CONSTANTS.STACK_ID,
-                        EventId: 'event-3',
-                        StackName: TEST_CONSTANTS.STACK_NAME,
-                        LogicalResourceId: 'Resource3',
-                        ResourceStatus: 'CREATE_COMPLETE' as const,
-                        Timestamp: new Date('2023-01-01T00:02:00Z'),
-                        ClientRequestToken: 'test-token',
-                    },
-                    {
-                        StackId: TEST_CONSTANTS.STACK_ID,
-                        EventId: 'event-4',
-                        StackName: TEST_CONSTANTS.STACK_NAME,
-                        LogicalResourceId: 'Resource4',
-                        ResourceStatus: 'CREATE_COMPLETE' as const,
-                        Timestamp: new Date('2023-01-01T00:03:00Z'),
-                        ClientRequestToken: 'different-token',
-                    },
-                ],
-                NextToken: 'token2',
-            };
-            const page3 = {
-                ...MOCK_RESPONSES.DESCRIBE_STACK_EVENTS,
-                StackEvents: [
-                    {
-                        StackId: TEST_CONSTANTS.STACK_ID,
-                        EventId: 'event-5',
-                        StackName: TEST_CONSTANTS.STACK_NAME,
-                        LogicalResourceId: 'Resource5',
-                        ResourceStatus: 'CREATE_COMPLETE' as const,
-                        Timestamp: new Date('2023-01-01T00:04:00Z'),
-                        ClientRequestToken: 'different-token',
-                    },
-                    {
-                        StackId: TEST_CONSTANTS.STACK_ID,
-                        EventId: 'event-6',
-                        StackName: TEST_CONSTANTS.STACK_NAME,
-                        LogicalResourceId: 'Resource6',
-                        ResourceStatus: 'CREATE_COMPLETE' as const,
-                        Timestamp: new Date('2023-01-01T00:05:00Z'),
-                        ClientRequestToken: 'different-token',
-                    },
-                ],
-                NextToken: undefined,
-            };
 
-            cloudFormationMock
-                .on(DescribeStackEventsCommand)
-                .resolvesOnce(page1)
-                .resolvesOnce(page2)
-                .resolvesOnce(page3);
+            cloudFormationMock.on(DescribeStackEventsCommand).resolvesOnce(page1);
 
             const result = await service.describeStackEvents(
                 {
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 },
-                'test-token',
+                { nextToken: undefined },
             );
 
-            expect(result.StackEvents).toHaveLength(3); // Only events with matching token (event-1, event-2, event-3)
+            expect(result.StackEvents).toHaveLength(2);
             expect(result.StackEvents?.[0].EventId).toBe('event-1');
             expect(result.StackEvents?.[1].EventId).toBe('event-2');
-            expect(result.StackEvents?.[2].EventId).toBe('event-3');
-            expect(result.NextToken).toBeUndefined();
-            expect(cloudFormationMock.commandCalls(DescribeStackEventsCommand)).toHaveLength(3); // Should have made 3 calls
+            expect(result.NextToken).toBe('token1');
+            expect(cloudFormationMock.commandCalls(DescribeStackEventsCommand)).toHaveLength(1);
         });
 
         it('should throw StackNotFoundException when API call fails', async () => {
@@ -498,7 +420,7 @@ describe('CfnService', () => {
                     {
                         StackName: TEST_CONSTANTS.STACK_NAME,
                     },
-                    'test-token',
+                    { nextToken: 'test-token' },
                 ),
             ).rejects.toThrow(error);
         });

@@ -1,4 +1,4 @@
-import { ChangeSetType } from '@aws-sdk/client-cloudformation';
+import { ChangeSetType, StackEvent } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { DocumentManager } from '../../document/DocumentManager';
 import { Identifiable } from '../../protocol/LspTypes';
@@ -203,13 +203,30 @@ export class DeploymentWorkflow implements StackActionWorkflow<DescribeDeploymen
         stackName: string,
     ): Promise<void> {
         try {
-            const stackEventsResponse = await this.cfnService.describeStackEvents(
-                { StackName: stackName },
-                existingWorkflow.id,
-            );
+            // Fetch all events for the workflow
+            let nextToken: string | undefined;
+            const allEvents: StackEvent[] = [];
+            do {
+                const stackEventsResponse = await this.cfnService.describeStackEvents(
+                    { StackName: stackName },
+                    { nextToken },
+                );
+
+                const events = stackEventsResponse.StackEvents ?? [];
+                const matchingEvents = events.filter((event) => event.ClientRequestToken === existingWorkflow.id);
+
+                allEvents.push(...matchingEvents);
+
+                // Stop if no more events match the client request token
+                if (matchingEvents.length === 0) {
+                    break;
+                }
+
+                nextToken = stackEventsResponse.NextToken;
+            } while (nextToken);
 
             const deploymentEvents: DeploymentEvent[] =
-                stackEventsResponse.StackEvents?.map((event) => ({
+                allEvents.map((event) => ({
                     LogicalResourceId: event.LogicalResourceId,
                     ResourceType: event.ResourceType,
                     Timestamp: event.Timestamp ? DateTime.fromJSDate(event.Timestamp) : undefined,

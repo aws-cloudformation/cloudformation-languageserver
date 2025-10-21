@@ -48,9 +48,7 @@ import {
     waitUntilStackCreateComplete,
     waitUntilStackImportComplete,
     DescribeChangeSetCommandOutput,
-    Change,
     GetTemplateCommand,
-    StackEvent,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClient } from './AwsClient';
@@ -63,11 +61,12 @@ export class CfnService {
         return await request(client);
     }
 
-    public async listStacks(statusToInclude?: StackStatus[], statusToExclude?: StackStatus[]): Promise<StackSummary[]> {
+    public async listStacks(
+        statusToInclude?: StackStatus[],
+        statusToExclude?: StackStatus[],
+        options?: { nextToken?: string },
+    ): Promise<{ stacks: StackSummary[]; nextToken?: string }> {
         return await this.withClient(async (client) => {
-            const allStacks: StackSummary[] = [];
-            let nextToken: string | undefined;
-
             let stackStatusFilter: StackStatus[] | undefined;
             if (statusToInclude) {
                 stackStatusFilter = statusToInclude;
@@ -75,22 +74,17 @@ export class CfnService {
                 stackStatusFilter = StackStatuses.filter((status) => !statusToExclude.includes(status));
             }
 
-            do {
-                const response = await client.send(
-                    new ListStacksCommand({
-                        NextToken: nextToken,
-                        StackStatusFilter: stackStatusFilter,
-                    }),
-                );
+            const response = await client.send(
+                new ListStacksCommand({
+                    NextToken: options?.nextToken,
+                    StackStatusFilter: stackStatusFilter,
+                }),
+            );
 
-                if (response.StackSummaries) {
-                    allStacks.push(...response.StackSummaries);
-                }
-
-                nextToken = response.NextToken;
-            } while (nextToken);
-
-            return allStacks;
+            return {
+                stacks: response.StackSummaries ?? [],
+                nextToken: response.NextToken,
+            };
         });
     }
 
@@ -129,32 +123,21 @@ export class CfnService {
         return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)));
     }
 
-    public async describeChangeSet(params: {
-        ChangeSetName: string;
-        IncludePropertyValues: boolean;
-        StackName?: string;
-    }): Promise<DescribeChangeSetCommandOutput> {
+    public async describeChangeSet(
+        params: {
+            ChangeSetName: string;
+            IncludePropertyValues: boolean;
+            StackName?: string;
+        },
+        options?: { nextToken?: string },
+    ): Promise<DescribeChangeSetCommandOutput> {
         return await this.withClient(async (client) => {
-            let nextToken: string | undefined;
-            let result: DescribeChangeSetCommandOutput | undefined;
-            const changes: Change[] = [];
-
-            do {
-                const response = await client.send(new DescribeChangeSetCommand({ ...params, NextToken: nextToken }));
-
-                if (result) {
-                    changes.push(...(response.Changes ?? []));
-                } else {
-                    result = response;
-                    changes.push(...(result.Changes ?? []));
-                }
-
-                nextToken = response.NextToken;
-            } while (nextToken);
-
-            result.Changes = changes;
-            result.NextToken = undefined;
-            return result;
+            return await client.send(
+                new DescribeChangeSetCommand({
+                    ...params,
+                    NextToken: options?.nextToken,
+                }),
+            );
         });
     }
 
@@ -169,42 +152,15 @@ export class CfnService {
         params: {
             StackName: string;
         },
-        clientRequestToken: string,
+        options?: { nextToken?: string },
     ): Promise<DescribeStackEventsCommandOutput> {
         return await this.withClient(async (client) => {
-            let nextToken: string | undefined;
-            let result: DescribeStackEventsCommandOutput | undefined;
-            const stackEvents: StackEvent[] = [];
-
-            do {
-                const response = await client.send(
-                    new DescribeStackEventsCommand({
-                        StackName: params.StackName,
-                        NextToken: nextToken,
-                    }),
-                );
-
-                if (result) {
-                    stackEvents.push(...(response.StackEvents ?? []));
-                } else {
-                    result = response;
-                    stackEvents.push(...(result.StackEvents ?? []));
-                }
-
-                // Stop if no more events in a page match the client request token parameter
-                const hasMatchingToken = response.StackEvents?.some(
-                    (event) => event.ClientRequestToken === clientRequestToken,
-                );
-                if (!hasMatchingToken) {
-                    break;
-                }
-
-                nextToken = response.NextToken;
-            } while (nextToken);
-
-            result.StackEvents = stackEvents.filter((event) => event.ClientRequestToken === clientRequestToken);
-            result.NextToken = undefined;
-            return result;
+            return await client.send(
+                new DescribeStackEventsCommand({
+                    StackName: params.StackName,
+                    NextToken: options?.nextToken,
+                }),
+            );
         });
     }
 
@@ -242,8 +198,17 @@ export class CfnService {
     public async getAllPrivateResourceSchemas(): Promise<DescribeTypeOutput[]> {
         return await this.withClient(async (client) => {
             const privateResourceSchemas: DescribeTypeOutput[] = [];
-            const allTypes = await this.getAllPrivateResourceTypes();
+            let nextToken: string | undefined;
+            const allTypes: TypeSummary[] = [];
 
+            // Fetch all types
+            do {
+                const result = await this.getAllPrivateResourceTypes({ nextToken });
+                allTypes.push(...result.types);
+                nextToken = result.nextToken;
+            } while (nextToken);
+
+            // Fetch schemas for each type
             for (const type of allTypes) {
                 if (type.TypeName) {
                     const schemaType = await client.send(
@@ -263,29 +228,23 @@ export class CfnService {
         });
     }
 
-    private async getAllPrivateResourceTypes(): Promise<TypeSummary[]> {
+    private async getAllPrivateResourceTypes(options?: {
+        nextToken?: string;
+    }): Promise<{ types: TypeSummary[]; nextToken?: string }> {
         return await this.withClient(async (client) => {
-            const allTypeSummaries: TypeSummary[] = [];
-            let nextToken: string | undefined;
+            const listResult = await client.send(
+                new ListTypesCommand({
+                    Visibility: Visibility.PRIVATE,
+                    Type: RegistryType.RESOURCE,
+                    MaxResults: 100,
+                    NextToken: options?.nextToken,
+                }),
+            );
 
-            do {
-                const listResult = await client.send(
-                    new ListTypesCommand({
-                        Visibility: Visibility.PRIVATE,
-                        Type: RegistryType.RESOURCE,
-                        MaxResults: 100,
-                        NextToken: nextToken,
-                    }),
-                );
-
-                if (listResult.TypeSummaries) {
-                    allTypeSummaries.push(...listResult.TypeSummaries);
-                }
-
-                nextToken = listResult.NextToken;
-            } while (nextToken);
-
-            return allTypeSummaries;
+            return {
+                types: listResult.TypeSummaries ?? [],
+                nextToken: listResult.NextToken,
+            };
         });
     }
 

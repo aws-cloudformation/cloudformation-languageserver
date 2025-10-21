@@ -1,4 +1,4 @@
-import { GetResourceCommandOutput, ListResourcesOutput, ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
+import { GetResourceCommandOutput, ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
 import { DateTime } from 'luxon';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { CfnExternal } from '../server/CfnExternal';
@@ -114,29 +114,35 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     }
 
     private async retrieveResourceList(typeName: string): Promise<ResourceList | undefined> {
-        let output: ListResourcesOutput | undefined = undefined;
-
         try {
-            output = await this.ccapiService.listResources(typeName);
+            let nextToken: string | undefined;
+            const allIdentifiers: string[] = [];
+
+            do {
+                const output = await this.ccapiService.listResources(typeName, { nextToken });
+
+                if (output.ResourceDescriptions) {
+                    const identifiers = output.ResourceDescriptions.map((desc) => desc.Identifier).filter(
+                        (id): id is string => id !== undefined,
+                    );
+                    allIdentifiers.push(...identifiers);
+                }
+
+                nextToken = output.NextToken;
+            } while (nextToken);
+
+            const now = DateTime.now();
+
+            return {
+                typeName: typeName,
+                resourceIdentifiers: allIdentifiers,
+                createdTimestamp: now,
+                lastUpdatedTimestamp: now,
+            };
         } catch (error) {
             log.error(error, `CCAPI ListResource failed for type ${typeName}`);
             return;
         }
-
-        if (!output?.ResourceDescriptions) {
-            return;
-        }
-
-        const now = DateTime.now();
-
-        return {
-            typeName: typeName,
-            resourceIdentifiers: output.ResourceDescriptions.map((desc) => desc.Identifier).filter(
-                (id) => id !== undefined,
-            ),
-            createdTimestamp: now,
-            lastUpdatedTimestamp: now,
-        };
     }
 
     public async refreshResourceList(resourceTypes: string[]): Promise<RefreshResourcesResult> {

@@ -86,7 +86,10 @@ describe('IacGeneratorService', () => {
 
             const result = await service.listResourceScanResources('scan-123');
 
-            expect(result).toEqual(mockResponse.Resources);
+            expect(result).toEqual({
+                resources: mockResponse.Resources,
+                nextToken: undefined,
+            });
         });
 
         it('should throw CloudFormationServiceException when API call fails', async () => {

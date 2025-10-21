@@ -1,4 +1,4 @@
-import { ScannedResource } from '@aws-sdk/client-cloudformation';
+import { ScannedResource, ResourceScanSummary } from '@aws-sdk/client-cloudformation';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { AwsClient } from './AwsClient';
@@ -25,13 +25,21 @@ export async function getFilteredScannedResources(
 ): Promise<FilteredResourcesInfo | undefined> {
     const iacGeneratorService = new IacGeneratorService(awsClient);
     try {
-        const resourceScans = await iacGeneratorService.listResourceScans();
-        if (!resourceScans || resourceScans.length === 0) {
+        // Fetch all scans
+        let nextToken: string | undefined;
+        const allScans: ResourceScanSummary[] = [];
+        do {
+            const result = await iacGeneratorService.listResourceScans({ nextToken });
+            allScans.push(...result.scans);
+            nextToken = result.nextToken;
+        } while (nextToken);
+
+        if (allScans.length === 0) {
             logger.info('No resource scans found in account');
             return undefined;
         }
 
-        const completedScans = resourceScans.filter((scan) => scan.Status === 'COMPLETE');
+        const completedScans = allScans.filter((scan) => scan.Status === 'COMPLETE');
         if (completedScans.length === 0) {
             logger.info('No completed resource scans found');
             return undefined;
@@ -52,9 +60,18 @@ export async function getFilteredScannedResources(
             `Using resource scan: ${latestScan.ResourceScanId} (started: ${latestScan.StartTime?.toISOString() ?? 'unknown'})`,
         );
 
-        const scannedResources = await iacGeneratorService.listResourceScanResources(latestScan.ResourceScanId);
+        // Fetch all resources for the scan
+        let resourceToken: string | undefined;
+        const allResources: ScannedResource[] = [];
+        do {
+            const result = await iacGeneratorService.listResourceScanResources(latestScan.ResourceScanId, {
+                nextToken: resourceToken,
+            });
+            allResources.push(...result.resources);
+            resourceToken = result.nextToken;
+        } while (resourceToken);
 
-        return filterResourcesByRelationships(scannedResources, templateResourceTypes, relationshipService);
+        return filterResourcesByRelationships(allResources, templateResourceTypes, relationshipService);
     } catch (error) {
         logger.warn({ error: extractErrorMessage(error) }, 'Failed to get resource scan data');
         return undefined;

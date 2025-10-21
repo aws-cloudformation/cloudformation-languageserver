@@ -41,39 +41,38 @@ export class IacGeneratorService {
         });
     }
 
-    public async listResourceScanResources(scanId: string): Promise<ScannedResource[]> {
+    public async listResourceScanResources(
+        scanId: string,
+        options?: { nextToken?: string; maxResults?: number },
+    ): Promise<{ resources: ScannedResource[]; nextToken?: string }> {
         return await this.withClient(async (client) => {
             const input: ListResourceScanResourcesInput = {
                 ResourceScanId: scanId,
+                NextToken: options?.nextToken,
+                MaxResults: options?.maxResults,
             };
-            let nextToken: string | undefined;
-            const scannedResources: ScannedResource[] = [];
-            do {
-                const response = await client.send(new ListResourceScanResourcesCommand(input));
-                if (response.Resources) {
-                    scannedResources.push(...response.Resources);
-                }
-                input.NextToken = response.NextToken;
-                nextToken = response.NextToken;
-            } while (nextToken);
-            return scannedResources;
+            const response = await client.send(new ListResourceScanResourcesCommand(input));
+            return {
+                resources: response.Resources ?? [],
+                nextToken: response.NextToken,
+            };
         });
     }
 
-    public async listResourceScans(): Promise<ResourceScanSummary[]> {
+    public async listResourceScans(options?: {
+        nextToken?: string;
+        maxResults?: number;
+    }): Promise<{ scans: ResourceScanSummary[]; nextToken?: string }> {
         return await this.withClient(async (client) => {
-            const input: ListResourceScansInput = {};
-            let nextToken: string | undefined;
-            const resourceScans: ResourceScanSummary[] = [];
-            do {
-                const response = await client.send(new ListResourceScansCommand(input));
-                if (response.ResourceScanSummaries) {
-                    resourceScans.push(...response.ResourceScanSummaries);
-                }
-                input.NextToken = response.NextToken;
-                nextToken = response.NextToken;
-            } while (nextToken);
-            return resourceScans;
+            const input: ListResourceScansInput = {
+                NextToken: options?.nextToken,
+                MaxResults: options?.maxResults,
+            };
+            const response = await client.send(new ListResourceScansCommand(input));
+            return {
+                scans: response.ResourceScanSummaries ?? [],
+                nextToken: response.NextToken,
+            };
         });
     }
 
