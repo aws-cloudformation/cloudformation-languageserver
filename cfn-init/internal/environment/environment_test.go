@@ -38,6 +38,9 @@ func TestAdd_Success(t *testing.T) {
 
 func TestAdd_ProjectNotFound(t *testing.T) {
 	tempDir := t.TempDir()
+	originalDir, _ := os.Getwd()
+	t.Cleanup(func() { os.Chdir(originalDir) })
+
 	err := os.Chdir(tempDir)
 	assert.NoError(t, err)
 
@@ -49,6 +52,9 @@ func TestAdd_ProjectNotFound(t *testing.T) {
 
 func TestAdd_ConfigFileNotFound(t *testing.T) {
 	tempDir := t.TempDir()
+	originalDir, _ := os.Getwd()
+	t.Cleanup(func() { os.Chdir(originalDir) })
+
 	err := os.Chdir(tempDir)
 	assert.NoError(t, err)
 
