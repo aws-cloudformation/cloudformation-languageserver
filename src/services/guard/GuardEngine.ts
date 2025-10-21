@@ -192,7 +192,7 @@ export class GuardEngine {
 
     /**
      * Parse SingleLineSummary output and convert to structured violations
-     * This is much simpler and more reliable than parsing SARIF output
+     * Groups violations by missing property and location, combining rule names
      */
     private parseSingleLineSummaryOutput(
         output: string,
@@ -205,26 +205,30 @@ export class GuardEngine {
             return violations;
         }
 
-        // Parse SingleLineSummary output to extract violations with location information
-
         // Use regex to find all PropertyPath entries with their associated violation messages
         const propertyPathRegex = /PropertyPath\s*=\s*([^\s]+\[L:(\d+),C:(\d+)\])/g;
-        const violationRegex = /Violation:\s*([^\n]+)/g;
-        const errorRegex = /Error\s*=\s*([^\n]+)/g;
-        const fixRegex = /Fix:\s*([^\n]+)/g;
         const ruleRegex = /Rule\s*=\s*([A-Z_][A-Z0-9_]*)/g;
-
-        // Additional regex patterns for ComparisonError details
+        const missingPropertyRegex = /MissingProperty\s*=\s*([^\n]+)/g;
         const comparisonValueRegex = /Value\s*=\s*([^\n]+)/g;
         const comparisonWithRegex = /ComparedWith\s*=\s*([^\n]+)/g;
-
-        // Additional regex patterns for RequiredPropertyError details
-        const missingPropertyRegex = /MissingProperty\s*=\s*([^\n]+)/g;
-
-        // Additional regex pattern for Operator details
         const operatorRegex = /Operator\s*=\s*([^\n]+)/g;
 
-        // Find all PropertyPath matches
+        // Group violations by location and missing property
+        const violationGroups = new Map<
+            string,
+            {
+                line: number;
+                column: number;
+                cfnPath: string;
+                missingProperty?: string;
+                ruleNames: Set<string>;
+                ruleMessages: string[];
+                actualValue?: string;
+                expectedValue?: string;
+                operator?: string;
+            }
+        >();
+
         let propertyPathMatch;
         while ((propertyPathMatch = propertyPathRegex.exec(output)) !== null) {
             const fullPath = propertyPathMatch[1];
@@ -240,27 +244,7 @@ export class GuardEngine {
             const ruleMatches = [...textBeforePropertyPath.matchAll(ruleRegex)];
             const ruleName = ruleMatches.length > 0 ? ruleMatches[ruleMatches.length - 1][1] : 'unknown';
 
-            // Find violation message by looking backwards from this PropertyPath
-            const violationMatches = [...textBeforePropertyPath.matchAll(violationRegex)];
-            const errorMatches = [...textBeforePropertyPath.matchAll(errorRegex)];
-            let violationMessage = '';
-
-            // Prefer Violation: messages, but fall back to Error = messages
-            if (violationMatches.length > 0) {
-                violationMessage = violationMatches[violationMatches.length - 1][1];
-            } else if (errorMatches.length > 0) {
-                violationMessage = errorMatches[errorMatches.length - 1][1];
-            }
-
-            // Find fix message by looking backwards from this PropertyPath
-            const fixMatches = [...textBeforePropertyPath.matchAll(fixRegex)];
-            let fixMessage = '';
-            if (fixMatches.length > 0) {
-                fixMessage = fixMatches[fixMatches.length - 1][1];
-            }
-
-            // Find the error block that contains this PropertyPath to get the specific context
-            // Look for the next closing brace after this PropertyPath to find the end of the error block
+            // Find missing property within the error block
             const textAfterPropertyPath = output.slice(propertyPathMatch.index);
             const errorBlockEnd = textAfterPropertyPath.search(/\n\s*\}/);
             const errorBlockText =
@@ -268,16 +252,14 @@ export class GuardEngine {
                     ? textAfterPropertyPath.slice(0, 500)
                     : textAfterPropertyPath.slice(0, errorBlockEnd);
 
-            // Find comparison values, missing property, and operator within this specific error block
+            const missingPropertyMatches = [...errorBlockText.matchAll(missingPropertyRegex)];
             const valueMatches = [...errorBlockText.matchAll(comparisonValueRegex)];
             const comparedWithMatches = [...errorBlockText.matchAll(comparisonWithRegex)];
-            const missingPropertyMatches = [...errorBlockText.matchAll(missingPropertyRegex)];
             const operatorMatches = [...errorBlockText.matchAll(operatorRegex)];
 
-            let actualValue = '';
-            let expectedValue = '';
-            let missingProperty = '';
-            let operator = '';
+            let actualValue: string | undefined;
+            let expectedValue: string | undefined;
+            let operator: string | undefined;
 
             if (valueMatches.length > 0) {
                 actualValue = valueMatches[0][1].trim();
@@ -285,59 +267,110 @@ export class GuardEngine {
             if (comparedWithMatches.length > 0) {
                 expectedValue = comparedWithMatches[0][1].trim();
             }
-            if (missingPropertyMatches.length > 0) {
-                missingProperty = missingPropertyMatches[0][1].trim();
-            }
             if (operatorMatches.length > 0) {
                 operator = operatorMatches[0][1].trim();
             }
 
-            // Build clean message - extract from rule definition << >> blocks
-            let message = '';
+            // Only process if this is a root missing property (no dots in property name)
+            if (missingPropertyMatches.length > 0) {
+                const missingProperty = missingPropertyMatches[0][1].trim();
 
-            // Use pre-extracted message from rule definition with specific context
-            const rule = _rules.find((r) => r.name === ruleName);
+                // Skip nested properties - only report root missing properties
+                if (!missingProperty.includes('.')) {
+                    const groupKey = `${line}:${column}:${cfnPath}:${missingProperty}`;
 
-            if (rule?.message) {
-                message = rule.message;
+                    if (!violationGroups.has(groupKey)) {
+                        violationGroups.set(groupKey, {
+                            line,
+                            column,
+                            cfnPath,
+                            missingProperty,
+                            ruleNames: new Set(),
+                            ruleMessages: [],
+                            actualValue,
+                            expectedValue,
+                            operator,
+                        });
+                    }
 
-                // Append specific context based on the type of violation
-                const context = this.extractViolationContext(
-                    violationMessage,
-                    fixMessage,
-                    actualValue,
-                    expectedValue,
-                    missingProperty,
-                    operator,
-                );
+                    const group = violationGroups.get(groupKey);
+                    if (!group) {
+                        continue;
+                    }
 
-                if (context) {
-                    message += ` ${context}`;
-                }
+                    group.ruleNames.add(ruleName);
 
-                // Ensure message ends with newline
-                if (!message.endsWith('\n')) {
-                    message += '\n';
+                    // Get rule message if available
+                    const rule = _rules.find((r) => r.name === ruleName);
+                    if (rule?.message && !group.ruleMessages.includes(rule.message)) {
+                        group.ruleMessages.push(rule.message);
+                    }
                 }
             } else {
-                // Fallback to a simple message when rule message isn't available
-                message = `Guard rule violation: ${ruleName}\n`;
-            }
+                // Failsafe: handle any PropertyPath entry without missing property (comparison errors, etc.)
+                const groupKey = `${line}:${column}:${cfnPath}:other`;
 
-            if (ruleName && message) {
-                const violation = {
-                    ruleName,
-                    message,
-                    severity,
-                    location: {
+                if (!violationGroups.has(groupKey)) {
+                    violationGroups.set(groupKey, {
                         line,
                         column,
-                        path: cfnPath,
-                    },
-                };
+                        cfnPath,
+                        ruleNames: new Set(),
+                        ruleMessages: [],
+                        actualValue,
+                        expectedValue,
+                        operator,
+                    });
+                }
 
-                violations.push(violation);
+                const group = violationGroups.get(groupKey);
+                if (!group) {
+                    continue;
+                }
+
+                group.ruleNames.add(ruleName);
+
+                // Get rule message if available
+                const rule = _rules.find((r) => r.name === ruleName);
+                if (rule?.message && !group.ruleMessages.includes(rule.message)) {
+                    group.ruleMessages.push(rule.message);
+                }
             }
+        }
+
+        // Convert groups to violations
+        for (const [, group] of violationGroups) {
+            const ruleNamesList = [...group.ruleNames].sort();
+            const combinedRuleName = ruleNamesList.join(', ');
+
+            // Use the first available rule message, or create a generic one
+            let message = '';
+            if (group.ruleMessages.length > 0) {
+                message = group.ruleMessages[0];
+            } else {
+                if (group.missingProperty) {
+                    message = `Missing property: ${group.missingProperty}`;
+                } else if (group.actualValue && group.expectedValue) {
+                    message = `Expected: ${group.expectedValue}, Found: ${group.actualValue}`;
+                } else {
+                    message = `Guard rule violation`;
+                }
+            }
+
+            if (!message.endsWith('\n')) {
+                message += '\n';
+            }
+
+            violations.push({
+                ruleName: combinedRuleName,
+                message,
+                severity,
+                location: {
+                    line: group.line,
+                    column: group.column,
+                    path: group.cfnPath,
+                },
+            });
         }
 
         return violations;

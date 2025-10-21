@@ -189,22 +189,13 @@ function extractViolationMessage(content: string): string | undefined {
     if (!messageMatch) return undefined;
 
     const messageBlock = messageMatch[1];
-    const violationMatch = messageBlock.match(/Violation:\s*([^\n]+)/);
     const fixMatch = messageBlock.match(/Fix:\s*([^\n]+)/);
 
-    let message = '';
-    if (violationMatch) {
-        message = `Violation: ${violationMatch[1].trim()}`;
-    }
     if (fixMatch) {
-        if (message) {
-            message += `\nFix: ${fixMatch[1].trim()}\n`;
-        } else {
-            message = `Fix: ${fixMatch[1].trim()}\n`;
-        }
+        return `${fixMatch[1].trim()}\n`;
     }
 
-    return message || undefined;
+    return undefined;
 }
 
 /**

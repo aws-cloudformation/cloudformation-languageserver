@@ -9,7 +9,7 @@
  * runtime file parsing and reduce bundle size.
  *
  * Source: AWS Guard Rules Registry v1.0.2
- * Generated: 2025-09-14T15:14:15.730Z
+ * Generated: 2025-10-21T14:43:55.631Z
  * URL: https://github.com/aws-cloudformation/aws-guard-rules-registry/releases/download/1.0.2/ruleset-build-v1.0.2.zip
  */
 
@@ -36,7 +36,7 @@ rule API_GW_CACHE_ENABLED_AND_ENCRYPTED when %api_gw_cache_enabled_encrypted !em
   }
 }`,
         description: 'Guard rule: API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        message: 'Violation: API Gateway Stage Method not set with caching and caching encrypted\nFix: API GW Stage Method property CacheDataEncrypted and CachingEnabled set to true\n',
+        message: 'API GW Stage Method property CacheDataEncrypted and CachingEnabled set to true\n',
     },
     API_GW_EXECUTION_LOGGING_ENABLED: {
         name: 'API_GW_EXECUTION_LOGGING_ENABLED',
@@ -53,7 +53,7 @@ rule API_GW_EXECUTION_LOGGING_ENABLED when %api_gw_execution_logging_enabled !em
   }
 }`,
         description: 'Guard rule: API_GW_EXECUTION_LOGGING_ENABLED',
-        message: 'Violation: Logging Level for API GW Method Setting not set\nFix: API GW Stage Method Setting logging level must be set to "ERROR" or "INFO"\n',
+        message: 'API GW Stage Method Setting logging level must be set to "ERROR" or "INFO"\n',
     },
     CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED: {
         name: 'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
@@ -67,7 +67,7 @@ rule CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED when %cloudtrail_trails_cw_logs_enable
   
 }`,
         description: 'Guard rule: CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        message: 'Violation: CloudTrail Trail should have logs exported to cloudwatch logs.\nFix: Set the CloudWatchLogsLogGroupArn parameter to enable exporting to CloudWatch Logs.\n',
+        message: 'Set the CloudWatchLogsLogGroupArn parameter to enable exporting to CloudWatch Logs.\n',
     },
     CLOUD_TRAIL_ENCRYPTION_ENABLED: {
         name: 'CLOUD_TRAIL_ENCRYPTION_ENABLED',
@@ -82,7 +82,7 @@ rule CLOUD_TRAIL_ENCRYPTION_ENABLED when %cloudtrail_trails_encryption !empty {
   
 }`,
         description: 'Guard rule: CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        message: 'Violation: CloudTrail Trail should be used to encrypt logs delivered by CloudTrail.\nFix: Set the KMSKeyId parameter to enable encryption. The value can be an alias name prefixed by "alias/", a fully specified ARN to an alias, a fully specified ARN to a key, or a globally unique identifier.\n',
+        message: 'Set the KMSKeyId parameter to enable encryption. The value can be an alias name prefixed by "alias/", a fully specified ARN to an alias, a fully specified ARN to a key, or a globally unique identifier.\n',
     },
     CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED: {
         name: 'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
@@ -97,7 +97,7 @@ rule CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED when %cloudtrail_trails_log_validat
   
 }`,
         description: 'Guard rule: CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        message: 'Violation: CloudTrail Trail should have Log File Validation enabled.\nFix: Set the EnableLogFileValidation parameter to true.\n',
+        message: 'Set the EnableLogFileValidation parameter to true.\n',
     },
     CLOUDTRAIL_S3_DATAEVENTS_ENABLED: {
         name: 'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
@@ -112,7 +112,7 @@ rule CLOUDTRAIL_S3_DATAEVENTS_ENABLED when %cloudtrail_trails_dataevents !empty 
   
 }`,
         description: 'Guard rule: CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        message: 'Violation: CloudTrail Trail should have data events being logged.\nFix: Set the EventSelectors parameter to enable encryption. The value can be an alias name prefixed by "alias/", a fully specified ARN to an alias, a fully specified ARN to a key, or a globally unique identifier.\n',
+        message: 'Set the EventSelectors parameter to enable encryption. The value can be an alias name prefixed by "alias/", a fully specified ARN to an alias, a fully specified ARN to a key, or a globally unique identifier.\n',
     },
     CLOUDWATCH_ALARM_ACTION_CHECK: {
         name: 'CLOUDWATCH_ALARM_ACTION_CHECK',
@@ -129,7 +129,7 @@ rule CLOUDWATCH_ALARM_ACTION_CHECK when %cloudwatch_alarm_action_check !empty {
   
 }`,
         description: 'Guard rule: CLOUDWATCH_ALARM_ACTION_CHECK',
-        message: 'Violation: CloudWatch Alarms should have at least one Alarm Action, one Insufficient Data Actions action, or one OK Action enabled.\nFix: Set one Alarm Action, one Insufficient Data Actions action, or one OK Action on the CloudWatch Alarm resource.\n',
+        message: 'Set one Alarm Action, one Insufficient Data Actions action, or one OK Action on the CloudWatch Alarm resource.\n',
     },
     CLOUDWATCH_LOG_GROUP_ENCRYPTED: {
         name: 'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
@@ -143,7 +143,7 @@ rule CLOUDWATCH_LOG_GROUP_ENCRYPTED when %cloudwatch_logs !empty {
   
 }`,
         description: 'Guard rule: CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        message: 'Violation: CloudWatch Log LogsGroup does not have KmsKeyId set.\nFix: Set the KmsKeyId parameter to a ARN.\n',
+        message: 'Set the KmsKeyId parameter to a ARN.\n',
     },
     CW_LOGGROUP_RETENTION_PERIOD_CHECK: {
         name: 'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
@@ -157,7 +157,7 @@ rule CW_LOGGROUP_RETENTION_PERIOD_CHECK when %cloudwatch_logs_retention_period !
   
 }`,
         description: 'Guard rule: CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        message: 'Violation: CloudWatch Log LogsGroup does not have RetentionInDays set.\nFix: Set the RetentionInDays parameter to a value of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, or 3653.\n',
+        message: 'Set the RetentionInDays parameter to a value of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, or 3653.\n',
     },
     DB_INSTANCE_BACKUP_ENABLED: {
         name: 'DB_INSTANCE_BACKUP_ENABLED',
@@ -173,7 +173,7 @@ rule DB_INSTANCE_BACKUP_ENABLED when %aws_rds_instances_db_instance_backup_enabl
   
 }`,
         description: 'Guard rule: DB_INSTANCE_BACKUP_ENABLED',
-        message: 'Violation: All RDS instances must have automated backup enabled.\nFix: Set the BackupRetentionPeriod to values of 1 to 35 to enable backups.\n',
+        message: 'Set the BackupRetentionPeriod to values of 1 to 35 to enable backups.\n',
     },
     DMS_REPLICATION_NOT_PUBLIC: {
         name: 'DMS_REPLICATION_NOT_PUBLIC',
@@ -188,7 +188,7 @@ rule DMS_REPLICATION_NOT_PUBLIC when %dms_replication_instances !empty {
   
 }`,
         description: 'Guard rule: DMS_REPLICATION_NOT_PUBLIC',
-        message: 'Violation: AWS Database Migration Service replication instances should not be public.\nFix: Set the DMS Replication Instance property PubliclyAccessible parameter to true.\n',
+        message: 'Set the DMS Replication Instance property PubliclyAccessible parameter to true.\n',
     },
     DYNAMODB_PITR_ENABLED: {
         name: 'DYNAMODB_PITR_ENABLED',
@@ -200,7 +200,7 @@ rule DYNAMODB_PITR_ENABLED when %aws_dynamodb_table_resources !empty {
   
 }`,
         description: 'Guard rule: DYNAMODB_PITR_ENABLED',
-        message: 'Violation: All DynamoDB Tables must have Point-In-Time-Recovery enabled.\nFix: Set the dynamodb table property PointInTimeRecoverySpecification.PointInTimeRecoveryEnabled to true.\n',
+        message: 'Set the dynamodb table property PointInTimeRecoverySpecification.PointInTimeRecoveryEnabled to true.\n',
     },
     EBS_OPTIMIZED_INSTANCE: {
         name: 'EBS_OPTIMIZED_INSTANCE',
@@ -214,7 +214,7 @@ rule EBS_OPTIMIZED_INSTANCE when %ec2_ebs_optimized_instances !empty {
     
 }`,
         description: 'Guard rule: EBS_OPTIMIZED_INSTANCE',
-        message: 'Violation: EBS optimization must be enabled for your EC2 instances\nFix: set the EbsOptimized property to true\n',
+        message: 'set the EbsOptimized property to true\n',
     },
     EC2_EBS_ENCRYPTION_BY_DEFAULT: {
         name: 'EC2_EBS_ENCRYPTION_BY_DEFAULT',
@@ -228,7 +228,7 @@ rule EC2_EBS_ENCRYPTION_BY_DEFAULT when %ec2_ebs_volumes_encrypted_by_default !e
 		
 }`,
         description: 'Guard rule: EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        message: 'Violation: All EBS Volumes should be encryped\nFix: Set Encrypted property to true\n',
+        message: 'Set Encrypted property to true\n',
     },
     EC2_INSTANCE_DETAILED_MONITORING_ENABLED: {
         name: 'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
@@ -242,7 +242,7 @@ rule EC2_INSTANCE_DETAILED_MONITORING_ENABLED when %ec2_instances_detailed_monit
     
 }`,
         description: 'Guard rule: EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        message: 'Violation: EC2 Instance Monitoring must be enabled on all EC2 instances\nFix: set the Monitoring property to true\n',
+        message: 'set the Monitoring property to true\n',
     },
     EC2_INSTANCE_NO_PUBLIC_IP: {
         name: 'EC2_INSTANCE_NO_PUBLIC_IP',
@@ -260,7 +260,7 @@ rule EC2_INSTANCE_NO_PUBLIC_IP when %ec2_instances_no_public_ip !empty {
 	}
 }`,
         description: 'Guard rule: EC2_INSTANCE_NO_PUBLIC_IP',
-        message: 'Violation: EC2 Instances cannot have public IP addresses associated with their network interfaces\nFix: remove the AssociatePublicIpAddress property from NetworkInterfaces list or set it to false\n',
+        message: 'remove the AssociatePublicIpAddress property from NetworkInterfaces list or set it to false\n',
     },
     EC2_INSTANCE_PROFILE_ATTACHED: {
         name: 'EC2_INSTANCE_PROFILE_ATTACHED',
@@ -274,7 +274,7 @@ rule EC2_INSTANCE_PROFILE_ATTACHED when %ec2_instances_profile_attached !empty {
   
 }`,
         description: 'Guard rule: EC2_INSTANCE_PROFILE_ATTACHED',
-        message: 'Violation: EC2 Instances must have IAM profile attached to it.\nFix: Associate the EC2 Instance property IamInstanceProfile with an IAM Instance Profile.\n',
+        message: 'Associate the EC2 Instance property IamInstanceProfile with an IAM Instance Profile.\n',
     },
     EC2_INSTANCES_IN_VPC: {
         name: 'EC2_INSTANCES_IN_VPC',
@@ -288,7 +288,7 @@ rule EC2_INSTANCES_IN_VPC when %ec2_instances_in_vpc !empty {
   
 }`,
         description: 'Guard rule: EC2_INSTANCES_IN_VPC',
-        message: 'Violation: EC2 Instances must belong to a VPC\nFix: set the SubnetId property to a subnet ID\n',
+        message: 'set the SubnetId property to a subnet ID\n',
     },
     EFS_ENCRYPTED_CHECK: {
         name: 'EFS_ENCRYPTED_CHECK',
@@ -302,7 +302,7 @@ rule EFS_ENCRYPTED_CHECK when %efs_file_systems_encrypted_check !empty {
   
 }`,
         description: 'Guard rule: EFS_ENCRYPTED_CHECK',
-        message: 'Violation: EFS filesystem must be encrypted.\nFix: Set the EFS Filesystem property Encrypted parameter to true.\n',
+        message: 'Set the EFS Filesystem property Encrypted parameter to true.\n',
     },
     EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN: {
         name: 'EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
@@ -316,7 +316,7 @@ rule EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN when %efs_file_systems_protected_by_
   
 }`,
         description: 'Guard rule: EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
-        message: 'Violation: EFS filesystem backup policy should be enabled.\nFix: Set the EFS Filesystem property BackupPolicy.Status parameter to ENABLED.\n',
+        message: 'Set the EFS Filesystem property BackupPolicy.Status parameter to ENABLED.\n',
     },
     ELASTICSEARCH_ENCRYPTED_AT_REST: {
         name: 'ELASTICSEARCH_ENCRYPTED_AT_REST',
@@ -330,7 +330,7 @@ rule ELASTICSEARCH_ENCRYPTED_AT_REST when %elasticsearch_domains_encrypted !empt
   
 }`,
         description: 'Guard rule: ELASTICSEARCH_ENCRYPTED_AT_REST',
-        message: 'Violation: Elasticsearch domains must enforce server side encryption.\nFix: Set the EncryptionAtRestOptions.Enabled parameter to true.\n',
+        message: 'Set the EncryptionAtRestOptions.Enabled parameter to true.\n',
     },
     ELASTICSEARCH_IN_VPC_ONLY: {
         name: 'ELASTICSEARCH_IN_VPC_ONLY',
@@ -344,7 +344,7 @@ rule ELASTICSEARCH_IN_VPC_ONLY when %elasticsearch_domains_vpc_required !empty {
   
 }`,
         description: 'Guard rule: ELASTICSEARCH_IN_VPC_ONLY',
-        message: 'Violation: Elasticsearch domains must be in a VPC.\nFix: Provide VPCOptions object to enable opensearch to function in a VPC.\n',
+        message: 'Provide VPCOptions object to enable opensearch to function in a VPC.\n',
     },
     ELASTICSEARCH_LOGS_TO_CLOUDWATCH: {
         name: 'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
@@ -362,7 +362,7 @@ rule ELASTICSEARCH_LOGS_TO_CLOUDWATCH when %elasticsearch_domains_logs_cloudwatc
   
 }`,
         description: 'Guard rule: ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        message: 'Violation: Elasticsearch domain must have logging configured to send logs to CloudWatch Logs.\nFix: Set a LogPublishingOptions object to have the property "Enabled" parameter set to true for keys "ES_APPLICATION_LOGS", "SEARCH_SLOW_LOGS", or "INDEX_SLOW_LOGS".\n',
+        message: 'Set a LogPublishingOptions object to have the property "Enabled" parameter set to true for keys "ES_APPLICATION_LOGS", "SEARCH_SLOW_LOGS", or "INDEX_SLOW_LOGS".\n',
     },
     ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK: {
         name: 'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
@@ -376,7 +376,7 @@ rule ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK when %elasticsearch_domains_nod
   
 }`,
         description: 'Guard rule: ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        message: 'Violation: Elasticsearch domains must enforce Node-to-Node Encryption.\nFix: Set the NodeToNodeEncryptionOptions.Enabled parameter to true.\n',
+        message: 'Set the NodeToNodeEncryptionOptions.Enabled parameter to true.\n',
     },
     ENCRYPTED_VOLUMES: {
         name: 'ENCRYPTED_VOLUMES',
@@ -391,7 +391,7 @@ rule ENCRYPTED_VOLUMES when %ebs_volumes_encrypted !empty {
   
 }`,
         description: 'Guard rule: ENCRYPTED_VOLUMES',
-        message: 'Violation: EBS volumes in an attached state must encrypted.\nFix: either set the KmsKeyId property to a key ID, key alias, key ARN, or alias ARN\n',
+        message: 'either set the KmsKeyId property to a key ID, key alias, key ARN, or alias ARN\n',
     },
     IAM_NO_INLINE_POLICY_CHECK: {
         name: 'IAM_NO_INLINE_POLICY_CHECK',
@@ -408,7 +408,7 @@ rule IAM_NO_INLINE_POLICY_CHECK when %aws_iam_entities_no_inline_policy !empty {
   
 }`,
         description: 'Guard rule: IAM_NO_INLINE_POLICY_CHECK',
-        message: 'Violation: Inline policies are not allowed on IAM Users, Roles, or Groups.\nFix: Remove the Policies list property from any IAM Users, Roles, or Groups.\n',
+        message: 'Remove the Policies list property from any IAM Users, Roles, or Groups.\n',
     },
     IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS: {
         name: 'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
@@ -430,7 +430,7 @@ rule IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS when %aws_iam_policies_no_statem
 	
 }`,
         description: 'Guard rule: IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        message: 'Violation: One or more IAM policies contain allow statements that grant permissions to all actions on all resources\nFix: Remove policy statements that match {"Effect": "Allow", "Action": "*", "Resource": "*"}\n',
+        message: 'Remove policy statements that match {"Effect": "Allow", "Action": "*", "Resource": "*"}\n',
     },
     IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS: {
         name: 'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
@@ -452,7 +452,7 @@ rule IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS when %aws_iam_managed_policies_no
   
 }`,
         description: 'Guard rule: IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        message: 'Violation: One or more IAM Managed Policies allow full access to at least 1 AWS service\nFix: Remove policy statements that match {"Effect": "Allow", "Action": "<service-name>:*" ... } or {"Effect": "Allow", "Action": "*" ... }\n',
+        message: 'Remove policy statements that match {"Effect": "Allow", "Action": "<service-name>:*" ... } or {"Effect": "Allow", "Action": "*" ... }\n',
     },
     IAM_USER_NO_POLICIES_CHECK: {
         name: 'IAM_USER_NO_POLICIES_CHECK',
@@ -466,7 +466,7 @@ rule IAM_USER_NO_POLICIES_CHECK when %aws_iam_users_no_policies !empty {
   
 }`,
         description: 'Guard rule: IAM_USER_NO_POLICIES_CHECK',
-        message: 'Violation: Inline policies are not allowed on IAM Users. IAM users must inherit permissions from IAM groups or roles.\nFix: Remove the Policies list property from any IAM Users.\n',
+        message: 'Remove the Policies list property from any IAM Users.\n',
     },
     INCOMING_SSH_DISABLED: {
         name: 'INCOMING_SSH_DISABLED',
@@ -486,7 +486,7 @@ rule INCOMING_SSH_DISABLED when %aws_security_groups_restricted_ssh !empty {
   
 }`,
         description: 'Guard rule: INCOMING_SSH_DISABLED',
-        message: 'Violation: IP addresses of the incoming SSH traffic in the security groups are restricted (CIDR other than 0.0.0.0/0)\nFix: set SecurityGroupIngress.CidrIp property to a more restrictive CIDR than 0.0.0.0/0\n',
+        message: 'set SecurityGroupIngress.CidrIp property to a more restrictive CIDR than 0.0.0.0/0\n',
     },
     LAMBDA_CONCURRENCY_CHECK: {
         name: 'LAMBDA_CONCURRENCY_CHECK',
@@ -500,7 +500,7 @@ rule LAMBDA_CONCURRENCY_CHECK when %aws_lambda_functions_concurrency !empty {
   
 }`,
         description: 'Guard rule: LAMBDA_CONCURRENCY_CHECK',
-        message: 'Violation: All AWS Lambda Functions must have concurrent execution limits configured\nFix: Set the ReservedConcurrentExecutions property to an integer greater than or equal to 0\n',
+        message: 'Set the ReservedConcurrentExecutions property to an integer greater than or equal to 0\n',
     },
     LAMBDA_DLQ_CHECK: {
         name: 'LAMBDA_DLQ_CHECK',
@@ -514,7 +514,7 @@ rule LAMBDA_DLQ_CHECK when %aws_lambda_functions_dlq !empty {
   
 }`,
         description: 'Guard rule: LAMBDA_DLQ_CHECK',
-        message: 'Violation: All AWS Lambda Functions must have a dead-letter queue configured\nFix: Set the DeadLetterConfig.TargetAr Property to the Amazon Resource Name (ARN) of an Amazon SQS queue or Amazon SNS topic\n',
+        message: 'Set the DeadLetterConfig.TargetAr Property to the Amazon Resource Name (ARN) of an Amazon SQS queue or Amazon SNS topic\n',
     },
     LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED: {
         name: 'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
@@ -567,7 +567,7 @@ rule LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED when %aws_lambda_permissions_publi
   }
 }`,
         description: 'Guard rule: LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        message: 'Violation: All Lambda permission policies attached to Lambda resources must prohibit public access.\nFix: Limit permission policies by setting the Principal property to an account ID,\n',
+        message: 'Limit permission policies by setting the Principal property to an account ID,\n',
     },
     LAMBDA_INSIDE_VPC: {
         name: 'LAMBDA_INSIDE_VPC',
@@ -582,7 +582,7 @@ rule  LAMBDA_INSIDE_VPC when %aws_lambda_functions_inside_vpc !empty {
   
 }`,
         description: 'Guard rule: LAMBDA_INSIDE_VPC',
-        message: 'Violation: All AWS Lambda Functions must be configured with access to a VPC\nFix: set the VpcConfig.SecurityGroupIds and VpcConfig.SubnetIds parameters with a list of security groups and subnets.\n',
+        message: 'set the VpcConfig.SecurityGroupIds and VpcConfig.SubnetIds parameters with a list of security groups and subnets.\n',
     },
     NO_UNRESTRICTED_ROUTE_TO_IGW: {
         name: 'NO_UNRESTRICTED_ROUTE_TO_IGW',
@@ -601,7 +601,7 @@ rule NO_UNRESTRICTED_ROUTE_TO_IGW when %routes_no_unrestricted_to_igw !empty {
 	}
 }`,
         description: 'Guard rule: NO_UNRESTRICTED_ROUTE_TO_IGW',
-        message: 'Violation: EC2 Routes to an IGW cannot have a destination CIDR block of \'0.0.0.0/0\' or \'::/0\'\nFix: Remove routes to an IGW (with the GatewayId property defined) or modify the DestinationCidrBlock property to a more restricted CIDR block\n',
+        message: 'Remove routes to an IGW (with the GatewayId property defined) or modify the DestinationCidrBlock property to a more restricted CIDR block\n',
     },
     RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED: {
         name: 'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
@@ -617,7 +617,7 @@ rule RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED when %aws_rds_instances_minor_v
   
 }`,
         description: 'Guard rule: RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        message: 'Violation: All RDS instances must have automatic minor version upgrade enabled.\nFix: Set the AutoMinorVersionUpgrade parameter to true.\n',
+        message: 'Set the AutoMinorVersionUpgrade parameter to true.\n',
     },
     RDS_ENHANCED_MONITORING_ENABLED: {
         name: 'RDS_ENHANCED_MONITORING_ENABLED',
@@ -633,7 +633,7 @@ rule RDS_ENHANCED_MONITORING_ENABLED when %aws_rds_instances_enhanced_monitoring
   
 }`,
         description: 'Guard rule: RDS_ENHANCED_MONITORING_ENABLED',
-        message: 'Violation: RDS Instance enhanced monitoring required.\nFix: Specify a value of 1, 5, 10, 15, 30, or 60 for the parameter on the property MonitoringInterval.\n',
+        message: 'Specify a value of 1, 5, 10, 15, 30, or 60 for the parameter on the property MonitoringInterval.\n',
     },
     RDS_INSTANCE_DELETION_PROTECTION_ENABLED: {
         name: 'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
@@ -648,7 +648,7 @@ rule RDS_INSTANCE_DELETION_PROTECTION_ENABLED when %aws_rds_instances_deletion_p
   
 }`,
         description: 'Guard rule: RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        message: 'Violation: All RDS instances must deletion protection enabled.\nFix: Set the parameter for DeletionProtection to true.\n',
+        message: 'Set the parameter for DeletionProtection to true.\n',
     },
     RDS_INSTANCE_LOGGING_ENABLED: {
         name: 'RDS_INSTANCE_LOGGING_ENABLED',
@@ -663,7 +663,7 @@ rule RDS_INSTANCE_LOGGING_ENABLED when %aws_rds_instances_logging_enabled !empty
   
 }`,
         description: 'Guard rule: RDS_INSTANCE_LOGGING_ENABLED',
-        message: 'Violation: Enable CloudWatch Logs Exports for monitoring and logging.\nFix: Provide EnableCloudWatchLogsExports object to start exporting cloudwatch logs.\n',
+        message: 'Provide EnableCloudWatchLogsExports object to start exporting cloudwatch logs.\n',
     },
     RDS_INSTANCE_PUBLIC_ACCESS_CHECK: {
         name: 'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
@@ -677,7 +677,7 @@ rule RDS_INSTANCE_PUBLIC_ACCESS_CHECK when %aws_rds_instances_not_public !empty 
   
 }`,
         description: 'Guard rule: RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        message: 'Violation: All RDS instances must not be publicly accessible.\nFix: Set the PubliclyAccessible to false.\n',
+        message: 'Set the PubliclyAccessible to false.\n',
     },
     RDS_MULTI_AZ_SUPPORT: {
         name: 'RDS_MULTI_AZ_SUPPORT',
@@ -692,7 +692,7 @@ rule RDS_MULTI_AZ_SUPPORT when %aws_rds_instances_multi_az_support !empty {
   
 }`,
         description: 'Guard rule: RDS_MULTI_AZ_SUPPORT',
-        message: 'Violation: All RDS instances must have MultiAZ support enabled.\nFix: Set the MultiAZ parameter to true.\n',
+        message: 'Set the MultiAZ parameter to true.\n',
     },
     RDS_SNAPSHOT_ENCRYPTED: {
         name: 'RDS_SNAPSHOT_ENCRYPTED',
@@ -708,7 +708,7 @@ rule RDS_SNAPSHOT_ENCRYPTED when %aws_rds_instances_snapshot_encrypted !empty {
   
 }`,
         description: 'Guard rule: RDS_SNAPSHOT_ENCRYPTED',
-        message: 'Violation: All RDS instances must have snapshots encrypted.\nFix: Set the StorageEncrypted parameter to true so by default all snapshots are encrypted.\n',
+        message: 'Set the StorageEncrypted parameter to true so by default all snapshots are encrypted.\n',
     },
     RDS_STORAGE_ENCRYPTED: {
         name: 'RDS_STORAGE_ENCRYPTED',
@@ -724,7 +724,7 @@ rule RDS_STORAGE_ENCRYPTED when %aws_rds_instances_storage_encrypted !empty {
   
 }`,
         description: 'Guard rule: RDS_STORAGE_ENCRYPTED',
-        message: 'Violation: All RDS instances must have encrypted storage.\nFix: Set the StorageEncrypted parameter to true.\n',
+        message: 'Set the StorageEncrypted parameter to true.\n',
     },
     REDSHIFT_BACKUP_ENABLED: {
         name: 'REDSHIFT_BACKUP_ENABLED',
@@ -739,7 +739,7 @@ rule REDSHIFT_BACKUP_ENABLED when %redhshift_backup_enabled_clusters !empty {
     
 }`,
         description: 'Guard rule: REDSHIFT_BACKUP_ENABLED',
-        message: 'Violation: Amazon Redshift automated snapshots must be enabled for clusters\nFix: Either remove the AutomatedSnapshotRetentionPeriod property (default retention period is 1 day)\n',
+        message: 'Either remove the AutomatedSnapshotRetentionPeriod property (default retention period is 1 day)\n',
     },
     REDSHIFT_CLUSTER_CONFIGURATION_CHECK: {
         name: 'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
@@ -754,7 +754,7 @@ rule REDSHIFT_CLUSTER_CONFIGURATION_CHECK when %redhshift_clusters_configuration
     
 }`,
         description: 'Guard rule: REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        message: 'Violation: Amazon Redshift configuration should have encryption enabled\nFix: Set the Encrypted property to true\n',
+        message: 'Set the Encrypted property to true\n',
     },
     REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK: {
         name: 'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
@@ -776,7 +776,7 @@ rule REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK when %redhshift_clusters_mainten
     
 }`,
         description: 'Guard rule: REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        message: 'Violation: Amazon Redshift maintenance settings must be configured\nFix: set the PreferredMaintenanceWindow property, remove the AllowVersionUpgrade property (default true) or set it to true, and remove the AutomatedSnapshotRetentionPeriod property (default 1 day) or set it to greated than 0.\n',
+        message: 'set the PreferredMaintenanceWindow property, remove the AllowVersionUpgrade property (default true) or set it to true, and remove the AutomatedSnapshotRetentionPeriod property (default 1 day) or set it to greated than 0.\n',
     },
     REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK: {
         name: 'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
@@ -793,7 +793,7 @@ rule REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK when %aws_redshift_clusters_resources_
   
 }`,
         description: 'Guard rule: REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        message: 'Violation: Redshift cluster should not be available to public.\nFix: Set the Redshift property PubliclyAccessible parameter to false.\n',
+        message: 'Set the Redshift property PubliclyAccessible parameter to false.\n',
     },
     REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED: {
         name: 'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
@@ -808,7 +808,7 @@ rule REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED when %redhshift_enhanced_vpc_routing_
     
 }`,
         description: 'Guard rule: REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        message: 'Violation: Enhanced VPC Routing must be enabled on Redshift clusters\nFix: set the EnhancedVpcRouting property to true\n',
+        message: 'set the EnhancedVpcRouting property to true\n',
     },
     RESTRICTED_INCOMING_TRAFFIC: {
         name: 'RESTRICTED_INCOMING_TRAFFIC',
@@ -832,7 +832,7 @@ rule RESTRICTED_INCOMING_TRAFFIC when %aws_security_groups_restricted_incoming_t
 	
 }`,
         description: 'Guard rule: RESTRICTED_INCOMING_TRAFFIC',
-        message: 'Violation: Security groups must not allow unrestricted incoming TCP/UDP traffic to the specified ports [20, 21, 3389, 3306, 4333].\nFix: change the FromPort and ToPort properties in the SecurityGroupIngress list\n',
+        message: 'change the FromPort and ToPort properties in the SecurityGroupIngress list\n',
     },
     S3_BUCKET_DEFAULT_LOCK_ENABLED: {
         name: 'S3_BUCKET_DEFAULT_LOCK_ENABLED',
@@ -847,7 +847,7 @@ rule S3_BUCKET_DEFAULT_LOCK_ENABLED when %s3_buckets_default_lock_enabled !empty
   
 }`,
         description: 'Guard rule: S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        message: 'Violation: S3 Bucket ObjectLockEnabled must be set to true.\nFix: Set the S3 property ObjectLockEnabled parameter to true.\n',
+        message: 'Set the S3 property ObjectLockEnabled parameter to true.\n',
     },
     S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED: {
         name: 'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
@@ -865,7 +865,7 @@ rule S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED when %s3_buckets_level_public_acce
   
 }`,
         description: 'Guard rule: S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        message: 'Violation: S3 Bucket Public Access controls need to be restricted.\nFix: Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
+        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
     },
     S3_BUCKET_LOGGING_ENABLED: {
         name: 'S3_BUCKET_LOGGING_ENABLED',
@@ -879,7 +879,7 @@ rule S3_BUCKET_LOGGING_ENABLED when %s3_buckets_bucket_logging_enabled  !empty {
   
 }`,
         description: 'Guard rule: S3_BUCKET_LOGGING_ENABLED',
-        message: 'Violation: S3 Bucket Logging needs to be configured to enable logging.\nFix: Set the S3 Bucket property LoggingConfiguration to start logging into S3 bucket.\n',
+        message: 'Set the S3 Bucket property LoggingConfiguration to start logging into S3 bucket.\n',
     },
     S3_BUCKET_PUBLIC_READ_PROHIBITED: {
         name: 'S3_BUCKET_PUBLIC_READ_PROHIBITED',
@@ -897,7 +897,7 @@ rule S3_BUCKET_PUBLIC_READ_PROHIBITED when %s3_bucket_public_read_prohibited !em
   
 }`,
         description: 'Guard rule: S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        message: 'Violation: S3 Bucket Public Write Access controls need to be restricted.\nFix: Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
+        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
     },
     S3_BUCKET_PUBLIC_WRITE_PROHIBITED: {
         name: 'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
@@ -915,7 +915,7 @@ rule S3_BUCKET_PUBLIC_WRITE_PROHIBITED when %s3_buckets_public_write_prohibited 
   
 }`,
         description: 'Guard rule: S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        message: 'Violation: S3 Bucket Public Write Access controls need to be restricted.\nFix: Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
+        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
     },
     S3_BUCKET_REPLICATION_ENABLED: {
         name: 'S3_BUCKET_REPLICATION_ENABLED',
@@ -929,7 +929,7 @@ rule S3_BUCKET_REPLICATION_ENABLED when %s3_buckets_replication_enabled !empty {
   
 }`,
         description: 'Guard rule: S3_BUCKET_REPLICATION_ENABLED',
-        message: 'Violation: S3 Bucket replication should be enabled.\nFix: Set S3 Bucket ReplicationConfiguration to another S3 Bucket.\n',
+        message: 'Set S3 Bucket ReplicationConfiguration to another S3 Bucket.\n',
     },
     S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED: {
         name: 'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
@@ -944,7 +944,7 @@ rule S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED when %s3_buckets_server_side_encry
   
 }`,
         description: 'Guard rule: S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        message: 'Violation: S3 Bucket must enable server-side encryption.\nFix: Set the S3 Bucket property BucketEncryption.ServerSideEncryptionConfiguration.ServerSideEncryptionByDefault.SSEAlgorithm to either "aws:kms" or "AES256"\n',
+        message: 'Set the S3 Bucket property BucketEncryption.ServerSideEncryptionConfiguration.ServerSideEncryptionByDefault.SSEAlgorithm to either "aws:kms" or "AES256"\n',
     },
     S3_BUCKET_SSL_REQUESTS_ONLY: {
         name: 'S3_BUCKET_SSL_REQUESTS_ONLY',
@@ -958,7 +958,7 @@ rule S3_BUCKET_SSL_REQUESTS_ONLY when %s3_buckets_policies_ssl_requests_only !em
   
 }`,
         description: 'Guard rule: S3_BUCKET_SSL_REQUESTS_ONLY',
-        message: 'Violation: Bucket policies must feature a statement to enforce TLS usage.\nFix: Set a bucket policy statement to \'"Action":"s3:*","Effect":"Deny","Principal":"*","Resource":"*","Condition":{"Bool":{"aws:SecureTransport":false}}\' .\n',
+        message: 'Set a bucket policy statement to \'"Action":"s3:*","Effect":"Deny","Principal":"*","Resource":"*","Condition":{"Bool":{"aws:SecureTransport":false}}\' .\n',
     },
     S3_BUCKET_VERSIONING_ENABLED: {
         name: 'S3_BUCKET_VERSIONING_ENABLED',
@@ -973,7 +973,7 @@ rule S3_BUCKET_VERSIONING_ENABLED when %s3_buckets_versioning_enabled !empty {
   
 }`,
         description: 'Guard rule: S3_BUCKET_VERSIONING_ENABLED',
-        message: 'Violation: S3 Bucket Versioning must be enabled.\nFix: Set the S3 Bucket property VersioningConfiguration.Status to \'Enabled\' .\n',
+        message: 'Set the S3 Bucket property VersioningConfiguration.Status to \'Enabled\' .\n',
     },
     S3_DEFAULT_ENCRYPTION_KMS: {
         name: 'S3_DEFAULT_ENCRYPTION_KMS',
@@ -988,7 +988,7 @@ rule S3_DEFAULT_ENCRYPTION_KMS when %s3_buckets_s3_default_encryption !empty {
   
 }`,
         description: 'Guard rule: S3_DEFAULT_ENCRYPTION_KMS',
-        message: 'Violation: S3 Bucket default encryption must be set.\nFix: Set the S3 Bucket property BucketEncryption.ServerSideEncryptionConfiguration.ServerSideEncryptionByDefault.SSEAlgorithm to either "aws:kms" or "AES256"\n',
+        message: 'Set the S3 Bucket property BucketEncryption.ServerSideEncryptionConfiguration.ServerSideEncryptionByDefault.SSEAlgorithm to either "aws:kms" or "AES256"\n',
     },
     SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED: {
         name: 'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
@@ -1003,7 +1003,7 @@ rule SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED when %ec2_subnets_auto_assign_public_
   
 }`,
         description: 'Guard rule: SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
-        message: 'Violation: VPCs should not have subnets that are assigned a public IP address.\nFix: remove the MapPublicIpOnLaucnh property or set it to false\n',
+        message: 'remove the MapPublicIpOnLaucnh property or set it to false\n',
     }
 };
 
