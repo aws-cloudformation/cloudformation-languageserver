@@ -13,3 +13,4 @@ tools/*
 **/.aws-cfn-storage
 /oss-attribution
 /tmp-tst
+/jscpd
