@@ -3,10 +3,13 @@ import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttri
 import { IntrinsicFunction, TopLevelSection } from '../../../src/context/ContextType';
 import { IntrinsicFunctionArgumentHoverProvider } from '../../../src/hover/IntrinsicFunctionArgumentHoverProvider';
 import { createResourceContext, createParameterContext } from '../../utils/MockContext';
+import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
 
 describe('IntrinsicFunctionArgumentHoverProvider', () => {
+    const mockSchemaRetriever = createMockSchemaRetriever();
+
     it('should return undefined when not inside an intrinsic function', () => {
-        const provider = new IntrinsicFunctionArgumentHoverProvider();
+        const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
         const mockContext = createResourceContext('MyBucket', {
             text: 'MyBucket',
@@ -21,7 +24,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
     });
 
     it('should return undefined when intrinsic function is not supported', () => {
-        const provider = new IntrinsicFunctionArgumentHoverProvider();
+        const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
         // Create a mock context that appears to be inside an intrinsic function
         const mockContext = createResourceContext('MyBucket', {
@@ -45,7 +48,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
 
     describe('Positive cases - Ref intrinsic function', () => {
         it('should return hover information for Ref to a resource', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             // Create related entities map with a target resource
             const relatedEntities = new Map();
@@ -87,7 +90,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
         });
 
         it('should return hover information for Ref to a parameter', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             // Create related entities map with a target parameter
             const relatedEntities = new Map();
@@ -128,7 +131,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
         });
 
         it('should return undefined for Ref when referenced entity is not found', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             // Create context with empty related entities
             const mockContext = createResourceContext(
@@ -155,7 +158,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
 
     describe('Positive cases - GetAtt intrinsic function', () => {
         it('should return hover information for GetAtt', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             // Create related entities map with a target resource
             const relatedEntities = new Map();
@@ -187,6 +190,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
             mockContext.intrinsicContext.intrinsicFunction = () =>
                 ({
                     type: IntrinsicFunction.GetAtt,
+                    args: ['MyBucket', 'Arn'],
                 }) as any;
 
             const result = provider.getInformation(mockContext);
@@ -199,7 +203,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
 
     describe('DeletionPolicy values inside If intrinsic functions', () => {
         it('should return documentation for valid DeletionPolicy value "Delete" inside !If', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             const mockContext = createResourceContext('MyBucket', {
                 text: 'Delete',
@@ -221,7 +225,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
         });
 
         it('should return documentation for valid DeletionPolicy value "Retain" inside !If', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             const mockContext = createResourceContext('MyBucket', {
                 text: 'Retain',
@@ -243,7 +247,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
         });
 
         it('should return documentation for valid DeletionPolicy value "Snapshot" inside !If', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             const mockContext = createResourceContext('MyBucket', {
                 text: 'Snapshot',
@@ -265,7 +269,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
         });
 
         it('should return documentation for valid DeletionPolicy value "RetainExceptOnCreate" inside !If', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             const mockContext = createResourceContext('MyBucket', {
                 text: 'RetainExceptOnCreate',
@@ -287,7 +291,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
         });
 
         it('should return undefined for invalid DeletionPolicy value inside !If', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             const mockContext = createResourceContext('MyBucket', {
                 text: 'InvalidValue',
@@ -308,7 +312,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
         });
 
         it('should return undefined when not in DeletionPolicy context inside !If', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             const mockContext = createResourceContext('MyBucket', {
                 text: 'Retain',
@@ -331,7 +335,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
 
     describe('Edge cases', () => {
         it('should return undefined when context is not ContextWithRelatedEntities', () => {
-            const provider = new IntrinsicFunctionArgumentHoverProvider();
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             // Create a basic context (not ContextWithRelatedEntities)
             const mockContext = createResourceContext('MyBucket', {

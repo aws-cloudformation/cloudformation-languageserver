@@ -126,7 +126,10 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
         hoverProviderMap.set(HoverType.Condition, new ConditionHoverProvider());
         hoverProviderMap.set(HoverType.Mapping, new MappingHoverProvider());
         hoverProviderMap.set(HoverType.IntrinsicFunction, new IntrinsicFunctionHoverProvider());
-        hoverProviderMap.set(HoverType.IntrinsicFunctionArgument, new IntrinsicFunctionArgumentHoverProvider());
+        hoverProviderMap.set(
+            HoverType.IntrinsicFunctionArgument,
+            new IntrinsicFunctionArgumentHoverProvider(schemaRetriever),
+        );
         return hoverProviderMap;
     }
 
