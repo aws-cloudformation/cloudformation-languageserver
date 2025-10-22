@@ -1457,4 +1457,245 @@ describe('ResourcePropertyCompletionProvider', () => {
             expect(snapshotItem).toBeDefined();
         });
     });
+
+    describe('UpdateReplacePolicy Completions', () => {
+        test('should return all UpdateReplacePolicy values for snapshot-supported resource type', () => {
+            const mockContext = createResourceContext('MyDBCluster', {
+                text: '',
+                propertyPath: ['Resources', 'MyDBCluster', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::RDS::DBCluster',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(3); // Delete, Retain, Snapshot
+
+            const deleteItem = result!.find((item) => item.label === 'Delete');
+            expect(deleteItem).toBeDefined();
+            expect(deleteItem!.kind).toBe(CompletionItemKind.EnumMember);
+
+            const retainItem = result!.find((item) => item.label === 'Retain');
+            expect(retainItem).toBeDefined();
+            expect(retainItem!.kind).toBe(CompletionItemKind.EnumMember);
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeDefined();
+            expect(snapshotItem!.kind).toBe(CompletionItemKind.EnumMember);
+        });
+
+        test('should exclude Snapshot for non-snapshot-supported resource type', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                text: '',
+                propertyPath: ['Resources', 'MyBucket', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::S3::Bucket', // S3 buckets don't support Snapshot on replace
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(2); // Delete, Retain (no Snapshot)
+
+            const deleteItem = result!.find((item) => item.label === 'Delete');
+            expect(deleteItem).toBeDefined();
+
+            const retainItem = result!.find((item) => item.label === 'Retain');
+            expect(retainItem).toBeDefined();
+
+            // Should NOT include Snapshot for S3 buckets
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeUndefined();
+        });
+
+        test('should return empty when not in value context', () => {
+            const mockContext = createResourceContext('MyDBCluster', {
+                text: '',
+                propertyPath: ['Resources', 'MyDBCluster', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::RDS::DBCluster',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            // Mock isValue to return false (simulating key context)
+            const originalIsValue = mockContext.isValue;
+            mockContext.isValue = vi.fn().mockReturnValue(false);
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(0);
+
+            // Restore original method
+            mockContext.isValue = originalIsValue;
+        });
+
+        test('should include documentation for UpdateReplacePolicy values', () => {
+            const mockContext = createResourceContext('MyDBCluster', {
+                text: '',
+                propertyPath: ['Resources', 'MyDBCluster', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::RDS::DBCluster',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(3);
+
+            // Check that documentation is included
+            const deleteItem = result!.find((item) => item.label === 'Delete');
+            expect(deleteItem).toBeDefined();
+            expect(deleteItem!.documentation).toBeDefined();
+            const deleteDoc =
+                typeof deleteItem!.documentation === 'string'
+                    ? deleteItem!.documentation
+                    : deleteItem!.documentation?.value;
+            expect(deleteDoc).toContain('CloudFormation deletes the resource');
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeDefined();
+            expect(snapshotItem!.documentation).toBeDefined();
+            const snapshotDoc =
+                typeof snapshotItem!.documentation === 'string'
+                    ? snapshotItem!.documentation
+                    : snapshotItem!.documentation?.value;
+            expect(snapshotDoc).toContain('CloudFormation creates a snapshot');
+        });
+
+        test('should provide correct completion item properties for UpdateReplacePolicy values', () => {
+            const mockContext = createResourceContext('MyDBCluster', {
+                text: '',
+                propertyPath: ['Resources', 'MyDBCluster', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::RDS::DBCluster',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(3);
+
+            // Check properties of a specific completion item
+            const deleteItem = result!.find((item) => item.label === 'Delete');
+            expect(deleteItem).toBeDefined();
+            expect(deleteItem!.insertText).toBe('Delete');
+            expect(deleteItem!.filterText).toBe('Delete');
+            expect(deleteItem!.kind).toBe(CompletionItemKind.EnumMember);
+            expect(deleteItem!.detail).toBe(ExtensionName);
+            expect(deleteItem!.sortText).toBeDefined();
+            expect(deleteItem!.data?.type).toBe('simple');
+        });
+
+        test('should handle EC2 Volume resource type (supports Snapshot on replace)', () => {
+            const mockContext = createResourceContext('MyVolume', {
+                text: '',
+                propertyPath: ['Resources', 'MyVolume', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::EC2::Volume',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(3); // Should include Snapshot for EC2 Volume
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeDefined();
+        });
+
+        test('should handle ElastiCache CacheCluster resource type (supports Snapshot on replace)', () => {
+            const mockContext = createResourceContext('MyCacheCluster', {
+                text: '',
+                propertyPath: ['Resources', 'MyCacheCluster', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::ElastiCache::CacheCluster',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(3); // Should include Snapshot for ElastiCache
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeDefined();
+        });
+
+        test('should handle Neptune DBCluster resource type (supports Snapshot on replace)', () => {
+            const mockContext = createResourceContext('MyNeptuneCluster', {
+                text: '',
+                propertyPath: ['Resources', 'MyNeptuneCluster', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::Neptune::DBCluster',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(3); // Should include Snapshot for Neptune
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeDefined();
+        });
+
+        test('should handle Redshift Cluster resource type (supports Snapshot on replace)', () => {
+            const mockContext = createResourceContext('MyRedshiftCluster', {
+                text: '',
+                propertyPath: ['Resources', 'MyRedshiftCluster', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::Redshift::Cluster',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(3); // Should include Snapshot for Redshift
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeDefined();
+        });
+
+        test('should handle Lambda Function resource type (does not support Snapshot on replace)', () => {
+            const mockContext = createResourceContext('MyFunction', {
+                text: '',
+                propertyPath: ['Resources', 'MyFunction', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::Lambda::Function',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(2); // Should NOT include Snapshot for Lambda
+
+            const deleteItem = result!.find((item) => item.label === 'Delete');
+            expect(deleteItem).toBeDefined();
+
+            const retainItem = result!.find((item) => item.label === 'Retain');
+            expect(retainItem).toBeDefined();
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeUndefined();
+        });
+    });
 });

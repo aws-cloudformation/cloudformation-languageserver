@@ -1130,7 +1130,39 @@ Resources:
                     {
                         action: 'type',
                         content: `elete]
-    UpdateReplacePolicy: !If [IsProduction, Snapshot, Delete]
+    UpdateReplacePolicy: !If [IsProduction, S]`,
+                        position: { line: 286, character: 50 },
+                        description: 'Suggest Snapshot for UpdateReplacePolicy',
+                        verification: {
+                            position: { line: 287, character: 45 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['Snapshot'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'delete',
+                        range: { start: { line: 287, character: 45 }, end: { line: 287, character: 46 } },
+                        description: 'remove ]',
+                    },
+                    {
+                        action: 'type',
+                        content: `napshot, D]`,
+                        position: { line: 287, character: 45 },
+                        description: 'Suggest Delete for UpdateReplacePolicy',
+                        verification: {
+                            position: { line: 287, character: 55 },
+                            expectation: CompletionExpectationBuilder.create().expectContainsItems(['Delete']).build(),
+                        },
+                    },
+                    {
+                        action: 'delete',
+                        range: { start: { line: 287, character: 55 }, end: { line: 287, character: 56 } },
+                        description: 'remove ]',
+                    },
+                    {
+                        action: 'type',
+                        content: `elete]
 
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -1169,7 +1201,7 @@ Resources:
         Variables:
           ENVIRONMENT: !Ref EnvironmentName
           DATABASE_ENDPOINT: !GetAtt Database.`,
-                        position: { line: 286, character: 50 },
+                        position: { line: 287, character: 55 },
                         description: 'Suggest readonly properties of Resource as Fn::GetAtt value',
                         verification: {
                             position: { line: 325, character: 46 },
