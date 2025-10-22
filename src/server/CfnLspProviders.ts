@@ -9,6 +9,7 @@ import { ResourceStateImporter } from '../resourceState/ResourceStateImporter';
 import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../resourceState/StackManagementInfoProvider';
 import { CodeActionService } from '../services/CodeActionService';
+import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
 import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
 import { DeploymentWorkflowV2 } from '../stacks/actions/DeploymentWorkflowV2';
 import {
@@ -31,6 +32,7 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly deploymentWorkflowService: StackActionWorkflow<DescribeDeploymentStatusResult>;
     readonly resourceStateManager: ResourceStateManager;
     readonly resourceStateImporter: ResourceStateImporter;
+    readonly relationshipSchemaService: RelationshipSchemaService;
 
     // LSP feature providers
     readonly hoverRouter: HoverRouter;
@@ -60,18 +62,22 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.resourceStateManager = overrides.resourceStateManager ?? ResourceStateManager.create(external);
         this.resourceStateImporter =
             overrides.resourceStateImporter ?? ResourceStateImporter.create(core, external, this);
+        this.relationshipSchemaService = overrides.relationshipSchemaService ?? new RelationshipSchemaService();
 
         this.hoverRouter = overrides.hoverRouter ?? new HoverRouter(core.contextManager, external.schemaRetriever);
         this.completionRouter = overrides.completionRouter ?? CompletionRouter.create(core, external, this);
 
-        this.inlineCompletionRouter = overrides.inlineCompletionRouter ?? InlineCompletionRouter.create(core, external);
+        this.inlineCompletionRouter =
+            overrides.inlineCompletionRouter ??
+            InlineCompletionRouter.create(core, external, this.relationshipSchemaService);
         this.definitionProvider = overrides.definitionProvider ?? new DefinitionProvider(core.contextManager);
         this.codeActionService = overrides.codeActionService ?? CodeActionService.create(core);
         this.documentSymbolRouter = overrides.documentSymbolRouter ?? new DocumentSymbolRouter(core.syntaxTreeManager);
         this.codeLensProvider =
             overrides.codeLensProvider ?? new CodeLensProvider(core.syntaxTreeManager, core.documentManager);
 
-        this.cfnAI = overrides.cfnAI ?? new CfnAI(core.documentManager, external.awsClient);
+        this.cfnAI =
+            overrides.cfnAI ?? new CfnAI(core.documentManager, external.awsClient, this.relationshipSchemaService);
     }
 
     configurables(): Configurable[] {

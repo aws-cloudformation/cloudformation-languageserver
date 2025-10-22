@@ -1,3 +1,4 @@
+import { join } from 'path';
 import { PassThrough } from 'stream';
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node';
 import {
@@ -39,6 +40,8 @@ import {
     RenameParams,
     CompletionItem,
     DidChangeWorkspaceFoldersParams,
+    CodeLensParams,
+    CodeLensRequest,
 } from 'vscode-languageserver';
 import { InitializeParams, createConnection } from 'vscode-languageserver/node';
 import {
@@ -61,20 +64,23 @@ import {
     InvalidateSsoTokenParams,
     SsoTokenChangedParams,
 } from '../../src/auth/AwsLspAuthTypes';
-import { MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
+import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
+import { getRemotePublicSchemas } from '../../src/schema/GetSchemaTask';
 import { GetSchemaTaskManager } from '../../src/schema/GetSchemaTaskManager';
 import { SchemaStore } from '../../src/schema/SchemaStore';
 import { CfnExternal } from '../../src/server/CfnExternal';
 import { CfnInfraCore } from '../../src/server/CfnInfraCore';
 import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
+import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
 import { createMockCfnLintService, createMockGuardService, mockCfnAi } from './MockServerComponents';
-import { schemaFileType } from './SchemaUtils';
+import { getTestPrivateSchemas } from './SchemaUtils';
+import { wait } from './Utils';
 
 const clientInfo = { name: `Test ${ExtensionName}`, version: '1.0.0-test' };
 
@@ -101,13 +107,6 @@ export class TestExtension implements Closeable {
             capabilities: {},
             clientInfo,
             workspaceFolders: [],
-            initializationOptions: {
-                clientInfo: {
-                    clientId: 'SomeClientId',
-                    telemetryEnabled: false,
-                    logLevel: 'info',
-                },
-            },
         } as InitializeParams,
     ) {
         this.serverConnection = new LspConnection(
@@ -115,26 +114,34 @@ export class TestExtension implements Closeable {
             {
                 onInitialize: (params) => {
                     const lsp = this.serverConnection.components;
-                    LoggerFactory.initialize(params.initializationOptions['clientInfo']);
+                    LoggerFactory.initialize({
+                        clientInfo: {
+                            extension: clientInfo,
+                            clientId: '1111-1111-1111-1111',
+                        },
+                        telemetryEnabled: true,
+                        logLevel: 'info',
+                    });
 
-                    const dataStoreFactory = new MemoryDataStoreFactoryProvider();
+                    const dataStoreFactory = new MultiDataStoreFactoryProvider();
                     this.core = new CfnInfraCore(lsp, params, {
-                        dataStoreFactory: new MemoryDataStoreFactoryProvider(),
+                        dataStoreFactory,
                     });
 
                     const schemaStore = new SchemaStore(dataStoreFactory);
                     this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
-                        schemaTaskManager: new GetSchemaTaskManager(
-                            schemaStore,
-                            () => Promise.resolve(schemaFileType()),
-                            () => Promise.resolve([]),
+                        schemaTaskManager: new GetSchemaTaskManager(schemaStore, getRemotePublicSchemas, () =>
+                            Promise.resolve(getTestPrivateSchemas()),
                         ),
                         cfnLintService: createMockCfnLintService(),
                         guardService: createMockGuardService(),
                     });
 
                     this.providers = new CfnLspProviders(this.core, this.external, {
+                        relationshipSchemaService: new RelationshipSchemaService(
+                            join(__dirname, '..', '..', 'assets', 'relationship_schemas.json'),
+                        ),
                         cfnAI: mockCfnAi(),
                     });
                     this.server = new CfnServer(lsp, this.core, this.external, this.providers);
@@ -187,16 +194,17 @@ export class TestExtension implements Closeable {
 
     async openDocument(params: DidOpenTextDocumentParams) {
         await this.notify(DidOpenTextDocumentNotification.method, params);
-        // Give server time to process the notification
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await wait(10);
     }
 
-    changeDocument(params: DidChangeTextDocumentParams) {
-        return this.notify(DidChangeTextDocumentNotification.method, params);
+    async changeDocument(params: DidChangeTextDocumentParams) {
+        await this.notify(DidChangeTextDocumentNotification.method, params);
+        await wait(10);
     }
 
-    closeDocument(params: DidCloseTextDocumentParams) {
-        return this.notify(DidCloseTextDocumentNotification.method, params);
+    async closeDocument(params: DidCloseTextDocumentParams) {
+        await this.notify(DidCloseTextDocumentNotification.method, params);
+        await wait(10);
     }
 
     saveDocument(params: DidSaveTextDocumentParams) {
@@ -221,6 +229,10 @@ export class TestExtension implements Closeable {
 
     codeAction(params: CodeActionParams) {
         return this.send(CodeActionRequest.method, params);
+    }
+
+    codeLens(params: CodeLensParams) {
+        return this.send(CodeLensRequest.method, params);
     }
 
     executeCommand(params: ExecuteCommandParams) {

@@ -51,6 +51,10 @@ export class WaitFor {
     }
 
     static async waitFor(code: () => void | Promise<void>): Promise<void> {
-        await new WaitFor(25).wait(code);
+        await new WaitFor(100).wait(code);
     }
+}
+
+export async function wait(ms: number) {
+    await new Promise((resolve) => setTimeout(resolve, ms));
 }

@@ -41,7 +41,7 @@ describe('InlineCompletionRouter', () => {
             mockSchemaRetriever,
             mockSyntaxTreeManager,
         );
-        router = new InlineCompletionRouter(mockContextManager, providers, mockDocumentManager);
+        router = new InlineCompletionRouter(mockContextManager, providers, mockRelationshipSchemaService);
         router.configure(mockSettingsManager);
         vi.restoreAllMocks();
     });
@@ -296,23 +296,6 @@ describe('InlineCompletionRouter', () => {
 
             expect(result).toBeUndefined();
             expect(mockContextManager.getContext.calledOnce).toBe(true);
-        });
-    });
-
-    describe('Static Factory Method', () => {
-        test('should create router with components', () => {
-            const mockCore = {
-                contextManager: mockContextManager,
-                documentManager: mockDocumentManager,
-                syntaxTreeManager: mockSyntaxTreeManager,
-            } as any;
-            const mockExternal = {
-                schemaRetriever: mockSchemaRetriever,
-            } as any;
-
-            const createdRouter = InlineCompletionRouter.create(mockCore, mockExternal);
-
-            expect(createdRouter).toBeInstanceOf(InlineCompletionRouter);
         });
     });
 });

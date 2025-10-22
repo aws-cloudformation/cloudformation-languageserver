@@ -24,7 +24,7 @@ export class CfnAI implements SettingsConfigurable, Closeable {
     constructor(
         private readonly documentManager: DocumentManager,
         private readonly awsClient: AwsClient,
-        private readonly relationshipSchemaService: RelationshipSchemaService = new RelationshipSchemaService(),
+        private readonly relationshipSchemaService: RelationshipSchemaService,
     ) {
         this.llmConfig = new LLMConfig();
     }

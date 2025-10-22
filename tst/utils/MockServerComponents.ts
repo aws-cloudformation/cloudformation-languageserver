@@ -366,6 +366,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
         resourceStateManager: overrides.resourceStateManager ?? createMockResourceStateManager(),
         resourceStateImporter: overrides.resourceStateImporter ?? createMockResourceStateImporter(),
+        relationshipSchemaService: overrides.relationshipSchemaService ?? stubInterface<RelationshipSchemaService>(),
         hoverRouter: overrides.hoverRouter ?? createMockHoverRouter(),
         completionRouter: overrides.completionRouter ?? createMockCompletionRouter(),
         inlineCompletionRouter: overrides.inlineCompletionRouter ?? createMockInlineCompletionRouter(),
