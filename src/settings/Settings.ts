@@ -35,6 +35,7 @@ export type GuardSettings = Toggleable<{
     delayMs: number;
     validateOnChange: boolean;
     enabledRulePacks: readonly string[];
+    rulesFile?: string;
     timeout: number;
     maxConcurrentValidations: number;
     maxQueueSize: number;
