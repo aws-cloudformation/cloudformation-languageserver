@@ -6,6 +6,7 @@ import {
 } from 'vscode-languageserver';
 import {
     UpdateCredentialsParams,
+    UpdateCredentialsResult,
     ConnectionMetadata,
     ListProfilesParams,
     ListProfilesResult,
@@ -22,7 +23,9 @@ import {
 export const IamCredentialsUpdateRequest = Object.freeze({
     method: 'aws/credentials/iam/update' as const,
     messageDirection: MessageDirection.clientToServer,
-    type: new ProtocolRequestType<UpdateCredentialsParams, void, never, void, void>('aws/credentials/iam/update'),
+    type: new ProtocolRequestType<UpdateCredentialsParams, UpdateCredentialsResult, never, void, void>(
+        'aws/credentials/iam/update',
+    ),
 } as const);
 
 export const BearerCredentialsUpdateRequest = Object.freeze({

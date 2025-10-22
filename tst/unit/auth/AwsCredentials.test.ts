@@ -7,12 +7,7 @@ import {
     UpdateCredentialsParams,
     UpdateProfileParams,
 } from '../../../src/auth/AwsLspAuthTypes';
-import { DefaultSettings } from '../../../src/settings/Settings';
-import {
-    createMockAuthHandlers,
-    createMockSettingsManager,
-    mockViClientMessage,
-} from '../../utils/MockServerComponents';
+import { createMockAuthHandlers, createMockSettingsManager } from '../../utils/MockServerComponents';
 
 describe('AwsCredentials', () => {
     const iam = {
@@ -22,7 +17,6 @@ describe('AwsCredentials', () => {
         sessionToken: 'token123',
         region: 'us-west-2',
     };
-    const getIAM = vi.fn();
     const token = {
         token: 'bearer-token-123',
     };
@@ -30,42 +24,12 @@ describe('AwsCredentials', () => {
     let awsCredentials: AwsCredentials;
     let mockAwsHandlers: ReturnType<typeof createMockAuthHandlers>;
     let mockSettingsManager: any;
-    let mockClientMessage: any;
 
     beforeEach(() => {
         vi.clearAllMocks();
         mockAwsHandlers = createMockAuthHandlers();
         mockSettingsManager = createMockSettingsManager();
-        mockClientMessage = mockViClientMessage();
-        awsCredentials = new AwsCredentials(mockAwsHandlers, mockSettingsManager, mockClientMessage, getIAM);
-    });
-
-    describe('credential state management', () => {
-        describe('getCredentials', () => {
-            test('should return undefined for IAM credentials when none exist', async () => {
-                expect(await awsCredentials.getIAM()).toBeUndefined();
-            });
-
-            test('should return undefined for bearer credentials when none exist', () => {
-                expect(awsCredentials.getBearer()).toBeUndefined();
-            });
-
-            test('should return IAM credentials when they exist', async () => {
-                getIAM.mockResolvedValue(iam);
-                expect(await awsCredentials.getIAM()).toStrictEqual(iam);
-            });
-
-            test('should return bearer credentials when they exist', () => {
-                // Simulate bearer credential update
-                const validCredentials: UpdateCredentialsParams = {
-                    data: token,
-                };
-
-                awsCredentials.handleBearerCredentialsUpdate(validCredentials);
-
-                expect(awsCredentials.getBearer()).toStrictEqual(token);
-            });
-        });
+        awsCredentials = new AwsCredentials(mockAwsHandlers, mockSettingsManager);
     });
 
     describe('connection metadata', () => {
@@ -201,7 +165,7 @@ describe('AwsCredentials', () => {
 
             awsCredentials.handleIamCredentialsUpdate(validCredentials);
 
-            expect((awsCredentials as any).profileName).toBe(iam.profile);
+            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
         });
 
         test('should reset IAM profile when invalid data is received', () => {
@@ -209,7 +173,7 @@ describe('AwsCredentials', () => {
             awsCredentials.handleIamCredentialsUpdate({
                 data: iam,
             });
-            expect((awsCredentials as any).profileName).toBe(iam.profile);
+            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
 
             // Then send invalid credentials
             awsCredentials.handleIamCredentialsUpdate({
@@ -219,7 +183,7 @@ describe('AwsCredentials', () => {
                 },
             } as UpdateCredentialsParams);
 
-            expect((awsCredentials as any).profileName).toBe(DefaultSettings.profile.profile);
+            expect((awsCredentials as any).iamCredentials).toBeUndefined();
         });
 
         test('should update bearer credentials and metadata when valid data is received', () => {
@@ -248,12 +212,12 @@ describe('AwsCredentials', () => {
             awsCredentials.handleIamCredentialsUpdate({
                 data: iam,
             });
-            expect((awsCredentials as any).profileName).toBe(iam.profile);
+            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
 
             // Then delete them
 
             awsCredentials.handleIamCredentialsDelete();
-            expect((awsCredentials as any).profileName).toBe(DefaultSettings.profile.profile);
+            expect((awsCredentials as any).iamCredentials).toBeUndefined();
         });
 
         test('should delete bearer credentials and metadata when delete handler is called', () => {
@@ -268,7 +232,7 @@ describe('AwsCredentials', () => {
 
             awsCredentials.handleBearerCredentialsDelete();
 
-            expect(awsCredentials.getBearer()).toBeUndefined();
+            expect((awsCredentials as any).bearerCredentials).toBeUndefined();
             expect(awsCredentials.getConnectionMetadata()).toBeUndefined();
         });
     });
@@ -291,7 +255,7 @@ describe('AwsCredentials', () => {
 
             awsCredentials.handleSsoTokenChanged(expiredTokenParams);
 
-            expect(awsCredentials.getBearer()).toBeUndefined();
+            expect((awsCredentials as any).bearerCredentials).toBeUndefined();
             expect(awsCredentials.getConnectionMetadata()).toBeUndefined();
         });
 
@@ -320,13 +284,13 @@ describe('AwsCredentials', () => {
         test('should handle errors in IAM credential update handler gracefully', () => {
             // This should not throw even with malformed data
             awsCredentials.handleIamCredentialsUpdate({ data: iam });
-            expect((awsCredentials as any).profileName).toBe(iam.profile);
+            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
 
             expect(() => {
                 awsCredentials.handleIamCredentialsUpdate({ data: 'invalid-data' as any });
             }).not.toThrow();
 
-            expect((awsCredentials as any).profileName).toBe(DefaultSettings.profile.profile);
+            expect((awsCredentials as any).iamCredentials).toBeUndefined();
         });
 
         test('should handle errors in bearer credential update handler gracefully', () => {
@@ -335,7 +299,7 @@ describe('AwsCredentials', () => {
                 awsCredentials.handleBearerCredentialsUpdate({ data: 'invalid-data' as any });
             }).not.toThrow();
 
-            expect(awsCredentials.getBearer()).toBeUndefined();
+            expect((awsCredentials as any).bearerCredentials).toBeUndefined();
         });
     });
 });

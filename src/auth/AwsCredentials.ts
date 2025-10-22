@@ -1,12 +1,10 @@
-import { AwsCredentialIdentity } from '@aws-sdk/types';
 import { DeepReadonly } from 'ts-essentials';
 import { LspAuthHandlers } from '../protocol/LspAuthHandlers';
 import { DefaultSettings } from '../settings/Settings';
 import { SettingsManager } from '../settings/SettingsManager';
-import { parseProfile } from '../settings/SettingsParser';
-import { ClientMessage } from '../telemetry/ClientMessage';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
+import { getRegion } from '../utils/Region';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import {
     parseListProfilesResult,
@@ -30,31 +28,33 @@ import {
     InvalidateSsoTokenParams,
     InvalidateSsoTokenResult,
     SsoTokenChangedParams,
+    IamCredentials,
 } from './AwsLspAuthTypes';
-import { sdkIAMCredentials } from './AwsSdkCredentialsProvider';
 
 export class AwsCredentials {
     private readonly logger = LoggerFactory.getLogger(AwsCredentials);
-    private profileName = DefaultSettings.profile.profile;
 
+    private iamCredentials?: IamCredentials;
     private bearerCredentials?: BearerCredentials;
     private connectionMetadata?: ConnectionMetadata;
 
     constructor(
         private readonly awsHandlers: LspAuthHandlers,
         private readonly settingsManager: SettingsManager,
-        private readonly clientMessage: ClientMessage,
-        private readonly getIAMFromSdk: (
-            profile: string,
-        ) => Promise<DeepReadonly<AwsCredentialIdentity>> = sdkIAMCredentials,
     ) {}
 
-    getIAM(): Promise<DeepReadonly<AwsCredentialIdentity>> {
-        return this.getIAMFromSdk(this.profileName);
+    getIAM(): DeepReadonly<IamCredentials> {
+        if (!this.iamCredentials) {
+            throw new Error('IAM credentials not configured');
+        }
+        return structuredClone(this.iamCredentials);
     }
 
-    getBearer(): DeepReadonly<BearerCredentials | undefined> {
-        return this.bearerCredentials;
+    getBearer(): DeepReadonly<BearerCredentials> {
+        if (!this.bearerCredentials) {
+            throw new Error('Bearer credentials not configured');
+        }
+        return structuredClone(this.bearerCredentials);
     }
 
     getConnectionMetadata(): ConnectionMetadata | undefined {
@@ -137,29 +137,28 @@ export class AwsCredentials {
         }
     }
 
-    handleIamCredentialsUpdate(params: UpdateCredentialsParams) {
-        let newProfileName = DefaultSettings.profile.profile;
-        let newRegion = DefaultSettings.profile.region;
+    handleIamCredentialsUpdate(params: UpdateCredentialsParams): boolean {
         try {
             const { data } = parseWithPrettyError(parseUpdateCredentialsParams, params);
             if ('accessKeyId' in data) {
-                const profile = parseWithPrettyError(
-                    parseProfile,
-                    {
-                        profile: data.profile,
-                        region: data.region,
-                    },
-                    DefaultSettings.profile,
-                );
+                const region = getRegion(data.region);
 
-                newProfileName = profile.profile;
-                newRegion = profile.region;
+                this.iamCredentials = {
+                    ...data,
+                    region,
+                };
+
+                this.settingsManager.updateProfileSettings(data.profile, region);
+                return true;
             }
+
+            throw new Error('Not an IAM credential');
         } catch (error) {
-            this.logger.error(`Failed to update IAM profile: ${extractErrorMessage(error)}`);
-        } finally {
-            this.profileName = newProfileName;
-            this.settingsManager.updateProfileSettings(newProfileName, newRegion);
+            this.iamCredentials = undefined;
+
+            this.logger.error(`Failed to update IAM credentials: ${extractErrorMessage(error)}`);
+            this.settingsManager.updateProfileSettings(DefaultSettings.profile.profile, DefaultSettings.profile.region);
+            return false;
         }
     }
 
@@ -183,7 +182,7 @@ export class AwsCredentials {
 
     handleIamCredentialsDelete() {
         this.logger.info('IAM credentials deleted');
-        this.profileName = DefaultSettings.profile.profile;
+        this.iamCredentials = undefined;
     }
 
     handleBearerCredentialsDelete() {

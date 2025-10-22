@@ -1,14 +1,13 @@
 import { RequestHandler, NotificationHandler } from 'vscode-languageserver/node';
-import { UpdateCredentialsParams, SsoTokenChangedParams } from '../auth/AwsLspAuthTypes';
+import { UpdateCredentialsParams, UpdateCredentialsResult, SsoTokenChangedParams } from '../auth/AwsLspAuthTypes';
 import { ServerComponents } from '../server/ServerComponents';
 
 export function iamCredentialsUpdateHandler(
     components: ServerComponents,
-): RequestHandler<UpdateCredentialsParams, void, void> {
-    return (params: UpdateCredentialsParams) => {
-        // AwsCredentials.handleIamCredentialsUpdate already calls settingsManager.updateProfileSettings
-        // which will notify all subscribed components via the observable pattern
-        components.awsCredentials.handleIamCredentialsUpdate(params);
+): RequestHandler<UpdateCredentialsParams, UpdateCredentialsResult, void> {
+    return (params: UpdateCredentialsParams): UpdateCredentialsResult => {
+        const success = components.awsCredentials.handleIamCredentialsUpdate(params);
+        return { success };
     };
 }
 

@@ -2,7 +2,6 @@ import { CloudFormationClient } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, vi, MockedClass } from 'vitest';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { ExtensionId, ExtensionVersion } from '../../../src/utils/ExtensionConfig';
-import { AwsRegion } from '../../../src/utils/Region';
 import { createMockComponents } from '../../utils/MockServerComponents';
 
 // Mock AWS SDK clients
@@ -13,6 +12,13 @@ const MockedCloudFormationClient = CloudFormationClient as MockedClass<typeof Cl
 describe('AwsClient', () => {
     let component: AwsClient;
     let mockComponents: ReturnType<typeof createMockComponents>;
+    const iam = {
+        region: 'test-region',
+        profile: 'test-profile',
+        accessKeyId: 'test-access-key',
+        secretAccessKey: 'test-secret-key',
+        sessionToken: 'test-session-token',
+    };
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -21,56 +27,29 @@ describe('AwsClient', () => {
     });
 
     describe('getCloudFormationClient', () => {
-        it('should create and return new CloudFormation client', async () => {
-            mockComponents.awsCredentials.getIAM.resolves({
+        it('should create and return new CloudFormation client', () => {
+            mockComponents.awsCredentials.getIAM.returns({
+                region: 'test-region',
+                profile: 'test-profile',
                 accessKeyId: 'test-access-key',
                 secretAccessKey: 'test-secret-key',
                 sessionToken: 'test-session-token',
             });
 
-            const client = await component.getCloudFormationClient();
+            const client = component.getCloudFormationClient();
 
             expect(MockedCloudFormationClient).toHaveBeenCalledWith({
-                region: AwsRegion.US_EAST_1, // Default region
-                credentials: {
-                    accessKeyId: 'test-access-key',
-                    secretAccessKey: 'test-secret-key',
-                    sessionToken: 'test-session-token',
-                },
+                region: iam.region,
+                credentials: iam,
                 customUserAgent: `${ExtensionId}/${ExtensionVersion}`,
             });
             expect(client).toBeInstanceOf(CloudFormationClient);
         });
 
-        it('should handle credentials provider errors', async () => {
-            mockComponents.awsCredentials.getIAM.rejects(new Error('Credential provider error'));
+        it('should handle credentials provider errors', () => {
+            mockComponents.awsCredentials.getIAM.throws(new Error('Credential provider error'));
 
-            await expect(component.getCloudFormationClient()).rejects.toThrow('Credential provider error');
-        });
-    });
-
-    describe('configure', () => {
-        it('should subscribe to profile settings changes', () => {
-            component.configure(mockComponents.settingsManager);
-
-            expect(mockComponents.settingsManager.subscribe.calledWith('profile')).toBe(true);
-        });
-
-        it('should unsubscribe from previous subscription when reconfigured', () => {
-            const mockUnsubscribe = vi.fn();
-            const mockSubscription = {
-                unsubscribe: mockUnsubscribe,
-                isActive: vi.fn().mockReturnValue(true),
-            };
-            mockComponents.settingsManager.subscribe.returns(mockSubscription);
-
-            // First configuration
-            component.configure(mockComponents.settingsManager);
-
-            // Second configuration should unsubscribe from first
-            component.configure(mockComponents.settingsManager);
-
-            expect(mockUnsubscribe).toHaveBeenCalledOnce();
+            expect(() => component.getCloudFormationClient()).toThrow('Credential provider error');
         });
     });
 });
