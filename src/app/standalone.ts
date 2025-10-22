@@ -4,13 +4,31 @@ import { LspCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
+import { AwsEnv, NodeEnv } from '../utils/Environment';
+import { ExtensionName } from '../utils/ExtensionConfig';
 
 let server: unknown;
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument */
+function getLogger() {
+    return LoggerFactory.getLogger('Init');
+}
+
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
 async function onInitialize(params: InitializeParams) {
-    LoggerFactory.initialize(params.initializationOptions['aws']);
-    TelemetryService.initialize(params.clientInfo, params.initializationOptions['aws']);
+    const ClientInfo = params.clientInfo;
+    const AwsMetadata = params.initializationOptions['aws'];
+
+    getLogger().info(
+        {
+            ClientInfo,
+            AwsMetadata,
+            NodeEnv,
+            AwsEnv,
+        },
+        `${ExtensionName} initializing...`,
+    );
+    LoggerFactory.initialize(AwsMetadata);
+    TelemetryService.initialize(ClientInfo, AwsMetadata);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
     const { CfnInfraCore } = await import('../server/CfnInfraCore');
@@ -22,14 +40,18 @@ async function onInitialize(params: InitializeParams) {
 }
 
 function onInitialized(params: InitializedParams) {
+    getLogger().info(`${ExtensionName} initialized`);
     (server as any).initialized(params);
 }
 
 function onShutdown() {
+    getLogger().info(`${ExtensionName} shutting down...`);
     return (server as any).close();
 }
 
-function onExit() {}
+function onExit() {
+    getLogger().info(`${ExtensionName} exiting`);
+}
 
 const lsp = new LspConnection(createConnection(ProposedFeatures.all), {
     onInitialize,

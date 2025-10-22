@@ -60,24 +60,20 @@ export class LspConnection {
         this.communication.console.info(`${ExtensionName} launched from ${__dirname}`);
 
         this.connection.onInitialize((params: InitializeParams): InitializeResult | Promise<InitializeResult> => {
-            this.communication.console.info(`${ExtensionName} initializing...`);
             this.initializeParams = params;
             return onInitialize(params);
         });
 
         this.connection.onInitialized((params: InitializedParams) => {
-            this.communication.console.info(`${ExtensionName} initialized`);
             this.workspace.initialize(this.initializeParams?.capabilities, this.initializeParams?.workspaceFolders);
             onInitialized(params);
         });
 
         this.connection.onShutdown(() => {
-            this.communication.console.info(`${ExtensionName} shutting down...`);
             onShutdown();
         });
 
         this.connection.onExit(() => {
-            this.communication.console.info(`${ExtensionName} exiting`);
             onExit();
         });
     }
