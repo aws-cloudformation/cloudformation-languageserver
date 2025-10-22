@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { IntrinsicFunction, TopLevelSection } from '../../../src/context/ContextType';
 import { IntrinsicFunctionArgumentHoverProvider } from '../../../src/hover/IntrinsicFunctionArgumentHoverProvider';
+import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { createResourceContext, createParameterContext } from '../../utils/MockContext';
 import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
 
 describe('IntrinsicFunctionArgumentHoverProvider', () => {
-    const mockSchemaRetriever = createMockSchemaRetriever();
+    const mockCombinedSchemas = new CombinedSchemas();
+    const mockSchemaRetriever = createMockSchemaRetriever(mockCombinedSchemas);
 
     it('should return undefined when not inside an intrinsic function', () => {
         const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
@@ -157,7 +159,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
     });
 
     describe('Positive cases - GetAtt intrinsic function', () => {
-        it('should return hover information for GetAtt', () => {
+        it('should return hover information for GetAtt resource name (position 1)', () => {
             const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             // Create related entities map with a target resource
@@ -198,6 +200,203 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
             expect(result).toBeDefined();
             expect(result).toContain('AWS::S3::Bucket');
             expect(result).toContain('MyBucket');
+        });
+
+        it('should return attribute hover information for GetAtt attribute name (position 2)', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
+
+            // Create related entities map with a target resource
+            const relatedEntities = new Map();
+            const resourcesMap = new Map();
+            const targetResource = createResourceContext('MyBucket', {
+                text: 'MyBucket',
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {
+                        BucketName: 'my-test-bucket',
+                    },
+                },
+            });
+            resourcesMap.set('MyBucket', targetResource);
+            relatedEntities.set(TopLevelSection.Resources, resourcesMap);
+
+            // Create context for the GetAtt attribute argument
+            const mockContext = createResourceContext(
+                'SomeOtherResource',
+                {
+                    text: 'Arn', // This is the attribute name in !GetAtt
+                    data: { Type: 'AWS::Lambda::Function' },
+                },
+                relatedEntities,
+            );
+
+            // Mock the intrinsicContext for a GetAtt function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.GetAtt,
+                    args: ['MyBucket', 'Arn'],
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeDefined();
+            expect(result).toContain('GetAtt attribute for AWS::S3::Bucket');
+            expect(result).toContain('Arn');
+        });
+
+        it('should return hover information for GetAtt dot notation format', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
+
+            // Create related entities map with a target resource
+            const relatedEntities = new Map();
+            const resourcesMap = new Map();
+            const targetResource = createResourceContext('MyBucket', {
+                text: 'MyBucket',
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {
+                        BucketName: 'my-test-bucket',
+                    },
+                },
+            });
+            resourcesMap.set('MyBucket', targetResource);
+            relatedEntities.set(TopLevelSection.Resources, resourcesMap);
+
+            // Create context for the GetAtt dot notation argument
+            const mockContext = createResourceContext(
+                'SomeOtherResource',
+                {
+                    text: 'MyBucket.Arn', // This is the dot notation format
+                    data: { Type: 'AWS::Lambda::Function' },
+                },
+                relatedEntities,
+            );
+
+            // Mock the intrinsicContext for a GetAtt function with dot notation
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.GetAtt,
+                    args: 'MyBucket.Arn',
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeDefined();
+            expect(result).toContain('AWS::S3::Bucket');
+            expect(result).toContain('MyBucket');
+            expect(result).toContain('GetAtt attribute for AWS::S3::Bucket');
+            expect(result).toContain('---'); // Separator between resource and attribute info
+        });
+
+        it('should return undefined for GetAtt when resource is not found', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
+
+            // Create context with empty related entities
+            const mockContext = createResourceContext(
+                'SomeOtherResource',
+                {
+                    text: 'Arn',
+                    data: { Type: 'AWS::Lambda::Function' },
+                },
+                new Map(),
+            );
+
+            // Mock the intrinsicContext for a GetAtt function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.GetAtt,
+                    args: ['NonExistentResource', 'Arn'],
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeUndefined();
+        });
+
+        it('should return fallback documentation when schema is not available', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
+
+            // Create related entities map with a target resource
+            const relatedEntities = new Map();
+            const resourcesMap = new Map();
+            const targetResource = createResourceContext('MyCustomResource', {
+                text: 'MyCustomResource',
+                data: {
+                    Type: 'Custom::MyType',
+                    Properties: {},
+                },
+            });
+            resourcesMap.set('MyCustomResource', targetResource);
+            relatedEntities.set(TopLevelSection.Resources, resourcesMap);
+
+            // Create context for the GetAtt attribute argument
+            const mockContext = createResourceContext(
+                'SomeOtherResource',
+                {
+                    text: 'CustomAttribute',
+                    data: { Type: 'AWS::Lambda::Function' },
+                },
+                relatedEntities,
+            );
+
+            // Mock the intrinsicContext for a GetAtt function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.GetAtt,
+                    args: ['MyCustomResource', 'CustomAttribute'],
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeDefined();
+            expect(result).toContain('GetAtt attribute for Custom::MyType');
+            expect(result).toContain('CustomAttribute');
+            expect(result).toContain('Returns the value of this attribute');
+        });
+
+        it('should handle nested attribute names with dots', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
+
+            // Create related entities map with a target resource
+            const relatedEntities = new Map();
+            const resourcesMap = new Map();
+            const targetResource = createResourceContext('MyTable', {
+                text: 'MyTable',
+                data: {
+                    Type: 'AWS::DynamoDB::Table',
+                    Properties: {},
+                },
+            });
+            resourcesMap.set('MyTable', targetResource);
+            relatedEntities.set(TopLevelSection.Resources, resourcesMap);
+
+            // Create context for the GetAtt attribute argument with nested attribute
+            const mockContext = createResourceContext(
+                'SomeOtherResource',
+                {
+                    text: 'StreamSpecification.StreamArn',
+                    data: { Type: 'AWS::Lambda::Function' },
+                },
+                relatedEntities,
+            );
+
+            // Mock the intrinsicContext for a GetAtt function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.GetAtt,
+                    args: ['MyTable', 'StreamSpecification.StreamArn'],
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeDefined();
+            expect(result).toContain('GetAtt attribute for AWS::DynamoDB::Table');
+            expect(result).toContain('StreamSpecification.StreamArn');
         });
     });
 
