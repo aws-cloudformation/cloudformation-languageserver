@@ -199,7 +199,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
         this.validationManager.remove(params.stackName);
 
         if (!params.keepChangeSet) {
-            if (changeSetType === ChangeSetType.CREATE) {
+            if (changeSetType === ChangeSetType.CREATE || changeSetType === ChangeSetType.IMPORT) {
                 await deleteStackAndChangeSet(this.cfnService, existingWorkflow, params.id);
             } else {
                 await deleteChangeSet(this.cfnService, existingWorkflow, params.id);
