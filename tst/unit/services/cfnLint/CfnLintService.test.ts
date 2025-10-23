@@ -1444,4 +1444,111 @@ describe('CfnLintService', () => {
             expect(lintStub.calledWith(mockTemplate, mockUri)).toBe(true);
         });
     });
+
+    describe('local cfn-lint path functionality', () => {
+        test('should switch to local executor when path is set', () => {
+            const components = createMockComponents();
+            const service = CfnLintService.create(components);
+            const settingsManager = createMockSettingsManager({
+                diagnostics: {
+                    cfnLint: {
+                        enabled: true,
+                        path: '/usr/local/bin/cfn-lint',
+                        delayMs: 1000,
+                        lintOnChange: true,
+                        initialization: {
+                            maxRetries: 3,
+                            initialDelayMs: 1000,
+                            maxDelayMs: 30000,
+                            backoffMultiplier: 2,
+                            totalTimeoutMs: 120000,
+                        },
+                    },
+                },
+            } as any);
+
+            service.configure(settingsManager);
+
+            // Trigger settings change to activate path
+            const callback = settingsManager.subscribe.getCall(0).args[1];
+            callback({
+                cfnLint: {
+                    enabled: true,
+                    path: '/usr/local/bin/cfn-lint',
+                    delayMs: 1000,
+                    lintOnChange: true,
+                    initialization: {
+                        maxRetries: 3,
+                        initialDelayMs: 1000,
+                        maxDelayMs: 30000,
+                        backoffMultiplier: 2,
+                        totalTimeoutMs: 120000,
+                    },
+                },
+            } as any);
+
+            // Verify local executor is created
+            expect((service as any).localExecutor).toBeDefined();
+        });
+
+        test('should switch back to pyodide when path is cleared', () => {
+            const components = createMockComponents();
+            const service = CfnLintService.create(components);
+            const settingsManager = createMockSettingsManager({
+                diagnostics: {
+                    cfnLint: {
+                        enabled: true,
+                        delayMs: 1000,
+                        lintOnChange: true,
+                        initialization: {
+                            maxRetries: 3,
+                            initialDelayMs: 1000,
+                            maxDelayMs: 30000,
+                            backoffMultiplier: 2,
+                            totalTimeoutMs: 120000,
+                        },
+                    },
+                },
+            } as any);
+
+            service.configure(settingsManager);
+            
+            // First set path
+            const callback = settingsManager.subscribe.getCall(0).args[1];
+            callback({
+                cfnLint: {
+                    enabled: true,
+                    path: '/usr/local/bin/cfn-lint',
+                    delayMs: 1000,
+                    lintOnChange: true,
+                    initialization: {
+                        maxRetries: 3,
+                        initialDelayMs: 1000,
+                        maxDelayMs: 30000,
+                        backoffMultiplier: 2,
+                        totalTimeoutMs: 120000,
+                    },
+                },
+            } as any);
+            expect((service as any).localExecutor).toBeDefined();
+
+            // Then clear path
+            callback({
+                cfnLint: {
+                    enabled: true,
+                    delayMs: 1000,
+                    lintOnChange: true,
+                    initialization: {
+                        maxRetries: 3,
+                        initialDelayMs: 1000,
+                        maxDelayMs: 30000,
+                        backoffMultiplier: 2,
+                        totalTimeoutMs: 120000,
+                    },
+                },
+            } as any);
+
+            expect((service as any).localExecutor).toBeUndefined();
+        });
+    });
 });

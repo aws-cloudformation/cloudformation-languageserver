@@ -28,6 +28,7 @@ export type CompletionSettings = Toggleable<{
 export type CfnLintSettings = Toggleable<{
     delayMs: number;
     lintOnChange: boolean;
+    path?: string;
     initialization: CfnLintInitializationSettings;
     ignoreChecks: readonly string[];
     includeChecks: readonly string[];

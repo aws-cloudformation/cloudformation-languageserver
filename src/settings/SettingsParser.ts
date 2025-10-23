@@ -68,6 +68,7 @@ function createCfnLintSchema(defaults: Settings['diagnostics']['cfnLint']) {
             enabled: z.boolean().default(defaults.enabled),
             delayMs: z.number().default(defaults.delayMs),
             lintOnChange: z.boolean().default(defaults.lintOnChange),
+            path: z.string().optional(),
             initialization: createCfnLintInitializationSchema(defaults.initialization),
             ignoreChecks: z.array(z.string()).readonly().default(defaults.ignoreChecks),
             includeChecks: z.array(z.string()).readonly().default(defaults.includeChecks),
