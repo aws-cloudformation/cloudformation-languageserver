@@ -15,18 +15,23 @@ export type ResourceToImport = {
     ResourceIdentifier: Record<string, string>;
 };
 
-export type CreateStackActionParams = Identifiable & {
+export type CreateValidationParams = Identifiable & {
     uri: string;
     stackName: string;
     parameters?: Parameter[];
     capabilities?: Capability[];
     resourcesToImport?: ResourceToImport[];
+    keepChangeSet?: boolean;
 };
 
-export type CreateStackActionResult = Identifiable & {
+export type ChangeSetReference = {
     changeSetName: string;
     stackName: string;
 };
+
+export type CreateDeploymentParams = Identifiable & ChangeSetReference;
+
+export type CreateStackActionResult = Identifiable & ChangeSetReference;
 
 export type TemplateUri = string;
 
@@ -105,11 +110,16 @@ export type DeploymentEvent = {
     DetailedStatus?: DetailedStatus;
 };
 
-export type DescribeValidationStatusResult = GetStackActionStatusResult & {
-    ValidationDetails?: ValidationDetail[];
+export type Failable = {
     FailureReason?: string;
 };
 
-export type DescribeDeploymentStatusResult = DescribeValidationStatusResult & {
-    DeploymentEvents?: DeploymentEvent[];
-};
+export type DescribeValidationStatusResult = GetStackActionStatusResult &
+    Failable & {
+        ValidationDetails?: ValidationDetail[];
+    };
+
+export type DescribeDeploymentStatusResult = GetStackActionStatusResult &
+    Failable & {
+        DeploymentEvents?: DeploymentEvent[];
+    };

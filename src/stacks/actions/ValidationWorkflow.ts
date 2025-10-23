@@ -17,21 +17,21 @@ import {
     processWorkflowUpdates,
 } from './StackActionOperations';
 import {
-    CreateStackActionParams,
-    CreateStackActionResult,
+    CreateValidationParams,
     StackActionPhase,
     StackActionState,
     GetStackActionStatusResult,
     DescribeValidationStatusResult,
+    CreateStackActionResult,
 } from './StackActionRequestType';
-import { StackActionWorkflowState, StackActionWorkflow } from './StackActionWorkflowType';
+import { StackActionWorkflow, StackActionWorkflowState } from './StackActionWorkflowType';
 import { Validation } from './Validation';
 import { ValidationManager } from './ValidationManager';
 
 export const CFN_VALIDATION_SOURCE = 'CFN Dry-Run';
 export const DRY_RUN_VALIDATION_NAME = 'Change Set Dry-Run';
 
-export class ValidationWorkflow implements StackActionWorkflow<DescribeValidationStatusResult> {
+export class ValidationWorkflow implements StackActionWorkflow<CreateValidationParams, DescribeValidationStatusResult> {
     protected readonly workflows = new Map<string, StackActionWorkflowState>();
     protected readonly log = LoggerFactory.getLogger(ValidationWorkflow);
 
@@ -43,7 +43,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
         protected readonly validationManager: ValidationManager,
     ) {}
 
-    async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
+    async start(params: CreateValidationParams): Promise<CreateStackActionResult> {
         // Determine ChangeSet type based on resourcesToImport and stack existence
         let changeSetType: ChangeSetType;
 
@@ -118,7 +118,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
     }
 
     protected async runValidationAsync(
-        params: CreateStackActionParams,
+        params: CreateValidationParams,
         changeSetName: string,
         changeSetType: ChangeSetType,
     ): Promise<void> {
@@ -186,13 +186,23 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
                 failureReason: extractErrorMessage(error),
             });
         } finally {
-            // Cleanup validation object to prevent memory leaks
-            this.validationManager.remove(stackName);
+            await this.handleCleanup(params, existingWorkflow, changeSetType);
+        }
+    }
 
+    protected async handleCleanup(
+        params: CreateValidationParams,
+        existingWorkflow: StackActionWorkflowState,
+        changeSetType: ChangeSetType,
+    ) {
+        // Cleanup validation object to prevent memory leaks
+        this.validationManager.remove(params.stackName);
+
+        if (!params.keepChangeSet) {
             if (changeSetType === ChangeSetType.CREATE) {
-                await deleteStackAndChangeSet(this.cfnService, existingWorkflow, workflowId);
+                await deleteStackAndChangeSet(this.cfnService, existingWorkflow, params.id);
             } else {
-                await deleteChangeSet(this.cfnService, existingWorkflow, workflowId);
+                await deleteChangeSet(this.cfnService, existingWorkflow, params.id);
             }
         }
     }

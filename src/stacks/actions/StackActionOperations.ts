@@ -1,4 +1,4 @@
-import { Change, ChangeSetType } from '@aws-sdk/client-cloudformation';
+import { Change, ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { DateTime } from 'luxon';
 import Parser from 'tree-sitter';
@@ -19,7 +19,7 @@ import {
     StackChange,
     StackActionPhase,
     StackActionState,
-    CreateStackActionParams,
+    CreateValidationParams,
     ValidationDetail,
 } from './StackActionRequestType';
 import {
@@ -35,7 +35,7 @@ const logger = LoggerFactory.getLogger('StackActionOperations');
 export async function processChangeSet(
     cfnService: CfnService,
     documentManager: DocumentManager,
-    params: CreateStackActionParams,
+    params: CreateValidationParams,
     changeSetType: ChangeSetType,
 ): Promise<string> {
     const document = documentManager.get(params.uri);
@@ -320,4 +320,17 @@ export async function publishValidationDiagnostics(
     }
 
     await diagnosticCoordinator.publishDiagnostics(CFN_VALIDATION_SOURCE, uri, diagnostics);
+}
+
+// If a stack is in REVIEW_IN_PROGRESS, this indicates that a stack was created by the createChangeSet method
+export async function isStackInReview(stackName: string, cfnService: CfnService): Promise<boolean> {
+    const describeStacksResult = await cfnService.describeStacks({ StackName: stackName });
+
+    const stackResult = describeStacksResult.Stacks?.filter((stack) => stack.StackName === stackName)[0];
+
+    if (!stackResult) {
+        throw new Error(`Stack not found: ${stackName}`);
+    }
+
+    return stackResult.StackStatus === StackStatus.REVIEW_IN_PROGRESS;
 }

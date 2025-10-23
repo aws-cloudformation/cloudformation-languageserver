@@ -1,4 +1,4 @@
-import { ChangeSetType } from '@aws-sdk/client-cloudformation';
+import { ChangeSetType, DescribeChangeSetCommandOutput } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { DocumentManager } from '../../document/DocumentManager';
 import { Identifiable } from '../../protocol/LspTypes';
@@ -8,24 +8,23 @@ import { CfnService } from '../../services/CfnService';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
-    processChangeSet,
-    waitForChangeSetValidation,
     waitForDeployment,
     processWorkflowUpdates,
+    mapChangesToStackChanges,
+    isStackInReview,
 } from './StackActionOperations';
 import {
-    CreateStackActionParams,
-    CreateStackActionResult,
     StackActionPhase,
     StackActionState,
     GetStackActionStatusResult,
-    DescribeDeploymentStatusResult,
     DeploymentEvent,
+    DescribeDeploymentStatusResult,
+    CreateDeploymentParams,
+    CreateStackActionResult,
 } from './StackActionRequestType';
-import { StackActionWorkflowState, StackActionWorkflow } from './StackActionWorkflowType';
-import { DRY_RUN_VALIDATION_NAME } from './ValidationWorkflow';
+import { StackActionWorkflow, StackActionWorkflowState } from './StackActionWorkflowType';
 
-export class DeploymentWorkflow implements StackActionWorkflow<DescribeDeploymentStatusResult> {
+export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentParams, DescribeDeploymentStatusResult> {
     protected readonly workflows = new Map<string, StackActionWorkflowState>();
     protected readonly log = LoggerFactory.getLogger(DeploymentWorkflow);
 
@@ -34,40 +33,39 @@ export class DeploymentWorkflow implements StackActionWorkflow<DescribeDeploymen
         protected readonly documentManager: DocumentManager,
     ) {}
 
-    async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
-        // Determine ChangeSet type based on resourcesToImport and stack existence
-        let changeSetType: ChangeSetType;
+    async start(params: CreateDeploymentParams): Promise<CreateStackActionResult> {
+        const describeChangeSetResult = await this.cfnService.describeChangeSet({
+            StackName: params.stackName,
+            ChangeSetName: params.changeSetName,
+            IncludePropertyValues: true,
+        });
 
-        if (params.resourcesToImport && params.resourcesToImport.length > 0) {
-            changeSetType = ChangeSetType.IMPORT;
-        } else {
-            try {
-                await this.cfnService.describeStacks({ StackName: params.stackName });
-                changeSetType = ChangeSetType.UPDATE;
-            } catch {
-                changeSetType = ChangeSetType.CREATE;
-            }
-        }
+        const changeSetType = await this.determineChangeSetType(
+            describeChangeSetResult,
+            params.stackName,
+            this.cfnService,
+        );
 
-        const changeSetName = await processChangeSet(this.cfnService, this.documentManager, params, changeSetType);
+        await this.cfnService.executeChangeSet({
+            StackName: params.stackName,
+            ChangeSetName: params.changeSetName,
+            ClientRequestToken: params.id,
+        });
 
         // Set initial workflow state
         this.workflows.set(params.id, {
             id: params.id,
-            changeSetName: changeSetName,
+            changeSetName: params.changeSetName,
             stackName: params.stackName,
-            phase: StackActionPhase.VALIDATION_IN_PROGRESS,
+            phase: StackActionPhase.DEPLOYMENT_IN_PROGRESS,
             startTime: Date.now(),
             state: StackActionState.IN_PROGRESS,
+            changes: mapChangesToStackChanges(describeChangeSetResult.Changes),
         });
 
-        void this.runDeploymentAsync(params, changeSetName, changeSetType);
+        void this.runDeploymentAsync(params, changeSetType);
 
-        return {
-            id: params.id,
-            changeSetName: changeSetName,
-            stackName: params.stackName,
-        };
+        return params;
     }
 
     getStatus(params: Identifiable): GetStackActionStatusResult {
@@ -92,86 +90,18 @@ export class DeploymentWorkflow implements StackActionWorkflow<DescribeDeploymen
 
         return {
             ...this.getStatus(params),
-            ValidationDetails: workflow.validationDetails,
             DeploymentEvents: workflow.deploymentEvents,
             FailureReason: workflow.failureReason,
         };
     }
 
-    protected async runDeploymentAsync(
-        params: CreateStackActionParams,
-        changeSetName: string,
-        changeSetType: ChangeSetType,
-    ): Promise<void> {
+    protected async runDeploymentAsync(params: CreateDeploymentParams, changeSetType: ChangeSetType): Promise<void> {
         const workflowId = params.id;
         const stackName = params.stackName;
 
-        let validationResult;
         let existingWorkflow = this.workflows.get(workflowId);
         if (!existingWorkflow) {
             this.log.error({ workflowId }, 'Workflow not found during async execution');
-            return;
-        }
-
-        try {
-            validationResult = await waitForChangeSetValidation(this.cfnService, changeSetName, stackName);
-
-            existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
-                phase: validationResult.phase,
-                changes: validationResult.changes,
-            });
-
-            if (validationResult.state === StackActionState.FAILED) {
-                existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
-                    state: StackActionState.FAILED,
-                    validationDetails: [
-                        {
-                            ValidationName: DRY_RUN_VALIDATION_NAME,
-                            Timestamp: DateTime.now(),
-                            Severity: 'ERROR',
-                            Message: `Validation failed with reason: ${validationResult.failureReason}`,
-                        },
-                    ],
-                });
-
-                return;
-            } else {
-                existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
-                    validationDetails: [
-                        {
-                            ValidationName: DRY_RUN_VALIDATION_NAME,
-                            Timestamp: DateTime.now(),
-                            Severity: 'INFO',
-                            Message: 'Validation succeeded',
-                        },
-                    ],
-                });
-            }
-        } catch (error) {
-            this.log.error({ error, workflowId }, 'Deployment workflow threw exception during validation phase');
-            processWorkflowUpdates(this.workflows, existingWorkflow, {
-                phase: StackActionPhase.VALIDATION_FAILED,
-                state: StackActionState.FAILED,
-                failureReason: extractErrorMessage(error),
-            });
-
-            return;
-        }
-
-        try {
-            await this.cfnService.executeChangeSet({
-                StackName: stackName,
-                ChangeSetName: changeSetName,
-                ClientRequestToken: workflowId,
-            });
-        } catch (error) {
-            this.log.error({ error, workflowId }, 'Deployment workflow threw exception during deployment start phase');
-            processWorkflowUpdates(this.workflows, existingWorkflow, {
-                phase: StackActionPhase.DEPLOYMENT_FAILED,
-                state: StackActionState.FAILED,
-                failureReason: extractErrorMessage(error),
-            });
-
             return;
         }
 
@@ -189,8 +119,8 @@ export class DeploymentWorkflow implements StackActionWorkflow<DescribeDeploymen
                 state: deploymentResult.state,
             });
         } catch (error) {
-            this.log.error({ error, workflowId }, 'Deployment workflow threw exception during deployment phase');
-            processWorkflowUpdates(this.workflows, existingWorkflow, {
+            this.log.error({ error, workflowId }, 'Deployment workflow threw exception');
+            existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: StackActionPhase.DEPLOYMENT_FAILED,
                 state: StackActionState.FAILED,
                 failureReason: extractErrorMessage(error),
@@ -225,10 +155,30 @@ export class DeploymentWorkflow implements StackActionWorkflow<DescribeDeploymen
             });
         } catch (error) {
             this.log.error({ error, stackName }, 'Failed to process deployment events');
+
+            existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
+                phase: StackActionPhase.DEPLOYMENT_FAILED,
+                state: StackActionState.FAILED,
+                failureReason: extractErrorMessage(error),
+            });
         }
     }
 
     static create(core: CfnInfraCore, external: CfnExternal): DeploymentWorkflow {
         return new DeploymentWorkflow(external.cfnService, core.documentManager);
+    }
+
+    private async determineChangeSetType(
+        describeChangeSetResult: DescribeChangeSetCommandOutput,
+        stackName: string,
+        cfnService: CfnService,
+    ): Promise<ChangeSetType> {
+        if (describeChangeSetResult.Changes?.some((change) => change.ResourceChange?.Action === 'Import')) {
+            return ChangeSetType.IMPORT;
+        } else if (await isStackInReview(stackName, cfnService)) {
+            return ChangeSetType.CREATE;
+        } else {
+            return ChangeSetType.UPDATE;
+        }
     }
 }

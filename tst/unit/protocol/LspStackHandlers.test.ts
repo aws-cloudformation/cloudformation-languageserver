@@ -9,19 +9,20 @@ import {
     CreateValidationRequest,
     CreateDeploymentRequest,
     GetValidationStatusRequest,
-    GetDeploymentStatusRequest,
     DescribeValidationStatusRequest,
     DescribeDeploymentStatusRequest,
+    GetDeploymentStatusRequest,
 } from '../../../src/stacks/actions/StackActionProtocol';
 import {
     GetCapabilitiesResult,
     TemplateUri,
     GetParametersResult,
-    CreateStackActionParams,
-    CreateStackActionResult,
+    CreateValidationParams,
     GetStackActionStatusResult,
     DescribeValidationStatusResult,
     DescribeDeploymentStatusResult,
+    CreateStackActionResult,
+    CreateDeploymentParams,
 } from '../../../src/stacks/actions/StackActionRequestType';
 
 describe('LspTemplateHandlers', () => {
@@ -50,7 +51,7 @@ describe('LspTemplateHandlers', () => {
     });
 
     it('should register onCreateValidation handler', () => {
-        const mockHandler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void> = vi.fn();
+        const mockHandler: RequestHandler<CreateValidationParams, CreateStackActionResult, void> = vi.fn();
 
         stackActionHandlers.onCreateValidation(mockHandler);
 
@@ -58,7 +59,7 @@ describe('LspTemplateHandlers', () => {
     });
 
     it('should register onCreateDeployment handler', () => {
-        const mockHandler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void> = vi.fn();
+        const mockHandler: RequestHandler<CreateDeploymentParams, CreateStackActionResult, void> = vi.fn();
 
         stackActionHandlers.onCreateDeployment(mockHandler);
 

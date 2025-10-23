@@ -1,222 +1,169 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DocumentManager } from '../../../src/document/DocumentManager';
+import { Identifiable } from '../../../src/protocol/LspTypes';
 import { CfnService } from '../../../src/services/CfnService';
 import { DeploymentWorkflow } from '../../../src/stacks/actions/DeploymentWorkflow';
 import {
-    processChangeSet,
-    waitForChangeSetValidation,
     waitForDeployment,
-    processWorkflowUpdates,
+    isStackInReview,
+    mapChangesToStackChanges,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
-    CreateStackActionParams,
+    CreateDeploymentParams,
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
-import { DRY_RUN_VALIDATION_NAME } from '../../../src/stacks/actions/ValidationWorkflow';
 
-vi.mock('../../../src/stacks/actions/StackActionOperations');
+vi.mock('../../../src/stacks/actions/StackActionOperations', async () => {
+    const actual = await vi.importActual('../../../src/stacks/actions/StackActionOperations');
+    return {
+        ...actual,
+        waitForDeployment: vi.fn(),
+        determineChangeSetType: vi.fn(),
+        mapChangesToStackChanges: vi.fn(),
+        isStackInReview: vi.fn(),
+    };
+});
 
 describe('DeploymentWorkflow', () => {
     let deploymentWorkflow: DeploymentWorkflow;
     let mockCfnService: CfnService;
     let mockDocumentManager: DocumentManager;
 
+    const testId = 'test-id';
+    const testStackName = 'test-stack';
+    const testChangeSetName = 'test-change-set-name';
+
+    const testCreateDeploymentParams: CreateDeploymentParams = {
+        id: testId,
+        stackName: testStackName,
+        changeSetName: testChangeSetName,
+    };
+
+    const testIdentifiableParams: Identifiable = {
+        id: testId,
+    };
+
     beforeEach(() => {
         mockCfnService = {
-            describeStacks: vi.fn(),
+            executeChangeSet: vi.fn(),
+            describeChangeSet: vi.fn(),
+            describeStackEvents: vi.fn(),
         } as any;
         mockDocumentManager = {} as DocumentManager;
         deploymentWorkflow = new DeploymentWorkflow(mockCfnService, mockDocumentManager);
+
         vi.clearAllMocks();
     });
 
     describe('start', () => {
-        it('should start deployment workflow with CREATE when stack does not exist', async () => {
-            const params: CreateStackActionParams = {
-                id: 'test-id',
-                uri: 'file:///test.yaml',
-                stackName: 'test-stack',
-            };
+        it('should execute changeset and start deployment workflow', async () => {
+            const mockChanges = [{ Action: 'Add', ResourceType: 'AWS::S3::Bucket' }];
+            const mockMappedChanges = [
+                { type: 'Resource', resourceChange: { action: 'Add', logicalResourceId: 'MyBucket' } },
+            ];
 
-            mockCfnService.describeStacks = vi.fn().mockRejectedValue(new Error('Stack does not exist'));
-            (processChangeSet as any).mockResolvedValue('changeset-123');
+            mockCfnService.executeChangeSet = vi.fn().mockResolvedValue({});
+            mockCfnService.describeChangeSet = vi.fn().mockResolvedValue({ Changes: mockChanges });
+            (mapChangesToStackChanges as any).mockReturnValue(mockMappedChanges);
+            (isStackInReview as any).mockResolvedValue(true);
 
-            const result = await deploymentWorkflow.start(params);
+            // Don't resolve waitForDeployment so async operation stays pending
+            (waitForDeployment as any).mockImplementation(() => new Promise(() => {}));
 
-            expect(result).toEqual({
-                id: 'test-id',
-                changeSetName: 'changeset-123',
-                stackName: 'test-stack',
+            const result = await deploymentWorkflow.start(testCreateDeploymentParams);
+
+            expect(mockCfnService.executeChangeSet).toHaveBeenCalledWith({
+                StackName: testStackName,
+                ChangeSetName: testChangeSetName,
+                ClientRequestToken: testId,
             });
 
-            expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'CREATE');
-        });
-
-        it('should start deployment workflow with UPDATE when stack exists', async () => {
-            const params: CreateStackActionParams = {
-                id: 'test-id',
-                uri: 'file:///test.yaml',
-                stackName: 'test-stack',
-            };
-
-            mockCfnService.describeStacks = vi.fn().mockResolvedValue({ Stacks: [{ StackName: 'test-stack' }] });
-            (processChangeSet as any).mockResolvedValue('changeset-123');
-
-            const result = await deploymentWorkflow.start(params);
-
-            expect(result).toEqual({
-                id: 'test-id',
-                changeSetName: 'changeset-123',
-                stackName: 'test-stack',
+            expect(mockCfnService.describeChangeSet).toHaveBeenCalledWith({
+                StackName: testStackName,
+                ChangeSetName: testChangeSetName,
+                IncludePropertyValues: true,
             });
 
-            expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'UPDATE');
-        });
+            expect(result).toEqual(testCreateDeploymentParams);
 
-        it('should start deployment workflow with IMPORT when resourcesToImport has items', async () => {
-            const params: CreateStackActionParams = {
-                id: 'test-id',
-                uri: 'file:///test.yaml',
-                stackName: 'test-stack',
-                resourcesToImport: [
-                    {
-                        ResourceType: 'AWS::S3::Bucket',
-                        LogicalResourceId: 'MyBucket',
-                        ResourceIdentifier: { BucketName: 'my-bucket' },
-                    },
-                ],
-            };
-
-            (processChangeSet as any).mockResolvedValue('changeset-123');
-
-            const result = await deploymentWorkflow.start(params);
-
-            expect(result).toEqual({
-                id: 'test-id',
-                changeSetName: 'changeset-123',
-                stackName: 'test-stack',
-            });
-
-            expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'IMPORT');
-            expect(mockCfnService.describeStacks).not.toHaveBeenCalled();
-        });
-
-        it('should start deployment workflow with CREATE when resourcesToImport is empty array', async () => {
-            const params: CreateStackActionParams = {
-                id: 'test-id',
-                uri: 'file:///test.yaml',
-                stackName: 'test-stack',
-                resourcesToImport: [],
-            };
-
-            mockCfnService.describeStacks = vi.fn().mockRejectedValue(new Error('Stack does not exist'));
-            (processChangeSet as any).mockResolvedValue('changeset-123');
-
-            const result = await deploymentWorkflow.start(params);
-
-            expect(result).toEqual({
-                id: 'test-id',
-                changeSetName: 'changeset-123',
-                stackName: 'test-stack',
-            });
-
-            expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'CREATE');
-        });
-
-        it('should start deployment workflow with UPDATE when resourcesToImport is undefined and stack exists', async () => {
-            const params: CreateStackActionParams = {
-                id: 'test-id',
-                uri: 'file:///test.yaml',
-                stackName: 'test-stack',
-                resourcesToImport: undefined,
-            };
-
-            mockCfnService.describeStacks = vi.fn().mockResolvedValue({ Stacks: [{ StackName: 'test-stack' }] });
-            (processChangeSet as any).mockResolvedValue('changeset-123');
-
-            const result = await deploymentWorkflow.start(params);
-
-            expect(result).toEqual({
-                id: 'test-id',
-                changeSetName: 'changeset-123',
-                stackName: 'test-stack',
-            });
-
-            expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'UPDATE');
+            // Verify initial workflow state is set (async operation is still pending)
+            const workflow = (deploymentWorkflow as any).workflows.get(testId);
+            expect(workflow.phase).toBe(StackActionPhase.DEPLOYMENT_IN_PROGRESS);
+            expect(workflow.state).toBe(StackActionState.IN_PROGRESS);
+            expect(workflow.changes).toBe(mockMappedChanges);
         });
     });
 
     describe('getStatus', () => {
-        it('should return workflow status', () => {
-            const params = { id: 'test-id' };
-
+        it('should get workflow status', () => {
             const workflow = {
-                id: 'test-id',
-                changeSetName: 'changeset-123',
-                stackName: 'test-stack',
-                phase: StackActionPhase.VALIDATION_IN_PROGRESS,
+                id: testId,
+                changeSetName: testChangeSetName,
+                stackName: testStackName,
+                phase: StackActionPhase.DEPLOYMENT_IN_PROGRESS,
                 startTime: Date.now(),
                 state: StackActionState.IN_PROGRESS,
             };
 
             // Directly set workflow state
-            (deploymentWorkflow as any).workflows.set('test-id', workflow);
+            (deploymentWorkflow as any).workflows.set(testId, workflow);
 
-            const result = deploymentWorkflow.getStatus(params);
+            const result = deploymentWorkflow.getStatus(testIdentifiableParams);
 
             expect(result).toEqual({
-                phase: StackActionPhase.VALIDATION_IN_PROGRESS,
+                phase: StackActionPhase.DEPLOYMENT_IN_PROGRESS,
                 state: StackActionState.IN_PROGRESS,
                 changes: undefined,
-                id: 'test-id',
+                id: testId,
             });
         });
 
         it('should throw error when workflow not found', () => {
-            const params = { id: 'nonexistent-id' };
+            const getStatusParams = { id: 'nonexistent-id' };
 
-            expect(() => deploymentWorkflow.getStatus(params)).toThrow('Workflow not found: nonexistent-id');
+            expect(() => deploymentWorkflow.getStatus(getStatusParams)).toThrow('Workflow not found: nonexistent-id');
         });
     });
 
     describe('describeStatus', () => {
-        it('should return workflow status with validation details and deployment events', () => {
-            const params = { id: 'test-id' };
+        it('should return workflow status with deployment events and failure reason', () => {
             const changes = [{ type: 'Resource', resourceChange: { action: 'Add', logicalResourceId: 'MyBucket' } }];
 
             const workflow = {
-                id: 'test-id',
-                changeSetName: 'changeset-123',
-                stackName: 'test-stack',
+                id: testId,
+                changeSetName: testChangeSetName,
+                stackName: testStackName,
                 phase: StackActionPhase.DEPLOYMENT_COMPLETE,
                 startTime: Date.now(),
                 state: StackActionState.SUCCESSFUL,
                 changes: changes,
-                validationDetails: [{ Timestamp: new Date(), Severity: 'INFO', Message: 'Validation succeeded' }],
                 deploymentEvents: [{ LogicalResourceId: 'MyBucket', ResourceType: 'AWS::S3::Bucket' }],
+                failureReason: undefined,
             };
 
             // Directly set workflow state
-            (deploymentWorkflow as any).workflows.set('test-id', workflow);
+            (deploymentWorkflow as any).workflows.set(testId, workflow);
 
-            const result = deploymentWorkflow.describeStatus(params);
+            const result = deploymentWorkflow.describeStatus(testIdentifiableParams);
 
             expect(result).toEqual({
                 phase: StackActionPhase.DEPLOYMENT_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
                 changes: changes,
-                id: 'test-id',
-                ValidationDetails: workflow.validationDetails,
+                id: testId,
                 DeploymentEvents: workflow.deploymentEvents,
+                FailureReason: workflow.failureReason,
             });
         });
 
         it('should throw error when workflow not found', () => {
-            const params = { id: 'nonexistent-id' };
+            const describeStatusParams = { id: 'nonexistent-id' };
 
-            expect(() => deploymentWorkflow.describeStatus(params)).toThrow('Workflow not found: nonexistent-id');
+            expect(() => deploymentWorkflow.describeStatus(describeStatusParams)).toThrow(
+                'Workflow not found: nonexistent-id',
+            );
         });
     });
 
@@ -235,9 +182,8 @@ describe('DeploymentWorkflow', () => {
         };
 
         beforeEach(() => {
-            mockCfnService.describeStacks = vi.fn().mockRejectedValue(new Error('Stack not found'));
-
             mockCfnService.executeChangeSet = vi.fn().mockResolvedValue({});
+            mockCfnService.describeChangeSet = vi.fn().mockResolvedValue({ Changes: [] });
 
             mockCfnService.describeStackEvents = vi.fn().mockResolvedValue({
                 StackEvents: [
@@ -257,63 +203,31 @@ describe('DeploymentWorkflow', () => {
                 ],
             });
 
-            (processChangeSet as any).mockResolvedValue('test-changeset');
-
-            (waitForChangeSetValidation as any).mockResolvedValue({
-                phase: StackActionPhase.VALIDATION_COMPLETE,
-                state: StackActionState.SUCCESSFUL,
-                changes: [],
-            });
-
             (waitForDeployment as any).mockResolvedValue({
                 phase: StackActionPhase.DEPLOYMENT_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
             });
 
-            (processWorkflowUpdates as any).mockImplementation((map: any, workflow: any, updates: any) => {
-                const updated = { ...workflow, ...updates };
-                map.set(workflow.id, updated);
-                return updated;
-            });
+            (isStackInReview as any).mockResolvedValue(true);
+            (mapChangesToStackChanges as any).mockReturnValue([]);
+
+            // Don't mock processWorkflowUpdates - use the real implementation
         });
 
         it('should execute full deployment workflow successfully', async () => {
-            const workflowId = 'test-workflow-id';
-            const params: CreateStackActionParams = {
-                id: workflowId,
-                stackName: 'test-stack',
-                uri: 'file://test.yaml',
-                parameters: [],
-                capabilities: [],
-            };
+            await deploymentWorkflow.start(testCreateDeploymentParams);
+            await waitForWorkflowCompletion(testId);
 
-            await deploymentWorkflow.start(params);
-            await waitForWorkflowCompletion(workflowId);
-
-            // Verify StackActionOperations method calls
-            expect(processChangeSet).toHaveBeenCalledWith(
-                mockCfnService,
-                mockDocumentManager,
-                params,
-                ChangeSetType.CREATE,
-            );
-            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'test-changeset', 'test-stack');
             expect(mockCfnService.executeChangeSet).toHaveBeenCalledWith({
-                StackName: 'test-stack',
-                ChangeSetName: 'test-changeset',
-                ClientRequestToken: workflowId,
+                StackName: testStackName,
+                ChangeSetName: testChangeSetName,
+                ClientRequestToken: testId,
             });
-            expect(waitForDeployment).toHaveBeenCalledWith(mockCfnService, 'test-stack', ChangeSetType.CREATE);
+            expect(waitForDeployment).toHaveBeenCalledWith(mockCfnService, testStackName, ChangeSetType.CREATE);
 
-            const workflow = (deploymentWorkflow as any).workflows.get(workflowId);
+            const workflow = (deploymentWorkflow as any).workflows.get(testId);
             expect(workflow.state).toBe(StackActionState.SUCCESSFUL);
             expect(workflow.phase).toBe(StackActionPhase.DEPLOYMENT_COMPLETE);
-            expect(workflow.validationDetails).toBeDefined();
-            expect(workflow.validationDetails).toHaveLength(1);
-            expect(workflow.validationDetails[0].Severity).toBe('INFO');
-            expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
-            expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
-            expect(workflow.deploymentEvents).toBeDefined();
             expect(workflow.deploymentEvents).toHaveLength(2);
             expect(workflow.deploymentEvents[0].LogicalResourceId).toBe('MyBucket');
             expect(workflow.deploymentEvents[0].ResourceType).toBe('AWS::S3::Bucket');
@@ -322,94 +236,53 @@ describe('DeploymentWorkflow', () => {
             expect(workflow.failureReason).toBeUndefined();
         });
 
-        it('should handle waitForValidation returning failed', async () => {
-            // Override the default mock for this test
-            (waitForChangeSetValidation as any).mockResolvedValueOnce({
-                phase: StackActionPhase.VALIDATION_FAILED,
+        it('should handle waitForDeployment returning failed', async () => {
+            (waitForDeployment as any).mockResolvedValue({
+                phase: StackActionPhase.DEPLOYMENT_FAILED,
                 state: StackActionState.FAILED,
-                failureReason: 'Invalid template',
             });
 
-            const workflowId = 'test-workflow-id';
-            const params: CreateStackActionParams = {
-                id: workflowId,
-                stackName: 'test-stack',
-                uri: 'file://test.yaml',
-                parameters: [],
-                capabilities: [],
-            };
+            await deploymentWorkflow.start(testCreateDeploymentParams);
+            await waitForWorkflowCompletion(testId);
 
-            await deploymentWorkflow.start(params);
-            await waitForWorkflowCompletion(workflowId);
-
-            const workflow = (deploymentWorkflow as any).workflows.get(workflowId);
+            const workflow = (deploymentWorkflow as any).workflows.get(testId);
             expect(workflow.state).toBe(StackActionState.FAILED);
-            expect(workflow.validationDetails[0].Message).toContain('Validation failed with reason: Invalid template');
+            expect(workflow.phase).toBe(StackActionPhase.DEPLOYMENT_FAILED);
         });
 
-        it('should handle waitForValidation throwing exception', async () => {
-            // Override the default mock for this test
-            (waitForChangeSetValidation as any).mockRejectedValueOnce(new Error('Validation service error'));
+        it('should handle waitForDeployment throwing exception', async () => {
+            (waitForDeployment as any).mockRejectedValue(new Error('Deployment service error'));
 
-            const workflowId = 'test-workflow-id';
-            const params: CreateStackActionParams = {
-                id: workflowId,
-                stackName: 'test-stack',
-                uri: 'file://test.yaml',
-                parameters: [],
-                capabilities: [],
-            };
+            await deploymentWorkflow.start(testCreateDeploymentParams);
 
-            await deploymentWorkflow.start(params);
-            await waitForWorkflowCompletion(workflowId);
+            // Wait longer for the async error to be processed
+            await new Promise((resolve) => setTimeout(resolve, 200));
 
-            const workflow = (deploymentWorkflow as any).workflows.get(workflowId);
+            const workflow = (deploymentWorkflow as any).workflows.get(testId);
             expect(workflow.state).toBe(StackActionState.FAILED);
-            expect(workflow.failureReason).toBe('Validation service error');
+            expect(workflow.phase).toBe(StackActionPhase.DEPLOYMENT_FAILED);
+            expect(workflow.failureReason).toBe('Deployment service error');
         });
 
         it('should handle executeChangeSet throwing exception', async () => {
-            // Override the default mock for this test
             mockCfnService.executeChangeSet = vi.fn().mockRejectedValueOnce(new Error('Execute changeset failed'));
 
-            const workflowId = 'test-workflow-id';
-            const params: CreateStackActionParams = {
-                id: workflowId,
-                stackName: 'test-stack',
-                uri: 'file://test.yaml',
-                parameters: [],
-                capabilities: [],
-            };
-
-            await deploymentWorkflow.start(params);
-            await waitForWorkflowCompletion(workflowId);
-
-            const workflow = (deploymentWorkflow as any).workflows.get(workflowId);
-            expect(workflow.state).toBe(StackActionState.FAILED);
-            expect(workflow.phase).toBe(StackActionPhase.DEPLOYMENT_FAILED);
-            expect(workflow.failureReason).toBe('Execute changeset failed');
+            await expect(deploymentWorkflow.start(testCreateDeploymentParams)).rejects.toThrow(
+                'Execute changeset failed',
+            );
         });
 
         it('should handle processDeploymentEvents throwing exception', async () => {
-            // Override the default mock for this test
             mockCfnService.describeStackEvents = vi.fn().mockRejectedValueOnce(new Error('Failed to get stack events'));
 
-            const workflowId = 'test-workflow-id';
-            const params: CreateStackActionParams = {
-                id: workflowId,
-                stackName: 'test-stack',
-                uri: 'file://test.yaml',
-                parameters: [],
-                capabilities: [],
-            };
-
-            await deploymentWorkflow.start(params);
-            await waitForWorkflowCompletion(workflowId);
+            await deploymentWorkflow.start(testCreateDeploymentParams);
+            await waitForWorkflowCompletion(testId);
 
             // Workflow should still succeed even if processDeploymentEvents fails
-            const workflow = (deploymentWorkflow as any).workflows.get(workflowId);
-            expect(workflow.state).toBe(StackActionState.SUCCESSFUL);
-            expect(workflow.phase).toBe(StackActionPhase.DEPLOYMENT_COMPLETE);
+            const workflow = (deploymentWorkflow as any).workflows.get(testId);
+            expect(workflow.state).toBe(StackActionState.FAILED);
+            expect(workflow.phase).toBe(StackActionPhase.DEPLOYMENT_FAILED);
+            expect(workflow.failureReason).toBe('Failed to get stack events');
             expect(workflow.deploymentEvents).toBeUndefined();
         });
     });

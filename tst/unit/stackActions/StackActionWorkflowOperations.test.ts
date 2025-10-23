@@ -1,4 +1,4 @@
-import { Change, ChangeSetType } from '@aws-sdk/client-cloudformation';
+import { Change, ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { DateTime } from 'luxon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -15,9 +15,10 @@ import {
     mapChangesToStackChanges,
     parseValidationEvents,
     publishValidationDiagnostics,
+    isStackInReview,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
-    CreateStackActionParams,
+    CreateValidationParams,
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
@@ -45,6 +46,7 @@ describe('StackActionWorkflowOperations', () => {
             waitUntilStackUpdateComplete: vi.fn(),
             waitUntilStackCreateComplete: vi.fn(),
             deleteStack: vi.fn(),
+            describeStacks: vi.fn(),
         } as any;
 
         mockDocumentManager = {
@@ -56,7 +58,7 @@ describe('StackActionWorkflowOperations', () => {
 
     describe('processChangeSet', () => {
         it('should create change set successfully', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -84,7 +86,7 @@ describe('StackActionWorkflowOperations', () => {
         });
 
         it('should throw error when document not found', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///missing.yaml',
                 stackName: 'test-stack',
@@ -495,6 +497,78 @@ describe('StackActionWorkflowOperations', () => {
                     }),
                 ],
             );
+        });
+    });
+
+    describe('isStackInReview', () => {
+        it('should return true when stack status is REVIEW_IN_PROGRESS', async () => {
+            (mockCfnService.describeStacks as any).mockResolvedValue({
+                Stacks: [
+                    {
+                        StackName: 'test-stack',
+                        StackStatus: StackStatus.REVIEW_IN_PROGRESS,
+                    },
+                ],
+            });
+
+            const result = await isStackInReview('test-stack', mockCfnService);
+
+            expect(result).toBe(true);
+            expect(mockCfnService.describeStacks).toHaveBeenCalledWith({
+                StackName: 'test-stack',
+            });
+        });
+
+        it('should return false when stack status is not REVIEW_IN_PROGRESS', async () => {
+            (mockCfnService.describeStacks as any).mockResolvedValue({
+                Stacks: [
+                    {
+                        StackName: 'test-stack',
+                        StackStatus: StackStatus.CREATE_COMPLETE,
+                    },
+                ],
+            });
+
+            const result = await isStackInReview('test-stack', mockCfnService);
+
+            expect(result).toBe(false);
+        });
+
+        it('should throw error when stack is not found', async () => {
+            (mockCfnService.describeStacks as any).mockResolvedValue({
+                Stacks: [],
+            });
+
+            await expect(isStackInReview('missing-stack', mockCfnService)).rejects.toThrow(
+                'Stack not found: missing-stack',
+            );
+        });
+
+        it('should throw error when Stacks array is undefined', async () => {
+            (mockCfnService.describeStacks as any).mockResolvedValue({
+                Stacks: undefined,
+            });
+
+            await expect(isStackInReview('test-stack', mockCfnService)).rejects.toThrow('Stack not found: test-stack');
+        });
+
+        it('should handle multiple stacks and find the correct one', async () => {
+            (mockCfnService.describeStacks as any).mockResolvedValue({
+                Stacks: [
+                    {
+                        StackName: 'other-stack',
+                        StackStatus: StackStatus.CREATE_COMPLETE,
+                    },
+                    {
+                        StackName: 'test-stack',
+                        StackStatus: StackStatus.REVIEW_IN_PROGRESS,
+                    },
+                ],
+            });
+
+            const result = await isStackInReview('test-stack', mockCfnService);
+
+            expect(result).toBe(true);
         });
     });
 });

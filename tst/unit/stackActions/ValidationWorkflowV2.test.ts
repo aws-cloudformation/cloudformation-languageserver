@@ -15,7 +15,7 @@ import {
     publishValidationDiagnostics,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
-    CreateStackActionParams,
+    CreateValidationParams,
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
@@ -108,7 +108,7 @@ describe('ValidationWorkflowV2', () => {
 
     describe('full workflow execution', () => {
         it('should handle successful validation workflow with events and diagnostics publishing', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -178,7 +178,7 @@ describe('ValidationWorkflowV2', () => {
         });
 
         it('should handle validation failure', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -201,7 +201,7 @@ describe('ValidationWorkflowV2', () => {
         });
 
         it('should handle validation exception', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -220,7 +220,7 @@ describe('ValidationWorkflowV2', () => {
         });
 
         it('should handle Describe Events failure', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
