@@ -197,14 +197,14 @@ describe('DeploymentWorkflow', () => {
                             Timestamp: new Date('2023-01-01T10:00:00Z'),
                             ResourceStatus: 'CREATE_COMPLETE',
                             ResourceStatusReason: 'Resource creation completed successfully',
-                            ClientRequestToken: 'test-workflow-id',
+                            ClientRequestToken: testId,
                         },
                         {
                             LogicalResourceId: 'MyRole',
                             ResourceType: 'AWS::IAM::Role',
                             Timestamp: new Date('2023-01-01T10:01:00Z'),
                             ResourceStatus: 'CREATE_COMPLETE',
-                            ClientRequestToken: 'test-workflow-id',
+                            ClientRequestToken: testId,
                         },
                     ],
                 });
