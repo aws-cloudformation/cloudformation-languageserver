@@ -1,5 +1,6 @@
-import { readFileSync } from 'fs';
+import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { CombinedSchemas } from '../../src/schema/CombinedSchemas';
 import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from '../../src/schema/RegionalSchemas';
 import { ResourceSchema } from '../../src/schema/ResourceSchema';
@@ -174,4 +175,23 @@ export function schemaFileType(schemas: (typeof Schemas.S3Bucket)[] = Object.val
             createdMs: Date.now(),
         };
     });
+}
+
+export function getTestPrivateSchemas(): DescribeTypeOutput[] {
+    const schemas: DescribeTypeOutput[] = [];
+    const privateSchemasDir = join(__dirname, '..', 'resources', 'private-schemas');
+
+    for (const file of readdirSync(privateSchemasDir)) {
+        const content = readFileSync(join(privateSchemasDir, file), 'utf8');
+        const schema = JSON.parse(content);
+
+        schemas.push({
+            TypeName: schema.typeName,
+            Schema: content,
+            Type: 'RESOURCE',
+            Visibility: 'PRIVATE',
+        });
+    }
+
+    return schemas;
 }

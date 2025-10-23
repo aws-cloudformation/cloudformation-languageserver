@@ -26,7 +26,7 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
     constructor(
         private readonly contextManager: ContextManager,
         private readonly inlineCompletionProviderMap: Map<InlineCompletionProviderType, InlineCompletionProvider>,
-        private readonly documentManager: DocumentManager,
+        private readonly schemaService: RelationshipSchemaService,
     ) {}
 
     @Track({ name: 'getInlineCompletions' })
@@ -97,8 +97,7 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
         );
     }
 
-    static create(core: CfnInfraCore, external: CfnExternal) {
-        const relationshipSchemaService = new RelationshipSchemaService();
+    static create(core: CfnInfraCore, external: CfnExternal, relationshipSchemaService: RelationshipSchemaService) {
         return new InlineCompletionRouter(
             core.contextManager,
             createInlineCompletionProviders(
@@ -107,7 +106,7 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
                 external.schemaRetriever,
                 core.syntaxTreeManager,
             ),
-            core.documentManager,
+            relationshipSchemaService,
         );
     }
 }

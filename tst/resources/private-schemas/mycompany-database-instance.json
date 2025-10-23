@@ -1,0 +1,35 @@
+{
+  "typeName": "MyCompany::Database::Instance",
+  "description": "A custom database instance resource",
+  "properties": {
+    "InstanceId": {
+      "type": "string",
+      "description": "Unique identifier for the database instance"
+    },
+    "Engine": {
+      "type": "string",
+      "enum": [
+        "mysql",
+        "postgres",
+        "mongodb"
+      ]
+    },
+    "InstanceClass": {
+      "type": "string",
+      "pattern": "^db\\.[a-z0-9]+\\.[a-z0-9]+$"
+    },
+    "AllocatedStorage": {
+      "type": "integer",
+      "minimum": 20,
+      "maximum": 65536
+    }
+  },
+  "required": [
+    "InstanceId",
+    "Engine"
+  ],
+  "primaryIdentifier": [
+    "/properties/InstanceId"
+  ],
+  "additionalProperties": false
+}

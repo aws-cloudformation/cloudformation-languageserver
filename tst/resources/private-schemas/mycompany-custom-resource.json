@@ -1,0 +1,43 @@
+{
+  "typeName": "MyCompany::Custom::Resource",
+  "description": "A custom private resource type for testing",
+  "properties": {
+    "Name": {
+      "type": "string",
+      "description": "The name of the custom resource"
+    },
+    "Configuration": {
+      "type": "object",
+      "description": "Configuration settings",
+      "properties": {
+        "Enabled": {
+          "type": "boolean"
+        },
+        "Value": {
+          "type": "string"
+        }
+      }
+    },
+    "Tags": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "Key": {
+            "type": "string"
+          },
+          "Value": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "Name"
+  ],
+  "primaryIdentifier": [
+    "/properties/Name"
+  ],
+  "additionalProperties": false
+}
