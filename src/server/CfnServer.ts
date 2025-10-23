@@ -23,6 +23,7 @@ import {
     getResourceTypesHandler,
     importResourceStateHandler,
     refreshResourceListHandler,
+    searchResourceHandler,
     getStackMgmtInfo,
 } from '../handlers/ResourceHandler';
 import {
@@ -112,6 +113,7 @@ export class CfnServer {
 
         this.lsp.resourceHandlers.onListResources(listResourcesHandler(this.components));
         this.lsp.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));
+        this.lsp.resourceHandlers.onSearchResource(searchResourceHandler(this.components));
         this.lsp.resourceHandlers.onGetResourceTypes(getResourceTypesHandler(this.components));
         this.lsp.resourceHandlers.onResourceStateImport(importResourceStateHandler(this.components));
         this.lsp.resourceHandlers.onStackMgmtInfo(getStackMgmtInfo(this.components));

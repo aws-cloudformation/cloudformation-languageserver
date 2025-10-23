@@ -31,6 +31,7 @@ export type ValidationWaitForResult = {
     phase: StackActionPhase;
     changes?: StackChange[];
     failureReason?: string;
+    nextToken?: string;
 };
 
 export type DeploymentWaitForResult = {

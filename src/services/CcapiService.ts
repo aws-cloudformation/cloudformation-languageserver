@@ -3,10 +3,14 @@ import {
     GetResourceCommand,
     GetResourceInput,
     ListResourcesCommand,
-    ListResourcesInput,
     ListResourcesOutput,
 } from '@aws-sdk/client-cloudcontrol';
 import { AwsClient } from './AwsClient';
+
+export interface ListResourcesOptions {
+    nextToken?: string;
+    maxResults?: number;
+}
 
 export class CcapiService {
     constructor(private readonly awsClient: AwsClient) {}
@@ -16,26 +20,21 @@ export class CcapiService {
         return await request(client);
     }
 
-    public async listResources(typeName: string) {
+    public async listResources(typeName: string, options?: ListResourcesOptions): Promise<ListResourcesOutput> {
         return await this.withClient(async (client) => {
-            let nextToken: string | undefined;
-            const resourceList: ListResourcesOutput = {
-                TypeName: typeName,
-                ResourceDescriptions: [],
-            };
-            const listResourcesInput: ListResourcesInput = {
-                TypeName: typeName,
-            };
-            do {
-                const response = await client.send(new ListResourcesCommand(listResourcesInput));
-                if (response.ResourceDescriptions) {
-                    resourceList.ResourceDescriptions?.push(...response.ResourceDescriptions);
-                }
-                nextToken = response.NextToken;
-                listResourcesInput.NextToken = response.NextToken;
-            } while (nextToken);
+            const response = await client.send(
+                new ListResourcesCommand({
+                    TypeName: typeName,
+                    NextToken: options?.nextToken,
+                    MaxResults: options?.maxResults,
+                }),
+            );
 
-            return resourceList;
+            return {
+                TypeName: response.TypeName,
+                ResourceDescriptions: response.ResourceDescriptions,
+                NextToken: response.NextToken,
+            };
         });
     }
 

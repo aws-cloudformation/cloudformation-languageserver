@@ -46,13 +46,19 @@ export type ResourceType = string;
 
 export type ResourceIdentifier = string;
 
+export type ResourceRequest = {
+    resourceType: string;
+    nextToken?: string;
+};
+
 export type ListResourcesParams = {
-    resourceTypes?: string[];
+    resources?: ResourceRequest[];
 };
 
 export type ResourceSummary = {
     typeName: string;
     resourceIdentifiers: string[];
+    nextToken?: string;
 };
 
 export type ListResourcesResult = {
@@ -64,13 +70,27 @@ export const ListResourcesRequest = new RequestType<ListResourcesParams, ListRes
 );
 
 export type RefreshResourcesParams = {
-    resourceTypes: string[];
+    resources: ResourceRequest[];
 };
 
 export type RefreshResourcesResult = {
     resources: ResourceSummary[];
     refreshFailed: boolean;
 };
+
+export type SearchResourceParams = {
+    resourceType: string;
+    identifier: string;
+};
+
+export type SearchResourceResult = {
+    found: boolean;
+    resource?: ResourceSummary;
+};
+
+export const SearchResourceRequest = new RequestType<SearchResourceParams, SearchResourceResult, void>(
+    'aws/cfn/resources/search',
+);
 
 export const RefreshResourceListRequest = new RequestType<RefreshResourcesParams, RefreshResourcesResult, void>(
     'aws/cfn/resources/refresh',

@@ -13,6 +13,8 @@ import {
     ResourceStateResult,
     ResourceSummary,
     ResourceIdentifier,
+    SearchResourceParams,
+    SearchResourceResult,
 } from '../resourceState/ResourceStateTypes';
 import { ResourceStackManagementResult } from '../resourceState/StackManagementInfoProvider';
 import { ServerComponents } from '../server/ServerComponents';
@@ -38,22 +40,26 @@ export function getResourceTypesHandler(
 
 export function listResourcesHandler(
     components: ServerComponents,
-): ServerRequestHandler<ListResourcesParams, ListResourcesResult, never, void> {
+): RequestHandler<ListResourcesParams, ListResourcesResult, void> {
     return async (params: ListResourcesParams): Promise<ListResourcesResult> => {
         try {
-            const resourceTypes = params.resourceTypes;
-            if (!resourceTypes || resourceTypes.length === 0) {
+            const resourceRequests = params.resources;
+            if (!resourceRequests || resourceRequests.length === 0) {
                 return { resources: [] };
             }
 
             const resources: ResourceSummary[] = [];
 
-            for (const typeName of resourceTypes) {
-                const resourceList = await components.resourceStateManager.listResources(typeName);
+            for (const request of resourceRequests) {
+                const resourceList = await components.resourceStateManager.listResources(
+                    request.resourceType,
+                    request.nextToken,
+                );
                 if (resourceList) {
                     resources.push({
                         typeName: resourceList.typeName,
                         resourceIdentifiers: resourceList.resourceIdentifiers,
+                        nextToken: resourceList.nextToken,
                     });
                 }
             }
@@ -83,13 +89,37 @@ export function refreshResourceListHandler(
                 setTimeout(() => reject(new Error('Resource list refresh timed out')), 30_000),
             );
 
-            return await Promise.race([
-                components.resourceStateManager.refreshResourceList(params.resourceTypes),
-                timeout,
-            ]);
+            const resourceTypes = params.resources.map((r) => r.resourceType);
+            return await Promise.race([components.resourceStateManager.refreshResourceList(resourceTypes), timeout]);
         } catch (error) {
             log.error(error, 'Failed to refresh resource list');
             throw new Error(`Failed to refresh resource list: ${extractErrorMessage(error)}`);
+        }
+    };
+}
+
+export function searchResourceHandler(
+    components: ServerComponents,
+): ServerRequestHandler<SearchResourceParams, SearchResourceResult, never, void> {
+    return async (params: SearchResourceParams): Promise<SearchResourceResult> => {
+        try {
+            const result = await components.resourceStateManager.searchResourceByIdentifier(
+                params.resourceType,
+                params.identifier,
+            );
+            return {
+                found: result.found,
+                resource: result.resourceList
+                    ? {
+                          typeName: result.resourceList.typeName,
+                          resourceIdentifiers: result.resourceList.resourceIdentifiers,
+                          nextToken: result.resourceList.nextToken,
+                      }
+                    : undefined,
+            };
+        } catch (error) {
+            log.error(error, 'Failed to search resource');
+            return { found: false };
         }
     };
 }
