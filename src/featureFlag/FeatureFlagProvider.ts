@@ -2,8 +2,10 @@ import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import axios from 'axios';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
+import { extractErrorMessage } from '../utils/Errors';
 import { FeatureFlagConfig, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey } from './FeatureFlagConfig';
 import { Describable, FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 
@@ -30,7 +32,9 @@ export class FeatureFlagProvider implements Closeable {
         // Using 5 mins i.e. 12 requests in 1 hour
         this.timeout = setInterval(
             () => {
-                this.refresh().catch(log.error);
+                this.refresh().catch((err) => {
+                    log.error(`Failed to sync feature flags from remote: ${extractErrorMessage(err)}`);
+                });
             },
             5 * 60 * 1000,
         );
@@ -45,25 +49,26 @@ export class FeatureFlagProvider implements Closeable {
     }
 
     private async refresh() {
-        const newConfig = await getFromOnline(AwsEnv);
+        const newConfig = await this.getFromOnline(AwsEnv);
         this.config = new FeatureFlagConfig(newConfig);
 
         writeFileSync(FeatureFlagProvider.LocalFile, JSON.stringify(newConfig, undefined, 2));
         logFeatureFlags(this.config);
     }
 
+    @Measure({ name: 'getFromOnline' })
+    private async getFromOnline(env: string): Promise<unknown> {
+        const response = await axios<unknown>({
+            method: 'get',
+            url: `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/head/main/assets/featureFlag/${env.toLowerCase()}.json`,
+        });
+
+        return response.data;
+    }
+
     close() {
         clearInterval(this.timeout);
     }
-}
-
-async function getFromOnline(env: string): Promise<unknown> {
-    const response = await axios<unknown>({
-        method: 'get',
-        url: `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/head/main/assets/featureFlag/${env.toLowerCase()}.json`,
-    });
-
-    return response.data;
 }
 
 function logFeatureFlags(config: Describable) {
