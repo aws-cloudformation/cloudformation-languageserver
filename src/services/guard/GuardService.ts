@@ -1,3 +1,4 @@
+import { readFile } from 'fs/promises';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { NodeType } from '../../context/syntaxtree/utils/NodeType';
@@ -107,7 +108,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
             previousSettings.enabledRulePacks.length !== newSettings.enabledRulePacks.length ||
             !previousSettings.enabledRulePacks.every((pack, index) => pack === newSettings.enabledRulePacks[index]);
 
-        if (packListChanged) {
+        const rulesFileChanged = previousSettings.rulesFile !== newSettings.rulesFile;
+
+        if (packListChanged || rulesFileChanged) {
             this.revalidateAllDocuments();
         }
     }
@@ -178,7 +181,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
                 // Continue with validation but log the issues
             }
 
-            const enabledRules = this.getEnabledRulesByConfiguration();
+            const enabledRules = await this.getEnabledRulesByConfiguration();
 
             if (enabledRules.length === 0) {
                 this.publishDiagnostics(uri, []);
@@ -487,7 +490,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
     /**
      * Process the validation queue
      */
-    private processValidationQueue(): void {
+    private async processValidationQueue(): Promise<void> {
         if (this.isProcessingQueue || this.validationQueue.length === 0) {
             return;
         }
@@ -512,7 +515,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
                     continue;
                 }
 
-                const enabledRules = this.getEnabledRulesByConfiguration();
+                const enabledRules = await this.getEnabledRulesByConfiguration();
 
                 // Execute the validation
                 this.executeValidation(entry.uri, entry.content, enabledRules).then(entry.resolve).catch(entry.reject);
@@ -562,31 +565,110 @@ export class GuardService implements SettingsConfigurable, Closeable {
     /**
      * Get enabled rules based on current configuration
      */
-    private getEnabledRulesByConfiguration(): GuardRule[] {
-        const enabledPackNames = this.settings.enabledRulePacks;
+    private async getEnabledRulesByConfiguration(): Promise<GuardRule[]> {
         const enabledRules: GuardRule[] = [];
 
         // Track which packs each rule comes from for proper reporting
         this.ruleToPacksMap.clear();
 
-        for (const packName of enabledPackNames) {
+        // If rulesFile is specified, load rules from file
+        if (this.settings.rulesFile) {
             try {
-                const packRules = getRulesForPack(packName);
-                for (const ruleData of packRules) {
-                    // Track which packs this rule belongs to
-                    if (!this.ruleToPacksMap.has(ruleData.name)) {
-                        this.ruleToPacksMap.set(ruleData.name, new Set());
-                    }
-                    this.ruleToPacksMap.get(ruleData.name)?.add(packName);
-
-                    enabledRules.push(this.convertRuleDataToGuardRule(ruleData));
-                }
+                const customRules = await this.loadRulesFromFile(this.settings.rulesFile);
+                enabledRules.push(...customRules);
             } catch (error) {
-                this.log.error(`Failed to get rules for pack '${packName}': ${extractErrorMessage(error)}`);
+                this.log.error(
+                    `Failed to load rules from file '${this.settings.rulesFile}': ${extractErrorMessage(error)}`,
+                );
+                throw error;
+            }
+        } else {
+            // Use rule packs if no custom rules file is specified
+            const enabledPackNames = this.settings.enabledRulePacks;
+
+            for (const packName of enabledPackNames) {
+                try {
+                    const packRules = getRulesForPack(packName);
+                    for (const ruleData of packRules) {
+                        // Track which packs this rule belongs to
+                        if (!this.ruleToPacksMap.has(ruleData.name)) {
+                            this.ruleToPacksMap.set(ruleData.name, new Set());
+                        }
+                        this.ruleToPacksMap.get(ruleData.name)?.add(packName);
+
+                        enabledRules.push(this.convertRuleDataToGuardRule(ruleData));
+                    }
+                } catch (error) {
+                    this.log.error(`Failed to get rules for pack '${packName}': ${extractErrorMessage(error)}`);
+                }
             }
         }
 
         return enabledRules;
+    }
+
+    /**
+     * Load Guard rules from a file
+     */
+    private async loadRulesFromFile(filePath: string): Promise<GuardRule[]> {
+        try {
+            const fileContent = await readFile(filePath, 'utf8');
+            return this.parseRulesFromContent(fileContent, filePath);
+        } catch (error) {
+            throw new Error(`Failed to read rules file '${filePath}': ${extractErrorMessage(error)}`);
+        }
+    }
+
+    /**
+     * Parse Guard rules from file content
+     */
+    private parseRulesFromContent(content: string, filePath: string): GuardRule[] {
+        const rules: GuardRule[] = [];
+
+        // Split content by rule boundaries (rules start with 'rule' keyword)
+        // Use a more precise regex to match rule declarations
+        const ruleMatches = content.matchAll(/^rule\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{([\s\S]*?)^\}/gm);
+
+        for (const match of ruleMatches) {
+            const ruleName = match[1];
+            const fullRuleContent = match[0];
+
+            try {
+                const rule = this.parseRuleBlock(ruleName, fullRuleContent);
+                if (rule) {
+                    rules.push(rule);
+                }
+            } catch (error) {
+                this.log.warn(`Failed to parse rule '${ruleName}' in '${filePath}': ${extractErrorMessage(error)}`);
+            }
+        }
+
+        if (rules.length === 0) {
+            this.log.warn(`No valid rules found in file '${filePath}'`);
+        }
+
+        return rules;
+    }
+
+    /**
+     * Parse a single rule block
+     */
+    private parseRuleBlock(ruleName: string, fullRuleContent: string): GuardRule | null {
+        // Extract message from rule content if available
+        const extractedMessage = GuardEngine.extractRuleMessage(fullRuleContent);
+
+        const description = `Custom rule ${ruleName}`;
+        const message = extractedMessage ?? undefined; // Let Guard engine handle default messaging
+
+        return {
+            name: ruleName,
+            content: fullRuleContent,
+            description,
+            severity: this.getDefaultSeverity(),
+            tags: ['custom', 'file'],
+            pack: 'custom',
+            message,
+        };
     }
 
     /**

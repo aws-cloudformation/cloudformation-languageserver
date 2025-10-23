@@ -64,6 +64,7 @@ function createGuardSchema(defaults: Settings['diagnostics']['cfnGuard']) {
             delayMs: z.number().default(defaults.delayMs),
             validateOnChange: z.boolean().default(defaults.validateOnChange),
             enabledRulePacks: z.array(z.string()).readonly().default(defaults.enabledRulePacks),
+            rulesFile: z.string().optional(),
             timeout: z.number().default(defaults.timeout),
             maxConcurrentValidations: z.number().default(defaults.maxConcurrentValidations),
             maxQueueSize: z.number().default(defaults.maxQueueSize),

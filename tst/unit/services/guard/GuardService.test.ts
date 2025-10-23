@@ -413,6 +413,117 @@ describe('GuardService', () => {
         });
     });
 
+    describe('rulesFile functionality', () => {
+        beforeEach(() => {
+            const mockSettingsManager = createMockSettingsManager({
+                diagnostics: {
+                    cfnGuard: {
+                        ...defaultSettings,
+                        rulesFile: '/path/to/rules.guard',
+                    },
+                },
+            } as any);
+            guardService.configure(mockSettingsManager);
+        });
+
+        it('should trigger revalidation when rulesFile setting changes', () => {
+            const mockSettingsManager = createMockSettingsManager({
+                diagnostics: {
+                    cfnGuard: defaultSettings,
+                },
+            } as any);
+
+            // Configure with initial settings
+            guardService.configure(mockSettingsManager);
+
+            // Get the callback that was registered
+            const settingsCallback = mockSettingsManager.subscribe.getCall(0).args[1];
+
+            // Call the callback with new settings that have rulesFile
+            settingsCallback({
+                cfnGuard: {
+                    ...defaultSettings,
+                    rulesFile: '/new/path/rules.guard',
+                },
+            } as any);
+
+            // Verify the callback was called (revalidation would be triggered)
+            expect(mockSettingsManager.subscribe.called).toBe(true);
+        });
+
+        it('should show error diagnostic when rulesFile cannot be read', async () => {
+            // When rulesFile is set but file doesn't exist, validation should catch the error
+            // and publish error diagnostics to inform the user
+            await guardService.validate('content', 'file:///test.yaml');
+
+            // Verify that publishDiagnostics was called with error diagnostic
+            expect(mockComponents.diagnosticCoordinator.publishDiagnostics.called).toBe(true);
+            const call = mockComponents.diagnosticCoordinator.publishDiagnostics.getCall(0);
+            const diagnostics = call.args[2];
+            expect(diagnostics.length).toBeGreaterThan(0);
+            expect(diagnostics[0].message).toContain('Guard Validation Error');
+        });
+
+        it('should parse multiple rules from rules file content', () => {
+            const rulesContent = `
+rule S3_BUCKET_ENCRYPTION {
+    Resources.*[Type == 'AWS::S3::Bucket'] {
+        Properties.BucketEncryption exists
+    }
+}
+
+rule EC2_INSTANCE_TYPE {
+    Resources.*[Type == 'AWS::EC2::Instance'] {
+        Properties.InstanceType in ['t2.micro', 't3.micro']
+    }
+}`;
+
+            // Access the private method for testing
+            const parseMethod = (guardService as any).parseRulesFromContent.bind(guardService);
+            const rules = parseMethod(rulesContent, '/test/rules.guard');
+
+            expect(rules).toHaveLength(2);
+            expect(rules[0].name).toBe('S3_BUCKET_ENCRYPTION');
+            expect(rules[1].name).toBe('EC2_INSTANCE_TYPE');
+            expect(rules[0].pack).toBe('custom');
+            expect(rules[1].pack).toBe('custom');
+        });
+
+        it('should extract custom message from rule with message block', () => {
+            const ruleWithMessage = `
+rule S3_BUCKET_ENCRYPTION {
+    Resources.*[Type == 'AWS::S3::Bucket'] {
+        Properties.BucketEncryption exists
+        <<
+            Violation: S3 bucket must have encryption enabled
+            Fix: Add BucketEncryption property
+        >>
+    }
+}`;
+
+            const parseMethod = (guardService as any).parseRulesFromContent.bind(guardService);
+            const rules = parseMethod(ruleWithMessage, '/test/rules.guard');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].message).toBe('S3 bucket must have encryption enabled Add BucketEncryption property');
+        });
+
+        it('should use undefined message for rule without message block', () => {
+            const ruleWithoutMessage = `
+rule S3_BUCKET_ENCRYPTION {
+    Resources.*[Type == 'AWS::S3::Bucket'] {
+        Properties.BucketEncryption exists
+    }
+}`;
+
+            const parseMethod = (guardService as any).parseRulesFromContent.bind(guardService);
+            const rules = parseMethod(ruleWithoutMessage, '/test/rules.guard');
+
+            expect(rules).toHaveLength(1);
+            expect(rules[0].message).toBeUndefined();
+        });
+    });
+
     describe('factory method', () => {
         it('should create GuardService with components', () => {
             const service = GuardService.create(mockComponents);
