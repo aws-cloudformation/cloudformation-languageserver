@@ -77,7 +77,9 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
 
         // Check for intrinsic function arguments first
         if (context.intrinsicContext.inIntrinsic()) {
-            const doc = this.hoverProviderMap.get(HoverType.IntrinsicFunctionArgument)?.getInformation(context);
+            const doc = this.hoverProviderMap
+                .get(HoverType.IntrinsicFunctionArgument)
+                ?.getInformation(context, textDocPosParams.position);
             if (doc) {
                 return doc;
             }

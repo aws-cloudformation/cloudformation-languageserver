@@ -1,13 +1,25 @@
+import { Position } from 'vscode-languageserver-protocol';
 import { Context } from '../context/Context';
 
 /**
  * Determines the position in GetAtt arguments (1 for resource, 2 for attribute)
  */
-export function determineGetAttPosition(args: unknown, context: Context): number {
+export function determineGetAttPosition(args: unknown, context: Context, cursorPosition?: Position): number {
     if (typeof args === 'string') {
         const dotIndex = args.indexOf('.');
         if (dotIndex === -1) {
             return 1;
+        }
+
+        // If we have cursor position, use it to determine which part is being hovered
+        if (cursorPosition) {
+            const nodeStart = context.startPosition;
+            const relativeChar = cursorPosition.character - nodeStart.column;
+
+            if (relativeChar <= dotIndex) {
+                return 1; // resource part
+            }
+            return 2; // attribute part
         }
 
         const resourcePart = args.slice(0, dotIndex);
@@ -66,4 +78,23 @@ export function extractGetAttResourceLogicalId(args: unknown): string | undefine
     }
 
     return undefined;
+}
+
+/**
+ * Extracts the attribute name from GetAtt arguments
+ */
+export function extractAttributeName(args: unknown, context: Context): string | undefined {
+    if (typeof args === 'string') {
+        const dotIndex = args.indexOf('.');
+        if (dotIndex !== -1) {
+            return args.slice(dotIndex + 1);
+        }
+        return undefined;
+    }
+
+    if (Array.isArray(args) && args.length >= 2) {
+        return args[1] as string;
+    }
+
+    return context.text;
 }
