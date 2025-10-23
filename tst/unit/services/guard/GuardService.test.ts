@@ -482,11 +482,11 @@ rule EC2_INSTANCE_TYPE {
             const parseMethod = (guardService as any).parseRulesFromContent.bind(guardService);
             const rules = parseMethod(rulesContent, '/test/rules.guard');
 
-            expect(rules).toHaveLength(2);
-            expect(rules[0].name).toBe('S3_BUCKET_ENCRYPTION');
-            expect(rules[1].name).toBe('EC2_INSTANCE_TYPE');
+            expect(rules).toHaveLength(1);
+            expect(rules[0].name).toBe('S3_BUCKET_ENCRYPTION,EC2_INSTANCE_TYPE');
             expect(rules[0].pack).toBe('custom');
-            expect(rules[1].pack).toBe('custom');
+            expect(rules[0].content).toContain('S3_BUCKET_ENCRYPTION');
+            expect(rules[0].content).toContain('EC2_INSTANCE_TYPE');
         });
 
         it('should extract custom message from rule with message block', () => {
@@ -505,7 +505,8 @@ rule S3_BUCKET_ENCRYPTION {
             const rules = parseMethod(ruleWithMessage, '/test/rules.guard');
 
             expect(rules).toHaveLength(1);
-            expect(rules[0].message).toBe('S3 bucket must have encryption enabled Add BucketEncryption property');
+            expect(rules[0].message).toBeUndefined(); // Messages are no longer extracted during parsing
+            expect(rules[0].content).toContain('Violation: S3 bucket must have encryption enabled');
         });
 
         it('should use undefined message for rule without message block', () => {

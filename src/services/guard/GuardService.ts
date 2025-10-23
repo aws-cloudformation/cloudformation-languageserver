@@ -623,31 +623,28 @@ export class GuardService implements SettingsConfigurable, Closeable {
      * Parse Guard rules from file content
      */
     private parseRulesFromContent(content: string, filePath: string): GuardRule[] {
-        const rules: GuardRule[] = [];
-
-        // Split content by rule boundaries (rules start with 'rule' keyword)
-        // Use a more precise regex to match rule declarations
-        const ruleMatches = content.matchAll(/^rule\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{([\s\S]*?)^\}/gm);
-
+        // Extract rule names for metadata but keep entire content together
+        const ruleNames: string[] = [];
+        const ruleMatches = content.matchAll(/^rule\s+([A-Za-z_][A-Za-z0-9_]*)/gm);
+        
         for (const match of ruleMatches) {
-            const ruleName = match[1];
-            const fullRuleContent = match[0];
-
-            try {
-                const rule = this.parseRuleBlock(ruleName, fullRuleContent);
-                if (rule) {
-                    rules.push(rule);
-                }
-            } catch (error) {
-                this.log.warn(`Failed to parse rule '${ruleName}' in '${filePath}': ${extractErrorMessage(error)}`);
-            }
+            ruleNames.push(match[1]);
         }
 
-        if (rules.length === 0) {
+        if (ruleNames.length === 0) {
             this.log.warn(`No valid rules found in file '${filePath}'`);
         }
 
-        return rules;
+        // Return single rule with entire content to preserve variable definitions
+        return [{
+            name: ruleNames.length > 0 ? ruleNames.join(',') : `rules-from-${filePath.split('/').pop()?.replace(/\.[^.]*$/, '') || 'file'}`,
+            content: content,
+            description: `Rules: ${ruleNames.join(', ')} from ${filePath}`,
+            severity: this.getDefaultSeverity(),
+            tags: ['custom', 'file'],
+            pack: 'custom',
+            message: undefined,
+        }];
     }
 
     /**
