@@ -505,8 +505,13 @@ rule S3_BUCKET_ENCRYPTION {
             const rules = parseMethod(ruleWithMessage, '/test/rules.guard');
 
             expect(rules).toHaveLength(1);
-            expect(rules[0].message).toBeUndefined(); // Messages are no longer extracted during parsing
+            expect(rules[0].message).toBeUndefined(); // Messages are stored separately for violation mapping
             expect(rules[0].content).toContain('Violation: S3 bucket must have encryption enabled');
+            // Check that custom message was stored in the service
+            const customMessages = (guardService as any).ruleCustomMessages;
+            expect(customMessages.get('S3_BUCKET_ENCRYPTION')).toBe(
+                'Violation: S3 bucket must have encryption enabled\n            Fix: Add BucketEncryption property',
+            );
         });
 
         it('should use undefined message for rule without message block', () => {
