@@ -275,6 +275,7 @@ export async function publishValidationDiagnostics(
     events: ValidationDetail[],
     syntaxTreeManager: SyntaxTreeManager,
     diagnosticCoordinator: DiagnosticCoordinator,
+    documentManager: DocumentManager,
 ): Promise<void> {
     const syntaxTree = syntaxTreeManager.getSyntaxTree(uri);
     if (!syntaxTree) {
@@ -296,7 +297,15 @@ export async function publishValidationDiagnostics(
             const nodeByPath = syntaxTree.getNodeByPath(pathSegments);
 
             startPosition = nodeByPath.node?.startPosition;
-            endPosition = nodeByPath.node?.endPosition;
+            if (startPosition) {
+                const line = documentManager.getLine(uri, startPosition?.row);
+                if (line) {
+                    endPosition = {
+                        row: startPosition.row,
+                        column: startPosition.column + line.length,
+                    };
+                }
+            }
         } else if (event.LogicalId) {
             // fall back to using LogicalId and underlining entire resource
             logger.debug({ event }, 'No ResourcePropertyPath found, falling back to using LogicalId');

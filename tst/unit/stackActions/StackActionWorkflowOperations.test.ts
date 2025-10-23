@@ -460,6 +460,7 @@ describe('StackActionWorkflowOperations', () => {
                 validationDetails,
                 mockSyntaxTreeManager,
                 mockDiagnosticCoordinator,
+                mockDocumentManager,
             );
 
             expect(mockSyntaxTree.getNodeByPath).toHaveBeenCalledWith([

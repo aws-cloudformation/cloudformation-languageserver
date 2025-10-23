@@ -174,6 +174,7 @@ describe('ValidationWorkflowV2', () => {
                 mockParseValidationEventsResponse,
                 mockSyntaxTreeManager,
                 mockDiagnosticCoordinator,
+                mockDocumentManager,
             );
         });
 
