@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-object-type */
 
-// Must be kept consistent with https://github.com/aws/language-server-runtimes
-export type IamCredentials = {
-    profile?: string;
-    accessKeyId: string;
-    secretAccessKey: string;
-    sessionToken?: string;
-    region?: string;
+import { AwsCredentialIdentity } from '@aws-sdk/types';
+
+export type IamCredentials = AwsCredentialIdentity & {
+    profile: string;
+    region: string;
 };
 
 export type BearerCredentials = {
@@ -26,6 +24,10 @@ export type UpdateCredentialsParams = {
     data: IamCredentials | BearerCredentials;
     metadata?: ConnectionMetadata;
     encrypted?: boolean;
+};
+
+export type UpdateCredentialsResult = {
+    success: boolean;
 };
 
 export type ProfileKind =

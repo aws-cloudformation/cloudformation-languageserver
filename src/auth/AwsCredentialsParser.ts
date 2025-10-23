@@ -19,11 +19,11 @@ const ProfileKindSchema = z.enum([
 ]);
 
 const IamCredentialsSchema = z.object({
-    profile: z.string().optional(),
+    profile: z.string({ message: 'Profile name is required' }),
     accessKeyId: z.string({ message: 'Access key ID is required' }),
     secretAccessKey: z.string({ message: 'Secret access key is required' }),
     sessionToken: z.string().optional(),
-    region: z.string().optional(),
+    region: z.string({ message: 'Region is required' }),
 });
 
 const BearerCredentialsSchema = z.object({

@@ -17,6 +17,7 @@ import {
     ListProfilesParams,
     SsoTokenChangedParams,
     UpdateCredentialsParams,
+    UpdateCredentialsResult,
     UpdateProfileParams,
 } from '../auth/AwsLspAuthTypes';
 
@@ -27,7 +28,7 @@ export class LspAuthHandlers {
     // ========================================
     // RECEIVE: Client → Server
     // ========================================
-    onIamCredentialsUpdate(handler: RequestHandler<UpdateCredentialsParams, void, void>) {
+    onIamCredentialsUpdate(handler: RequestHandler<UpdateCredentialsParams, UpdateCredentialsResult, void>) {
         this.connection.onRequest(IamCredentialsUpdateRequest.type, handler);
     }
 

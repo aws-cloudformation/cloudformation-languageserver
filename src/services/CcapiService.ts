@@ -12,7 +12,7 @@ export class CcapiService {
     constructor(private readonly awsClient: AwsClient) {}
 
     private async withClient<T>(request: (client: CloudControlClient) => Promise<T>): Promise<T> {
-        const client = await this.awsClient.getCloudControlClient();
+        const client = this.awsClient.getCloudControlClient();
         return await request(client);
     }
 

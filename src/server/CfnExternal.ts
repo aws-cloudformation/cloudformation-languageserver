@@ -63,7 +63,7 @@ export class CfnExternal implements Configurables, Closeable {
     }
 
     configurables(): Configurable[] {
-        return [this.schemaTaskManager, this.schemaRetriever, this.awsClient, this.cfnLintService, this.guardService];
+        return [this.schemaTaskManager, this.schemaRetriever, this.cfnLintService, this.guardService];
     }
 
     async close() {

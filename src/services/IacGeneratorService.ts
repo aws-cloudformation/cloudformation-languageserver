@@ -24,7 +24,7 @@ export class IacGeneratorService {
     constructor(private readonly awsClient: AwsClient) {}
 
     private async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
-        const client = await this.awsClient.getCloudFormationClient();
+        const client = this.awsClient.getCloudFormationClient();
         return await request(client);
     }
 

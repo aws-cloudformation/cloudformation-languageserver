@@ -29,15 +29,18 @@ describe('AuthHandler', () => {
     test('iamCredentialsUpdateHandler calls handleIamCredentialsUpdate', () => {
         const params: UpdateCredentialsParams = {
             data: {
+                profile: 'test-profile',
                 accessKeyId: 'test',
                 secretAccessKey: 'test',
                 region: 'Region',
             },
         };
-        iamCredentialsUpdateHandler(mockComponents)(params, mockCancellationToken);
+        awsCredentials.handleIamCredentialsUpdate.returns(true);
+        const result = iamCredentialsUpdateHandler(mockComponents)(params, mockCancellationToken);
 
         expect(awsCredentials.handleIamCredentialsUpdate.callCount).toBe(1);
         expect(awsCredentials.handleIamCredentialsUpdate.firstCall.args[0]).toStrictEqual(params);
+        expect(result).toEqual({ success: true });
     });
 
     test('bearerCredentialsUpdateHandler calls handleBearerCredentialsUpdate', () => {
