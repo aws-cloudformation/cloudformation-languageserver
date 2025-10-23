@@ -239,22 +239,29 @@ describe('DeploymentWorkflow', () => {
 
             mockCfnService.executeChangeSet = vi.fn().mockResolvedValue({});
 
-            mockCfnService.describeStackEvents = vi.fn().mockResolvedValue({
-                StackEvents: [
-                    {
-                        LogicalResourceId: 'MyBucket',
-                        ResourceType: 'AWS::S3::Bucket',
-                        Timestamp: new Date('2023-01-01T10:00:00Z'),
-                        ResourceStatus: 'CREATE_COMPLETE',
-                        ResourceStatusReason: 'Resource creation completed successfully',
-                    },
-                    {
-                        LogicalResourceId: 'MyRole',
-                        ResourceType: 'AWS::IAM::Role',
-                        Timestamp: new Date('2023-01-01T10:01:00Z'),
-                        ResourceStatus: 'CREATE_COMPLETE',
-                    },
-                ],
+            mockCfnService.describeStackEvents = vi.fn().mockImplementation((_params, options) => {
+                if (options?.nextToken) {
+                    return Promise.resolve({ StackEvents: [] });
+                }
+                return Promise.resolve({
+                    StackEvents: [
+                        {
+                            LogicalResourceId: 'MyBucket',
+                            ResourceType: 'AWS::S3::Bucket',
+                            Timestamp: new Date('2023-01-01T10:00:00Z'),
+                            ResourceStatus: 'CREATE_COMPLETE',
+                            ResourceStatusReason: 'Resource creation completed successfully',
+                            ClientRequestToken: 'test-workflow-id',
+                        },
+                        {
+                            LogicalResourceId: 'MyRole',
+                            ResourceType: 'AWS::IAM::Role',
+                            Timestamp: new Date('2023-01-01T10:01:00Z'),
+                            ResourceStatus: 'CREATE_COMPLETE',
+                            ClientRequestToken: 'test-workflow-id',
+                        },
+                    ],
+                });
             });
 
             (processChangeSet as any).mockResolvedValue('test-changeset');

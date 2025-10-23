@@ -19,6 +19,7 @@ import {
 import { StackActionWorkflow } from '../stacks/actions/StackActionWorkflowType';
 import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
 import { ValidationWorkflowV2 } from '../stacks/actions/ValidationWorkflowV2';
+import { StackManager } from '../stacks/StackManager';
 import { localCfnClientExists } from '../utils/ClientUtil';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
@@ -28,6 +29,7 @@ import { CfnInfraCore } from './CfnInfraCore';
 export class CfnLspProviders implements Configurables, Closeable {
     // Business logic
     readonly stackManagementInfoProvider: StackManagementInfoProvider;
+    readonly stackManager: StackManager;
     readonly validationWorkflowService: StackActionWorkflow<DescribeValidationStatusResult>;
     readonly deploymentWorkflowService: StackActionWorkflow<DescribeDeploymentStatusResult>;
     readonly resourceStateManager: ResourceStateManager;
@@ -49,6 +51,7 @@ export class CfnLspProviders implements Configurables, Closeable {
     constructor(core: CfnInfraCore, external: CfnExternal, overrides: Partial<CfnLspProviders> = {}) {
         this.stackManagementInfoProvider =
             overrides.stackManagementInfoProvider ?? new StackManagementInfoProvider(external.cfnService);
+        this.stackManager = overrides.stackManager ?? new StackManager(external.cfnService);
         this.validationWorkflowService =
             overrides.validationWorkflowService ??
             (localCfnClientExists()
