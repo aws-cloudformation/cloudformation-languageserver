@@ -81,6 +81,7 @@ function findYamlIntrinsicReferences(text: string, logicalIds: Set<string>): voi
     }
     if (text.includes('!GetAtt')) {
         extractMatches(text, YamlGetAtt, logicalIds);
+        extractMatches(text, YamlGetAttArray, logicalIds);
     }
     if (text.includes('!FindInMap')) {
         extractMatches(text, YamlFindInMap, logicalIds);
@@ -218,6 +219,7 @@ const JsonArrayItem = /"([A-Za-z][A-Za-z0-9]*)"/g; // Matches "LogicalId" within
 
 const YamlRef = /!Ref\s+([A-Za-z][A-Za-z0-9]*)/g; // Matches !Ref LogicalId - YAML short form reference
 const YamlGetAtt = /!GetAtt\s+([A-Za-z][A-Za-z0-9]*)/g; // Matches !GetAtt LogicalId.Attribute - YAML short form get attribute
+const YamlGetAttArray = /!GetAtt\s+\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches !GetAtt [LogicalId, Attribute] - YAML short form get attribute with array syntax
 const YamlFindInMap = /!FindInMap\s+\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches !FindInMap [MappingName, Key1, Key2] - YAML short form mapping lookup
 const YamlSub = /!Sub\s+["']?([^"'\n]+)["']?/g; // Matches !Sub "template string" - YAML short form string substitution
 const YamlRefColon = /Ref:\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Ref: LogicalId - YAML long form reference
