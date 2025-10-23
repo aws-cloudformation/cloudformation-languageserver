@@ -48,9 +48,8 @@ import {
     waitUntilStackCreateComplete,
     waitUntilStackImportComplete,
     DescribeChangeSetCommandOutput,
-    Change,
     GetTemplateCommand,
-    StackEvent,
+    Change,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClient } from './AwsClient';
@@ -63,11 +62,12 @@ export class CfnService {
         return await request(client);
     }
 
-    public async listStacks(statusToInclude?: StackStatus[], statusToExclude?: StackStatus[]): Promise<StackSummary[]> {
+    public async listStacks(
+        statusToInclude?: StackStatus[],
+        statusToExclude?: StackStatus[],
+        nextToken?: string,
+    ): Promise<{ stacks: StackSummary[]; nextToken?: string }> {
         return await this.withClient(async (client) => {
-            const allStacks: StackSummary[] = [];
-            let nextToken: string | undefined;
-
             let stackStatusFilter: StackStatus[] | undefined;
             if (statusToInclude) {
                 stackStatusFilter = statusToInclude;
@@ -75,22 +75,17 @@ export class CfnService {
                 stackStatusFilter = StackStatuses.filter((status) => !statusToExclude.includes(status));
             }
 
-            do {
-                const response = await client.send(
-                    new ListStacksCommand({
-                        NextToken: nextToken,
-                        StackStatusFilter: stackStatusFilter,
-                    }),
-                );
+            const response = await client.send(
+                new ListStacksCommand({
+                    NextToken: nextToken,
+                    StackStatusFilter: stackStatusFilter,
+                }),
+            );
 
-                if (response.StackSummaries) {
-                    allStacks.push(...response.StackSummaries);
-                }
-
-                nextToken = response.NextToken;
-            } while (nextToken);
-
-            return allStacks;
+            return {
+                stacks: response.StackSummaries ?? [],
+                nextToken: response.NextToken,
+            };
         });
     }
 
@@ -169,42 +164,15 @@ export class CfnService {
         params: {
             StackName: string;
         },
-        clientRequestToken: string,
+        options?: { nextToken?: string },
     ): Promise<DescribeStackEventsCommandOutput> {
         return await this.withClient(async (client) => {
-            let nextToken: string | undefined;
-            let result: DescribeStackEventsCommandOutput | undefined;
-            const stackEvents: StackEvent[] = [];
-
-            do {
-                const response = await client.send(
-                    new DescribeStackEventsCommand({
-                        StackName: params.StackName,
-                        NextToken: nextToken,
-                    }),
-                );
-
-                if (result) {
-                    stackEvents.push(...(response.StackEvents ?? []));
-                } else {
-                    result = response;
-                    stackEvents.push(...(result.StackEvents ?? []));
-                }
-
-                // Stop if no more events in a page match the client request token parameter
-                const hasMatchingToken = response.StackEvents?.some(
-                    (event) => event.ClientRequestToken === clientRequestToken,
-                );
-                if (!hasMatchingToken) {
-                    break;
-                }
-
-                nextToken = response.NextToken;
-            } while (nextToken);
-
-            result.StackEvents = stackEvents.filter((event) => event.ClientRequestToken === clientRequestToken);
-            result.NextToken = undefined;
-            return result;
+            return await client.send(
+                new DescribeStackEventsCommand({
+                    StackName: params.StackName,
+                    NextToken: options?.nextToken,
+                }),
+            );
         });
     }
 

@@ -2,6 +2,7 @@ import { arch, platform, type, release, machine } from 'os';
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
 import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { OTLPTraceExporter } from '@opentelemetry/exporter-trace-otlp-http';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
     AggregationTemporality,
@@ -10,13 +11,10 @@ import {
     ViewOptions,
 } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { isBeta, isAlpha, isProd, isTest } from '../utils/Environment';
+import { isBeta, isAlpha, isProd, isTest, IsAppEnvironment } from '../utils/Environment';
 import { ExtensionName, ExtensionVersion } from '../utils/ExtensionConfig';
 import { ClientInfo } from './TelemetryConfig';
 
-const DurationHistogramBoundaries = [
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16_384, 32_768, 65_536,
-]; // Boundaries for buckets - latency (ms) usually grows exponentially
 const ExportIntervalSeconds = 30;
 
 export function otelSdk(clientId: string, client?: ClientInfo) {
@@ -31,6 +29,15 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
         exportIntervalMillis: ExportIntervalSeconds * 1000,
     });
 
+    let traceExporter: OTLPTraceExporter | undefined;
+
+    // Only enable in alpha environment (excluding test env)
+    if (isAlpha && IsAppEnvironment) {
+        traceExporter = new OTLPTraceExporter({
+            url: `${telemetryUrl}/v1/traces`,
+        });
+    }
+
     const sdk = new NodeSDK({
         resource: resourceFromAttributes({
             ['service']: `${ExtensionName}-${ExtensionVersion}`,
@@ -43,13 +50,13 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
         }),
         resourceDetectors: [],
         metricReader: metricsReader,
+        traceExporter: traceExporter,
         views: [
             {
                 instrumentName: '*.duration',
                 aggregation: {
-                    type: AggregationType.EXPLICIT_BUCKET_HISTOGRAM,
+                    type: AggregationType.EXPONENTIAL_HISTOGRAM,
                     options: {
-                        boundaries: DurationHistogramBoundaries,
                         recordMinMax: true,
                     },
                 },
@@ -57,9 +64,8 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
             {
                 instrumentName: '*.latency',
                 aggregation: {
-                    type: AggregationType.EXPLICIT_BUCKET_HISTOGRAM,
+                    type: AggregationType.EXPONENTIAL_HISTOGRAM,
                     options: {
-                        boundaries: DurationHistogramBoundaries,
                         recordMinMax: true,
                     },
                 },

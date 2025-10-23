@@ -82,6 +82,7 @@ export async function waitForChangeSetValidation(
                 state: StackActionState.SUCCESSFUL,
                 changes: mapChangesToStackChanges(response.Changes),
                 failureReason: result.reason ? String(result.reason) : undefined,
+                nextToken: response.NextToken,
             };
         } else {
             logger.warn(

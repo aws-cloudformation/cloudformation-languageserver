@@ -289,8 +289,8 @@ describe('StackActionHandler', () => {
             ];
 
             const mockComponents = {
-                cfnService: {
-                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                stackManager: {
+                    listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
                 },
             } as any;
 
@@ -302,7 +302,7 @@ describe('StackActionHandler', () => {
 
         it('should return empty array on error', async () => {
             const mockComponents = {
-                cfnService: {
+                stackManager: {
                     listStacks: vi.fn().mockRejectedValue(new Error('API Error')),
                 },
             } as any;
@@ -313,11 +313,11 @@ describe('StackActionHandler', () => {
             expect(result.stacks).toEqual([]);
         });
 
-        it('should pass statusToInclude to cfnService', async () => {
+        it('should pass statusToInclude to stackManager', async () => {
             const mockStacks: StackSummary[] = [];
             const mockComponents = {
-                cfnService: {
-                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                stackManager: {
+                    listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
                 },
             } as any;
 
@@ -328,14 +328,18 @@ describe('StackActionHandler', () => {
             const handler = listStacksHandler(mockComponents);
             await handler(paramsWithInclude, mockToken);
 
-            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith([StackStatus.CREATE_COMPLETE], undefined);
+            expect(mockComponents.stackManager.listStacks).toHaveBeenCalledWith(
+                [StackStatus.CREATE_COMPLETE],
+                undefined,
+                undefined,
+            );
         });
 
-        it('should pass statusToExclude to cfnService', async () => {
+        it('should pass statusToExclude to stackManager', async () => {
             const mockStacks: StackSummary[] = [];
             const mockComponents = {
-                cfnService: {
-                    listStacks: vi.fn().mockResolvedValue(mockStacks),
+                stackManager: {
+                    listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
                 },
             } as any;
 
@@ -346,12 +350,16 @@ describe('StackActionHandler', () => {
             const handler = listStacksHandler(mockComponents);
             await handler(paramsWithExclude, mockToken);
 
-            expect(mockComponents.cfnService.listStacks).toHaveBeenCalledWith(undefined, [StackStatus.DELETE_COMPLETE]);
+            expect(mockComponents.stackManager.listStacks).toHaveBeenCalledWith(
+                undefined,
+                [StackStatus.DELETE_COMPLETE],
+                undefined,
+            );
         });
 
         it('should return empty array when both statusToInclude and statusToExclude are provided', async () => {
             const mockComponents = {
-                cfnService: {
+                stackManager: {
                     listStacks: vi.fn(),
                 },
             } as any;
@@ -365,7 +373,7 @@ describe('StackActionHandler', () => {
             const result = (await handler(paramsWithBoth, mockToken)) as ListStacksResult;
 
             expect(result.stacks).toEqual([]);
-            expect(mockComponents.cfnService.listStacks).not.toHaveBeenCalled();
+            expect(mockComponents.stackManager.listStacks).not.toHaveBeenCalled();
         });
     });
 

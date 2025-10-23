@@ -4,10 +4,12 @@ import { RequestType } from 'vscode-languageserver-protocol';
 export type ListStacksParams = {
     statusToInclude?: StackStatus[];
     statusToExclude?: StackStatus[];
+    loadMore?: boolean;
 };
 
 export type ListStacksResult = {
     stacks: StackSummary[];
+    nextToken?: string;
 };
 
 export const ListStacksRequest = new RequestType<ListStacksParams, ListStacksResult, void>('aws/cfn/stacks');

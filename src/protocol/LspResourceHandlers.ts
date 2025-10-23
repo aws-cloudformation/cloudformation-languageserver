@@ -1,4 +1,5 @@
 import { Connection, ServerRequestHandler } from 'vscode-languageserver';
+import { RequestHandler } from 'vscode-languageserver/node';
 import {
     ResourceTypesResult,
     ResourceTypesRequest,
@@ -13,13 +14,16 @@ import {
     RefreshResourcesResult,
     StackMgmtInfoRequest,
     ResourceIdentifier,
+    SearchResourceRequest,
+    SearchResourceParams,
+    SearchResourceResult,
 } from '../resourceState/ResourceStateTypes';
 import { ResourceStackManagementResult } from '../resourceState/StackManagementInfoProvider';
 
 export class LspResourceHandlers {
     constructor(private readonly connection: Connection) {}
 
-    onListResources(handler: ServerRequestHandler<ListResourcesParams, ListResourcesResult, never, void>) {
+    onListResources(handler: RequestHandler<ListResourcesParams, ListResourcesResult, void>) {
         this.connection.onRequest(ListResourcesRequest.method, handler);
     }
 
@@ -37,5 +41,9 @@ export class LspResourceHandlers {
 
     onStackMgmtInfo(handler: ServerRequestHandler<ResourceIdentifier, ResourceStackManagementResult, never, void>) {
         this.connection.onRequest(StackMgmtInfoRequest.method, handler);
+    }
+
+    onSearchResource(handler: ServerRequestHandler<SearchResourceParams, SearchResourceResult, never, void>) {
+        this.connection.onRequest(SearchResourceRequest.method, handler);
     }
 }

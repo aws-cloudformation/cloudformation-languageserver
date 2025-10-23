@@ -1,4 +1,4 @@
-import { ResponseError, ErrorCodes, RequestHandler } from 'vscode-languageserver';
+import { ErrorCodes, RequestHandler, ResponseError } from 'vscode-languageserver';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Parameter, Resource } from '../context/semantic/Entity';
@@ -12,13 +12,13 @@ import {
     parseTemplateUriParams,
 } from '../stacks/actions/StackActionParser';
 import {
-    GetCapabilitiesResult,
     TemplateUri,
-    GetParametersResult,
     CreateValidationParams,
-    GetStackActionStatusResult,
-    DescribeValidationStatusResult,
     DescribeDeploymentStatusResult,
+    DescribeValidationStatusResult,
+    GetCapabilitiesResult,
+    GetParametersResult,
+    GetStackActionStatusResult,
     GetTemplateResourcesResult,
     CreateDeploymentParams,
     CreateStackActionResult,
@@ -244,10 +244,14 @@ export function listStacksHandler(
             if (params.statusToInclude?.length && params.statusToExclude?.length) {
                 throw new Error('Cannot specify both statusToInclude and statusToExclude');
             }
-            return { stacks: await components.cfnService.listStacks(params.statusToInclude, params.statusToExclude) };
+            return await components.stackManager.listStacks(
+                params.statusToInclude,
+                params.statusToExclude,
+                params.loadMore,
+            );
         } catch (error) {
             log.error({ error: extractErrorMessage(error) }, 'Error listing stacks');
-            return { stacks: [] };
+            return { stacks: [], nextToken: undefined };
         }
     };
 }

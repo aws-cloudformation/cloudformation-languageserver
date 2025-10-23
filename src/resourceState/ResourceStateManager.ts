@@ -1,4 +1,4 @@
-import { GetResourceCommandOutput, ListResourcesOutput, ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
+import { GetResourceCommandOutput, ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
 import { DateTime } from 'luxon';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { CfnExternal } from '../server/CfnExternal';
@@ -21,6 +21,7 @@ export type ResourceState = {
 type ResourceList = {
     typeName: string;
     resourceIdentifiers: string[];
+    nextToken?: string;
     createdTimestamp: DateTime;
     lastUpdatedTimestamp: DateTime;
 };
@@ -79,19 +80,65 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         return value;
     }
 
-    public async listResources(typeName: string, updateFromLive?: boolean): Promise<ResourceList | undefined> {
-        const cachedResourceList = this.resourceListMap.get(typeName);
-        if (cachedResourceList && !updateFromLive) {
-            return cachedResourceList;
-        }
-        const resourceList = await this.retrieveResourceList(typeName);
-        if (!resourceList) {
+    public async listResources(typeName: string, nextToken?: string): Promise<ResourceList | undefined> {
+        const cached = this.resourceListMap.get(typeName);
+
+        if (!nextToken) {
+            // Initial request - fetch first page and cache it
+            const resourceList = await this.retrieveResourceList(typeName);
+            if (resourceList) {
+                this.resourceListMap.set(typeName, resourceList);
+                return resourceList;
+            }
             return;
         }
 
-        this.resourceListMap.set(typeName, resourceList);
+        // Pagination request - fetch next page and append to cache
+        const resourceListNextPage = await this.retrieveResourceList(typeName, nextToken);
+        if (resourceListNextPage && cached) {
+            // Deduplicate efficiently using Set for O(1) lookup
+            const cachedSet = new Set(cached.resourceIdentifiers);
+            const newIdentifiers = resourceListNextPage.resourceIdentifiers.filter((id) => !cachedSet.has(id));
+            cached.resourceIdentifiers.push(...newIdentifiers);
+            cached.nextToken = resourceListNextPage.nextToken;
+            cached.lastUpdatedTimestamp = DateTime.now();
+            return cached;
+        }
 
-        return resourceList;
+        return resourceListNextPage;
+    }
+
+    public async searchResourceByIdentifier(
+        typeName: string,
+        identifier: string,
+    ): Promise<{ found: boolean; resourceList?: ResourceList }> {
+        const resource = await this.getResource(typeName, identifier);
+        if (!resource) {
+            return { found: false };
+        }
+
+        // Add to cache
+        const cached = this.resourceListMap.get(typeName);
+        if (cached && !cached.resourceIdentifiers.includes(identifier)) {
+            cached.resourceIdentifiers.push(identifier);
+            cached.lastUpdatedTimestamp = DateTime.now();
+            return { found: true, resourceList: cached };
+        }
+
+        // Create new cache entry if doesn't exist
+        if (!cached) {
+            const newList: ResourceList = {
+                typeName,
+                resourceIdentifiers: [identifier],
+                nextToken: undefined,
+                createdTimestamp: DateTime.now(),
+                lastUpdatedTimestamp: DateTime.now(),
+            };
+            this.resourceListMap.set(typeName, newList);
+            return { found: true, resourceList: newList };
+        }
+
+        return { found: true, resourceList: cached };
     }
 
     public getResourceTypes(): string[] {
@@ -113,40 +160,42 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         return resourceIdToStateMap?.get(identifier);
     }
 
-    private async retrieveResourceList(typeName: string): Promise<ResourceList | undefined> {
-        let output: ListResourcesOutput | undefined = undefined;
-
+    private async retrieveResourceList(typeName: string, nextToken?: string): Promise<ResourceList | undefined> {
         try {
-            output = await this.ccapiService.listResources(typeName);
+            const output = await this.ccapiService.listResources(typeName, { nextToken });
+
+            const identifiers =
+                output.ResourceDescriptions?.map((desc) => desc.Identifier).filter(
+                    (id): id is string => id !== undefined,
+                ) ?? [];
+
+            const now = DateTime.now();
+
+            return {
+                typeName: typeName,
+                resourceIdentifiers: identifiers,
+                createdTimestamp: now,
+                lastUpdatedTimestamp: now,
+                nextToken: output.NextToken,
+            };
         } catch (error) {
             log.error(error, `CCAPI ListResource failed for type ${typeName}`);
             return;
         }
-
-        if (!output?.ResourceDescriptions) {
-            return;
-        }
-
-        const now = DateTime.now();
-
-        return {
-            typeName: typeName,
-            resourceIdentifiers: output.ResourceDescriptions.map((desc) => desc.Identifier).filter(
-                (id) => id !== undefined,
-            ),
-            createdTimestamp: now,
-            lastUpdatedTimestamp: now,
-        };
     }
 
     public async refreshResourceList(resourceTypes: string[]): Promise<RefreshResourcesResult> {
         if (this.isRefreshing) {
             // return cached resource list
             return {
-                resources: resourceTypes.map((resourceType) => ({
-                    typeName: resourceType,
-                    resourceIdentifiers: this.resourceListMap.get(resourceType)?.resourceIdentifiers ?? [],
-                })),
+                resources: resourceTypes.map((resourceType) => {
+                    const cached = this.resourceListMap.get(resourceType);
+                    return {
+                        typeName: resourceType,
+                        resourceIdentifiers: cached?.resourceIdentifiers ?? [],
+                        nextToken: cached?.nextToken,
+                    };
+                }),
                 refreshFailed: false,
             };
         }
@@ -158,32 +207,30 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         try {
             this.isRefreshing = true;
             const result: ListResourcesResult = { resources: [] };
-            const now = DateTime.now();
             let anyRefreshFailed = false;
 
             for (const resourceType of resourceTypes) {
-                const storedResourceList = this.resourceListMap.get(resourceType);
+                // Clear cache and fetch first page only
+                this.resourceListMap.delete(resourceType);
 
-                const newResourceList = await this.retrieveResourceList(resourceType);
-                if (!newResourceList) {
-                    // Failed to update this resource type
+                const response = await this.retrieveResourceList(resourceType);
+                if (!response) {
+                    anyRefreshFailed = true;
                     result.resources.push({
                         typeName: resourceType,
-                        resourceIdentifiers: storedResourceList?.resourceIdentifiers ?? [],
+                        resourceIdentifiers: [],
+                        nextToken: undefined,
                     });
-                    anyRefreshFailed = true;
                     continue;
                 }
 
-                this.resourceListMap.set(resourceType, {
-                    ...newResourceList,
-                    createdTimestamp: storedResourceList?.createdTimestamp ?? now,
-                    lastUpdatedTimestamp: now,
-                });
+                // Cache the first page
+                this.resourceListMap.set(resourceType, response);
 
                 result.resources.push({
                     typeName: resourceType,
-                    resourceIdentifiers: newResourceList.resourceIdentifiers,
+                    resourceIdentifiers: response.resourceIdentifiers,
+                    nextToken: response.nextToken,
                 });
             }
             return { ...result, refreshFailed: anyRefreshFailed };

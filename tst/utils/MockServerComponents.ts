@@ -55,6 +55,7 @@ import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
 import { DeploymentWorkflow } from '../../src/stacks/actions/DeploymentWorkflow';
 import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow';
+import { StackManager } from '../../src/stacks/StackManager';
 import { ClientMessage } from '../../src/telemetry/ClientMessage';
 import { Closeable } from '../../src/utils/Closeable';
 import { Configurables } from '../../src/utils/Configurable';
@@ -362,6 +363,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
     const providers: MockLspProviders = {
         stackManagementInfoProvider:
             overrides.stackManagementInfoProvider ?? stubInterface<StackManagementInfoProvider>(),
+        stackManager: overrides.stackManager ?? stubInterface<StackManager>(),
         validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
         deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
         resourceStateManager: overrides.resourceStateManager ?? createMockResourceStateManager(),
