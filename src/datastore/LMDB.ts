@@ -3,7 +3,7 @@ import { join } from 'path';
 import { open, Database, RootDatabase } from 'lmdb';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
-import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { extractErrorMessage } from '../utils/Errors';
 import { DataStore, DataStoreFactory } from './DataStore';
@@ -18,6 +18,7 @@ export class LMDBStore implements DataStore {
         return this.store.get(key) as T | undefined;
     }
 
+    @Measure({ name: 'put' })
     put<T>(key: string, value: T): Promise<boolean> {
         return this.store.put(key, value);
     }
