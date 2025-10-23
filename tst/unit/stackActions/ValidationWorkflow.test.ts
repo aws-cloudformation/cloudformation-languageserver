@@ -392,11 +392,13 @@ describe('ValidationWorkflow', () => {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
-                resourcesToImport: [{
-                    ResourceType: 'test-resource-type',
-                    LogicalResourceId: 'test-logical-id',
-                    ResourceIdentifier: {}
-                }]
+                resourcesToImport: [
+                    {
+                        ResourceType: 'test-resource-type',
+                        LogicalResourceId: 'test-logical-id',
+                        ResourceIdentifier: {},
+                    },
+                ],
             };
 
             const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
