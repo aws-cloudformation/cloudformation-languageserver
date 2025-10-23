@@ -156,7 +156,7 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
 
             try {
                 const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
-                if (resolvedSchemas.length > 0) {
+                if (resolvedSchemas.length === 1) {
                     const firstSchema = resolvedSchemas[0];
                     if (firstSchema.description) {
                         description = firstSchema.description;

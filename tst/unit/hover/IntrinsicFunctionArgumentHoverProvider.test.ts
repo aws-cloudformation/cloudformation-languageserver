@@ -245,7 +245,7 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
             expect(result).toContain('Arn');
         });
 
-        it('should return hover information for GetAtt dot notation format', () => {
+        it('should return hover information for GetAtt dot notation format - resource part', () => {
             const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
 
             // Create related entities map with a target resource
@@ -281,13 +281,56 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
                     args: 'MyBucket.Arn',
                 }) as any;
 
-            const result = provider.getInformation(mockContext);
+            const position = { line: 1, character: 5 }; // Hovering over "MyBucket"
+
+            const result = provider.getInformation(mockContext, position);
 
             expect(result).toBeDefined();
             expect(result).toContain('AWS::S3::Bucket');
             expect(result).toContain('MyBucket');
+            expect(result).not.toContain('GetAtt attribute'); // Should not show attribute info
+        });
+
+        it('should return hover information for GetAtt dot notation format - attribute part', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
+
+            const relatedEntities = new Map();
+            const resourcesMap = new Map();
+            const targetResource = createResourceContext('MyBucket', {
+                text: 'MyBucket',
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {
+                        BucketName: 'my-test-bucket',
+                    },
+                },
+            });
+            resourcesMap.set('MyBucket', targetResource);
+            relatedEntities.set(TopLevelSection.Resources, resourcesMap);
+
+            const mockContext = createResourceContext(
+                'SomeOtherResource',
+                {
+                    text: 'MyBucket.Arn',
+                    data: { Type: 'AWS::Lambda::Function' },
+                },
+                relatedEntities,
+            );
+
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.GetAtt,
+                    args: 'MyBucket.Arn',
+                }) as any;
+
+            const position = { line: 1, character: 12 }; // Hovering over "Arn"
+
+            const result = provider.getInformation(mockContext, position);
+
+            expect(result).toBeDefined();
             expect(result).toContain('GetAtt attribute for AWS::S3::Bucket');
-            expect(result).toContain('---'); // Separator between resource and attribute info
+            expect(result).toContain('Arn');
         });
 
         it('should return undefined for GetAtt when resource is not found', () => {
