@@ -23,7 +23,12 @@ import {
     CreateDeploymentParams,
     CreateStackActionResult,
 } from '../stacks/actions/StackActionRequestType';
-import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
+import {
+    ListStacksParams,
+    ListStacksResult,
+    ListChangeSetParams,
+    ListChangeSetResult,
+} from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
@@ -252,6 +257,26 @@ export function listStacksHandler(
         } catch (error) {
             log.error({ error: extractErrorMessage(error) }, 'Error listing stacks');
             return { stacks: [], nextToken: undefined };
+        }
+    };
+}
+
+export function listChangeSetsHandler(
+    components: ServerComponents,
+): RequestHandler<ListChangeSetParams, ListChangeSetResult, void> {
+    return async (params: ListChangeSetParams): Promise<ListChangeSetResult> => {
+        try {
+            const changeSets = await components.cfnService.listChangeSets(params.stackName);
+            return {
+                changeSets: changeSets.map((cs) => ({
+                    changeSetName: cs.ChangeSetName ?? '',
+                    status: cs.Status ?? '',
+                    creationTime: cs.CreationTime?.toISOString(),
+                    description: cs.Description,
+                })),
+            };
+        } catch {
+            return { changeSets: [] };
         }
     };
 }

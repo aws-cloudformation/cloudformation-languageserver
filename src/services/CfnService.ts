@@ -50,6 +50,8 @@ import {
     DescribeChangeSetCommandOutput,
     GetTemplateCommand,
     Change,
+    ListChangeSetsCommand,
+    ChangeSetSummary,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClient } from './AwsClient';
@@ -330,6 +332,17 @@ export class CfnService {
 
     public async validateTemplate(params: ValidateTemplateInput): Promise<ValidateTemplateOutput> {
         return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
+    }
+
+    public async listChangeSets(stackName: string): Promise<ChangeSetSummary[]> {
+        try {
+            return await this.withClient(async (client) => {
+                const response = await client.send(new ListChangeSetsCommand({ StackName: stackName }));
+                return response.Summaries ?? [];
+            });
+        } catch {
+            return [];
+        }
     }
 }
 
