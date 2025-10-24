@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { DocumentType, Extension } from '../../../src/document/Document';
+import { DocumentType } from '../../../src/document/Document';
 import {
     getIndexFromPoint,
     getNewEndPosition,
@@ -129,14 +129,14 @@ describe('DocumentUtils', () => {
         it('should determine JSON type from .json extension', () => {
             const result = detectDocumentType('file:///test.json', '{}');
 
-            expect(result.extension).toBe(Extension.JSON);
+            expect(result.extension).toBe('json');
             expect(result.type).toBe(DocumentType.JSON);
         });
 
         it('should determine YAML type from .yaml extension', () => {
             const result = detectDocumentType('file:///test.yaml', 'key: value');
 
-            expect(result.extension).toBe(Extension.YAML);
+            expect(result.extension).toBe('yaml');
             expect(result.type).toBe(DocumentType.YAML);
         });
 
@@ -151,14 +151,8 @@ describe('DocumentUtils', () => {
         it('should handle case-insensitive extensions', () => {
             const result = detectDocumentType('file:///test.JSON', '{}');
 
-            expect(result.extension).toBe(Extension.JSON);
+            expect(result.extension).toBe('json');
             expect(result.type).toBe(DocumentType.JSON);
-        });
-
-        it('should throw error for unsupported extension', () => {
-            expect(() => {
-                detectDocumentType('file:///test.xyz', 'content');
-            }).toThrow('Extension xyz is not supported');
         });
 
         it('should detect JSON from array content', () => {

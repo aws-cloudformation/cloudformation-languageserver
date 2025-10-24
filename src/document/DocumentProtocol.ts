@@ -1,10 +1,10 @@
 import { MessageDirection, ProtocolNotificationType } from 'vscode-languageserver';
-import { CloudFormationFileType, DocumentType, Extension } from './Document';
+import { CloudFormationFileType, DocumentType } from './Document';
 
 export type DocumentMetadata = {
     uri: string;
     fileName: string;
-    ext: Extension;
+    ext: string;
     type: DocumentType;
     cfnType: CloudFormationFileType;
     languageId: string;

@@ -34,14 +34,6 @@ describe('Document', () => {
 
             expect(doc.documentType).toBe(DocumentType.JSON);
         });
-
-        it('should throw error for unsupported extension', () => {
-            const textDocument = TextDocument.create('file:///test.xyz', 'xyz', 1, 'content');
-
-            expect(() => {
-                new Document(textDocument);
-            }).toThrow('Extension xyz is not supported');
-        });
     });
 
     describe('content', () => {

@@ -8,7 +8,7 @@ import { detectDocumentType, uriToPath } from './DocumentUtils';
 
 export class Document {
     private readonly log = LoggerFactory.getLogger(Document);
-    public readonly extension: Extension;
+    public readonly extension: string;
     public readonly documentType: DocumentType;
     public readonly cfnFileType: CloudFormationFileType;
     public readonly fileName: string;
@@ -131,17 +131,6 @@ export enum DocumentType {
     YAML = 'YAML',
     JSON = 'JSON',
 }
-
-export enum Extension {
-    YAML = 'yaml',
-    JSON = 'json',
-    YML = 'yml',
-    TXT = 'txt',
-    CFN = 'cfn',
-    TEMPLATE = 'template',
-}
-
-export const Extensions = Object.values(Extension);
 
 export enum CloudFormationFileType {
     Template = 'template',

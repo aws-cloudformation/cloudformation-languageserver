@@ -6,7 +6,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Delayer } from '../utils/Delayer';
-import { CloudFormationFileType, Document, DocumentType, Extension } from './Document';
+import { CloudFormationFileType, Document, DocumentType } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
 export class DocumentManager implements SettingsConfigurable {
@@ -157,14 +157,16 @@ export class DocumentManager implements SettingsConfigurable {
             );
         }
 
-        for (const type of Object.values(Extension)) {
-            this.telemetry.registerGaugeProvider(
-                `documents.open.extension.type.${type}`,
-                () => this.countDocumentsByExtension(type),
-                {
-                    unit: '1',
-                },
-            );
+        // eslint-disable-next-line unicorn/no-array-reduce
+        const grouped = [...this.documentMap.values()].reduce<Record<string, number>>((acc, doc) => {
+            acc[doc.extension] = (acc[doc.extension] || 0) + 1;
+            return acc;
+        }, {});
+
+        for (const [key, value] of Object.entries(grouped)) {
+            this.telemetry.registerGaugeProvider(`documents.open.extension.type.${key}`, () => value, {
+                unit: '1',
+            });
         }
     }
 
@@ -174,9 +176,5 @@ export class DocumentManager implements SettingsConfigurable {
 
     private countDocumentsByDocType(docType: DocumentType): number {
         return [...this.documentMap.values()].filter((doc) => doc.documentType === docType).length;
-    }
-
-    private countDocumentsByExtension(extension: Extension): number {
-        return [...this.documentMap.values()].filter((doc) => doc.extension === extension).length;
     }
 }
