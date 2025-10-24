@@ -1,6 +1,6 @@
 import { extname, parse } from 'path';
 import { Edit, Point } from 'tree-sitter';
-import { DocumentType, Extension, Extensions } from './Document';
+import { DocumentType } from './Document';
 
 export function getIndexFromPoint(content: string, point: Point): number {
     const contentInLines = content.split('\n');
@@ -56,21 +56,25 @@ export function createEdit(
     };
 }
 
-export function detectDocumentType(uri: string, content: string): { extension: Extension; type: DocumentType } {
-    let ext = extname(uri).toLowerCase();
-    if (ext.startsWith('.')) {
-        ext = ext.slice(1);
-    }
+enum Extension {
+    YAML = 'yaml',
+    JSON = 'json',
+    YML = 'yml',
+    TXT = 'txt',
+    CFN = 'cfn',
+    TEMPLATE = 'template',
+}
 
-    const extension = Extensions.find((type) => type.toString().toLowerCase() === ext);
-    if (!extension) {
-        throw new Error(`Extension ${ext} is not supported`);
+export function detectDocumentType(uri: string, content: string): { extension: string; type: DocumentType } {
+    let extension = extname(uri).toLowerCase();
+    if (extension.startsWith('.')) {
+        extension = extension.slice(1);
     }
 
     let type: DocumentType;
-    if (extension === Extension.JSON) {
+    if (extension === Extension.JSON.toLowerCase()) {
         type = DocumentType.JSON;
-    } else if (extension === Extension.YAML || extension === Extension.YML) {
+    } else if (extension === Extension.YAML.toLowerCase() || extension === Extension.YML.toLowerCase()) {
         type = DocumentType.YAML;
     } else if (content.startsWith('{') || content.startsWith('[')) {
         type = DocumentType.JSON;

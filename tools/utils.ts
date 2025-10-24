@@ -1,6 +1,6 @@
 import { readFileSync, statSync } from 'fs';
 import { detectDocumentType, uriToPath } from '../src/document/DocumentUtils';
-import { CloudFormationFileType, DocumentType, Extension } from '../src/document/Document';
+import { CloudFormationFileType, DocumentType } from '../src/document/Document';
 import { detectCfnFileType } from '../src/document/CloudFormationDetection';
 
 export type TestPosition = {
@@ -162,7 +162,7 @@ export function generatePositions(content: string, iterations: number): TestPosi
 export type TemplateFile = {
     name: string;
     path: string;
-    extension: Extension;
+    extension: string;
     documentType: DocumentType;
     cfnFileType: CloudFormationFileType;
     content: string;
