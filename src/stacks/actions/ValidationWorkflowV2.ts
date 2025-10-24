@@ -1,4 +1,3 @@
-import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { FileContextManager } from '../../context/FileContextManager';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
@@ -34,11 +33,7 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
         super(cfnServiceV2, documentManager, diagnosticCoordinator, syntaxTreeManager, validationManager);
     }
 
-    override async runValidationAsync(
-        params: CreateValidationParams,
-        changeSetName: string,
-        changeSetType: ChangeSetType,
-    ): Promise<void> {
+    override async runValidationAsync(params: CreateValidationParams, changeSetName: string): Promise<void> {
         const uri = params.uri;
         const workflowId = params.id;
         const stackName = params.stackName;
@@ -103,7 +98,7 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
                 failureReason: extractErrorMessage(error),
             });
         } finally {
-            await this.handleCleanup(params, existingWorkflow, changeSetType);
+            await this.handleCleanup(params, existingWorkflow);
         }
     }
 

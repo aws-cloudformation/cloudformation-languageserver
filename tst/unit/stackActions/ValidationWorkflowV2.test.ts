@@ -9,10 +9,11 @@ import {
     processChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
-    deleteStackAndChangeSet,
+    cleanupReviewStack,
     deleteChangeSet,
     parseValidationEvents,
     publishValidationDiagnostics,
+    isStackInReview,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateValidationParams,
@@ -80,7 +81,9 @@ describe('ValidationWorkflowV2', () => {
             OperationEvents: [],
         });
 
-        (deleteStackAndChangeSet as any).mockResolvedValue(undefined);
+        (isStackInReview as any).mockResolvedValue(true);
+
+        (cleanupReviewStack as any).mockResolvedValue(undefined);
         (deleteChangeSet as any).mockResolvedValue(undefined);
 
         (processWorkflowUpdates as any).mockImplementation((map: any, workflow: any, updates: any) => {
@@ -212,8 +215,10 @@ describe('ValidationWorkflowV2', () => {
             await validationWorkflowV2.start(params);
             await waitForWorkflowCompletion('test-id');
 
+            expect(isStackInReview).toHaveBeenCalled();
+
             expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
-            expect(deleteStackAndChangeSet).toHaveBeenCalled();
+            expect(cleanupReviewStack).toHaveBeenCalled();
 
             const workflow = (validationWorkflowV2 as any).workflows.get('test-id');
             expect(workflow.failureReason).toBe('Validation service error');

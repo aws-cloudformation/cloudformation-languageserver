@@ -10,11 +10,12 @@ import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
-    deleteStackAndChangeSet,
+    cleanupReviewStack,
     deleteChangeSet,
     processChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
+    isStackInReview,
 } from './StackActionOperations';
 import {
     CreateValidationParams,
@@ -81,7 +82,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             state: StackActionState.IN_PROGRESS,
         });
 
-        void this.runValidationAsync(params, changeSetName, changeSetType);
+        void this.runValidationAsync(params, changeSetName);
 
         return {
             id: params.id,
@@ -117,11 +118,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
         };
     }
 
-    protected async runValidationAsync(
-        params: CreateValidationParams,
-        changeSetName: string,
-        changeSetType: ChangeSetType,
-    ): Promise<void> {
+    protected async runValidationAsync(params: CreateValidationParams, changeSetName: string): Promise<void> {
         const workflowId = params.id;
         const stackName = params.stackName;
 
@@ -186,23 +183,23 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
                 failureReason: extractErrorMessage(error),
             });
         } finally {
-            await this.handleCleanup(params, existingWorkflow, changeSetType);
+            await this.handleCleanup(params, existingWorkflow);
         }
     }
 
-    protected async handleCleanup(
-        params: CreateValidationParams,
-        existingWorkflow: StackActionWorkflowState,
-        changeSetType: ChangeSetType,
-    ) {
+    protected async handleCleanup(params: CreateValidationParams, existingWorkflow: StackActionWorkflowState) {
         // Cleanup validation object to prevent memory leaks
         this.validationManager.remove(params.stackName);
 
         if (!params.keepChangeSet) {
-            if (changeSetType === ChangeSetType.CREATE || changeSetType === ChangeSetType.IMPORT) {
-                await deleteStackAndChangeSet(this.cfnService, existingWorkflow, params.id);
-            } else {
-                await deleteChangeSet(this.cfnService, existingWorkflow, params.id);
+            try {
+                if (await isStackInReview(params.stackName, this.cfnService)) {
+                    await cleanupReviewStack(this.cfnService, existingWorkflow, params.id);
+                } else {
+                    await deleteChangeSet(this.cfnService, existingWorkflow, params.id);
+                }
+            } catch (error) {
+                this.log.error({ error }, 'resource cleanup failed');
             }
         }
     }

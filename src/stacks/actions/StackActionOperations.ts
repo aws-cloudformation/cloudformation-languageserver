@@ -155,29 +155,12 @@ export async function waitForDeployment(
     }
 }
 
-export async function deleteStackAndChangeSet(
+export async function cleanupReviewStack(
     cfnService: CfnService,
     workflow: StackActionWorkflowState,
     workflowId: string,
 ): Promise<void> {
     try {
-        // Delete changeset first
-        await retryWithExponentialBackoff(
-            () =>
-                cfnService.deleteChangeSet({
-                    StackName: workflow.stackName,
-                    ChangeSetName: workflow.changeSetName,
-                }),
-            {
-                maxRetries: 3,
-                initialDelayMs: 1000,
-                operationName: `Delete change set ${workflow.changeSetName}`,
-            },
-            logger,
-        );
-
-        // Delete stack
-        // TODO only delete stack for CREATE operation
         await retryWithExponentialBackoff(
             () =>
                 cfnService.deleteStack({

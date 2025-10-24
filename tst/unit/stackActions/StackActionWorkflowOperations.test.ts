@@ -10,7 +10,7 @@ import {
     processChangeSet,
     waitForChangeSetValidation,
     waitForDeployment,
-    deleteStackAndChangeSet,
+    cleanupReviewStack,
     deleteChangeSet,
     mapChangesToStackChanges,
     parseValidationEvents,
@@ -150,7 +150,7 @@ describe('StackActionWorkflowOperations', () => {
         });
     });
 
-    describe('deleteStackAndChangeSet', () => {
+    describe('cleanupReviewStack', () => {
         it('should call retryWithExponentialBackoff with correct parameters', async () => {
             const { retryWithExponentialBackoff } = await import('../../../src/utils/Retry');
             (retryWithExponentialBackoff as any).mockResolvedValue(undefined);
@@ -164,14 +164,14 @@ describe('StackActionWorkflowOperations', () => {
                 state: StackActionState.SUCCESSFUL,
             };
 
-            await deleteStackAndChangeSet(mockCfnService, workflow, 'workflow-id');
+            await cleanupReviewStack(mockCfnService, workflow, 'workflow-id');
 
             expect(retryWithExponentialBackoff).toHaveBeenCalledWith(
                 expect.any(Function),
                 {
                     maxRetries: 3,
                     initialDelayMs: 1000,
-                    operationName: 'Delete change set changeset-123',
+                    operationName: 'Delete stack test-stack',
                 },
                 expect.any(Object), // logger
             );

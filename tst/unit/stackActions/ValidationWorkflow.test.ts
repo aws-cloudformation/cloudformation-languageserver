@@ -7,8 +7,9 @@ import {
     processChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
-    deleteStackAndChangeSet,
+    cleanupReviewStack,
     deleteChangeSet,
+    isStackInReview,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateValidationParams,
@@ -338,7 +339,10 @@ describe('ValidationWorkflow', () => {
                 state: StackActionState.SUCCESSFUL,
                 changes: [],
             });
-            (deleteStackAndChangeSet as any).mockResolvedValue(undefined);
+
+            (isStackInReview as any).mockResolvedValue(true);
+
+            (cleanupReviewStack as any).mockResolvedValue(undefined);
 
             (deleteChangeSet as any).mockResolvedValue(undefined);
 
@@ -384,7 +388,8 @@ describe('ValidationWorkflow', () => {
             expect(workflow.validationDetails[0].Severity).toBe('INFO');
             expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
             expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
-            expect(deleteStackAndChangeSet).toHaveBeenCalled();
+            expect(isStackInReview).toHaveBeenCalled();
+            expect(cleanupReviewStack).toHaveBeenCalled();
         });
 
         it('should handle successful import workflow', async () => {
@@ -421,7 +426,8 @@ describe('ValidationWorkflow', () => {
             expect(workflow.validationDetails[0].Severity).toBe('INFO');
             expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
             expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
-            expect(deleteStackAndChangeSet).toHaveBeenCalled();
+            expect(isStackInReview).toHaveBeenCalled();
+            expect(cleanupReviewStack).toHaveBeenCalled();
         });
 
         it('should handle successful update workflow', async () => {
@@ -432,6 +438,9 @@ describe('ValidationWorkflow', () => {
             };
 
             mockCfnService.describeStacks = vi.fn().mockResolvedValue({ Stacks: [{ StackName: 'test-stack' }] });
+
+            // Override isStackInReview to show that the stack was existing before validation
+            (isStackInReview as any).mockResolvedValue(false);
 
             const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
             (waitForChangeSetValidation as any).mockResolvedValueOnce({
@@ -453,6 +462,7 @@ describe('ValidationWorkflow', () => {
             expect(workflow.validationDetails[0].Severity).toBe('INFO');
             expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
             expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
+            expect(isStackInReview).toHaveBeenCalled();
             expect(deleteChangeSet).toHaveBeenCalled();
         });
 
@@ -484,7 +494,7 @@ describe('ValidationWorkflow', () => {
             expect(workflow.validationDetails[0].Severity).toBe('INFO');
             expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
             expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
-            expect(deleteStackAndChangeSet).not.toHaveBeenCalled();
+            expect(cleanupReviewStack).not.toHaveBeenCalled();
         });
 
         it('should handle validation failure', async () => {
@@ -527,7 +537,7 @@ describe('ValidationWorkflow', () => {
             await waitForWorkflowCompletion('test-id');
 
             expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
-            expect(deleteStackAndChangeSet).toHaveBeenCalled();
+            expect(cleanupReviewStack).toHaveBeenCalled();
 
             const workflow = (validationWorkflow as any).workflows.get('test-id');
             expect(workflow.failureReason).toBeDefined();
