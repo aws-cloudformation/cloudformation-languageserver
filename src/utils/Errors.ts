@@ -8,3 +8,31 @@ export function extractErrorMessage(error: unknown) {
 
     return toString(error);
 }
+
+/**
+ * Best effort extraction of location of exception based on stack trace
+ */
+export function extractLocationFromStack(stack?: string): {
+    'error.file'?: string;
+    'error.line'?: number;
+    'error.column'?: number;
+} {
+    if (!stack) return {};
+
+    // Match first line with file location: at ... (/path/to/file.ts:line:column)
+    const match = stack.match(/at .+\((.+):(\d+):(\d+)\)|at (.+):(\d+):(\d+)/);
+    if (!match) return {};
+
+    const fullPath = match[1] || match[4];
+    const line = parseInt(match[2] || match[5], 10); // eslint-disable-line unicorn/prefer-number-properties
+    const column = parseInt(match[3] || match[6], 10); // eslint-disable-line unicorn/prefer-number-properties
+
+    // Extract only filename without path
+    const filename = fullPath?.split('/').pop()?.split('\\').pop();
+
+    return {
+        'error.file': filename,
+        'error.line': line,
+        'error.column': column,
+    };
+}

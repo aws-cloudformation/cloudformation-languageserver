@@ -21,7 +21,7 @@ describe('GetSchemaTask', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        mockDataStore = new MemoryStore();
+        mockDataStore = new MemoryStore('TestStore');
         mockLogger = stubInterface<Logger>();
 
         // Setup Sinon stubs
