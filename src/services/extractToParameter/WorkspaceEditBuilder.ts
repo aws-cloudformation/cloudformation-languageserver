@@ -129,13 +129,7 @@ export class WorkspaceEditBuilder {
         pos1: { line: number; character: number },
         pos2: { line: number; character: number },
     ): boolean {
-        if (pos1.line < pos2.line) {
-            return true;
-        }
-        if (pos1.line > pos2.line) {
-            return false;
-        }
-        return pos1.character < pos2.character;
+        return this.comparePositions(pos1, pos2, false);
     }
 
     /**
@@ -146,13 +140,21 @@ export class WorkspaceEditBuilder {
         pos1: { line: number; character: number },
         pos2: { line: number; character: number },
     ): boolean {
+        return this.comparePositions(pos1, pos2, true);
+    }
+
+    private comparePositions(
+        pos1: { line: number; character: number },
+        pos2: { line: number; character: number },
+        allowEqual: boolean,
+    ): boolean {
         if (pos1.line < pos2.line) {
             return true;
         }
         if (pos1.line > pos2.line) {
             return false;
         }
-        return pos1.character <= pos2.character;
+        return allowEqual ? pos1.character <= pos2.character : pos1.character < pos2.character;
     }
 
     /**
