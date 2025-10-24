@@ -20,7 +20,7 @@
     "Language Server"
   ],
   "scripts": {
-    "clean": "rm -rf build && rm -rf bundle && rm -rf coverage && rm -rf node_modules && rm -rf out",
+    "clean": "rm -rf build && rm -rf bundle && rm -rf coverage && rm -rf node_modules && rm -rf out && rm -rf jscpd",
     "build": "rm -rf out && tsc -b",
     "watch": "rm -rf out && tsc -b -w",
     "test": "NODE_ENV=test vitest run",
