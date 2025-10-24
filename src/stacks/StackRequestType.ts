@@ -30,6 +30,7 @@ export const GetStackTemplateRequest = new RequestType<GetStackTemplateParams, G
 
 export type ListChangeSetParams = {
     stackName: string;
+    nextToken?: string;
 };
 
 export type ListChangeSetResult = {
@@ -39,6 +40,7 @@ export type ListChangeSetResult = {
         creationTime?: string;
         description?: string;
     }>;
+    nextToken?: string;
 };
 
 export const ListChangeSetRequest = new RequestType<ListChangeSetParams, ListChangeSetResult, void>(

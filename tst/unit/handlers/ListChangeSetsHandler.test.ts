@@ -21,18 +21,21 @@ describe('listChangeSetsHandler', () => {
         expect(result).toEqual({ changeSets: [] });
     });
 
-    it('should transform change sets correctly', async () => {
-        const mockChangeSets = [
-            {
-                ChangeSetName: 'changeset-1',
-                Status: 'CREATE_COMPLETE',
-                CreationTime: new Date('2023-01-01T00:00:00Z'),
-                Description: 'Test changeset',
-            },
-        ];
+    it('should transform change sets correctly with pagination', async () => {
+        const mockResult = {
+            changeSets: [
+                {
+                    ChangeSetName: 'changeset-1',
+                    Status: 'CREATE_COMPLETE',
+                    CreationTime: new Date('2023-01-01T00:00:00Z'),
+                    Description: 'Test changeset',
+                },
+            ],
+            nextToken: 'next-page-token',
+        };
 
         const mockCfnService = {
-            listChangeSets: vi.fn().mockResolvedValue(mockChangeSets),
+            listChangeSets: vi.fn().mockResolvedValue(mockResult),
         };
 
         const mockComponents = {
@@ -40,8 +43,9 @@ describe('listChangeSetsHandler', () => {
         } as unknown as ServerComponents;
 
         const handler = listChangeSetsHandler(mockComponents);
-        const result = await handler({ stackName: 'test-stack' }, mockToken);
+        const result = await handler({ stackName: 'test-stack', nextToken: 'some-token' }, mockToken);
 
+        expect(mockCfnService.listChangeSets).toHaveBeenCalledWith('test-stack', 'some-token');
         expect(result).toEqual({
             changeSets: [
                 {
@@ -51,6 +55,7 @@ describe('listChangeSetsHandler', () => {
                     description: 'Test changeset',
                 },
             ],
+            nextToken: 'next-page-token',
         });
     });
 });

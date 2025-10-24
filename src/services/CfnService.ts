@@ -334,14 +334,25 @@ export class CfnService {
         return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
     }
 
-    public async listChangeSets(stackName: string): Promise<ChangeSetSummary[]> {
+    public async listChangeSets(
+        stackName: string,
+        nextToken?: string,
+    ): Promise<{ changeSets: ChangeSetSummary[]; nextToken?: string }> {
         try {
             return await this.withClient(async (client) => {
-                const response = await client.send(new ListChangeSetsCommand({ StackName: stackName }));
-                return response.Summaries ?? [];
+                const response = await client.send(
+                    new ListChangeSetsCommand({
+                        StackName: stackName,
+                        NextToken: nextToken,
+                    }),
+                );
+                return {
+                    changeSets: response.Summaries ?? [],
+                    nextToken: response.NextToken,
+                };
             });
         } catch {
-            return [];
+            return { changeSets: [] };
         }
     }
 }

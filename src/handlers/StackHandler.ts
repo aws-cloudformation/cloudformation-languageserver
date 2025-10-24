@@ -266,14 +266,15 @@ export function listChangeSetsHandler(
 ): RequestHandler<ListChangeSetParams, ListChangeSetResult, void> {
     return async (params: ListChangeSetParams): Promise<ListChangeSetResult> => {
         try {
-            const changeSets = await components.cfnService.listChangeSets(params.stackName);
+            const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
             return {
-                changeSets: changeSets.map((cs) => ({
+                changeSets: result.changeSets.map((cs) => ({
                     changeSetName: cs.ChangeSetName ?? '',
                     status: cs.Status ?? '',
                     creationTime: cs.CreationTime?.toISOString(),
                     description: cs.Description,
                 })),
+                nextToken: result.nextToken,
             };
         } catch {
             return { changeSets: [] };
