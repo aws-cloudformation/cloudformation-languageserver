@@ -49,6 +49,7 @@ describe('StackActionWorkflowOperations', () => {
 
         mockDocumentManager = {
             get: vi.fn(),
+            getLine: vi.fn(),
         } as any;
 
         vi.clearAllMocks();
@@ -424,6 +425,9 @@ describe('StackActionWorkflowOperations', () => {
             };
             mockSyntaxTreeManager.getSyntaxTree.mockReturnValue(mockSyntaxTree);
 
+            const lineContent = 'some line content';
+            (mockDocumentManager.getLine as any).mockReturnValue(lineContent);
+
             // Mock getEntityMap for fallback case
             const mockResourcesMap = new Map([
                 [
@@ -480,7 +484,7 @@ describe('StackActionWorkflowOperations', () => {
                         severity: DiagnosticSeverity.Error,
                         range: {
                             start: { line: 5, character: 10 },
-                            end: { line: 5, character: 20 },
+                            end: { line: 5, character: 10 + lineContent.length },
                         },
                         message: 'S3BucketValidation: Bucket name must be globally unique',
                         source: 'CFN Dry-Run',
