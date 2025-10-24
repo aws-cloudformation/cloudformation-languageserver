@@ -34,38 +34,54 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
     ) {}
 
     async start(params: CreateDeploymentParams): Promise<CreateStackActionResult> {
-        const describeChangeSetResult = await this.cfnService.describeChangeSet({
-            StackName: params.stackName,
-            ChangeSetName: params.changeSetName,
-            IncludePropertyValues: true,
-        });
-
-        const changeSetType = await this.determineChangeSetType(
-            describeChangeSetResult,
-            params.stackName,
-            this.cfnService,
-        );
-
-        await this.cfnService.executeChangeSet({
-            StackName: params.stackName,
-            ChangeSetName: params.changeSetName,
-            ClientRequestToken: params.id,
-        });
-
-        // Set initial workflow state
-        this.workflows.set(params.id, {
+        const workflow = {
             id: params.id,
             changeSetName: params.changeSetName,
             stackName: params.stackName,
-            phase: StackActionPhase.DEPLOYMENT_IN_PROGRESS,
+            phase: StackActionPhase.DEPLOYMENT_STARTED,
             startTime: Date.now(),
             state: StackActionState.IN_PROGRESS,
-            changes: mapChangesToStackChanges(describeChangeSetResult.Changes),
-        });
+        };
 
-        void this.runDeploymentAsync(params, changeSetType);
+        // set initial workflow
+        this.workflows.set(params.id, workflow);
 
-        return params;
+        try {
+            const describeChangeSetResult = await this.cfnService.describeChangeSet({
+                StackName: params.stackName,
+                ChangeSetName: params.changeSetName,
+                IncludePropertyValues: true,
+            });
+
+            const changeSetType = await this.determineChangeSetType(
+                describeChangeSetResult,
+                params.stackName,
+                this.cfnService,
+            );
+
+            await this.cfnService.executeChangeSet({
+                StackName: params.stackName,
+                ChangeSetName: params.changeSetName,
+                ClientRequestToken: params.id,
+            });
+
+            processWorkflowUpdates(this.workflows, workflow, {
+                phase: StackActionPhase.DEPLOYMENT_IN_PROGRESS,
+                changes: mapChangesToStackChanges(describeChangeSetResult.Changes),
+            });
+
+            void this.runDeploymentAsync(params, changeSetType);
+
+            return params;
+        } catch (error) {
+            processWorkflowUpdates(this.workflows, workflow, {
+                phase: StackActionPhase.DEPLOYMENT_FAILED,
+                state: StackActionState.FAILED,
+                failureReason: extractErrorMessage(error),
+            });
+
+            throw error;
+        }
     }
 
     getStatus(params: Identifiable): GetStackActionStatusResult {

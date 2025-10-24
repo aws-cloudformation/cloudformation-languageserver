@@ -94,6 +94,40 @@ describe('DeploymentWorkflow', () => {
             expect(workflow.state).toBe(StackActionState.IN_PROGRESS);
             expect(workflow.changes).toBe(mockMappedChanges);
         });
+
+        it('should update workflow on start failure', async () => {
+            const mockChanges = [{ Action: 'Add', ResourceType: 'AWS::S3::Bucket' }];
+            const mockMappedChanges = [
+                { type: 'Resource', resourceChange: { action: 'Add', logicalResourceId: 'MyBucket' } },
+            ];
+
+            mockCfnService.executeChangeSet = vi.fn().mockRejectedValueOnce(new Error('Execute changeset failed'));
+            mockCfnService.describeChangeSet = vi.fn().mockResolvedValue({ Changes: mockChanges });
+            (mapChangesToStackChanges as any).mockReturnValue(mockMappedChanges);
+            (isStackInReview as any).mockResolvedValue(true);
+
+            // Don't resolve waitForDeployment so async operation stays pending
+            (waitForDeployment as any).mockImplementation(() => new Promise(() => {}));
+
+            await expect(deploymentWorkflow.start(testCreateDeploymentParams)).rejects.toThrow();
+
+            expect(mockCfnService.executeChangeSet).toHaveBeenCalledWith({
+                StackName: testStackName,
+                ChangeSetName: testChangeSetName,
+                ClientRequestToken: testId,
+            });
+
+            expect(mockCfnService.describeChangeSet).toHaveBeenCalledWith({
+                StackName: testStackName,
+                ChangeSetName: testChangeSetName,
+                IncludePropertyValues: true,
+            });
+
+            // Verify failed workflow state
+            const workflow = (deploymentWorkflow as any).workflows.get(testId);
+            expect(workflow.phase).toBe(StackActionPhase.DEPLOYMENT_FAILED);
+            expect(workflow.state).toBe(StackActionState.FAILED);
+        });
     });
 
     describe('getStatus', () => {
