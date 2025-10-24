@@ -186,9 +186,12 @@ interface BenchmarkResult {
     iterations: number;
     contextNotFoundCount: number;
     contextUnknownCount: number;
+    contextWithEntitiesNotFoundCount: number;
+    relatedEntitiesCounts: number[];
     totalLatencies: number[];
     syntaxTreeLatencies: number[];
     contextLatencies: number[];
+    contextWithEntitiesLatencies: number[];
     resourceUsage: {
         initial: ResourceUsage;
         final: ResourceUsage;
@@ -204,6 +207,8 @@ interface BenchmarkResult {
         total: Percentiles;
         syntaxTree: Percentiles;
         context: Percentiles;
+        contextWithEntities: Percentiles;
+        relatedEntities: Percentiles;
     };
 }
 
@@ -361,6 +366,8 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
     const totalLatencies: number[] = [];
     const syntaxTreeLatencies: number[] = [];
     const contextLatencies: number[] = [];
+    const contextWithEntitiesLatencies: number[] = [];
+    const relatedEntitiesCounts: number[] = [];
     const cpuUsageDeltas: number[] = [];
     const rssUsages: number[] = [];
     const heapUsedUsages: number[] = [];
@@ -368,6 +375,7 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
 
     let contextNotFoundCount = 0;
     let contextUnknownCount = 0;
+    let contextWithEntitiesNotFoundCount = 0;
     let errors = 0;
 
     console.log(`Running ${formatNumber(ITERATIONS)} iterations for ${templateName}...`);
@@ -388,7 +396,9 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
 
         let syntaxTreeSuccess = false;
         let contextSuccess = false;
+        let contextWithEntitiesSuccess = false;
         let context = null;
+        let contextWithEntities = null;
 
         // Try syntax tree creation
         try {
@@ -410,6 +420,10 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
                 textDocument: { uri },
                 position: { line: pos.line, character: pos.character },
             });
+
+            // Force evaluate lazy properties
+            context?.entity;
+            context?.intrinsicContext;
             contextLatencies.push((performance.now() - contextStartTime) * 1000);
             contextSuccess = true;
         } catch (error) {
@@ -421,8 +435,40 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
             }
         }
 
-        // Record total latency ONLY if BOTH operations succeeded
-        if (syntaxTreeSuccess && contextSuccess) {
+        // Try getContextAndRelatedEntities
+        try {
+            const contextWithEntitiesStartTime = performance.now();
+            contextWithEntities = contextManager.getContextAndRelatedEntities({
+                textDocument: { uri },
+                position: { line: pos.line, character: pos.character },
+            });
+
+            // Force evaluate lazy properties
+            contextWithEntities?.entity;
+            contextWithEntities?.intrinsicContext;
+            const relatedEntities = contextWithEntities?.relatedEntities;
+
+            contextWithEntitiesLatencies.push((performance.now() - contextWithEntitiesStartTime) * 1000);
+            contextWithEntitiesSuccess = true;
+
+            if (relatedEntities) {
+                let count = 0;
+                for (const innerMap of relatedEntities.values()) {
+                    count += innerMap.size;
+                }
+                relatedEntitiesCounts.push(count);
+            }
+        } catch (error) {
+            errors++;
+            if (errors < 10 || errors % 5000 === 0) {
+                console.warn(
+                    `⚠️  Iteration ${i + 1} contextWithEntities resolution failed for ${templateName}: ${error}, continuing...`,
+                );
+            }
+        }
+
+        // Record total latency ONLY if ALL operations succeeded
+        if (syntaxTreeSuccess && contextSuccess && contextWithEntitiesSuccess) {
             totalLatencies.push((performance.now() - totalStartTime) * 1000);
         }
 
@@ -438,8 +484,13 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
             contextUnknownCount++;
         }
 
+        // Track contextWithEntities results
+        if (!contextWithEntitiesSuccess || contextWithEntities === undefined) {
+            contextWithEntitiesNotFoundCount++;
+        }
+
         // Track resource usage (for any iteration that had at least partial success)
-        if (syntaxTreeSuccess || contextSuccess) {
+        if (syntaxTreeSuccess || contextSuccess || contextWithEntitiesSuccess) {
             const iterationEndUsage = getCurrentResourceUsage();
             const cpuDelta = calculateResourceDelta(iterationStartUsage, iterationEndUsage);
             cpuUsageDeltas.push(cpuDelta.cpuUsage.user + cpuDelta.cpuUsage.system);
@@ -481,9 +532,12 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
         iterations: ITERATIONS, // Total attempted iterations
         contextNotFoundCount,
         contextUnknownCount,
+        contextWithEntitiesNotFoundCount,
+        relatedEntitiesCounts,
         totalLatencies,
         syntaxTreeLatencies,
         contextLatencies,
+        contextWithEntitiesLatencies,
         resourceUsage: {
             initial: initialResourceUsage,
             final: finalResourceUsage,
@@ -499,13 +553,23 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
             total: calculatePercentiles(totalLatencies),
             syntaxTree: calculatePercentiles(syntaxTreeLatencies),
             context: calculatePercentiles(contextLatencies),
+            contextWithEntities: calculatePercentiles(contextWithEntitiesLatencies),
+            relatedEntities: calculatePercentiles(relatedEntitiesCounts),
         },
     };
 }
 
 function formatResults(result: BenchmarkResult): string {
-    const { templateName, format, iterations, contextNotFoundCount, contextUnknownCount, percentiles, resourceUsage } =
-        result;
+    const {
+        templateName,
+        format,
+        iterations,
+        contextNotFoundCount,
+        contextUnknownCount,
+        contextWithEntitiesNotFoundCount,
+        percentiles,
+        resourceUsage,
+    } = result;
 
     // Calculate context rates based on total iterations
     const contextFoundCount = iterations - contextNotFoundCount;
@@ -513,6 +577,8 @@ function formatResults(result: BenchmarkResult): string {
     const contextFoundRate = safeFormatPercentage(contextFoundCount, iterations);
     const contextValidRate = safeFormatPercentage(contextValidCount, iterations);
     const contextUnknownRate = safeFormatPercentage(contextUnknownCount, iterations);
+    const contextWithEntitiesFoundCount = iterations - contextWithEntitiesNotFoundCount;
+    const contextWithEntitiesFoundRate = safeFormatPercentage(contextWithEntitiesFoundCount, iterations);
 
     // Calculate resource deltas
     const memoryDelta = calculateResourceDelta(resourceUsage.initial, resourceUsage.final);
@@ -522,9 +588,11 @@ function formatResults(result: BenchmarkResult): string {
     const totalDataPoints = result.totalLatencies.length;
     const syntaxTreeDataPoints = result.syntaxTreeLatencies.length;
     const contextDataPoints = result.contextLatencies.length;
+    const contextWithEntitiesDataPoints = result.contextWithEntitiesLatencies.length;
 
     // Check if we have valid data
-    const hasValidData = totalDataPoints > 0 || syntaxTreeDataPoints > 0 || contextDataPoints > 0;
+    const hasValidData =
+        totalDataPoints > 0 || syntaxTreeDataPoints > 0 || contextDataPoints > 0 || contextWithEntitiesDataPoints > 0;
 
     return `
 ## ${templateName} (${format})
@@ -535,9 +603,12 @@ function formatResults(result: BenchmarkResult): string {
 - **Context Found:** ${formatNumber(contextFoundCount)} (${contextFoundRate}%)
 - **Context Valid:** ${formatNumber(contextValidCount)} (${contextValidRate}%)
 - **Context Unknown:** ${formatNumber(contextUnknownCount)} (${contextUnknownRate}%)
+- **Context With Entities Found:** ${formatNumber(contextWithEntitiesFoundCount)} (${contextWithEntitiesFoundRate}%)
+- **Related Entities Detected:** P50=${safeFormatNumber(percentiles.relatedEntities.p50, 0)}, P90=${safeFormatNumber(percentiles.relatedEntities.p90, 0)}, P99=${safeFormatNumber(percentiles.relatedEntities.p99, 0)}
 
 ### Data Points Used for Percentile Calculations
 - **Context Resolution:** ${formatNumber(contextDataPoints)} measurements
+- **Context With Entities:** ${formatNumber(contextWithEntitiesDataPoints)} measurements
 - **Syntax Tree:** ${formatNumber(syntaxTreeDataPoints)} measurements  
 - **Total Latency:** ${formatNumber(totalDataPoints)} measurements
 
@@ -549,6 +620,7 @@ ${!hasValidData ? '⚠️ **No successful measurements - all metrics show N/A**\
 | **Total** | ${safeFormatNumber(percentiles.total.p50)} | ${safeFormatNumber(percentiles.total.p90)} | ${safeFormatNumber(percentiles.total.p99)} | ${safeFormatNumber(percentiles.total.p99_9)} | ${safeFormatNumber(percentiles.total.p99_99)} |
 | **Syntax Tree** | ${safeFormatNumber(percentiles.syntaxTree.p50)} | ${safeFormatNumber(percentiles.syntaxTree.p90)} | ${safeFormatNumber(percentiles.syntaxTree.p99)} | ${safeFormatNumber(percentiles.syntaxTree.p99_9)} | ${safeFormatNumber(percentiles.syntaxTree.p99_99)} |
 | **Context Resolution** | ${safeFormatNumber(percentiles.context.p50)} | ${safeFormatNumber(percentiles.context.p90)} | ${safeFormatNumber(percentiles.context.p99)} | ${safeFormatNumber(percentiles.context.p99_9)} | ${safeFormatNumber(percentiles.context.p99_99)} |
+| **Context With Entities** | ${safeFormatNumber(percentiles.contextWithEntities.p50)} | ${safeFormatNumber(percentiles.contextWithEntities.p90)} | ${safeFormatNumber(percentiles.contextWithEntities.p99)} | ${safeFormatNumber(percentiles.contextWithEntities.p99_9)} | ${safeFormatNumber(percentiles.contextWithEntities.p99_99)} |
 
 ### Resource Usage
 | Metric | Initial | Final | Peak | Delta | Peak Delta |
@@ -564,6 +636,7 @@ ${!hasValidData ? '⚠️ **No successful measurements - all metrics show N/A**\
 |--------|-----|-----|
 | **Syntax Tree** | ${safeFormatPercentage(percentiles.syntaxTree.p50, percentiles.total.p50)}% | ${safeFormatPercentage(percentiles.syntaxTree.p99, percentiles.total.p99)}% |
 | **Context Resolution** | ${safeFormatPercentage(percentiles.context.p50, percentiles.total.p50)}% | ${safeFormatPercentage(percentiles.context.p99, percentiles.total.p99)}% |
+| **Context With Entities** | ${safeFormatPercentage(percentiles.contextWithEntities.p50, percentiles.total.p50)}% | ${safeFormatPercentage(percentiles.contextWithEntities.p99, percentiles.total.p99)}% |
 - **Memory Growth:** ${formatBytes(memoryDelta.memoryUsage.rss)} RSS, ${formatBytes(memoryDelta.memoryUsage.heapUsed)} Heap
 - **Peak Memory Usage:** ${formatBytes(resourceUsage.peak.memoryUsage.rss)} RSS, ${formatBytes(resourceUsage.peak.memoryUsage.heapUsed)} Heap
 
@@ -591,10 +664,10 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
     // Comparison Table
     report.push('## Performance Comparison\n');
     report.push(
-        '| Template | Format | Size (KB) | Data Points | Success Rates | Syntax Tree P50/P99.9 (μs) | Context P50/P99.9 (μs) | Total P50/P99.9 (μs) | Memory P50 (MB) |',
+        '| Template | Format | Size (KB) | Data Points | Success Rates | Related Entities (P50/P90/P99) | Syntax Tree P50/P99.9 (μs) | Context P50/P99.9 (μs) | Context+Entities P50/P99.9 (μs) | Total P50/P99.9 (μs) | Memory P50 (MB) |',
     );
     report.push(
-        '|----------|--------|-----------|-------------|---------------|----------------------------|------------------------|----------------------|-----------------|',
+        '|----------|--------|-----------|-------------|---------------|-------------------------------|----------------------------|------------------------|--------------------------------|----------------------|-----------------|',
     );
 
     // Sort results by file size (smallest first)
@@ -618,24 +691,29 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         const contextValidCount = contextFoundCount - result.contextUnknownCount;
         const contextFoundRate = safeFormatPercentage(contextFoundCount, result.iterations);
         const contextValidRate = safeFormatPercentage(contextValidCount, result.iterations);
+        const contextWithEntitiesFoundCount = result.iterations - result.contextWithEntitiesNotFoundCount;
+        const contextWithEntitiesFoundRate = safeFormatPercentage(contextWithEntitiesFoundCount, result.iterations);
 
         // Data points as bullets
         const syntaxTreeDataPoints = result.syntaxTreeLatencies.length;
-        const dataPointsInfo = `• Syntax Tree: ${formatNumber(syntaxTreeDataPoints)}<br>• Valid Context: ${formatNumber(contextValidCount)}<br>• Found Context: ${formatNumber(contextFoundCount)}`;
+        const contextWithEntitiesDataPoints = result.contextWithEntitiesLatencies.length;
+        const dataPointsInfo = `• Syntax Tree: ${formatNumber(syntaxTreeDataPoints)}<br>• Valid Context: ${formatNumber(contextValidCount)}<br>• Found Context: ${formatNumber(contextFoundCount)}<br>• Context+Entities: ${formatNumber(contextWithEntitiesFoundCount)}`;
 
         // Success rates as bullets
-        const successRatesInfo = `• Syntax Tree: ${safeFormatPercentage(syntaxTreeDataPoints, result.iterations)}%<br>• Valid Context: ${contextValidRate}%<br>• Found Context: ${contextFoundRate}%`;
+        const successRatesInfo = `• Syntax Tree: ${safeFormatPercentage(syntaxTreeDataPoints, result.iterations)}%<br>• Valid Context: ${contextValidRate}%<br>• Found Context: ${contextFoundRate}%<br>• Context+Entities: ${contextWithEntitiesFoundRate}%`;
 
         // P50 and P99.9 latencies for each component
+        const relatedEntitiesCount = `${safeFormatNumber(result.percentiles.relatedEntities.p50, 0)} / ${safeFormatNumber(result.percentiles.relatedEntities.p90, 0)} / ${safeFormatNumber(result.percentiles.relatedEntities.p99, 0)}`;
         const syntaxTreeLatencies = `${safeFormatNumber(result.percentiles.syntaxTree.p50)} / ${safeFormatNumber(result.percentiles.syntaxTree.p99_9)}`;
         const contextLatencies = `${safeFormatNumber(result.percentiles.context.p50)} / ${safeFormatNumber(result.percentiles.context.p99_9)}`;
+        const contextWithEntitiesLatencies = `${safeFormatNumber(result.percentiles.contextWithEntities.p50)} / ${safeFormatNumber(result.percentiles.contextWithEntities.p99_9)}`;
         const totalLatencies = `${safeFormatNumber(result.percentiles.total.p50)} / ${safeFormatNumber(result.percentiles.total.p99_9)}`;
 
         // Memory usage
         const memoryP50MB = safeFormatNumber(result.resourceUsage.memoryUsagePercentiles.rss.p50 / (1024 * 1024), 1);
 
         report.push(
-            `| ${result.templateName} | ${result.format} | ${fileSizeKB} | ${dataPointsInfo} | ${successRatesInfo} | ${syntaxTreeLatencies} | ${contextLatencies} | ${totalLatencies} | ${memoryP50MB} |`,
+            `| ${result.templateName} | ${result.format} | ${fileSizeKB} | ${dataPointsInfo} | ${successRatesInfo} | ${relatedEntitiesCount} | ${syntaxTreeLatencies} | ${contextLatencies} | ${contextWithEntitiesLatencies} | ${totalLatencies} | ${memoryP50MB} |`,
         );
     });
 
@@ -650,6 +728,8 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         const syntaxTreeP99Latencies = validResults.map((r) => r.percentiles.syntaxTree.p99);
         const contextP50Latencies = validResults.map((r) => r.percentiles.context.p50);
         const contextP99Latencies = validResults.map((r) => r.percentiles.context.p99);
+        const contextWithEntitiesP50Latencies = validResults.map((r) => r.percentiles.contextWithEntities.p50);
+        const contextWithEntitiesP99Latencies = validResults.map((r) => r.percentiles.contextWithEntities.p99);
 
         report.push('### Latency Distribution Ranges\n');
 
@@ -662,7 +742,10 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
             `| **Syntax Tree** | ${safeFormatNumber(Math.min(...syntaxTreeP50Latencies))} - ${safeFormatNumber(Math.max(...syntaxTreeP50Latencies))} | ${safeFormatNumber(Math.min(...syntaxTreeP99Latencies))} - ${safeFormatNumber(Math.max(...syntaxTreeP99Latencies))} |`,
         );
         report.push(
-            `| **Context Resolution** | ${safeFormatNumber(Math.min(...contextP50Latencies))} - ${safeFormatNumber(Math.max(...contextP50Latencies))} | ${safeFormatNumber(Math.min(...contextP99Latencies))} - ${safeFormatNumber(Math.max(...contextP99Latencies))} |\n`,
+            `| **Context Resolution** | ${safeFormatNumber(Math.min(...contextP50Latencies))} - ${safeFormatNumber(Math.max(...contextP50Latencies))} | ${safeFormatNumber(Math.min(...contextP99Latencies))} - ${safeFormatNumber(Math.max(...contextP99Latencies))} |`,
+        );
+        report.push(
+            `| **Context With Entities** | ${safeFormatNumber(Math.min(...contextWithEntitiesP50Latencies))} - ${safeFormatNumber(Math.max(...contextWithEntitiesP50Latencies))} | ${safeFormatNumber(Math.min(...contextWithEntitiesP99Latencies))} - ${safeFormatNumber(Math.max(...contextWithEntitiesP99Latencies))} |\n`,
         );
     }
 
@@ -674,24 +757,34 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         const contextFoundRate = safeFormatPercentage(contextFoundCount, result.iterations);
         const contextValidRate = safeFormatPercentage(contextValidCount, result.iterations);
         const contextUnknownRate = safeFormatPercentage(result.contextUnknownCount, result.iterations);
+        const contextWithEntitiesFoundCount = result.iterations - result.contextWithEntitiesNotFoundCount;
+        const contextWithEntitiesFoundRate = safeFormatPercentage(contextWithEntitiesFoundCount, result.iterations);
         report.push(
-            `- **${result.templateName}:** Found ${contextFoundRate}%, Valid ${contextValidRate}%, Unknown ${contextUnknownRate}%`,
+            `- **${result.templateName}:** Found ${contextFoundRate}%, Valid ${contextValidRate}%, Unknown ${contextUnknownRate}%, With Entities ${contextWithEntitiesFoundRate}%`,
         );
     });
 
     report.push('### Component Overhead Analysis\n');
 
-    report.push('| Template | Syntax Tree Overhead | Context Resolution Overhead |');
-    report.push('|----------|---------------------|----------------------------|');
+    report.push('| Template | Syntax Tree Overhead | Context Resolution Overhead | Context With Entities Overhead |');
+    report.push('|----------|---------------------|----------------------------|-------------------------------|');
 
     sortedResults.forEach((result) => {
         const syntaxTreeP50Pct = safeFormatPercentage(result.percentiles.syntaxTree.p50, result.percentiles.total.p50);
         const syntaxTreeP99Pct = safeFormatPercentage(result.percentiles.syntaxTree.p99, result.percentiles.total.p99);
         const contextP50Pct = safeFormatPercentage(result.percentiles.context.p50, result.percentiles.total.p50);
         const contextP99Pct = safeFormatPercentage(result.percentiles.context.p99, result.percentiles.total.p99);
+        const contextWithEntitiesP50Pct = safeFormatPercentage(
+            result.percentiles.contextWithEntities.p50,
+            result.percentiles.total.p50,
+        );
+        const contextWithEntitiesP99Pct = safeFormatPercentage(
+            result.percentiles.contextWithEntities.p99,
+            result.percentiles.total.p99,
+        );
 
         report.push(
-            `| **${result.templateName}** | ${syntaxTreeP50Pct}% (P50) / ${syntaxTreeP99Pct}% (P99) | ${contextP50Pct}% (P50) / ${contextP99Pct}% (P99) |`,
+            `| **${result.templateName}** | ${syntaxTreeP50Pct}% (P50) / ${syntaxTreeP99Pct}% (P99) | ${contextP50Pct}% (P50) / ${contextP99Pct}% (P99) | ${contextWithEntitiesP50Pct}% (P50) / ${contextWithEntitiesP99Pct}% (P99) |`,
         );
     });
 
@@ -835,8 +928,13 @@ function main(): void {
                 const contextFoundRate = safeFormatPercentage(contextFoundCount, result.iterations);
                 const contextValidRate = safeFormatPercentage(contextValidCount, result.iterations);
                 const contextUnknownRate = safeFormatPercentage(result.contextUnknownCount, result.iterations);
+                const contextWithEntitiesFoundCount = result.iterations - result.contextWithEntitiesNotFoundCount;
+                const contextWithEntitiesFoundRate = safeFormatPercentage(
+                    contextWithEntitiesFoundCount,
+                    result.iterations,
+                );
                 console.log(
-                    `   ${result.templateName} (${result.format}): P50=${safeFormatNumber(result.percentiles.total.p50)} μs, P99=${safeFormatNumber(result.percentiles.total.p99)} μs, Found=${contextFoundRate}%, Valid=${contextValidRate}%, Unknown=${contextUnknownRate}%`,
+                    `   ${result.templateName} (${result.format}): P50=${safeFormatNumber(result.percentiles.total.p50)} μs, P99=${safeFormatNumber(result.percentiles.total.p99)} μs, Found=${contextFoundRate}%, Valid=${contextValidRate}%, Unknown=${contextUnknownRate}%, WithEntities=${contextWithEntitiesFoundRate}%`,
                 );
             });
 
