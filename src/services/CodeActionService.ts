@@ -36,6 +36,10 @@ export class CodeActionService {
     private static readonly REMOVE_ERROR_TITLE = 'Remove validation error';
     private readonly log = LoggerFactory.getLogger(CodeActionService);
 
+    private logError(operation: string, error: unknown): void {
+        this.log.error(`Error ${operation}: ${extractErrorMessage(error)}`);
+    }
+
     constructor(
         private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly documentManager: DocumentManager,
@@ -96,7 +100,7 @@ export class CodeActionService {
                 fixes.push(...this.generateCfnValidationFixes(diagnostic, uri));
             }
         } catch (error) {
-            this.log.error(`Error generating fixes for diagnostic: ${extractErrorMessage(error)}`);
+            this.logError('generating fixes for diagnostic', error);
         }
 
         return fixes;
@@ -222,7 +226,7 @@ export class CodeActionService {
                 }
             }
         } catch (error) {
-            this.log.warn(`Could not determine key-pair range from syntax tree: ${extractErrorMessage(error)}`);
+            this.logError('determining key-pair range from syntax tree', error);
         }
 
         // Fallback to the diagnostic range as provided by cfn-lint
@@ -268,7 +272,7 @@ export class CodeActionService {
                 end: pointToPosition(node.endPosition),
             };
         } catch (error) {
-            this.log.warn(`Error finding key-pair boundaries in syntax tree: ${extractErrorMessage(error)}`);
+            this.logError('finding key-pair boundaries in syntax tree', error);
             return undefined;
         }
     }
@@ -303,7 +307,7 @@ export class CodeActionService {
             }
             // If we can't find a proper insertion point using syntax tree, don't generate a fix
         } catch (error) {
-            this.log.warn(`Error generating add required property fix: ${extractErrorMessage(error)}`);
+            this.logError('generating add required property fix', error);
             // If we can't generate a proper fix using syntax tree, don't generate a fix
         }
 
@@ -336,7 +340,7 @@ export class CodeActionService {
 
             return codeAction;
         } catch (error) {
-            this.log.error(`Error creating code action: ${extractErrorMessage(error)}`);
+            this.logError('creating code action', error);
             return undefined;
         }
     }
@@ -391,7 +395,7 @@ export class CodeActionService {
 
             return undefined;
         } catch (error) {
-            this.log.warn(`Error finding first child insertion point: ${extractErrorMessage(error)}`);
+            this.logError('finding first child insertion point', error);
             return undefined;
         }
     }
@@ -416,7 +420,7 @@ export class CodeActionService {
 
             return undefined;
         } catch (error) {
-            this.log.warn(`Error finding first child position using syntax tree: ${extractErrorMessage(error)}`);
+            this.logError('finding first child position using syntax tree', error);
             return undefined;
         }
     }
@@ -547,7 +551,7 @@ export class CodeActionService {
                 }
             }
         } catch (error) {
-            this.log.error(`Error generating refactor actions: ${extractErrorMessage(error)}`);
+            this.logError('generating refactor actions', error);
         }
 
         return refactorActions;
@@ -592,7 +596,7 @@ export class CodeActionService {
                 },
             };
         } catch (error) {
-            this.log.error(`Error generating extract to parameter action: ${extractErrorMessage(error)}`);
+            this.logError('generating extract to parameter action', error);
             return undefined;
         }
     }
@@ -638,9 +642,7 @@ export class CodeActionService {
                 },
             };
         } catch (error) {
-            this.log.error(
-                `Error generating extract all occurrences to parameter action: ${extractErrorMessage(error)}`,
-            );
+            this.logError('generating extract all occurrences to parameter action', error);
             return undefined;
         }
     }

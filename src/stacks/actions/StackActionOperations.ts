@@ -32,6 +32,10 @@ import { CFN_VALIDATION_SOURCE } from './ValidationWorkflow';
 
 const logger = LoggerFactory.getLogger('StackActionOperations');
 
+function logCleanupError(error: unknown, workflowId: string, changeSetName: string, operation: string): void {
+    logger.warn({ error, workflowId, changeSetName }, `Failed to cleanup ${operation}`);
+}
+
 export async function processChangeSet(
     cfnService: CfnService,
     documentManager: DocumentManager,
@@ -187,10 +191,7 @@ export async function deleteStackAndChangeSet(
             logger,
         );
     } catch (error) {
-        logger.warn(
-            { error, workflowId, changeSetName: workflow.changeSetName },
-            'Failed to cleanup workflow resources',
-        );
+        logCleanupError(error, workflowId, workflow.changeSetName, 'workflow resources');
     }
 }
 
@@ -214,10 +215,7 @@ export async function deleteChangeSet(
             logger,
         );
     } catch (error) {
-        logger.warn(
-            { error, workflowId, changeSetName: workflow.changeSetName },
-            'Failed to cleanup workflow resources',
-        );
+        logCleanupError(error, workflowId, workflow.changeSetName, 'change set');
     }
 }
 

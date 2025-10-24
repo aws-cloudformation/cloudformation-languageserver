@@ -11,6 +11,7 @@ import { DocumentManager } from '../document/DocumentManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
+import { determineGetAttPosition, extractGetAttResourceLogicalId } from '../utils/GetAttUtils';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, createMarkupContent, createReplacementRange } from './CompletionUtils';
 
@@ -231,7 +232,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             return undefined;
         }
 
-        const position = this.determineGetAttPosition(intrinsicFunction.args, context);
+        const position = determineGetAttPosition(intrinsicFunction.args, context);
 
         if (position === 1) {
             return this.getGetAttResourceCompletions(resourceEntities, intrinsicFunction.args, context);
@@ -636,45 +637,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
     }
 
-    private determineGetAttPosition(args: unknown, context: Context): number {
-        if (typeof args === 'string') {
-            const dotIndex = args.indexOf('.');
-            if (dotIndex === -1) {
-                return 1;
-            }
-
-            const resourcePart = args.slice(0, dotIndex);
-
-            if (context.text === resourcePart) {
-                return 1;
-            }
-
-            if (context.text.length > 0 && resourcePart.startsWith(context.text)) {
-                return 1;
-            }
-
-            return 2;
-        }
-
-        if (!Array.isArray(args)) {
-            return 0;
-        }
-
-        if (args.length === 0) {
-            return 1;
-        }
-
-        if (args.length === 1 && args[0] === context.text) {
-            return 1;
-        }
-
-        if (args.length >= 2 && args[1] === context.text) {
-            return 2;
-        }
-
-        return 2;
-    }
-
     private getGetAttResourceCompletions(
         resourceEntities: Map<string, Context>,
         args: unknown,
@@ -712,7 +674,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         args: unknown,
         context: Context,
     ): CompletionItem[] | undefined {
-        const resourceLogicalId = this.extractGetAttResourceLogicalId(args);
+        const resourceLogicalId = extractGetAttResourceLogicalId(args);
 
         if (!resourceLogicalId) {
             return undefined;
@@ -784,23 +746,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         });
 
         return context.text.length > 0 ? this.attributeFuzzySearch(completionItems, context.text) : completionItems;
-    }
-
-    private extractGetAttResourceLogicalId(args: unknown): string | undefined {
-        if (typeof args === 'string') {
-            const dotIndex = args.indexOf('.');
-            if (dotIndex !== -1) {
-                return args.slice(0, Math.max(0, dotIndex));
-            }
-            return args;
-        }
-
-        if (Array.isArray(args) && args.length > 0 && typeof args[0] === 'string') {
-            // Array format
-            return args[0];
-        }
-
-        return undefined;
     }
 
     private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } {

@@ -1,15 +1,23 @@
+import { Position } from 'vscode-languageserver-protocol';
 import { Context } from '../context/Context';
-import { IntrinsicFunction, ResourceAttribute, ResourceAttributesSet } from '../context/ContextType';
+import { IntrinsicFunction, ResourceAttribute, ResourceAttributesSet, TopLevelSection } from '../context/ContextType';
 import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntities';
+import { Resource } from '../context/semantic/Entity';
+import { EntityType } from '../context/semantic/SemanticTypes';
+import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { determineGetAttPosition, extractAttributeName, extractGetAttResourceLogicalId } from '../utils/GetAttUtils';
 import { formatIntrinsicArgumentHover, getResourceAttributeValueDoc } from './HoverFormatter';
 import { HoverProvider } from './HoverProvider';
 
-export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
-    constructor() {}
+const log = LoggerFactory.getLogger('IntrinsicFunctionArgumentHoverProvider');
 
-    getInformation(context: Context): string | undefined {
+export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
+    constructor(private readonly schemaRetriever: SchemaRetriever) {}
+
+    getInformation(context: Context, position?: Position): string | undefined {
         // Only handle contexts that are inside intrinsic functions
-        if (!context.intrinsicContext.inIntrinsic()) {
+        if (!context.intrinsicContext.inIntrinsic() || context.isIntrinsicFunc) {
             return undefined;
         }
 
@@ -28,7 +36,7 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
                 return this.handleRefArgument(context);
             }
             case IntrinsicFunction.GetAtt: {
-                return this.handleGetAttArgument(context);
+                return this.handleGetAttArgument(context, position);
             }
             // Add other intrinsic function types as needed
             default: {
@@ -43,9 +51,13 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
             return undefined;
         }
 
+        // Extract logical ID (handle dot notation like "MyBucket.Arn")
+        const dotIndex = context.text.indexOf('.');
+        const logicalId = dotIndex === -1 ? context.text : context.text.slice(0, dotIndex);
+
         // Look for the referenced entity in related entities
         for (const [, section] of context.relatedEntities.entries()) {
-            const relatedContext = section.get(context.text);
+            const relatedContext = section.get(logicalId);
             if (relatedContext) {
                 return this.buildSchemaAndFormat(relatedContext);
             }
@@ -54,11 +66,27 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
         return undefined;
     }
 
-    private handleGetAttArgument(context: Context): string | undefined {
-        // For !GetAtt, we might want to handle resource.attribute references
-        // This could be implemented similarly to handleRefArgument but with
-        // additional logic for attribute-specific information
-        return this.handleRefArgument(context); // For now, use same logic as Ref
+    private handleGetAttArgument(context: Context, position?: Position): string | undefined {
+        if (!(context instanceof ContextWithRelatedEntities)) {
+            return undefined;
+        }
+
+        const intrinsicFunction = context.intrinsicContext.intrinsicFunction();
+        if (!intrinsicFunction) {
+            return undefined;
+        }
+
+        const getAttPosition = determineGetAttPosition(intrinsicFunction.args, context, position);
+
+        if (getAttPosition === 1) {
+            // Hovering over resource name
+            return this.handleRefArgument(context);
+        } else if (getAttPosition === 2) {
+            // Hovering over attribute name
+            return this.getGetAttAttributeHover(context, intrinsicFunction.args);
+        }
+
+        return undefined;
     }
 
     private buildSchemaAndFormat(relatedContext: Context): string | undefined {
@@ -79,5 +107,74 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
         }
 
         return undefined;
+    }
+
+    /**
+     * Gets hover information for GetAtt attribute names
+     */
+    private getGetAttAttributeHover(context: ContextWithRelatedEntities, args: unknown): string | undefined {
+        const resourceLogicalId = extractGetAttResourceLogicalId(args);
+        if (!resourceLogicalId) {
+            return undefined;
+        }
+
+        const resourcesSection = context.relatedEntities.get(TopLevelSection.Resources);
+        if (!resourcesSection) {
+            return undefined;
+        }
+
+        const resourceContext = resourcesSection.get(resourceLogicalId);
+        if (!resourceContext?.entity || resourceContext.entity.entityType !== EntityType.Resource) {
+            return undefined;
+        }
+
+        const resource = resourceContext.entity as Resource;
+        const resourceType = resource.Type;
+        if (!resourceType || typeof resourceType !== 'string') {
+            return undefined;
+        }
+
+        const attributeName = extractAttributeName(args, context);
+        if (!attributeName) {
+            return undefined;
+        }
+
+        return this.getAttributeDocumentation(resourceType, attributeName);
+    }
+
+    /**
+     * Gets documentation for a specific resource attribute from the schema
+     */
+    private getAttributeDocumentation(resourceType: string, attributeName: string): string | undefined {
+        const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
+
+        // Provide fallback description even when schema is not available
+        let description = `**${attributeName}** attribute of **${resourceType}**\n\nReturns the value of this attribute when used with the GetAtt intrinsic function.`;
+
+        if (schema) {
+            const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/')}`;
+
+            try {
+                const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
+                if (resolvedSchemas.length === 1) {
+                    const firstSchema = resolvedSchemas[0];
+                    if (firstSchema.description) {
+                        description = firstSchema.description;
+                    }
+                }
+            } catch (error) {
+                log.debug({ error, resourceType, attributeName }, 'Error resolving attribute documentation');
+            }
+        }
+
+        return this.formatAttributeHover(resourceType, description);
+    }
+
+    /**
+     * Formats the hover information for GetAtt attributes
+     */
+    private formatAttributeHover(resourceType: string, description: string): string {
+        const lines = [`**GetAtt attribute for ${resourceType}**`, '', description];
+        return lines.join('\n');
     }
 }
