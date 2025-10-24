@@ -3,20 +3,21 @@ import { Identifiable } from '../../protocol/LspTypes';
 import {
     TemplateUri,
     GetParametersResult,
-    CreateStackActionParams,
-    CreateStackActionResult,
+    CreateValidationParams,
     GetStackActionStatusResult,
     GetCapabilitiesResult,
     DescribeValidationStatusResult,
     DescribeDeploymentStatusResult,
     GetTemplateResourcesResult,
+    CreateStackActionResult,
+    CreateDeploymentParams,
 } from './StackActionRequestType';
 
-export const CreateValidationRequest = new RequestType<CreateStackActionParams, CreateStackActionResult, void>(
+export const CreateValidationRequest = new RequestType<CreateValidationParams, CreateStackActionResult, void>(
     'aws/cfn/stack/validation/create',
 );
 
-export const CreateDeploymentRequest = new RequestType<CreateStackActionParams, CreateStackActionResult, void>(
+export const CreateDeploymentRequest = new RequestType<CreateDeploymentParams, CreateStackActionResult, void>(
     'aws/cfn/stack/deployment/create',
 );
 

@@ -1,4 +1,3 @@
-import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { FileContextManager } from '../../context/FileContextManager';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
@@ -9,14 +8,12 @@ import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
-    deleteStackAndChangeSet,
-    deleteChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
     parseValidationEvents,
     publishValidationDiagnostics,
 } from './StackActionOperations';
-import { CreateStackActionParams, StackActionPhase, StackActionState } from './StackActionRequestType';
+import { CreateValidationParams, StackActionPhase, StackActionState } from './StackActionRequestType';
 import { ValidationManager } from './ValidationManager';
 import { ValidationWorkflow } from './ValidationWorkflow';
 
@@ -36,11 +33,7 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
         super(cfnServiceV2, documentManager, diagnosticCoordinator, syntaxTreeManager, validationManager);
     }
 
-    override async runValidationAsync(
-        params: CreateStackActionParams,
-        changeSetName: string,
-        changeSetType: ChangeSetType,
-    ): Promise<void> {
+    override async runValidationAsync(params: CreateValidationParams, changeSetName: string): Promise<void> {
         const uri = params.uri;
         const workflowId = params.id;
         const stackName = params.stackName;
@@ -105,14 +98,7 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
                 failureReason: extractErrorMessage(error),
             });
         } finally {
-            // Cleanup validation object to prevent memory leaks
-            this.validationManager.remove(stackName);
-
-            if (changeSetType === ChangeSetType.CREATE) {
-                await deleteStackAndChangeSet(this.cfnServiceV2, existingWorkflow, workflowId);
-            } else {
-                await deleteChangeSet(this.cfnServiceV2, existingWorkflow, workflowId);
-            }
+            await this.handleCleanup(params, existingWorkflow);
         }
     }
 

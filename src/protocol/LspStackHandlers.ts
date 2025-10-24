@@ -2,24 +2,25 @@ import { Connection, RequestHandler } from 'vscode-languageserver';
 import {
     CreateValidationRequest,
     CreateDeploymentRequest,
-    GetDeploymentStatusRequest,
     GetValidationStatusRequest,
     GetCapabilitiesRequest,
     GetParametersRequest,
     DescribeValidationStatusRequest,
     DescribeDeploymentStatusRequest,
     GetTemplateResourcesRequest,
+    GetDeploymentStatusRequest,
 } from '../stacks/actions/StackActionProtocol';
 import {
     TemplateUri,
-    CreateStackActionParams,
-    CreateStackActionResult,
+    CreateValidationParams,
     GetStackActionStatusResult,
     GetParametersResult,
     GetCapabilitiesResult,
     DescribeValidationStatusResult,
     DescribeDeploymentStatusResult,
     GetTemplateResourcesResult,
+    CreateStackActionResult,
+    CreateDeploymentParams,
 } from '../stacks/actions/StackActionRequestType';
 import {
     ListStacksParams,
@@ -34,11 +35,11 @@ import { Identifiable } from './LspTypes';
 export class LspStackHandlers {
     constructor(private readonly connection: Connection) {}
 
-    onCreateValidation(handler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void>) {
+    onCreateValidation(handler: RequestHandler<CreateValidationParams, CreateStackActionResult, void>) {
         this.connection.onRequest(CreateValidationRequest.method, handler);
     }
 
-    onCreateDeployment(handler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void>) {
+    onCreateDeployment(handler: RequestHandler<CreateDeploymentParams, CreateStackActionResult, void>) {
         this.connection.onRequest(CreateDeploymentRequest.method, handler);
     }
 

@@ -48,6 +48,7 @@ vi.mock('../../../src/protocol/LspParser', () => ({
 vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
     parseStackActionParams: vi.fn((input) => input),
     parseTemplateUriParams: vi.fn((input) => input),
+    parseCreateDeploymentParams: vi.fn((input) => input),
 }));
 
 vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
@@ -188,7 +189,7 @@ describe('StackActionHandler', () => {
             mockComponents.deploymentWorkflowService.start.resolves(mockResult);
 
             const handler = createDeploymentHandler(mockComponents);
-            const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
+            const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'test-change-set' };
 
             const result = await handler(params, {} as any);
 

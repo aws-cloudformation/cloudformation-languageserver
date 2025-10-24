@@ -6,17 +6,22 @@ import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
-import { parseStackActionParams, parseTemplateUriParams } from '../stacks/actions/StackActionParser';
 import {
-    CreateStackActionParams,
-    CreateStackActionResult,
+    parseCreateDeploymentParams,
+    parseStackActionParams,
+    parseTemplateUriParams,
+} from '../stacks/actions/StackActionParser';
+import {
+    TemplateUri,
+    CreateValidationParams,
     DescribeDeploymentStatusResult,
     DescribeValidationStatusResult,
     GetCapabilitiesResult,
     GetParametersResult,
     GetStackActionStatusResult,
     GetTemplateResourcesResult,
-    TemplateUri,
+    CreateDeploymentParams,
+    CreateStackActionResult,
 } from '../stacks/actions/StackActionRequestType';
 import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -55,7 +60,7 @@ export function getParametersHandler(
 
 export function createValidationHandler(
     components: ServerComponents,
-): RequestHandler<CreateStackActionParams, CreateStackActionResult, void> {
+): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         log.debug({ Handler: 'createValidationHandler', rawParams });
 
@@ -70,12 +75,12 @@ export function createValidationHandler(
 
 export function createDeploymentHandler(
     components: ServerComponents,
-): RequestHandler<CreateStackActionParams, CreateStackActionResult, void> {
+): RequestHandler<CreateDeploymentParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         log.debug({ Handler: 'createDeploymentHandler', rawParams });
 
         try {
-            const params = parseWithPrettyError(parseStackActionParams, rawParams);
+            const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
             return await components.deploymentWorkflowService.start(params);
         } catch (error) {
             handleStackActionError(error, 'Failed to start deployment workflow');

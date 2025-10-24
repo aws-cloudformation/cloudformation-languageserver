@@ -1,4 +1,4 @@
-import { Change, ChangeSetType } from '@aws-sdk/client-cloudformation';
+import { Change, ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { DateTime } from 'luxon';
 import Parser from 'tree-sitter';
@@ -19,7 +19,7 @@ import {
     StackChange,
     StackActionPhase,
     StackActionState,
-    CreateStackActionParams,
+    CreateValidationParams,
     ValidationDetail,
 } from './StackActionRequestType';
 import {
@@ -39,7 +39,7 @@ function logCleanupError(error: unknown, workflowId: string, changeSetName: stri
 export async function processChangeSet(
     cfnService: CfnService,
     documentManager: DocumentManager,
-    params: CreateStackActionParams,
+    params: CreateValidationParams,
     changeSetType: ChangeSetType,
 ): Promise<string> {
     const document = documentManager.get(params.uri);
@@ -155,29 +155,12 @@ export async function waitForDeployment(
     }
 }
 
-export async function deleteStackAndChangeSet(
+export async function cleanupReviewStack(
     cfnService: CfnService,
     workflow: StackActionWorkflowState,
     workflowId: string,
 ): Promise<void> {
     try {
-        // Delete changeset first
-        await retryWithExponentialBackoff(
-            () =>
-                cfnService.deleteChangeSet({
-                    StackName: workflow.stackName,
-                    ChangeSetName: workflow.changeSetName,
-                }),
-            {
-                maxRetries: 3,
-                initialDelayMs: 1000,
-                operationName: `Delete change set ${workflow.changeSetName}`,
-            },
-            logger,
-        );
-
-        // Delete stack
-        // TODO only delete stack for CREATE operation
         await retryWithExponentialBackoff(
             () =>
                 cfnService.deleteStack({
@@ -319,4 +302,17 @@ export async function publishValidationDiagnostics(
     }
 
     await diagnosticCoordinator.publishDiagnostics(CFN_VALIDATION_SOURCE, uri, diagnostics);
+}
+
+// If a stack is in REVIEW_IN_PROGRESS, this indicates that a stack was created by the createChangeSet method
+export async function isStackInReview(stackName: string, cfnService: CfnService): Promise<boolean> {
+    const describeStacksResult = await cfnService.describeStacks({ StackName: stackName });
+
+    const stackResult = describeStacksResult.Stacks?.filter((stack) => stack.StackName === stackName)[0];
+
+    if (!stackResult) {
+        throw new Error(`Stack not found: ${stackName}`);
+    }
+
+    return stackResult.StackStatus === StackStatus.REVIEW_IN_PROGRESS;
 }
