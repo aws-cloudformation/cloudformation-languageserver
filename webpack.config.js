@@ -313,6 +313,7 @@ module.exports = (env = {}) => {
         output: {
             clean: true,
             filename: `[name].js`,
+            chunkFilename: `[name].js`,
             path: outputPath,
             library: {
                 type: 'commonjs2',
@@ -321,8 +322,8 @@ module.exports = (env = {}) => {
         externals: isDevelopment ? [nodeExternals()] : EXTERNALS,
         optimization: {
             minimize: false,
-            moduleIds: 'deterministic',
-            chunkIds: 'deterministic',
+            moduleIds: 'named',
+            chunkIds: 'named',
             usedExports: true,
             sideEffects: false,
             splitChunks: {
