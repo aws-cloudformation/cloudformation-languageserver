@@ -54,6 +54,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
     // Track which packs each rule belongs to for proper violation reporting
     private readonly ruleToPacksMap = new Map<string, Set<string>>();
 
+    // Track custom messages from rules files
+    private readonly ruleCustomMessages = new Map<string, string>();
+
     // Validation queuing for concurrent requests
     private readonly validationQueue: ValidationQueueEntry[] = [];
     private readonly activeValidations = new Map<string, Promise<GuardViolation[]>>();
@@ -234,7 +237,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
             const diagnostic: Diagnostic = {
                 severity,
                 range,
-                message: violation.message,
+                message: this.ruleCustomMessages.get(violation.ruleName) ?? violation.message,
                 source: GuardService.CFN_GUARD_SOURCE,
                 code: violation.ruleName,
             };
@@ -571,6 +574,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
         // Track which packs each rule comes from for proper reporting
         this.ruleToPacksMap.clear();
 
+        // Clear custom messages when getting new rules
+        this.ruleCustomMessages.clear();
+
         // If rulesFile is specified, load rules from file
         if (this.settings.rulesFile) {
             try {
@@ -623,31 +629,52 @@ export class GuardService implements SettingsConfigurable, Closeable {
      * Parse Guard rules from file content
      */
     private parseRulesFromContent(content: string, filePath: string): GuardRule[] {
-        const rules: GuardRule[] = [];
+        // Extract rule names and messages for metadata but keep entire content together
+        const ruleNames: string[] = [];
 
-        // Split content by rule boundaries (rules start with 'rule' keyword)
-        // Use a more precise regex to match rule declarations
-        const ruleMatches = content.matchAll(/^rule\s+([A-Za-z_][A-Za-z0-9_]*)\s*\{([\s\S]*?)^\}/gm);
-
+        // Extract rule names
+        const ruleMatches = content.matchAll(/^rule\s+([A-Za-z_][A-Za-z0-9_]*)/gm);
         for (const match of ruleMatches) {
-            const ruleName = match[1];
-            const fullRuleContent = match[0];
+            ruleNames.push(match[1]);
+        }
 
-            try {
-                const rule = this.parseRuleBlock(ruleName, fullRuleContent);
-                if (rule) {
-                    rules.push(rule);
-                }
-            } catch (error) {
-                this.log.warn(`Failed to parse rule '${ruleName}' in '${filePath}': ${extractErrorMessage(error)}`);
+        // Extract messages from rule blocks and store them
+        const ruleBlockMatches = content.matchAll(
+            /^rule\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:when\s+[^{]+)?\s*\{([\s\S]*?)^\}/gm,
+        );
+        for (const match of ruleBlockMatches) {
+            const ruleName = match[1];
+            const ruleContent = match[0];
+            const extractedMessage = GuardEngine.extractRuleMessage(ruleContent);
+            if (extractedMessage) {
+                this.ruleCustomMessages.set(ruleName, extractedMessage);
             }
         }
 
-        if (rules.length === 0) {
+        if (ruleNames.length === 0) {
             this.log.warn(`No valid rules found in file '${filePath}'`);
         }
 
-        return rules;
+        // Return single rule with entire content to preserve variable definitions
+        return [
+            {
+                name:
+                    ruleNames.length > 0
+                        ? ruleNames.join(',')
+                        : `rules-from-${
+                              filePath
+                                  .split('/')
+                                  .pop()
+                                  ?.replace(/\.[^.]*$/, '') ?? 'file'
+                          }`,
+                content: content,
+                description: `Rules: ${ruleNames.join(', ')} from ${filePath}`,
+                severity: this.getDefaultSeverity(),
+                tags: ['custom', 'file'],
+                pack: 'custom',
+                message: undefined,
+            },
+        ];
     }
 
     /**
