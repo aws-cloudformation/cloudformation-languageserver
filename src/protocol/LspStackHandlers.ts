@@ -29,6 +29,9 @@ import {
     GetStackTemplateParams,
     GetStackTemplateResult,
     GetStackTemplateRequest,
+    ListChangeSetParams,
+    ListChangeSetResult,
+    ListChangeSetRequest,
 } from '../stacks/StackRequestType';
 import { Identifiable } from './LspTypes';
 
@@ -77,5 +80,9 @@ export class LspStackHandlers {
 
     onGetStackTemplate(handler: RequestHandler<GetStackTemplateParams, GetStackTemplateResult | undefined, void>) {
         this.connection.onRequest(GetStackTemplateRequest.method, handler);
+    }
+
+    onListChangeSets(handler: RequestHandler<ListChangeSetParams, ListChangeSetResult, void>) {
+        this.connection.onRequest(ListChangeSetRequest.method, handler);
     }
 }
