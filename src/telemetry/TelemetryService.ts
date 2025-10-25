@@ -3,6 +3,7 @@ import { MetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { v4 } from 'uuid';
 import { Closeable } from '../utils/Closeable';
+import { extractLocationFromStack } from '../utils/Errors';
 import { LoggerFactory } from './LoggerFactory';
 import { otelSdk } from './OTELInstrumentation';
 import { ScopedTelemetry } from './ScopedTelemetry';
@@ -149,39 +150,38 @@ export class TelemetryService implements Closeable {
     }
 
     private registerErrorHandlers(telemetry: ScopedTelemetry): void {
-        process.on('uncaughtExceptionMonitor', (error, origin) => {
-            this.logger.error(
+        process.on('unhandledRejection', (reason, _promise) => {
+            this.logger.error(reason, 'Unhandled promise rejection');
+
+            const location = reason instanceof Error ? extractLocationFromStack(reason.stack) : {};
+            telemetry.count(
+                'process.promise.unhandled',
+                1,
+                { unit: '1' },
                 {
-                    error,
-                    origin,
+                    'error.type': reason instanceof Error ? reason.name : typeof reason,
+                    ...location,
                 },
-                'Uncaught exception monitor',
             );
 
-            telemetry.count('process.exception.monitor.uncaught', 1, { unit: '1' });
-        });
-
-        process.on('unhandledRejection', (reason, promise) => {
-            this.logger.error(
-                {
-                    reason,
-                    promise,
-                },
-                'Unhandled promise rejection',
-            );
-
-            telemetry.count('process.promise.unhandled', 1, { unit: '1' });
+            void this.metricsReader?.forceFlush();
         });
 
         process.on('uncaughtException', (error, origin) => {
-            this.logger.error(
+            this.logger.error(error, `Uncaught exception ${origin}`);
+
+            telemetry.count(
+                'process.exception.uncaught',
+                1,
+                { unit: '1' },
                 {
-                    error,
-                    origin,
+                    'error.type': error.name,
+                    'error.origin': origin,
+                    ...extractLocationFromStack(error.stack),
                 },
-                'Uncaught exception',
             );
-            telemetry.count('process.exception.uncaught', 1, { unit: '1' });
+
+            void this.metricsReader?.forceFlush();
         });
     }
 
