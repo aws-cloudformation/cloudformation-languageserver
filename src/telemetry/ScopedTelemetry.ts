@@ -12,6 +12,7 @@ import {
     ValueType,
 } from '@opentelemetry/api';
 import { Closeable } from '../utils/Closeable';
+import { typeOf } from '../utils/TypeCheck';
 
 export class ScopedTelemetry implements Closeable {
     private readonly counters = new Map<string, Counter>();
@@ -149,19 +150,13 @@ export class ScopedTelemetry implements Closeable {
     }
 
     private recordResponse<T>(name: string, result: T, options?: MetricOptions, attributes?: Attributes): void {
-        let responseType = 'value';
-        if (result === undefined) {
-            responseType = 'undefined';
-        } else if (result === null) {
-            responseType = 'null';
-        } else if (Array.isArray(result)) {
-            responseType = 'array';
-            this.histogram(`${name}.response.type.array.size`, result.length, { unit: '1', ...options }, attributes);
-        } else if (typeof result === 'object') {
-            responseType = 'object';
+        const { type, size } = typeOf(result);
+
+        if (size !== undefined) {
+            this.histogram(`${name}.response.type.size`, size, { unit: '1', ...options }, attributes);
         }
 
-        this.count(`${name}.response.type.${responseType}`, 1, { unit: '1', ...options }, attributes);
+        this.count(`${name}.response.type.${type}`, 1, { unit: '1', ...options }, attributes);
     }
 
     private getOrCreateUpDownCounter(name: string, options?: MetricOptions): UpDownCounter | undefined {

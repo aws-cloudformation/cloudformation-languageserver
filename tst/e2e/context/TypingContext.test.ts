@@ -6,7 +6,7 @@ import { ContextExpectationBuilder, TemplateBuilder, TemplateScenario } from '..
 
 describe('Typing Context', () => {
     describe('YAML', () => {
-        it('Create partial template', () => {
+        it('Create partial template', async () => {
             const template = new TemplateBuilder(DocumentType.YAML);
             const scenario: TemplateScenario = {
                 name: 'Simple Template',
@@ -107,12 +107,12 @@ describe('Typing Context', () => {
                 ],
             };
 
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 
     describe('JSON', () => {
-        it('Create partial template', () => {
+        it('Create partial template', async () => {
             const template = new TemplateBuilder(DocumentType.JSON, '{}');
             const scenario: TemplateScenario = {
                 name: 'Simple JSON Template',
@@ -208,7 +208,7 @@ describe('Typing Context', () => {
                 ],
             };
 
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 });

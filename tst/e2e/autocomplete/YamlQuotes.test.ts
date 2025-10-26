@@ -12,7 +12,7 @@ describe('YAML Completion when using quotes', () => {
     describe('Double quotes', () => {
         const template = new TemplateBuilder(DocumentType.YAML);
 
-        it('Object Keys', () => {
+        it('Object Keys', async () => {
             const scenario: TemplateScenario = {
                 name: 'Get Keys with double quotes',
                 steps: [
@@ -35,10 +35,10 @@ describe('YAML Completion when using quotes', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
 
-        it('Enum values', () => {
+        it('Enum values', async () => {
             const scenario: TemplateScenario = {
                 name: 'No empty lines Value property key',
                 steps: [
@@ -61,14 +61,14 @@ describe('YAML Completion when using quotes', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 
     describe('Single quotes', () => {
         const template = new TemplateBuilder(DocumentType.YAML);
 
-        it('Object keys', () => {
+        it('Object keys', async () => {
             const scenario: TemplateScenario = {
                 name: 'Get Keys with single quotes',
                 steps: [
@@ -91,10 +91,10 @@ describe('YAML Completion when using quotes', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
 
-        it('Enum values', () => {
+        it('Enum values', async () => {
             const scenario: TemplateScenario = {
                 name: 'Get enum values with single quotes',
                 steps: [
@@ -117,7 +117,7 @@ describe('YAML Completion when using quotes', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 });

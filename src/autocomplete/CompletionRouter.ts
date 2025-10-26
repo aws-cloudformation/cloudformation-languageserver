@@ -1,4 +1,4 @@
-import { CompletionList, CompletionParams } from 'vscode-languageserver';
+import { CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
 import { IntrinsicFunction, IntrinsicsUsingConditionKeyword, TopLevelSection } from '../context/ContextType';
@@ -47,18 +47,10 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
     ) {}
 
     @Track({ name: 'getCompletions' })
-    getCompletions(params: CompletionParams): Promise<CompletionList> | CompletionList | undefined {
+    async getCompletions(params: CompletionParams) {
         if (!this.completionSettings.enabled) return;
 
         const context = this.contextManager.getContext(params);
-        this.log.debug(
-            {
-                Router: 'Completion',
-                Position: params.position,
-                Context: context?.record(),
-            },
-            'Processing completion request',
-        );
         if (!context) {
             return;
         }
@@ -94,7 +86,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         const editorSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
 
         if (completions instanceof Promise) {
-            return completions.then((result) => {
+            return await completions.then((result) => {
                 return this.formatter.format(
                     {
                         isIncomplete: result.length > this.completionSettings.maxCompletions,

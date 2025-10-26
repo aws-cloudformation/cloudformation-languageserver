@@ -12,7 +12,7 @@ describe('CompletionHandler', () => {
     const mockSyntaxTree = createMockYamlSyntaxTree();
     const mockServices = createMockComponents();
 
-    test('should return completion list with fuzzy search results when context exists', () => {
+    test('should return completion list with fuzzy search results when context exists', async () => {
         const mockContext = createTopLevelContext('Unknown', { text: 'Res' });
         mockServices.contextManager.getContext.returns(mockContext);
         mockServices.syntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
@@ -28,7 +28,7 @@ describe('CompletionHandler', () => {
                 },
             ],
         };
-        mockServices.completionRouter.getCompletions.returns(mockCompletions);
+        mockServices.completionRouter.getCompletions.resolves(mockCompletions);
 
         const mockParams: CompletionParams = {
             textDocument: { uri: uri },
@@ -36,7 +36,7 @@ describe('CompletionHandler', () => {
         };
 
         const handler = completionHandler(mockServices);
-        const result = handler(mockParams, CancellationToken.None, undefined as any, undefined as any) as any;
+        const result = (await handler(mockParams, CancellationToken.None, undefined as any, undefined as any)) as any;
 
         expect(result).toBeDefined();
         expect(result?.isIncomplete).toBe(false);
