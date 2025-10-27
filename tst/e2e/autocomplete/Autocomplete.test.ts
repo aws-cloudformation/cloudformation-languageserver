@@ -1596,6 +1596,191 @@ Resources:
             };
             await template.executeScenario(scenario);
         });
+
+        it('test FindInMap pattern filtering for pseudo-parameters', () => {
+            const template = new TemplateBuilder(DocumentType.YAML);
+            const scenario: TemplateScenario = {
+                name: 'FindInMap pattern filtering comprehensive test',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Comprehensive test for FindInMap pattern filtering'
+
+Parameters:
+  TestRegion:
+    Type: String
+    Default: us-east-1
+  TestAccountId:
+    Type: String
+    Default: '123456789012'
+  TestPartition:
+    Type: String
+    Default: aws
+
+Mappings:
+  # Mixed mapping with region keys and non-region keys
+  RegionMap:
+    us-east-1:
+      AMI: "ami-0abcdef1234567890"
+      InstanceType: "t3.micro"
+      Storage: "gp3"
+    us-west-2:
+      AMI: "ami-0fedcba0987654321"
+      InstanceType: "t3.small"
+      Storage: "gp3"
+    eu-central-1:
+      AMI: "ami-0123456789abcdef0"
+      InstanceType: "t3.nano"
+      Storage: "gp2"
+    donor-region:
+      Privilege: "view"
+      Access: "limited"
+    partition-leader:
+      Privilege: "admin"
+      Access: "full"
+    invalid-key:
+      SomeValue: "test"
+
+  # Mixed mapping with account ID keys and non-account keys
+  AccountMap:
+    '123456789012':
+      Environment: "production"
+      Budget: "high"
+    '987654321098':
+      Environment: "staging"
+      Budget: "medium"
+    '555666777888':
+      Environment: "development"
+      Budget: "low"
+    short-account:
+      Type: "demo"
+    long-account-id:
+      Type: "invalid"
+    non-numeric:
+      Type: "test"
+
+  # Mixed mapping with partition keys and non-partition keys
+  PartitionMap:
+    aws:
+      ServiceEndpoint: "amazonaws.com"
+      Region: "global"
+    aws-cn:
+      ServiceEndpoint: "amazonaws.com.cn"
+      Region: "china"
+    aws-us-gov:
+      ServiceEndpoint: "amazonaws-us-gov.com"
+      Region: "government"
+    invalid-partition:
+      Type: "test"
+    aws-invalid:
+      Type: "wrong"
+    not-aws:
+      Type: "other"
+
+Resources:
+  # Test AWS::Region pattern filtering
+  TestRegionDynamic:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /test/region-ami
+      Type: String
+      Value: !FindInMap [RegionMap, !Ref 'AWS::Region', ]`,
+                        position: { line: 0, character: 0 },
+                        description: 'AWS::Region should only suggest region-pattern keys',
+                        verification: {
+                            position: { line: 81, character: 56 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['AMI', 'InstanceType', 'Storage'])
+                                .expectExcludesItems(['Privilege', 'Access', 'SomeValue', 'Type'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `AMI]
+
+  # Test AWS::AccountId pattern filtering
+  TestAccountDynamic:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /test/account-env
+      Type: String
+      Value: !FindInMap [AccountMap, !Ref 'AWS::AccountId', ]`,
+                        range: { start: { line: 81, character: 56 }, end: { line: 81, character: 57 } },
+                        description: 'AWS::AccountId should only suggest account-pattern keys',
+                        verification: {
+                            position: { line: 89, character: 60 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['Environment', 'Budget'])
+                                .expectExcludesItems(['Type'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `Environment]
+
+  # Test AWS::Partition pattern filtering
+  TestPartitionDynamic:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /test/partition-endpoint
+      Type: String
+      Value: !FindInMap [PartitionMap, !Ref 'AWS::Partition', ]`,
+                        range: { start: { line: 89, character: 60 }, end: { line: 89, character: 61 } },
+                        description: 'AWS::Partition pattern filtering should only suggest partition-pattern keys',
+                        verification: {
+                            position: { line: 97, character: 62 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['ServiceEndpoint', 'Region'])
+                                .expectExcludesItems(['Type'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `ServiceEndpoint]
+
+  # Test static key (should show all second-level keys)
+  TestStaticKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /test/static
+      Type: String
+      Value: !FindInMap [RegionMap, us-east-1, ]`,
+                        range: { start: { line: 97, character: 62 }, end: { line: 97, character: 63 } },
+                        description: 'Static key should show second-level keys from us-east-1',
+                        verification: {
+                            position: { line: 105, character: 47 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['AMI', 'InstanceType', 'Storage'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `AMI]
+
+Outputs:
+  RegionAMI:
+    Description: "AMI for current region"
+    Value: !FindInMap [RegionMap, !Ref 'AWS::Region', AMI]
+  
+  AccountEnvironment:
+    Description: "Environment for current account"
+    Value: !FindInMap [AccountMap, !Ref 'AWS::AccountId', Environment]
+  
+  PartitionEndpoint:
+    Description: "Service endpoint for current partition"
+    Value: !FindInMap [PartitionMap, !Ref 'AWS::Partition', ServiceEndpoint]`,
+                        range: { start: { line: 105, character: 47 }, end: { line: 105, character: 48 } },
+                        description: 'Complete the comprehensive YAML test template',
+                    },
+                ],
+            };
+            template.executeScenario(scenario);
+        });
     });
 
     describe('JSON', () => {
@@ -3279,6 +3464,237 @@ Resources:
                 ],
             };
             await template.executeScenario(scenario);
+        });
+
+        it('test FindInMap pattern filtering for pseudo-parameters', () => {
+            const template = new TemplateBuilder(DocumentType.JSON);
+            const scenario: TemplateScenario = {
+                name: 'FindInMap pattern filtering comprehensive test',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Comprehensive test for FindInMap pattern filtering",
+  "Parameters": {
+    "TestRegion": {
+      "Type": "String",
+      "Default": "us-east-1"
+    },
+    "TestAccountId": {
+      "Type": "String",
+      "Default": "123456789012"
+    },
+    "TestPartition": {
+      "Type": "String",
+      "Default": "aws"
+    }
+  },
+  "Mappings": {
+    "RegionMap": {
+      "us-east-1": {
+        "AMI": "ami-0abcdef1234567890",
+        "InstanceType": "t3.micro",
+        "Storage": "gp3"
+      },
+      "us-west-2": {
+        "AMI": "ami-0fedcba0987654321",
+        "InstanceType": "t3.small",
+        "Storage": "gp3"
+      },
+      "eu-central-1": {
+        "AMI": "ami-0123456789abcdef0",
+        "InstanceType": "t3.nano",
+        "Storage": "gp2"
+      },
+      "donor-region": {
+        "Privilege": "view",
+        "Access": "limited"
+      },
+      "partition-leader": {
+        "Privilege": "admin",
+        "Access": "full"
+      },
+      "invalid-key": {
+        "SomeValue": "test"
+      }
+    },
+    "AccountMap": {
+      "123456789012": {
+        "Environment": "production",
+        "Budget": "high"
+      },
+      "987654321098": {
+        "Environment": "staging",
+        "Budget": "medium"
+      },
+      "555666777888": {
+        "Environment": "development",
+        "Budget": "low"
+      },
+      "short-account": {
+        "Type": "demo"
+      },
+      "long-account-id": {
+        "Type": "invalid"
+      },
+      "non-numeric": {
+        "Type": "test"
+      }
+    },
+    "PartitionMap": {
+      "aws": {
+        "ServiceEndpoint": "amazonaws.com",
+        "Region": "global"
+      },
+      "aws-cn": {
+        "ServiceEndpoint": "amazonaws.com.cn",
+        "Region": "china"
+      },
+      "aws-us-gov": {
+        "ServiceEndpoint": "amazonaws-us-gov.com",
+        "Region": "government"
+      },
+      "invalid-partition": {
+        "Type": "test"
+      },
+      "aws-invalid": {
+        "Type": "wrong"
+      },
+      "not-aws": {
+        "Type": "other"
+      }
+    }
+  },
+  "Resources": {
+    "TestRegionDynamic": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/test/region-ami",
+        "Type": "String",
+        "Value": {
+          "Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, ""]
+        }
+      }
+    }
+  }
+}`,
+                        position: { line: 0, character: 0 },
+                        description: 'Test AWS::Region pattern filtering - should only suggest region-pattern keys',
+                        verification: {
+                            position: { line: 100, character: 66 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['AMI', 'InstanceType', 'Storage'])
+                                .expectExcludesItems(['Privilege', 'Access', 'SomeValue', 'Type'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `AMI"]
+        }
+      }
+    },
+    "TestAccountDynamic": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/test/account-env",
+        "Type": "String",
+        "Value": {
+          "Fn::FindInMap": ["AccountMap", {"Ref": "AWS::AccountId"}, ""]`,
+                        range: { start: { line: 100, character: 66 }, end: { line: 100, character: 68 } },
+                        description: 'AWS::AccountId should only suggest account-pattern keys',
+                        verification: {
+                            position: { line: 110, character: 70 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['Environment', 'Budget'])
+                                .expectExcludesItems(['Type'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `Environment"]
+        }
+      }
+    },
+    "TestPartitionDynamic": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/test/partition-endpoint",
+        "Type": "String",
+        "Value": {
+          "Fn::FindInMap": ["PartitionMap", {"Ref": "AWS::Partition"}, ""]`,
+                        range: { start: { line: 110, character: 70 }, end: { line: 110, character: 72 } },
+                        description:
+                            'Test AWS::Partition pattern filtering - should only suggest partition-pattern keys',
+                        verification: {
+                            position: { line: 120, character: 72 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['ServiceEndpoint', 'Region'])
+                                .expectExcludesItems(['Type'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `ServiceEndpoint"]
+        }
+      }
+    },
+    "TestStaticKey": {
+      "Type": "AWS::SSM::Parameter",
+      "Properties": {
+        "Name": "/test/static",
+        "Type": "String",
+        "Value": {
+          "Fn::FindInMap": ["RegionMap", "us-east-1", ""]`,
+                        range: { start: { line: 120, character: 72 }, end: { line: 120, character: 74 } },
+                        description: 'Should show all second-level keys from us-east-1',
+                        verification: {
+                            position: { line: 130, character: 55 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['AMI', 'InstanceType', 'Storage'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `AMI"]
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "RegionAMI": {
+      "Description": "AMI for current region",
+      "Value": {
+        "Fn::FindInMap": ["RegionMap", {"Ref": "AWS::Region"}, "AMI"]
+      }
+    },
+    "AccountEnvironment": {
+      "Description": "Environment for current account",
+      "Value": {
+        "Fn::FindInMap": ["AccountMap", {"Ref": "AWS::AccountId"}, "Environment"]
+      }
+    },
+    "PartitionEndpoint": {
+      "Description": "Service endpoint for current partition",
+      "Value": {
+        "Fn::FindInMap": ["PartitionMap", {"Ref": "AWS::Partition"}, "ServiceEndpoint"]
+      }
+    }`,
+                        range: { start: { line: 130, character: 55 }, end: { line: 130, character: 57 } },
+                        description: 'Complete the comprehensive JSON test template',
+                    },
+                    {
+                        action: 'delete',
+                        description: 'delete trailing }',
+                        range: { start: { line: 154, character: 8 }, end: { line: 156, character: 6 } },
+                    },
+                ],
+            };
+            template.executeScenario(scenario);
         });
     });
 });

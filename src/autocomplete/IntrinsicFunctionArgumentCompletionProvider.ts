@@ -762,9 +762,11 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     /**
      * Extracts the pseudo-parameter name from a Ref object (supports both YAML and JSON formats)
      */
-    private extractPseudoParameterFromRef(refObject: { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown }): string | undefined {
+    private extractPseudoParameterFromRef(
+        refObject: { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown },
+    ): string | undefined {
         let refValue: unknown;
-        
+
         if ('Ref' in refObject) {
             refValue = refObject.Ref;
         } else if ('!Ref' in refObject) {
@@ -772,7 +774,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         } else if ('Fn::Ref' in refObject) {
             refValue = refObject['Fn::Ref'];
         }
-        
+
         if (typeof refValue === 'string' && refValue.startsWith('AWS::')) {
             return refValue;
         }
@@ -784,14 +786,21 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
      */
     private getPatternForPseudoParameter(pseudoParameter: string): RegExp | undefined {
         switch (pseudoParameter) {
-            case PseudoParameter.AWSRegion:
+            case 'AWS::Region': {
                 // AWS regions follow the pattern: xx-xxxx-x (e.g., us-east-1, eu-west-2, ap-southeast-1)
                 return /^[a-z]{2}-[a-z]+-\d+$/;
-            case PseudoParameter.AWSAccountId:
+            }
+            case 'AWS::AccountId': {
                 // AWS account IDs are 12-digit numbers
                 return /^\d{12}$/;
-            default:
+            }
+            case 'AWS::Partition': {
+                // AWS partitions are: aws, aws-us-gov, aws-cn
+                return /^aws(-us-gov|-cn)?$/;
+            }
+            default: {
                 return undefined;
+            }
         }
     }
 
@@ -800,7 +809,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
      */
     private filterTopLevelKeysByPattern(mappingEntity: Mapping, pattern: RegExp): string[] {
         const allTopLevelKeys = mappingEntity.getTopLevelKeys();
-        return allTopLevelKeys.filter(key => pattern.test(key));
+        return allTopLevelKeys.filter((key) => pattern.test(key));
     }
 
     /**
@@ -808,7 +817,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
      */
     private getSecondLevelKeysFromMatchingTopLevelKeys(mappingEntity: Mapping, pattern: RegExp): string[] {
         const matchingTopLevelKeys = this.filterTopLevelKeysByPattern(mappingEntity, pattern);
-        
+
         if (matchingTopLevelKeys.length === 0) {
             return [];
         }
@@ -822,7 +831,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             }
         }
 
-        return Array.from(secondLevelKeysSet);
+        return [...secondLevelKeysSet];
     }
 
     private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown } {
