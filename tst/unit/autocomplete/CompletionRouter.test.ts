@@ -212,6 +212,7 @@ describe('CompletionRouter', () => {
             completionProviderMap,
             mockDocumentManager,
             entityFieldProviderMap,
+            mockComponents.schemaRetriever,
         );
 
         function expectCompletionProvider(

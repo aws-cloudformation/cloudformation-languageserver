@@ -12,6 +12,7 @@ import { Entity, Output, Parameter } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
+import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnLspProviders } from '../server/CfnLspProviders';
@@ -49,6 +50,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         private readonly completionProviderMap: Map<CompletionProviderType, CompletionProvider>,
         private readonly documentManager: DocumentManager,
         private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
+        private readonly schemaRetriever: SchemaRetriever,
     ) {}
 
     @Track({ name: 'getCompletions', trackObjectKey: 'items' })
@@ -100,7 +102,8 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                     },
                     context,
                     editorSettings,
-                    lineContent
+                    lineContent,
+                    this.schemaRetriever,
                 );
             });
         } else if (completions) {
@@ -109,7 +112,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                 items: completions.slice(0, this.completionSettings.maxCompletions),
             };
 
-            return this.formatter.format(completionList, context, editorSettings, lineContent);
+            return this.formatter.format(completionList, context, editorSettings, lineContent, this.schemaRetriever);
         }
         return;
     }
@@ -274,10 +277,13 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
     }
 
     static create(core: CfnInfraCore, external: CfnExternal, providers: CfnLspProviders) {
+      CompletionFormatter.getInstance();
         return new CompletionRouter(
             core.contextManager,
             createCompletionProviders(core, external, providers),
             core.documentManager,
+            createEntityFieldProviders(),
+            external.schemaRetriever,
         );
     }
 }

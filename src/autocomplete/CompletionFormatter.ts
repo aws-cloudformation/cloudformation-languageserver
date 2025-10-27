@@ -1,12 +1,30 @@
-import { CompletionItem, CompletionItemKind, CompletionList, InsertTextFormat, Range, Position, TextEdit } from 'vscode-languageserver';
+import {
+    CompletionItem,
+    CompletionItemKind,
+    CompletionList,
+    InsertTextFormat,
+    Range,
+    Position,
+    TextEdit,
+} from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { ResourceAttributesSet, TopLevelSection, TopLevelSectionsSet } from '../context/ContextType';
+import { Resource } from '../context/semantic/Entity';
+<<<<<<< HEAD
+=======
+import { EntityType } from '../context/semantic/SemanticTypes';
+>>>>>>> 1a469e4 (Working json indentation improvement)
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentType } from '../document/Document';
-import { createReplacementRange } from './CompletionUtils';
+import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getIndentationString } from '../utils/IndentationUtils';
+<<<<<<< HEAD
+import { Item } from '@langchain/langgraph';
+=======
+import { RESOURCE_ATTRIBUTE_TYPES } from './CompletionUtils';
+>>>>>>> 1a469e4 (Working json indentation improvement)
 
 export type CompletionItemData = {
     type?: 'object' | 'array' | 'simple';
@@ -18,6 +36,8 @@ export interface ExtendedCompletionItem extends CompletionItem {
 }
 
 export class CompletionFormatter {
+    // In CompletionFormatter class
+
     private static readonly log = LoggerFactory.getLogger(CompletionFormatter);
     private static instance: CompletionFormatter;
 
@@ -26,7 +46,7 @@ export class CompletionFormatter {
     static getInstance(): CompletionFormatter {
         if (!CompletionFormatter.instance) {
             CompletionFormatter.instance = new CompletionFormatter();
-        }
+        } 
         return CompletionFormatter.instance;
     }
 
@@ -39,12 +59,18 @@ export class CompletionFormatter {
         return `{INDENT${numberOfIndents}}`;
     }
 
-    format(completions: CompletionList, context: Context, editorSettings: EditorSettings, lineContent?: string): CompletionList {
+    format(
+        completions: CompletionList,
+        context: Context,
+        editorSettings: EditorSettings,
+        lineContent?: string,
+        schemaRetriever?: SchemaRetriever,
+    ): CompletionList {
         try {
             const documentType = context.documentType;
-
-            const formattedItems = completions.items.map((item) => this.formatItem(item, documentType, editorSettings, context, lineContent));
-
+            const formattedItems = completions.items.map((item) =>
+                this.formatItem(item, documentType, editorSettings, context, lineContent, schemaRetriever),
+            );
             return {
                 ...completions,
                 items: formattedItems,
@@ -61,6 +87,7 @@ export class CompletionFormatter {
         editorSettings: EditorSettings,
         context: Context,
         lineContent?: string,
+        schemaRetriever?: SchemaRetriever,
     ): CompletionItem {
         const formattedItem = { ...item };
 
@@ -69,97 +96,231 @@ export class CompletionFormatter {
             return formattedItem;
         }
 
+        // Set filterText for ALL items (including snippets) when in JSON with quotes
+        const isInJsonString = documentType === DocumentType.JSON && context.syntaxNode.type === 'string';
+        if (isInJsonString) {
+            formattedItem.filterText = `"${context.text}"`;
+        }
+
         const textToFormat = item.insertText ?? item.label;
 
         if (documentType === DocumentType.JSON) {
-          console.log("DEBUG");
-          const formattedText = this.formatForJson(textToFormat, item, context, lineContent);
-          if (formattedText.range) {
-              console.log("have a range")
-              console.log(formattedText);
-              formattedItem.textEdit = TextEdit.replace(formattedText.range, formattedText.text);
-              formattedItem.insertText = undefined;
-          } else {
-              console.log("No range")
-              formattedItem.insertText = formattedText.text;
-          }
-          
+<<<<<<< HEAD
+            const result = this.formatForJson(editorSettings, textToFormat, context, item, lineContent);
+            if (typeof result === 'string') {
+                formattedItem.insertText = result;
+            } else if (result.range) {
+                formattedItem.textEdit = TextEdit.replace(result.range, result.text);
+                delete formattedItem.insertText;
+            } else {
+                formattedItem.insertText = result.text;
+            }
+=======
+            const result = this.formatForJson(
+                editorSettings,
+                textToFormat,
+                item,
+                context,
+                lineContent,
+                schemaRetriever,
+            );
+            formattedItem.textEdit = TextEdit.replace(result.range, result.text);
+            delete formattedItem.insertText;
+>>>>>>> 1a469e4 (Working json indentation improvement)
         } else {
             formattedItem.insertText = this.formatForYaml(textToFormat, item, editorSettings);
         }
-
         return formattedItem;
     }
 
-    private formatForJson(label: string, item: CompletionItem, context: Context, lineContent?: string): {text: string, range?: Range} {
-      // Check if data.type equals 'object'
-      if(!lineContent){
-        console.log("No lineContent");
-        return {
-          text: label, 
-        };
-      }
+    private formatForJson(
+        editorSettings: EditorSettings,
+        label: string,
+        context: Context,
+        item: CompletionItem,
+        lineContent?: string,
+<<<<<<< HEAD
+    ): { text: string; range?: Range } {
 
-      console.log("Line content is " + lineContent);
-      console.log("Data type is " + item.data?.type )
-      if(item.data?.type == 'object'){ 
-        console.log("Data type is object");
-        return this.enhancedFormatForJson(label, context, lineContent);
-      }
+      console.error("=== formatForJson called for label:", label);
+        const isTopLevelSectionWithSnippet =
+            this.isTopLevelSection(label) &&
+            CompletionFormatter.TOP_LEVEL_SECTIONS_WITH_SNIPPETS.has(label as TopLevelSection);
 
+        const shouldFormat = 
+            context.syntaxNode.type === 'string' &&
+            !context.isValue() &&
+            lineContent &&
+            !isTopLevelSectionWithSnippet &&
+            item.data?.type !== undefined;
+
+        const shouldFormatAsObject = item.data?.type === 'object';
+        const shouldFormatAsArray = item.data?.type === 'array';
+
+        console.log("Item data type is ", item.data?.type);
+        console.error("shouldFormatAsObject:", shouldFormatAsObject);
+        console.error("shouldFormatAsArray:", shouldFormatAsArray);
+
+        if (shouldFormat) {
+           let replacementText = label;
+           const indentation = ' '.repeat(context.startPosition.column);
+           const indentString = getIndentationString(editorSettings, DocumentType.JSON);
+           
+           if (shouldFormatAsObject) { //OBJECT
+                replacementText = `${indentation}"${label}": {\n${indentation}${indentString}\n${indentation}}`;
+            } else if (shouldFormatAsArray) { //ARRAY
+                replacementText = `${indentation}"${label}": [\n${indentation}${indentString}\n${indentation}]`;
+            }
+
+          const range = Range.create(
+              Position.create(context.startPosition.row, 0),
+              Position.create(context.endPosition.row, context.endPosition.column + 1),
+          );
+
+          return {
+              text: replacementText,
+              range: range,
+          };
+        }
+=======
+        schemaRetriever?: SchemaRetriever,
+    ): { text: string; range: Range } {
+        const shouldFormat = context.syntaxNode.type === 'string' && !context.isValue() && lineContent;
+
+        const itemData = item.data as CompletionItemData | undefined;
+
+        let formatAsObject = itemData?.type === 'object';
+        let formatAsArray = itemData?.type === 'array';
+        let formatAsString = false;
+
+        // If type is not in item.data and we have schemaRetriever, look it up from schema
+        if ((!itemData?.type || itemData?.type === 'simple') && schemaRetriever && context.entity) {
+            const propertyType = this.getPropertyTypeFromSchema(schemaRetriever, context, label);
+
+            switch (propertyType) {
+                case 'object': {
+                    formatAsObject = true;
+
+                    break;
+                }
+                case 'array': {
+                    formatAsArray = true;
+
+                    break;
+                }
+                case 'string': {
+                    formatAsString = true;
+
+                    break;
+                }
+                // No default
+            }
+        }
+
+        const indentation = ' '.repeat(context.startPosition.column);
+        const indentString = getIndentationString(editorSettings, DocumentType.JSON);
+
+        let replacementText = `${indentation}"${label}":`;
+
+        if (shouldFormat) {
+            if (formatAsObject) {
+                replacementText = `${indentation}"${label}": {\n${indentation}${indentString}\n${indentation}}`;
+            } else if (formatAsArray) {
+                replacementText = `${indentation}"${label}": [\n${indentation}${indentString}\n${indentation}]`;
+            } else if (formatAsString) {
+                replacementText = `${indentation}"${label}": ""`;
+            }
+        }
+
+        const range = Range.create(
+            Position.create(context.startPosition.row, 0),
+            Position.create(context.endPosition.row, context.endPosition.column + 1),
+        );
+
+>>>>>>> 1a469e4 (Working json indentation improvement)
         return {
-          text: label,
+            text: replacementText,
+            range: range,
         };
     }
 
+    /**
+     * Get the type of a property from the CloudFormation schema
+     * @param schemaRetriever - SchemaRetriever instance to get schemas
+     * @param context - Current context with entity and property path information
+     * @param propertyName - Name of the property to look up
+     * @returns The first type found in the schema ('object', 'array', 'string', etc.) or undefined
+     */
+    private getPropertyTypeFromSchema(
+        schemaRetriever: SchemaRetriever,
+        context: Context,
+        propertyName: string,
+    ): string | undefined {
+        try {
+            if (ResourceAttributesSet.has(propertyName)) {
+                return RESOURCE_ATTRIBUTE_TYPES[propertyName];
+            }
 
-    private enhancedFormatForJson (label: string, context: Context, lineContent: string) {
-      const afterCursor = lineContent.substring(context.endPosition.column).trimStart();
-      const beforeCursor = lineContent.substring(0, context.startPosition.column);
-    
-      if (afterCursor.startsWith(': {')) {
-          return {
-            text: label, 
-          }; // ": {" already exists
-      } else if (afterCursor.startsWith(':')) {
-          const restOfLine = afterCursor.substring(1).trimStart();
-          if (restOfLine.startsWith('{') || restOfLine === '') {
-              return {
-                text: label, 
-              }; // Colon exists, braces exist
-          }
-          return {
-            text: label, 
-          }; // Let existing colon handle it
-      } else if (afterCursor.startsWith('{')) {
-        const quoteStart = beforeCursor.lastIndexOf('"');
-        const quoteEnd = afterCursor.indexOf('"') + context.endPosition.column;
-        
-        const range = Range.create(
-            Position.create(context.startPosition.row, quoteStart),
-            Position.create(context.startPosition.row, quoteEnd + 1)
-        );
-        
-        return {
-            text: `"${label}":`,
-            range: range
-        };
-      } else {
-          // Check if we're inside quotes
-          const inQuotes = (beforeCursor.match(/"/g) || []).length % 2 === 1;
-          const hasClosingQuote = afterCursor.trimStart().startsWith('"');
-          if (inQuotes && !hasClosingQuote){
-              return {
-                text: `${label}": {}`, 
-                range: createReplacementRange(context, true),
-              } // Close quote, add colon and braces
-          } else {
-              return {
-                text: `"${label}:" {}`, 
-                range: createReplacementRange(context, false),
-              } // In quotes or no quotes, do a full replace
-          }
-      }
+            const entity = context.entity;
+            if (!entity || entity.entityType !== EntityType.Resource) {
+                return undefined;
+            }
+
+            const resourceType = (entity as Resource).Type;
+            if (!resourceType) {
+                return undefined;
+            }
+
+            // Get the combined schemas
+            const combinedSchemas = schemaRetriever.getDefault();
+
+            // Get the schema for this resource type
+            const resourceSchema = combinedSchemas.schemas.get(resourceType);
+            if (!resourceSchema) {
+                return undefined;
+            }
+
+            const propertiesIndex = context.propertyPath.indexOf('Properties');
+            let propertyPath: string[];
+
+            if (propertiesIndex === -1) {
+                propertyPath = [propertyName];
+            } else {
+                propertyPath = [
+                    ...context.propertyPath
+                        .slice(propertiesIndex + 1)
+                        .map(String)
+                        .filter((p) => p !== ''),
+                    propertyName,
+                ];
+            }
+
+            const jsonPointerPath = '/properties/' + propertyPath.join('/');
+
+            const propertyDefinitions = resourceSchema.resolveJsonPointerPath(jsonPointerPath);
+
+            if (propertyDefinitions.length === 0) {
+                return undefined;
+            }
+
+            // Get the first property definition (there may be multiple due to oneOf/anyOf)
+            const propertyDef = propertyDefinitions[0];
+
+            // Return the first type found
+            if (propertyDef && 'type' in propertyDef) {
+                const type = propertyDef.type;
+                if (Array.isArray(type)) {
+                    return type[0];
+                } else if (typeof type === 'string') {
+                    return type;
+                }
+            }
+
+            return undefined;
+        } catch (error) {
+            CompletionFormatter.log.debug(error as Error, 'Failed to get property type from schema');
+            return undefined;
+        }
     }
 
     private formatForYaml(label: string, item: CompletionItem | undefined, editorSettings: EditorSettings): string {
