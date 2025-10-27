@@ -132,6 +132,18 @@ export const Schemas = {
             return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-synthetics-canary.json'), 'utf8');
         },
     },
+    ServerlessFunction: {
+        fileName: 'file://aws-serverless-function.json',
+        get contents() {
+            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-serverless-function.json'), 'utf8');
+        },
+    },
+    ServerlessApi: {
+        fileName: 'file://aws-serverless-api.json',
+        get contents() {
+            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-serverless-api.json'), 'utf8');
+        },
+    },
 };
 
 export function regionalSchemas(

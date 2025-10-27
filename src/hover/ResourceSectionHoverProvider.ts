@@ -61,7 +61,9 @@ export class ResourceSectionHoverProvider implements HoverProvider {
             doc.push('\n');
         }
 
-        if (schema.isAws) {
+        if (schema.isSam && schema.documentationUrl) {
+            doc.push(`[Source Documentation](${schema.documentationUrl})`);
+        } else if (schema.isAws && !schema.isSam) {
             const resource = schema.typeName.toLowerCase().split('::').splice(1).join('-');
             doc.push(
                 `[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-resource-${resource}.html)`,

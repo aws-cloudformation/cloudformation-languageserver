@@ -4,6 +4,7 @@ import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Closeable } from '../utils/Closeable';
 import { AwsRegion } from '../utils/Region';
+import { GetSamSchemaTask } from './GetSamSchemaTask';
 import { GetPrivateSchemasTask, GetPublicSchemaTask } from './GetSchemaTask';
 import { SchemaFileType } from './RegionalSchemas';
 import { SchemaStore } from './SchemaStore';
@@ -14,6 +15,7 @@ const OneHour = 60 * 60 * 1000;
 export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
     private readonly tasks: GetPublicSchemaTask[] = [];
     private readonly privateTask: GetPrivateSchemasTask;
+    private readonly samTask: GetSamSchemaTask;
     private settingsSubscription?: SettingsSubscription;
     private readonly log = LoggerFactory.getLogger(GetSchemaTaskManager);
 
@@ -29,10 +31,12 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         private profile: string = DefaultSettings.profile.profile,
     ) {
         this.privateTask = new GetPrivateSchemasTask(this.getPrivateResources, () => this.profile);
+        this.samTask = new GetSamSchemaTask();
 
         this.timeout = setTimeout(() => {
             // Wait before trying to call CFN APIs so that credentials have time to update
             this.runPrivateTask();
+            void this.runSamTask();
         }, TenSeconds);
 
         this.interval = setInterval(() => {
@@ -69,6 +73,14 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
 
     runPrivateTask() {
         this.privateTask.run(this.schemas.privateSchemas, this.log).catch(() => {});
+    }
+
+    private async runSamTask(): Promise<void> {
+        try {
+            await this.samTask.run(this.schemas.publicSchemas, this.log);
+        } catch (error) {
+            this.log.error({ error }, 'Failed to run SAM schema task');
+        }
     }
 
     public currentRegionalTasks() {
