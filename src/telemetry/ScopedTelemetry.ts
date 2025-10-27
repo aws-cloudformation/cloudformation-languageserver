@@ -10,9 +10,19 @@ import {
     Tracer,
     UpDownCounter,
     ValueType,
+    MetricAdvice,
 } from '@opentelemetry/api';
 import { Closeable } from '../utils/Closeable';
 import { typeOf } from '../utils/TypeCheck';
+
+export type MetricConfig = {
+    description?: string;
+    unit?: string;
+    valueType?: ValueType;
+    advice?: MetricAdvice;
+    trackObjectKey?: string;
+    attributes?: Attributes;
+};
 
 export class ScopedTelemetry implements Closeable {
     private readonly counters = new Map<string, Counter>();
@@ -27,28 +37,34 @@ export class ScopedTelemetry implements Closeable {
         private readonly tracer?: Tracer,
     ) {}
 
-    count(name: string, value: number, options?: MetricOptions, attributes?: Attributes): void {
-        this.getOrCreateCounter(name, options)?.add(value, generateAttr(attributes));
+    count(name: string, value: number, config?: MetricConfig): void {
+        const { options, attributes } = generateConfig(config);
+        this.getOrCreateCounter(name, options)?.add(value, attributes);
     }
 
-    countBoolean(name: string, value: boolean, options?: MetricOptions, attributes?: Attributes): void {
-        this.getOrCreateCounter(name, options)?.add(value ? 1 : 0, generateAttr(attributes));
+    countBoolean(name: string, value: boolean, config?: MetricConfig): void {
+        const { options, attributes } = generateConfig(config);
+        this.getOrCreateCounter(name, options)?.add(value ? 1 : 0, attributes);
     }
 
-    countUpDown(name: string, value: number, options?: MetricOptions, attributes?: Attributes): void {
-        this.getOrCreateUpDownCounter(name, options)?.add(value, generateAttr(attributes));
+    countUpDown(name: string, value: number, config?: MetricConfig): void {
+        const { options, attributes } = generateConfig(config);
+        this.getOrCreateUpDownCounter(name, options)?.add(value, attributes);
     }
 
-    countUpDownBoolean(name: string, value: boolean, options?: MetricOptions, attributes?: Attributes): void {
-        this.getOrCreateUpDownCounter(name, options)?.add(value ? 1 : 0, generateAttr(attributes));
+    countUpDownBoolean(name: string, value: boolean, config?: MetricConfig): void {
+        const { options, attributes } = generateConfig(config);
+        this.getOrCreateUpDownCounter(name, options)?.add(value ? 1 : 0, attributes);
     }
 
-    histogram(name: string, value: number, options?: MetricOptions, attributes?: Attributes): void {
-        this.getOrCreateHistogram(name, options)?.record(value, generateAttr(attributes));
+    histogram(name: string, value: number, config?: MetricConfig): void {
+        const { options, attributes } = generateConfig(config);
+        this.getOrCreateHistogram(name, options)?.record(value, attributes);
     }
 
-    gauge(name: string, value: number, options?: MetricOptions, attributes?: Attributes): void {
-        this.getOrCreateGauge(name, options)?.record(value, generateAttr(attributes));
+    gauge(name: string, value: number, config?: MetricConfig): void {
+        const { options, attributes } = generateConfig(config);
+        this.getOrCreateGauge(name, options)?.record(value, attributes);
     }
 
     registerGaugeProvider(name: string, provider: () => number, options?: MetricOptions): void {
@@ -67,57 +83,41 @@ export class ScopedTelemetry implements Closeable {
         );
     }
 
-    measure<T>(name: string, fn: () => T, options?: MetricOptions, attributes?: Attributes): T {
-        return this.executeWithMetrics(name, fn, false, options, attributes);
+    measure<T>(name: string, fn: () => T, config?: MetricConfig): T {
+        return this.executeWithMetrics(name, fn, false, config);
     }
 
-    async measureAsync<T>(
-        name: string,
-        fn: () => Promise<T>,
-        options?: MetricOptions,
-        attributes?: Attributes,
-    ): Promise<T> {
-        return await this.executeWithMetricsAsync(name, fn, false, options, attributes);
+    async measureAsync<T>(name: string, fn: () => Promise<T>, config?: MetricConfig): Promise<T> {
+        return await this.executeWithMetricsAsync(name, fn, false, config);
     }
 
-    trackExecution<T>(name: string, fn: () => T, options?: MetricOptions, attributes?: Attributes): T {
-        return this.executeWithMetrics(name, fn, true, options, attributes);
+    trackExecution<T>(name: string, fn: () => T, config?: MetricConfig): T {
+        return this.executeWithMetrics(name, fn, true, config);
     }
 
-    async trackExecutionAsync<T>(
-        name: string,
-        fn: () => Promise<T>,
-        options?: MetricOptions,
-        attributes?: Attributes,
-    ): Promise<T> {
-        return await this.executeWithMetricsAsync(name, fn, true, options, attributes);
+    async trackExecutionAsync<T>(name: string, fn: () => Promise<T>, config?: MetricConfig): Promise<T> {
+        return await this.executeWithMetricsAsync(name, fn, true, config);
     }
 
-    private executeWithMetrics<T>(
-        name: string,
-        fn: () => T,
-        trackResponse: boolean,
-        options?: MetricOptions,
-        attributes?: Attributes,
-    ): T {
+    private executeWithMetrics<T>(name: string, fn: () => T, trackResponse: boolean, config?: MetricConfig): T {
         if (!this.meter) {
             return fn();
         }
 
         const startTime = performance.now();
-        this.count(`${name}.count`, 1, { unit: '1', ...options }, attributes);
-        this.count(`${name}.fault`, 0, { unit: '1', ...options }, attributes);
+        this.count(`${name}.count`, 1, config);
+        this.count(`${name}.fault`, 0, config);
 
         try {
             const result = fn();
 
-            if (trackResponse) this.recordResponse(name, result, options, attributes);
+            if (trackResponse) this.recordResponse(name, result, config);
             return result;
         } catch (error) {
-            this.count(`${name}.fault`, 1, { unit: '1', ...options }, attributes);
+            this.count(`${name}.fault`, 1, config);
             throw error;
         } finally {
-            this.recordDuration(name, performance.now() - startTime, options, attributes);
+            this.recordDuration(name, performance.now() - startTime, config);
         }
     }
 
@@ -125,38 +125,40 @@ export class ScopedTelemetry implements Closeable {
         name: string,
         fn: () => Promise<T>,
         trackResponse: boolean,
-        options?: MetricOptions,
-        attributes?: Attributes,
+        config?: MetricConfig,
     ): Promise<T> {
         if (!this.meter) {
             return await fn();
         }
 
         const startTime = performance.now();
-        this.count(`${name}.count`, 1, { unit: '1', ...options }, attributes);
-        this.count(`${name}.fault`, 0, { unit: '1', ...options }, attributes);
+        this.count(`${name}.count`, 1, config);
+        this.count(`${name}.fault`, 0, config);
 
         try {
             const result = await fn();
 
-            if (trackResponse) this.recordResponse(name, result, options, attributes);
+            if (trackResponse) this.recordResponse(name, result, config);
             return result;
         } catch (error) {
-            this.count(`${name}.fault`, 1, { unit: '1', ...options }, attributes);
+            this.count(`${name}.fault`, 1, config);
             throw error;
         } finally {
-            this.recordDuration(name, performance.now() - startTime, options, attributes);
+            this.recordDuration(name, performance.now() - startTime, config);
         }
     }
 
-    private recordResponse<T>(name: string, result: T, options?: MetricOptions, attributes?: Attributes): void {
-        const { type, size } = typeOf(result);
+    private recordResponse<T>(name: string, result: T, config?: MetricConfig): void {
+        const trackObjectKey = config?.trackObjectKey;
+        const value =
+            trackObjectKey && result && typeof result === 'object' ? result[trackObjectKey as keyof T] : result;
+        const { type, size } = typeOf(value);
 
         if (size !== undefined) {
-            this.histogram(`${name}.response.type.size`, size, { unit: '1', ...options }, attributes);
+            this.histogram(`${name}.response.type.size`, size, config);
         }
 
-        this.count(`${name}.response.type.${type}`, 1, { unit: '1', ...options }, attributes);
+        this.count(`${name}.response.type.${type}`, 1, config);
     }
 
     private getOrCreateUpDownCounter(name: string, options?: MetricOptions): UpDownCounter | undefined {
@@ -211,13 +213,12 @@ export class ScopedTelemetry implements Closeable {
         return gauge;
     }
 
-    private recordDuration(name: string, duration: number, options?: MetricOptions, attributes?: Attributes) {
-        this.histogram(
-            `${name}.duration`,
-            duration,
-            { unit: 'ms', valueType: ValueType.DOUBLE, ...options },
-            attributes,
-        );
+    private recordDuration(name: string, duration: number, config?: MetricConfig) {
+        this.histogram(`${name}.duration`, duration, {
+            unit: 'ms',
+            valueType: ValueType.DOUBLE,
+            ...config,
+        });
     }
 
     close(): void {
@@ -230,6 +231,15 @@ export class ScopedTelemetry implements Closeable {
 }
 
 const AwsEmfStorageResolution = 1; // High-resolution metrics (1-second granularity) https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsemfexporter#metric-attributes
+
+function generateConfig(config?: MetricConfig) {
+    const { attributes = {}, unit = '1', valueType = ValueType.INT, ...options } = config ?? {};
+    return {
+        options: { unit, valueType, ...options },
+        attributes: generateAttr(attributes),
+    };
+}
+
 function generateAttr(attributes?: Attributes): Attributes {
     return { 'aws.emf.storage_resolution': AwsEmfStorageResolution, ...attributes };
 }

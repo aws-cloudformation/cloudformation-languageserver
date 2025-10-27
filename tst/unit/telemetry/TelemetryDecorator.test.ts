@@ -58,12 +58,9 @@ describe('TelemetryDecorator', () => {
             const result = instance.syncMethod();
 
             expect(result).toBe('result');
-            expect(mockTelemetry.trackExecution).toHaveBeenCalledWith(
-                'syncMethod',
-                expect.any(Function),
-                undefined,
-                {},
-            );
+            expect(mockTelemetry.trackExecution).toHaveBeenCalledWith('syncMethod', expect.any(Function), {
+                name: 'syncMethod',
+            });
             expect(mockTelemetry.trackExecutionAsync).not.toHaveBeenCalled();
         });
 
@@ -80,12 +77,9 @@ describe('TelemetryDecorator', () => {
             const result = await instance.asyncMethod();
 
             expect(result).toBe('result');
-            expect(mockTelemetry.trackExecutionAsync).toHaveBeenCalledWith(
-                'asyncMethod',
-                expect.any(Function),
-                undefined,
-                {},
-            );
+            expect(mockTelemetry.trackExecutionAsync).toHaveBeenCalledWith('asyncMethod', expect.any(Function), {
+                name: 'asyncMethod',
+            });
             expect(mockTelemetry.trackExecution).not.toHaveBeenCalled();
         });
 
@@ -140,15 +134,12 @@ describe('TelemetryDecorator', () => {
 
             new TestClass().method();
 
-            expect(mockTelemetry.trackExecution).toHaveBeenCalledWith(
-                'customName',
-                expect.any(Function),
-                undefined,
-                {},
-            );
+            expect(mockTelemetry.trackExecution).toHaveBeenCalledWith('customName', expect.any(Function), {
+                name: 'customName',
+            });
         });
 
-        it('should pass custom attributes', () => {
+        it('should pass config with attributes', () => {
             class TestClass {
                 @Track({ name: 'method', attributes: { key: 'value' } })
                 method() {}
@@ -156,8 +147,25 @@ describe('TelemetryDecorator', () => {
 
             new TestClass().method();
 
-            expect(mockTelemetry.trackExecution).toHaveBeenCalledWith('method', expect.any(Function), undefined, {
-                key: 'value',
+            expect(mockTelemetry.trackExecution).toHaveBeenCalledWith('method', expect.any(Function), {
+                name: 'method',
+                attributes: { key: 'value' },
+            });
+        });
+
+        it('should pass config with trackObjectKey', () => {
+            class TestClass {
+                @Track({ name: 'method', trackObjectKey: 'items' })
+                method() {
+                    return { items: [1, 2, 3] };
+                }
+            }
+
+            new TestClass().method();
+
+            expect(mockTelemetry.trackExecution).toHaveBeenCalledWith('method', expect.any(Function), {
+                name: 'method',
+                trackObjectKey: 'items',
             });
         });
     });
@@ -175,7 +183,9 @@ describe('TelemetryDecorator', () => {
             const result = instance.syncMethod();
 
             expect(result).toBe('result');
-            expect(mockTelemetry.measure).toHaveBeenCalledWith('syncMethod', expect.any(Function), undefined, {});
+            expect(mockTelemetry.measure).toHaveBeenCalledWith('syncMethod', expect.any(Function), {
+                name: 'syncMethod',
+            });
             expect(mockTelemetry.measureAsync).not.toHaveBeenCalled();
         });
 
@@ -192,7 +202,9 @@ describe('TelemetryDecorator', () => {
             const result = await instance.asyncMethod();
 
             expect(result).toBe('result');
-            expect(mockTelemetry.measureAsync).toHaveBeenCalledWith('asyncMethod', expect.any(Function), undefined, {});
+            expect(mockTelemetry.measureAsync).toHaveBeenCalledWith('asyncMethod', expect.any(Function), {
+                name: 'asyncMethod',
+            });
             expect(mockTelemetry.measure).not.toHaveBeenCalled();
         });
 
@@ -231,20 +243,24 @@ describe('TelemetryDecorator', () => {
 
             new TestClass().method();
 
-            expect(mockTelemetry.measure).toHaveBeenCalledWith('customName', expect.any(Function), undefined, {});
+            expect(mockTelemetry.measure).toHaveBeenCalledWith('customName', expect.any(Function), {
+                name: 'customName',
+            });
         });
 
-        it('should pass metric options', () => {
-            const options = { unit: 'ms' };
-
+        it('should pass metric config', () => {
             class TestClass {
-                @Measure({ name: 'method', options })
+                @Measure({ name: 'method', unit: 'ms', valueType: 1 })
                 method() {}
             }
 
             new TestClass().method();
 
-            expect(mockTelemetry.measure).toHaveBeenCalledWith('method', expect.any(Function), options, {});
+            expect(mockTelemetry.measure).toHaveBeenCalledWith('method', expect.any(Function), {
+                name: 'method',
+                unit: 'ms',
+                valueType: 1,
+            });
         });
     });
 });

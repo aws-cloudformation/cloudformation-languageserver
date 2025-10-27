@@ -46,7 +46,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
     ) {}
 
-    @Track({ name: 'getCompletions' })
+    @Track({ name: 'getCompletions', trackObjectKey: 'items' })
     async getCompletions(params: CompletionParams) {
         if (!this.completionSettings.enabled) return;
 
