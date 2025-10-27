@@ -50,8 +50,9 @@ import {
     DescribeChangeSetCommandOutput,
     GetTemplateCommand,
     Change,
-    ListChangeSetsCommand,
     ChangeSetSummary,
+    ListChangeSetsCommand,
+    waitUntilStackDeleteComplete,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClient } from './AwsClient';
@@ -327,6 +328,19 @@ export class CfnService {
                 maxWaitTime: timeoutMinutes * 60,
             };
             return await waitUntilStackImportComplete(waiterConfig, params);
+        });
+    }
+
+    public async waitUntilStackDeleteComplete(
+        params: DescribeStacksCommandInput,
+        timeoutMinutes: number = 30,
+    ): Promise<WaiterResult> {
+        return await this.withClient(async (client) => {
+            const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
+                client,
+                maxWaitTime: timeoutMinutes * 60,
+            };
+            return await waitUntilStackDeleteComplete(waiterConfig, params);
         });
     }
 

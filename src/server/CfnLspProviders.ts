@@ -10,10 +10,13 @@ import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../resourceState/StackManagementInfoProvider';
 import { CodeActionService } from '../services/CodeActionService';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
+import { ChangeSetDeletionWorkflow } from '../stacks/actions/ChangeSetDeletionWorkflow';
 import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
 import {
     CreateDeploymentParams,
     CreateValidationParams,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
     DescribeDeploymentStatusResult,
     DescribeValidationStatusResult,
 } from '../stacks/actions/StackActionRequestType';
@@ -32,6 +35,7 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly stackManagementInfoProvider: StackManagementInfoProvider;
     readonly validationWorkflowService: StackActionWorkflow<CreateValidationParams, DescribeValidationStatusResult>;
     readonly deploymentWorkflowService: StackActionWorkflow<CreateDeploymentParams, DescribeDeploymentStatusResult>;
+    readonly changeSetDeletionWorkflowService: StackActionWorkflow<DeleteChangeSetParams, DescribeDeletionStatusResult>;
     readonly stackManager: StackManager;
     readonly resourceStateManager: ResourceStateManager;
     readonly resourceStateImporter: ResourceStateImporter;
@@ -60,6 +64,8 @@ export class CfnLspProviders implements Configurables, Closeable {
                 : ValidationWorkflow.create(core, external));
         this.deploymentWorkflowService =
             overrides.deploymentWorkflowService ?? DeploymentWorkflow.create(core, external);
+        this.changeSetDeletionWorkflowService =
+            overrides.deploymentWorkflowService ?? ChangeSetDeletionWorkflow.create(core, external);
         this.resourceStateManager = overrides.resourceStateManager ?? ResourceStateManager.create(external);
         this.resourceStateImporter =
             overrides.resourceStateImporter ?? ResourceStateImporter.create(core, external, this);

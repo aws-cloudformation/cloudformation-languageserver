@@ -53,6 +53,7 @@ import { OnlineStatus } from '../../src/services/OnlineStatus';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
+import { ChangeSetDeletionWorkflow } from '../../src/stacks/actions/ChangeSetDeletionWorkflow';
 import { DeploymentWorkflow } from '../../src/stacks/actions/DeploymentWorkflow';
 import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow';
 import { StackManager } from '../../src/stacks/StackManager';
@@ -263,6 +264,10 @@ export function createMockDeploymentWorkflowService() {
     return stubInterface<DeploymentWorkflow>();
 }
 
+export function createMockChangeSetDeletionWorkflowService() {
+    return stubInterface<ChangeSetDeletionWorkflow>();
+}
+
 export function createMockAwsCredentials() {
     return stubInterface<AwsCredentials>();
 }
@@ -366,6 +371,8 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         stackManager: overrides.stackManager ?? stubInterface<StackManager>(),
         validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
         deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
+        changeSetDeletionWorkflowService:
+            overrides.changeSetDeletionWorkflowService ?? createMockChangeSetDeletionWorkflowService(),
         resourceStateManager: overrides.resourceStateManager ?? createMockResourceStateManager(),
         resourceStateImporter: overrides.resourceStateImporter ?? createMockResourceStateImporter(),
         relationshipSchemaService: overrides.relationshipSchemaService ?? stubInterface<RelationshipSchemaService>(),

@@ -12,6 +12,9 @@ import {
     DescribeValidationStatusRequest,
     DescribeDeploymentStatusRequest,
     GetDeploymentStatusRequest,
+    DeleteChangeSetRequest,
+    GetChangeSetDeletionStatusRequest,
+    DescribeChangeSetDeletionStatusRequest,
 } from '../../../src/stacks/actions/StackActionProtocol';
 import {
     GetCapabilitiesResult,
@@ -23,6 +26,8 @@ import {
     DescribeDeploymentStatusResult,
     CreateStackActionResult,
     CreateDeploymentParams,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
 } from '../../../src/stacks/actions/StackActionRequestType';
 
 describe('LspTemplateHandlers', () => {
@@ -96,5 +101,29 @@ describe('LspTemplateHandlers', () => {
         stackActionHandlers.onDescribeDeploymentStatus(mockHandler);
 
         expect(connection.onRequest.calledWith(DescribeDeploymentStatusRequest.method)).toBe(true);
+    });
+
+    it('should register onDeleteChangeSet handler', () => {
+        const mockHandler: RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> = vi.fn();
+
+        stackActionHandlers.onDeleteChangeSet(mockHandler);
+
+        expect(connection.onRequest.calledWith(DeleteChangeSetRequest.method)).toBe(true);
+    });
+
+    it('should register onGetChangeSetDeletionStatus handler', () => {
+        const mockHandler: RequestHandler<Identifiable, GetStackActionStatusResult, void> = vi.fn();
+
+        stackActionHandlers.onGetChangeSetDeletionStatus(mockHandler);
+
+        expect(connection.onRequest.calledWith(GetChangeSetDeletionStatusRequest.method)).toBe(true);
+    });
+
+    it('should register onDescribeChangeSetDeletionStatus handler', () => {
+        const mockHandler: RequestHandler<Identifiable, DescribeDeletionStatusResult, void> = vi.fn();
+
+        stackActionHandlers.onDescribeChangeSetDeletionStatus(mockHandler);
+
+        expect(connection.onRequest.calledWith(DescribeChangeSetDeletionStatusRequest.method)).toBe(true);
     });
 });
