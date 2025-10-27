@@ -1,18 +1,18 @@
 import type { ResourceSchema } from '../ResourceSchema';
+import { PlaceholderConstants } from './PlaceholderConstants';
 import type { ResourceTemplateTransformer } from './ResourceTemplateTransformer';
 
 /**
- * Transformer that adds tabstop placeholders for required write-only properties.
+ * Transformer that adds placeholder constants for required write-only properties.
  * Only adds placeholders at the required property level, not for nested write-only children.
- * Replaces empty objects with tabstop placeholders using LSP snippet syntax.
- * Uses sequential tabstops (${1}, ${2}, etc.). The $0 final cursor position is handled by the client.
+ * Uses placeholder constants that will be replaced with tab stops later.
  */
 export class AddWriteOnlyRequiredPropertiesTransformer implements ResourceTemplateTransformer {
-    public transform(resourceProperties: Record<string, unknown>, schema: ResourceSchema): void {
+    public transform(resourceProperties: Record<string, unknown>, schema: ResourceSchema, logicalId?: string): void {
         const requiredProps = schema.required ?? [];
         const writeOnlyPaths = schema.writeOnlyProperties ?? [];
 
-        if (requiredProps.length === 0 || writeOnlyPaths.length === 0) {
+        if (requiredProps.length === 0 || writeOnlyPaths.length === 0 || !logicalId) {
             return;
         }
 
@@ -28,10 +28,12 @@ export class AddWriteOnlyRequiredPropertiesTransformer implements ResourceTempla
             }
         }
 
-        let tabstopIndex = 1;
         for (const prop of requiredWriteOnlyProps) {
             if (!(prop in resourceProperties) || this.isEmpty(resourceProperties[prop])) {
-                resourceProperties[prop] = `\${${tabstopIndex++}:update required write only property}`;
+                resourceProperties[prop] = PlaceholderConstants.createPlaceholder(
+                    PlaceholderConstants.WRITE_ONLY_REQUIRED,
+                    logicalId,
+                );
             }
         }
     }

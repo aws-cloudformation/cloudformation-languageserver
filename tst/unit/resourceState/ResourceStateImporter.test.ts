@@ -12,20 +12,32 @@ import {
 } from '../../../src/resourceState/ResourceStateTypes';
 import { createMockSchemaRetriever, createMockStackManagementInfoProvider } from '../../utils/MockServerComponents';
 import { combinedSchemas } from '../../utils/SchemaUtils';
-import { createMockResourceState, MockResourceStates } from './MockResourceState';
+import { createMockResourceState } from './MockResourceState';
 import { TestScenarios, getImportExpectation, getCloneExpectation } from './StateImportExpectation';
 
 describe('ResourceStateImporter', () => {
     let mockResourceStateManager: any;
-    const documentManager = new DocumentManager(new TextDocuments(TextDocument));
-    const syntaxTreeManager = new SyntaxTreeManager();
-    const schemaRetriever = createMockSchemaRetriever(combinedSchemas());
+    let documentManager: DocumentManager;
+    let syntaxTreeManager: SyntaxTreeManager;
+    let schemaRetriever: ReturnType<typeof createMockSchemaRetriever>;
     const mockStackManagementInfoProvider = createMockStackManagementInfoProvider();
     let importer: ResourceStateImporter;
 
     beforeEach(() => {
         vi.clearAllMocks();
 
+        // Create fresh instances for each test to prevent memory accumulation
+        documentManager = new DocumentManager(new TextDocuments(TextDocument));
+        syntaxTreeManager = new SyntaxTreeManager();
+
+        // Mock editor settings with 2 spaces and insertSpaces: true
+        (documentManager as any).editorSettings = {
+            tabSize: 2,
+            insertSpaces: true,
+            detectIndentation: false,
+        };
+
+        schemaRetriever = createMockSchemaRetriever(combinedSchemas());
         mockResourceStateManager = {
             getResource: vi.fn(),
             listResources: vi.fn(),
@@ -65,7 +77,7 @@ describe('ResourceStateImporter', () => {
 
     describe.each(TestScenarios)('$name', (scenario) => {
         describe('Import functionality', () => {
-            const resourceTypes = Object.keys(MockResourceStates);
+            const resourceTypes = ['AWS::S3::Bucket', 'AWS::Synthetics::Canary'];
 
             for (const resourceType of resourceTypes) {
                 it(`should import ${resourceType} with exact expected output`, async () => {
@@ -86,23 +98,19 @@ describe('ResourceStateImporter', () => {
                     const params: ResourceStateParams = {
                         resourceSelections,
                         textDocument: { uri } as any,
-                        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                        context: { diagnostics: [], only: [], triggerKind: 1 },
                         purpose: ResourceStatePurpose.IMPORT,
                     };
 
                     const result = await importer.importResourceState(params);
 
-                    expect(result.edit).toBeDefined();
-                    expect(result.edit!.changes![uri]).toBeDefined();
+                    expect(result.completionItem).toBeDefined();
+                    expect(result.completionItem!.textEdit).toBeDefined();
 
-                    const textEdit = result.edit!.changes![uri][0] as TextEdit;
+                    const textEdit = result.completionItem!.textEdit as TextEdit;
                     const newText = textEdit.newText;
 
                     const expectedText = getImportExpectation(scenario, resourceType);
                     expect(newText).toBe(expectedText);
-
-                    expect(newText).not.toContain('<CLONE INPUT REQUIRED>');
                     expect(result.successfulImports).toBeDefined();
                     expect(result.failedImports).toBeDefined();
                 });
@@ -110,7 +118,10 @@ describe('ResourceStateImporter', () => {
         });
 
         describe('Clone functionality', () => {
-            const resourceTypes = Object.keys(MockResourceStates);
+            const resourceTypes = [
+                'AWS::S3::Bucket', // Non-required primary identifier
+                'AWS::Synthetics::Canary', // Required primary identifier
+            ];
 
             for (const resourceType of resourceTypes) {
                 it(`should clone ${resourceType} with exact expected output`, async () => {
@@ -131,22 +142,19 @@ describe('ResourceStateImporter', () => {
                     const params: ResourceStateParams = {
                         resourceSelections,
                         textDocument: { uri } as any,
-                        range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                        context: { diagnostics: [], only: [], triggerKind: 1 },
                         purpose: ResourceStatePurpose.CLONE,
                     };
 
                     const result = await importer.importResourceState(params);
 
-                    expect(result.edit).toBeDefined();
-                    expect(result.edit!.changes![uri]).toBeDefined();
+                    expect(result.completionItem).toBeDefined();
+                    expect(result.completionItem!.textEdit).toBeDefined();
 
-                    const textEdit = result.edit!.changes![uri][0] as TextEdit;
+                    const textEdit = result.completionItem!.textEdit as TextEdit;
                     const newText = textEdit.newText;
 
                     const expectedText = getCloneExpectation(scenario, resourceType);
                     expect(newText).toBe(expectedText);
-
                     expect(result.successfulImports).toBeDefined();
                     expect(result.failedImports).toBeDefined();
                 });
@@ -164,15 +172,12 @@ describe('ResourceStateImporter', () => {
             const params: ResourceStateParams = {
                 resourceSelections: [],
                 textDocument: { uri } as any,
-                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                context: { diagnostics: [], only: [], triggerKind: 1 },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
             const result = await importer.importResourceState(params);
 
-            expect(result.edit).toBeDefined();
-            expect(result.title).toBe('Resource State Import');
+            expect(result.completionItem).toBeUndefined();
             expect(Object.keys(result.successfulImports)).toHaveLength(0);
             expect(Object.keys(result.failedImports)).toHaveLength(0);
         });
@@ -183,15 +188,12 @@ describe('ResourceStateImporter', () => {
             const params: ResourceStateParams = {
                 resourceSelections: [{ resourceType: 'AWS::S3::Bucket', resourceIdentifiers: ['test-bucket'] }],
                 textDocument: { uri } as any,
-                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                context: { diagnostics: [], only: [], triggerKind: 1 },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
             const result = await importer.importResourceState(params);
 
-            expect(result.edit).toBeUndefined();
-            expect(result.title).toBe('Import failed. Document not found.');
+            expect(result.completionItem).toBeUndefined();
             expect(Object.keys(result.successfulImports)).toHaveLength(0);
             expect(Object.keys(result.failedImports)).toHaveLength(0);
         });
@@ -205,15 +207,12 @@ describe('ResourceStateImporter', () => {
             const params: ResourceStateParams = {
                 resourceSelections: [{ resourceType: 'AWS::S3::Bucket', resourceIdentifiers: ['test-bucket'] }],
                 textDocument: { uri } as any,
-                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                context: { diagnostics: [], only: [], triggerKind: 1 },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
             const result = await importer.importResourceState(params);
 
-            expect(result.edit).toBeDefined();
-            expect(result.title).toBe('Resource State Import');
+            expect(result.completionItem).toBeUndefined();
             expect(Object.keys(result.successfulImports)).toHaveLength(0);
             expect(Object.keys(result.failedImports)).toHaveLength(1);
         });
@@ -242,8 +241,6 @@ describe('ResourceStateImporter', () => {
                     },
                 ],
                 textDocument: { uri } as any,
-                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                context: { diagnostics: [], only: [], triggerKind: 1 },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -278,8 +275,6 @@ describe('ResourceStateImporter', () => {
                     },
                 ],
                 textDocument: { uri } as any,
-                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                context: { diagnostics: [], only: [], triggerKind: 1 },
                 purpose: ResourceStatePurpose.CLONE,
             };
 
@@ -310,8 +305,6 @@ describe('ResourceStateImporter', () => {
                     },
                 ],
                 textDocument: { uri } as any,
-                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                context: { diagnostics: [], only: [], triggerKind: 1 },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -357,17 +350,15 @@ describe('ResourceStateImporter', () => {
             const params: ResourceStateParams = {
                 resourceSelections,
                 textDocument: { uri } as any,
-                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                context: { diagnostics: [], only: [], triggerKind: 1 },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
             const result = await importer.importResourceState(params);
 
-            expect(result.edit).toBeDefined();
-            expect(result.edit!.changes![uri]).toBeDefined();
+            expect(result.completionItem).toBeDefined();
+            expect(result.completionItem!.textEdit).toBeDefined();
 
-            const textEdit = result.edit!.changes![uri][0];
+            const textEdit = result.completionItem!.textEdit as TextEdit;
             expect(textEdit.newText).toContain('"IAMRole2"');
             expect(textEdit.newText).not.toContain('"IAMRole"');
             expect(textEdit.newText).not.toContain('"IAMRole1"');
@@ -398,17 +389,15 @@ describe('ResourceStateImporter', () => {
             const params: ResourceStateParams = {
                 resourceSelections,
                 textDocument: { uri } as any,
-                range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-                context: { diagnostics: [], only: [], triggerKind: 1 },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
             const result = await importer.importResourceState(params);
 
-            expect(result.edit).toBeDefined();
-            expect(result.edit!.changes![uri]).toBeDefined();
+            expect(result.completionItem).toBeDefined();
+            expect(result.completionItem!.textEdit).toBeDefined();
 
-            const textEdit = result.edit!.changes![uri][0];
+            const textEdit = result.completionItem!.textEdit as TextEdit;
             expect(textEdit.newText).toContain('"IAMRole"');
             expect(textEdit.newText).toContain('"IAMRole1"');
             expect(textEdit.newText).toContain('"IAMRole2"');

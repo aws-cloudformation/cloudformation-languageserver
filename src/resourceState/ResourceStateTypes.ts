@@ -1,4 +1,4 @@
-import { CodeAction, CodeActionParams } from 'vscode-languageserver';
+import { CompletionItem, TextDocumentIdentifier } from 'vscode-languageserver';
 import { RequestType } from 'vscode-languageserver-protocol';
 import { ResourceStackManagementResult } from './StackManagementInfoProvider';
 
@@ -27,12 +27,14 @@ export enum ResourceStatePurpose {
     CLONE = 'Clone',
 }
 
-export interface ResourceStateParams extends CodeActionParams {
+export interface ResourceStateParams {
+    textDocument: TextDocumentIdentifier;
     resourceSelections?: ResourceSelection[];
     purpose: ResourceStatePurpose;
 }
 
-export interface ResourceStateResult extends CodeAction {
+export interface ResourceStateResult {
+    completionItem?: CompletionItem;
     successfulImports: Record<ResourceType, ResourceIdentifier[]>;
     failedImports: Record<ResourceType, ResourceIdentifier[]>;
     warning?: string;
