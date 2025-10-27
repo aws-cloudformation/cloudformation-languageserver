@@ -102,38 +102,23 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
         editorSettings: EditorSettings,
         uri?: string,
     ): ExtractToParameterResult | undefined {
-        if (!this.canExtract(context)) {
+        const baseExtraction = this.performBaseExtraction(context, editorSettings, uri);
+        if (!baseExtraction) {
             return undefined;
         }
 
-        const literalInfo = this.literalDetector.detectLiteralValue(context.syntaxNode);
-        if (!literalInfo || literalInfo.isReference) {
-            return undefined;
-        }
+        const replacementEdit = this.generateReplacementEdit(
+            baseExtraction.parameterName,
+            baseExtraction.literalInfo,
+            context,
+        );
 
-        try {
-            const templateContent = this.getTemplateContent(context);
-            const parameterName = this.generateParameterName(context, templateContent, uri);
-            const parameterDefinition = this.typeInferrer.inferParameterType(literalInfo.type, literalInfo.value);
-            const replacementEdit = this.generateReplacementEdit(parameterName, literalInfo, context);
-            const parameterInsertionEdit = this.generateParameterInsertionEdit(
-                parameterName,
-                parameterDefinition,
-                templateContent,
-                context,
-                editorSettings,
-                uri,
-            );
-
-            return {
-                parameterName,
-                parameterDefinition,
-                replacementEdit,
-                parameterInsertionEdit,
-            };
-        } catch {
-            return undefined;
-        }
+        return {
+            parameterName: baseExtraction.parameterName,
+            parameterDefinition: baseExtraction.parameterDefinition,
+            replacementEdit,
+            parameterInsertionEdit: baseExtraction.parameterInsertionEdit,
+        };
     }
 
     /**
@@ -146,6 +131,49 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
         editorSettings: EditorSettings,
         uri?: string,
     ): ExtractAllOccurrencesResult | undefined {
+        const baseExtraction = this.performBaseExtraction(context, editorSettings, uri);
+        if (!baseExtraction) {
+            return undefined;
+        }
+
+        if (!uri) {
+            return undefined;
+        }
+
+        const allOccurrences = this.allOccurrencesFinder.findAllOccurrences(
+            uri,
+            baseExtraction.literalInfo.value,
+            baseExtraction.literalInfo.type,
+        );
+
+        const replacementEdits = allOccurrences.map((occurrenceRange) =>
+            this.textEditGenerator.generateLiteralReplacementEdit(
+                baseExtraction.parameterName,
+                occurrenceRange,
+                context.documentType,
+            ),
+        );
+
+        return {
+            parameterName: baseExtraction.parameterName,
+            parameterDefinition: baseExtraction.parameterDefinition,
+            replacementEdits,
+            parameterInsertionEdit: baseExtraction.parameterInsertionEdit,
+        };
+    }
+
+    private performBaseExtraction(
+        context: Context,
+        editorSettings: EditorSettings,
+        uri?: string,
+    ):
+        | {
+              literalInfo: LiteralValueInfo;
+              parameterName: string;
+              parameterDefinition: import('./ExtractToParameterTypes').ParameterDefinition;
+              parameterInsertionEdit: TextEdit;
+          }
+        | undefined {
         if (!this.canExtract(context)) {
             return undefined;
         }
@@ -159,25 +187,6 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
             const templateContent = this.getTemplateContent(context);
             const parameterName = this.generateParameterName(context, templateContent, uri);
             const parameterDefinition = this.typeInferrer.inferParameterType(literalInfo.type, literalInfo.value);
-
-            if (!uri) {
-                return undefined;
-            }
-
-            const allOccurrences = this.allOccurrencesFinder.findAllOccurrences(
-                uri,
-                literalInfo.value,
-                literalInfo.type,
-            );
-
-            const replacementEdits = allOccurrences.map((occurrenceRange) =>
-                this.textEditGenerator.generateLiteralReplacementEdit(
-                    parameterName,
-                    occurrenceRange,
-                    context.documentType,
-                ),
-            );
-
             const parameterInsertionEdit = this.generateParameterInsertionEdit(
                 parameterName,
                 parameterDefinition,
@@ -188,9 +197,9 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
             );
 
             return {
+                literalInfo,
                 parameterName,
                 parameterDefinition,
-                replacementEdits,
                 parameterInsertionEdit,
             };
         } catch {
