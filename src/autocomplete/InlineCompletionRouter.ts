@@ -1,4 +1,4 @@
-import { InlineCompletionList, InlineCompletionParams, InlineCompletionItem } from 'vscode-languageserver-protocol';
+import { InlineCompletionParams } from 'vscode-languageserver-protocol';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
@@ -16,7 +16,6 @@ import { InlineCompletionProvider } from './InlineCompletionProvider';
 import { RelatedResourcesInlineCompletionProvider } from './RelatedResourcesInlineCompletionProvider';
 
 export type InlineCompletionProviderType = 'RelatedResources' | 'ResourceBlock' | 'PropertyBlock';
-type ReturnType = InlineCompletionList | InlineCompletionItem[] | null | undefined;
 
 export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
     private completionSettings: CompletionSettings = DefaultSettings.completion;
@@ -30,7 +29,7 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
     ) {}
 
     @Track({ name: 'getInlineCompletions' })
-    getInlineCompletions(params: InlineCompletionParams): Promise<ReturnType> | ReturnType {
+    async getInlineCompletions(params: InlineCompletionParams) {
         if (!this.completionSettings.enabled) return;
 
         const context = this.contextManager.getContext(params);
@@ -39,15 +38,6 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
             return;
         }
 
-        this.log.debug(
-            {
-                position: params.position,
-                section: context.section,
-                propertyPath: context.propertyPath,
-            },
-            'Processing inline completion request',
-        );
-
         // Check if we are authoring a new resource
         if (this.isAuthoringNewResource(context)) {
             const relatedResourcesProvider = this.inlineCompletionProviderMap.get('RelatedResources');
@@ -55,7 +45,7 @@ export class InlineCompletionRouter implements SettingsConfigurable, Closeable {
                 const result = relatedResourcesProvider.getInlineCompletion(context, params);
 
                 if (result instanceof Promise) {
-                    return result.then((items) => {
+                    return await result.then((items) => {
                         return { items };
                     });
                 } else if (result && Array.isArray(result)) {

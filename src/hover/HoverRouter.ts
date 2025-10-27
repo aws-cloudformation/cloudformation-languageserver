@@ -57,22 +57,14 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
     }
 
     @Track({ name: 'getHoverDoc' })
-    getHoverDoc(textDocPosParams: TextDocumentPositionParams): string | undefined {
+    getHoverDoc(textDocPosParams: TextDocumentPositionParams) {
         if (!this.settings.enabled) {
-            return undefined;
+            return;
         }
         const context = this.contextManager.getContextAndRelatedEntities(textDocPosParams);
-        this.log.debug(
-            {
-                Router: 'Hover',
-                Position: textDocPosParams.position,
-                Context: context?.record(),
-            },
-            'Processing hover request',
-        );
 
         if (!context) {
-            return undefined;
+            return;
         }
 
         // Check for intrinsic function arguments first

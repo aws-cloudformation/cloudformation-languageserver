@@ -4,7 +4,7 @@ import { CompletionExpectationBuilder, TemplateBuilder, TemplateScenario } from 
 
 describe('Autocomplete Features', () => {
     describe('YAML', () => {
-        it('test Completion while authoring', () => {
+        it('test Completion while authoring', async () => {
             const template = new TemplateBuilder(DocumentType.YAML);
             const scenario: TemplateScenario = {
                 name: 'Comprehensive template',
@@ -1553,10 +1553,10 @@ O`,
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
 
-        it('test nested object property completion', () => {
+        it('test nested object property completion', async () => {
             const template = new TemplateBuilder(DocumentType.YAML);
             const scenario: TemplateScenario = {
                 name: 'Nested object property completion',
@@ -1594,12 +1594,12 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 
     describe('JSON', () => {
-        it('Completion while authoring', () => {
+        it('Completion while authoring', async () => {
             const template = new TemplateBuilder(DocumentType.JSON);
 
             const scenario: TemplateScenario = {
@@ -3278,7 +3278,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 });

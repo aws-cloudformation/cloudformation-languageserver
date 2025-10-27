@@ -99,7 +99,7 @@ describe('ScopedTelemetry', () => {
             const result = scopedTelemetry.trackExecution('test', fn);
 
             expect(result).toBe('result');
-            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.value', expect.any(Object));
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.string', expect.any(Object));
         });
 
         it('should track null response', () => {
@@ -124,7 +124,7 @@ describe('ScopedTelemetry', () => {
             scopedTelemetry.trackExecution('test', fn);
 
             expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.array', expect.any(Object));
-            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test.response.type.array.size', expect.any(Object));
+            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test.response.type.size', expect.any(Object));
         });
     });
 
@@ -138,7 +138,7 @@ describe('ScopedTelemetry', () => {
             const result = await scopedTelemetry.trackExecutionAsync('test', fn);
 
             expect(result).toBe('result');
-            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.value', expect.any(Object));
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.string', expect.any(Object));
         });
     });
 

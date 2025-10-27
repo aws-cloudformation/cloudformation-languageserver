@@ -97,15 +97,7 @@ export class DocumentSymbolRouter {
     constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
     @Track({ name: 'getDocumentSymbols' })
-    getDocumentSymbols(params: DocumentSymbolParams): DocumentSymbol[] {
-        this.log.debug(
-            {
-                Router: 'DocumentSymbol',
-                Document: params.textDocument,
-            },
-            'Processing document symbol request',
-        );
-
+    getDocumentSymbols(params: DocumentSymbolParams) {
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {
             return [];
