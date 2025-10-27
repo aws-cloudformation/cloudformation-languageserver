@@ -1597,7 +1597,7 @@ Resources:
             await template.executeScenario(scenario);
         });
 
-        it('test FindInMap pattern filtering for pseudo-parameters', () => {
+        it('test FindInMap pattern filtering for pseudo-parameters', async () => {
             const template = new TemplateBuilder(DocumentType.YAML);
             const scenario: TemplateScenario = {
                 name: 'FindInMap pattern filtering comprehensive test',
@@ -1779,7 +1779,7 @@ Outputs:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 
@@ -3466,7 +3466,7 @@ Outputs:
             await template.executeScenario(scenario);
         });
 
-        it('test FindInMap pattern filtering for pseudo-parameters', () => {
+        it('test FindInMap pattern filtering for pseudo-parameters', async () => {
             const template = new TemplateBuilder(DocumentType.JSON);
             const scenario: TemplateScenario = {
                 name: 'FindInMap pattern filtering comprehensive test',
@@ -3694,7 +3694,7 @@ Outputs:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 });
