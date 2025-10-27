@@ -1,7 +1,7 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, Position, TextEdit } from 'vscode-languageserver';
 import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
 import { Context } from '../context/Context';
-import { IntrinsicFunction, PseudoParameter, TopLevelSection } from '../context/ContextType';
+import { IntrinsicFunction, PseudoParameter, PseudoParametersSet, TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
@@ -764,7 +764,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
      */
     private extractPseudoParameterFromRef(
         refObject: { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown },
-    ): string | undefined {
+    ): PseudoParameter | undefined {
         let refValue: unknown;
 
         if ('Ref' in refObject) {
@@ -775,8 +775,8 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             refValue = refObject['Fn::Ref'];
         }
 
-        if (typeof refValue === 'string' && refValue.startsWith('AWS::')) {
-            return refValue;
+        if (typeof refValue === 'string' && refValue.startsWith('AWS::') && PseudoParametersSet.has(refValue)) {
+            return refValue as PseudoParameter;
         }
         return undefined;
     }
@@ -784,18 +784,15 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     /**
      * Returns a regex pattern for known pseudo-parameters that can be used to filter top-level keys
      */
-    private getPatternForPseudoParameter(pseudoParameter: string): RegExp | undefined {
+    private getPatternForPseudoParameter(pseudoParameter: PseudoParameter): RegExp | undefined {
         switch (pseudoParameter) {
-            case 'AWS::Region': {
-                // AWS regions follow the pattern: xx-xxxx-x (e.g., us-east-1, eu-west-2, ap-southeast-1)
+            case PseudoParameter.AWSRegion: {
                 return /^[a-z]{2}-[a-z]+-\d+$/;
             }
-            case 'AWS::AccountId': {
-                // AWS account IDs are 12-digit numbers
+            case PseudoParameter.AWSAccountId: {
                 return /^\d{12}$/;
             }
-            case 'AWS::Partition': {
-                // AWS partitions are: aws, aws-us-gov, aws-cn
+            case PseudoParameter.AWSPartition: {
                 return /^aws(-us-gov|-cn)?$/;
             }
             default: {
@@ -804,17 +801,11 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
     }
 
-    /**
-     * Filters top-level keys by pattern and returns second-level keys from matching keys
-     */
     private filterTopLevelKeysByPattern(mappingEntity: Mapping, pattern: RegExp): string[] {
         const allTopLevelKeys = mappingEntity.getTopLevelKeys();
         return allTopLevelKeys.filter((key) => pattern.test(key));
     }
 
-    /**
-     * Gets second-level keys from top-level keys that match the given pattern
-     */
     private getSecondLevelKeysFromMatchingTopLevelKeys(mappingEntity: Mapping, pattern: RegExp): string[] {
         const matchingTopLevelKeys = this.filterTopLevelKeysByPattern(mappingEntity, pattern);
 
@@ -822,7 +813,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             return [];
         }
 
-        // Collect all unique second-level keys from matching top-level keys
         const secondLevelKeysSet = new Set<string>();
         for (const topLevelKey of matchingTopLevelKeys) {
             const keys = mappingEntity.getSecondLevelKeys(topLevelKey);

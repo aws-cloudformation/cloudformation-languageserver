@@ -40,7 +40,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
     let provider: IntrinsicFunctionArgumentCompletionProvider;
     const mockSyntaxTreeManager = createMockSyntaxTreeManager();
 
-    // Create a proper CombinedSchemas mock
     const mockSchemas = new Map([
         [
             'AWS::S3::Bucket',
@@ -55,7 +54,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
     const mockSchemaRetriever = createMockSchemaRetriever(mockCombinedSchemas);
     const mockDocumentManager = createMockDocumentManager();
 
-    // Mock mapping data for comprehensive testing
     const mockMappingData = {
         RegionMap: {
             'us-east-1': { AMI: 'ami-12345', InstanceType: 't2.micro' },
@@ -88,7 +86,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
         position: { line: 0, character: 0 },
     });
 
-    // Helper function to create mock FindInMap intrinsic context
     function createMockFindInMapContext(text: string, args: unknown[] | string = [], documentType = DocumentType.YAML) {
         const mockContext = createMockContext('Unknown', undefined, {
             text,
@@ -102,7 +99,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
         return mockContext;
     }
 
-    // Helper function to setup mapping entities
     function setupMappingEntities(mappingData: Record<string, Record<string, Record<string, any>>>) {
         const mockSectionNodeMap = new Map();
         mockSectionNodeMap.set(TopLevelSection.Mappings, {} as SyntaxNode);
@@ -420,7 +416,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
             const result = provider.getCompletions(mockContext, createTestParams());
 
             expect(result).toBeDefined();
-            expect(result!.length).toBe(2); // Should return second-level keys (position 3)
+            expect(result!.length).toBe(2);
 
             const labels = result!.map((item) => item.label);
             expect(labels).toContain('AMI');
@@ -515,7 +511,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
     });
 
     describe('Pattern Filtering', () => {
-        // Mock mapping data with mixed patterns - some keys match AWS::Region pattern, some don't
         const mockMappingDataWithMixedPatterns = {
             RegionMap: {
                 'us-east-1': { AMI: 'ami-12345', InstanceType: 't3.micro' },
