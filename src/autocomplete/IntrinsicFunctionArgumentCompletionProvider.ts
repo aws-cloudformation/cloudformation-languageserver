@@ -580,7 +580,18 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         if (typeof topLevelKey === 'string') {
             return mappingEntity.getSecondLevelKeys(topLevelKey);
         } else {
-            // For dynamic references, get all possible keys
+            // For dynamic references, try pattern-based filtering
+            const pseudoParameter = this.extractPseudoParameterFromRef(topLevelKey);
+            if (pseudoParameter) {
+                const pattern = this.getPatternForPseudoParameter(pseudoParameter);
+                if (pattern) {
+                    const filteredKeys = this.getSecondLevelKeysFromMatchingTopLevelKeys(mappingEntity, pattern);
+                    if (filteredKeys.length > 0) {
+                        return filteredKeys;
+                    }
+                }
+            }
+            // Fallback to all possible keys if no pattern matching or no matches found
             return mappingEntity.getSecondLevelKeys();
         }
     }
@@ -748,7 +759,73 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         return context.text.length > 0 ? this.attributeFuzzySearch(completionItems, context.text) : completionItems;
     }
 
-    private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } {
-        return typeof value === 'object' && value !== null && ('Ref' in value || '!Ref' in value);
+    /**
+     * Extracts the pseudo-parameter name from a Ref object (supports both YAML and JSON formats)
+     */
+    private extractPseudoParameterFromRef(refObject: { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown }): string | undefined {
+        let refValue: unknown;
+        
+        if ('Ref' in refObject) {
+            refValue = refObject.Ref;
+        } else if ('!Ref' in refObject) {
+            refValue = refObject['!Ref'];
+        } else if ('Fn::Ref' in refObject) {
+            refValue = refObject['Fn::Ref'];
+        }
+        
+        if (typeof refValue === 'string' && refValue.startsWith('AWS::')) {
+            return refValue;
+        }
+        return undefined;
+    }
+
+    /**
+     * Returns a regex pattern for known pseudo-parameters that can be used to filter top-level keys
+     */
+    private getPatternForPseudoParameter(pseudoParameter: string): RegExp | undefined {
+        switch (pseudoParameter) {
+            case PseudoParameter.AWSRegion:
+                // AWS regions follow the pattern: xx-xxxx-x (e.g., us-east-1, eu-west-2, ap-southeast-1)
+                return /^[a-z]{2}-[a-z]+-\d+$/;
+            case PseudoParameter.AWSAccountId:
+                // AWS account IDs are 12-digit numbers
+                return /^\d{12}$/;
+            default:
+                return undefined;
+        }
+    }
+
+    /**
+     * Filters top-level keys by pattern and returns second-level keys from matching keys
+     */
+    private filterTopLevelKeysByPattern(mappingEntity: Mapping, pattern: RegExp): string[] {
+        const allTopLevelKeys = mappingEntity.getTopLevelKeys();
+        return allTopLevelKeys.filter(key => pattern.test(key));
+    }
+
+    /**
+     * Gets second-level keys from top-level keys that match the given pattern
+     */
+    private getSecondLevelKeysFromMatchingTopLevelKeys(mappingEntity: Mapping, pattern: RegExp): string[] {
+        const matchingTopLevelKeys = this.filterTopLevelKeysByPattern(mappingEntity, pattern);
+        
+        if (matchingTopLevelKeys.length === 0) {
+            return [];
+        }
+
+        // Collect all unique second-level keys from matching top-level keys
+        const secondLevelKeysSet = new Set<string>();
+        for (const topLevelKey of matchingTopLevelKeys) {
+            const keys = mappingEntity.getSecondLevelKeys(topLevelKey);
+            for (const key of keys) {
+                secondLevelKeysSet.add(key);
+            }
+        }
+
+        return Array.from(secondLevelKeysSet);
+    }
+
+    private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown } {
+        return typeof value === 'object' && value !== null && ('Ref' in value || '!Ref' in value || 'Fn::Ref' in value);
     }
 }
