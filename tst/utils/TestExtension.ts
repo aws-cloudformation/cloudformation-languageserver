@@ -65,6 +65,7 @@ import {
     SsoTokenChangedParams,
 } from '../../src/auth/AwsLspAuthTypes';
 import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
+import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
 import { getRemotePublicSchemas } from '../../src/schema/GetSchemaTask';
@@ -136,6 +137,9 @@ export class TestExtension implements Closeable {
                         ),
                         cfnLintService: createMockCfnLintService(),
                         guardService: createMockGuardService(),
+                        featureFlags: new FeatureFlagProvider(
+                            join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+                        ),
                     });
 
                     this.providers = new CfnLspProviders(this.core, this.external, {
