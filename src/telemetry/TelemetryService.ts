@@ -3,6 +3,7 @@ import { MetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { v4 } from 'uuid';
 import { Closeable } from '../utils/Closeable';
+import { IsAlphaApp } from '../utils/Environment';
 import { extractLocationFromStack } from '../utils/Errors';
 import { LoggerFactory } from './LoggerFactory';
 import { otelSdk } from './OTELInstrumentation';
@@ -20,7 +21,12 @@ export class TelemetryService implements Closeable {
     private readonly scopedTelemetry: Map<string, ScopedTelemetry> = new Map();
 
     private constructor(client?: ClientInfo, metadata?: AwsMetadata) {
-        this.enabled = metadata?.telemetryEnabled ?? TelemetrySettings.isEnabled;
+        if (IsAlphaApp) {
+            // Always enable telemetry in alpha, unless it is a test env
+            this.enabled = TelemetrySettings.isEnabled;
+        } else {
+            this.enabled = metadata?.telemetryEnabled ?? TelemetrySettings.isEnabled;
+        }
 
         if (this.enabled) {
             const id = metadata?.clientInfo?.clientId ?? v4();

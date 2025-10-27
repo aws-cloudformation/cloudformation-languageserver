@@ -1,6 +1,6 @@
 import { LevelWithSilent } from 'pino';
 import { _InitializeParams } from 'vscode-languageserver-protocol';
-import { isAlpha, IsAppEnvironment, isBeta } from '../utils/Environment';
+import { isAlpha, IsAppEnvironment } from '../utils/Environment';
 
 export type ClientInfo = _InitializeParams['clientInfo'];
 
@@ -17,6 +17,6 @@ export type AwsMetadata = {
 };
 
 export const TelemetrySettings = Object.freeze({
-    isEnabled: isAlpha || isBeta,
+    isEnabled: isAlpha,
     logLevel: IsAppEnvironment ? 'info' : 'silent',
 });

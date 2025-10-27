@@ -11,8 +11,8 @@ import {
     ViewOptions,
 } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { isBeta, isAlpha, isProd, isTest, IsAppEnvironment } from '../utils/Environment';
-import { ExtensionName, ExtensionVersion } from '../utils/ExtensionConfig';
+import { isBeta, isAlpha, isProd, isTest, IsAlphaApp } from '../utils/Environment';
+import { ExtensionId, ExtensionVersion } from '../utils/ExtensionConfig';
 import { ClientInfo } from './TelemetryConfig';
 
 const ExportIntervalSeconds = 30;
@@ -32,7 +32,7 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
     let traceExporter: OTLPTraceExporter | undefined;
 
     // Only enable in alpha environment (excluding test env)
-    if (isAlpha && IsAppEnvironment) {
+    if (IsAlphaApp) {
         traceExporter = new OTLPTraceExporter({
             url: `${telemetryUrl}/v1/traces`,
         });
@@ -40,7 +40,7 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
 
     const sdk = new NodeSDK({
         resource: resourceFromAttributes({
-            ['service']: `${ExtensionName}-${ExtensionVersion}`,
+            ['service']: `${ExtensionId}-${ExtensionVersion}`,
             ['service.env']: `${process.env.NODE_ENV}-${process.env.AWS_ENV}`,
             ['client.id']: clientId,
             ['client.type']: `${client?.name ?? 'Unknown'}-${client?.version ?? 'Unknown'}`,
@@ -110,6 +110,8 @@ function telemetryBaseUrl() {
         return 'https://development-ide-telemetry.cloudformation.aws.dev';
     } else if (isBeta) {
         return 'https://preview-ide-telemetry.cloudformation.aws.dev';
+    } else if (isProd) {
+        return 'https://ide-telemetry.cloudformation.aws.dev';
     }
 
     throw new Error('Unknown endpoint');
