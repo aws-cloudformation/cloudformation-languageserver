@@ -25,6 +25,7 @@ import { LspComponents } from '../../src/protocol/LspComponents';
 import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
 import { LspDocuments } from '../../src/protocol/LspDocuments';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
+import { LspRelatedResourcesHandlers } from '../../src/protocol/LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
 import { LspStackHandlers } from '../../src/protocol/LspStackHandlers';
 import { LspWorkspace } from '../../src/protocol/LspWorkspace';
@@ -335,6 +336,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         authHandlers: overrides.authHandlers ?? createMockAuthHandlers(),
         stackHandlers: overrides.stackHandlers ?? stubInterface<LspStackHandlers>(),
         resourceHandlers: overrides.resourceHandlers ?? stubInterface<LspResourceHandlers>(),
+        relatedResourcesHandlers: overrides.relatedResourcesHandlers ?? stubInterface<LspRelatedResourcesHandlers>(),
     };
 
     const core: MockInfraCoreComponents = {

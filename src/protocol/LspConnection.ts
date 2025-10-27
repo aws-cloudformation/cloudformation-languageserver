@@ -14,6 +14,7 @@ import { LspComponents } from './LspComponents';
 import { LspDiagnostics } from './LspDiagnostics';
 import { LspDocuments } from './LspDocuments';
 import { LspHandlers } from './LspHandlers';
+import { LspRelatedResourcesHandlers } from './LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from './LspResourceHandlers';
 import { LspStackHandlers } from './LspStackHandlers';
 import { LspWorkspace } from './LspWorkspace';
@@ -34,6 +35,7 @@ export class LspConnection {
     private readonly authHandlers: LspAuthHandlers;
     private readonly stackHandlers: LspStackHandlers;
     private readonly resourceHandlers: LspResourceHandlers;
+    private readonly relatedResourcesHandlers: LspRelatedResourcesHandlers;
 
     private initializeParams?: InitializeParams;
 
@@ -56,6 +58,7 @@ export class LspConnection {
         this.authHandlers = new LspAuthHandlers(this.connection);
         this.stackHandlers = new LspStackHandlers(this.connection);
         this.resourceHandlers = new LspResourceHandlers(this.connection);
+        this.relatedResourcesHandlers = new LspRelatedResourcesHandlers(this.connection);
 
         this.communication.console.info(`${ExtensionName} launched from ${__dirname}`);
 
@@ -88,6 +91,7 @@ export class LspConnection {
             this.authHandlers,
             this.stackHandlers,
             this.resourceHandlers,
+            this.relatedResourcesHandlers,
         );
     }
 

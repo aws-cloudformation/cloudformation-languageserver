@@ -1,3 +1,4 @@
+import { ErrorCodes, ResponseError } from 'vscode-languageserver';
 import { toString } from './String';
 
 export function extractErrorMessage(error: unknown) {
@@ -7,6 +8,16 @@ export function extractErrorMessage(error: unknown) {
     }
 
     return toString(error);
+}
+
+export function handleLspError(error: unknown, contextMessage: string): never {
+    if (error instanceof ResponseError) {
+        throw error;
+    }
+    if (error instanceof TypeError) {
+        throw new ResponseError(ErrorCodes.InvalidParams, error.message);
+    }
+    throw new ResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`);
 }
 
 /**
