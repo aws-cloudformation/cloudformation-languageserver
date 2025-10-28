@@ -1,4 +1,4 @@
-import { Capability, StackSummary, StackStatus } from '@aws-sdk/client-cloudformation';
+import { Capability, StackSummary, StackStatus, StackResourceSummary } from '@aws-sdk/client-cloudformation';
 import { StubbedInstance } from 'ts-sinon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
@@ -15,6 +15,7 @@ import {
     getValidationStatusHandler,
     getDeploymentStatusHandler,
     listStacksHandler,
+    listStackResourcesHandler,
     describeValidationStatusHandler,
     describeDeploymentStatusHandler,
     getTemplateResourcesHandler,
@@ -31,7 +32,12 @@ import {
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
-import { ListStacksParams, ListStacksResult } from '../../../src/stacks/StackRequestType';
+import {
+    ListStacksParams,
+    ListStacksResult,
+    ListStackResourcesParams,
+    ListStackResourcesResult,
+} from '../../../src/stacks/StackRequestType';
 import {
     createMockComponents,
     createMockSyntaxTreeManager,
@@ -450,6 +456,50 @@ describe('StackActionHandler', () => {
 
             expect(result.stacks).toEqual([]);
             expect(mockComponents.stackManager.listStacks).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('listStackResourcesHandler', () => {
+        it('should return resources on success', async () => {
+            const mockResources: StackResourceSummary[] = [
+                {
+                    LogicalResourceId: 'MyBucket',
+                    ResourceType: 'AWS::S3::Bucket',
+                    ResourceStatus: 'CREATE_COMPLETE',
+                } as StackResourceSummary,
+            ];
+
+            mockComponents.cfnService.listStackResources.resolves({
+                StackResourceSummaries: mockResources,
+                $metadata: {},
+            });
+
+            const handler = listStackResourcesHandler(mockComponents);
+            const params: ListStackResourcesParams = { stackName: 'test-stack' };
+            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
+
+            expect(result.resources).toEqual(mockResources);
+            expect(mockComponents.cfnService.listStackResources.calledWith({ StackName: 'test-stack' })).toBe(true);
+        });
+
+        it('should return empty array on error', async () => {
+            mockComponents.cfnService.listStackResources.rejects(new Error('API Error'));
+
+            const handler = listStackResourcesHandler(mockComponents);
+            const params: ListStackResourcesParams = { stackName: 'test-stack' };
+            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
+
+            expect(result.resources).toEqual([]);
+        });
+
+        it('should handle undefined StackResourceSummaries', async () => {
+            mockComponents.cfnService.listStackResources.resolves({ StackResourceSummaries: undefined, $metadata: {} });
+
+            const handler = listStackResourcesHandler(mockComponents);
+            const params: ListStackResourcesParams = { stackName: 'test-stack' };
+            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
+
+            expect(result.resources).toEqual([]);
         });
     });
 

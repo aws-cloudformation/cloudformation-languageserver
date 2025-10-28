@@ -28,7 +28,11 @@ import {
 } from '../handlers/ResourceHandler';
 import {
     listStacksHandler,
+<<<<<<< HEAD
     listChangeSetsHandler,
+=======
+    listStackResourcesHandler,
+>>>>>>> 29939f4 (Added new command for listStackResources)
     createValidationHandler,
     createDeploymentHandler,
     getValidationStatusHandler,
@@ -119,6 +123,7 @@ export class CfnServer {
         );
         this.lsp.stackHandlers.onListStacks(listStacksHandler(this.components));
         this.lsp.stackHandlers.onListChangeSets(listChangeSetsHandler(this.components));
+        this.lsp.stackHandlers.onListStackResources(listStackResourcesHandler(this.components));
         this.lsp.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
 
         this.lsp.resourceHandlers.onListResources(listResourcesHandler(this.components));

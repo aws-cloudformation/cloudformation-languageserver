@@ -48,6 +48,7 @@ describe('CfnServer', () => {
             expect(mockFeatures.stackHandlers.onGetValidationStatus.calledOnce).toBe(true);
             expect(mockFeatures.stackHandlers.onGetDeploymentStatus.calledOnce).toBe(true);
             expect(mockFeatures.stackHandlers.onListStacks.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onListStackResources.calledOnce).toBe(true);
         });
     });
 

@@ -29,6 +29,14 @@ import {
     DeleteChangeSetParams,
     DescribeDeletionStatusResult,
 } from '../../../src/stacks/actions/StackActionRequestType';
+import {
+    ListStacksRequest,
+    ListStacksParams,
+    ListStacksResult,
+    ListStackResourcesRequest,
+    ListStackResourcesParams,
+    ListStackResourcesResult,
+} from '../../../src/stacks/StackRequestType';
 
 describe('LspTemplateHandlers', () => {
     let connection: StubbedInstance<Connection>;
@@ -125,5 +133,21 @@ describe('LspTemplateHandlers', () => {
         stackActionHandlers.onDescribeChangeSetDeletionStatus(mockHandler);
 
         expect(connection.onRequest.calledWith(DescribeChangeSetDeletionStatusRequest.method)).toBe(true);
+    });
+
+    it('should register onListStacks handler', () => {
+        const mockHandler: RequestHandler<ListStacksParams, ListStacksResult, void> = vi.fn();
+
+        stackActionHandlers.onListStacks(mockHandler);
+
+        expect(connection.onRequest.calledWith(ListStacksRequest.method)).toBe(true);
+    });
+
+    it('should register onListStackResources handler', () => {
+        const mockHandler: RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void> = vi.fn();
+
+        stackActionHandlers.onListStackResources(mockHandler);
+
+        expect(connection.onRequest.calledWith(ListStackResourcesRequest.method)).toBe(true);
     });
 });

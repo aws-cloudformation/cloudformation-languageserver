@@ -31,6 +31,9 @@ import {
     ListStacksParams,
     ListStacksResult,
     ListStacksRequest,
+    ListStackResourcesParams,
+    ListStackResourcesResult,
+    ListStackResourcesRequest,
     GetStackTemplateParams,
     GetStackTemplateResult,
     GetStackTemplateRequest,
@@ -81,6 +84,10 @@ export class LspStackHandlers {
 
     onListStacks(handler: RequestHandler<ListStacksParams, ListStacksResult, void>) {
         this.connection.onRequest(ListStacksRequest.method, handler);
+    }
+
+    onListStackResources(handler: RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void>) {
+        this.connection.onRequest(ListStackResourcesRequest.method, handler);
     }
 
     onGetStackTemplate(handler: RequestHandler<GetStackTemplateParams, GetStackTemplateResult | undefined, void>) {

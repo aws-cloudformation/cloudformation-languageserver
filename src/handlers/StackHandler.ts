@@ -31,6 +31,8 @@ import {
     ListStacksResult,
     ListChangeSetParams,
     ListChangeSetResult,
+    ListStackResourcesParams,
+    ListStackResourcesResult,
 } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
@@ -326,6 +328,20 @@ export function listChangeSetsHandler(
             };
         } catch {
             return { changeSets: [] };
+        }
+    };
+}
+
+export function listStackResourcesHandler(
+    components: ServerComponents,
+): RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void> {
+    return async (params: ListStackResourcesParams): Promise<ListStackResourcesResult> => {
+        try {
+            const response = await components.cfnService.listStackResources({ StackName: params.stackName });
+            return { resources: response.StackResourceSummaries ?? [] };
+        } catch (error) {
+            log.error({ error: extractErrorMessage(error) }, 'Error listing stack resources');
+            return { resources: [] };
         }
     };
 }
