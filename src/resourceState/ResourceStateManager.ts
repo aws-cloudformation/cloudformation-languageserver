@@ -252,7 +252,9 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
                     nextToken: response.nextToken,
                 });
             }
-            this.telemetry.count('refresh.anyFailed', anyRefreshFailed ? 1 : 0);
+            if (anyRefreshFailed) {
+                this.telemetry.count('refresh.anyFailed', 1);
+            }
             return { ...result, refreshFailed: anyRefreshFailed };
         } finally {
             this.isRefreshing = false;
@@ -298,8 +300,6 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
             }
             return total;
         });
-
-        this.telemetry.registerGaugeProvider('cache.refreshing', () => (this.isRefreshing ? 1 : 0));
     }
 
     static create(external: CfnExternal) {
