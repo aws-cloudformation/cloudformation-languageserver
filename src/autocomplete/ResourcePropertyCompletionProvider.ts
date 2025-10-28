@@ -137,23 +137,21 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         context: Context,
         schema: ResourceSchema,
     ): CompletionItem[] {
-        // Handle array schemas - resolve their items to get array item properties
+        // resolve array to get array item properties
         const schemasToProcess: PropertyType[] = [];
 
         for (const resolvedSchema of resolvedSchemas) {
             if (resolvedSchema.type === 'array' && resolvedSchema.items) {
-                // Items can be a $ref or an inline schema
                 if (resolvedSchema.items.$ref) {
                     const itemSchema = schema.resolveRef(resolvedSchema.items.$ref);
                     if (itemSchema) {
                         schemasToProcess.push(itemSchema);
                     }
                 } else {
-                    // Inline schema
                     schemasToProcess.push(resolvedSchema.items);
                 }
             } else {
-                // Not an array, use the schema as-is
+                // not an array, use the schema as is
                 schemasToProcess.push(resolvedSchema);
             }
         }
