@@ -1,5 +1,6 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
+import { ListStackResourcesParams } from '../StackRequestType';
 import {
     CreateDeploymentParams,
     CreateValidationParams,
@@ -50,6 +51,12 @@ const DeleteChangeSetParamsSchema = z.object({
 
 const TemplateUriSchema = z.string().min(1);
 
+const ListStackResourcesParamsSchema = z.object({
+    stackName: z.string().min(1),
+    nextToken: z.string().optional(),
+    maxItems: z.number().optional(),
+});
+
 export function parseStackActionParams(input: unknown): CreateValidationParams {
     return StackActionParamsSchema.parse(input);
 }
@@ -64,4 +71,8 @@ export function parseDeleteChangeSetParams(input: unknown): DeleteChangeSetParam
 
 export function parseTemplateUriParams(input: unknown): TemplateUri {
     return TemplateUriSchema.parse(input);
+}
+
+export function parseListStackResourcesParams(input: unknown): ListStackResourcesParams {
+    return ListStackResourcesParamsSchema.parse(input);
 }

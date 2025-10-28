@@ -199,6 +199,7 @@ export class CfnService {
     public async listStackResources(params: {
         StackName: string;
         NextToken?: string;
+        MaxItems?: number;
     }): Promise<ListStackResourcesCommandOutput> {
         return await this.withClient((client) => client.send(new ListStackResourcesCommand(params)));
     }

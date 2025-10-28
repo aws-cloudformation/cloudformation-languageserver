@@ -493,6 +493,8 @@ describe('CfnService', () => {
 
             const result = await service.listStackResources({
                 StackName: TEST_CONSTANTS.STACK_NAME,
+                NextToken: 'token123',
+                MaxItems: 10,
             });
 
             expect(result).toEqual(MOCK_RESPONSES.LIST_STACK_RESOURCES);

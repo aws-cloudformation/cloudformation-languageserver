@@ -1,4 +1,4 @@
-import { StackSummary, StackStatus } from '@aws-sdk/client-cloudformation';
+import { StackSummary, StackStatus, StackResourceSummary } from '@aws-sdk/client-cloudformation';
 import { RequestType } from 'vscode-languageserver-protocol';
 
 export type ListStacksParams = {
@@ -45,4 +45,18 @@ export type ListChangeSetResult = {
 
 export const ListChangeSetRequest = new RequestType<ListChangeSetParams, ListChangeSetResult, void>(
     'aws/cfn/stack/changeSet/list',
+);
+
+export type ListStackResourcesParams = {
+    stackName: string;
+    nextToken?: string;
+    maxItems?: number;
+};
+
+export type ListStackResourcesResult = {
+    resources: StackResourceSummary[];
+};
+
+export const ListStackResourcesRequest = new RequestType<ListStackResourcesParams, ListStackResourcesResult, void>(
+    'aws/cfn/stack/resources',
 );
