@@ -100,6 +100,7 @@ export function createMockDiagnosticCoordinator() {
     mock.clearDiagnosticsForUri.returns(Promise.resolve());
     mock.getDiagnostics.returns([]);
     mock.getSources.returns([]);
+    mock.getKeyRangeFromPath.returns(undefined);
     return mock;
 }
 

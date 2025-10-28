@@ -54,7 +54,8 @@ export class CfnInfraCore implements Configurables, Closeable {
             overrides.awsCredentials ?? new AwsCredentials(lspComponents.authHandlers, this.settingsManager);
 
         this.diagnosticCoordinator =
-            overrides.diagnosticCoordinator ?? new DiagnosticCoordinator(lspComponents.diagnostics);
+            overrides.diagnosticCoordinator ??
+            new DiagnosticCoordinator(lspComponents.diagnostics, this.syntaxTreeManager);
     }
 
     configurables(): Configurable[] {

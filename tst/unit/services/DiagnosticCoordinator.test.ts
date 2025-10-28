@@ -1,13 +1,23 @@
+import { SyntaxNode } from 'tree-sitter';
+import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Diagnostic, DiagnosticSeverity, Range, Position } from 'vscode-languageserver';
-import { LspDiagnostics } from '../../../src/protocol/LspDiagnostics';
+import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
+import { createMockLspDiagnostics, createMockSyntaxTreeManager } from '../../utils/MockServerComponents';
+
+// Mock NodeType module
+vi.mock('../../../src/context/syntaxtree/utils/NodeType', () => ({
+    NodeType: {
+        isPairNode: vi.fn().mockReturnValue(true),
+    },
+}));
 
 describe('DiagnosticCoordinator', () => {
     let coordinator: DiagnosticCoordinator;
-    let mockLspDiagnostics: LspDiagnostics;
     let mockPublishDiagnostics: ReturnType<typeof vi.fn>;
+    let mockSyntaxTreeManager: ReturnType<typeof createMockSyntaxTreeManager>;
 
     const testUri = 'file:///test/template.yaml';
     const testUri2 = 'file:///test/template2.yaml';
@@ -30,11 +40,11 @@ describe('DiagnosticCoordinator', () => {
 
     beforeEach(() => {
         mockPublishDiagnostics = vi.fn().mockResolvedValue(undefined);
-        mockLspDiagnostics = {
-            publishDiagnostics: mockPublishDiagnostics,
-        } as unknown as LspDiagnostics;
+        const mockLspDiagnostics = createMockLspDiagnostics();
+        mockLspDiagnostics.publishDiagnostics.callsFake(mockPublishDiagnostics);
 
-        coordinator = new DiagnosticCoordinator(mockLspDiagnostics);
+        mockSyntaxTreeManager = createMockSyntaxTreeManager();
+        coordinator = new DiagnosticCoordinator(mockLspDiagnostics, mockSyntaxTreeManager);
     });
 
     afterEach(() => {
@@ -410,6 +420,158 @@ describe('DiagnosticCoordinator', () => {
                 uri: testUri,
                 diagnostics: [diagnostic],
             });
+        });
+    });
+
+    describe('getKeyRangeFromPath', () => {
+        it('should return undefined when no syntax tree is found', () => {
+            const result = coordinator.getKeyRangeFromPath(testUri, '/Resources/MyBucket');
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when syntax tree manager returns undefined', () => {
+            mockSyntaxTreeManager.getSyntaxTree.returns(undefined);
+            const result = coordinator.getKeyRangeFromPath(testUri, '/Resources/MyBucket');
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when getNodeByPath returns no node', () => {
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.getNodeByPath.returns({ node: undefined, fullyResolved: false });
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = coordinator.getKeyRangeFromPath(testUri, '/Resources/MyBucket');
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when node is not a pair node', () => {
+            const mockNode = stubInterface<SyntaxNode>();
+            mockNode.childForFieldName.returns(null);
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.getNodeByPath.returns({ node: mockNode, fullyResolved: true });
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = coordinator.getKeyRangeFromPath(testUri, '/Resources/MyBucket');
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when pair node has no key child', () => {
+            const mockNode = stubInterface<SyntaxNode>();
+            mockNode.childForFieldName.returns(null);
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.getNodeByPath.returns({ node: mockNode, fullyResolved: true });
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = coordinator.getKeyRangeFromPath(testUri, '/Resources/MyBucket');
+            expect(result).toBeUndefined();
+        });
+
+        it('should return key range when valid pair node with key is found', () => {
+            const mockKeyNode = stubInterface<SyntaxNode>();
+            mockKeyNode.startPosition = { row: 5, column: 2 };
+            mockKeyNode.endPosition = { row: 5, column: 10 };
+
+            const mockNode = stubInterface<SyntaxNode>();
+            mockNode.childForFieldName.returns(mockKeyNode);
+
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.getNodeByPath.returns({ node: mockNode, fullyResolved: true });
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = coordinator.getKeyRangeFromPath(testUri, '/Resources/MyBucket');
+
+            expect(result).toEqual({
+                start: { line: 5, character: 2 },
+                end: { line: 5, character: 10 },
+            });
+            expect(mockNode.childForFieldName.calledWith('key')).toBe(true);
+        });
+
+        it('should handle path with leading slash', () => {
+            const mockKeyNode = stubInterface<SyntaxNode>();
+            mockKeyNode.startPosition = { row: 3, column: 4 };
+            mockKeyNode.endPosition = { row: 3, column: 12 };
+
+            const mockNode = stubInterface<SyntaxNode>();
+            mockNode.childForFieldName.returns(mockKeyNode);
+
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.getNodeByPath.returns({ node: mockNode, fullyResolved: true });
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = coordinator.getKeyRangeFromPath(testUri, '/Resources/MyBucket/Properties');
+
+            expect(mockSyntaxTree.getNodeByPath.calledWith(['Resources', 'MyBucket', 'Properties'])).toBe(true);
+            expect(result).toEqual({
+                start: { line: 3, character: 4 },
+                end: { line: 3, character: 12 },
+            });
+        });
+
+        it('should handle path without leading slash', () => {
+            const mockKeyNode = stubInterface<SyntaxNode>();
+            mockKeyNode.startPosition = { row: 1, column: 0 };
+            mockKeyNode.endPosition = { row: 1, column: 8 };
+
+            const mockNode = stubInterface<SyntaxNode>();
+            mockNode.childForFieldName.returns(mockKeyNode);
+
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.getNodeByPath.returns({ node: mockNode, fullyResolved: true });
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = coordinator.getKeyRangeFromPath(testUri, 'Parameters/BucketName');
+
+            expect(mockSyntaxTree.getNodeByPath.calledWith(['Parameters', 'BucketName'])).toBe(true);
+            expect(result).toEqual({
+                start: { line: 1, character: 0 },
+                end: { line: 1, character: 8 },
+            });
+        });
+
+        it('should handle complex nested paths', () => {
+            const mockKeyNode = stubInterface<SyntaxNode>();
+            mockKeyNode.startPosition = { row: 10, column: 6 };
+            mockKeyNode.endPosition = { row: 10, column: 20 };
+
+            const mockNode = stubInterface<SyntaxNode>();
+            mockNode.childForFieldName.returns(mockKeyNode);
+
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.getNodeByPath.returns({ node: mockNode, fullyResolved: true });
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = coordinator.getKeyRangeFromPath(
+                testUri,
+                '/Resources/MyBucket/Properties/NotificationConfiguration/TopicConfigurations/0/Topic',
+            );
+
+            expect(
+                mockSyntaxTree.getNodeByPath.calledWith([
+                    'Resources',
+                    'MyBucket',
+                    'Properties',
+                    'NotificationConfiguration',
+                    'TopicConfigurations',
+                    '0',
+                    'Topic',
+                ]),
+            ).toBe(true);
+            expect(result).toEqual({
+                start: { line: 10, character: 6 },
+                end: { line: 10, character: 20 },
+            });
+        });
+
+        it('should handle empty path gracefully', () => {
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.getNodeByPath.returns({ node: undefined, fullyResolved: false });
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const result = coordinator.getKeyRangeFromPath(testUri, '');
+
+            expect(mockSyntaxTree.getNodeByPath.calledWith([''])).toBe(true);
+            expect(result).toBeUndefined();
         });
     });
 });
