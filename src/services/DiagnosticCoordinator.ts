@@ -1,4 +1,7 @@
-import { Diagnostic, PublishDiagnosticsParams } from 'vscode-languageserver';
+import { Diagnostic, PublishDiagnosticsParams, Range } from 'vscode-languageserver';
+import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
+import { NodeType } from '../context/syntaxtree/utils/NodeType';
+import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { LspDiagnostics } from '../protocol/LspDiagnostics';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -16,7 +19,10 @@ export class DiagnosticCoordinator {
     private readonly urisToDiagnostics = new Map<string, SourceToDiagnostics>();
     private readonly log = LoggerFactory.getLogger(DiagnosticCoordinator);
 
-    constructor(private readonly lspDiagnostics: LspDiagnostics) {}
+    constructor(
+        private readonly lspDiagnostics: LspDiagnostics,
+        private readonly syntaxTreeManager: SyntaxTreeManager,
+    ) {}
 
     /**
      * Publish diagnostics from a specific source for a document.
@@ -163,5 +169,45 @@ export class DiagnosticCoordinator {
         });
 
         return allDiagnostics;
+    }
+
+    /**
+     * Extract the key range from a path using syntax tree directly
+     */
+    getKeyRangeFromPath(uri: string, path: string): Range | undefined {
+        // Parse paths like "/Resources/User/Properties/Policies"
+        // Remove leading slash if present and split by '/'
+        const pathSegments = path.startsWith('/') ? path.slice(1).split('/') : path.split('/');
+
+        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);
+        if (!syntaxTree) {
+            return undefined;
+        }
+
+        // Get the node at the path
+        const result = syntaxTree.getNodeByPath(pathSegments);
+        if (!result.node) {
+            return undefined;
+        }
+
+        // Check if this is a pair node (key/value pair)
+        if (NodeType.isPairNode(result.node, syntaxTree.type)) {
+            // Get the key node from the pair
+            const keyNode = result.node.childForFieldName(FieldNames.KEY);
+            if (keyNode) {
+                return {
+                    start: {
+                        line: keyNode.startPosition.row,
+                        character: keyNode.startPosition.column,
+                    },
+                    end: {
+                        line: keyNode.endPosition.row,
+                        character: keyNode.endPosition.column,
+                    },
+                };
+            }
+        }
+
+        return undefined;
     }
 }

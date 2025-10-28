@@ -71,7 +71,6 @@ export class DeploymentWorkflowV2 extends DeploymentWorkflow {
                 validationDetails,
                 this.syntaxTreeManager,
                 this.diagnosticCoordinator,
-                this.documentManager,
             );
 
             if (validationResult.state === StackActionState.FAILED) {

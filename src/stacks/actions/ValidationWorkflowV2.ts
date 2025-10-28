@@ -90,7 +90,6 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
                 validationDetails,
                 this.syntaxTreeManager,
                 this.diagnosticCoordinator,
-                this.documentManager,
             );
         } catch (error) {
             this.log.error({ error, workflowId }, 'Validation workflow threw exception');

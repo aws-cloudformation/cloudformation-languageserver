@@ -170,7 +170,6 @@ describe('DeploymentWorkflow', () => {
                 mockParseValidationEventsResponse,
                 mockSyntaxTreeManager,
                 mockDiagnosticCoordinator,
-                mockDocumentManager,
             );
 
             // Verify StackActionOperations method calls
