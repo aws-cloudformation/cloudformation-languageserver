@@ -350,6 +350,7 @@ export class LiteralValueDetector {
             return { value: false, type: LiteralValueType.BOOLEAN };
         }
 
+        // eslint-disable-next-line security/detect-unsafe-regex
         if (/^-?\d+(?:\.\d*)?$/.test(text)) {
             return { value: Number.parseFloat(text), type: LiteralValueType.NUMBER };
         }

@@ -16,8 +16,7 @@ export function generatePositions(content: string, iterations: number): TestPosi
     // Detect if this is JSON or YAML based on content
     const isJson = content.trim().startsWith('{') || content.trim().startsWith('[');
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+    for (const [i, line] of lines.entries()) {
         const trimmedLine = line.trim();
 
         // Skip empty lines and comments
@@ -31,13 +30,13 @@ export function generatePositions(content: string, iterations: number): TestPosi
 
         if (isJson) {
             // For JSON, count braces and brackets to determine nesting
-            const beforeLine = content.substring(0, content.indexOf(line));
-            const openBraces = (beforeLine.match(/[{[]/g) || []).length;
-            const closeBraces = (beforeLine.match(/[}\]]/g) || []).length;
+            const beforeLine = content.slice(0, Math.max(0, content.indexOf(line)));
+            const openBraces = (beforeLine.match(/[{[]/g) ?? []).length;
+            const closeBraces = (beforeLine.match(/[}\]]/g) ?? []).length;
             depth = Math.max(1, openBraces - closeBraces + 1);
         } else {
             // For YAML, use indentation (handle both 2-space and 4-space, and tabs)
-            const tabCount = line.match(/^\t*/)?.[0]?.length || 0;
+            const tabCount = line.match(/^\t*/)?.[0]?.length ?? 0;
             const spaceCount = indentLevel - tabCount;
 
             if (tabCount > 0) {
@@ -111,27 +110,27 @@ export function generatePositions(content: string, iterations: number): TestPosi
 
     // Group positions by depth for balanced testing
     const positionsByDepth = new Map<number, TestPosition[]>();
-    positions.forEach((pos) => {
+    for (const pos of positions) {
         if (!positionsByDepth.has(pos.depth)) {
             positionsByDepth.set(pos.depth, []);
         }
         positionsByDepth.get(pos.depth)!.push(pos);
-    });
+    }
 
     // Generate test positions with deterministic, balanced depth distribution
     const testPositions: TestPosition[] = [];
-    const depths = Array.from(positionsByDepth.keys()).sort((a, b) => b - a); // Deepest first
+    const depths = [...positionsByDepth.keys()].sort((a, b) => b - a); // Deepest first
 
     // Calculate weights for each depth (deeper positions get higher weight)
     const depthWeights = new Map<number, number>();
-    depths.forEach((depth) => {
+    for (const depth of depths) {
         // Give higher weight to deeper positions (exponential weighting)
         const weight = Math.pow(1.5, depth - 1);
         depthWeights.set(depth, weight);
-    });
+    }
 
     // Calculate total weight
-    const totalWeight = Array.from(depthWeights.values()).reduce((sum, weight) => sum + weight, 0);
+    const totalWeight = [...depthWeights.values()].reduce((sum, weight) => sum + weight, 0);
 
     // Distribute iterations deterministically based on weights
     for (let i = 0; i < iterations; i++) {
