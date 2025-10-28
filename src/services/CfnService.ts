@@ -55,6 +55,7 @@ import {
     waitUntilStackDeleteComplete,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
 export class CfnService {
@@ -179,6 +180,7 @@ export class CfnService {
         });
     }
 
+    @Measure({ name: 'describeStackResources' })
     public async describeStackResources(params: {
         StackName?: string;
         LogicalResourceId?: string;
