@@ -493,71 +493,11 @@ describe('CfnService', () => {
 
             const result = await service.listStackResources({
                 StackName: TEST_CONSTANTS.STACK_NAME,
+                NextToken: 'token123',
+                MaxItems: 10,
             });
 
             expect(result).toEqual(MOCK_RESPONSES.LIST_STACK_RESOURCES);
-        });
-
-        it('should handle pagination and collect all resources', async () => {
-            const page1 = {
-                ...MOCK_RESPONSES.LIST_STACK_RESOURCES,
-                StackResourceSummaries: [
-                    {
-                        LogicalResourceId: 'Resource1',
-                        ResourceType: 'AWS::S3::Bucket',
-                        LastUpdatedTimestamp: new Date(),
-                        ResourceStatus: 'CREATE_COMPLETE' as const,
-                    },
-                    {
-                        LogicalResourceId: 'Resource2',
-                        ResourceType: 'AWS::S3::Bucket',
-                        LastUpdatedTimestamp: new Date(),
-                        ResourceStatus: 'CREATE_COMPLETE' as const,
-                    },
-                ],
-                NextToken: 'token1',
-            };
-            const page2 = {
-                ...MOCK_RESPONSES.LIST_STACK_RESOURCES,
-                StackResourceSummaries: [
-                    {
-                        LogicalResourceId: 'Resource3',
-                        ResourceType: 'AWS::S3::Bucket',
-                        LastUpdatedTimestamp: new Date(),
-                        ResourceStatus: 'CREATE_COMPLETE' as const,
-                    },
-                ],
-                NextToken: undefined,
-            };
-
-            cloudFormationMock.on(ListStackResourcesCommand).resolvesOnce(page1).resolvesOnce(page2);
-
-            const result = await service.listStackResources({
-                StackName: TEST_CONSTANTS.STACK_NAME,
-            });
-
-            expect(result.StackResourceSummaries).toHaveLength(3);
-            expect(result.StackResourceSummaries).toEqual([
-                {
-                    LogicalResourceId: 'Resource1',
-                    ResourceType: 'AWS::S3::Bucket',
-                    LastUpdatedTimestamp: expect.any(Date),
-                    ResourceStatus: 'CREATE_COMPLETE' as const,
-                },
-                {
-                    LogicalResourceId: 'Resource2',
-                    ResourceType: 'AWS::S3::Bucket',
-                    LastUpdatedTimestamp: expect.any(Date),
-                    ResourceStatus: 'CREATE_COMPLETE' as const,
-                },
-                {
-                    LogicalResourceId: 'Resource3',
-                    ResourceType: 'AWS::S3::Bucket',
-                    LastUpdatedTimestamp: expect.any(Date),
-                    ResourceStatus: 'CREATE_COMPLETE' as const,
-                },
-            ]);
-            expect(result.NextToken).toBeUndefined();
         });
 
         it('should throw StackNotFoundException when API call fails', async () => {

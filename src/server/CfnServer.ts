@@ -28,11 +28,8 @@ import {
 } from '../handlers/ResourceHandler';
 import {
     listStacksHandler,
-<<<<<<< HEAD
     listChangeSetsHandler,
-=======
     listStackResourcesHandler,
->>>>>>> 29939f4 (Added new command for listStackResources)
     createValidationHandler,
     createDeploymentHandler,
     getValidationStatusHandler,

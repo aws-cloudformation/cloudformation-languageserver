@@ -32,12 +32,7 @@ import {
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
-import {
-    ListStacksParams,
-    ListStacksResult,
-    ListStackResourcesParams,
-    ListStackResourcesResult,
-} from '../../../src/stacks/StackRequestType';
+import { ListStacksParams, ListStacksResult, ListStackResourcesResult } from '../../../src/stacks/StackRequestType';
 import {
     createMockComponents,
     createMockSyntaxTreeManager,
@@ -59,6 +54,7 @@ vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
     parseTemplateUriParams: vi.fn((input) => input),
     parseCreateDeploymentParams: vi.fn((input) => input),
     parseDeleteChangeSetParams: vi.fn((input) => input),
+    parseListStackResourcesParams: vi.fn((input) => input),
 }));
 
 vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
@@ -475,18 +471,24 @@ describe('StackActionHandler', () => {
             });
 
             const handler = listStackResourcesHandler(mockComponents);
-            const params: ListStackResourcesParams = { stackName: 'test-stack' };
+            const params = { stackName: 'test-stack', nextToken: 'token123', maxItems: 10 };
             const result = (await handler(params, {} as any)) as ListStackResourcesResult;
 
             expect(result.resources).toEqual(mockResources);
-            expect(mockComponents.cfnService.listStackResources.calledWith({ StackName: 'test-stack' })).toBe(true);
+            expect(
+                mockComponents.cfnService.listStackResources.calledWith({
+                    StackName: 'test-stack',
+                    NextToken: 'token123',
+                    MaxItems: 10,
+                }),
+            ).toBe(true);
         });
 
         it('should return empty array on error', async () => {
             mockComponents.cfnService.listStackResources.rejects(new Error('API Error'));
 
             const handler = listStackResourcesHandler(mockComponents);
-            const params: ListStackResourcesParams = { stackName: 'test-stack' };
+            const params = { stackName: 'test-stack' };
             const result = (await handler(params, {} as any)) as ListStackResourcesResult;
 
             expect(result.resources).toEqual([]);
@@ -496,7 +498,7 @@ describe('StackActionHandler', () => {
             mockComponents.cfnService.listStackResources.resolves({ StackResourceSummaries: undefined, $metadata: {} });
 
             const handler = listStackResourcesHandler(mockComponents);
-            const params: ListStackResourcesParams = { stackName: 'test-stack' };
+            const params = { stackName: 'test-stack' };
             const result = (await handler(params, {} as any)) as ListStackResourcesResult;
 
             expect(result.resources).toEqual([]);

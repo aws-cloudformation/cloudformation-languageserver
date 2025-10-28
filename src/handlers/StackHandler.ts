@@ -9,6 +9,7 @@ import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
 import {
     parseCreateDeploymentParams,
     parseDeleteChangeSetParams,
+    parseListStackResourcesParams,
     parseStackActionParams,
     parseTemplateUriParams,
 } from '../stacks/actions/StackActionParser';
@@ -335,9 +336,14 @@ export function listChangeSetsHandler(
 export function listStackResourcesHandler(
     components: ServerComponents,
 ): RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void> {
-    return async (params: ListStackResourcesParams): Promise<ListStackResourcesResult> => {
+    return async (rawParams): Promise<ListStackResourcesResult> => {
         try {
-            const response = await components.cfnService.listStackResources({ StackName: params.stackName });
+            const params = parseWithPrettyError(parseListStackResourcesParams, rawParams);
+            const response = await components.cfnService.listStackResources({
+                StackName: params.stackName,
+                NextToken: params.nextToken,
+                MaxItems: params.maxItems,
+            });
             return { resources: response.StackResourceSummaries ?? [] };
         } catch (error) {
             log.error({ error: extractErrorMessage(error) }, 'Error listing stack resources');

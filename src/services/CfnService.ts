@@ -42,7 +42,6 @@ import {
     TypeSummary,
     DescribeTypeOutput,
     StackSummary,
-    StackResourceSummary,
     StackStatus,
     waitUntilChangeSetCreateComplete,
     waitUntilStackUpdateComplete,
@@ -197,33 +196,12 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DescribeStackResourceCommand(params)));
     }
 
-    public async listStackResources(params: { StackName: string }): Promise<ListStackResourcesCommandOutput> {
-        return await this.withClient(async (client) => {
-            const allResources: StackResourceSummary[] = [];
-            let nextToken: string | undefined;
-            let lastResponse: ListStackResourcesCommandOutput;
-
-            do {
-                lastResponse = await client.send(
-                    new ListStackResourcesCommand({
-                        StackName: params.StackName,
-                        NextToken: nextToken,
-                    }),
-                );
-
-                if (lastResponse.StackResourceSummaries) {
-                    allResources.push(...lastResponse.StackResourceSummaries);
-                }
-
-                nextToken = lastResponse.NextToken;
-            } while (nextToken);
-
-            return {
-                ...lastResponse,
-                StackResourceSummaries: allResources,
-                NextToken: undefined,
-            };
-        });
+    public async listStackResources(params: {
+        StackName: string;
+        NextToken?: string;
+        MaxItems?: number;
+    }): Promise<ListStackResourcesCommandOutput> {
+        return await this.withClient((client) => client.send(new ListStackResourcesCommand(params)));
     }
 
     public async describeStackResourceDrifts(params: {

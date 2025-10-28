@@ -49,6 +49,8 @@ export const ListChangeSetRequest = new RequestType<ListChangeSetParams, ListCha
 
 export type ListStackResourcesParams = {
     stackName: string;
+    nextToken?: string;
+    maxItems?: number;
 };
 
 export type ListStackResourcesResult = {
