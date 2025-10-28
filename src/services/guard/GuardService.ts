@@ -640,6 +640,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         // Extract messages from rule blocks and store them
         const ruleBlockMatches = content.matchAll(
+            // eslint-disable-next-line security/detect-unsafe-regex
             /^rule\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:when\s+[^{]+)?\s*\{([\s\S]*?)^\}/gm,
         );
         for (const match of ruleBlockMatches) {

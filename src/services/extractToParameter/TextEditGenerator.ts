@@ -245,6 +245,7 @@ export class TextEditGenerator {
         }
 
         // Quote strings that look like booleans or numbers
+        // eslint-disable-next-line security/detect-unsafe-regex
         if (/^(?:true|false|yes|no|on|off|\d+(?:\.\d*)?)$/i.test(str)) {
             return true;
         }

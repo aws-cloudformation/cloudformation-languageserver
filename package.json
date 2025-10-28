@@ -28,7 +28,7 @@
     "test:integration": "NODE_ENV=test vitest run --config vitest.integration.config.ts",
     "test:unit": "NODE_ENV=test vitest run --config vitest.unit.config.ts",
     "test:leaks": "NODE_ENV=test vitest run --pool=forks --logHeapUsage",
-    "lint": "eslint src tst",
+    "lint": "eslint --max-warnings 0 .",
     "lint:fix": "npm run lint -- --fix",
     "build:go:dev": "GOPROXY=direct go build -C cfn-init -v -o ../bundle/development/bin/cfn-init",
     "build:go:prod": "GOPROXY=direct go build -C cfn-init -v -o ../bundle/production/bin/cfn-init",

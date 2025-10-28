@@ -487,6 +487,7 @@ export class ResourceSchema {
         // If not found directly, check pattern properties
         if (!foundProperty && currentSchema.patternProperties) {
             for (const [pattern, patternSchema] of Object.entries(currentSchema.patternProperties)) {
+                // eslint-disable-next-line security/detect-non-literal-regexp
                 if (new RegExp(pattern).test(propertyName)) {
                     const newContext: TraversalContext = {
                         ...context,

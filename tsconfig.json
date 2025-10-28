@@ -32,6 +32,7 @@
     "coverage",
     "out",
     "node_modules",
+    "assets",
     "src/services/guard/assets/guard.js"
   ]
 }

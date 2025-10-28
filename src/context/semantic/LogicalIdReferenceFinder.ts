@@ -236,6 +236,7 @@ const YamlInlineItemPattern = /([A-Za-z][A-Za-z0-9]*)/g; // Matches LogicalId wi
 const ValidLogicalId = /^[A-Za-z][A-Za-z0-9.]+$/;
 
 // Validated these regex, they will fail fast with ?= lookahead
+// eslint-disable-next-line security/detect-unsafe-regex
 const YamlListDep = /DependsOn:\s*\n(\s*-\s*[A-Za-z][A-Za-z0-9]*(?:\s+-\s*[A-Za-z][A-Za-z0-9]*)*)/g; // Matches DependsOn: followed by YAML list items
 
 const YamlInlineListItem = /^(?=\s*-)\s*-\s+([A-Za-z][A-Za-z0-9]*)/gm; // Matches - LogicalId - standalone list items (for DependsOn arrays)

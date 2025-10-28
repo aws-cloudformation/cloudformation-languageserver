@@ -2,11 +2,11 @@
 
 /**
  * Guard Rules Generator
- * 
+ *
  * Downloads AWS Guard Rules Registry and generates a TypeScript file with:
  * - All individual rules parsed from guard-rules-registry-all-rules.guard
  * - Rule pack mappings showing which rules belong to each pack
- * 
+ *
  * This eliminates the need for runtime file parsing and reduces bundle size
  * by avoiding rule duplication across multiple pack files.
  */
@@ -20,8 +20,8 @@ import * as yauzl from 'yauzl';
 const DEFAULT_VERSION = '1.0.2';
 const DEFAULT_BASE_URL = 'https://github.com/aws-cloudformation/aws-guard-rules-registry/releases/download';
 
-const VERSION = process.env.GUARD_RULES_VERSION || DEFAULT_VERSION;
-const BASE_URL = process.env.GUARD_RULES_BASE_URL || DEFAULT_BASE_URL;
+const VERSION = process.env.GUARD_RULES_VERSION ?? DEFAULT_VERSION;
+const BASE_URL = process.env.GUARD_RULES_BASE_URL ?? DEFAULT_BASE_URL;
 const RULES_ZIP_URL = `${BASE_URL}/${VERSION}/ruleset-build-v${VERSION}.zip`;
 
 const TEMP_DIR = path.join(__dirname, '.temp');
@@ -52,7 +52,7 @@ async function downloadFile(url: string, outputPath: string): Promise<void> {
     const writer = fs.createWriteStream(outputPath);
     response.data.pipe(writer);
 
-    return new Promise<void>((resolve, reject) => {
+    return await new Promise<void>((resolve, reject) => {
         writer.on('finish', resolve);
         writer.on('error', reject);
         response.data.on('error', reject);
@@ -63,7 +63,7 @@ async function downloadFile(url: string, outputPath: string): Promise<void> {
  * Extract zip file using yauzl library for better cross-platform compatibility
  */
 async function extractZip(zipPath: string, extractDir: string): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+    return await new Promise<void>((resolve, reject) => {
         yauzl.open(zipPath, { lazyEntries: true }, (err, zipfile) => {
             if (err) {
                 reject(new Error(`Failed to open zip file: ${err.message}`));
@@ -168,12 +168,12 @@ function cleanCustomMessages(content: string): string {
 
     for (const line of lines) {
         const trimmed = line.trim();
-        
+
         // Skip lines that contain Guard Rule Set or Controls metadata
         if (trimmed.startsWith('Guard Rule Set:') || trimmed.startsWith('Controls:')) {
             continue;
         }
-        
+
         // Keep all other lines
         cleanedLines.push(line);
     }
@@ -207,7 +207,9 @@ function parseGuardRulesFile(content: string): ParsedGuardRule[] {
     // Split by both rule identifier formats
     // 1. "# Rule Identifier:" format
     // 2. "## Config Rule Name :" format
-    const ruleBlocks = content.split(/(?=^(?:#\s*Rule Identifier:\s*$|##\s*Config Rule Name\s*:))/m).filter(block => block.trim());
+    const ruleBlocks = content
+        .split(/(?=^(?:#\s*Rule Identifier:\s*$|##\s*Config Rule Name\s*:))/m)
+        .filter((block) => block.trim());
 
     for (const block of ruleBlocks) {
         const lines = block.split('\n');
@@ -257,7 +259,7 @@ function parseGuardRulesFile(content: string): ParsedGuardRule[] {
         let cleanContent = guardContent.join('\n').trim();
 
         // Skip if no actual Guard content found
-        if (!cleanContent || !cleanContent.includes('rule ')) {
+        if (!cleanContent?.includes('rule ')) {
             continue;
         }
 
@@ -274,7 +276,7 @@ function parseGuardRulesFile(content: string): ParsedGuardRule[] {
             name,
             content: contentWithoutMessages,
             description: `Guard rule: ${name}`,
-            message
+            message,
         });
     }
 
@@ -288,7 +290,7 @@ function parseRulePackFile(content: string, packName: string): RulePack {
     const rules: string[] = [];
 
     // Similar parsing but just extract rule names
-    const ruleBlocks = content.split(/(?=^rule\s+)/m).filter(block => block.trim());
+    const ruleBlocks = content.split(/(?=^rule\s+)/m).filter((block) => block.trim());
 
     for (const block of ruleBlocks) {
         const firstLine = block.split('\n')[0]?.trim();
@@ -306,27 +308,38 @@ function parseRulePackFile(content: string, packName: string): RulePack {
 /**
  * Generate TypeScript file with all rules and pack mappings
  */
-function generateTypeScriptFile(allRules: ParsedGuardRule[], rulePacks: RulePack[], version: string, sourceUrl: string): string {
-    const rulesObject = allRules.map(rule => {
-        // Use template literals for better readability - escape backticks, ${}, and backslashes in content
-        const contentEscaped = rule.content.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
-        const descriptionEscaped = rule.description.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-        const messageEscaped = rule.message ? rule.message.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n') : undefined;
+function generateTypeScriptFile(
+    allRules: ParsedGuardRule[],
+    rulePacks: RulePack[],
+    version: string,
+    sourceUrl: string,
+): string {
+    const rulesObject = allRules
+        .map((rule) => {
+            // Use template literals for better readability - escape backticks, ${}, and backslashes in content
+            const contentEscaped = rule.content.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+            const descriptionEscaped = rule.description.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+            const messageEscaped = rule.message
+                ? rule.message.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n')
+                : undefined;
 
-        return `    ${rule.name}: {
+            return `    ${rule.name}: {
         name: '${rule.name}',
         content: \`${contentEscaped}\`,
         description: '${descriptionEscaped}',${messageEscaped ? `\n        message: '${messageEscaped}',` : ''}
     }`;
-    }).join(',\n');
+        })
+        .join(',\n');
 
-    const packsObject = rulePacks.map(pack => {
-        // Format rule arrays with proper line breaks and indentation
-        const rulesFormatted = pack.rules.map(rule => `'${rule}',`).join('\n        ');
-        return `    '${pack.name}': [
+    const packsObject = rulePacks
+        .map((pack) => {
+            // Format rule arrays with proper line breaks and indentation
+            const rulesFormatted = pack.rules.map((rule) => `'${rule}',`).join('\n        ');
+            return `    '${pack.name}': [
         ${rulesFormatted}
     ]`;
-    }).join(',\n');
+        })
+        .join(',\n');
 
     const generationDate = new Date().toISOString();
 
@@ -428,7 +441,7 @@ async function main() {
             if (file.endsWith('.guard') && file !== 'guard-rules-registry-all-rules.guard') {
                 const packName = file.replace('.guard', '');
                 const packPath = path.join(outputDir, file);
-                const packContent = fs.readFileSync(packPath, 'utf-8');
+                const packContent = fs.readFileSync(packPath, 'utf8');
 
                 // Parse rules from this pack file
                 const packRules = parseGuardRulesFile(packContent);
@@ -454,7 +467,7 @@ async function main() {
         }
 
         // Convert map to array and sort by rule name for consistent ordering
-        const allRules = Array.from(allRulesMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        const allRules = [...allRulesMap.values()].sort((a, b) => a.name.localeCompare(b.name));
         console.log(`🔍 Found ${allRules.length} unique rules across all packs`);
 
         // Sort rule packs by name for consistent ordering
@@ -471,11 +484,10 @@ async function main() {
         }
 
         // Write output file
-        fs.writeFileSync(OUTPUT_FILE, tsContent, 'utf-8');
+        fs.writeFileSync(OUTPUT_FILE, tsContent, 'utf8');
 
         console.log(`✅ Generated ${OUTPUT_FILE}`);
         console.log(`📊 Summary: ${allRules.length} rules, ${rulePacks.length} packs`);
-
     } catch (error) {
         console.error('❌ Error generating guard rules:', error);
         process.exit(1);

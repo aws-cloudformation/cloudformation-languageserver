@@ -74,7 +74,7 @@ const argv = yargs(hideBin(process.argv))
     .option('iterations', {
         alias: 'i',
         type: 'number',
-        default: 10000,
+        default: 10_000,
         description: 'Number of iterations per template',
         coerce: (value: number) => {
             if (value <= 0) {
@@ -154,8 +154,8 @@ const argv = yargs(hideBin(process.argv))
 
 // Configuration from command line arguments
 const ITERATIONS = argv.iterations;
-const TEMPLATE_PATHS = argv.templates as string[];
-const OUTPUT_PATH = argv.output as string;
+const TEMPLATE_PATHS = argv.templates;
+const OUTPUT_PATH = argv.output;
 
 type Percentiles = {
     p50: number;
@@ -222,8 +222,8 @@ function formatNumber(num: number): string {
 
 // Helper function to safely format numbers that might be NaN or Infinity
 function safeFormatNumber(num: number, decimals: number = 2): string {
-    if (isNaN(num)) return 'N/A';
-    if (!isFinite(num)) return 'N/A';
+    if (Number.isNaN(num)) return 'N/A';
+    if (!Number.isFinite(num)) return 'N/A';
     return num.toLocaleString('en-US', {
         minimumFractionDigits: decimals,
         maximumFractionDigits: decimals,
@@ -234,26 +234,26 @@ function safeFormatNumber(num: number, decimals: number = 2): string {
 function safeFormatPercentage(numerator: number, denominator: number): string {
     if (denominator === 0) return 'N/A';
     const percentage = (numerator / denominator) * 100;
-    if (isNaN(percentage) || !isFinite(percentage)) return 'N/A';
+    if (Number.isNaN(percentage) || !Number.isFinite(percentage)) return 'N/A';
     return percentage.toFixed(1);
 }
 
 function loadTemplates(): void {
-    templateFiles.forEach(({ name, path }) => {
+    for (const { name, path } of templateFiles) {
         const content = readFileSync(path, 'utf8');
         templates.set(name, content);
-    });
+    }
 }
 
 function calculatePercentiles(latencies: number[]): Percentiles {
     if (latencies.length === 0) {
         return {
-            p50: NaN,
-            p90: NaN,
-            p95: NaN,
-            p99: NaN,
-            p99_9: NaN,
-            p99_99: NaN,
+            p50: Number.NaN,
+            p90: Number.NaN,
+            p95: Number.NaN,
+            p99: Number.NaN,
+            p99_9: Number.NaN,
+            p99_99: Number.NaN,
         };
     }
 
@@ -346,7 +346,7 @@ function formatBytes(bytes: number): string {
 
 function benchmarkTemplate(templateName: string, format: DocumentType): BenchmarkResult | null {
     // @ts-ignore
-    global.gc();
+    globalThis.gc();
     const content = templates.get(templateName);
     if (!content) {
         console.error(`❌ Template ${templateName} not found, skipping...`);
@@ -382,7 +382,7 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
     const syntaxTreeManager = new SyntaxTreeManager();
     try {
         syntaxTreeManager.add(uri, content);
-    } catch (error) {}
+    } catch {}
     const contextManager = new ContextManager(syntaxTreeManager);
 
     // Get initial resource usage
@@ -479,7 +479,7 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
         } else if (context === undefined) {
             // getContext returned undefined - context not found
             contextNotFoundCount++;
-        } else if (context && context.entity && context.entity.entityType === EntityType.Unknown) {
+        } else if (context?.entity && context.entity.entityType === EntityType.Unknown) {
             // getContext returned a valid context but entity is Unknown
             contextUnknownCount++;
         }
@@ -612,7 +612,7 @@ function formatResults(result: BenchmarkResult): string {
 - **Syntax Tree:** ${formatNumber(syntaxTreeDataPoints)} measurements  
 - **Total Latency:** ${formatNumber(totalDataPoints)} measurements
 
-${!hasValidData ? '⚠️ **No successful measurements - all metrics show N/A**\n' : ''}
+${hasValidData ? '' : '⚠️ **No successful measurements - all metrics show N/A**\n'}
 
 ### Performance Summary
 | Component | P50 (μs) | P90 (μs) | P99 (μs) | P99.9 (μs) | P99.99 (μs) |
@@ -655,18 +655,14 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
     const report: string[] = [];
 
     // Header
-    report.push('# Context Resolution Benchmark Results\n');
-    report.push(`**Generated:** ${new Date().toISOString()} at ${process.cwd()}`);
-    report.push(`**Iterations per template:** ${formatNumber(ITERATIONS)}`);
-    report.push(`**Templates benchmarked:** ${results.length}/${templateFiles.length}`);
-    report.push(`**Total iterations:** ${formatNumber(results.reduce((sum, r) => sum + r.iterations, 0))}\n`);
-
-    // Comparison Table
-    report.push('## Performance Comparison\n');
     report.push(
+        '# Context Resolution Benchmark Results\n',
+        `**Generated:** ${new Date().toISOString()} at ${process.cwd()}`,
+        `**Iterations per template:** ${formatNumber(ITERATIONS)}`,
+        `**Templates benchmarked:** ${results.length}/${templateFiles.length}`,
+        `**Total iterations:** ${formatNumber(results.reduce((sum, r) => sum + r.iterations, 0))}\n`,
+        '## Performance Comparison\n',
         '| Template | Format | Size (KB) | Data Points | Success Rates | Related Entities (P50/P90/P99) | Syntax Tree P50/P99.9 (μs) | Context P50/P99.9 (μs) | Context+Entities P50/P99.9 (μs) | Total P50/P99.9 (μs) | Memory P50 (MB) |',
-    );
-    report.push(
         '|----------|--------|-----------|-------------|---------------|-------------------------------|----------------------------|------------------------|--------------------------------|----------------------|-----------------|',
     );
 
@@ -680,9 +676,9 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         return aSize - bSize;
     });
 
-    sortedResults.forEach((result) => {
+    for (const result of sortedResults) {
         const content = templates.get(result.templateName);
-        if (!content) return;
+        if (!content) continue;
 
         const fileSizeKB = (Buffer.byteLength(content, 'utf8') / 1024).toFixed(1);
 
@@ -715,7 +711,7 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         report.push(
             `| ${result.templateName} | ${result.format} | ${fileSizeKB} | ${dataPointsInfo} | ${successRatesInfo} | ${relatedEntitiesCount} | ${syntaxTreeLatencies} | ${contextLatencies} | ${contextWithEntitiesLatencies} | ${totalLatencies} | ${memoryP50MB} |`,
         );
-    });
+    }
 
     // Performance Analysis
     report.push('## Performance Analysis\n');
@@ -731,26 +727,19 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         const contextWithEntitiesP50Latencies = validResults.map((r) => r.percentiles.contextWithEntities.p50);
         const contextWithEntitiesP99Latencies = validResults.map((r) => r.percentiles.contextWithEntities.p99);
 
-        report.push('### Latency Distribution Ranges\n');
-
-        report.push('| Component | P50 Range (μs) | P99 Range (μs) |');
-        report.push('|-----------|----------------|----------------|');
         report.push(
+            '### Latency Distribution Ranges\n',
+            '| Component | P50 Range (μs) | P99 Range (μs) |',
+            '|-----------|----------------|----------------|',
             `| **Total Latency** | ${safeFormatNumber(Math.min(...totalP50Latencies))} - ${safeFormatNumber(Math.max(...totalP50Latencies))} | ${safeFormatNumber(Math.min(...totalP99Latencies))} - ${safeFormatNumber(Math.max(...totalP99Latencies))} |`,
-        );
-        report.push(
             `| **Syntax Tree** | ${safeFormatNumber(Math.min(...syntaxTreeP50Latencies))} - ${safeFormatNumber(Math.max(...syntaxTreeP50Latencies))} | ${safeFormatNumber(Math.min(...syntaxTreeP99Latencies))} - ${safeFormatNumber(Math.max(...syntaxTreeP99Latencies))} |`,
-        );
-        report.push(
             `| **Context Resolution** | ${safeFormatNumber(Math.min(...contextP50Latencies))} - ${safeFormatNumber(Math.max(...contextP50Latencies))} | ${safeFormatNumber(Math.min(...contextP99Latencies))} - ${safeFormatNumber(Math.max(...contextP99Latencies))} |`,
-        );
-        report.push(
             `| **Context With Entities** | ${safeFormatNumber(Math.min(...contextWithEntitiesP50Latencies))} - ${safeFormatNumber(Math.max(...contextWithEntitiesP50Latencies))} | ${safeFormatNumber(Math.min(...contextWithEntitiesP99Latencies))} - ${safeFormatNumber(Math.max(...contextWithEntitiesP99Latencies))} |\n`,
         );
     }
 
     report.push('### Context Success Analysis');
-    sortedResults.forEach((result) => {
+    for (const result of sortedResults) {
         // Calculate context rates based on total iterations
         const contextFoundCount = result.iterations - result.contextNotFoundCount;
         const contextValidCount = contextFoundCount - result.contextUnknownCount;
@@ -762,14 +751,15 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         report.push(
             `- **${result.templateName}:** Found ${contextFoundRate}%, Valid ${contextValidRate}%, Unknown ${contextUnknownRate}%, With Entities ${contextWithEntitiesFoundRate}%`,
         );
-    });
+    }
 
-    report.push('### Component Overhead Analysis\n');
+    report.push(
+        '### Component Overhead Analysis\n',
+        '| Template | Syntax Tree Overhead | Context Resolution Overhead | Context With Entities Overhead |',
+        '|----------|---------------------|----------------------------|-------------------------------|',
+    );
 
-    report.push('| Template | Syntax Tree Overhead | Context Resolution Overhead | Context With Entities Overhead |');
-    report.push('|----------|---------------------|----------------------------|-------------------------------|');
-
-    sortedResults.forEach((result) => {
+    for (const result of sortedResults) {
         const syntaxTreeP50Pct = safeFormatPercentage(result.percentiles.syntaxTree.p50, result.percentiles.total.p50);
         const syntaxTreeP99Pct = safeFormatPercentage(result.percentiles.syntaxTree.p99, result.percentiles.total.p99);
         const contextP50Pct = safeFormatPercentage(result.percentiles.context.p50, result.percentiles.total.p50);
@@ -786,15 +776,14 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         report.push(
             `| **${result.templateName}** | ${syntaxTreeP50Pct}% (P50) / ${syntaxTreeP99Pct}% (P99) | ${contextP50Pct}% (P50) / ${contextP99Pct}% (P99) | ${contextWithEntitiesP50Pct}% (P50) / ${contextWithEntitiesP99Pct}% (P99) |`,
         );
-    });
+    }
 
     // Detailed results for each template (sorted by performance)
-    report.push('\n---\n');
-    report.push('# Detailed Results by Template\n');
+    report.push('\n---\n', '# Detailed Results by Template\n');
 
-    sortedResults.forEach((result) => {
+    for (const result of sortedResults) {
         report.push(formatResults(result));
-    });
+    }
 
     // Save the report
     try {
@@ -819,7 +808,7 @@ function main(): void {
         process.exit(exitCode);
     };
 
-    let results: BenchmarkResult[] = [];
+    const results: BenchmarkResult[] = [];
 
     // Handle only unexpected errors, not user interruption
     process.on('uncaughtException', (error) => {
@@ -840,14 +829,14 @@ function main(): void {
         console.log(`📄 Results will be saved to: ${OUTPUT_PATH}`);
 
         // Check if garbage collection is available - REQUIRED for benchmark to start
-        if (!global.gc) {
+        if (globalThis.gc) {
+            console.log('✅ Garbage collection enabled - forcing GC between iterations');
+        } else {
             console.error('❌ Garbage collection not available. This is REQUIRED for benchmark accuracy.');
             console.error('   Please run with --expose-gc flag:');
             console.error('   node --expose-gc benchmark.js');
             console.error('   Exiting...');
             process.exit(1);
-        } else {
-            console.log('✅ Garbage collection enabled - forcing GC between iterations');
         }
 
         console.log('📁 Discovering template files...');
@@ -872,10 +861,10 @@ function main(): void {
         });
 
         console.log(`📋 Found ${templateFiles.length} template files (sorted by size):`);
-        templateFiles.forEach(({ name, documentType, size }) => {
+        for (const { name, documentType, size } of templateFiles) {
             const sizeKB = (size / 1024).toFixed(2);
             console.log(`   - ${name} (${documentType}) - ${sizeKB} KB`);
-        });
+        }
 
         loadTemplates();
 
@@ -922,7 +911,7 @@ function main(): void {
             console.log(`\n✨ Benchmark complete!`);
             console.log(`📊 Successfully benchmarked ${results.length}/${templateFiles.length} templates`);
             console.log(`\n📊 Quick Summary:`);
-            results.forEach((result) => {
+            for (const result of results) {
                 const contextFoundCount = result.iterations - result.contextNotFoundCount;
                 const contextValidCount = contextFoundCount - result.contextUnknownCount;
                 const contextFoundRate = safeFormatPercentage(contextFoundCount, result.iterations);
@@ -936,7 +925,7 @@ function main(): void {
                 console.log(
                     `   ${result.templateName} (${result.format}): P50=${safeFormatNumber(result.percentiles.total.p50)} μs, P99=${safeFormatNumber(result.percentiles.total.p99)} μs, Found=${contextFoundRate}%, Valid=${contextValidRate}%, Unknown=${contextUnknownRate}%, WithEntities=${contextWithEntitiesFoundRate}%`,
                 );
-            });
+            }
 
             process.exit(0);
         } catch (error) {
