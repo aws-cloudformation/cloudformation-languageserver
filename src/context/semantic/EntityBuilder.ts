@@ -7,7 +7,18 @@ import { TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from '../ContextTy
 import { nodeToObject, parseSyntheticNode } from '../syntaxtree/utils/NodeParse';
 import { NodeType } from '../syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../syntaxtree/utils/TreeSitterTypes';
-import { Condition, Mapping, Metadata, Output, Parameter, Resource, Rule, Transform, Unknown } from './Entity';
+import {
+    Condition,
+    ForEachResource,
+    Mapping,
+    Metadata,
+    Output,
+    Parameter,
+    Resource,
+    Rule,
+    Transform,
+    Unknown,
+} from './Entity';
 
 const log = LoggerFactory.getLogger('EntityBuilder');
 
@@ -49,6 +60,26 @@ export function createEntityFromObject(logicalId: string, entityObject: any, sec
             return Parameter.from(logicalId, entityObject);
         }
         case TopLevelSection.Resources: {
+            if (logicalId.startsWith('Fn::ForEach')) {
+                const loopName = logicalId.replace('Fn::ForEach::', '');
+                const identifier = Array.isArray(entityObject) ? entityObject[0] : '';
+                const collection = Array.isArray(entityObject) ? entityObject[1] : undefined;
+                const outputMap = Array.isArray(entityObject) ? entityObject[2] : {};
+                const [key, value]: [string, any] = Object.entries(outputMap ?? {})[0] || ['', {}];
+                const resource = new Resource(
+                    key,
+                    value?.Type,
+                    value?.Properties,
+                    value?.DependsOn,
+                    value?.Condition,
+                    value?.Metadata,
+                    value?.CreationPolicy,
+                    value?.DeletionPolicy,
+                    value?.UpdatePolicy,
+                    value?.UpdateReplacePolicy,
+                );
+                return new ForEachResource(loopName, identifier, collection, resource);
+            }
             return new Resource(
                 logicalId,
                 entityObject?.Type,
