@@ -26,7 +26,7 @@ describe('AuthHandler', () => {
         mockComponents = createMockComponents({ awsCredentials });
     });
 
-    test('iamCredentialsUpdateHandler calls handleIamCredentialsUpdate', () => {
+    test('iamCredentialsUpdateHandler calls handleIamCredentialsUpdate', async () => {
         const params: UpdateCredentialsParams = {
             data: {
                 profile: 'test-profile',
@@ -35,8 +35,8 @@ describe('AuthHandler', () => {
                 region: 'Region',
             },
         };
-        awsCredentials.handleIamCredentialsUpdate.returns(true);
-        const result = iamCredentialsUpdateHandler(mockComponents)(params, mockCancellationToken);
+        awsCredentials.handleIamCredentialsUpdate.resolves(true);
+        const result = await iamCredentialsUpdateHandler(mockComponents)(params, mockCancellationToken);
 
         expect(awsCredentials.handleIamCredentialsUpdate.callCount).toBe(1);
         expect(awsCredentials.handleIamCredentialsUpdate.firstCall.args[0]).toStrictEqual(params);

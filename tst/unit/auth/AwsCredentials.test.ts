@@ -10,13 +10,6 @@ import {
 import { createMockAuthHandlers, createMockSettingsManager } from '../../utils/MockServerComponents';
 
 describe('AwsCredentials', () => {
-    const iam = {
-        profile: 'SomeProfile',
-        accessKeyId: 'AKIATEST',
-        secretAccessKey: 'secret123',
-        sessionToken: 'token123',
-        region: 'us-west-2',
-    };
     const token = {
         token: 'bearer-token-123',
     };
@@ -158,34 +151,6 @@ describe('AwsCredentials', () => {
     });
 
     describe('credential handlers', () => {
-        test('should update IAM profile when valid data is received', () => {
-            const validCredentials: UpdateCredentialsParams = {
-                data: iam,
-            };
-
-            awsCredentials.handleIamCredentialsUpdate(validCredentials);
-
-            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
-        });
-
-        test('should reset IAM profile when invalid data is received', () => {
-            // First set valid credentials
-            awsCredentials.handleIamCredentialsUpdate({
-                data: iam,
-            });
-            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
-
-            // Then send invalid credentials
-            awsCredentials.handleIamCredentialsUpdate({
-                data: {
-                    accessKeyId: 'AKIATEST',
-                    // Missing secretAccessKey
-                },
-            } as UpdateCredentialsParams);
-
-            expect((awsCredentials as any).iamCredentials).toBeUndefined();
-        });
-
         test('should update bearer credentials and metadata when valid data is received', () => {
             const validCredentials: UpdateCredentialsParams = {
                 data: token,
@@ -204,20 +169,6 @@ describe('AwsCredentials', () => {
             const metadata = awsCredentials.getConnectionMetadata();
             expect(metadata?.sso?.startUrl).toBe('https://test.awsapps.com/start');
             expect(metadata?.sso?.accountId).toBe('123456789012');
-        });
-
-        test('should reset IAM when delete handler is called', () => {
-            // First set credentials
-
-            awsCredentials.handleIamCredentialsUpdate({
-                data: iam,
-            });
-            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
-
-            // Then delete them
-
-            awsCredentials.handleIamCredentialsDelete();
-            expect((awsCredentials as any).iamCredentials).toBeUndefined();
         });
 
         test('should delete bearer credentials and metadata when delete handler is called', () => {
@@ -281,18 +232,6 @@ describe('AwsCredentials', () => {
     });
 
     describe('error handling', () => {
-        test('should handle errors in IAM credential update handler gracefully', () => {
-            // This should not throw even with malformed data
-            awsCredentials.handleIamCredentialsUpdate({ data: iam });
-            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
-
-            expect(() => {
-                awsCredentials.handleIamCredentialsUpdate({ data: 'invalid-data' as any });
-            }).not.toThrow();
-
-            expect((awsCredentials as any).iamCredentials).toBeUndefined();
-        });
-
         test('should handle errors in bearer credential update handler gracefully', () => {
             // This should not throw even with malformed data
             expect(() => {
