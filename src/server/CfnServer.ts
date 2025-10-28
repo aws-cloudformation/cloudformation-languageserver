@@ -38,6 +38,9 @@ import {
     describeValidationStatusHandler,
     describeDeploymentStatusHandler,
     getTemplateResourcesHandler,
+    deleteChangeSetHandler,
+    getChangeSetDeletionStatusHandler,
+    describeChangeSetDeletionStatusHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
 import { closeSafely } from '../utils/Closeable';
@@ -109,6 +112,11 @@ export class CfnServer {
         this.lsp.stackHandlers.onGetDeploymentStatus(getDeploymentStatusHandler(this.components));
         this.lsp.stackHandlers.onDescribeValidationStatus(describeValidationStatusHandler(this.components));
         this.lsp.stackHandlers.onDescribeDeploymentStatus(describeDeploymentStatusHandler(this.components));
+        this.lsp.stackHandlers.onDeleteChangeSet(deleteChangeSetHandler(this.components));
+        this.lsp.stackHandlers.onGetChangeSetDeletionStatus(getChangeSetDeletionStatusHandler(this.components));
+        this.lsp.stackHandlers.onDescribeChangeSetDeletionStatus(
+            describeChangeSetDeletionStatusHandler(this.components),
+        );
         this.lsp.stackHandlers.onListStacks(listStacksHandler(this.components));
         this.lsp.stackHandlers.onListChangeSets(listChangeSetsHandler(this.components));
         this.lsp.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));

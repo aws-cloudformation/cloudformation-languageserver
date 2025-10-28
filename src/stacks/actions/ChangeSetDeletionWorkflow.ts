@@ -193,21 +193,15 @@ export class ChangeSetDeletionWorkflow
     }
 
     private async hasMultipleChangeSets(stackName: string): Promise<boolean> {
-        let nextToken: string | undefined;
-        let changeSetCount = 0;
+        const result = await this.cfnService.listChangeSets(stackName);
 
-        do {
-            const result = await this.cfnService.listChangeSets(stackName, nextToken);
+        const changeSetCount = result.changeSets.length;
 
-            changeSetCount += result.changeSets.length ?? 0;
-
-            if (changeSetCount > 1) {
-                return true;
-            }
-
-            nextToken = result.nextToken;
-        } while (nextToken);
-
-        return false;
+        // Minimum one change set per page, if nextToken is defined there is at least two change sets
+        if (changeSetCount > 1 || result.nextToken) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
