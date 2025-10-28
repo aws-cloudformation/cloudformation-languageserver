@@ -22,27 +22,25 @@ export function typeOf(value: unknown): {
         type = 'undefined';
     } else if (value === null) {
         type = 'null';
-    } else if (typeof value === 'boolean') {
-        type = 'boolean';
-    } else if (typeof value === 'string') {
-        type = 'string';
-    } else if (typeof value === 'bigint') {
-        type = 'bigint';
-    } else if (typeof value === 'number') {
-        type = 'number';
-    } else if (typeof value === 'symbol') {
-        type = 'symbol';
-    } else if (typeof value === 'function') {
-        type = 'function';
-    }
-
-    if (type === undefined && typeof value === 'object') {
+    } else if (typeof value === 'object') {
         if (Array.isArray(value)) {
             type = 'array';
             size = value.length;
         } else {
             type = 'object';
         }
+    } else if (typeof value === 'string') {
+        type = 'string';
+    } else if (typeof value === 'number') {
+        type = 'number';
+    } else if (typeof value === 'boolean') {
+        type = 'boolean';
+    } else if (typeof value === 'bigint') {
+        type = 'bigint';
+    } else if (typeof value === 'symbol') {
+        type = 'symbol';
+    } else if (typeof value === 'function') {
+        type = 'function';
     }
 
     type ??= 'unknown';

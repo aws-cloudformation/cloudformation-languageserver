@@ -160,15 +160,12 @@ export class TelemetryService implements Closeable {
             this.logger.error(reason, 'Unhandled promise rejection');
 
             const location = reason instanceof Error ? extractLocationFromStack(reason.stack) : {};
-            telemetry.count(
-                'process.promise.unhandled',
-                1,
-                { unit: '1' },
-                {
+            telemetry.count('process.promise.unhandled', 1, {
+                attributes: {
                     'error.type': reason instanceof Error ? reason.name : typeof reason,
                     ...location,
                 },
-            );
+            });
 
             void this.metricsReader?.forceFlush();
         });
@@ -176,16 +173,13 @@ export class TelemetryService implements Closeable {
         process.on('uncaughtException', (error, origin) => {
             this.logger.error(error, `Uncaught exception ${origin}`);
 
-            telemetry.count(
-                'process.exception.uncaught',
-                1,
-                { unit: '1' },
-                {
+            telemetry.count('process.exception.uncaught', 1, {
+                attributes: {
                     'error.type': error.name,
                     'error.origin': origin,
                     ...extractLocationFromStack(error.stack),
                 },
-            );
+            });
 
             void this.metricsReader?.forceFlush();
         });

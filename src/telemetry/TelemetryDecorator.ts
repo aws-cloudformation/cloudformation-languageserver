@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access */
-import { Attributes } from '@opentelemetry/api';
-import { MetricOptions } from '@opentelemetry/api/build/src/metrics/Metric';
+import { MetricConfig } from './ScopedTelemetry';
 import { TelemetryService } from './TelemetryService';
 
 type ScopeDecoratorOptions = {
@@ -8,9 +7,8 @@ type ScopeDecoratorOptions = {
 };
 type ScopedMetricsDecoratorOptions = {
     name: string;
-    options?: MetricOptions;
-    attributes?: Attributes;
-} & ScopeDecoratorOptions;
+} & MetricConfig &
+    ScopeDecoratorOptions;
 
 type MethodNames = {
     sync: 'trackExecution' | 'measure';
@@ -55,24 +53,12 @@ function createTelemetryMethodDecorator(methodNames: MethodNames) {
             descriptor.value = function (this: any, ...args: any[]) {
                 const telemetry = TelemetryService.instance.get(scopeName(target, decoratorOptions.scope));
 
-                const attributes: Attributes = { ...decoratorOptions?.attributes };
-
                 if (isAsyncFunction(originalMethod)) {
                     const asyncMethod = telemetry[methodNames.async].bind(telemetry);
-                    return asyncMethod(
-                        metricName,
-                        () => originalMethod.apply(this, args),
-                        decoratorOptions?.options,
-                        attributes,
-                    );
+                    return asyncMethod(metricName, () => originalMethod.apply(this, args), decoratorOptions);
                 } else {
                     const syncMethod = telemetry[methodNames.sync].bind(telemetry);
-                    return syncMethod(
-                        metricName,
-                        () => originalMethod.apply(this, args),
-                        decoratorOptions?.options,
-                        attributes,
-                    );
+                    return syncMethod(metricName, () => originalMethod.apply(this, args), decoratorOptions);
                 }
             };
 
