@@ -6,6 +6,8 @@ import { CcapiService } from '../services/CcapiService';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
 
@@ -32,6 +34,7 @@ type ResourceStateMap = Map<ResourceType, Map<ResourceId, ResourceState>>;
 type ResourceListMap = Map<ResourceType, ResourceList>;
 
 export class ResourceStateManager implements SettingsConfigurable, Closeable {
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private settingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
     private isRefreshing = false;
@@ -43,13 +46,23 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     constructor(
         private readonly ccapiService: CcapiService,
         private readonly schemaRetriever: SchemaRetriever,
-    ) {}
+    ) {
+        this.registerCacheGauges();
+    }
 
+    @Measure({ name: 'getResource' })
     public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<ResourceState | undefined> {
+        this.telemetry.count('cache.hit', 0);
+        this.telemetry.count('cache.miss', 0);
+        this.telemetry.count('notFound', 0);
+
         const cachedResources = this.getResourceState(typeName, identifier);
         if (cachedResources) {
+            this.telemetry.count('cache.hit', 1);
             return cachedResources;
         }
+        this.telemetry.count('cache.miss', 1);
+
         let output: GetResourceCommandOutput | undefined = undefined;
 
         try {
@@ -58,6 +71,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
             log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
             if (error instanceof ResourceNotFoundException) {
                 log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
+                this.telemetry.count('notFound', 1);
             }
             return;
         }
@@ -80,6 +94,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         return value;
     }
 
+    @Measure({ name: 'listResources' })
     public async listResources(typeName: string, nextToken?: string): Promise<ResourceList | undefined> {
         const cached = this.resourceListMap.get(typeName);
 
@@ -108,6 +123,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         return resourceListNextPage;
     }
 
+    @Measure({ name: 'searchResourceByIdentifier' })
     public async searchResourceByIdentifier(
         typeName: string,
         identifier: string,
@@ -184,7 +200,10 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         }
     }
 
+    @Measure({ name: 'refreshResourceList' })
     public async refreshResourceList(resourceTypes: string[]): Promise<RefreshResourcesResult> {
+        this.telemetry.count('refresh.anyFailed', 0);
+
         if (this.isRefreshing) {
             // return cached resource list
             return {
@@ -233,6 +252,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
                     nextToken: response.nextToken,
                 });
             }
+            this.telemetry.count('refresh.anyFailed', anyRefreshFailed ? 1 : 0);
             return { ...result, refreshFailed: anyRefreshFailed };
         } finally {
             this.isRefreshing = false;
@@ -259,10 +279,27 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     private onSettingsChanged(newSettings: ProfileSettings) {
         // clear cached resources if AWS profile or region changes as data is redundant
         if (newSettings.profile !== this.settings.profile || newSettings.region !== this.settings.region) {
+            this.telemetry.count('cache.invalidated', 1);
             this.resourceStateMap.clear();
             this.resourceListMap.clear();
         }
         this.settings = newSettings;
+    }
+
+    private registerCacheGauges(): void {
+        this.telemetry.registerGaugeProvider('cache.resourceState.types', () => this.resourceStateMap.size);
+
+        this.telemetry.registerGaugeProvider('cache.resourceLists.count', () => this.resourceListMap.size);
+
+        this.telemetry.registerGaugeProvider('cache.resourceState.total', () => {
+            let total = 0;
+            for (const resourceMap of this.resourceStateMap.values()) {
+                total += resourceMap.size;
+            }
+            return total;
+        });
+
+        this.telemetry.registerGaugeProvider('cache.refreshing', () => (this.isRefreshing ? 1 : 0));
     }
 
     static create(external: CfnExternal) {
