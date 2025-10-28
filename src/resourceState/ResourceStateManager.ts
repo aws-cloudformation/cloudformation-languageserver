@@ -48,20 +48,17 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         private readonly schemaRetriever: SchemaRetriever,
     ) {
         this.registerCacheGauges();
+        this.initializeCounters();
     }
 
     @Measure({ name: 'getResource' })
     public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<ResourceState | undefined> {
-        this.telemetry.count('cache.hit', 0);
-        this.telemetry.count('cache.miss', 0);
-        this.telemetry.count('notFound', 0);
-
         const cachedResources = this.getResourceState(typeName, identifier);
         if (cachedResources) {
-            this.telemetry.count('cache.hit', 1);
+            this.telemetry.count('state.hit', 1);
             return cachedResources;
         }
-        this.telemetry.count('cache.miss', 1);
+        this.telemetry.count('state.miss', 1);
 
         let output: GetResourceCommandOutput | undefined = undefined;
 
@@ -71,7 +68,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
             log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
             if (error instanceof ResourceNotFoundException) {
                 log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
-                this.telemetry.count('notFound', 1);
+                this.telemetry.count('state.fault', 1);
             }
             return;
         }
@@ -202,8 +199,6 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
 
     @Measure({ name: 'refreshResourceList' })
     public async refreshResourceList(resourceTypes: string[]): Promise<RefreshResourcesResult> {
-        this.telemetry.count('refresh.anyFailed', 0);
-
         if (this.isRefreshing) {
             // return cached resource list
             return {
@@ -253,7 +248,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
                 });
             }
             if (anyRefreshFailed) {
-                this.telemetry.count('refresh.anyFailed', 1);
+                this.telemetry.count('refresh.fault', 1);
             }
             return { ...result, refreshFailed: anyRefreshFailed };
         } finally {
@@ -281,19 +276,29 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     private onSettingsChanged(newSettings: ProfileSettings) {
         // clear cached resources if AWS profile or region changes as data is redundant
         if (newSettings.profile !== this.settings.profile || newSettings.region !== this.settings.region) {
-            this.telemetry.count('cache.invalidated', 1);
+            this.telemetry.count('state.invalidated', 1);
+            this.telemetry.count('list.invalidated', 1);
             this.resourceStateMap.clear();
             this.resourceListMap.clear();
         }
         this.settings = newSettings;
     }
 
+    private initializeCounters(): void {
+        this.telemetry.count('state.hit', 0);
+        this.telemetry.count('state.miss', 0);
+        this.telemetry.count('state.fault', 0);
+        this.telemetry.count('state.invalidated', 0);
+        this.telemetry.count('list.invalidated', 0);
+        this.telemetry.count('refresh.fault', 0);
+    }
+
     private registerCacheGauges(): void {
-        this.telemetry.registerGaugeProvider('cache.resourceState.types', () => this.resourceStateMap.size);
+        this.telemetry.registerGaugeProvider('state.types', () => this.resourceStateMap.size);
 
-        this.telemetry.registerGaugeProvider('cache.resourceLists.count', () => this.resourceListMap.size);
+        this.telemetry.registerGaugeProvider('list.types', () => this.resourceListMap.size);
 
-        this.telemetry.registerGaugeProvider('cache.resourceState.total', () => {
+        this.telemetry.registerGaugeProvider('state.count', () => {
             let total = 0;
             for (const resourceMap of this.resourceStateMap.values()) {
                 total += resourceMap.size;
