@@ -57,27 +57,21 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
     }
 
     @Track({ name: 'getHoverDoc' })
-    getHoverDoc(textDocPosParams: TextDocumentPositionParams): string | undefined {
+    getHoverDoc(textDocPosParams: TextDocumentPositionParams) {
         if (!this.settings.enabled) {
-            return undefined;
+            return;
         }
         const context = this.contextManager.getContextAndRelatedEntities(textDocPosParams);
-        this.log.debug(
-            {
-                Router: 'Hover',
-                Position: textDocPosParams.position,
-                Context: context?.record(),
-            },
-            'Processing hover request',
-        );
 
         if (!context) {
-            return undefined;
+            return;
         }
 
         // Check for intrinsic function arguments first
         if (context.intrinsicContext.inIntrinsic()) {
-            const doc = this.hoverProviderMap.get(HoverType.IntrinsicFunctionArgument)?.getInformation(context);
+            const doc = this.hoverProviderMap
+                .get(HoverType.IntrinsicFunctionArgument)
+                ?.getInformation(context, textDocPosParams.position);
             if (doc) {
                 return doc;
             }
@@ -126,7 +120,10 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
         hoverProviderMap.set(HoverType.Condition, new ConditionHoverProvider());
         hoverProviderMap.set(HoverType.Mapping, new MappingHoverProvider());
         hoverProviderMap.set(HoverType.IntrinsicFunction, new IntrinsicFunctionHoverProvider());
-        hoverProviderMap.set(HoverType.IntrinsicFunctionArgument, new IntrinsicFunctionArgumentHoverProvider());
+        hoverProviderMap.set(
+            HoverType.IntrinsicFunctionArgument,
+            new IntrinsicFunctionArgumentHoverProvider(schemaRetriever),
+        );
         return hoverProviderMap;
     }
 

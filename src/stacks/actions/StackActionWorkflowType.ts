@@ -2,14 +2,13 @@ import { Identifiable } from '../../protocol/LspTypes';
 import { AwsEnv } from '../../utils/Environment';
 import { ExtensionName } from '../../utils/ExtensionConfig';
 import {
-    CreateStackActionParams,
-    CreateStackActionResult,
     DeploymentEvent,
     GetStackActionStatusResult,
     StackActionPhase,
     StackActionState,
     StackChange,
     ValidationDetail,
+    CreateStackActionResult,
 } from './StackActionRequestType';
 
 export type StackActionWorkflowState = {
@@ -42,8 +41,8 @@ export type DeploymentWaitForResult = {
 
 export const changeSetNamePrefix = `${ExtensionName}-${AwsEnv}`.replaceAll(' ', '-');
 
-export interface StackActionWorkflow<TDescribeResult> {
-    start(params: CreateStackActionParams): Promise<CreateStackActionResult>;
+export interface StackActionWorkflow<TStartParams, TDescribeResult> {
+    start(params: TStartParams): Promise<CreateStackActionResult>;
     getStatus(params: Identifiable): GetStackActionStatusResult;
     describeStatus(params: Identifiable): TDescribeResult;
 }

@@ -27,3 +27,22 @@ export type GetStackTemplateResult = {
 export const GetStackTemplateRequest = new RequestType<GetStackTemplateParams, GetStackTemplateResult, void>(
     'aws/cfn/stack/template',
 );
+
+export type ListChangeSetParams = {
+    stackName: string;
+    nextToken?: string;
+};
+
+export type ListChangeSetResult = {
+    changeSets: Array<{
+        changeSetName: string;
+        status: string;
+        creationTime?: string;
+        description?: string;
+    }>;
+    nextToken?: string;
+};
+
+export const ListChangeSetRequest = new RequestType<ListChangeSetParams, ListChangeSetResult, void>(
+    'aws/cfn/stack/changeSet/list',
+);

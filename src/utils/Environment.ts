@@ -21,6 +21,7 @@ export const isAlpha = getAwsEnv() === AwsEnvironment.ALPHA;
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 export const IsAppEnvironment = Object.values(AwsEnvironment).includes(AwsEnv);
+export const IsAlphaApp = isAlpha && IsAppEnvironment;
 
 function getAwsEnv() {
     if (getNodeEnv() === NodeEnvironment.test) {

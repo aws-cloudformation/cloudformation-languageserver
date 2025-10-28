@@ -40,7 +40,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
     let provider: IntrinsicFunctionArgumentCompletionProvider;
     const mockSyntaxTreeManager = createMockSyntaxTreeManager();
 
-    // Create a proper CombinedSchemas mock
     const mockSchemas = new Map([
         [
             'AWS::S3::Bucket',
@@ -55,7 +54,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
     const mockSchemaRetriever = createMockSchemaRetriever(mockCombinedSchemas);
     const mockDocumentManager = createMockDocumentManager();
 
-    // Mock mapping data for comprehensive testing
     const mockMappingData = {
         RegionMap: {
             'us-east-1': { AMI: 'ami-12345', InstanceType: 't2.micro' },
@@ -88,7 +86,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
         position: { line: 0, character: 0 },
     });
 
-    // Helper function to create mock FindInMap intrinsic context
     function createMockFindInMapContext(text: string, args: unknown[] | string = [], documentType = DocumentType.YAML) {
         const mockContext = createMockContext('Unknown', undefined, {
             text,
@@ -102,7 +99,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
         return mockContext;
     }
 
-    // Helper function to setup mapping entities
     function setupMappingEntities(mappingData: Record<string, Record<string, Record<string, any>>>) {
         const mockSectionNodeMap = new Map();
         mockSectionNodeMap.set(TopLevelSection.Mappings, {} as SyntaxNode);
@@ -420,7 +416,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
             const result = provider.getCompletions(mockContext, createTestParams());
 
             expect(result).toBeDefined();
-            expect(result!.length).toBe(2); // Should return second-level keys (position 3)
+            expect(result!.length).toBe(2);
 
             const labels = result!.map((item) => item.label);
             expect(labels).toContain('AMI');
@@ -511,6 +507,351 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
 
             const labels = result!.map((item) => item.label);
             expect(labels).toContain('Region-Map_v2');
+        });
+    });
+
+    describe('Pattern Filtering', () => {
+        const mockMappingDataWithMixedPatterns = {
+            RegionMap: {
+                'us-east-1': { AMI: 'ami-12345', InstanceType: 't3.micro' },
+                'us-west-2': { AMI: 'ami-67890', InstanceType: 't3.small' },
+                'eu-west-1': { AMI: 'ami-abcde', InstanceType: 't3.medium' },
+                'donor-region': { Privilege: 'view' },
+                'partition-leader': { Privilege: 'admin' },
+            },
+            AccountMap: {
+                '123456789012': { Environment: 'prod', Owner: 'team-a' },
+                '987654321098': { Environment: 'dev', Owner: 'team-b' },
+                'default-account': { Environment: 'test', Owner: 'team-c' },
+            },
+        };
+
+        describe('AWS::Region Pattern Filtering', () => {
+            it('should filter second-level keys based on AWS::Region pattern when using !Ref AWS::Region', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext('', ['RegionMap', { Ref: 'AWS::Region' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('AMI');
+                expect(labels).toContain('InstanceType');
+                expect(labels).not.toContain('Privilege');
+
+                for (const item of result!) {
+                    expect(item.kind).toBe(CompletionItemKind.EnumMember);
+                }
+            });
+
+            it('should filter second-level keys based on AWS::Region pattern when using {"Ref": "AWS::Region"}', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext('', ['RegionMap', { Ref: 'AWS::Region' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('AMI');
+                expect(labels).toContain('InstanceType');
+                expect(labels).not.toContain('Privilege');
+            });
+
+            it('should filter second-level keys based on AWS::Region pattern when using {"!Ref": "AWS::Region"}', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext('', ['RegionMap', { '!Ref': 'AWS::Region' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('AMI');
+                expect(labels).toContain('InstanceType');
+                expect(labels).not.toContain('Privilege');
+            });
+
+            it('should filter second-level keys based on AWS::Region pattern when using {"Fn::Ref": "AWS::Region"} (JSON format)', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext(
+                    '',
+                    ['RegionMap', { 'Fn::Ref': 'AWS::Region' }, ''],
+                    DocumentType.JSON,
+                );
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                const labels = result!.map((item) => item.label);
+
+                expect(labels).toContain('AMI');
+                expect(labels).toContain('InstanceType');
+                expect(labels).not.toContain('Privilege');
+            });
+        });
+
+        describe('AWS::AccountId Pattern Filtering', () => {
+            it('should filter second-level keys based on AWS::AccountId pattern when using !Ref AWS::AccountId', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext('', ['AccountMap', { Ref: 'AWS::AccountId' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                const labels = result!.map((item) => item.label);
+
+                expect(labels).toContain('Environment');
+                expect(labels).toContain('Owner');
+
+                for (const item of result!) {
+                    expect(item.kind).toBe(CompletionItemKind.EnumMember);
+                }
+            });
+
+            it('should filter second-level keys based on AWS::AccountId pattern when using {"Fn::Ref": "AWS::AccountId"} (JSON format)', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext(
+                    '',
+                    ['AccountMap', { 'Fn::Ref': 'AWS::AccountId' }, ''],
+                    DocumentType.JSON,
+                );
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('Environment');
+                expect(labels).toContain('Owner');
+            });
+        });
+
+        describe('AWS::Partition Pattern Filtering', () => {
+            it('should filter second-level keys based on AWS::Partition pattern when using !Ref AWS::Partition', () => {
+                const mockMappingDataWithPartitions = {
+                    PartitionMap: {
+                        aws: { ServiceEndpoint: 'amazonaws.com', Region: 'us-east-1' },
+                        'aws-us-gov': { ServiceEndpoint: 'amazonaws-us-gov.com', Region: 'us-gov-east-1' },
+                        'aws-cn': { ServiceEndpoint: 'amazonaws.com.cn', Region: 'cn-north-1' },
+                        'custom-partition': { ServiceEndpoint: 'custom.com', Region: 'custom-1' },
+                    },
+                };
+                setupMappingEntities(mockMappingDataWithPartitions);
+
+                const mockContext = createMockFindInMapContext('', ['PartitionMap', { Ref: 'AWS::Partition' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('ServiceEndpoint');
+                expect(labels).toContain('Region');
+
+                for (const item of result!) {
+                    expect(item.kind).toBe(CompletionItemKind.EnumMember);
+                }
+            });
+
+            it('should filter second-level keys based on AWS::Partition pattern when using {"Fn::Ref": "AWS::Partition"} (JSON format)', () => {
+                const mockMappingDataWithPartitions = {
+                    PartitionMap: {
+                        aws: { ServiceEndpoint: 'amazonaws.com', Region: 'us-east-1' },
+                        'aws-us-gov': { ServiceEndpoint: 'amazonaws-us-gov.com', Region: 'us-gov-east-1' },
+                        'aws-cn': { ServiceEndpoint: 'amazonaws.com.cn', Region: 'cn-north-1' },
+                        'custom-partition': { ServiceEndpoint: 'custom.com', Region: 'custom-1' },
+                    },
+                };
+                setupMappingEntities(mockMappingDataWithPartitions);
+
+                const mockContext = createMockFindInMapContext(
+                    '',
+                    ['PartitionMap', { 'Fn::Ref': 'AWS::Partition' }, ''],
+                    DocumentType.JSON,
+                );
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(2);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('ServiceEndpoint');
+                expect(labels).toContain('Region');
+            });
+        });
+
+        describe('Fallback Behavior', () => {
+            it('should fallback to all keys when no top-level keys match the pattern', () => {
+                const mappingWithNoRegions = {
+                    NonRegionMap: {
+                        'custom-key-1': { Value: 'test1' },
+                        'custom-key-2': { Value: 'test2' },
+                    },
+                };
+                setupMappingEntities(mappingWithNoRegions);
+
+                const mockContext = createMockFindInMapContext('', ['NonRegionMap', { Ref: 'AWS::Region' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(1);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('Value');
+            });
+
+            it('should fallback to all keys when using unknown pseudo-parameter', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext('', [
+                    'RegionMap',
+                    { Ref: 'AWS::StackName' }, // not a pattern-supported pseudo-parameter
+                    '',
+                ]);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(3);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('AMI');
+                expect(labels).toContain('InstanceType');
+                expect(labels).toContain('Privilege');
+            });
+
+            it('should fallback to all keys when using non-pseudo-parameter reference', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext('', [
+                    'RegionMap',
+                    { Ref: 'MyParameter' }, // not a pseudo-parameter
+                    '',
+                ]);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(3);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('AMI');
+                expect(labels).toContain('InstanceType');
+                expect(labels).toContain('Privilege');
+            });
+        });
+
+        describe('Edge Cases', () => {
+            it('should handle mapping with only pattern-matching keys', () => {
+                const onlyRegionsMapping = {
+                    RegionOnlyMap: {
+                        'us-east-1': { AMI: 'ami-12345' },
+                        'us-west-2': { AMI: 'ami-67890' },
+                        'eu-west-1': { AMI: 'ami-abcde' },
+                    },
+                };
+                setupMappingEntities(onlyRegionsMapping);
+
+                const mockContext = createMockFindInMapContext('', ['RegionOnlyMap', { Ref: 'AWS::Region' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(1);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('AMI');
+            });
+
+            it('should handle mapping with only non-pattern-matching keys', () => {
+                const noRegionsMapping = {
+                    NoRegionsMap: {
+                        'custom-key': { Value: 'test' },
+                        'another-key': { Value: 'test2' },
+                    },
+                };
+                setupMappingEntities(noRegionsMapping);
+
+                const mockContext = createMockFindInMapContext('', ['NoRegionsMap', { Ref: 'AWS::Region' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(1);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('Value');
+            });
+
+            it('should handle empty mapping gracefully', () => {
+                const emptyMapping = {
+                    EmptyMap: {},
+                };
+                setupMappingEntities(emptyMapping);
+
+                const mockContext = createMockFindInMapContext('', ['EmptyMap', { Ref: 'AWS::Region' }, '']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeUndefined();
+            });
+
+            it('should maintain fuzzy search functionality with pattern filtering', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext('AMI', ['RegionMap', { Ref: 'AWS::Region' }, 'AMI']);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(1);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('AMI');
+                expect(labels).not.toContain('InstanceType');
+                expect(labels).not.toContain('Privilege');
+            });
+        });
+
+        describe('Static String Keys (Existing Behavior)', () => {
+            it('should continue to work with static string keys without pattern filtering', () => {
+                setupMappingEntities(mockMappingDataWithMixedPatterns);
+
+                const mockContext = createMockFindInMapContext('', [
+                    'RegionMap',
+                    'donor-region', // static string key
+                    '',
+                ]);
+
+                const result = provider.getCompletions(mockContext, createTestParams());
+
+                expect(result).toBeDefined();
+                expect(result!.length).toBe(1);
+
+                const labels = result!.map((item) => item.label);
+                expect(labels).toContain('Privilege');
+                expect(labels).not.toContain('AMI');
+                expect(labels).not.toContain('InstanceType');
+            });
         });
     });
 });

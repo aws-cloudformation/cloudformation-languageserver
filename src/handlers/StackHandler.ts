@@ -6,19 +6,32 @@ import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
-import { parseStackActionParams, parseTemplateUriParams } from '../stacks/actions/StackActionParser';
 import {
-    CreateStackActionParams,
-    CreateStackActionResult,
+    parseCreateDeploymentParams,
+    parseDeleteChangeSetParams,
+    parseStackActionParams,
+    parseTemplateUriParams,
+} from '../stacks/actions/StackActionParser';
+import {
+    TemplateUri,
+    CreateValidationParams,
     DescribeDeploymentStatusResult,
     DescribeValidationStatusResult,
     GetCapabilitiesResult,
     GetParametersResult,
     GetStackActionStatusResult,
     GetTemplateResourcesResult,
-    TemplateUri,
+    CreateDeploymentParams,
+    CreateStackActionResult,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
 } from '../stacks/actions/StackActionRequestType';
-import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
+import {
+    ListStacksParams,
+    ListStacksResult,
+    ListChangeSetParams,
+    ListChangeSetResult,
+} from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
@@ -55,7 +68,7 @@ export function getParametersHandler(
 
 export function createValidationHandler(
     components: ServerComponents,
-): RequestHandler<CreateStackActionParams, CreateStackActionResult, void> {
+): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         log.debug({ Handler: 'createValidationHandler', rawParams });
 
@@ -70,12 +83,12 @@ export function createValidationHandler(
 
 export function createDeploymentHandler(
     components: ServerComponents,
-): RequestHandler<CreateStackActionParams, CreateStackActionResult, void> {
+): RequestHandler<CreateDeploymentParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         log.debug({ Handler: 'createDeploymentHandler', rawParams });
 
         try {
-            const params = parseWithPrettyError(parseStackActionParams, rawParams);
+            const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
             return await components.deploymentWorkflowService.start(params);
         } catch (error) {
             handleStackActionError(error, 'Failed to start deployment workflow');
@@ -139,6 +152,51 @@ export function describeDeploymentStatusHandler(
             return components.deploymentWorkflowService.describeStatus(params);
         } catch (error) {
             handleStackActionError(error, 'Failed to describe deployment status');
+        }
+    };
+}
+
+export function deleteChangeSetHandler(
+    components: ServerComponents,
+): RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> {
+    return async (rawParams) => {
+        log.debug({ Handler: 'deleteChangeSetHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
+            return await components.changeSetDeletionWorkflowService.start(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to start change set deletion workflow');
+        }
+    };
+}
+
+export function getChangeSetDeletionStatusHandler(
+    components: ServerComponents,
+): RequestHandler<Identifiable, GetStackActionStatusResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'getChangeSetDeletionStatusHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseIdentifiable, rawParams);
+            return components.changeSetDeletionWorkflowService.getStatus(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to get change set deletion status');
+        }
+    };
+}
+
+export function describeChangeSetDeletionStatusHandler(
+    components: ServerComponents,
+): RequestHandler<Identifiable, DescribeDeletionStatusResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'describeChangeSetDeletionStatusHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseIdentifiable, rawParams);
+            return components.changeSetDeletionWorkflowService.describeStatus(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to describe change set deletion status');
         }
     };
 }
@@ -247,6 +305,27 @@ export function listStacksHandler(
         } catch (error) {
             log.error({ error: extractErrorMessage(error) }, 'Error listing stacks');
             return { stacks: [], nextToken: undefined };
+        }
+    };
+}
+
+export function listChangeSetsHandler(
+    components: ServerComponents,
+): RequestHandler<ListChangeSetParams, ListChangeSetResult, void> {
+    return async (params: ListChangeSetParams): Promise<ListChangeSetResult> => {
+        try {
+            const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
+            return {
+                changeSets: result.changeSets.map((cs) => ({
+                    changeSetName: cs.ChangeSetName ?? '',
+                    status: cs.Status ?? '',
+                    creationTime: cs.CreationTime?.toISOString(),
+                    description: cs.Description,
+                })),
+                nextToken: result.nextToken,
+            };
+        } catch {
+            return { changeSets: [] };
         }
     };
 }

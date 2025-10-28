@@ -1,4 +1,3 @@
-import { ChangeSetType } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { StackActionPhase, StackActionState } from '../../../src/stacks/actions/StackActionRequestType';
 import { ValidationWorkflow } from '../../../src/stacks/actions/ValidationWorkflow';
@@ -87,7 +86,6 @@ describe('ValidationWorkflow Enhanced Features', () => {
                 stackName: 'test-stack',
             },
             'test-changeset',
-            ChangeSetType.CREATE,
         );
 
         expect(mockValidation.setPhase).toHaveBeenCalledWith(StackActionPhase.VALIDATION_COMPLETE);
@@ -119,7 +117,6 @@ describe('ValidationWorkflow Enhanced Features', () => {
                 stackName: 'test-stack',
             },
             'test-changeset',
-            ChangeSetType.CREATE,
         );
 
         expect(mockValidation.setPhase).toHaveBeenCalledWith(StackActionPhase.VALIDATION_FAILED);
@@ -150,7 +147,6 @@ describe('ValidationWorkflow Enhanced Features', () => {
                 stackName: 'test-stack',
             },
             'test-changeset',
-            ChangeSetType.CREATE,
         );
 
         expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');

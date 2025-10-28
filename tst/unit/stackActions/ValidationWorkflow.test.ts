@@ -7,11 +7,12 @@ import {
     processChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
-    deleteStackAndChangeSet,
+    cleanupReviewStack,
     deleteChangeSet,
+    isStackInReview,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
-    CreateStackActionParams,
+    CreateValidationParams,
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
@@ -45,7 +46,7 @@ describe('ValidationWorkflow', () => {
 
     describe('start', () => {
         it('should start validation workflow with CREATE when stack does not exist', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -66,7 +67,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should start validation workflow with UPDATE when stack exists', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -88,7 +89,7 @@ describe('ValidationWorkflow', () => {
     });
 
     it('should start validation workflow with IMPORT when resourcesToImport has items', async () => {
-        const params: CreateStackActionParams = {
+        const params: CreateValidationParams = {
             id: 'test-id',
             uri: 'file:///test.yaml',
             stackName: 'test-stack',
@@ -116,7 +117,7 @@ describe('ValidationWorkflow', () => {
     });
 
     it('should start validation workflow with CREATE when resourcesToImport is empty array', async () => {
-        const params: CreateStackActionParams = {
+        const params: CreateValidationParams = {
             id: 'test-id',
             uri: 'file:///test.yaml',
             stackName: 'test-stack',
@@ -138,7 +139,7 @@ describe('ValidationWorkflow', () => {
     });
 
     it('should start validation workflow with UPDATE when resourcesToImport is undefined and stack exists', async () => {
-        const params: CreateStackActionParams = {
+        const params: CreateValidationParams = {
             id: 'test-id',
             uri: 'file:///test.yaml',
             stackName: 'test-stack',
@@ -244,7 +245,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should add validation to manager when workflow starts', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -268,7 +269,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should get validation from manager during workflow operations', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -290,7 +291,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should remove validation from manager after workflow completion', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -338,7 +339,10 @@ describe('ValidationWorkflow', () => {
                 state: StackActionState.SUCCESSFUL,
                 changes: [],
             });
-            (deleteStackAndChangeSet as any).mockResolvedValue(undefined);
+
+            (isStackInReview as any).mockResolvedValue(true);
+
+            (cleanupReviewStack as any).mockResolvedValue(undefined);
 
             (deleteChangeSet as any).mockResolvedValue(undefined);
 
@@ -358,7 +362,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should handle successful validation workflow', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -384,10 +388,117 @@ describe('ValidationWorkflow', () => {
             expect(workflow.validationDetails[0].Severity).toBe('INFO');
             expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
             expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
+            expect(isStackInReview).toHaveBeenCalled();
+            expect(cleanupReviewStack).toHaveBeenCalled();
+        });
+
+        it('should handle successful import workflow', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+                resourcesToImport: [
+                    {
+                        ResourceType: 'test-resource-type',
+                        LogicalResourceId: 'test-logical-id',
+                        ResourceIdentifier: {},
+                    },
+                ],
+            };
+
+            const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
+                changes: mockChanges,
+            });
+
+            const result = await validationWorkflow.start(params);
+            await waitForWorkflowCompletion('test-id');
+
+            expect(result.changeSetName).toBe('changeset-123');
+            expect(mockValidationManager.add).toHaveBeenCalled();
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
+
+            const workflow = (validationWorkflow as any).workflows.get('test-id');
+            expect(workflow.changes).toEqual(mockChanges);
+            expect(workflow.validationDetails).toBeDefined();
+            expect(workflow.validationDetails[0].Severity).toBe('INFO');
+            expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
+            expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
+            expect(isStackInReview).toHaveBeenCalled();
+            expect(cleanupReviewStack).toHaveBeenCalled();
+        });
+
+        it('should handle successful update workflow', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+            };
+
+            mockCfnService.describeStacks = vi.fn().mockResolvedValue({ Stacks: [{ StackName: 'test-stack' }] });
+
+            // Override isStackInReview to show that the stack was existing before validation
+            (isStackInReview as any).mockResolvedValue(false);
+
+            const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
+                changes: mockChanges,
+            });
+
+            const result = await validationWorkflow.start(params);
+            await waitForWorkflowCompletion('test-id');
+
+            expect(result.changeSetName).toBe('changeset-123');
+            expect(mockValidationManager.add).toHaveBeenCalled();
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
+
+            const workflow = (validationWorkflow as any).workflows.get('test-id');
+            expect(workflow.changes).toEqual(mockChanges);
+            expect(workflow.validationDetails).toBeDefined();
+            expect(workflow.validationDetails[0].Severity).toBe('INFO');
+            expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
+            expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
+            expect(isStackInReview).toHaveBeenCalled();
+            expect(deleteChangeSet).toHaveBeenCalled();
+        });
+
+        it('should handle keep change set when flag is supplied', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+                keepChangeSet: true,
+            };
+
+            const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
+                changes: mockChanges,
+            });
+
+            const result = await validationWorkflow.start(params);
+            await waitForWorkflowCompletion('test-id');
+
+            expect(result.changeSetName).toBe('changeset-123');
+            expect(mockValidationManager.add).toHaveBeenCalled();
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
+
+            const workflow = (validationWorkflow as any).workflows.get('test-id');
+            expect(workflow.changes).toEqual(mockChanges);
+            expect(workflow.validationDetails).toBeDefined();
+            expect(workflow.validationDetails[0].Severity).toBe('INFO');
+            expect(workflow.validationDetails[0].Message).toBe('Validation succeeded');
+            expect(workflow.validationDetails[0].ValidationName).toBe(DRY_RUN_VALIDATION_NAME);
+            expect(cleanupReviewStack).not.toHaveBeenCalled();
         });
 
         it('should handle validation failure', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -414,7 +525,7 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should handle validation exception', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -426,7 +537,7 @@ describe('ValidationWorkflow', () => {
             await waitForWorkflowCompletion('test-id');
 
             expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
-            expect(deleteStackAndChangeSet).toHaveBeenCalled();
+            expect(cleanupReviewStack).toHaveBeenCalled();
 
             const workflow = (validationWorkflow as any).workflows.get('test-id');
             expect(workflow.failureReason).toBeDefined();

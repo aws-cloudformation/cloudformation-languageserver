@@ -54,6 +54,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
+    private logError(operation: string, error: unknown): void {
+        this.log.error(`Error ${operation}: ${extractErrorMessage(error)}`);
+    }
+
     // Request queue for handling requests during initialization
     private readonly requestQueue = new Map<
         string,
@@ -147,7 +151,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             await this.workerManager.mountFolder(fsDir, mountDir);
             this.telemetry.count('mount.success', 1, { unit: '1' });
         } catch (error) {
-            this.log.error(`Error mounting folder: ${extractErrorMessage(error)}`);
+            this.logError('mounting folder', error);
             this.telemetry.count('mount.fault', 1, { unit: '1' });
             throw error; // Re-throw to notify caller
         }
@@ -205,7 +209,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         this.diagnosticCoordinator
             .publishDiagnostics(CfnLintService.CFN_LINT_SOURCE, uri, diagnostics)
             .catch((reason) => {
-                this.log.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
+                this.logError('publishing diagnostics', reason);
             });
     }
 
@@ -255,13 +259,13 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                     await this.diagnosticCoordinator
                         .publishDiagnostics(CfnLintService.CFN_LINT_SOURCE, payload.uri, payload.diagnostics)
                         .catch((reason) => {
-                            this.log.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
+                            this.logError('publishing diagnostics', reason);
                         });
                 }
             }
         } catch (error) {
             const errorMessage = extractErrorMessage(error);
-            this.log.error(`Error linting ${fileType} by string: ${errorMessage}`);
+            this.logError(`linting ${fileType} by string`, error);
             this.publishErrorDiagnostics(uri, errorMessage);
         }
     }
@@ -279,7 +283,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                 ? deploymentFile['template-file-path']
                 : undefined;
         } catch (error) {
-            this.log.error(`Error parsing deployment file: ${extractErrorMessage(error)}`);
+            this.logError('parsing deployment file', error);
             return undefined;
         }
     }
@@ -328,13 +332,13 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                     await this.diagnosticCoordinator
                         .publishDiagnostics(CfnLintService.CFN_LINT_SOURCE, payload.uri, payload.diagnostics)
                         .catch((reason) => {
-                            this.log.error(`Error publishing diagnostics: ${extractErrorMessage(reason)}`);
+                            this.logError('publishing diagnostics', reason);
                         });
                 }
             }
         } catch (error) {
             const errorMessage = extractErrorMessage(error);
-            this.log.error(`Error linting ${fileType} by file: ${errorMessage}`);
+            this.logError(`linting ${fileType} by file`, error);
             this.publishErrorDiagnostics(uri, errorMessage);
         }
     }
@@ -375,7 +379,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             await this.waitForInitialization();
         } catch (error) {
             this.telemetry.count('lint.uninitialized', 1, { unit: '1' });
-            this.log.error(`Failed to wait for CfnLintService initialization: ${extractErrorMessage(error)}`);
+            this.logError('waiting for CfnLintService initialization', error);
             throw error;
         }
 
@@ -391,7 +395,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             if (fileType === CloudFormationFileType.GitSyncDeployment) {
                 this.telemetry.count(`lint.file.${CloudFormationFileType.GitSyncDeployment}`, 1, { unit: '1' });
 
-                this.log.error(`GitSync deployment file ${uri} cannot be processed outside of a workspace context`);
+                this.logError(
+                    `processing GitSync deployment file ${uri}`,
+                    new Error('cannot be processed outside of a workspace context'),
+                );
                 this.publishDiagnostics(uri, []);
                 return;
             }
@@ -452,7 +459,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                 }
                 this.processQueuedRequests();
             } catch (error) {
-                this.log.error(`Initialization failed: ${extractErrorMessage(error)}`);
+                this.logError('during initialization', error);
                 // Re-throw to let callers know initialization failed
                 throw error;
             }
@@ -505,7 +512,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                     request.resolve();
                 })
                 .catch((reason: unknown) => {
-                    this.log.error(`Error processing queued request for ${uri}: ${extractErrorMessage(reason)}`);
+                    this.logError(`processing queued request for ${uri}`, reason);
                     request.reject(reason);
                 });
         }
@@ -575,7 +582,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
 
                 // Trigger initialization if needed (but don't await it here)
                 this.ensureInitialized().catch((error) => {
-                    this.log.error(`Failed to ensure initialization: ${extractErrorMessage(error)}`);
+                    this.logError('ensuring initialization', error);
                 });
             });
         }

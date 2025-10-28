@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
-import { CompletionItemKind, CompletionList, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
+import { CompletionItemKind, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import {
     CompletionRouter,
     createCompletionProviders,
@@ -33,11 +33,11 @@ describe('CompletionRouter', () => {
         position: { line: 0, character: 0 },
     };
 
-    test('should return completion list with fuzzy search results when context exists', () => {
+    test('should return completion list with fuzzy search results when context exists', async () => {
         const mockContext = createTopLevelContext('Unknown', { text: 'Res' });
         mockComponents.contextManager.getContext.returns(mockContext);
 
-        const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+        const result = await completionRouter.getCompletions(mockParams);
 
         expect(result).toBeDefined();
         expect(result?.isIncomplete).toBe(false);
@@ -49,20 +49,20 @@ describe('CompletionRouter', () => {
         expect(resourcesItem!.detail).toBe(ExtensionName);
     });
 
-    test('should return undefined when context is undefined', () => {
+    test('should return undefined when context is undefined', async () => {
         mockComponents.contextManager.getContext.returns(undefined);
 
-        const result = completionRouter.getCompletions(mockParams);
+        const result = await completionRouter.getCompletions(mockParams);
 
         expect(result).toBeUndefined();
     });
 
-    test('should return top-level sections for document with single character', () => {
+    test('should return top-level sections for document with single character', async () => {
         const mockContext = createTopLevelContext('Unknown', { text: 'R' });
 
         mockComponents.contextManager.getContext.returns(mockContext);
 
-        const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+        const result = await completionRouter.getCompletions(mockParams);
 
         expect(result).toBeDefined();
         expect(result?.isIncomplete).toBe(false);
@@ -78,20 +78,20 @@ describe('CompletionRouter', () => {
         expect(resourcesItem).toBeDefined();
     });
 
-    test('should return undefined when no context', () => {
+    test('should return undefined when no context', async () => {
         mockComponents.contextManager.getContext.returns(undefined);
 
-        const result = completionRouter.getCompletions(mockParams);
+        const result = await completionRouter.getCompletions(mockParams);
 
         expect(result).toBeUndefined();
     });
 
-    test('should return top-level sections when document cannot be retrieved', () => {
+    test('should return top-level sections when document cannot be retrieved', async () => {
         const mockContext = createTopLevelContext('Unknown', { text: '' });
 
         mockComponents.contextManager.getContext.returns(mockContext);
 
-        const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+        const result = await completionRouter.getCompletions(mockParams);
 
         expect(result).toBeDefined();
         expect(result?.isIncomplete).toBe(false);
@@ -110,7 +110,7 @@ describe('CompletionRouter', () => {
         expect(result).toBeDefined();
     });
 
-    test('should return intrinsic functions when triggered with Fn:', () => {
+    test('should return intrinsic functions when triggered with Fn:', async () => {
         const mockContext = createTopLevelContext('Resources', { text: 'Fn:', type: DocumentType.YAML });
         mockComponents.contextManager.getContext.returns(mockContext);
 
@@ -119,7 +119,7 @@ describe('CompletionRouter', () => {
             context: { triggerCharacter: ':', triggerKind: CompletionTriggerKind.TriggerCharacter },
         };
 
-        const result = completionRouter.getCompletions(fnColonParams) as CompletionList | undefined;
+        const result = await completionRouter.getCompletions(fnColonParams);
 
         expect(result).toBeDefined();
         expect(result?.items.length).toBeGreaterThan(0);
@@ -128,7 +128,7 @@ describe('CompletionRouter', () => {
         expect(fnBase64).toBeDefined();
     });
 
-    test('should return intrinsic functions when triggered with ! in YAML', () => {
+    test('should return intrinsic functions when triggered with ! in YAML', async () => {
         const mockContext = createTopLevelContext('Resources', { text: '!', type: DocumentType.YAML });
         mockComponents.contextManager.getContext.returns(mockContext);
 
@@ -137,7 +137,7 @@ describe('CompletionRouter', () => {
             context: { triggerCharacter: '!', triggerKind: CompletionTriggerKind.TriggerCharacter },
         };
 
-        const result = completionRouter.getCompletions(bangParams) as CompletionList | undefined;
+        const result = await completionRouter.getCompletions(bangParams);
 
         expect(result).toBeDefined();
         expect(result?.items.length).toBeGreaterThan(0);
@@ -146,7 +146,7 @@ describe('CompletionRouter', () => {
         expect(fnBase64).toBeDefined();
     });
 
-    test('should not return intrinsic function completions for complete function name with colon', () => {
+    test('should not return intrinsic function completions for complete function name with colon', async () => {
         // Create a context where the user has typed "Fn::Sub:" (complete function name)
         const mockContext = createTopLevelContext('Resources', { text: 'Fn::Sub:', type: DocumentType.YAML });
 
@@ -176,7 +176,7 @@ describe('CompletionRouter', () => {
             context: { triggerCharacter: ':', triggerKind: CompletionTriggerKind.TriggerCharacter },
         };
 
-        const result = completionRouter.getCompletions(colonParams) as CompletionList | undefined;
+        const result = await completionRouter.getCompletions(colonParams);
 
         // Should return argument completions since we're inside a Sub function
         expect(result).toBeDefined();
@@ -271,7 +271,7 @@ describe('CompletionRouter', () => {
                 expectCompletionProvider(line, character, uri, EntityType.Condition, description);
             }
 
-            function expectNoConditionCompletionProvider(
+            async function expectNoConditionCompletionProvider(
                 line: number,
                 character: number,
                 uri: string,
@@ -280,7 +280,7 @@ describe('CompletionRouter', () => {
                 const conditionProvider = completionProviderMap.get(EntityType.Condition);
                 const getCompletionsSpy = vi.spyOn(conditionProvider!, 'getCompletions');
 
-                realCompletionRouter.getCompletions(docPosition(uri, line, character)) as CompletionList | undefined;
+                await realCompletionRouter.getCompletions(docPosition(uri, line, character));
 
                 expect(
                     getCompletionsSpy,
@@ -610,29 +610,29 @@ describe('CompletionRouter', () => {
             });
 
             describe('Edge Cases and Negative Tests', () => {
-                test('should NOT invoke ConditionCompletionProvider for resource types', () => {
+                test('should NOT invoke ConditionCompletionProvider for resource types', async () => {
                     // JSON: Line 36: "Type": "AWS::S3::Bucket",
-                    expectNoConditionCompletionProvider(36, 20, conditionJsonUri, 'JSON resource type');
+                    await expectNoConditionCompletionProvider(36, 20, conditionJsonUri, 'JSON resource type');
                 });
 
-                test('should NOT invoke ConditionCompletionProvider for property values', () => {
+                test('should NOT invoke ConditionCompletionProvider for property values', async () => {
                     // YAML: Line 71: BucketName: my-dev-bucket
-                    expectNoConditionCompletionProvider(71, 20, conditionYamlUri, 'YAML property value');
+                    await expectNoConditionCompletionProvider(71, 20, conditionYamlUri, 'YAML property value');
                 });
 
-                test('should NOT invoke ConditionCompletionProvider at template root level', () => {
+                test('should NOT invoke ConditionCompletionProvider at template root level', async () => {
                     // Test at template root level
-                    expectNoConditionCompletionProvider(1, 0, conditionYamlUri, 'YAML template root');
+                    await expectNoConditionCompletionProvider(1, 0, conditionYamlUri, 'YAML template root');
                 });
 
-                test('should NOT invoke ConditionCompletionProvider for parameter values', () => {
+                test('should NOT invoke ConditionCompletionProvider for parameter values', async () => {
                     // JSON: Line 11: "Default": "dev",
-                    expectNoConditionCompletionProvider(11, 20, conditionJsonUri, 'JSON parameter default value');
+                    await expectNoConditionCompletionProvider(11, 20, conditionJsonUri, 'JSON parameter default value');
                 });
 
-                test('should NOT invoke ConditionCompletionProvider for resource property names', () => {
+                test('should NOT invoke ConditionCompletionProvider for resource property names', async () => {
                     // YAML: Line 44: BucketName: (property name)
-                    expectNoConditionCompletionProvider(44, 10, conditionYamlUri, 'YAML property name');
+                    await expectNoConditionCompletionProvider(44, 10, conditionYamlUri, 'YAML property name');
                 });
             });
         });
@@ -796,7 +796,7 @@ describe('CompletionRouter', () => {
     });
 
     describe('isIncomplete handling', () => {
-        test('should set isIncomplete to true when results exceed maxCompletions', () => {
+        test('should set isIncomplete to true when results exceed maxCompletions', async () => {
             const mockProvider = {
                 getCompletions: vi
                     .fn()
@@ -809,14 +809,14 @@ describe('CompletionRouter', () => {
             const mockContext = createTopLevelContext('Unknown', { text: '' });
             mockComponents.contextManager.getContext.returns(mockContext);
 
-            const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+            const result = await completionRouter.getCompletions(mockParams);
 
             expect(result).toBeDefined();
             expect(result!.isIncomplete).toBe(true);
             expect(result!.items.length).toBe(100);
         });
 
-        test('should set isIncomplete to false when results are within maxCompletions', () => {
+        test('should set isIncomplete to false when results are within maxCompletions', async () => {
             const mockProvider = {
                 getCompletions: vi
                     .fn()
@@ -829,7 +829,7 @@ describe('CompletionRouter', () => {
             const mockContext = createTopLevelContext('Unknown', { text: '' });
             mockComponents.contextManager.getContext.returns(mockContext);
 
-            const result = completionRouter.getCompletions(mockParams) as CompletionList | undefined;
+            const result = await completionRouter.getCompletions(mockParams);
 
             expect(result).toBeDefined();
             expect(result!.isIncomplete).toBe(false);

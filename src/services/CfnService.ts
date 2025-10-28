@@ -50,6 +50,9 @@ import {
     DescribeChangeSetCommandOutput,
     GetTemplateCommand,
     Change,
+    ChangeSetSummary,
+    ListChangeSetsCommand,
+    waitUntilStackDeleteComplete,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClient } from './AwsClient';
@@ -328,8 +331,43 @@ export class CfnService {
         });
     }
 
+    public async waitUntilStackDeleteComplete(
+        params: DescribeStacksCommandInput,
+        timeoutMinutes: number = 30,
+    ): Promise<WaiterResult> {
+        return await this.withClient(async (client) => {
+            const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
+                client,
+                maxWaitTime: timeoutMinutes * 60,
+            };
+            return await waitUntilStackDeleteComplete(waiterConfig, params);
+        });
+    }
+
     public async validateTemplate(params: ValidateTemplateInput): Promise<ValidateTemplateOutput> {
         return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
+    }
+
+    public async listChangeSets(
+        stackName: string,
+        nextToken?: string,
+    ): Promise<{ changeSets: ChangeSetSummary[]; nextToken?: string }> {
+        try {
+            return await this.withClient(async (client) => {
+                const response = await client.send(
+                    new ListChangeSetsCommand({
+                        StackName: stackName,
+                        NextToken: nextToken,
+                    }),
+                );
+                return {
+                    changeSets: response.Summaries ?? [],
+                    nextToken: response.NextToken,
+                };
+            });
+        } catch {
+            return { changeSets: [] };
+        }
     }
 }
 

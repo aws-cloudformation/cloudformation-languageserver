@@ -2,24 +2,30 @@ import { Connection, RequestHandler } from 'vscode-languageserver';
 import {
     CreateValidationRequest,
     CreateDeploymentRequest,
-    GetDeploymentStatusRequest,
     GetValidationStatusRequest,
     GetCapabilitiesRequest,
     GetParametersRequest,
     DescribeValidationStatusRequest,
     DescribeDeploymentStatusRequest,
     GetTemplateResourcesRequest,
+    GetDeploymentStatusRequest,
+    DeleteChangeSetRequest,
+    GetChangeSetDeletionStatusRequest,
+    DescribeChangeSetDeletionStatusRequest,
 } from '../stacks/actions/StackActionProtocol';
 import {
     TemplateUri,
-    CreateStackActionParams,
-    CreateStackActionResult,
+    CreateValidationParams,
     GetStackActionStatusResult,
     GetParametersResult,
     GetCapabilitiesResult,
     DescribeValidationStatusResult,
     DescribeDeploymentStatusResult,
     GetTemplateResourcesResult,
+    CreateStackActionResult,
+    CreateDeploymentParams,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
 } from '../stacks/actions/StackActionRequestType';
 import {
     ListStacksParams,
@@ -28,17 +34,20 @@ import {
     GetStackTemplateParams,
     GetStackTemplateResult,
     GetStackTemplateRequest,
+    ListChangeSetParams,
+    ListChangeSetResult,
+    ListChangeSetRequest,
 } from '../stacks/StackRequestType';
 import { Identifiable } from './LspTypes';
 
 export class LspStackHandlers {
     constructor(private readonly connection: Connection) {}
 
-    onCreateValidation(handler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void>) {
+    onCreateValidation(handler: RequestHandler<CreateValidationParams, CreateStackActionResult, void>) {
         this.connection.onRequest(CreateValidationRequest.method, handler);
     }
 
-    onCreateDeployment(handler: RequestHandler<CreateStackActionParams, CreateStackActionResult, void>) {
+    onCreateDeployment(handler: RequestHandler<CreateDeploymentParams, CreateStackActionResult, void>) {
         this.connection.onRequest(CreateDeploymentRequest.method, handler);
     }
 
@@ -76,5 +85,21 @@ export class LspStackHandlers {
 
     onGetStackTemplate(handler: RequestHandler<GetStackTemplateParams, GetStackTemplateResult | undefined, void>) {
         this.connection.onRequest(GetStackTemplateRequest.method, handler);
+    }
+
+    onListChangeSets(handler: RequestHandler<ListChangeSetParams, ListChangeSetResult, void>) {
+        this.connection.onRequest(ListChangeSetRequest.method, handler);
+    }
+
+    onDeleteChangeSet(handler: RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void>) {
+        this.connection.onRequest(DeleteChangeSetRequest.method, handler);
+    }
+
+    onGetChangeSetDeletionStatus(handler: RequestHandler<Identifiable, GetStackActionStatusResult, void>) {
+        this.connection.onRequest(GetChangeSetDeletionStatusRequest.method, handler);
+    }
+
+    onDescribeChangeSetDeletionStatus(handler: RequestHandler<Identifiable, DescribeDeletionStatusResult, void>) {
+        this.connection.onRequest(DescribeChangeSetDeletionStatusRequest.method, handler);
     }
 }

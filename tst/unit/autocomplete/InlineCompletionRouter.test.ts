@@ -46,7 +46,7 @@ describe('InlineCompletionRouter', () => {
         vi.restoreAllMocks();
     });
 
-    test('should return undefined when completion is disabled', () => {
+    test('should return undefined when completion is disabled', async () => {
         const disabledSettings = {
             ...DefaultSettings,
             completion: { ...DefaultSettings.completion, enabled: false },
@@ -61,40 +61,40 @@ describe('InlineCompletionRouter', () => {
         });
         router.configure(disabledSettingsManager);
 
-        const result = router.getInlineCompletions(mockParams);
+        const result = await router.getInlineCompletions(mockParams);
 
         expect(result).toBeUndefined();
         expect(mockContextManager.getContext.called).toBe(false);
     });
 
-    test('should return undefined when context is not available', () => {
+    test('should return undefined when context is not available', async () => {
         mockContextManager.getContext.returns(undefined);
 
-        const result = router.getInlineCompletions(mockParams);
+        const result = await router.getInlineCompletions(mockParams);
 
         expect(result).toBeUndefined();
         expect(mockContextManager.getContext.calledOnce).toBe(true);
         expect(mockContextManager.getContext.calledWith(mockParams)).toBe(true);
     });
 
-    test('should return undefined when context exists but no providers match', () => {
+    test('should return undefined when context exists but no providers match', async () => {
         const mockContext = createTopLevelContext('Parameters', { text: 'AWS::' });
         mockContextManager.getContext.returns(mockContext);
 
-        const result = router.getInlineCompletions(mockParams);
+        const result = await router.getInlineCompletions(mockParams);
 
         expect(result).toBeUndefined();
         expect(mockContextManager.getContext.calledOnce).toBe(true);
     });
 
-    test('should handle YAML document context', () => {
+    test('should handle YAML document context', async () => {
         const mockContext = createTopLevelContext('Resources', {
             text: 'AWS::S3::',
             type: DocumentType.YAML,
         });
         mockContextManager.getContext.returns(mockContext);
 
-        const result = router.getInlineCompletions(mockParams);
+        const result = await router.getInlineCompletions(mockParams);
 
         expect(mockContextManager.getContext.calledOnce).toBe(true);
         expect(mockContextManager.getContext.calledWith(mockParams)).toBe(true);
@@ -102,14 +102,14 @@ describe('InlineCompletionRouter', () => {
         expect(result).toBeUndefined();
     });
 
-    test('should handle JSON document context', () => {
+    test('should handle JSON document context', async () => {
         const mockContext = createTopLevelContext('Resources', {
             text: 'AWS::S3::',
             type: DocumentType.JSON,
         });
         mockContextManager.getContext.returns(mockContext);
 
-        const result = router.getInlineCompletions(mockParams);
+        const result = await router.getInlineCompletions(mockParams);
 
         expect(mockContextManager.getContext.calledOnce).toBe(true);
         expect(mockContextManager.getContext.calledWith(mockParams)).toBe(true);
@@ -117,7 +117,7 @@ describe('InlineCompletionRouter', () => {
         expect(result).toBeUndefined();
     });
 
-    test('should handle different trigger kinds', () => {
+    test('should handle different trigger kinds', async () => {
         const automaticParams: InlineCompletionParams = {
             ...mockParams,
             context: {
@@ -128,14 +128,14 @@ describe('InlineCompletionRouter', () => {
         const mockContext = createTopLevelContext('Resources', { text: 'Type: ' });
         mockContextManager.getContext.returns(mockContext);
 
-        const result = router.getInlineCompletions(automaticParams);
+        const result = await router.getInlineCompletions(automaticParams);
 
         expect(mockContextManager.getContext.calledWith(automaticParams)).toBe(true);
         // Since no providers are implemented yet, should return undefined
         expect(result).toBeUndefined();
     });
 
-    test('should handle different positions', () => {
+    test('should handle different positions', async () => {
         const positionParams: InlineCompletionParams = {
             ...mockParams,
             position: { line: 5, character: 10 },
@@ -144,7 +144,7 @@ describe('InlineCompletionRouter', () => {
         const mockContext = createTopLevelContext('Resources', { text: 'Properties:' });
         mockContextManager.getContext.returns(mockContext);
 
-        const result = router.getInlineCompletions(positionParams);
+        const result = await router.getInlineCompletions(positionParams);
 
         expect(mockContextManager.getContext.calledWith(positionParams)).toBe(true);
         // Since no providers are implemented yet, should return undefined
@@ -244,55 +244,55 @@ describe('InlineCompletionRouter', () => {
     });
 
     describe('Related Resources Provider', () => {
-        test('should attempt to use related resources provider for Resources section at top level', () => {
+        test('should attempt to use related resources provider for Resources section at top level', async () => {
             const mockContext = createTopLevelContext('Resources', {
                 text: '',
                 propertyPath: ['Resources'],
             });
             mockContextManager.getContext.returns(mockContext);
 
-            const result = router.getInlineCompletions(mockParams);
+            const result = await router.getInlineCompletions(mockParams);
 
             expect(mockContextManager.getContext.calledOnce).toBe(true);
             // Should attempt to use related resources provider but return undefined due to no existing resources
             expect(result).toBeUndefined();
         });
 
-        test('should not use related resources provider for non-Resources section', () => {
+        test('should not use related resources provider for non-Resources section', async () => {
             const mockContext = createTopLevelContext('Parameters', {
                 text: '',
                 propertyPath: ['Parameters'],
             });
             mockContextManager.getContext.returns(mockContext);
 
-            const result = router.getInlineCompletions(mockParams);
+            const result = await router.getInlineCompletions(mockParams);
 
             expect(result).toBeUndefined();
             expect(mockContextManager.getContext.calledOnce).toBe(true);
         });
 
-        test('should handle Resources section with resource-level context', () => {
+        test('should handle Resources section with resource-level context', async () => {
             const mockContext = createTopLevelContext('Resources', {
                 text: 'MyResource',
                 propertyPath: ['Resources', 'MyResource'],
             });
             mockContextManager.getContext.returns(mockContext);
 
-            const result = router.getInlineCompletions(mockParams);
+            const result = await router.getInlineCompletions(mockParams);
 
             expect(mockContextManager.getContext.calledOnce).toBe(true);
             // Should return undefined since no existing resources to suggest from
             expect(result).toBeUndefined();
         });
 
-        test('should not use related resources provider for deep property paths', () => {
+        test('should not use related resources provider for deep property paths', async () => {
             const mockContext = createTopLevelContext('Resources', {
                 text: 'BucketName',
                 propertyPath: ['Resources', 'MyBucket', 'Properties', 'BucketName'],
             });
             mockContextManager.getContext.returns(mockContext);
 
-            const result = router.getInlineCompletions(mockParams);
+            const result = await router.getInlineCompletions(mockParams);
 
             expect(result).toBeUndefined();
             expect(mockContextManager.getContext.calledOnce).toBe(true);

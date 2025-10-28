@@ -1,4 +1,3 @@
-import { CodeLens } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../document/DocumentManager';
 import { Track } from '../telemetry/TelemetryDecorator';
@@ -13,10 +12,10 @@ export class CodeLensProvider {
     ) {}
 
     @Track({ name: 'getCodeLenses' })
-    getCodeLenses(uri: string): CodeLens[] | undefined {
+    getCodeLenses(uri: string) {
         const doc = this.documentManager.get(uri);
         if (!doc) {
-            return undefined;
+            return;
         }
 
         return [...getStackActionsCodeLenses(uri), ...this.managedResource.getCodeLenses(uri, doc)];

@@ -17,14 +17,15 @@ export default tseslint.config([
         'node_modules/',
         'eslint.config.mjs',
         'webpack.*.js',
+        'vitest.*.ts',
         '**/*.json',
         '**/*.yaml',
         '**/*.zip',
         '**/.DS_Store',
         '**/.tsbuildinfo',
         '**/*.md',
-        'tools/',
         'src/services/guard/assets/**',
+        'sbom/',
     ]),
     eslint.configs.recommended,
     ...tseslint.configs.recommendedTypeChecked,
@@ -43,6 +44,7 @@ export default tseslint.config([
         rules: {
             // --- General Code Quality & Best Practices ---
             'no-console': 'error',
+            'no-debugger': 'error',
             eqeqeq: ['error', 'always'],
             'require-atomic-updates': 'error',
 
@@ -64,19 +66,19 @@ export default tseslint.config([
                 'error',
                 {
                     groups: [
-                        'builtin',   // Node.js built-in modules (fs, path, etc.)
-                        'external',  // npm packages
-                        'internal',  // Internal modules (configured via settings)
-                        'parent',    // Parent directory imports (../)
-                        'sibling',   // Same directory imports (./)
-                        'index'      // Index file imports (./index)
+                        'builtin', // Node.js built-in modules (fs, path, etc.)
+                        'external', // npm packages
+                        'internal', // Internal modules (configured via settings)
+                        'parent', // Parent directory imports (../)
+                        'sibling', // Same directory imports (./)
+                        'index', // Index file imports (./index)
                     ],
                     'newlines-between': 'never',
                     alphabetize: {
                         order: 'asc',
-                        caseInsensitive: true
-                    }
-                }
+                        caseInsensitive: true,
+                    },
+                },
             ],
             'import/no-self-import': 'error',
             'import/no-useless-path-segments': 'error',
@@ -121,8 +123,8 @@ export default tseslint.config([
         },
         languageOptions: {
             globals: {
-                ...vitest.environments.env.globals
-            }
+                ...vitest.environments.env.globals,
+            },
         },
         rules: {
             ...vitest.configs.recommended.rules,
@@ -141,13 +143,38 @@ export default tseslint.config([
             'unicorn/consistent-function-scoping': 'off',
             'import/first': 'off',
             'unicorn/switch-case-braces': 'off',
-            '@typescript-eslint/no-unsafe-return': 'off'
+            '@typescript-eslint/no-unsafe-return': 'off',
         },
     },
     {
         files: ['tst/e2e/**'],
         rules: {
-            'vitest/expect-expect': 'off'
+            'vitest/expect-expect': 'off',
+        },
+    },
+    {
+        files: ['tools/**'],
+        rules: {
+            'no-console': 'off',
+            'no-empty': 'off',
+            'import/order': 'off',
+            'import/first': 'off',
+            'import/no-namespace': 'off',
+            'import/no-unresolved': 'off',
+            '@typescript-eslint/no-unsafe-member-access': 'off',
+            '@typescript-eslint/no-unsafe-call': 'off',
+            '@typescript-eslint/no-non-null-assertion': 'off',
+            '@typescript-eslint/no-unsafe-argument': 'off',
+            '@typescript-eslint/no-unused-vars': 'off',
+            '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-unused-expressions': 'off',
+            '@typescript-eslint/ban-ts-comment': 'off',
+            '@typescript-eslint/no-unsafe-assignment': 'off',
+            '@typescript-eslint/restrict-template-expressions': 'off',
+            'unicorn/import-style': 'off',
+            'unicorn/no-null': 'off',
+            'unicorn/prefer-string-replace-all': 'off',
+            'unicorn/prefer-top-level-await': 'off',
         },
     },
     eslintPluginPrettierRecommended, // Must be last to override other configs

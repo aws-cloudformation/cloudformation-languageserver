@@ -20,7 +20,7 @@ describe('ScopedTelemetry', () => {
         it('should increment counter', () => {
             scopedTelemetry.count('test', 5);
 
-            expect(mockMeter.createCounter).toHaveBeenCalledWith('test', undefined);
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test', { unit: '1', valueType: 0 });
         });
     });
 
@@ -42,7 +42,7 @@ describe('ScopedTelemetry', () => {
         it('should record histogram value', () => {
             scopedTelemetry.histogram('test', 100);
 
-            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test', undefined);
+            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test', { unit: '1', valueType: 0 });
         });
     });
 
@@ -99,7 +99,7 @@ describe('ScopedTelemetry', () => {
             const result = scopedTelemetry.trackExecution('test', fn);
 
             expect(result).toBe('result');
-            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.value', expect.any(Object));
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.string', expect.any(Object));
         });
 
         it('should track null response', () => {
@@ -124,7 +124,24 @@ describe('ScopedTelemetry', () => {
             scopedTelemetry.trackExecution('test', fn);
 
             expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.array', expect.any(Object));
-            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test.response.type.array.size', expect.any(Object));
+            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test.response.type.size', expect.any(Object));
+        });
+
+        it('should track object property when trackObjectKey is specified', () => {
+            const fn = vi.fn(() => ({ items: [1, 2, 3], other: 'data' }));
+
+            scopedTelemetry.trackExecution('test', fn, { trackObjectKey: 'items' });
+
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.array', expect.any(Object));
+            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test.response.type.size', expect.any(Object));
+        });
+
+        it('should track whole object when trackObjectKey not found', () => {
+            const fn = vi.fn(() => ({ data: 'value' }));
+
+            scopedTelemetry.trackExecution('test', fn, { trackObjectKey: 'missing' });
+
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.undefined', expect.any(Object));
         });
     });
 
@@ -138,7 +155,7 @@ describe('ScopedTelemetry', () => {
             const result = await scopedTelemetry.trackExecutionAsync('test', fn);
 
             expect(result).toBe('result');
-            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.value', expect.any(Object));
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.string', expect.any(Object));
         });
     });
 

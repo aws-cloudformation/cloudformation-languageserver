@@ -1,4 +1,4 @@
-import { CompletionList, CompletionParams } from 'vscode-languageserver';
+import { CompletionParams } from 'vscode-languageserver';
 import { TextDocuments } from 'vscode-languageserver/node';
 import {
     TextDocumentContentChangeEvent,
@@ -138,13 +138,13 @@ export class TemplateBuilder {
         this.initialize(startingContent);
     }
 
-    executeScenario(scenario: TemplateScenario): void {
+    async executeScenario(scenario: TemplateScenario) {
         for (const step of scenario.steps) {
             this.executeAction(step);
 
             let exception: unknown;
             try {
-                this.executeVerification(step);
+                await this.executeVerification(step);
             } catch (error: unknown) {
                 exception = error;
             }
@@ -237,7 +237,7 @@ export class TemplateBuilder {
         }
     }
 
-    private executeVerification(step: BuildStep) {
+    private async executeVerification(step: BuildStep) {
         if (step.verification?.expectation instanceof ContextExpectation) {
             this.verifyContextAt(
                 step.verification.position,
@@ -245,7 +245,7 @@ export class TemplateBuilder {
                 step.verification.description,
             );
         } else if (step.verification?.expectation instanceof CompletionExpectation) {
-            this.verifyCompletionsAt(
+            await this.verifyCompletionsAt(
                 step.verification.position,
                 step.verification.expectation,
                 step.verification.description,
@@ -359,13 +359,13 @@ export class TemplateBuilder {
         return this.contextManager.getContext(params);
     }
 
-    getCompletionsAt(position: Position, triggerCharacter?: string): CompletionList | undefined {
+    async getCompletionsAt(position: Position, triggerCharacter?: string) {
         const params: CompletionParams = {
             textDocument: { uri: this.uri },
             position,
             context: triggerCharacter ? { triggerKind: 2, triggerCharacter } : { triggerKind: 2 },
         };
-        return this.completionRouter.getCompletions(params) as CompletionList | undefined;
+        return await this.completionRouter.getCompletions(params);
     }
 
     expectHoverAt(position: Position) {
@@ -383,13 +383,13 @@ export class TemplateBuilder {
         return expectAt(result, position, 'completions');
     }
 
-    verifyCompletionsAt(
+    async verifyCompletionsAt(
         position: Position,
         expected: CompletionExpectation,
         description?: string,
         triggerCharacter?: string,
-    ): void {
-        const completions = this.getCompletionsAt(position, triggerCharacter);
+    ) {
+        const completions = await this.getCompletionsAt(position, triggerCharacter);
         const desc = description ? ` (${description})` : '';
 
         if (!completions) {

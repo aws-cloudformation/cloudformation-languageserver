@@ -381,7 +381,7 @@ export class GuardEngine {
      * This provides a consistent message for all violations of a rule
      */
     public static extractRuleMessage(ruleContent: string): string | undefined {
-        // Match << >> blocks and extract Violation and Fix messages
+        // Match << >> blocks and extract any message content
         const messageBlockRegex = /<<\s*([\s\S]*?)\s*>>/;
         const match = ruleContent.match(messageBlockRegex);
 
@@ -389,19 +389,8 @@ export class GuardEngine {
             return undefined;
         }
 
-        const messageBlock = match[1];
-        const violationMatch = messageBlock.match(/Violation:\s*([^\n]+)/);
-        const fixMatch = messageBlock.match(/Fix:\s*([^\n]+)/);
-
-        let message = '';
-        if (violationMatch) {
-            message = violationMatch[1].trim();
-        }
-        if (fixMatch) {
-            message += ` ${fixMatch[1].trim()}`;
-        }
-
-        return message || undefined;
+        const messageBlock = match[1].trim();
+        return messageBlock || undefined;
     }
 
     /**

@@ -9,13 +9,14 @@ import {
     processChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
-    deleteStackAndChangeSet,
+    cleanupReviewStack,
     deleteChangeSet,
     parseValidationEvents,
     publishValidationDiagnostics,
+    isStackInReview,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
-    CreateStackActionParams,
+    CreateValidationParams,
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
@@ -80,7 +81,9 @@ describe('ValidationWorkflowV2', () => {
             OperationEvents: [],
         });
 
-        (deleteStackAndChangeSet as any).mockResolvedValue(undefined);
+        (isStackInReview as any).mockResolvedValue(true);
+
+        (cleanupReviewStack as any).mockResolvedValue(undefined);
         (deleteChangeSet as any).mockResolvedValue(undefined);
 
         (processWorkflowUpdates as any).mockImplementation((map: any, workflow: any, updates: any) => {
@@ -108,7 +111,7 @@ describe('ValidationWorkflowV2', () => {
 
     describe('full workflow execution', () => {
         it('should handle successful validation workflow with events and diagnostics publishing', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -178,7 +181,7 @@ describe('ValidationWorkflowV2', () => {
         });
 
         it('should handle validation failure', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -201,7 +204,7 @@ describe('ValidationWorkflowV2', () => {
         });
 
         it('should handle validation exception', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
@@ -212,15 +215,17 @@ describe('ValidationWorkflowV2', () => {
             await validationWorkflowV2.start(params);
             await waitForWorkflowCompletion('test-id');
 
+            expect(isStackInReview).toHaveBeenCalled();
+
             expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
-            expect(deleteStackAndChangeSet).toHaveBeenCalled();
+            expect(cleanupReviewStack).toHaveBeenCalled();
 
             const workflow = (validationWorkflowV2 as any).workflows.get('test-id');
             expect(workflow.failureReason).toBe('Validation service error');
         });
 
         it('should handle Describe Events failure', async () => {
-            const params: CreateStackActionParams = {
+            const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',

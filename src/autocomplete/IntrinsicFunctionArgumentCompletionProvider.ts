@@ -1,7 +1,7 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, Position, TextEdit } from 'vscode-languageserver';
 import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
 import { Context } from '../context/Context';
-import { IntrinsicFunction, PseudoParameter, TopLevelSection } from '../context/ContextType';
+import { IntrinsicFunction, PseudoParameter, PseudoParametersSet, TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
@@ -11,6 +11,7 @@ import { DocumentManager } from '../document/DocumentManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
+import { determineGetAttPosition, extractGetAttResourceLogicalId } from '../utils/GetAttUtils';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, createMarkupContent, createReplacementRange } from './CompletionUtils';
 
@@ -231,7 +232,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             return undefined;
         }
 
-        const position = this.determineGetAttPosition(intrinsicFunction.args, context);
+        const position = determineGetAttPosition(intrinsicFunction.args, context);
 
         if (position === 1) {
             return this.getGetAttResourceCompletions(resourceEntities, intrinsicFunction.args, context);
@@ -579,7 +580,18 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         if (typeof topLevelKey === 'string') {
             return mappingEntity.getSecondLevelKeys(topLevelKey);
         } else {
-            // For dynamic references, get all possible keys
+            // For dynamic references, try pattern-based filtering
+            const pseudoParameter = this.extractPseudoParameterFromRef(topLevelKey);
+            if (pseudoParameter) {
+                const pattern = this.getPatternForPseudoParameter(pseudoParameter);
+                if (pattern) {
+                    const filteredKeys = this.getSecondLevelKeysFromMatchingTopLevelKeys(mappingEntity, pattern);
+                    if (filteredKeys.length > 0) {
+                        return filteredKeys;
+                    }
+                }
+            }
+            // Fallback to all possible keys if no pattern matching or no matches found
             return mappingEntity.getSecondLevelKeys();
         }
     }
@@ -636,45 +648,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
     }
 
-    private determineGetAttPosition(args: unknown, context: Context): number {
-        if (typeof args === 'string') {
-            const dotIndex = args.indexOf('.');
-            if (dotIndex === -1) {
-                return 1;
-            }
-
-            const resourcePart = args.slice(0, dotIndex);
-
-            if (context.text === resourcePart) {
-                return 1;
-            }
-
-            if (context.text.length > 0 && resourcePart.startsWith(context.text)) {
-                return 1;
-            }
-
-            return 2;
-        }
-
-        if (!Array.isArray(args)) {
-            return 0;
-        }
-
-        if (args.length === 0) {
-            return 1;
-        }
-
-        if (args.length === 1 && args[0] === context.text) {
-            return 1;
-        }
-
-        if (args.length >= 2 && args[1] === context.text) {
-            return 2;
-        }
-
-        return 2;
-    }
-
     private getGetAttResourceCompletions(
         resourceEntities: Map<string, Context>,
         args: unknown,
@@ -712,7 +685,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         args: unknown,
         context: Context,
     ): CompletionItem[] | undefined {
-        const resourceLogicalId = this.extractGetAttResourceLogicalId(args);
+        const resourceLogicalId = extractGetAttResourceLogicalId(args);
 
         if (!resourceLogicalId) {
             return undefined;
@@ -786,24 +759,72 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         return context.text.length > 0 ? this.attributeFuzzySearch(completionItems, context.text) : completionItems;
     }
 
-    private extractGetAttResourceLogicalId(args: unknown): string | undefined {
-        if (typeof args === 'string') {
-            const dotIndex = args.indexOf('.');
-            if (dotIndex !== -1) {
-                return args.slice(0, Math.max(0, dotIndex));
-            }
-            return args;
+    /**
+     * Extracts the pseudo-parameter name from a Ref object (supports both YAML and JSON formats)
+     */
+    private extractPseudoParameterFromRef(
+        refObject: { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown },
+    ): PseudoParameter | undefined {
+        let refValue: unknown;
+
+        if ('Ref' in refObject) {
+            refValue = refObject.Ref;
+        } else if ('!Ref' in refObject) {
+            refValue = refObject['!Ref'];
+        } else if ('Fn::Ref' in refObject) {
+            refValue = refObject['Fn::Ref'];
         }
 
-        if (Array.isArray(args) && args.length > 0 && typeof args[0] === 'string') {
-            // Array format
-            return args[0];
+        if (typeof refValue === 'string' && refValue.startsWith('AWS::') && PseudoParametersSet.has(refValue)) {
+            return refValue as PseudoParameter;
         }
-
         return undefined;
     }
 
-    private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } {
-        return typeof value === 'object' && value !== null && ('Ref' in value || '!Ref' in value);
+    /**
+     * Returns a regex pattern for known pseudo-parameters that can be used to filter top-level keys
+     */
+    private getPatternForPseudoParameter(pseudoParameter: PseudoParameter): RegExp | undefined {
+        switch (pseudoParameter) {
+            case PseudoParameter.AWSRegion: {
+                return /^[a-z]{2}-[a-z]+-\d+$/;
+            }
+            case PseudoParameter.AWSAccountId: {
+                return /^\d{12}$/;
+            }
+            case PseudoParameter.AWSPartition: {
+                return /^aws(-us-gov|-cn)?$/;
+            }
+            default: {
+                return undefined;
+            }
+        }
+    }
+
+    private filterTopLevelKeysByPattern(mappingEntity: Mapping, pattern: RegExp): string[] {
+        const allTopLevelKeys = mappingEntity.getTopLevelKeys();
+        return allTopLevelKeys.filter((key) => pattern.test(key));
+    }
+
+    private getSecondLevelKeysFromMatchingTopLevelKeys(mappingEntity: Mapping, pattern: RegExp): string[] {
+        const matchingTopLevelKeys = this.filterTopLevelKeysByPattern(mappingEntity, pattern);
+
+        if (matchingTopLevelKeys.length === 0) {
+            return [];
+        }
+
+        const secondLevelKeysSet = new Set<string>();
+        for (const topLevelKey of matchingTopLevelKeys) {
+            const keys = mappingEntity.getSecondLevelKeys(topLevelKey);
+            for (const key of keys) {
+                secondLevelKeysSet.add(key);
+            }
+        }
+
+        return [...secondLevelKeysSet];
+    }
+
+    private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown } {
+        return typeof value === 'object' && value !== null && ('Ref' in value || '!Ref' in value || 'Fn::Ref' in value);
     }
 }

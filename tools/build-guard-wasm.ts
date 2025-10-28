@@ -44,7 +44,7 @@ function execCommand(command: string, cwd?: string): void {
     console.log(`Executing: ${command}`);
     execSync(command, {
         stdio: 'inherit',
-        cwd: cwd || process.cwd()
+        cwd: cwd ?? process.cwd(),
     });
 }
 
@@ -54,7 +54,7 @@ function execCommand(command: string, cwd?: string): void {
 function askConfirmation(question: string): Promise<boolean> {
     const rl = readline.createInterface({
         input: process.stdin,
-        output: process.stdout
+        output: process.stdout,
     });
 
     return new Promise((resolve) => {
@@ -79,12 +79,12 @@ async function buildGuardWasm(): Promise<void> {
             mkdirSync(TEMP_DIR, { recursive: true });
         }
 
-        if (!existsSync(GUARD_REPO)) {
-            console.log('Cloning cloudformation-guard repository...');
-            execCommand(`git clone https://github.com/aws-cloudformation/cloudformation-guard.git "${GUARD_REPO}"`);
-        } else {
+        if (existsSync(GUARD_REPO)) {
             console.log('Updating cloudformation-guard repository...');
             execCommand('git fetch --all --tags', GUARD_REPO);
+        } else {
+            console.log('Cloning cloudformation-guard repository...');
+            execCommand(`git clone https://github.com/aws-cloudformation/cloudformation-guard.git "${GUARD_REPO}"`);
         }
 
         console.log(`Checking out version ${GUARD_VERSION}...`);
@@ -144,21 +144,13 @@ async function buildGuardWasm(): Promise<void> {
             description: 'CloudFormation Guard WASM module',
             main: 'guard.js',
             types: 'guard.d.ts',
-            files: [
-                'guard.js',
-                'guard_bg.wasm',
-                'guard.d.ts'
-            ]
+            files: ['guard.js', 'guard_bg.wasm', 'guard.d.ts'],
         };
 
-        writeFileSync(
-            join(ASSETS_DIR, 'package.json'),
-            JSON.stringify(packageJson, null, 2) + '\n'
-        );
+        writeFileSync(join(ASSETS_DIR, 'package.json'), JSON.stringify(packageJson, null, 2) + '\n');
 
         console.log('WASM module built successfully!');
         console.log(`Files copied to: ${ASSETS_DIR}`);
-
 
         const shouldCleanup = await askConfirmation('Remove temporary directory?');
         if (shouldCleanup) {
@@ -167,7 +159,6 @@ async function buildGuardWasm(): Promise<void> {
         }
 
         console.log('Done!');
-
     } catch (error) {
         console.error('Build failed:', error);
         process.exit(1);
@@ -176,7 +167,7 @@ async function buildGuardWasm(): Promise<void> {
 
 // Run the build if this script is executed directly
 if (require.main === module) {
-    buildGuardWasm();
+    buildGuardWasm().catch(console.error);
 }
 
 export { buildGuardWasm };

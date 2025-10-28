@@ -1,4 +1,4 @@
-import { DefinitionParams, Location, LocationLink } from 'vscode-languageserver';
+import { DefinitionParams, Location } from 'vscode-languageserver';
 import { ContextManager } from '../context/ContextManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Track } from '../telemetry/TelemetryDecorator';
@@ -10,16 +10,8 @@ export class DefinitionProvider {
     constructor(private readonly contextManager: ContextManager) {}
 
     @Track({ name: 'getDefinitions' })
-    getDefinitions(params: DefinitionParams): Location | Location[] | LocationLink[] | undefined {
+    getDefinitions(params: DefinitionParams) {
         const context = this.contextManager.getContextAndRelatedEntities(params);
-        this.log.debug(
-            {
-                Router: 'Definition',
-                Position: params.position,
-            },
-            'Processing go-to definition request',
-        );
-
         if (!context) {
             return;
         }
@@ -37,7 +29,7 @@ export class DefinitionProvider {
         }
 
         if (locations.length === 0) {
-            return undefined;
+            return;
         } else if (locations.length === 1) {
             return locations[0];
         }

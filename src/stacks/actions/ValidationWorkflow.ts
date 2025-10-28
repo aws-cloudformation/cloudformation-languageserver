@@ -10,28 +10,29 @@ import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
-    deleteStackAndChangeSet,
+    cleanupReviewStack,
     deleteChangeSet,
     processChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
+    isStackInReview,
 } from './StackActionOperations';
 import {
-    CreateStackActionParams,
-    CreateStackActionResult,
+    CreateValidationParams,
     StackActionPhase,
     StackActionState,
     GetStackActionStatusResult,
     DescribeValidationStatusResult,
+    CreateStackActionResult,
 } from './StackActionRequestType';
-import { StackActionWorkflowState, StackActionWorkflow } from './StackActionWorkflowType';
+import { StackActionWorkflow, StackActionWorkflowState } from './StackActionWorkflowType';
 import { Validation } from './Validation';
 import { ValidationManager } from './ValidationManager';
 
 export const CFN_VALIDATION_SOURCE = 'CFN Dry-Run';
 export const DRY_RUN_VALIDATION_NAME = 'Change Set Dry-Run';
 
-export class ValidationWorkflow implements StackActionWorkflow<DescribeValidationStatusResult> {
+export class ValidationWorkflow implements StackActionWorkflow<CreateValidationParams, DescribeValidationStatusResult> {
     protected readonly workflows = new Map<string, StackActionWorkflowState>();
     protected readonly log = LoggerFactory.getLogger(ValidationWorkflow);
 
@@ -43,7 +44,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
         protected readonly validationManager: ValidationManager,
     ) {}
 
-    async start(params: CreateStackActionParams): Promise<CreateStackActionResult> {
+    async start(params: CreateValidationParams): Promise<CreateStackActionResult> {
         // Determine ChangeSet type based on resourcesToImport and stack existence
         let changeSetType: ChangeSetType;
 
@@ -81,7 +82,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
             state: StackActionState.IN_PROGRESS,
         });
 
-        void this.runValidationAsync(params, changeSetName, changeSetType);
+        void this.runValidationAsync(params, changeSetName);
 
         return {
             id: params.id,
@@ -117,11 +118,7 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
         };
     }
 
-    protected async runValidationAsync(
-        params: CreateStackActionParams,
-        changeSetName: string,
-        changeSetType: ChangeSetType,
-    ): Promise<void> {
+    protected async runValidationAsync(params: CreateValidationParams, changeSetName: string): Promise<void> {
         const workflowId = params.id;
         const stackName = params.stackName;
 
@@ -186,13 +183,23 @@ export class ValidationWorkflow implements StackActionWorkflow<DescribeValidatio
                 failureReason: extractErrorMessage(error),
             });
         } finally {
-            // Cleanup validation object to prevent memory leaks
-            this.validationManager.remove(stackName);
+            await this.handleCleanup(params, existingWorkflow);
+        }
+    }
 
-            if (changeSetType === ChangeSetType.CREATE) {
-                await deleteStackAndChangeSet(this.cfnService, existingWorkflow, workflowId);
-            } else {
-                await deleteChangeSet(this.cfnService, existingWorkflow, workflowId);
+    protected async handleCleanup(params: CreateValidationParams, existingWorkflow: StackActionWorkflowState) {
+        // Cleanup validation object to prevent memory leaks
+        this.validationManager.remove(params.stackName);
+
+        if (!params.keepChangeSet) {
+            try {
+                if (await isStackInReview(params.stackName, this.cfnService)) {
+                    await cleanupReviewStack(this.cfnService, existingWorkflow, params.id);
+                } else {
+                    await deleteChangeSet(this.cfnService, existingWorkflow, params.id);
+                }
+            } catch (error) {
+                this.log.error({ error }, 'resource cleanup failed');
             }
         }
     }

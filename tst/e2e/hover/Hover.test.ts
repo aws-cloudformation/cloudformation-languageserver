@@ -22,7 +22,7 @@ import { HoverExpectationBuilder, TemplateBuilder, TemplateScenario } from '../.
 
 describe('Hover Features', () => {
     describe('YAML', () => {
-        it('Hover while authoring', () => {
+        it('Hover while authoring', async () => {
             const template = new TemplateBuilder(DocumentType.YAML);
             const scenario: TemplateScenario = {
                 name: 'Comprehensive template hover',
@@ -1857,7 +1857,7 @@ Outputs:`,
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 
@@ -1907,7 +1907,7 @@ Resources:
             expect(emptyHover).toBeUndefined();
         });
 
-        it('Parameter Reference Hover - Valid and Invalid Cases', () => {
+        it('Parameter Reference Hover - Valid and Invalid Cases', async () => {
             const template = new TemplateBuilder(DocumentType.YAML);
             const scenario: TemplateScenario = {
                 name: 'Parameter Reference Hover Tests',
@@ -1938,7 +1938,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
 
             // Test Case 2: Invalid parameter reference
             const invalidTemplate = new TemplateBuilder(DocumentType.YAML);
@@ -1969,7 +1969,7 @@ Resources:
                     },
                 ],
             };
-            invalidTemplate.executeScenario(invalidScenario);
+            await invalidTemplate.executeScenario(invalidScenario);
         });
 
         it('HoverExpectationBuilder Functionality', () => {
@@ -1988,7 +1988,7 @@ Resources:
     });
 
     describe('Comprehensive JSON', () => {
-        it('Hover while authoring', () => {
+        it('Hover while authoring', async () => {
             const template = new TemplateBuilder(DocumentType.JSON);
             const scenario: TemplateScenario = {
                 name: 'Comprehensive template hover',
@@ -3798,7 +3798,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 });

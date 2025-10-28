@@ -18,6 +18,9 @@ import {
     describeValidationStatusHandler,
     describeDeploymentStatusHandler,
     getTemplateResourcesHandler,
+    deleteChangeSetHandler,
+    describeChangeSetDeletionStatusHandler,
+    getChangeSetDeletionStatusHandler,
 } from '../../../src/handlers/StackHandler';
 import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
 import {
@@ -48,6 +51,8 @@ vi.mock('../../../src/protocol/LspParser', () => ({
 vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
     parseStackActionParams: vi.fn((input) => input),
     parseTemplateUriParams: vi.fn((input) => input),
+    parseCreateDeploymentParams: vi.fn((input) => input),
+    parseDeleteChangeSetParams: vi.fn((input) => input),
 }));
 
 vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
@@ -188,7 +193,7 @@ describe('StackActionHandler', () => {
             mockComponents.deploymentWorkflowService.start.resolves(mockResult);
 
             const handler = createDeploymentHandler(mockComponents);
-            const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
+            const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'test-change-set' };
 
             const result = await handler(params, {} as any);
 
@@ -271,6 +276,78 @@ describe('StackActionHandler', () => {
             const result = await handler(params, {} as any);
 
             expect(mockComponents.deploymentWorkflowService.describeStatus.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+    });
+
+    describe('deleteChangeSetHandler', () => {
+        it('should delegate to deletion service', async () => {
+            const mockResult = { id: 'test-id', changeSetName: 'cs-123', stackName: 'test-stack' };
+            mockComponents.changeSetDeletionWorkflowService.start.resolves(mockResult);
+
+            const handler = deleteChangeSetHandler(mockComponents);
+            const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
+
+            const result = await handler(params, {} as any);
+
+            expect(mockComponents.changeSetDeletionWorkflowService.start.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+
+        it('should propagate ResponseError from service', async () => {
+            const responseError = new ResponseError(ErrorCodes.InternalError, 'Service error');
+            mockComponents.changeSetDeletionWorkflowService.start.rejects(responseError);
+
+            const handler = deleteChangeSetHandler(mockComponents);
+            const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
+
+            await expect(handler(params, {} as any)).rejects.toThrow(responseError);
+        });
+
+        it('should wrap other errors as InternalError', async () => {
+            mockComponents.changeSetDeletionWorkflowService.start.rejects(new Error('Generic error'));
+
+            const handler = deleteChangeSetHandler(mockComponents);
+            const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
+
+            await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
+        });
+    });
+
+    describe('getChangeSetDeletionStatusHandler', () => {
+        it('should delegate to deletion service get', async () => {
+            const mockResult = {
+                id: 'test-id',
+                status: StackActionPhase.DEPLOYMENT_COMPLETE,
+                result: StackActionState.SUCCESSFUL,
+            };
+            mockComponents.changeSetDeletionWorkflowService.getStatus.resolves(mockResult);
+
+            const handler = getChangeSetDeletionStatusHandler(mockComponents);
+            const params = { id: 'test-id' };
+
+            const result = await handler(params, {} as any);
+
+            expect(mockComponents.changeSetDeletionWorkflowService.getStatus.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+    });
+
+    describe('describeChangeSetDeletionStatusHandler', () => {
+        it('should delegate to deletion service describe', async () => {
+            const mockResult = {
+                id: 'test-id',
+                status: StackActionPhase.VALIDATION_COMPLETE,
+                result: StackActionState.SUCCESSFUL,
+            };
+            mockComponents.changeSetDeletionWorkflowService.describeStatus.resolves(mockResult);
+
+            const handler = describeChangeSetDeletionStatusHandler(mockComponents);
+            const params = { id: 'test-id' };
+
+            const result = await handler(params, {} as any);
+
+            expect(mockComponents.changeSetDeletionWorkflowService.describeStatus.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
         });
     });
