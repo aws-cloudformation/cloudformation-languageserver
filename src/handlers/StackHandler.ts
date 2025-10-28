@@ -8,6 +8,7 @@ import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
 import {
     parseCreateDeploymentParams,
+    parseDeleteChangeSetParams,
     parseStackActionParams,
     parseTemplateUriParams,
 } from '../stacks/actions/StackActionParser';
@@ -22,6 +23,8 @@ import {
     GetTemplateResourcesResult,
     CreateDeploymentParams,
     CreateStackActionResult,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
 } from '../stacks/actions/StackActionRequestType';
 import {
     ListStacksParams,
@@ -149,6 +152,51 @@ export function describeDeploymentStatusHandler(
             return components.deploymentWorkflowService.describeStatus(params);
         } catch (error) {
             handleStackActionError(error, 'Failed to describe deployment status');
+        }
+    };
+}
+
+export function deleteChangeSetHandler(
+    components: ServerComponents,
+): RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> {
+    return async (rawParams) => {
+        log.debug({ Handler: 'deleteChangeSetHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
+            return await components.changeSetDeletionWorkflowService.start(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to start change set deletion workflow');
+        }
+    };
+}
+
+export function getChangeSetDeletionStatusHandler(
+    components: ServerComponents,
+): RequestHandler<Identifiable, GetStackActionStatusResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'getChangeSetDeletionStatusHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseIdentifiable, rawParams);
+            return components.changeSetDeletionWorkflowService.getStatus(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to get change set deletion status');
+        }
+    };
+}
+
+export function describeChangeSetDeletionStatusHandler(
+    components: ServerComponents,
+): RequestHandler<Identifiable, DescribeDeletionStatusResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'describeChangeSetDeletionStatusHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseIdentifiable, rawParams);
+            return components.changeSetDeletionWorkflowService.describeStatus(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to describe change set deletion status');
         }
     };
 }

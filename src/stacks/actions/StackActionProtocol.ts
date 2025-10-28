@@ -11,6 +11,8 @@ import {
     GetTemplateResourcesResult,
     CreateStackActionResult,
     CreateDeploymentParams,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
 } from './StackActionRequestType';
 
 export const CreateValidationRequest = new RequestType<CreateValidationParams, CreateStackActionResult, void>(
@@ -45,4 +47,16 @@ export const GetCapabilitiesRequest = new RequestType<TemplateUri, GetCapabiliti
 
 export const GetTemplateResourcesRequest = new RequestType<TemplateUri, GetTemplateResourcesResult, void>(
     'aws/cfn/stack/import/resources',
+);
+
+export const DeleteChangeSetRequest = new RequestType<DeleteChangeSetParams, CreateStackActionResult, void>(
+    'aws/cfn/stack/changeSet/delete',
+);
+
+export const GetChangeSetDeletionStatusRequest = new RequestType<Identifiable, GetStackActionStatusResult, void>(
+    'aws/cfn/stack/changeSet/deletion/status',
+);
+
+export const DescribeChangeSetDeletionStatusRequest = new RequestType<Identifiable, DescribeDeletionStatusResult, void>(
+    'aws/cfn/stack/changeSet/deletion/status/describe',
 );
