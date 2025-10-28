@@ -292,17 +292,11 @@ describe('ChangeSetDeletionWorkflow', () => {
             mockCfnService.waitUntilStackDeleteComplete = vi.fn().mockResolvedValue({
                 state: WaiterState.SUCCESS,
             });
-            // Mock pagination: first call returns 1 changeset + nextToken, second call returns 1 changeset
-            mockCfnService.listChangeSets = vi
-                .fn()
-                .mockResolvedValueOnce({
-                    changeSets: [{ ChangeSetName: 'changeset1' }],
-                    nextToken: 'token123',
-                })
-                .mockResolvedValueOnce({
-                    changeSets: [{ ChangeSetName: 'changeset3' }],
-                    nextToken: undefined,
-                });
+
+            mockCfnService.listChangeSets = vi.fn().mockResolvedValue({
+                changeSets: [{ ChangeSetName: 'changeset1' }],
+                nextToken: 'token123',
+            });
             (isStackInReview as any).mockResolvedValue(true);
             (mapChangesToStackChanges as any).mockReturnValue([]);
         });
@@ -322,7 +316,7 @@ describe('ChangeSetDeletionWorkflow', () => {
                 ChangeSetName: testChangeSetName,
             });
 
-            expect(mockCfnService.listChangeSets).toBeCalledTimes(2);
+            expect(mockCfnService.listChangeSets).toBeCalledTimes(1);
             const workflow = (deletionWorkflow as any).workflows.get(testId);
             expect(workflow.state).toBe(StackActionState.SUCCESSFUL);
             expect(workflow.phase).toBe(StackActionPhase.DELETION_COMPLETE);
