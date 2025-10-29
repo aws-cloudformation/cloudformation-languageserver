@@ -4,7 +4,7 @@ import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/Dele
 import { updatePolicyPropertyDocsMap } from '../artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
 import { updateReplacePolicyValueDocsMap } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { Context } from '../context/Context';
-import { ResourceAttribute, TopLevelSection } from '../context/ContextType';
+import { ResourceAttribute } from '../context/ContextType';
 import { ForEachResource, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { ResourceSchema } from '../schema/ResourceSchema';
@@ -55,11 +55,10 @@ export class ResourceSectionHoverProvider implements HoverProvider {
         if (context.isResourceAttribute && resource[context.text] !== undefined) {
             return this.getResourceAttributeDoc(context.text);
         }
-        if (
-            context.matchPathWithLogicalId(TopLevelSection.Resources, 'Properties') &&
-            context.propertyPath.length >= 3
-        ) {
-            return this.getPropertyDefinitionDoc(schema, context);
+
+        const propertiesIndex = context.propertyPath.indexOf('Properties');
+        if (propertiesIndex !== -1 && context.propertyPath.length >= propertiesIndex + 1) {
+            return this.getPropertyDefinitionDoc(schema, context, propertiesIndex);
         }
     }
 
@@ -86,14 +85,18 @@ export class ResourceSectionHoverProvider implements HoverProvider {
         return doc.join('\n');
     }
 
-    private getPropertyDefinitionDoc(schema: ResourceSchema, context: Context): string | undefined {
+    private getPropertyDefinitionDoc(
+        schema: ResourceSchema,
+        context: Context,
+        propertiesIndex: number,
+    ): string | undefined {
         if (!context.isKey()) {
             return undefined;
         }
 
         // Extract the property path from the context, starting after "Properties"
-        // Expected path: ['Resources', 'LogicalId', 'Properties', ...propertySegments]
-        const propertyPathSegments = context.propertyPath.slice(3);
+        // Expected path: ['Resources', 'LogicalId', 'Properties', ...propertySegments] OR ['Resources', 'Fn::ForEach::LogicalName', 2, 'S3Bucket${BucketName}', 'Properties', ...propertySegments]
+        const propertyPathSegments = context.propertyPath.slice(propertiesIndex + 1);
 
         // Convert template path to JSON Pointer path and resolve schema
         const jsonPointerPath = templatePathToJsonPointerPath(propertyPathSegments);
