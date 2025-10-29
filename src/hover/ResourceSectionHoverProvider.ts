@@ -5,7 +5,8 @@ import { updatePolicyPropertyDocsMap } from '../artifacts/resourceAttributes/Upd
 import { updateReplacePolicyValueDocsMap } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection } from '../context/ContextType';
-import { Resource } from '../context/semantic/Entity';
+import { ForEachResource, Resource } from '../context/semantic/Entity';
+import { EntityType } from '../context/semantic/SemanticTypes';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { Measure } from '../telemetry/TelemetryDecorator';
@@ -18,7 +19,17 @@ export class ResourceSectionHoverProvider implements HoverProvider {
 
     @Measure({ name: 'getInformation' })
     getInformation(context: Context) {
-        const resource = context.entity as Resource;
+        let resource: Resource;
+
+        if (context.entity.entityType === EntityType.ForEachResource) {
+            const forEachResource = context.entity as ForEachResource;
+            if (!forEachResource.resource) {
+                return;
+            }
+            resource = forEachResource.resource;
+        } else {
+            resource = context.entity as Resource;
+        }
 
         if (context.text === context.logicalId) {
             return formatResourceHover(resource);
