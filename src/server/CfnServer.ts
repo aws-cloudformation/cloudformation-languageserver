@@ -1,8 +1,5 @@
 import { InitializedParams } from 'vscode-languageserver-protocol';
-import {
-    iamCredentialsDeleteHandler,
-    iamCredentialsUpdateHandler,
-} from '../handlers/AuthHandler';
+import { iamCredentialsDeleteHandler, iamCredentialsUpdateHandler } from '../handlers/AuthHandler';
 import { codeActionHandler } from '../handlers/CodeActionHandler';
 import { codeLensHandler } from '../handlers/CodeLensHandler';
 import { completionHandler } from '../handlers/CompletionHandler';
