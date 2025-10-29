@@ -25,7 +25,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
 
         it('should provide SAM resource property completion', () => {
@@ -60,7 +60,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
     });
 
@@ -86,7 +86,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
     });
 });

@@ -33,13 +33,13 @@ describe('TransformContext', () => {
             type: 'block_mapping',
         } as any;
 
-        const context = new TransformContext([mockNode], DocumentType.YAML);
+        const context = new TransformContext(mockNode, DocumentType.YAML);
         expect(context.hasSamTransform()).toBe(true);
     });
 
     it('should return false when no SAM transform present', () => {
         const mockNode = { childCount: 0, child: () => null } as any;
-        const context = new TransformContext([mockNode], DocumentType.YAML);
+        const context = new TransformContext(mockNode, DocumentType.YAML);
         expect(context.hasSamTransform()).toBe(false);
     });
 });

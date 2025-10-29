@@ -87,10 +87,7 @@ export function createResourceCompletionProviders(
         ResourceCompletionType.Entity,
         new ResourceEntityCompletionProvider(external.schemaRetriever, core.documentManager),
     );
-    resourceProviderMap.set(
-        ResourceCompletionType.Type,
-        new ResourceTypeCompletionProvider(external.schemaRetriever, core.syntaxTreeManager),
-    );
+    resourceProviderMap.set(ResourceCompletionType.Type, new ResourceTypeCompletionProvider(external.schemaRetriever));
     resourceProviderMap.set(
         ResourceCompletionType.Property,
         new ResourcePropertyCompletionProvider(external.schemaRetriever),

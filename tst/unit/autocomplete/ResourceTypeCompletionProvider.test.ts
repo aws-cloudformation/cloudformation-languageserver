@@ -9,10 +9,7 @@ import { createMockComponents } from '../../utils/MockServerComponents';
 
 describe('ResourceTypeCompletionProvider', () => {
     const mockComponents = createMockComponents();
-    const provider = new ResourceTypeCompletionProvider(
-        mockComponents.schemaRetriever,
-        mockComponents.syntaxTreeManager,
-    );
+    const provider = new ResourceTypeCompletionProvider(mockComponents.schemaRetriever);
 
     const mockParams: CompletionParams = {
         textDocument: { uri: 'file:///test.yaml' },

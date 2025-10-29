@@ -38,7 +38,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
     });
 
@@ -64,7 +64,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
     });
 });

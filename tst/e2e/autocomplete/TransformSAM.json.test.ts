@@ -29,7 +29,7 @@ describe('JSON SAM Transform Autocomplete', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
 
         it('should provide SAM resource property completion', () => {
@@ -71,7 +71,7 @@ describe('JSON SAM Transform Autocomplete', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
     });
 
@@ -101,7 +101,7 @@ describe('JSON SAM Transform Autocomplete', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
     });
 });

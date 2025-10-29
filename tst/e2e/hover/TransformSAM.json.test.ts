@@ -44,7 +44,7 @@ describe('JSON SAM Transform Hover', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
     });
 
@@ -74,7 +74,7 @@ describe('JSON SAM Transform Hover', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            void template.executeScenario(scenario);
         });
     });
 });
