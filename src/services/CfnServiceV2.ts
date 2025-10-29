@@ -1,9 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unsafe-argument */
+import {
+    CreateChangeSetCommandOutput,
+    Parameter,
+    Capability,
+    ResourceToImport,
+    DescribeChangeSetCommandOutput,
+    ResourceTargetDefinition,
+    Change,
+    ResourceChangeDetail,
+} from '@aws-sdk/client-cloudformation';
 import { CFN_CLIENT_PATH } from '../utils/ClientUtil';
 import { DynamicModuleLoader } from '../utils/DynamicModuleLoader';
 import { CfnService } from './CfnService';
-import { CreateChangeSetCommandOutput, Parameter, Capability, ResourceToImport, DescribeChangeSetCommandOutput, ResourceTargetDefinition, Change, ResourceChangeDetail } from '@aws-sdk/client-cloudformation';
 
 export type ResourceTargetDefinitionV2 = ResourceTargetDefinition & {
     BeforeValueFrom?: string;
@@ -99,7 +108,9 @@ export class CfnServiceV2 extends CfnService {
             const changes: any[] = [];
 
             do {
-                const response = await client.send(new DescribeChangeSetCommand({ ...params, NextToken: nextToken })) as DescribeChangeSetOutputV2;
+                const response = (await client.send(
+                    new DescribeChangeSetCommand({ ...params, NextToken: nextToken }),
+                )) as DescribeChangeSetOutputV2;
 
                 if (result) {
                     changes.push(...(response.Changes ?? []));

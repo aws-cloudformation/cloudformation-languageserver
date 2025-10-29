@@ -1,7 +1,6 @@
 import {
     Parameter,
     Capability,
-    ResourceChangeDetail,
     ResourceStatus,
     DetailedStatus,
 } from '@aws-sdk/client-cloudformation';
@@ -68,7 +67,7 @@ export type StackChange = {
         scope?: string[];
         beforeContext?: string;
         afterContext?: string;
-        resourceDriftStatus?: string
+        resourceDriftStatus?: string;
         details?: ResourceChangeDetailV2[];
     };
 };
