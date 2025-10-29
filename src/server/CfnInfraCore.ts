@@ -14,6 +14,15 @@ import { TelemetryService } from '../telemetry/TelemetryService';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
 
+interface ExtendedInitializeParams extends InitializeParams {
+    initializationOptions?: {
+        encryption?: {
+            key?: string;
+        };
+        [key: string]: unknown;
+    };
+}
+
 /**
  * Core Infrastructure
  * Only depends on LSP level components (or itself)
@@ -34,7 +43,7 @@ export class CfnInfraCore implements Configurables, Closeable {
 
     constructor(
         lspComponents: LspComponents,
-        _initializeParams: InitializeParams,
+        initializeParams: ExtendedInitializeParams,
         overrides: Partial<CfnInfraCore> = {},
     ) {
         this.dataStoreFactory = overrides.dataStoreFactory ?? new MultiDataStoreFactoryProvider();
@@ -50,8 +59,14 @@ export class CfnInfraCore implements Configurables, Closeable {
         this.contextManager = overrides.contextManager ?? new ContextManager(this.syntaxTreeManager);
         this.fileContextManager = overrides.fileContextManager ?? new FileContextManager(this.documentManager);
 
+        const encryptionKey = initializeParams.initializationOptions?.encryption?.key;
+        if (!encryptionKey) {
+            throw new Error('Encryption key is required');
+        }
+
         this.awsCredentials =
-            overrides.awsCredentials ?? new AwsCredentials(lspComponents.authHandlers, this.settingsManager);
+            overrides.awsCredentials ??
+            new AwsCredentials(lspComponents.authHandlers, this.settingsManager, encryptionKey);
 
         this.diagnosticCoordinator =
             overrides.diagnosticCoordinator ??

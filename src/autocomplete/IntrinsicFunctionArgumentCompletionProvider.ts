@@ -11,7 +11,11 @@ import { DocumentManager } from '../document/DocumentManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
-import { determineGetAttPosition, extractGetAttResourceLogicalId } from '../utils/GetAttUtils';
+import {
+    determineGetAttPosition,
+    extractGetAttResourceLogicalId,
+    getAttributeDocumentationFromSchema,
+} from '../utils/GetAttUtils';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, createMarkupContent, createReplacementRange } from './CompletionUtils';
 
@@ -708,29 +712,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const completionItems = attributes.map((attributeName) => {
-            const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
-            let documentation;
-
-            if (schema) {
-                const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/')}`;
-                documentation = createMarkupContent(
-                    `**${attributeName}** attribute of **${resource.Type}**\n\nReturns the value of this attribute when used with the GetAtt intrinsic function.`,
-                );
-
-                try {
-                    const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
-
-                    if (resolvedSchemas.length > 0) {
-                        const firstSchema = resolvedSchemas[0];
-
-                        if (firstSchema.description) {
-                            documentation = createMarkupContent(firstSchema.description);
-                        }
-                    }
-                } catch (error) {
-                    log.debug(error);
-                }
-            }
+            const documentation = createMarkupContent(
+                getAttributeDocumentationFromSchema(this.schemaRetriever, resourceType, attributeName),
+            );
 
             const item = createCompletionItem(attributeName, CompletionItemKind.Property, {
                 documentation: documentation,

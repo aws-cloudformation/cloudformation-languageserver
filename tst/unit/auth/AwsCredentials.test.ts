@@ -1,24 +1,17 @@
+import { randomBytes } from 'crypto';
+import { CompactEncrypt } from 'jose';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { AwsCredentials } from '../../../src/auth/AwsCredentials';
-import {
-    ConnectionMetadata,
-    ListProfilesResult,
-    SsoTokenChangedParams,
-    UpdateCredentialsParams,
-    UpdateProfileParams,
-} from '../../../src/auth/AwsLspAuthTypes';
+import { UpdateCredentialsParams } from '../../../src/auth/AwsLspAuthTypes';
 import { createMockAuthHandlers, createMockSettingsManager } from '../../utils/MockServerComponents';
 
 describe('AwsCredentials', () => {
-    const iam = {
+    const encryptionKey = randomBytes(32);
+    const testCredentials = {
         profile: 'SomeProfile',
         accessKeyId: 'AKIATEST',
-        secretAccessKey: 'secret123',
-        sessionToken: 'token123',
+        secretAccessKey: 'AKIASECRET',
         region: 'us-west-2',
-    };
-    const token = {
-        token: 'bearer-token-123',
     };
 
     let awsCredentials: AwsCredentials;
@@ -29,277 +22,86 @@ describe('AwsCredentials', () => {
         vi.clearAllMocks();
         mockAwsHandlers = createMockAuthHandlers();
         mockSettingsManager = createMockSettingsManager();
-        awsCredentials = new AwsCredentials(mockAwsHandlers, mockSettingsManager);
+        mockSettingsManager.updateProfileSettings = vi.fn();
+        awsCredentials = new AwsCredentials(mockAwsHandlers, mockSettingsManager, encryptionKey.toString('base64'));
     });
 
-    describe('connection metadata', () => {
-        test('should return undefined when no connection metadata exists', () => {
-            expect(awsCredentials.getConnectionMetadata()).toBeUndefined();
+    describe('getIAM', () => {
+        test('throws error when credentials not configured', () => {
+            expect(() => awsCredentials.getIAM()).toThrow('IAM credentials not configured');
         });
 
-        test('should return connection metadata when bearer credentials are updated with metadata', () => {
-            const metadata: ConnectionMetadata = {
-                sso: {
-                    startUrl: 'https://test.awsapps.com/start',
-                    region: 'us-east-1',
-                    accountId: '123456789012',
-                    roleName: 'TestRole',
-                },
-            };
+        test('returns deep readonly copy of credentials', async () => {
+            await awsCredentials.handleIamCredentialsUpdate(await encryptData(testCredentials));
 
-            const credentialsWithMetadata: UpdateCredentialsParams = {
-                data: {
-                    token: 'bearer-token-123',
-                },
-                metadata,
-            };
-
-            awsCredentials.handleBearerCredentialsUpdate(credentialsWithMetadata);
-
-            const result = awsCredentials.getConnectionMetadata();
-            expect(result).toBeDefined();
-            expect(result?.sso?.startUrl).toBe('https://test.awsapps.com/start');
-            expect(result?.sso?.accountId).toBe('123456789012');
+            const result = awsCredentials.getIAM();
+            expect(result.profile).toBe('SomeProfile');
+            expect(result.accessKeyId).toBe('AKIATEST');
+            expect(result.secretAccessKey).toBe('AKIASECRET');
+            expect(result.region).toBe('us-west-2');
+            expect(result.sessionToken).toBeUndefined();
+            expect(result).not.toBe(testCredentials);
         });
     });
 
-    describe('connection type detection', () => {
-        test('should return "none" when no connection metadata exists', () => {
-            expect(awsCredentials.getConnectionType()).toBe('none');
+    describe('handleIamCredentialsUpdate', () => {
+        test('successfully updates credentials with valid encrypted data', async () => {
+            const result = await awsCredentials.handleIamCredentialsUpdate(await encryptData(testCredentials));
+
+            expect(result).toBe(true);
+            expect(mockSettingsManager.updateProfileSettings).toHaveBeenCalledWith('SomeProfile', 'us-west-2');
+
+            const credentials = awsCredentials.getIAM();
+            expect(credentials.profile).toBe('SomeProfile');
+            expect(credentials.accessKeyId).toBe('AKIATEST');
+            expect(credentials.secretAccessKey).toBe('AKIASECRET');
+            expect(credentials.region).toBe('us-west-2');
+            expect(credentials.sessionToken).toBeUndefined();
         });
 
-        test('should return "builderId" for Builder ID URLs', () => {
-            const credentialsWithBuilderIdMetadata: UpdateCredentialsParams = {
-                data: { token: 'token' },
-                metadata: {
-                    sso: {
-                        startUrl: 'https://view.awsapps.com/start#/test',
-                    },
-                },
-            };
+        test('handles invalid encrypted data', async () => {
+            const result = await awsCredentials.handleIamCredentialsUpdate({ data: 'invalid-data' as any });
 
-            awsCredentials.handleBearerCredentialsUpdate(credentialsWithBuilderIdMetadata);
-
-            expect(awsCredentials.getConnectionType()).toBe('builderId');
+            expect(result).toBe(false);
+            expect(mockSettingsManager.updateProfileSettings).toHaveBeenCalledWith('default', 'us-east-1');
         });
 
-        test('should return "identityCenter" for Identity Center URLs', () => {
-            const credentialsWithIdCenterMetadata: UpdateCredentialsParams = {
-                data: { token: 'token' },
-                metadata: {
-                    sso: {
-                        startUrl: 'https://mycompany.awsapps.com/start',
-                    },
-                },
-            };
+        test('handles malformed JSON in encrypted data', async () => {
+            const result = await awsCredentials.handleIamCredentialsUpdate(await encryptData('invalid-json'));
 
-            awsCredentials.handleBearerCredentialsUpdate(credentialsWithIdCenterMetadata);
-
-            expect(awsCredentials.getConnectionType()).toBe('identityCenter');
-        });
-    });
-
-    describe('profile management', () => {
-        test('should call awsHandlers.sendListProfiles and return result', async () => {
-            const mockProfiles: ListProfilesResult = {
-                profiles: [
-                    { name: 'default', kinds: ['IamCredentialsProfile' as const] },
-                    { name: 'test', kinds: ['SsoTokenProfile' as const] },
-                ],
-                ssoSessions: [],
-            };
-            mockAwsHandlers.sendListProfiles.resolves(mockProfiles);
-
-            const result = await awsCredentials.listProfiles();
-
-            expect(mockAwsHandlers.sendListProfiles.calledOnce).toBe(true);
-            expect(result).toEqual(mockProfiles);
-            expect(result?.profiles).toHaveLength(2);
-            expect(result?.profiles?.[0].name).toBe('default');
+            expect(result).toBe(false);
         });
 
-        test('should handle listProfiles errors gracefully and return undefined', async () => {
-            mockAwsHandlers.sendListProfiles.rejects(new Error('Network error'));
+        test('handles invalid schema in decrypted data', async () => {
+            const invalidData = { invalid: 'structure' };
+            const encrypted = await encryptData(invalidData);
 
-            const result = await awsCredentials.listProfiles();
+            const result = await awsCredentials.handleIamCredentialsUpdate({ data: encrypted as any });
 
-            expect(result).toBeUndefined();
-        });
-
-        test('should call awsHandlers.sendUpdateProfile with correct params and return result', async () => {
-            const updateParams: UpdateProfileParams = {
-                profile: {
-                    name: 'test-profile',
-                    kinds: ['IamCredentialsProfile' as const],
-                    settings: {
-                        region: 'us-west-2',
-                    },
-                },
-            };
-            const mockResult = { success: true };
-            mockAwsHandlers.sendUpdateProfile.resolves(mockResult);
-
-            const result = await awsCredentials.updateProfile(updateParams);
-
-            expect(mockAwsHandlers.sendUpdateProfile.calledWith(updateParams)).toBe(true);
-            expect(result).toEqual(mockResult);
-        });
-
-        test('should handle updateProfile errors gracefully and return undefined', async () => {
-            const updateParams: UpdateProfileParams = {
-                profile: { name: 'test-profile', kinds: ['IamCredentialsProfile' as const] },
-            };
-            mockAwsHandlers.sendUpdateProfile.rejects(new Error('Update failed'));
-
-            const result = await awsCredentials.updateProfile(updateParams);
-
-            expect(result).toBeUndefined();
+            expect(result).toBe(false);
         });
     });
 
-    describe('credential handlers', () => {
-        test('should update IAM profile when valid data is received', () => {
-            const validCredentials: UpdateCredentialsParams = {
-                data: iam,
-            };
-
-            awsCredentials.handleIamCredentialsUpdate(validCredentials);
-
-            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
-        });
-
-        test('should reset IAM profile when invalid data is received', () => {
-            // First set valid credentials
-            awsCredentials.handleIamCredentialsUpdate({
-                data: iam,
-            });
-            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
-
-            // Then send invalid credentials
-            awsCredentials.handleIamCredentialsUpdate({
-                data: {
-                    accessKeyId: 'AKIATEST',
-                    // Missing secretAccessKey
-                },
-            } as UpdateCredentialsParams);
-
-            expect((awsCredentials as any).iamCredentials).toBeUndefined();
-        });
-
-        test('should update bearer credentials and metadata when valid data is received', () => {
-            const validCredentials: UpdateCredentialsParams = {
-                data: token,
-                metadata: {
-                    sso: {
-                        startUrl: 'https://test.awsapps.com/start',
-                        accountId: '123456789012',
-                    },
-                },
-            };
-
-            awsCredentials.handleBearerCredentialsUpdate(validCredentials);
-
-            expect(awsCredentials.getBearer()).toStrictEqual(token);
-
-            const metadata = awsCredentials.getConnectionMetadata();
-            expect(metadata?.sso?.startUrl).toBe('https://test.awsapps.com/start');
-            expect(metadata?.sso?.accountId).toBe('123456789012');
-        });
-
-        test('should reset IAM when delete handler is called', () => {
-            // First set credentials
-
-            awsCredentials.handleIamCredentialsUpdate({
-                data: iam,
-            });
-            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
-
-            // Then delete them
-
+    describe('handleIamCredentialsDelete', () => {
+        test('clears credentials', async () => {
+            const encrypted = await encryptData(testCredentials);
+            await awsCredentials.handleIamCredentialsUpdate({ data: encrypted as any });
             awsCredentials.handleIamCredentialsDelete();
-            expect((awsCredentials as any).iamCredentials).toBeUndefined();
-        });
 
-        test('should delete bearer credentials and metadata when delete handler is called', () => {
-            // First set credentials
-
-            awsCredentials.handleBearerCredentialsUpdate({
-                data: { token: 'bearer-token-123' },
-                metadata: { sso: { startUrl: 'https://test.com' } },
-            });
-            expect(awsCredentials.getBearer()).toBeDefined();
-            // Then delete them
-
-            awsCredentials.handleBearerCredentialsDelete();
-
-            expect((awsCredentials as any).bearerCredentials).toBeUndefined();
-            expect(awsCredentials.getConnectionMetadata()).toBeUndefined();
+            expect(() => awsCredentials.getIAM()).toThrow('IAM credentials not configured');
         });
     });
 
-    describe('SSO token handling', () => {
-        test('should clear bearer credentials when SSO token expires', () => {
-            // First set bearer credentials
+    async function encryptData(data: any): Promise<UpdateCredentialsParams> {
+        const payload = new TextEncoder().encode(JSON.stringify({ data }));
 
-            awsCredentials.handleBearerCredentialsUpdate({
-                data: { token: 'bearer-token-123' },
-                metadata: { sso: { startUrl: 'https://test.com' } },
-            });
-            expect(awsCredentials.getBearer()).toBeDefined();
-            // Then simulate token expiration
+        const jwt = await new CompactEncrypt(payload)
+            .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+            .encrypt(encryptionKey);
 
-            const expiredTokenParams: SsoTokenChangedParams = {
-                kind: 'Expired',
-                ssoTokenId: 'token-id-123',
-            };
-
-            awsCredentials.handleSsoTokenChanged(expiredTokenParams);
-
-            expect((awsCredentials as any).bearerCredentials).toBeUndefined();
-            expect(awsCredentials.getConnectionMetadata()).toBeUndefined();
-        });
-
-        test('should handle SSO token refresh without clearing credentials', () => {
-            // First set bearer credentials
-
-            awsCredentials.handleBearerCredentialsUpdate({
-                data: { token: 'bearer-token-123' },
-            });
-            expect(awsCredentials.getBearer()).toBeDefined();
-            // Then simulate token refresh
-
-            const refreshedTokenParams: SsoTokenChangedParams = {
-                kind: 'Refreshed',
-                ssoTokenId: 'token-id-123',
-            };
-
-            awsCredentials.handleSsoTokenChanged(refreshedTokenParams);
-
-            // Credentials should still exist (they'll be updated via credential update handler)
-            expect(awsCredentials.getBearer()).toBeDefined();
-        });
-    });
-
-    describe('error handling', () => {
-        test('should handle errors in IAM credential update handler gracefully', () => {
-            // This should not throw even with malformed data
-            awsCredentials.handleIamCredentialsUpdate({ data: iam });
-            expect((awsCredentials as any).iamCredentials.profile).toBe(iam.profile);
-
-            expect(() => {
-                awsCredentials.handleIamCredentialsUpdate({ data: 'invalid-data' as any });
-            }).not.toThrow();
-
-            expect((awsCredentials as any).iamCredentials).toBeUndefined();
-        });
-
-        test('should handle errors in bearer credential update handler gracefully', () => {
-            // This should not throw even with malformed data
-            expect(() => {
-                awsCredentials.handleBearerCredentialsUpdate({ data: 'invalid-data' as any });
-            }).not.toThrow();
-
-            expect((awsCredentials as any).bearerCredentials).toBeUndefined();
-        });
-    });
+        return {
+            data: jwt,
+            encrypted: true,
+        };
+    }
 });

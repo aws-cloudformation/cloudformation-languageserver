@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { join } from 'path';
 import { PassThrough } from 'stream';
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node';
@@ -44,26 +45,8 @@ import {
     CodeLensRequest,
 } from 'vscode-languageserver';
 import { InitializeParams, createConnection } from 'vscode-languageserver/node';
-import {
-    IamCredentialsUpdateRequest,
-    BearerCredentialsUpdateRequest,
-    IamCredentialsDeleteNotification,
-    BearerCredentialsDeleteNotification,
-    GetConnectionMetadataRequest,
-    ListProfilesRequest,
-    UpdateProfileRequest,
-    GetSsoTokenRequest,
-    InvalidateSsoTokenRequest,
-    SsoTokenChangedNotification,
-} from '../../src/auth/AuthProtocol';
-import {
-    UpdateCredentialsParams,
-    ListProfilesParams,
-    UpdateProfileParams,
-    GetSsoTokenParams,
-    InvalidateSsoTokenParams,
-    SsoTokenChangedParams,
-} from '../../src/auth/AwsLspAuthTypes';
+import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '../../src/auth/AuthProtocol';
+import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';
 import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
@@ -108,6 +91,11 @@ export class TestExtension implements Closeable {
             capabilities: {},
             clientInfo,
             workspaceFolders: [],
+            initializationOptions: {
+                encryption: {
+                    key: randomBytes(32).toString('base64'),
+                },
+            },
         } as InitializeParams,
     ) {
         this.serverConnection = new LspConnection(
@@ -275,39 +263,7 @@ export class TestExtension implements Closeable {
         return this.send(IamCredentialsUpdateRequest.method, params);
     }
 
-    updateBearerCredentials(params: UpdateCredentialsParams) {
-        return this.send(BearerCredentialsUpdateRequest.method, params);
-    }
-
     deleteIamCredentials() {
         return this.notify(IamCredentialsDeleteNotification.method, undefined);
-    }
-
-    deleteBearerCredentials() {
-        return this.notify(BearerCredentialsDeleteNotification.method, undefined);
-    }
-
-    getConnectionMetadata() {
-        return this.send(GetConnectionMetadataRequest.method, undefined);
-    }
-
-    listProfiles(params: ListProfilesParams) {
-        return this.send(ListProfilesRequest.method, params);
-    }
-
-    updateProfile(params: UpdateProfileParams) {
-        return this.send(UpdateProfileRequest.method, params);
-    }
-
-    getSsoToken(params: GetSsoTokenParams) {
-        return this.send(GetSsoTokenRequest.method, params);
-    }
-
-    invalidateSsoToken(params: InvalidateSsoTokenParams) {
-        return this.send(InvalidateSsoTokenRequest.method, params);
-    }
-
-    ssoTokenChanged(params: SsoTokenChangedParams) {
-        return this.notify(SsoTokenChangedNotification.method, params);
     }
 }
