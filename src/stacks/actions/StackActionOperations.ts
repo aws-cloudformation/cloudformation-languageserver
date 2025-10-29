@@ -56,7 +56,7 @@ export async function processChangeSet(
         Capabilities: params.capabilities,
         ChangeSetType: changeSetType,
         ResourcesToImport: params.resourcesToImport,
-        CompareWith: (changeSetType === 'UPDATE') ? 'LIVE_STATE' : undefined
+        CompareWith: changeSetType === 'UPDATE' ? 'LIVE_STATE' : undefined,
     });
 
     return changeSetName;
@@ -205,6 +205,7 @@ export async function deleteChangeSet(
 export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | undefined;
 export function mapChangesToStackChanges(changes?: ChangeV2[]): StackChange[] | undefined;
 export function mapChangesToStackChanges(changes?: Change[] | ChangeV2[]): StackChange[] | undefined {
+    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
     return changes?.map((change: Change | ChangeV2) => {
         const resourceChange = change.ResourceChange as any;
         return {
