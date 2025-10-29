@@ -78,7 +78,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
                 excludeReadOnly: true,
                 requireFullyResolved: true,
             });
-            completions = [...completions, ...this.getPropertyCompletionsFromSchemas(resolvedSchemas, context, schema)];
+
+            const propertyCompletions = this.getPropertyCompletionsFromSchemas(resolvedSchemas, context, schema);
+            completions = [...completions, ...propertyCompletions];
         }
 
         if (context.isValue()) {
@@ -96,25 +98,14 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private getSchemaPath(context: Context): string {
         let segments = context.propertyPath.slice(3);
 
-        // For SYNTHETIC_KEY_OR_VALUE, both key and value need the same path (current property)
+        // For key completions (except SYNTHETIC_KEY_OR_VALUE), remove last segment
         if (
-            NodeType.isNodeType(context['node'], CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE) ||
-            (context.isKey() && context.isValue())
+            context.isKey() &&
+            segments.length > 0 &&
+            !NodeType.isNodeType(context['node'], CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE) &&
+            !(context.isKey() && context.isValue())
         ) {
-            return templatePathToJsonPointerPath(segments);
-        }
-
-        // For key completions, we need to determine the correct path
-        if (context.isKey() && segments.length > 0) {
-            // Special case: if we're in an array item (last segment is a number),
-            // keep the full path to get array item schema
-            const lastSegment = segments[segments.length - 1];
-            if (typeof lastSegment === 'number') {
-                return templatePathToJsonPointerPath(segments);
-            } else {
-                // Regular case: remove last segment to get parent properties
-                segments = segments.slice(0, -1);
-            }
+            segments = segments.slice(0, -1);
         }
 
         return templatePathToJsonPointerPath(segments);
@@ -128,11 +119,30 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         context: Context,
         schema: ResourceSchema,
     ): CompletionItem[] {
+        // resolve array to get array item properties
+        const schemasToProcess: PropertyType[] = [];
+
+        for (const resolvedSchema of resolvedSchemas) {
+            if (resolvedSchema.type === 'array' && resolvedSchema.items) {
+                if (resolvedSchema.items.$ref) {
+                    const itemSchema = schema.resolveRef(resolvedSchema.items.$ref);
+                    if (itemSchema) {
+                        schemasToProcess.push(itemSchema);
+                    }
+                } else {
+                    schemasToProcess.push(resolvedSchema.items);
+                }
+            } else {
+                // not an array, use the schema as is
+                schemasToProcess.push(resolvedSchema);
+            }
+        }
+
         // Collect all properties from all resolved schemas
         const allProperties = new Map<string, PropertyType>();
         const requiredProperties = new Set<string>();
 
-        for (const resolvedSchema of resolvedSchemas) {
+        for (const resolvedSchema of schemasToProcess) {
             if (resolvedSchema.properties) {
                 for (const [propertyName, propertyDef] of Object.entries(resolvedSchema.properties)) {
                     // Use the first schema that defines this property
@@ -206,7 +216,10 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      */
     private getExistingProperties(context: Context): Set<string> {
         const propertyPath = context.propertyPath;
-        if (propertyPath.length > 3 && typeof propertyPath[propertyPath.length - 1] === 'number') {
+        const lastSegment = propertyPath[propertyPath.length - 1];
+        const isArrayItemContext = typeof lastSegment === 'number' || lastSegment === '';
+
+        if (propertyPath.length > 3 && isArrayItemContext) {
             const entity = context.entity as Resource;
             if (entity?.Properties) {
                 const pathSegments = propertyPath.slice(3); // Remove ['Resources', 'LogicalId', 'Properties']
@@ -221,9 +234,13 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
                     }
                 }
 
-                const arrayIndex = pathSegments[pathSegments.length - 1];
-                if (current && typeof current === 'object' && arrayIndex in current) {
-                    const arrayItem = (current as Record<string | number, CfnValue>)[arrayIndex];
+                if (Array.isArray(current) && current.length > 0) {
+                    let arrayItem: CfnValue | undefined;
+                    if (typeof lastSegment === 'number' && lastSegment in current) {
+                        arrayItem = (current as CfnValue[])[lastSegment];
+                    } else if (lastSegment === '') {
+                        arrayItem = (current as CfnValue[])[0];
+                    }
 
                     if (arrayItem && typeof arrayItem === 'object' && arrayItem !== null) {
                         return new Set(Object.keys(arrayItem as Record<string, CfnValue>));

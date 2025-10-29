@@ -1781,6 +1781,81 @@ Outputs:
             };
             await template.executeScenario(scenario);
         });
+
+        it('test nested array property completion', async () => {
+            const template = new TemplateBuilder(DocumentType.YAML);
+            const scenario: TemplateScenario = {
+                name: 'Nested array property completion',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `AWSTemplateFormatVersion: 2010-09-09
+Description: Simple CloudFormation template that creates an S3 bucket with KMS encryption
+
+Parameters:
+  KMSKeyRelatedToS3Bucket:
+    Type: String
+    Description: The ARN or ID of the KMS key used to encrypt the S3 bucket.
+
+Resources:
+  MySecureBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        `,
+                        position: { line: 0, character: 0 },
+                        description: 'Test autocomplete on BuecketEncryption properties',
+                        verification: {
+                            position: { line: 13, character: 8 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['ServerSideEncryptionConfiguration'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `ServerSideEncryptionConfiguration:
+          - `,
+                        position: { line: 13, character: 8 },
+                        description: 'Test autocomplete on deeply nested array',
+                        verification: {
+                            position: { line: 14, character: 12 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['ServerSideEncryptionByDefault', 'BucketKeyEnabled'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `ServerSideEncryptionByDefault:
+              `,
+                        position: { line: 14, character: 12 },
+                        description: 'Test autocomplete on deeply nested array properties',
+                        verification: {
+                            position: { line: 15, character: 14 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['SSEAlgorithm'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: `SSEAlgorithm: aws:kms
+              `,
+                        position: { line: 15, character: 14 },
+                        description:
+                            'Test autocomplete on deeply nested array properties after required properties written',
+                        verification: {
+                            position: { line: 16, character: 14 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['KMSMasterKeyID'])
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            await template.executeScenario(scenario);
+        });
     });
 
     describe('JSON', () => {
@@ -3691,6 +3766,97 @@ Outputs:
                         action: 'delete',
                         description: 'delete trailing }',
                         range: { start: { line: 154, character: 8 }, end: { line: 156, character: 6 } },
+                    },
+                ],
+            };
+            await template.executeScenario(scenario);
+        });
+
+        it('test nested array property completion', async () => {
+            const template = new TemplateBuilder(DocumentType.JSON);
+            const scenario: TemplateScenario = {
+                name: 'Nested array property completion',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Simple CloudFormation template that creates an S3 bucket with KMS encryption",
+  "Parameters": {
+    "KMSKeyRelatedToS3Bucket": {
+      "Type": "String",
+      "Description": "The ARN or ID of the KMS key used to encrypt the S3 bucket."
+    }
+  },
+  "Resources": {
+    "MySecureBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketEncryption": {
+          ""
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "BucketName": {
+      "Description": "Name of the created S3 bucket",
+      "Value": { "Ref": "MySecureBucket" }
+    }
+  }
+}`,
+                        position: { line: 0, character: 0 },
+                        description: 'Test autocomplete on BuecketEncryption properties',
+                        verification: {
+                            position: { line: 14, character: 11 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['ServerSideEncryptionConfiguration'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `"ServerSideEncryptionConfiguration": [
+            {
+              ""
+            }
+          ]`,
+                        range: { start: { line: 14, character: 10 }, end: { line: 14, character: 12 } },
+                        description: 'Test autocomplete on deeply nested array',
+                        verification: {
+                            position: { line: 16, character: 15 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['ServerSideEncryptionByDefault', 'BucketKeyEnabled'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `"ServerSideEncryptionByDefault": {
+                ""
+              }`,
+                        range: { start: { line: 16, character: 14 }, end: { line: 16, character: 16 } },
+                        description: 'Test autocomplete on deeply nested array properties',
+                        verification: {
+                            position: { line: 17, character: 17 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['SSEAlgorithm'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'replace',
+                        content: `"SSEAlgorithm": "aws:kms",
+                ""`,
+                        range: { start: { line: 17, character: 16 }, end: { line: 17, character: 18 } },
+                        description:
+                            'Test autocomplete on deeply nested array properties after required properties written',
+                        verification: {
+                            position: { line: 18, character: 17 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['KMSMasterKeyID'])
+                                .build(),
+                        },
                     },
                 ],
             };
