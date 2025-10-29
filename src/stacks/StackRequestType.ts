@@ -50,11 +50,11 @@ export const ListChangeSetRequest = new RequestType<ListChangeSetParams, ListCha
 export type ListStackResourcesParams = {
     stackName: string;
     nextToken?: string;
-    maxItems?: number;
 };
 
 export type ListStackResourcesResult = {
     resources: StackResourceSummary[];
+    nextToken?: string;
 };
 
 export const ListStackResourcesRequest = new RequestType<ListStackResourcesParams, ListStackResourcesResult, void>(

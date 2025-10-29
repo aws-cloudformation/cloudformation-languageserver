@@ -467,19 +467,20 @@ describe('StackActionHandler', () => {
 
             mockComponents.cfnService.listStackResources.resolves({
                 StackResourceSummaries: mockResources,
+                NextToken: 'nextToken456',
                 $metadata: {},
             });
 
             const handler = listStackResourcesHandler(mockComponents);
-            const params = { stackName: 'test-stack', nextToken: 'token123', maxItems: 10 };
+            const params = { stackName: 'test-stack', nextToken: 'token123' };
             const result = (await handler(params, {} as any)) as ListStackResourcesResult;
 
             expect(result.resources).toEqual(mockResources);
+            expect(result.nextToken).toBe('nextToken456');
             expect(
                 mockComponents.cfnService.listStackResources.calledWith({
                     StackName: 'test-stack',
                     NextToken: 'token123',
-                    MaxItems: 10,
                 }),
             ).toBe(true);
         });
@@ -502,6 +503,7 @@ describe('StackActionHandler', () => {
             const result = (await handler(params, {} as any)) as ListStackResourcesResult;
 
             expect(result.resources).toEqual([]);
+            expect(result.nextToken).toBeUndefined();
         });
     });
 
