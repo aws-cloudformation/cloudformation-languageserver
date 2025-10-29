@@ -13,6 +13,8 @@ import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { ResourceStateManager } from './ResourceStateManager';
 import {
@@ -34,6 +36,7 @@ interface ResourcesSection {
 const log = LoggerFactory.getLogger('ResourceStateImporter');
 
 export class ResourceStateImporter {
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private readonly importTransformers = TransformersUtil.createTransformers(ResourceStatePurpose.IMPORT);
     private readonly cloneTransformers = TransformersUtil.createTransformers(ResourceStatePurpose.CLONE);
 
@@ -43,10 +46,16 @@ export class ResourceStateImporter {
         private readonly resourceStateManager: ResourceStateManager,
         private readonly schemaRetriever: SchemaRetriever,
         private readonly stackManagementInfoProvider: StackManagementInfoProvider,
-    ) {}
+    ) {
+        this.initializeCounters();
+    }
 
+    @Measure({ name: 'importResourceState' })
     public async importResourceState(params: ResourceStateParams): Promise<ResourceStateResult> {
         const { resourceSelections, textDocument, purpose } = params;
+
+        this.telemetry.count(`purpose.${purpose.toLowerCase()}`, 1);
+
         if (!resourceSelections) {
             return this.getFailureResponse('No resources selected for import.');
         }
@@ -67,17 +76,27 @@ export class ResourceStateImporter {
             purpose,
         );
 
+        this.recordResourceMetrics(resourceSelections, importResult);
+
         let warning: string | undefined;
         if (purpose === ResourceStatePurpose.IMPORT) {
             warning = this.checkAndWarnManagedResources(fetchedResourceStates);
+            if (warning) {
+                this.telemetry.count('managed.warning', 1);
+            }
         }
 
         const resourceSection = this.getResourceSection(syntaxTree);
+        const resourceSectionExists = resourceSection !== undefined;
+
+        this.telemetry.count(`document.${document.documentType.toLowerCase()}`, 1);
+        this.telemetry.count(resourceSectionExists ? 'section.exists' : 'section.created', 1);
+
         const insertPosition = this.getInsertPosition(resourceSection, document);
         const docFormattedText = this.combineResourcesToDocumentFormat(
             fetchedResourceStates,
             document.documentType,
-            resourceSection !== undefined,
+            resourceSectionExists,
         );
 
         const commaPrefix = insertPosition.commaPrefixNeeded ? ',\n' : '';
@@ -195,6 +214,8 @@ export class ResourceStateImporter {
         if (!existingLogicalIds?.has(baseName)) {
             return baseName;
         }
+
+        this.telemetry.count('logicalid.collision', 1);
 
         let count = 1;
         while (existingLogicalIds.has(`${baseName}${count}`)) {
@@ -354,6 +375,27 @@ export class ResourceStateImporter {
             record[key] = createValue;
             return createValue;
         }
+    }
+
+    private recordResourceMetrics(resourceSelections: ResourceSelection[], importResult: ResourceStateResult): void {
+        const totalRequested = resourceSelections.reduce((sum, sel) => sum + sel.resourceIdentifiers.length, 0);
+        const succeeded = Object.values(importResult.successfulImports).flat().length;
+        const failed = Object.values(importResult.failedImports).flat().length;
+
+        this.telemetry.histogram('resources.requested', totalRequested);
+        this.telemetry.histogram('resources.succeeded', succeeded);
+        this.telemetry.histogram('resources.fault', failed);
+    }
+
+    private initializeCounters(): void {
+        this.telemetry.count('purpose.import', 0);
+        this.telemetry.count('purpose.clone', 0);
+        this.telemetry.count('managed.warning', 0);
+        this.telemetry.count('document.json', 0);
+        this.telemetry.count('document.yaml', 0);
+        this.telemetry.count('section.exists', 0);
+        this.telemetry.count('section.created', 0);
+        this.telemetry.count('logicalid.collision', 0);
     }
 
     static create(core: CfnInfraCore, external: CfnExternal, providers: CfnLspProviders): ResourceStateImporter {
