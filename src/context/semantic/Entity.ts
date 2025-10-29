@@ -177,3 +177,14 @@ export class Unknown extends Entity {
         super(EntityType.Unknown);
     }
 }
+
+export class ForEachResource extends Entity {
+    constructor(
+        public readonly name: string,
+        public readonly identifier?: string,
+        public readonly collection?: CfnValue,
+        public readonly resource?: Resource,
+    ) {
+        super(EntityType.ForEachResource);
+    }
+}
