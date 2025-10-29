@@ -62,11 +62,11 @@ export function createEntityFromObject(logicalId: string, entityObject: any, sec
         case TopLevelSection.Resources: {
             if (logicalId.startsWith('Fn::ForEach')) {
                 const loopName = logicalId.replace('Fn::ForEach::', '');
-                const identifier = Array.isArray(entityObject) ? entityObject[0] : '';
+                const identifier = Array.isArray(entityObject) ? entityObject[0] : undefined;
                 const collection = Array.isArray(entityObject) ? entityObject[1] : undefined;
                 const outputMap = Array.isArray(entityObject) ? entityObject[2] : {};
-                const [key, value]: [string, any] = Object.entries(outputMap ?? {})[0] || ['', {}];
-                const resource = new Resource(
+                const [key, value]: [string, any] = Object.entries(outputMap ?? {})[0] || [undefined, {}];
+                const resourceInsideForEach = new Resource(
                     key,
                     value?.Type,
                     value?.Properties,
@@ -78,7 +78,7 @@ export function createEntityFromObject(logicalId: string, entityObject: any, sec
                     value?.UpdatePolicy,
                     value?.UpdateReplacePolicy,
                 );
-                return new ForEachResource(loopName, identifier, collection, resource);
+                return new ForEachResource(loopName, identifier, collection, resourceInsideForEach);
             }
             return new Resource(
                 logicalId,

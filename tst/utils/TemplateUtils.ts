@@ -89,6 +89,20 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
             },
         },
     },
+    foreach: {
+        json: {
+            fileName: 'file://foreach_template.json',
+            get contents() {
+                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'foreach_template.json'), 'utf8');
+            },
+        },
+        yaml: {
+            fileName: 'file://foreach_template.yaml',
+            get contents() {
+                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'foreach_template.yaml'), 'utf8');
+            },
+        },
+    },
 };
 
 export function point(row: number, column: number): Point {
