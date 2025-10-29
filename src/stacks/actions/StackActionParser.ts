@@ -1,6 +1,6 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
-import { ListStackResourcesParams } from '../StackRequestType';
+import { ListStackResourcesParams, GetStackEventsParams, ClearStackEventsParams } from '../StackRequestType';
 import {
     CreateDeploymentParams,
     CreateValidationParams,
@@ -57,6 +57,16 @@ const ListStackResourcesParamsSchema = z.object({
     maxItems: z.number().optional(),
 });
 
+const GetStackEventsParamsSchema = z.object({
+    stackName: z.string().min(1).max(128),
+    nextToken: z.string().optional(),
+    refresh: z.boolean().optional(),
+});
+
+const ClearStackEventsParamsSchema = z.object({
+    stackName: z.string().min(1).max(128),
+});
+
 export function parseStackActionParams(input: unknown): CreateValidationParams {
     return StackActionParamsSchema.parse(input);
 }
@@ -75,4 +85,12 @@ export function parseTemplateUriParams(input: unknown): TemplateUri {
 
 export function parseListStackResourcesParams(input: unknown): ListStackResourcesParams {
     return ListStackResourcesParamsSchema.parse(input);
+}
+
+export function parseGetStackEventsParams(input: unknown): GetStackEventsParams {
+    return GetStackEventsParamsSchema.parse(input);
+}
+
+export function parseClearStackEventsParams(input: unknown): ClearStackEventsParams {
+    return ClearStackEventsParamsSchema.parse(input);
 }

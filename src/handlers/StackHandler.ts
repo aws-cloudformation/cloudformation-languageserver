@@ -12,6 +12,8 @@ import {
     parseListStackResourcesParams,
     parseStackActionParams,
     parseTemplateUriParams,
+    parseGetStackEventsParams,
+    parseClearStackEventsParams,
 } from '../stacks/actions/StackActionParser';
 import {
     TemplateUri,
@@ -34,6 +36,9 @@ import {
     ListChangeSetResult,
     ListStackResourcesParams,
     ListStackResourcesResult,
+    GetStackEventsParams,
+    GetStackEventsResult,
+    ClearStackEventsParams,
 } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
@@ -350,6 +355,36 @@ export function listStackResourcesHandler(
         } catch (error) {
             log.error({ error: extractErrorMessage(error) }, 'Error listing stack resources');
             return { resources: [] };
+        }
+    };
+}
+
+export function getStackEventsHandler(
+    components: ServerComponents,
+): RequestHandler<GetStackEventsParams, GetStackEventsResult, void> {
+    return async (rawParams): Promise<GetStackEventsResult> => {
+        try {
+            const params = parseWithPrettyError(parseGetStackEventsParams, rawParams);
+            if (params.refresh) {
+                const events = await components.stackEventManager.refresh(params.stackName);
+                return { events, nextToken: undefined };
+            }
+            return await components.stackEventManager.fetchEvents(params.stackName, params.nextToken);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to get stack events');
+        }
+    };
+}
+
+export function clearStackEventsHandler(
+    components: ServerComponents,
+): RequestHandler<ClearStackEventsParams, void, void> {
+    return (rawParams): void => {
+        try {
+            parseWithPrettyError(parseClearStackEventsParams, rawParams);
+            components.stackEventManager.clear();
+        } catch (error) {
+            handleStackActionError(error, 'Failed to clear stack events');
         }
     };
 }
