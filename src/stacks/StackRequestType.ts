@@ -1,4 +1,4 @@
-import { StackSummary, StackStatus, StackResourceSummary } from '@aws-sdk/client-cloudformation';
+import { StackSummary, StackStatus, StackResourceSummary, StackEvent } from '@aws-sdk/client-cloudformation';
 import { RequestType } from 'vscode-languageserver-protocol';
 
 export type ListStacksParams = {
@@ -59,4 +59,27 @@ export type ListStackResourcesResult = {
 
 export const ListStackResourcesRequest = new RequestType<ListStackResourcesParams, ListStackResourcesResult, void>(
     'aws/cfn/stack/resources',
+);
+
+export type GetStackEventsParams = {
+    stackName: string;
+    nextToken?: string;
+    refresh?: boolean;
+};
+
+export type GetStackEventsResult = {
+    events: StackEvent[];
+    nextToken?: string;
+};
+
+export const GetStackEventsRequest = new RequestType<GetStackEventsParams, GetStackEventsResult, void>(
+    'aws/cfn/stack/events',
+);
+
+export type ClearStackEventsParams = {
+    stackName: string;
+};
+
+export const ClearStackEventsRequest = new RequestType<ClearStackEventsParams, void, void>(
+    'aws/cfn/stack/events/clear',
 );
