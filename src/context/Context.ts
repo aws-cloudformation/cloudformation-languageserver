@@ -70,7 +70,12 @@ export class Context {
     }
 
     public get transformContext(): TransformContext {
-        this._transformContext ??= new TransformContext(this.pathToRoot, this.documentType);
+        // Find root node by traversing up from current node
+        let rootNode = this.node;
+        while (rootNode.parent) {
+            rootNode = rootNode.parent;
+        }
+        this._transformContext ??= new TransformContext(rootNode, this.documentType);
         return this._transformContext;
     }
 

@@ -1,7 +1,8 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../document/Document';
 import { removeQuotes } from '../utils/String';
-import { NodeType } from './syntaxtree/utils/NodeType';
+import { TopLevelSection } from './ContextType';
+import { NodeSearch } from './syntaxtree/utils/NodeSearch';
 import { FieldNames, YAML_NODE_SETS, JSON_NODE_SETS } from './syntaxtree/utils/TreeSitterTypes';
 
 export class TransformContext {
@@ -9,7 +10,7 @@ export class TransformContext {
     private _hasSamTransform?: boolean;
 
     constructor(
-        private readonly pathToRoot: ReadonlyArray<SyntaxNode>,
+        private readonly rootNode: SyntaxNode,
         private readonly documentType: DocumentType,
     ) {}
 
@@ -23,78 +24,25 @@ export class TransformContext {
     }
 
     private detectSamTransform(): boolean {
-        // Find the document-level mapping that has both Transform and Resources
-        for (let j = 0; j < this.pathToRoot.length; j++) {
-            const node = this.pathToRoot[j];
+        const sectionsSet = new Set([TopLevelSection.Transform]);
+        const result = new Map<TopLevelSection, SyntaxNode>();
 
-            if (YAML_NODE_SETS.mapping.has(node.type) || JSON_NODE_SETS.object.has(node.type)) {
-                // Check if this mapping has both Transform and Resources
-                let hasTransform = false;
-                let hasResources = false;
-                const keys: string[] = [];
+        NodeSearch.findSectionsInAllMappingPairs(this.rootNode, sectionsSet, this.documentType, result);
 
-                for (let i = 0; i < node.childCount; i++) {
-                    const child = node.child(i);
-                    if (!child || !NodeType.isPairNode(child, this.documentType)) continue;
+        const transformNode = result.get(TopLevelSection.Transform);
+        if (!transformNode) return false;
 
-                    const keyNode = child.childForFieldName(FieldNames.KEY);
-                    if (!keyNode) continue;
+        const valueNode = transformNode.childForFieldName('value');
+        if (!valueNode) return false;
 
-                    const keyText = removeQuotes(keyNode.text).trim();
-                    keys.push(keyText);
-                    if (keyText === 'Transform') hasTransform = true;
-                    if (keyText === 'Resources') hasResources = true;
-                }
+        // Handle both string and array values
+        const transformValue = this.getTransformValue(transformNode);
 
-                if (hasTransform && hasResources) {
-                    // Check Transform value
-                    for (let i = 0; i < node.childCount; i++) {
-                        const child = node.child(i);
-                        if (!child || !NodeType.isPairNode(child, this.documentType)) continue;
-
-                        const keyNode = child.childForFieldName(FieldNames.KEY);
-                        if (!keyNode) continue;
-
-                        const keyText = removeQuotes(keyNode.text).trim();
-                        if (keyText === 'Transform') {
-                            const transformValue = this.getTransformValue(child);
-
-                            if (
-                                transformValue === TransformContext.SAM_TRANSFORM ||
-                                (Array.isArray(transformValue) &&
-                                    transformValue.includes(TransformContext.SAM_TRANSFORM))
-                            ) {
-                                return true;
-                            }
-                        }
-                    }
-                    break;
-                }
-            }
+        if (Array.isArray(transformValue)) {
+            return transformValue.includes(TransformContext.SAM_TRANSFORM);
+        } else {
+            return transformValue === TransformContext.SAM_TRANSFORM;
         }
-
-        return false;
-    }
-
-    private findTopLevelMapping(node: SyntaxNode): SyntaxNode | undefined {
-        // For JSON: look for object node
-        if (this.documentType === DocumentType.JSON && JSON_NODE_SETS.object.has(node.type)) {
-            return node;
-        }
-
-        // For YAML: traverse down to find the mapping node
-        let current = node;
-        while (current && current.childCount > 0) {
-            const child = current.child(0);
-            if (!child) break;
-
-            if (YAML_NODE_SETS.mapping.has(child.type) || JSON_NODE_SETS.object.has(child.type)) {
-                return child;
-            }
-            current = child;
-        }
-
-        return undefined;
     }
 
     private getTransformValue(node: SyntaxNode): string | string[] | undefined {
