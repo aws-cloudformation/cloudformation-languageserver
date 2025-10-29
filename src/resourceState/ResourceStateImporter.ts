@@ -76,7 +76,7 @@ export class ResourceStateImporter {
             purpose,
         );
 
-        this.recordResourceMetrics(resourceSelections, importResult);
+        this.recordStateFetchMetrics(resourceSelections, importResult);
 
         let warning: string | undefined;
         if (purpose === ResourceStatePurpose.IMPORT) {
@@ -90,7 +90,7 @@ export class ResourceStateImporter {
         const resourceSectionExists = resourceSection !== undefined;
 
         this.telemetry.count(`document.${document.documentType.toLowerCase()}`, 1);
-        this.telemetry.count(resourceSectionExists ? 'section.exists' : 'section.created', 1);
+        this.telemetry.countBoolean('section.create', !resourceSectionExists);
 
         const insertPosition = this.getInsertPosition(resourceSection, document);
         const docFormattedText = this.combineResourcesToDocumentFormat(
@@ -377,7 +377,7 @@ export class ResourceStateImporter {
         }
     }
 
-    private recordResourceMetrics(resourceSelections: ResourceSelection[], importResult: ResourceStateResult): void {
+    private recordStateFetchMetrics(resourceSelections: ResourceSelection[], importResult: ResourceStateResult): void {
         const totalRequested = resourceSelections.reduce((sum, sel) => sum + sel.resourceIdentifiers.length, 0);
         const succeeded = Object.values(importResult.successfulImports).flat().length;
         const failed = Object.values(importResult.failedImports).flat().length;
@@ -393,8 +393,7 @@ export class ResourceStateImporter {
         this.telemetry.count('managed.warning', 0);
         this.telemetry.count('document.json', 0);
         this.telemetry.count('document.yaml', 0);
-        this.telemetry.count('section.exists', 0);
-        this.telemetry.count('section.created', 0);
+        this.telemetry.count('section.create', 0);
         this.telemetry.count('logicalid.collision', 0);
     }
 
