@@ -366,8 +366,8 @@ export function getStackEventsHandler(
         try {
             const params = parseWithPrettyError(parseGetStackEventsParams, rawParams);
             if (params.refresh) {
-                const events = await components.stackEventManager.refresh(params.stackName);
-                return { events, nextToken: undefined };
+                const result = await components.stackEventManager.refresh(params.stackName);
+                return { events: result.events, nextToken: undefined, gapDetected: result.gapDetected };
             }
             return await components.stackEventManager.fetchEvents(params.stackName, params.nextToken);
         } catch (error) {

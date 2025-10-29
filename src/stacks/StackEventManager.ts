@@ -23,10 +23,10 @@ export class StackEventManager {
         return { events, nextToken: response.NextToken };
     }
 
-    async refresh(stackName: string): Promise<StackEvent[]> {
+    async refresh(stackName: string): Promise<{ events: StackEvent[]; gapDetected: boolean }> {
         if (this.stackName !== stackName) {
             const eventsResponse = await this.fetchEvents(stackName);
-            return eventsResponse.events;
+            return { events: eventsResponse.events, gapDetected: false };
         }
 
         const newEvents: StackEvent[] = [];
@@ -43,7 +43,7 @@ export class StackEventManager {
                     if (newEvents.length > 0) {
                         this.mostRecentEventId = newEvents[0].EventId;
                     }
-                    return newEvents;
+                    return { events: newEvents, gapDetected: false };
                 }
 
                 newEvents.push(event);
@@ -55,11 +55,13 @@ export class StackEventManager {
             if (!token) break;
         }
 
+        const gapDetected = pagesChecked === maxPages && token !== undefined;
+
         if (newEvents.length > 0) {
             this.mostRecentEventId = newEvents[0].EventId;
         }
 
-        return newEvents;
+        return { events: newEvents, gapDetected };
     }
 
     clear(): void {
