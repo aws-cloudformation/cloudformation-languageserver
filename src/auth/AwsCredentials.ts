@@ -1,4 +1,6 @@
+import { compactDecrypt } from 'jose';
 import { DeepReadonly } from 'ts-essentials';
+import { z } from 'zod';
 import { LspAuthHandlers } from '../protocol/LspAuthHandlers';
 import { DefaultSettings } from '../settings/Settings';
 import { SettingsManager } from '../settings/SettingsManager';
@@ -31,17 +33,31 @@ import {
     IamCredentials,
 } from './AwsLspAuthTypes';
 
+const DecryptedCredentialsSchema = z.object({
+    data: z.object({
+        profile: z.string(),
+        accessKeyId: z.string(),
+        secretAccessKey: z.string(),
+        sessionToken: z.string().optional(),
+        region: z.string(),
+    }),
+});
+
 export class AwsCredentials {
     private readonly logger = LoggerFactory.getLogger(AwsCredentials);
 
     private iamCredentials?: IamCredentials;
     private bearerCredentials?: BearerCredentials;
     private connectionMetadata?: ConnectionMetadata;
+    private readonly encryptionKey: Buffer;
 
     constructor(
         private readonly awsHandlers: LspAuthHandlers,
         private readonly settingsManager: SettingsManager,
-    ) {}
+        encryptionKey: string,
+    ) {
+        this.encryptionKey = Buffer.from(encryptionKey, 'base64');
+    }
 
     getIAM(): DeepReadonly<IamCredentials> {
         if (!this.iamCredentials) {
@@ -137,22 +153,25 @@ export class AwsCredentials {
         }
     }
 
-    handleIamCredentialsUpdate(params: UpdateCredentialsParams): boolean {
+    async handleIamCredentialsUpdate(params: UpdateCredentialsParams): Promise<boolean> {
         try {
-            const { data } = parseWithPrettyError(parseUpdateCredentialsParams, params);
-            if ('accessKeyId' in data) {
-                const region = getRegion(data.region);
+            const decrypted = await compactDecrypt(params.data as unknown as string, this.encryptionKey);
+            const rawCredentials = JSON.parse(new TextDecoder().decode(decrypted.plaintext)) as unknown;
 
-                this.iamCredentials = {
-                    ...data,
-                    region,
-                };
+            const validatedCredentials = parseWithPrettyError(
+                DecryptedCredentialsSchema.parse.bind(DecryptedCredentialsSchema),
+                rawCredentials,
+            );
 
-                this.settingsManager.updateProfileSettings(data.profile, region);
-                return true;
-            }
+            const region = getRegion(validatedCredentials.data.region);
 
-            throw new Error('Not an IAM credential');
+            this.iamCredentials = {
+                ...validatedCredentials.data,
+                region,
+            };
+
+            this.settingsManager.updateProfileSettings(validatedCredentials.data.profile, region);
+            return true;
         } catch (error) {
             this.iamCredentials = undefined;
 
