@@ -22,12 +22,12 @@ describe('AuthHandler', () => {
 
     test('iamCredentialsUpdateHandler calls handleIamCredentialsUpdate', async () => {
         const params: UpdateCredentialsParams = {
-            data: {
+            data: JSON.stringify({
                 profile: 'test-profile',
                 accessKeyId: 'test',
                 secretAccessKey: 'test',
                 region: 'Region',
-            },
+            }),
         };
         awsCredentials.handleIamCredentialsUpdate.resolves(true);
         const result = await iamCredentialsUpdateHandler(mockComponents)(params, mockCancellationToken);
