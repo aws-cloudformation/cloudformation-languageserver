@@ -39,7 +39,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
             return this.resourceProviders
                 .get(ResourceCompletionType.Entity)
                 ?.getCompletions(context, params) as CompletionItem[];
-        } else if (context.entitySection === 'Type') {
+        } else if (context.entitySection === 'Type' || context.propertyPath[context.propertyPath.length - 1] === 'Type') {
             return this.resourceProviders
                 .get(ResourceCompletionType.Type)
                 ?.getCompletions(context, params) as CompletionItem[];
