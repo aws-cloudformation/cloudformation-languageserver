@@ -1,9 +1,11 @@
-import { Logger } from 'pino';
 import { DataStore } from '../datastore/DataStore';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../utils/Errors';
 import { downloadFile } from './RemoteSchemaHelper';
 import { SamSchemaTransformer, SamSchema } from './SamSchemaTransformer';
+
+const logger = LoggerFactory.getLogger('GetSamSchemaTask');
 
 export class GetSamSchemaTask {
     private static readonly SAM_SCHEMA_URL =
@@ -11,9 +13,9 @@ export class GetSamSchemaTask {
     private static readonly SAM_SCHEMA_KEY = 'sam-schemas';
 
     @Measure({ name: 'getSamSchema' })
-    async run(dataStore: DataStore, logger?: Logger): Promise<void> {
+    async run(dataStore: DataStore): Promise<void> {
         try {
-            logger?.info('Downloading SAM schema');
+            logger.info('Downloading SAM schema');
 
             const schemaBuffer = await downloadFile(GetSamSchemaTask.SAM_SCHEMA_URL);
             const samSchema = JSON.parse(schemaBuffer.toString()) as Record<string, unknown>;
@@ -25,9 +27,9 @@ export class GetSamSchemaTask {
                 await dataStore.put(`${GetSamSchemaTask.SAM_SCHEMA_KEY}:${resourceType}`, JSON.stringify(schema));
             }
 
-            logger?.info(`Downloaded and stored ${resourceSchemas.size} SAM resource schemas`);
+            logger.info(`Downloaded and stored ${resourceSchemas.size} SAM resource schemas`);
         } catch (error) {
-            logger?.error({ error: extractErrorMessage(error) }, 'Failed to download SAM schema');
+            logger.error({ error: extractErrorMessage(error) }, 'Failed to download SAM schema');
             throw error;
         }
     }

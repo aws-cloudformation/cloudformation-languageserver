@@ -77,7 +77,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
 
     private async runSamTask(): Promise<void> {
         try {
-            await this.samTask.run(this.schemas.publicSchemas, this.log);
+            await this.samTask.run(this.schemas.publicSchemas);
         } catch (error) {
             this.log.error({ error }, 'Failed to run SAM schema task');
         }
