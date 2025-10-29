@@ -32,7 +32,7 @@ export interface CodeActionFix {
 }
 
 export class CodeActionService {
-    private static readonly REMOVE_ERROR_TITLE = 'Remove validation error';
+    private static readonly REMOVE_ERROR_TITLE = 'Hide validation error';
     private readonly log = LoggerFactory.getLogger(CodeActionService);
 
     private logError(operation: string, error: unknown): void {
