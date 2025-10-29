@@ -170,7 +170,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
                 });
             }
         } catch (error) {
-            this.log.error({ error, workflowId }, 'Validation workflow threw exception');
+            this.log.error(error, `Validation workflow threw exception ${workflowId}`);
 
             const validation = this.validationManager.get(stackName);
             if (validation) {
@@ -199,7 +199,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
                     await deleteChangeSet(this.cfnService, existingWorkflow, params.id);
                 }
             } catch (error) {
-                this.log.error({ error }, 'resource cleanup failed');
+                this.log.error(error, 'Resource cleanup failed');
             }
         }
     }

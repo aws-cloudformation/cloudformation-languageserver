@@ -3,7 +3,6 @@ import { LspWorkspace } from '../protocol/LspWorkspace';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { toString } from '../utils/String';
 import { PartialDataObserver, SubscriptionManager } from '../utils/SubscriptionManager';
@@ -59,7 +58,7 @@ export class SettingsManager implements ISettingsSubscriber {
             const settings = parseWithPrettyError(parseSettings, mergedConfig, this.getCurrentSettings());
             this.validateAndUpdate(settings);
         } catch (error) {
-            logger.error(`Failed to sync configuration, keeping previous settings: ${extractErrorMessage(error)}`);
+            logger.error(error, `Failed to sync configuration, keeping previous settings`);
         }
     }
 
@@ -74,9 +73,7 @@ export class SettingsManager implements ISettingsSubscriber {
                 },
             });
         } catch (error) {
-            logger.error(
-                `Failed to update profile configuration, keeping previous settings: ${extractErrorMessage(error)}`,
-            );
+            logger.error(error, `Failed to update profile configuration, keeping previous settings`);
         }
     }
 

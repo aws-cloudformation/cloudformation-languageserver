@@ -169,7 +169,7 @@ describe('GetSchemaTask', () => {
             // Check that error was logged using Sinon stub
             expect(mockLogger.error.called).toBe(true);
             const errorCall = mockLogger.error.getCall(0);
-            expect(errorCall.args[0]).toContain('Failed to get private schemas');
+            expect(errorCall.lastArg).toContain('Failed to get private schemas');
         });
     });
 });

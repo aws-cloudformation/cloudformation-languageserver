@@ -3,7 +3,6 @@ import { CloudFormationFileType, DocumentType } from '../../document/Document';
 import { detectDocumentType } from '../../document/DocumentUtils';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { Measure } from '../../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../../utils/Errors';
 import { JsonSyntaxTree } from './JsonSyntaxTree';
 import { SyntaxTree } from './SyntaxTree';
 import { YamlSyntaxTree } from './YamlSyntaxTree';
@@ -31,7 +30,7 @@ export class SyntaxTreeManager {
         try {
             this.createTree(uri, content, type, cfnFileType);
         } catch (error) {
-            logger.error(`Failed to create tree ${uri} ${type} ${cfnFileType}: ${extractErrorMessage(error)}`);
+            logger.error(error, `Failed to create tree ${uri} ${type} ${cfnFileType}`);
         }
     }
 
@@ -71,7 +70,7 @@ export class SyntaxTreeManager {
         try {
             this.getSyntaxTree(uri)?.update(text, startPoint, endPoint);
         } catch (error) {
-            this.log.error({ error: extractErrorMessage(error), uri }, 'Failed to update tree');
+            this.log.error(error, `Failed to update tree ${uri}`);
         }
     }
 
@@ -79,7 +78,7 @@ export class SyntaxTreeManager {
         try {
             this.getSyntaxTree(uri)?.updateWithEdit(content, edit);
         } catch (error) {
-            this.log.error({ error: extractErrorMessage(error), uri }, 'Failed to update tree');
+            this.log.error(error, `Failed to update tree ${uri}`);
         }
     }
 

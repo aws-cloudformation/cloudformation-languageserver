@@ -192,11 +192,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
             // Execute Guard validation with queuing for concurrent requests
             const violations = await this.queueValidation(uri, content, enabledRules);
 
-            // Only log violations if there are any (info level for actual findings)
-            if (violations.length > 0) {
-                this.log.debug(`Guard validation found ${violations.length} violations for ${uri}`);
-            }
-
             // Convert violations to LSP diagnostics
             const diagnostics = this.convertViolationsToDiagnostics(uri, violations);
 
@@ -214,7 +209,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
             }
 
             // For other errors (WASM issues, timeouts, etc.), log as error and show diagnostic
-            this.log.debug(`Guard validation failed for ${uri}: ${errorMessage}`);
             this.publishErrorDiagnostics(uri, errorMessage);
         }
     }

@@ -1,6 +1,5 @@
 import { ScannedResource } from '@aws-sdk/client-cloudformation';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
 import { AwsClient } from './AwsClient';
 import { IacGeneratorService } from './IacGeneratorService';
 import { RelationshipSchemaService } from './RelationshipSchemaService';
@@ -56,7 +55,7 @@ export async function getFilteredScannedResources(
 
         return filterResourcesByRelationships(scannedResources, templateResourceTypes, relationshipService);
     } catch (error) {
-        logger.warn({ error: extractErrorMessage(error) }, 'Failed to get resource scan data');
+        logger.warn(error, 'Failed to get resource scan data');
         return undefined;
     }
 }

@@ -20,7 +20,7 @@ export async function analyzeCapabilities(document: Document, cfnService: CfnSer
 
         return validationResult.Capabilities;
     } catch (error) {
-        log.warn({ error }, 'Capability Analysis failed, assuming all capabilities are required');
+        log.warn(error, 'Capability Analysis failed, assuming all capabilities are required');
         return [Capability.CAPABILITY_IAM, Capability.CAPABILITY_NAMED_IAM, Capability.CAPABILITY_AUTO_EXPAND];
     }
 }

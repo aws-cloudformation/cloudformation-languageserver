@@ -71,16 +71,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             return undefined;
         }
 
-        log.debug(
-            {
-                provider: 'IntrinsicFunctionArgument',
-                context: context.record(),
-                intrinsicFunction: intrinsicFunction.type,
-                args: intrinsicFunction.args,
-            },
-            'Processing intrinsic function argument completion request',
-        );
-
         // Route to specific handlers based on intrinsic function type
         switch (intrinsicFunction.type) {
             case IntrinsicFunction.Ref: {
@@ -106,14 +96,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         params: CompletionParams,
         syntaxTree: SyntaxTree,
     ): CompletionItem[] | undefined {
-        log.debug(
-            {
-                provider: 'IntrinsicFunctionArgument',
-                function: 'Ref',
-                context: context.record(),
-            },
-            'Processing Ref argument completion',
-        );
         const parametersAndResourcesCompletions = this.getParametersAndResourcesAsCompletionItems(
             context,
             params,
@@ -135,14 +117,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         params: CompletionParams,
         syntaxTree: SyntaxTree,
     ): CompletionItem[] | undefined {
-        log.debug(
-            {
-                provider: 'IntrinsicFunctionArgument',
-                function: 'Sub',
-                context: context.record(),
-            },
-            'Processing Sub argument completion',
-        );
         const parametersAndResourcesCompletions = this.getParametersAndResourcesAsCompletionItems(
             context,
             params,
@@ -193,34 +167,26 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         syntaxTree: SyntaxTree,
         intrinsicFunction: IntrinsicFunctionInfo,
     ): CompletionItem[] | undefined {
-        log.debug(
-            { provider: 'FindInMap Completion', context: context.record() },
-            'Processing FindInMap completion request',
-        );
-
         // Validate that mappings exist in the template
         const mappingsMap = getEntityMap(syntaxTree, TopLevelSection.Mappings);
         if (!mappingsMap || mappingsMap.size === 0) {
-            log.debug('No mappings found in template for FindInMap completion');
             return undefined;
         }
 
         try {
             // Determine position in FindInMap arguments
             const position = this.determineFindInMapPosition(intrinsicFunction.args, context);
-            log.debug(`FindInMap argument position determined: ${position}`);
 
             // Get completions based on position
             const completions = this.getCompletionsByPosition(position, mappingsMap, intrinsicFunction.args, context);
 
             if (!completions) {
-                log.debug(`No completions found for FindInMap position ${position}`);
                 return undefined;
             }
 
             return completions;
         } catch (error) {
-            log.error({ error }, 'Error processing FindInMap completions');
+            log.error(error, 'Error processing FindInMap completions');
             return undefined;
         }
     }
@@ -362,7 +328,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                             attributeDescription = resolvedSchemas[0].description;
                         }
                     } catch (error) {
-                        log.error({ error }, 'Error resolving JSON Pointer path');
+                        log.error(error, 'Error resolving JSON pointer path');
                     }
                 }
                 completionItems.push(
@@ -461,7 +427,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     ): CompletionItem[] | undefined {
         // Validate position is within expected range for FindInMap (1-3)
         if (position < 1 || position > 3) {
-            log.debug(`Invalid FindInMap position: ${position}`);
             return undefined;
         }
 
@@ -489,7 +454,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
             return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
         } catch (error) {
-            log.error({ error }, 'Error creating mapping name completions');
+            log.error(error, 'Error creating mapping name completions');
             return [];
         }
     }
@@ -501,7 +466,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     ): CompletionItem[] | undefined {
         // Validate arguments structure
         if (!Array.isArray(args) || args.length === 0 || typeof args[0] !== 'string') {
-            log.debug('Invalid arguments for top-level key completions');
             return undefined;
         }
 
@@ -509,13 +473,11 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             const mappingName = args[0];
             const mappingEntity = this.getMappingEntity(mappingsEntities, mappingName);
             if (!mappingEntity) {
-                log.debug(`Mapping entity not found: ${mappingName}`);
                 return undefined;
             }
 
             const topLevelKeys = mappingEntity.getTopLevelKeys();
             if (topLevelKeys.length === 0) {
-                log.debug(`No top-level keys found for mapping: ${mappingName}`);
                 return undefined;
             }
 
@@ -525,7 +487,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
             return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
         } catch (error) {
-            log.error({ error }, 'Error creating top-level key completions');
+            log.error(error, 'Error creating top-level key completions');
             return undefined;
         }
     }
@@ -537,7 +499,6 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     ): CompletionItem[] | undefined {
         // Validate arguments structure for second-level keys
         if (!this.isValidSecondLevelKeyArgs(args)) {
-            log.debug('Invalid arguments for second-level key completions');
             return undefined;
         }
 
@@ -547,13 +508,11 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
             const mappingEntity = this.getMappingEntity(mappingsEntities, mappingName);
             if (!mappingEntity) {
-                log.debug(`Mapping entity not found: ${mappingName}`);
                 return undefined;
             }
 
             const secondLevelKeys = this.getSecondLevelKeysForTopLevelKey(mappingEntity, topLevelKey);
             if (secondLevelKeys.length === 0) {
-                log.debug(`No second-level keys found for mapping: ${mappingName}`);
                 return undefined;
             }
 
@@ -563,7 +522,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
             return this.filterSecondLevelKeyItems(items, context, topLevelKey);
         } catch (error) {
-            log.debug({ error }, 'Error creating second-level key completions');
+            log.warn(error, 'Error creating second-level key completions');
             return undefined;
         }
     }
@@ -647,7 +606,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             }
             return mappingContext.entity as Mapping;
         } catch (error) {
-            log.error({ error }, `Error retrieving mapping entity: ${mappingName}`);
+            log.error(error, `Error retrieving mapping entity: ${mappingName}`);
             return undefined;
         }
     }

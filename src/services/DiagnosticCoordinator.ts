@@ -5,7 +5,6 @@ import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { LspDiagnostics } from '../protocol/LspDiagnostics';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
 
 type SourceToDiagnostics = Map<string, Diagnostic[]>;
 
@@ -55,14 +54,8 @@ export class DiagnosticCoordinator {
             };
 
             await this.lspDiagnostics.publishDiagnostics(params);
-
-            this.log.debug(
-                `Published ${mergedDiagnostics.length} diagnostics for ${uri} from ${collection.size} sources`,
-            );
         } catch (error) {
-            this.log.error(
-                `Failed to publish diagnostics for source ${source}, URI ${uri}: ${extractErrorMessage(error)}`,
-            );
+            this.log.error(error, `Failed to publish diagnostics for source ${source}, URI ${uri}`);
             throw error;
         }
     }
@@ -89,10 +82,8 @@ export class DiagnosticCoordinator {
                 uri,
                 diagnostics: [],
             });
-
-            this.log.debug(`Cleared all diagnostics for ${uri} from ${collection.size} sources`);
         } catch (error) {
-            this.log.error(`Failed to clear all diagnostics for URI ${uri}: ${extractErrorMessage(error)}`);
+            this.log.error(error, `Failed to clear all diagnostics for URI ${uri}`);
             throw error;
         }
     }

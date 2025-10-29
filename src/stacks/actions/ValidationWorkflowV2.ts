@@ -85,7 +85,7 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
                 this.diagnosticCoordinator,
             );
         } catch (error) {
-            this.log.error({ error, workflowId }, 'Validation workflow threw exception');
+            this.log.error(error, `Validation workflow threw exception ${workflowId}`);
 
             const validation = this.validationManager.get(stackName);
             if (validation) {

@@ -7,7 +7,6 @@ import { getFilteredScannedResources, formatScannedResourcesForAI } from '../ser
 import { SettingsConfigurable, ISettingsSubscriber } from '../settings/ISettingsSubscriber';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Closeable } from '../utils/Closeable';
-import { extractErrorMessage } from '../utils/Errors';
 import { toString } from '../utils/String';
 import { Agent } from './Agent';
 import { LLMConfig } from './llm/LLMConfig';
@@ -47,7 +46,7 @@ export class CfnAI implements SettingsConfigurable, Closeable {
         try {
             return (await this.mcpTools?.getAllTools()) ?? [];
         } catch (error) {
-            logger.warn({ error: extractErrorMessage(error) }, 'Failed to get MCP tools, continuing without tools');
+            logger.warn(error, 'Failed to get MCP tools, continuing without tools');
             return [];
         }
     }
@@ -129,7 +128,7 @@ export class CfnAI implements SettingsConfigurable, Closeable {
                     logger.info('No resource scan available');
                 }
             } catch (error) {
-                logger.warn({ error: extractErrorMessage(error) }, 'Failed to get resource scan data');
+                logger.warn(error, 'Failed to get resource scan data');
             }
 
             return await agent.execute(

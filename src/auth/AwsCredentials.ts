@@ -5,7 +5,6 @@ import { LspAuthHandlers } from '../protocol/LspAuthHandlers';
 import { DefaultSettings } from '../settings/Settings';
 import { SettingsManager } from '../settings/SettingsManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
 import { getRegion } from '../utils/Region';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import { UpdateCredentialsParams, IamCredentials } from './AwsLspAuthTypes';
@@ -63,7 +62,7 @@ export class AwsCredentials {
         } catch (error) {
             this.iamCredentials = undefined;
 
-            this.logger.error(`Failed to update IAM credentials: ${extractErrorMessage(error)}`);
+            this.logger.error(error, `Failed to update IAM credentials`);
             this.settingsManager.updateProfileSettings(DefaultSettings.profile.profile, DefaultSettings.profile.region);
             return false;
         }

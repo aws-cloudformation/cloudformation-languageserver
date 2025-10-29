@@ -15,7 +15,6 @@ import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../utils/Errors';
 import { ResourceStateManager } from './ResourceStateManager';
 import {
     DeletionPolicyOnImport,
@@ -177,10 +176,7 @@ export class ResourceStateImporter {
                         this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
                     }
                 } catch (error) {
-                    log.error(
-                        { error: extractErrorMessage(error) },
-                        `Error importing resource state for ${resourceType} id: ${resourceIdentifier}`,
-                    );
+                    log.error(error, `Error importing resource state for ${resourceType} id: ${resourceIdentifier}`);
                     this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
                 }
             }

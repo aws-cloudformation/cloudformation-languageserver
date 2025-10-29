@@ -16,12 +16,6 @@ export function executionHandler(
     return (params): unknown => {
         TelemetryService.instance.get('ExecutionHandler').count(`execute.${params.command}`, 1, { unit: '1' });
 
-        log.debug({
-            Handler: 'Execution',
-            Command: params.command,
-            Arguments: params.arguments,
-        });
-
         switch (params.command) {
             case DESCRIBE_TEMPLATE: {
                 return executeWithError(components, async () => {
@@ -70,7 +64,7 @@ export function executionHandler(
                     const diagnosticId = args[1] as string;
                     components.diagnosticCoordinator
                         .handleClearCfnDiagnostic(uri, diagnosticId)
-                        .catch((err) => log.error(`Error clearing diagnostic: ${extractErrorMessage(err)}`));
+                        .catch((err) => log.error(err, `Error clearing diagnostic`));
                 }
                 break;
             }

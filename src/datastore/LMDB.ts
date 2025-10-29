@@ -6,7 +6,6 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { pathToArtifact } from '../utils/ArtifactsDir';
-import { extractErrorMessage } from '../utils/Errors';
 import { DataStore, DataStoreFactory } from './DataStore';
 import { encryptionStrategy } from './lmdb/Utils';
 
@@ -130,7 +129,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
                     rmSync(join(this.rootDir, entry.name), { recursive: true, force: true });
                 }
             } catch (error) {
-                log.error({ error: extractErrorMessage(error) }, 'Failed to cleanup old LMDB versions');
+                log.error(error, 'Failed to cleanup old LMDB versions');
                 this.telemetry.count('oldVersion.cleanup.error', 1, { unit: '1' });
             }
         }

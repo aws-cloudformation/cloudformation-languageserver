@@ -20,7 +20,6 @@ import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Track } from '../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../utils/Errors';
 import { pointToPosition } from '../utils/TypeConverters';
 import { ExtractToParameterProvider } from './extractToParameter/ExtractToParameterProvider';
 
@@ -37,7 +36,7 @@ export class CodeActionService {
     private readonly log = LoggerFactory.getLogger(CodeActionService);
 
     private logError(operation: string, error: unknown): void {
-        this.log.error(`Error ${operation}: ${extractErrorMessage(error)}`);
+        this.log.error(error, `Error ${operation}`);
     }
 
     constructor(
@@ -192,7 +191,7 @@ export class CodeActionService {
                 ],
             });
         } else {
-            this.log.debug(`Skipping quickfix for '${propertyName}' - could not determine proper range`);
+            this.log.warn(`Skipping quickfix for '${propertyName}' - could not determine proper range`);
         }
 
         return fixes;
@@ -220,7 +219,7 @@ export class CodeActionService {
         }
 
         // Fallback to the diagnostic range as provided by cfn-lint
-        this.log.debug(`Using fallback diagnostic range`);
+        this.log.warn(`Using fallback diagnostic range`);
         return diagnostic.range;
     }
 
@@ -256,7 +255,6 @@ export class CodeActionService {
                 return { start, end };
             }
 
-            this.log.debug(`No key-value pair found after traversal`);
             return {
                 start: pointToPosition(node.startPosition),
                 end: pointToPosition(node.endPosition),
@@ -379,7 +377,6 @@ export class CodeActionService {
 
                 // If no children exist, we can't determine proper indentation from the structure
                 // This shouldn't happen for valid YAML where we're adding a required property
-                this.log.debug(`No child properties found in block mapping pair - cannot determine indentation`);
                 return undefined;
             }
 

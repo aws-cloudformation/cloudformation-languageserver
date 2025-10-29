@@ -42,7 +42,7 @@ export function nodeToEntity(type: DocumentType, node: SyntaxNode | undefined, s
             entityObject = nodeToObject(node, type)?.[id];
         }
     } catch (error) {
-        log.error({ error }, 'Error creating entity');
+        log.error(error, 'Error creating entity');
         entityObject = undefined;
     }
 

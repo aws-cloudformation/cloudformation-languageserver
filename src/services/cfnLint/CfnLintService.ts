@@ -55,7 +55,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
     private logError(operation: string, error: unknown): void {
-        this.log.error(`Error ${operation}: ${extractErrorMessage(error)}`);
+        this.log.error(error, `Error ${operation}`);
     }
 
     // Request queue for handling requests during initialization
@@ -243,12 +243,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
      */
     private async lintStandaloneFile(content: string, uri: string, fileType: CloudFormationFileType): Promise<void> {
         try {
-            this.log.debug(`Begin linting of ${fileType} ${uri} by string`);
-
             // Use worker to lint template
             const diagnosticPayloads = await this.workerManager.lintTemplate(content, uri, fileType);
-
-            this.log.debug(`End linting of ${fileType} ${uri} by string`);
 
             if (!diagnosticPayloads || diagnosticPayloads.length === 0) {
                 // If no diagnostics were returned, publish empty diagnostics to clear any previous issues
@@ -305,12 +301,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         try {
             const relativePath = uri.replace(folder.uri, '/'.concat(folder.name));
 
-            this.log.debug(`Begin linting of ${fileType} ${uri} by file`);
-
             // Use worker to lint file
             const diagnosticPayloads = await this.workerManager.lintFile(relativePath, uri, fileType);
-
-            this.log.debug(`End linting of ${fileType} ${uri} by file`);
 
             if (!diagnosticPayloads || diagnosticPayloads.length === 0) {
                 // Handle empty result case
@@ -318,10 +310,11 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                     // For GitSync deployment files, extract template path and publish empty diagnostics
                     const templatePath = this.extractTemplatePathFromDeploymentFile(content);
                     if (templatePath) {
-                        this.log.debug(`Found template path in deployment file: ${templatePath}`);
                         // Publish empty diagnostics for the template file
                         const templateUri = URI.file(templatePath).toString();
                         this.publishDiagnostics(templateUri, []);
+                    } else {
+                        this.log.warn(`Did not find template path in deployment file: ${templatePath}`);
                     }
                 }
                 // Publish empty diagnostics for the current file
@@ -365,7 +358,6 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
      */
     public async lint(content: string, uri: string, forceUseContent: boolean = false): Promise<void> {
         // Check if this file should be processed by cfn-lint
-        this.log.debug(`Lint: ${uri} with ${forceUseContent}`);
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
         if (!fileType || fileType === CloudFormationFileType.Unknown) {
@@ -557,7 +549,6 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             }
             case LintTrigger.OnChange: {
                 if (!this.settings.lintOnChange) {
-                    this.log.debug('CfnLint lintOnChange is disabled, skipping linting');
                     return;
                 }
                 break;
