@@ -22,14 +22,6 @@ export class ConditionCompletionProvider implements CompletionProvider {
     public constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
     public getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
-        this.log.debug(
-            {
-                provider: 'Condition Completion',
-                position: params.position,
-            },
-            'Processing condition completion request',
-        );
-
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {
             return;

@@ -135,7 +135,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
                 state: deploymentResult.state,
             });
         } catch (error) {
-            this.log.error({ error, workflowId }, 'Deployment workflow threw exception');
+            this.log.error(error, `Deployment workflow threw exception ${workflowId}`);
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: StackActionPhase.DEPLOYMENT_FAILED,
                 state: StackActionState.FAILED,
@@ -187,7 +187,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
                 deploymentEvents: deploymentEvents,
             });
         } catch (error) {
-            this.log.error({ error, stackName }, 'Failed to process deployment events');
+            this.log.error(error, `Failed to process deployment events ${stackName}`);
 
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: StackActionPhase.DEPLOYMENT_FAILED,

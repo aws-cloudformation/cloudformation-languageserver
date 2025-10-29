@@ -23,7 +23,7 @@ export class RuleConfiguration {
         const removed = [...previousPacks].filter((pack) => !this.enabledPacks.has(pack));
 
         if (added.length > 0 || removed.length > 0) {
-            this.log.debug('Rule pack configuration updated');
+            this.log.info('Rule pack configuration updated');
         }
     }
 
@@ -51,13 +51,10 @@ export class RuleConfiguration {
      */
     filterRulesByEnabledPacks(allRules: GuardRule[]): GuardRule[] {
         if (this.enabledPacks.size === 0) {
-            this.log.debug('No rule packs enabled, returning empty rule set');
             return [];
         }
 
         const filteredRules = allRules.filter((rule) => this.isPackEnabled(rule.pack));
-
-        this.log.debug(`Filtered ${allRules.length} rules to ${filteredRules.length} rules from enabled packs`);
 
         return filteredRules;
     }
@@ -69,13 +66,13 @@ export class RuleConfiguration {
      */
     filterRulePackNamesByEnabled(allPackNames: string[]): string[] {
         if (this.enabledPacks.size === 0) {
-            this.log.debug('No rule packs enabled, returning empty pack set');
+            this.log.info('No rule packs enabled, returning empty pack set');
             return [];
         }
 
         const filteredPacks = allPackNames.filter((packName) => this.isPackEnabled(packName));
 
-        this.log.debug(`Filtered ${allPackNames.length} rule packs to ${filteredPacks.length} enabled packs`);
+        this.log.info(`Filtered ${allPackNames.length} rule packs to ${filteredPacks.length} enabled packs`);
 
         return filteredPacks;
     }
@@ -128,6 +125,6 @@ export class RuleConfiguration {
      */
     reset(): void {
         this.enabledPacks.clear();
-        this.log.debug('Rule configuration reset');
+        this.log.info('Rule configuration reset');
     }
 }

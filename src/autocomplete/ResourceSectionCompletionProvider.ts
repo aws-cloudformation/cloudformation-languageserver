@@ -33,18 +33,6 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
         context: Context,
         params: CompletionParams,
     ): Promise<CompletionItem[]> | CompletionItem[] | undefined {
-        this.log.debug(
-            {
-                provider: 'Resource Completion',
-                position: params.position,
-                entitySection: context.entitySection,
-                propertyPath: context.propertyPath,
-                atEntityKeyLevel: context.atEntityKeyLevel(),
-                text: context.text,
-            },
-            'Processing resource completion request',
-        );
-
         if (context.atEntityKeyLevel()) {
             return this.resourceProviders
                 .get(ResourceCompletionType.Entity)
@@ -77,7 +65,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
                             return [...stateCompletion, ...schemaPropertyCompletions];
                         })
                         .catch((error) => {
-                            this.log.debug(error, 'Received error from resource state autocomplete');
+                            this.log.warn(error, 'Received error from resource state autocomplete');
                             // Fallback to just property completions if state completions fail
                             return schemaPropertyCompletions;
                         });

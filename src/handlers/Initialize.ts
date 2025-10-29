@@ -1,7 +1,6 @@
 import { LspWorkspace } from '../protocol/LspWorkspace';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
 
 const logger = LoggerFactory.getLogger('InitializedHandler');
 
@@ -20,12 +19,12 @@ export function initializedHandler(workspace: LspWorkspace, components: ServerCo
                         // Properly await the async mountFolder method
                         await components.cfnLintService.mountFolder(folder);
                     } catch (error) {
-                        logger.error(`Failed to mount folder ${folder.name}: ${extractErrorMessage(error)}`);
+                        logger.error(error, `Failed to mount folder ${folder.name}`);
                     }
                 }
             })
             .catch((error: unknown) => {
-                logger.error(`Failed to initialize server: ${extractErrorMessage(error)}`);
+                logger.error(error, `Failed to initialize server`);
             });
     };
 }

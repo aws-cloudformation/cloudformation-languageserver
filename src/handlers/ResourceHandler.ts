@@ -33,7 +33,7 @@ export function getResourceTypesHandler(
             const resourceTypes = components.resourceStateManager.getResourceTypes();
             return { resourceTypes };
         } catch (error) {
-            log.error({ error: extractErrorMessage(error) }, 'Error getting resource types');
+            log.error(error, 'Error getting resource types');
             return { resourceTypes: [] };
         }
     };
@@ -67,7 +67,7 @@ export function listResourcesHandler(
 
             return { resources };
         } catch (error) {
-            log.error({ error: extractErrorMessage(error) }, 'Error listing resources');
+            log.error(error, 'Error listing resources');
             return { resources: [] };
         }
     };

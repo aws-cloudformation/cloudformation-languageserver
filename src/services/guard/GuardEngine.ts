@@ -123,7 +123,6 @@ export class GuardEngine {
         try {
             return this.performValidation(content, rules, severity);
         } catch (error) {
-            this.log.debug(`Guard validation failed: ${extractErrorMessage(error)}`);
             throw new Error(`Guard validation failed: ${extractErrorMessage(error)}`);
         }
     }
@@ -162,14 +161,9 @@ export class GuardEngine {
      * Perform the actual validation using SingleLineSummary format
      */
     private performValidation(content: string, rules: GuardRule[], severity: DiagnosticSeverity): GuardViolation[] {
-        try {
-            const output = this.executeGuardValidation(content, rules);
-            const violations = this.parseSingleLineSummaryOutput(output, rules, severity);
-            return this.deduplicateViolations(violations);
-        } catch (error) {
-            this.log.debug(`Guard WASM execution failed: ${extractErrorMessage(error)}`);
-            throw error;
-        }
+        const output = this.executeGuardValidation(content, rules);
+        const violations = this.parseSingleLineSummaryOutput(output, rules, severity);
+        return this.deduplicateViolations(violations);
     }
 
     /**

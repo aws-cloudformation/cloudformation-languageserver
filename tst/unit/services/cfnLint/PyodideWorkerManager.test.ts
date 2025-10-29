@@ -1129,7 +1129,7 @@ describe('PyodideWorkerManager', () => {
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // Error should be logged
-            expect(mockLogging.error.calledWith({ error: terminationError }, 'Error terminating worker')).toBe(true);
+            expect(mockLogging.error.calledWith(terminationError, 'Error terminating worker')).toBe(true);
         });
     });
 });

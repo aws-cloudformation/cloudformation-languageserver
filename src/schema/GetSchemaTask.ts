@@ -3,7 +3,6 @@ import { Logger } from 'pino';
 import { DataStore } from '../datastore/DataStore';
 import { CfnService } from '../services/CfnService';
 import { Measure } from '../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
@@ -88,7 +87,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
                 logger?.info(`No private registry schemas found for profile: ${profile}`);
             }
         } catch (error) {
-            logger?.error(`Failed to get private schemas: ${extractErrorMessage(error)}`);
+            logger?.error(error, `Failed to get private schemas`);
             throw error;
         }
     }

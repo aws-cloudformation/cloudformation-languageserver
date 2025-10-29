@@ -1,7 +1,6 @@
 import { TextDocument, Position, Range, DocumentUri } from 'vscode-languageserver-textdocument';
 import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
 import { detectCfnFileType } from './CloudFormationDetection';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
@@ -33,13 +32,7 @@ export class Document {
             this.cfnFileType = detectCfnFileType(this.textDocument.getText(), this.documentType);
         } catch (error) {
             this.cfnFileType = CloudFormationFileType.Unknown;
-            this.log.error(
-                {
-                    error: extractErrorMessage(error),
-                    uri: this.textDocument.uri,
-                },
-                'Failed to detect CloudFormation file type',
-            );
+            this.log.error(error, `Failed to detect CloudFormation file type ${this.textDocument.uri}`);
         }
         this.tabSize = fallbackTabSize;
         this.processIndentation(detectIndentation, fallbackTabSize);

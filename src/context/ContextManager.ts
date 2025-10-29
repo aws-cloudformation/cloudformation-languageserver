@@ -2,7 +2,7 @@ import { SyntaxNode } from 'tree-sitter';
 import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Track } from '../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../utils/Errors';
+import { toString } from '../utils/String';
 import { Context } from './Context';
 import { ContextWithRelatedEntities } from './ContextWithRelatedEntities';
 import { PathAndEntity, SyntaxTree } from './syntaxtree/SyntaxTree';
@@ -29,14 +29,7 @@ export class ContextManager {
                 contextParams.pathInfo.entityRootNode,
             );
         } catch (error) {
-            this.log.error(
-                {
-                    error: extractErrorMessage(error),
-                    uri: params.textDocument.uri,
-                    position: params.position,
-                },
-                'Could not get context',
-            );
+            this.log.error(error, `Could not get context ${params.textDocument.uri} ${toString(params.position)}`);
         }
 
         return undefined;
@@ -65,14 +58,7 @@ export class ContextManager {
                 fullEntitySearch,
             );
         } catch (error) {
-            this.log.error(
-                {
-                    error: extractErrorMessage(error),
-                    uri: params.textDocument.uri,
-                    position: params.position,
-                },
-                'Could not get context',
-            );
+            this.log.error(error, `Could not get context ${params.textDocument.uri} ${toString(params.position)}`);
         }
 
         return undefined;
@@ -100,14 +86,7 @@ export class ContextManager {
 
             return { context, fullyResolved: result.fullyResolved };
         } catch (error) {
-            this.log.error(
-                {
-                    error: extractErrorMessage(error),
-                    uri,
-                    pathSegments,
-                },
-                'Could not get context from path',
-            );
+            this.log.error(error, `Could not get context from path ${uri} ${toString(pathSegments)}`);
         }
 
         return { context: undefined, fullyResolved: false };
@@ -117,7 +96,6 @@ export class ContextManager {
         const uri = params.textDocument.uri;
         const [tree, currentNode] = this.getFromTree(uri, (tree) => tree.getNodeAtPosition(params.position));
         if (!currentNode || !tree) {
-            this.log.debug({ uri }, 'No syntax node found at position');
             return undefined;
         }
 

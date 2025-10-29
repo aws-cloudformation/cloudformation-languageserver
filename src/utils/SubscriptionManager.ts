@@ -122,7 +122,7 @@ export class SubscriptionManager<Data> {
         try {
             notifyFn();
         } catch (error) {
-            this.log.error({ error }, `Error in settings observer (subscription ${subscriptionId})`);
+            this.log.error(error, `Error in settings observer (subscription ${subscriptionId})`);
         }
     }
 
