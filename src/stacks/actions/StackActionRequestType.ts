@@ -1,9 +1,4 @@
-import {
-    Parameter,
-    Capability,
-    ResourceStatus,
-    DetailedStatus,
-} from '@aws-sdk/client-cloudformation';
+import { Parameter, Capability, ResourceStatus, DetailedStatus } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
 import { Identifiable } from '../../protocol/LspTypes';
