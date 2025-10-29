@@ -230,6 +230,21 @@ async function initializePyodide(): Promise<InitializeResult> {
     }
 }
 
+function convertPythonResultToDiagnostics(result: unknown): PublishDiagnosticsParams[] {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+    if (!result || typeof (result as any).toJs !== 'function') {
+        throw new Error('Invalid result from Python linting');
+    }
+
+    // Type assertion for the conversion result
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    const diagnostics = (result as any).toJs({
+        dict_converter: Object.fromEntries,
+    });
+
+    return (Array.isArray(diagnostics) ? diagnostics : []) as PublishDiagnosticsParams[];
+}
+
 // Lint template content as string
 async function lintTemplate(
     content: string,
@@ -251,18 +266,7 @@ async function lintTemplate(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await pyodide.runPythonAsync(pythonCode);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (!result || typeof result.toJs !== 'function') {
-        throw new Error('Invalid result from Python linting');
-    }
-
-    // Type assertion for the conversion result
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    const diagnostics = result.toJs({
-        dict_converter: Object.fromEntries,
-    });
-
-    return (Array.isArray(diagnostics) ? diagnostics : []) as PublishDiagnosticsParams[];
+    return convertPythonResultToDiagnostics(result);
 }
 
 // Lint file using path
@@ -280,18 +284,7 @@ async function lintFile(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await pyodide.runPythonAsync(pythonCode);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (!result || typeof result.toJs !== 'function') {
-        throw new Error('Invalid result from Python linting');
-    }
-
-    // Type assertion for the conversion result
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    const diagnostics = result.toJs({
-        dict_converter: Object.fromEntries,
-    });
-
-    return (Array.isArray(diagnostics) ? diagnostics : []) as PublishDiagnosticsParams[];
+    return convertPythonResultToDiagnostics(result);
 }
 
 // Mount folder to Pyodide filesystem
