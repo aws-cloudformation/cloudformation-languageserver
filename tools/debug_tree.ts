@@ -95,10 +95,10 @@ interface DebugResults {
 
 class DebugTreeTool {
     private readonly syntaxTreeManager: SyntaxTreeManager;
-    private documentManager: DocumentManager;
-    private contextManager: ContextManager;
+    private readonly documentManager: DocumentManager;
+    private readonly contextManager: ContextManager;
     private nodeCounter = 0;
-    private nodeIdMap = new Map<SyntaxNode, string>();
+    private readonly nodeIdMap = new Map<SyntaxNode, string>();
 
     constructor() {
         this.syntaxTreeManager = new SyntaxTreeManager();
@@ -106,12 +106,12 @@ class DebugTreeTool {
         this.contextManager = new ContextManager(this.syntaxTreeManager);
     }
 
-    public async debugTemplate(options: DebugOptions): Promise<DebugResults> {
+    public debugTemplate(options: DebugOptions): DebugResults {
         console.log(`🔍 Debugging CloudFormation template: ${options.file}`);
 
         // Read and parse the file
         const filePath = resolve(options.file);
-        const content = readFileSync(filePath, 'utf-8');
+        const content = readFileSync(filePath, 'utf8');
         const fileExtension = extname(filePath).toLowerCase();
 
         console.log(`📄 File size: ${content.length} characters`);
@@ -194,8 +194,8 @@ class DebugTreeTool {
             let fieldName: string | undefined;
             if (node.parent) {
                 const childIndex = node.parent.children.indexOf(node);
-                if (childIndex >= 0) {
-                    fieldName = node.parent.fieldNameForChild(childIndex) || undefined;
+                if (childIndex !== -1) {
+                    fieldName = node.parent.fieldNameForChild(childIndex) ?? undefined;
                 }
             }
 
@@ -275,8 +275,7 @@ class DebugTreeTool {
         }
 
         // Add positions at significant characters for each non-empty line
-        for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-            const line = lines[lineIndex];
+        for (const [lineIndex, line] of lines.entries()) {
             if (line.trim().length === 0) continue;
 
             // Add positions at CloudFormation-significant characters
@@ -312,9 +311,9 @@ class DebugTreeTool {
         }
 
         // Remove duplicates and sort
-        const uniquePositions = Array.from(
-            new Map(strategicPositions.map((p) => [`${p.line},${p.column}`, p])).values(),
-        ).sort((a, b) => a.line - b.line || a.column - b.column);
+        const uniquePositions = [...new Map(strategicPositions.map((p) => [`${p.line},${p.column}`, p])).values()].sort(
+            (a, b) => a.line - b.line || a.column - b.column,
+        );
 
         console.log(`🎯 Testing ${uniquePositions.length} strategic positions...`);
 
@@ -604,7 +603,7 @@ async function main() {
 
     try {
         const debugTool = new DebugTreeTool();
-        await debugTool.debugTemplate(options);
+        debugTool.debugTemplate(options);
     } catch (error) {
         console.error('❌ Error:', error instanceof Error ? error.message : String(error));
         process.exit(1);

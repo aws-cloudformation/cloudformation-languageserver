@@ -10,6 +10,7 @@ export enum EntityType {
     Mapping = 'Mapping',
     Parameter = 'Parameter',
     Unknown = 'Unknown',
+    ForEachResource = 'ForEachResource',
 }
 
 type Ref = { Ref: string };

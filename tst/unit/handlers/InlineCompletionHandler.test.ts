@@ -20,7 +20,7 @@ describe('InlineCompletionHandler', () => {
         mockServices.inlineCompletionRouter.getInlineCompletions.reset();
     });
 
-    test('should call inlineCompletionRouter.getInlineCompletions with correct parameters', () => {
+    test('should call inlineCompletionRouter.getInlineCompletions with correct parameters', async () => {
         const mockInlineCompletions = {
             items: [
                 {
@@ -33,21 +33,21 @@ describe('InlineCompletionHandler', () => {
             ],
         };
 
-        mockServices.inlineCompletionRouter.getInlineCompletions.returns(mockInlineCompletions);
+        mockServices.inlineCompletionRouter.getInlineCompletions.resolves(mockInlineCompletions);
 
         const handler = inlineCompletionHandler(mockServices);
-        const result = handler(mockParams, CancellationToken.None);
+        const result = await handler(mockParams, CancellationToken.None);
 
         expect(mockServices.inlineCompletionRouter.getInlineCompletions.calledOnce).toBe(true);
         expect(mockServices.inlineCompletionRouter.getInlineCompletions.calledWith(mockParams)).toBe(true);
         expect(result).toEqual(mockInlineCompletions);
     });
 
-    test('should return undefined when router returns undefined', () => {
-        mockServices.inlineCompletionRouter.getInlineCompletions.returns(undefined);
+    test('should return undefined when router returns undefined', async () => {
+        mockServices.inlineCompletionRouter.getInlineCompletions.resolves(undefined);
 
         const handler = inlineCompletionHandler(mockServices);
-        const result = handler(mockParams, CancellationToken.None);
+        const result = await handler(mockParams, CancellationToken.None);
 
         expect(result).toBeUndefined();
     });
@@ -81,7 +81,7 @@ describe('InlineCompletionHandler', () => {
             },
         };
 
-        mockServices.inlineCompletionRouter.getInlineCompletions.returns({ items: [] });
+        mockServices.inlineCompletionRouter.getInlineCompletions.resolves({ items: [] });
 
         const handler = inlineCompletionHandler(mockServices);
         handler(automaticParams, CancellationToken.None);
@@ -95,7 +95,7 @@ describe('InlineCompletionHandler', () => {
             textDocument: { uri: 'file:///test.json' },
         };
 
-        mockServices.inlineCompletionRouter.getInlineCompletions.returns({ items: [] });
+        mockServices.inlineCompletionRouter.getInlineCompletions.resolves({ items: [] });
 
         const handler = inlineCompletionHandler(mockServices);
         handler(jsonParams, CancellationToken.None);
@@ -109,7 +109,7 @@ describe('InlineCompletionHandler', () => {
             position: { line: 5, character: 10 },
         };
 
-        mockServices.inlineCompletionRouter.getInlineCompletions.returns({ items: [] });
+        mockServices.inlineCompletionRouter.getInlineCompletions.resolves({ items: [] });
 
         const handler = inlineCompletionHandler(mockServices);
         handler(positionParams, CancellationToken.None);

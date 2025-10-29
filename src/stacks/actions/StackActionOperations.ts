@@ -1,9 +1,8 @@
 import { Change, ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { DateTime } from 'luxon';
-import Parser from 'tree-sitter';
 import { v4 as uuidv4 } from 'uuid';
-import { ResponseError, ErrorCodes, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { ResponseError, ErrorCodes, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { TopLevelSection } from '../../context/ContextType';
 import { getEntityMap } from '../../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
@@ -272,35 +271,31 @@ export async function publishValidationDiagnostics(
 
     const diagnostics: Diagnostic[] = [];
     for (const event of events) {
-        let startPosition: Parser.Point | undefined;
-        let endPosition: Parser.Point | undefined;
+        let range: Range | undefined;
 
         if (event.ResourcePropertyPath) {
             logger.debug({ event }, 'Getting property-specific start and end positions');
 
-            // Parse ValidationPath like "/Resources/S3Bucket" or "/Resources/S3Bucket/Properties/BucketName"
-            const pathSegments = event.ResourcePropertyPath.split('/').filter(Boolean);
-
-            const nodeByPath = syntaxTree.getNodeByPath(pathSegments);
-
-            startPosition = nodeByPath.node?.startPosition;
-            endPosition = nodeByPath.node?.endPosition;
+            range = diagnosticCoordinator.getKeyRangeFromPath(uri, event.ResourcePropertyPath);
         } else if (event.LogicalId) {
             // fall back to using LogicalId and underlining entire resource
             logger.debug({ event }, 'No ResourcePropertyPath found, falling back to using LogicalId');
             const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
 
-            startPosition = resourcesMap?.get(event.LogicalId)?.startPosition;
-            endPosition = resourcesMap?.get(event.LogicalId)?.endPosition;
-        }
-
-        if (startPosition && endPosition) {
-            diagnostics.push({
-                severity: event.Severity === 'ERROR' ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
-                range: {
+            const startPosition = resourcesMap?.get(event.LogicalId)?.startPosition;
+            const endPosition = resourcesMap?.get(event.LogicalId)?.endPosition;
+            if (startPosition && endPosition) {
+                range = {
                     start: pointToPosition(startPosition),
                     end: pointToPosition(endPosition),
-                },
+                };
+            }
+        }
+
+        if (range) {
+            diagnostics.push({
+                severity: event.Severity === 'ERROR' ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
+                range: range,
                 message: event.Message,
                 source: CFN_VALIDATION_SOURCE,
                 data: uuidv4(),

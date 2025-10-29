@@ -10,7 +10,7 @@ describe('YAML Completion when using quotes', () => {
       ""
     }`;
 
-    it('Should autocomplete keys in nested json', () => {
+    it('Should autocomplete keys in nested json', async () => {
         const template = new TemplateBuilder(DocumentType.YAML);
         const scenario: TemplateScenario = {
             name: 'Get Keys with double quotes',
@@ -55,10 +55,10 @@ describe('YAML Completion when using quotes', () => {
                 },
             ],
         };
-        template.executeScenario(scenario);
+        await template.executeScenario(scenario);
     });
 
-    it('Should autocomplete enums in nested json', () => {
+    it('Should autocomplete enums in nested json', async () => {
         const template = new TemplateBuilder(DocumentType.YAML);
         const scenario: TemplateScenario = {
             name: 'Get enum values with double quotes',
@@ -115,6 +115,6 @@ describe('YAML Completion when using quotes', () => {
                 },
             ],
         };
-        template.executeScenario(scenario);
+        await template.executeScenario(scenario);
     });
 });

@@ -39,8 +39,8 @@ function hasSufficientKeys(
     for (const key of keys) {
         const keyPattern =
             documentType === DocumentType.JSON
-                ? new RegExp(`^\\s*({)?\\s*"${key}"\\s*:.*`, 'm')
-                : new RegExp(`^\\s*${key}\\s*:.*`, 'm');
+                ? new RegExp(`^\\s*({)?\\s*"${key}"\\s*:.*`, 'm') // eslint-disable-line security/detect-non-literal-regexp
+                : new RegExp(`^\\s*${key}\\s*:.*`, 'm'); // eslint-disable-line security/detect-non-literal-regexp
 
         if (keyPattern.test(content)) {
             matchCount++;

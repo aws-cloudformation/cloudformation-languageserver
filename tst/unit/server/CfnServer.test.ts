@@ -14,7 +14,7 @@ describe('CfnServer', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockFeatures = createMockComponents();
-        server = new CfnServer(mockFeatures.lsp, mockFeatures.core);
+        server = new CfnServer(mockFeatures.lsp, mockFeatures.core, mockFeatures.external, mockFeatures.providers);
     });
 
     describe('constructor', () => {
@@ -48,6 +48,7 @@ describe('CfnServer', () => {
             expect(mockFeatures.stackHandlers.onGetValidationStatus.calledOnce).toBe(true);
             expect(mockFeatures.stackHandlers.onGetDeploymentStatus.calledOnce).toBe(true);
             expect(mockFeatures.stackHandlers.onListStacks.calledOnce).toBe(true);
+            expect(mockFeatures.stackHandlers.onListStackResources.calledOnce).toBe(true);
         });
     });
 

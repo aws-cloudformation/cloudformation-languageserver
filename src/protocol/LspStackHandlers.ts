@@ -9,6 +9,9 @@ import {
     DescribeDeploymentStatusRequest,
     GetTemplateResourcesRequest,
     GetDeploymentStatusRequest,
+    DeleteChangeSetRequest,
+    GetChangeSetDeletionStatusRequest,
+    DescribeChangeSetDeletionStatusRequest,
 } from '../stacks/actions/StackActionProtocol';
 import {
     TemplateUri,
@@ -21,14 +24,22 @@ import {
     GetTemplateResourcesResult,
     CreateStackActionResult,
     CreateDeploymentParams,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
 } from '../stacks/actions/StackActionRequestType';
 import {
     ListStacksParams,
     ListStacksResult,
     ListStacksRequest,
+    ListStackResourcesParams,
+    ListStackResourcesResult,
+    ListStackResourcesRequest,
     GetStackTemplateParams,
     GetStackTemplateResult,
     GetStackTemplateRequest,
+    ListChangeSetParams,
+    ListChangeSetResult,
+    ListChangeSetRequest,
 } from '../stacks/StackRequestType';
 import { Identifiable } from './LspTypes';
 
@@ -75,7 +86,27 @@ export class LspStackHandlers {
         this.connection.onRequest(ListStacksRequest.method, handler);
     }
 
+    onListStackResources(handler: RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void>) {
+        this.connection.onRequest(ListStackResourcesRequest.method, handler);
+    }
+
     onGetStackTemplate(handler: RequestHandler<GetStackTemplateParams, GetStackTemplateResult | undefined, void>) {
         this.connection.onRequest(GetStackTemplateRequest.method, handler);
+    }
+
+    onListChangeSets(handler: RequestHandler<ListChangeSetParams, ListChangeSetResult, void>) {
+        this.connection.onRequest(ListChangeSetRequest.method, handler);
+    }
+
+    onDeleteChangeSet(handler: RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void>) {
+        this.connection.onRequest(DeleteChangeSetRequest.method, handler);
+    }
+
+    onGetChangeSetDeletionStatus(handler: RequestHandler<Identifiable, GetStackActionStatusResult, void>) {
+        this.connection.onRequest(GetChangeSetDeletionStatusRequest.method, handler);
+    }
+
+    onDescribeChangeSetDeletionStatus(handler: RequestHandler<Identifiable, DescribeDeletionStatusResult, void>) {
+        this.connection.onRequest(DescribeChangeSetDeletionStatusRequest.method, handler);
     }
 }

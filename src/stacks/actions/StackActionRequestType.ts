@@ -32,6 +32,8 @@ export type ChangeSetReference = {
 
 export type CreateDeploymentParams = Identifiable & ChangeSetReference;
 
+export type DeleteChangeSetParams = Identifiable & ChangeSetReference;
+
 export type CreateStackActionResult = Identifiable & ChangeSetReference;
 
 export type TemplateUri = string;
@@ -73,13 +75,17 @@ export type StackChange = {
 
 export enum StackActionPhase {
     VALIDATION_STARTED = 'VALIDATION_STARTED',
-    DEPLOYMENT_STARTED = 'DEPLOYMENT_STARTED',
     VALIDATION_IN_PROGRESS = 'VALIDATION_IN_PROGRESS',
-    DEPLOYMENT_IN_PROGRESS = 'DEPLOYMENT_IN_PROGRESS',
     VALIDATION_COMPLETE = 'VALIDATION_COMPLETE',
     VALIDATION_FAILED = 'VALIDATION_FAILED',
+    DEPLOYMENT_STARTED = 'DEPLOYMENT_STARTED',
+    DEPLOYMENT_IN_PROGRESS = 'DEPLOYMENT_IN_PROGRESS',
     DEPLOYMENT_COMPLETE = 'DEPLOYMENT_COMPLETE',
     DEPLOYMENT_FAILED = 'DEPLOYMENT_FAILED',
+    DELETION_STARTED = 'DELETION_STARTED',
+    DELETION_IN_PROGRESS = 'DELETION_IN_PROGRESS',
+    DELETION_COMPLETE = 'DELETION_COMPLETE',
+    DELETION_FAILED = 'DELETION_FAILED',
 }
 
 export enum StackActionState {
@@ -125,3 +131,5 @@ export type DescribeDeploymentStatusResult = GetStackActionStatusResult &
     Failable & {
         DeploymentEvents?: DeploymentEvent[];
     };
+
+export type DescribeDeletionStatusResult = GetStackActionStatusResult & Failable;

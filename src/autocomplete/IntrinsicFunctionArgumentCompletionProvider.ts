@@ -1,7 +1,7 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, Position, TextEdit } from 'vscode-languageserver';
 import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
 import { Context } from '../context/Context';
-import { IntrinsicFunction, PseudoParameter, TopLevelSection } from '../context/ContextType';
+import { IntrinsicFunction, PseudoParameter, PseudoParametersSet, TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
@@ -580,7 +580,18 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         if (typeof topLevelKey === 'string') {
             return mappingEntity.getSecondLevelKeys(topLevelKey);
         } else {
-            // For dynamic references, get all possible keys
+            // For dynamic references, try pattern-based filtering
+            const pseudoParameter = this.extractPseudoParameterFromRef(topLevelKey);
+            if (pseudoParameter) {
+                const pattern = this.getPatternForPseudoParameter(pseudoParameter);
+                if (pattern) {
+                    const filteredKeys = this.getSecondLevelKeysFromMatchingTopLevelKeys(mappingEntity, pattern);
+                    if (filteredKeys.length > 0) {
+                        return filteredKeys;
+                    }
+                }
+            }
+            // Fallback to all possible keys if no pattern matching or no matches found
             return mappingEntity.getSecondLevelKeys();
         }
     }
@@ -748,7 +759,72 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         return context.text.length > 0 ? this.attributeFuzzySearch(completionItems, context.text) : completionItems;
     }
 
-    private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } {
-        return typeof value === 'object' && value !== null && ('Ref' in value || '!Ref' in value);
+    /**
+     * Extracts the pseudo-parameter name from a Ref object (supports both YAML and JSON formats)
+     */
+    private extractPseudoParameterFromRef(
+        refObject: { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown },
+    ): PseudoParameter | undefined {
+        let refValue: unknown;
+
+        if ('Ref' in refObject) {
+            refValue = refObject.Ref;
+        } else if ('!Ref' in refObject) {
+            refValue = refObject['!Ref'];
+        } else if ('Fn::Ref' in refObject) {
+            refValue = refObject['Fn::Ref'];
+        }
+
+        if (typeof refValue === 'string' && refValue.startsWith('AWS::') && PseudoParametersSet.has(refValue)) {
+            return refValue as PseudoParameter;
+        }
+        return undefined;
+    }
+
+    /**
+     * Returns a regex pattern for known pseudo-parameters that can be used to filter top-level keys
+     */
+    private getPatternForPseudoParameter(pseudoParameter: PseudoParameter): RegExp | undefined {
+        switch (pseudoParameter) {
+            case PseudoParameter.AWSRegion: {
+                return /^[a-z]{2}-[a-z]+-\d+$/;
+            }
+            case PseudoParameter.AWSAccountId: {
+                return /^\d{12}$/;
+            }
+            case PseudoParameter.AWSPartition: {
+                return /^aws(-us-gov|-cn)?$/;
+            }
+            default: {
+                return undefined;
+            }
+        }
+    }
+
+    private filterTopLevelKeysByPattern(mappingEntity: Mapping, pattern: RegExp): string[] {
+        const allTopLevelKeys = mappingEntity.getTopLevelKeys();
+        return allTopLevelKeys.filter((key) => pattern.test(key));
+    }
+
+    private getSecondLevelKeysFromMatchingTopLevelKeys(mappingEntity: Mapping, pattern: RegExp): string[] {
+        const matchingTopLevelKeys = this.filterTopLevelKeysByPattern(mappingEntity, pattern);
+
+        if (matchingTopLevelKeys.length === 0) {
+            return [];
+        }
+
+        const secondLevelKeysSet = new Set<string>();
+        for (const topLevelKey of matchingTopLevelKeys) {
+            const keys = mappingEntity.getSecondLevelKeys(topLevelKey);
+            for (const key of keys) {
+                secondLevelKeysSet.add(key);
+            }
+        }
+
+        return [...secondLevelKeysSet];
+    }
+
+    private isRefObject(value: unknown): value is { Ref: unknown } | { '!Ref': unknown } | { 'Fn::Ref': unknown } {
+        return typeof value === 'object' && value !== null && ('Ref' in value || '!Ref' in value || 'Fn::Ref' in value);
     }
 }

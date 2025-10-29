@@ -8,6 +8,8 @@ import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
 import {
     parseCreateDeploymentParams,
+    parseDeleteChangeSetParams,
+    parseListStackResourcesParams,
     parseStackActionParams,
     parseTemplateUriParams,
 } from '../stacks/actions/StackActionParser';
@@ -22,8 +24,17 @@ import {
     GetTemplateResourcesResult,
     CreateDeploymentParams,
     CreateStackActionResult,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
 } from '../stacks/actions/StackActionRequestType';
-import { ListStacksParams, ListStacksResult } from '../stacks/StackRequestType';
+import {
+    ListStacksParams,
+    ListStacksResult,
+    ListChangeSetParams,
+    ListChangeSetResult,
+    ListStackResourcesParams,
+    ListStackResourcesResult,
+} from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
@@ -148,6 +159,51 @@ export function describeDeploymentStatusHandler(
     };
 }
 
+export function deleteChangeSetHandler(
+    components: ServerComponents,
+): RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> {
+    return async (rawParams) => {
+        log.debug({ Handler: 'deleteChangeSetHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
+            return await components.changeSetDeletionWorkflowService.start(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to start change set deletion workflow');
+        }
+    };
+}
+
+export function getChangeSetDeletionStatusHandler(
+    components: ServerComponents,
+): RequestHandler<Identifiable, GetStackActionStatusResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'getChangeSetDeletionStatusHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseIdentifiable, rawParams);
+            return components.changeSetDeletionWorkflowService.getStatus(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to get change set deletion status');
+        }
+    };
+}
+
+export function describeChangeSetDeletionStatusHandler(
+    components: ServerComponents,
+): RequestHandler<Identifiable, DescribeDeletionStatusResult, void> {
+    return (rawParams) => {
+        log.debug({ Handler: 'describeChangeSetDeletionStatusHandler', rawParams });
+
+        try {
+            const params = parseWithPrettyError(parseIdentifiable, rawParams);
+            return components.changeSetDeletionWorkflowService.describeStatus(params);
+        } catch (error) {
+            handleStackActionError(error, 'Failed to describe change set deletion status');
+        }
+    };
+}
+
 export function getCapabilitiesHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, GetCapabilitiesResult, void> {
@@ -252,6 +308,48 @@ export function listStacksHandler(
         } catch (error) {
             log.error({ error: extractErrorMessage(error) }, 'Error listing stacks');
             return { stacks: [], nextToken: undefined };
+        }
+    };
+}
+
+export function listChangeSetsHandler(
+    components: ServerComponents,
+): RequestHandler<ListChangeSetParams, ListChangeSetResult, void> {
+    return async (params: ListChangeSetParams): Promise<ListChangeSetResult> => {
+        try {
+            const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
+            return {
+                changeSets: result.changeSets.map((cs) => ({
+                    changeSetName: cs.ChangeSetName ?? '',
+                    status: cs.Status ?? '',
+                    creationTime: cs.CreationTime?.toISOString(),
+                    description: cs.Description,
+                })),
+                nextToken: result.nextToken,
+            };
+        } catch {
+            return { changeSets: [] };
+        }
+    };
+}
+
+export function listStackResourcesHandler(
+    components: ServerComponents,
+): RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void> {
+    return async (rawParams): Promise<ListStackResourcesResult> => {
+        try {
+            const params = parseWithPrettyError(parseListStackResourcesParams, rawParams);
+            const response = await components.cfnService.listStackResources({
+                StackName: params.stackName,
+                NextToken: params.nextToken,
+            });
+            return {
+                resources: response.StackResourceSummaries ?? [],
+                nextToken: response.NextToken,
+            };
+        } catch (error) {
+            log.error({ error: extractErrorMessage(error) }, 'Error listing stack resources');
+            return { resources: [] };
         }
     };
 }

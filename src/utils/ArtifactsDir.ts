@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync } from 'fs';
 import { resolve, join } from 'path';
 
-const RELATIVE_ROOT_DIR = './.aws-cfn-storage';
+const RELATIVE_ROOT_DIR = '.aws-cfn-storage';
 
 /**
  * This will create artifacts in the directory where the app is executing
@@ -10,7 +10,12 @@ const RELATIVE_ROOT_DIR = './.aws-cfn-storage';
  */
 function getOrCreateAbsolutePath(artifactDir: string | undefined = undefined): string {
     const dir = resolve(__dirname);
-    const path = join(dir, RELATIVE_ROOT_DIR, artifactDir ?? '.');
+    let path: string;
+    if (artifactDir) {
+        path = join(dir, RELATIVE_ROOT_DIR, artifactDir);
+    } else {
+        path = join(dir, RELATIVE_ROOT_DIR);
+    }
 
     if (existsSync(path)) {
         return path;

@@ -3,7 +3,8 @@ import { join } from 'path';
 import { open, Database, RootDatabase } from 'lmdb';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
-import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { TelemetryService } from '../telemetry/TelemetryService';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { extractErrorMessage } from '../utils/Errors';
 import { DataStore, DataStoreFactory } from './DataStore';
@@ -12,15 +13,23 @@ import { encryptionStrategy } from './lmdb/Utils';
 const log = LoggerFactory.getLogger('LMDB');
 
 export class LMDBStore implements DataStore {
-    constructor(private readonly store: Database<unknown, string>) {}
+    private readonly telemetry: ScopedTelemetry;
+
+    constructor(
+        private readonly name: string,
+        private readonly store: Database<unknown, string>,
+    ) {
+        this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
+    }
 
     get<T>(key: string): T | undefined {
         return this.store.get(key) as T | undefined;
     }
 
-    @Measure({ name: 'put' })
     put<T>(key: string, value: T): Promise<boolean> {
-        return this.store.put(key, value);
+        return this.telemetry.measureAsync('put', () => {
+            return this.store.put(key, value);
+        });
     }
 
     remove(key: string): Promise<boolean> {
@@ -41,7 +50,7 @@ export class LMDBStore implements DataStore {
 }
 
 export class LMDBStoreFactory implements DataStoreFactory {
-    @Telemetry() private readonly telemetry!: ScopedTelemetry;
+    @Telemetry({ scope: 'LMDB.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly rootDir = pathToArtifact('lmdb');
     private readonly storePath = join(this.rootDir, Version);
@@ -82,7 +91,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             if (database === undefined) {
                 throw new Error(`Failed to open LMDB store ${store}`);
             }
-            val = new LMDBStore(database);
+            val = new LMDBStore(store, database);
             this.stores.set(store, val);
         }
 

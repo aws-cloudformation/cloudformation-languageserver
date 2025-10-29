@@ -1,4 +1,4 @@
-import { Capability, StackSummary, StackStatus } from '@aws-sdk/client-cloudformation';
+import { Capability, StackSummary, StackStatus, StackResourceSummary } from '@aws-sdk/client-cloudformation';
 import { StubbedInstance } from 'ts-sinon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
@@ -15,9 +15,13 @@ import {
     getValidationStatusHandler,
     getDeploymentStatusHandler,
     listStacksHandler,
+    listStackResourcesHandler,
     describeValidationStatusHandler,
     describeDeploymentStatusHandler,
     getTemplateResourcesHandler,
+    deleteChangeSetHandler,
+    describeChangeSetDeletionStatusHandler,
+    getChangeSetDeletionStatusHandler,
 } from '../../../src/handlers/StackHandler';
 import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
 import {
@@ -28,7 +32,7 @@ import {
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
-import { ListStacksParams, ListStacksResult } from '../../../src/stacks/StackRequestType';
+import { ListStacksParams, ListStacksResult, ListStackResourcesResult } from '../../../src/stacks/StackRequestType';
 import {
     createMockComponents,
     createMockSyntaxTreeManager,
@@ -49,6 +53,8 @@ vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
     parseStackActionParams: vi.fn((input) => input),
     parseTemplateUriParams: vi.fn((input) => input),
     parseCreateDeploymentParams: vi.fn((input) => input),
+    parseDeleteChangeSetParams: vi.fn((input) => input),
+    parseListStackResourcesParams: vi.fn((input) => input),
 }));
 
 vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
@@ -276,6 +282,78 @@ describe('StackActionHandler', () => {
         });
     });
 
+    describe('deleteChangeSetHandler', () => {
+        it('should delegate to deletion service', async () => {
+            const mockResult = { id: 'test-id', changeSetName: 'cs-123', stackName: 'test-stack' };
+            mockComponents.changeSetDeletionWorkflowService.start.resolves(mockResult);
+
+            const handler = deleteChangeSetHandler(mockComponents);
+            const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
+
+            const result = await handler(params, {} as any);
+
+            expect(mockComponents.changeSetDeletionWorkflowService.start.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+
+        it('should propagate ResponseError from service', async () => {
+            const responseError = new ResponseError(ErrorCodes.InternalError, 'Service error');
+            mockComponents.changeSetDeletionWorkflowService.start.rejects(responseError);
+
+            const handler = deleteChangeSetHandler(mockComponents);
+            const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
+
+            await expect(handler(params, {} as any)).rejects.toThrow(responseError);
+        });
+
+        it('should wrap other errors as InternalError', async () => {
+            mockComponents.changeSetDeletionWorkflowService.start.rejects(new Error('Generic error'));
+
+            const handler = deleteChangeSetHandler(mockComponents);
+            const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
+
+            await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
+        });
+    });
+
+    describe('getChangeSetDeletionStatusHandler', () => {
+        it('should delegate to deletion service get', async () => {
+            const mockResult = {
+                id: 'test-id',
+                status: StackActionPhase.DEPLOYMENT_COMPLETE,
+                result: StackActionState.SUCCESSFUL,
+            };
+            mockComponents.changeSetDeletionWorkflowService.getStatus.resolves(mockResult);
+
+            const handler = getChangeSetDeletionStatusHandler(mockComponents);
+            const params = { id: 'test-id' };
+
+            const result = await handler(params, {} as any);
+
+            expect(mockComponents.changeSetDeletionWorkflowService.getStatus.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+    });
+
+    describe('describeChangeSetDeletionStatusHandler', () => {
+        it('should delegate to deletion service describe', async () => {
+            const mockResult = {
+                id: 'test-id',
+                status: StackActionPhase.VALIDATION_COMPLETE,
+                result: StackActionState.SUCCESSFUL,
+            };
+            mockComponents.changeSetDeletionWorkflowService.describeStatus.resolves(mockResult);
+
+            const handler = describeChangeSetDeletionStatusHandler(mockComponents);
+            const params = { id: 'test-id' };
+
+            const result = await handler(params, {} as any);
+
+            expect(mockComponents.changeSetDeletionWorkflowService.describeStatus.calledWith(params)).toBe(true);
+            expect(result).toEqual(mockResult);
+        });
+    });
+
     describe('listStacksHandler', () => {
         const mockParams = {} as ListStacksParams;
         const mockToken = {} as CancellationToken;
@@ -374,6 +452,58 @@ describe('StackActionHandler', () => {
 
             expect(result.stacks).toEqual([]);
             expect(mockComponents.stackManager.listStacks).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('listStackResourcesHandler', () => {
+        it('should return resources on success', async () => {
+            const mockResources: StackResourceSummary[] = [
+                {
+                    LogicalResourceId: 'MyBucket',
+                    ResourceType: 'AWS::S3::Bucket',
+                    ResourceStatus: 'CREATE_COMPLETE',
+                } as StackResourceSummary,
+            ];
+
+            mockComponents.cfnService.listStackResources.resolves({
+                StackResourceSummaries: mockResources,
+                NextToken: 'nextToken456',
+                $metadata: {},
+            });
+
+            const handler = listStackResourcesHandler(mockComponents);
+            const params = { stackName: 'test-stack', nextToken: 'token123' };
+            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
+
+            expect(result.resources).toEqual(mockResources);
+            expect(result.nextToken).toBe('nextToken456');
+            expect(
+                mockComponents.cfnService.listStackResources.calledWith({
+                    StackName: 'test-stack',
+                    NextToken: 'token123',
+                }),
+            ).toBe(true);
+        });
+
+        it('should return empty array on error', async () => {
+            mockComponents.cfnService.listStackResources.rejects(new Error('API Error'));
+
+            const handler = listStackResourcesHandler(mockComponents);
+            const params = { stackName: 'test-stack' };
+            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
+
+            expect(result.resources).toEqual([]);
+        });
+
+        it('should handle undefined StackResourceSummaries', async () => {
+            mockComponents.cfnService.listStackResources.resolves({ StackResourceSummaries: undefined, $metadata: {} });
+
+            const handler = listStackResourcesHandler(mockComponents);
+            const params = { stackName: 'test-stack' };
+            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
+
+            expect(result.resources).toEqual([]);
+            expect(result.nextToken).toBeUndefined();
         });
     });
 

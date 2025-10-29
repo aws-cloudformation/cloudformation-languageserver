@@ -12,6 +12,9 @@ import {
     DescribeValidationStatusRequest,
     DescribeDeploymentStatusRequest,
     GetDeploymentStatusRequest,
+    DeleteChangeSetRequest,
+    GetChangeSetDeletionStatusRequest,
+    DescribeChangeSetDeletionStatusRequest,
 } from '../../../src/stacks/actions/StackActionProtocol';
 import {
     GetCapabilitiesResult,
@@ -23,7 +26,17 @@ import {
     DescribeDeploymentStatusResult,
     CreateStackActionResult,
     CreateDeploymentParams,
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult,
 } from '../../../src/stacks/actions/StackActionRequestType';
+import {
+    ListStacksRequest,
+    ListStacksParams,
+    ListStacksResult,
+    ListStackResourcesRequest,
+    ListStackResourcesParams,
+    ListStackResourcesResult,
+} from '../../../src/stacks/StackRequestType';
 
 describe('LspTemplateHandlers', () => {
     let connection: StubbedInstance<Connection>;
@@ -96,5 +109,45 @@ describe('LspTemplateHandlers', () => {
         stackActionHandlers.onDescribeDeploymentStatus(mockHandler);
 
         expect(connection.onRequest.calledWith(DescribeDeploymentStatusRequest.method)).toBe(true);
+    });
+
+    it('should register onDeleteChangeSet handler', () => {
+        const mockHandler: RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> = vi.fn();
+
+        stackActionHandlers.onDeleteChangeSet(mockHandler);
+
+        expect(connection.onRequest.calledWith(DeleteChangeSetRequest.method)).toBe(true);
+    });
+
+    it('should register onGetChangeSetDeletionStatus handler', () => {
+        const mockHandler: RequestHandler<Identifiable, GetStackActionStatusResult, void> = vi.fn();
+
+        stackActionHandlers.onGetChangeSetDeletionStatus(mockHandler);
+
+        expect(connection.onRequest.calledWith(GetChangeSetDeletionStatusRequest.method)).toBe(true);
+    });
+
+    it('should register onDescribeChangeSetDeletionStatus handler', () => {
+        const mockHandler: RequestHandler<Identifiable, DescribeDeletionStatusResult, void> = vi.fn();
+
+        stackActionHandlers.onDescribeChangeSetDeletionStatus(mockHandler);
+
+        expect(connection.onRequest.calledWith(DescribeChangeSetDeletionStatusRequest.method)).toBe(true);
+    });
+
+    it('should register onListStacks handler', () => {
+        const mockHandler: RequestHandler<ListStacksParams, ListStacksResult, void> = vi.fn();
+
+        stackActionHandlers.onListStacks(mockHandler);
+
+        expect(connection.onRequest.calledWith(ListStacksRequest.method)).toBe(true);
+    });
+
+    it('should register onListStackResources handler', () => {
+        const mockHandler: RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void> = vi.fn();
+
+        stackActionHandlers.onListStackResources(mockHandler);
+
+        expect(connection.onRequest.calledWith(ListStackResourcesRequest.method)).toBe(true);
     });
 });

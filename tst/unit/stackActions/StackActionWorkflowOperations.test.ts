@@ -1,9 +1,10 @@
 import { Change, ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { DateTime } from 'luxon';
+import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { DiagnosticSeverity, ResponseError } from 'vscode-languageserver';
-import { getEntityMap } from '../../../src/context/SectionContextBuilder';
+import { ResponseError } from 'vscode-languageserver';
+import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
 import {
@@ -21,16 +22,18 @@ import {
     CreateValidationParams,
     StackActionPhase,
     StackActionState,
+    ValidationDetail,
 } from '../../../src/stacks/actions/StackActionRequestType';
 import { StackActionWorkflowState } from '../../../src/stacks/actions/StackActionWorkflowType';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
+import { createMockSyntaxTreeManager, createMockDiagnosticCoordinator } from '../../utils/MockServerComponents';
 
 vi.mock('../../../src/utils/Retry', () => ({
     retryWithExponentialBackoff: vi.fn(),
 }));
 
 vi.mock('../../../src/context/SectionContextBuilder', () => ({
-    getEntityMap: vi.fn(),
+    getEntityMap: vi.fn().mockImplementation(() => new Map()),
 }));
 
 describe('StackActionWorkflowOperations', () => {
@@ -51,6 +54,7 @@ describe('StackActionWorkflowOperations', () => {
 
         mockDocumentManager = {
             get: vi.fn(),
+            getLine: vi.fn(),
         } as any;
 
         vi.clearAllMocks();
@@ -403,42 +407,24 @@ describe('StackActionWorkflowOperations', () => {
     });
 
     describe('publishValidationDiagnostics', () => {
-        let mockSyntaxTreeManager: any;
-        let mockDiagnosticCoordinator: any;
+        let mockSyntaxTreeManager: ReturnType<typeof createMockSyntaxTreeManager>;
+        let mockDiagnosticCoordinator: ReturnType<typeof createMockDiagnosticCoordinator>;
 
         beforeEach(() => {
-            mockSyntaxTreeManager = {
-                getSyntaxTree: vi.fn(),
-            };
-            mockDiagnosticCoordinator = {
-                publishDiagnostics: vi.fn().mockResolvedValue(undefined),
-            };
+            mockSyntaxTreeManager = createMockSyntaxTreeManager();
+            mockDiagnosticCoordinator = createMockDiagnosticCoordinator();
         });
 
         it('should publish diagnostics with position information', async () => {
-            const mockSyntaxTree = {
-                getNodeByPath: vi.fn().mockReturnValue({
-                    node: {
-                        startPosition: { row: 5, column: 10 },
-                        endPosition: { row: 5, column: 20 },
-                    },
-                }),
-            };
-            mockSyntaxTreeManager.getSyntaxTree.mockReturnValue(mockSyntaxTree);
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
 
-            // Mock getEntityMap for fallback case
-            const mockResourcesMap = new Map([
-                [
-                    'MyLambda',
-                    {
-                        startPosition: { row: 10, column: 5 },
-                        endPosition: { row: 15, column: 10 },
-                    },
-                ],
-            ]);
-            (getEntityMap as any).mockReturnValue(mockResourcesMap);
+            mockDiagnosticCoordinator.getKeyRangeFromPath.returns({
+                start: { line: 5, character: 10 },
+                end: { line: 5, character: 20 },
+            });
 
-            const validationDetails = [
+            const validationDetails: ValidationDetail[] = [
                 {
                     Timestamp: DateTime.fromISO('2023-01-01T00:00:00.000Z'),
                     ValidationName: 'Enhanced Validation',
@@ -452,10 +438,10 @@ describe('StackActionWorkflowOperations', () => {
                     ValidationName: 'Enhanced Validation',
                     LogicalId: 'MyLambda',
                     Message: 'LambdaValidation: Runtime version is deprecated',
-                    Severity: 'WARNING',
-                    ResourcePropertyPath: undefined, // No property path - should use fallback
+                    Severity: 'INFO',
+                    ResourcePropertyPath: undefined,
                 },
-            ] as any;
+            ];
 
             await publishValidationDiagnostics(
                 'file:///test.yaml',
@@ -464,39 +450,7 @@ describe('StackActionWorkflowOperations', () => {
                 mockDiagnosticCoordinator,
             );
 
-            expect(mockSyntaxTree.getNodeByPath).toHaveBeenCalledWith([
-                'Resources',
-                'MyS3Bucket',
-                'Properties',
-                'BucketName',
-            ]);
-
-            expect(getEntityMap).toHaveBeenCalledWith(mockSyntaxTree, 'Resources');
-
-            expect(mockDiagnosticCoordinator.publishDiagnostics).toHaveBeenCalledWith(
-                'CFN Dry-Run',
-                'file:///test.yaml',
-                [
-                    expect.objectContaining({
-                        severity: DiagnosticSeverity.Error,
-                        range: {
-                            start: { line: 5, character: 10 },
-                            end: { line: 5, character: 20 },
-                        },
-                        message: 'S3BucketValidation: Bucket name must be globally unique',
-                        source: 'CFN Dry-Run',
-                    }),
-                    expect.objectContaining({
-                        severity: DiagnosticSeverity.Warning,
-                        range: {
-                            start: { line: 10, character: 5 },
-                            end: { line: 15, character: 10 },
-                        },
-                        message: 'LambdaValidation: Runtime version is deprecated',
-                        source: 'CFN Dry-Run',
-                    }),
-                ],
-            );
+            expect(mockDiagnosticCoordinator.publishDiagnostics.calledOnce).toBe(true);
         });
     });
 

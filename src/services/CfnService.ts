@@ -50,8 +50,12 @@ import {
     DescribeChangeSetCommandOutput,
     GetTemplateCommand,
     Change,
+    ChangeSetSummary,
+    ListChangeSetsCommand,
+    waitUntilStackDeleteComplete,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
 export class CfnService {
@@ -177,6 +181,7 @@ export class CfnService {
         });
     }
 
+    @Measure({ name: 'describeStackResources' })
     public async describeStackResources(params: {
         StackName?: string;
         LogicalResourceId?: string;
@@ -195,6 +200,7 @@ export class CfnService {
     public async listStackResources(params: {
         StackName: string;
         NextToken?: string;
+        MaxItems?: number;
     }): Promise<ListStackResourcesCommandOutput> {
         return await this.withClient((client) => client.send(new ListStackResourcesCommand(params)));
     }
@@ -329,8 +335,43 @@ export class CfnService {
         });
     }
 
+    public async waitUntilStackDeleteComplete(
+        params: DescribeStacksCommandInput,
+        timeoutMinutes: number = 30,
+    ): Promise<WaiterResult> {
+        return await this.withClient(async (client) => {
+            const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
+                client,
+                maxWaitTime: timeoutMinutes * 60,
+            };
+            return await waitUntilStackDeleteComplete(waiterConfig, params);
+        });
+    }
+
     public async validateTemplate(params: ValidateTemplateInput): Promise<ValidateTemplateOutput> {
         return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
+    }
+
+    public async listChangeSets(
+        stackName: string,
+        nextToken?: string,
+    ): Promise<{ changeSets: ChangeSetSummary[]; nextToken?: string }> {
+        try {
+            return await this.withClient(async (client) => {
+                const response = await client.send(
+                    new ListChangeSetsCommand({
+                        StackName: stackName,
+                        NextToken: nextToken,
+                    }),
+                );
+                return {
+                    changeSets: response.Summaries ?? [],
+                    nextToken: response.NextToken,
+                };
+            });
+        } catch {
+            return { changeSets: [] };
+        }
     }
 }
 

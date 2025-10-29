@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 
-execSync('npm sbom --sbom-format spdx > sbom/sbom.json');
+execSync('npm sbom --omit=dev --sbom-format spdx > sbom/sbom.json');
 const sbomJson = JSON.parse(readFileSync(join(__dirname, '..', 'sbom', 'sbom.json'), 'utf8'));
 const LspPackageName = JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8')).name;
 
@@ -17,6 +17,7 @@ type SbomJsonPackage = {
 const packages = (sbomJson.packages as SbomJsonPackage[])
     .filter((pkg) => pkg.name !== LspPackageName)
     .sort((a, b) => a.name.localeCompare(b.name))
+    // eslint-disable-next-line unicorn/no-array-reduce
     .reduce((unique, pkg) => {
         if (
             !unique.some(

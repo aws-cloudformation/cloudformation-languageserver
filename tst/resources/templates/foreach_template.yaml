@@ -1,0 +1,29 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template with Fn::ForEach examples"
+Transform: AWS::LanguageExtensions
+
+Parameters:
+  BucketNames:
+    Type: CommaDelimitedList
+    Default: "bucket1,bucket2,bucket3"
+    Description: "List of bucket names for ForEach"
+
+Resources:
+  Fn::ForEach::Buckets:
+    - BucketName
+    - !Ref BucketNames
+    - S3Bucket${BucketName}:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: !Sub "${BucketName}-${AWS::AccountId}-${AWS::Region}"
+          VersioningConfiguration:
+            Status: Enabled
+          BucketEncryption:
+            ServerSideEncryptionConfiguration:
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: AES256
+
+  RegularResource:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: regular-bucket

@@ -2,7 +2,14 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { Context } from '../../../src/context/Context';
 import { ContextManager } from '../../../src/context/ContextManager';
 import { TopLevelSection } from '../../../src/context/ContextType';
-import { Parameter, Resource, Condition, Mapping, Unknown } from '../../../src/context/semantic/Entity';
+import {
+    Parameter,
+    Resource,
+    Condition,
+    Mapping,
+    Unknown,
+    ForEachResource,
+} from '../../../src/context/semantic/Entity';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
 
@@ -677,6 +684,113 @@ Resources:
             const context = getContextAt(2, 5, quotedYamlUri);
             expect(context).toBeDefined();
             expect(context!.textInQuotes()).toBeUndefined();
+        });
+    });
+
+    describe('ForEachResource Entity Parsing', () => {
+        const foreachYamlUri = Templates.foreach.yaml.fileName;
+        const foreachJsonUri = Templates.foreach.json.fileName;
+        const foreachYaml = Templates.foreach.yaml.contents;
+        const foreachJson = Templates.foreach.json.contents;
+
+        beforeAll(() => {
+            syntaxTreeManager.add(foreachYamlUri, foreachYaml);
+            syntaxTreeManager.add(foreachJsonUri, foreachJson);
+        });
+
+        describe('YAML ForEach', () => {
+            it('should parse ForEach resource name', () => {
+                const context = getContextAt(11, 4, foreachYamlUri); // Position at "Fn::ForEach::Buckets:"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Resources);
+                expect(context!.logicalId).toBe('Fn::ForEach::Buckets');
+                expect(context!.text).toBe('Fn::ForEach::Buckets');
+            });
+
+            it('should create ForEachResource entity with correct properties', () => {
+                const context = getContextAt(11, 4, foreachYamlUri); // Fn::ForEach::Buckets
+
+                expect(context).toBeDefined();
+                const entity = context!.entity;
+                expect(entity).toBeInstanceOf(ForEachResource);
+
+                const forEachResource = entity as ForEachResource;
+                expect(forEachResource.name).toBe('Buckets');
+                expect(forEachResource.identifier).toBe('BucketName');
+                expect(forEachResource.collection).toBeDefined();
+                expect(forEachResource.collection).toHaveProperty('!Ref', 'BucketNames');
+                expect(forEachResource.resource).toBeInstanceOf(Resource);
+            });
+
+            it('should parse nested resource in ForEach', () => {
+                const context = getContextAt(11, 4, foreachYamlUri);
+
+                expect(context).toBeDefined();
+                const entity = context!.entity as ForEachResource;
+                const nestedResource = entity.resource;
+
+                expect(nestedResource).toBeInstanceOf(Resource);
+                expect(nestedResource?.name).toBe('S3Bucket${BucketName}');
+                expect(nestedResource?.Type).toBe('AWS::S3::Bucket');
+                expect(nestedResource?.Properties).toBeDefined();
+                expect(nestedResource?.Properties).toHaveProperty('BucketName');
+                expect(nestedResource?.Properties).toHaveProperty('VersioningConfiguration');
+                expect(nestedResource?.Properties?.VersioningConfiguration).toHaveProperty('Status', 'Enabled');
+                expect(nestedResource?.Properties).toHaveProperty('BucketEncryption');
+            });
+
+            it('should parse regular resource after ForEach', () => {
+                const context = getContextAt(26, 4, foreachYamlUri); // Position at "RegularResource:"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Resources);
+                expect(context!.logicalId).toBe('RegularResource');
+                expect(context!.entity).toBeInstanceOf(Resource);
+                expect(context!.entity).not.toBeInstanceOf(ForEachResource);
+            });
+        });
+
+        describe('JSON ForEach', () => {
+            it('should parse ForEach resource name in JSON', () => {
+                const context = getContextAt(12, 8, foreachJsonUri); // Position at "Fn::ForEach::Buckets"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Resources);
+                expect(context!.logicalId).toBe('Fn::ForEach::Buckets');
+            });
+
+            it('should create ForEachResource entity from JSON', () => {
+                const context = getContextAt(12, 8, foreachJsonUri);
+
+                expect(context).toBeDefined();
+                const entity = context!.entity;
+                expect(entity).toBeInstanceOf(ForEachResource);
+
+                const forEachResource = entity as ForEachResource;
+                expect(forEachResource.name).toBe('Buckets');
+                expect(forEachResource.identifier).toBe('BucketName');
+                expect(forEachResource.collection).toBeDefined();
+                expect(forEachResource.collection).toHaveProperty('Ref', 'BucketNames');
+                expect(forEachResource.resource).toBeInstanceOf(Resource);
+            });
+
+            it('should parse nested resource in JSON ForEach', () => {
+                const context = getContextAt(12, 8, foreachJsonUri);
+
+                expect(context).toBeDefined();
+                const entity = context!.entity as ForEachResource;
+                const nestedResource = entity.resource;
+
+                expect(nestedResource).toBeInstanceOf(Resource);
+                expect(nestedResource?.name).toBe('S3Bucket${BucketName}');
+                expect(nestedResource?.Type).toBe('AWS::S3::Bucket');
+                expect(nestedResource?.Properties).toBeDefined();
+                expect(nestedResource?.Properties).toHaveProperty('BucketName');
+                expect(nestedResource?.Properties?.BucketName).toHaveProperty('Fn::Sub');
+                expect(nestedResource?.Properties).toHaveProperty('VersioningConfiguration');
+                expect(nestedResource?.Properties?.VersioningConfiguration).toHaveProperty('Status', 'Enabled');
+            });
         });
     });
 });

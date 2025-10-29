@@ -74,7 +74,7 @@ const argv = yargs(hideBin(process.argv))
     .help()
     .parseSync();
 
-const TEMPLATE_PATHS = argv.templates as string[];
+const TEMPLATE_PATHS = argv.templates;
 const INTERVAL_MS = argv.interval;
 
 function sleep(ms: number) {
@@ -105,7 +105,7 @@ function pickRandom<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-async function main() {
+function main() {
     console.log('🚀 Starting Continuous Telemetry Metrics Generator');
     console.log(`⏱️  Interval: ${INTERVAL_MS}ms between iterations`);
     console.log('Press Ctrl+C to stop\n');
@@ -162,10 +162,10 @@ async function main() {
     }
 
     let iteration = 0;
-    setInterval(async () => {
+    setInterval(() => {
         const template = pickRandom(templates);
         const pos = pickRandom(positions.get(template.path)!);
-        await processTemplate(template.path, template.content, pos, components);
+        processTemplate(template.path, template.content, pos, components).catch(console.error);
 
         iteration++;
         if (iteration % 100 === 0) {
@@ -173,9 +173,9 @@ async function main() {
         }
     }, INTERVAL_MS);
 
-    process.on('SIGINT', async () => {
+    process.on('SIGINT', () => {
         console.log('\n\n🛑 Shutting down...');
-        await TelemetryService.instance.close();
+        TelemetryService.instance.close().catch(console.error);
         process.exit(0);
     });
 }

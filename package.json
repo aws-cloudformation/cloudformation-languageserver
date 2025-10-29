@@ -20,7 +20,7 @@
     "Language Server"
   ],
   "scripts": {
-    "clean": "rm -rf build && rm -rf bundle && rm -rf coverage && rm -rf node_modules && rm -rf out",
+    "clean": "rm -rf build && rm -rf bundle && rm -rf coverage && rm -rf node_modules && rm -rf out && rm -rf jscpd",
     "build": "rm -rf out && tsc -b",
     "watch": "rm -rf out && tsc -b -w",
     "test": "NODE_ENV=test vitest run",
@@ -28,7 +28,7 @@
     "test:integration": "NODE_ENV=test vitest run --config vitest.integration.config.ts",
     "test:unit": "NODE_ENV=test vitest run --config vitest.unit.config.ts",
     "test:leaks": "NODE_ENV=test vitest run --pool=forks --logHeapUsage",
-    "lint": "eslint src tst",
+    "lint": "eslint --max-warnings 0 .",
     "lint:fix": "npm run lint -- --fix",
     "build:go:dev": "GOPROXY=direct go build -C cfn-init -v -o ../bundle/development/bin/cfn-init",
     "build:go:prod": "GOPROXY=direct go build -C cfn-init -v -o ../bundle/production/bin/cfn-init",
@@ -76,6 +76,7 @@
     "fast-deep-equal": "3.1.3",
     "fuse.js": "7.1.0",
     "ini": "5.0.0",
+    "jose": "4.15.9",
     "js-yaml": "4.1.0",
     "lmdb": "3.4.2",
     "luxon": "3.7.1",

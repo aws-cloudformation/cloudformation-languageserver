@@ -51,17 +51,7 @@ export class CodeActionService {
      * Process diagnostics and generate code actions with fixes
      */
     @Track({ name: 'generateCodeActions' })
-    public generateCodeActions(params: CodeActionParams): CodeAction[] {
-        this.log.debug(
-            {
-                Router: 'CodeAction',
-                TextDocument: params.textDocument,
-                Context: params.context,
-                Range: params.range,
-            },
-            'Processing code action request',
-        );
-
+    public generateCodeActions(params: CodeActionParams) {
         const codeActions: CodeAction[] = [];
 
         for (const diagnostic of params.context.diagnostics) {

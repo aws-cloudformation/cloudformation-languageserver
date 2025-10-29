@@ -1,6 +1,12 @@
 import { Capability } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
-import { CreateDeploymentParams, CreateValidationParams, TemplateUri } from './StackActionRequestType';
+import { ListStackResourcesParams } from '../StackRequestType';
+import {
+    CreateDeploymentParams,
+    CreateValidationParams,
+    DeleteChangeSetParams,
+    TemplateUri,
+} from './StackActionRequestType';
 
 const CapabilitySchema = z.enum([
     Capability.CAPABILITY_AUTO_EXPAND,
@@ -37,7 +43,19 @@ const CreateDeploymentParamsSchema = z.object({
     changeSetName: z.string().min(1).max(128),
 });
 
+const DeleteChangeSetParamsSchema = z.object({
+    id: z.string().min(1),
+    stackName: z.string().min(1).max(128),
+    changeSetName: z.string().min(1).max(128),
+});
+
 const TemplateUriSchema = z.string().min(1);
+
+const ListStackResourcesParamsSchema = z.object({
+    stackName: z.string().min(1),
+    nextToken: z.string().optional(),
+    maxItems: z.number().optional(),
+});
 
 export function parseStackActionParams(input: unknown): CreateValidationParams {
     return StackActionParamsSchema.parse(input);
@@ -47,6 +65,14 @@ export function parseCreateDeploymentParams(input: unknown): CreateDeploymentPar
     return CreateDeploymentParamsSchema.parse(input);
 }
 
+export function parseDeleteChangeSetParams(input: unknown): DeleteChangeSetParams {
+    return DeleteChangeSetParamsSchema.parse(input);
+}
+
 export function parseTemplateUriParams(input: unknown): TemplateUri {
     return TemplateUriSchema.parse(input);
+}
+
+export function parseListStackResourcesParams(input: unknown): ListStackResourcesParams {
+    return ListStackResourcesParamsSchema.parse(input);
 }

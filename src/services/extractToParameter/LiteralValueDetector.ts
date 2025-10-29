@@ -85,30 +85,14 @@ export class LiteralValueDetector {
     }
 
     private isJsonIntrinsicFunction(node: SyntaxNode): boolean {
-        if (!node?.children) {
-            return false;
-        }
-
-        const pairs = node.children.filter((child) => child.type === 'pair');
-        if (pairs.length !== 1) {
-            return false;
-        }
-
-        const pair = pairs[0];
-        if (!pair?.children || pair.children.length < 2) {
-            return false;
-        }
-
-        const keyNode = pair.children[0];
-        if (keyNode?.type !== 'string' || !keyNode.text) {
-            return false;
-        }
-
-        const keyText = this.removeQuotes(keyNode.text);
-        return this.isIntrinsicFunctionName(keyText);
+        return this.isJsonFunctionOfType(node, this.isIntrinsicFunctionName.bind(this));
     }
 
     private isJsonReferenceFunction(node: SyntaxNode): boolean {
+        return this.isJsonFunctionOfType(node, this.isReferenceFunctionName.bind(this));
+    }
+
+    private isJsonFunctionOfType(node: SyntaxNode, validationFn: (name: string) => boolean): boolean {
         if (!node?.children) {
             return false;
         }
@@ -129,7 +113,7 @@ export class LiteralValueDetector {
         }
 
         const keyText = this.removeQuotes(keyNode.text);
-        return this.isReferenceFunctionName(keyText);
+        return validationFn(keyText);
     }
 
     private isYamlIntrinsicTag(tagText: string): boolean {
@@ -366,6 +350,7 @@ export class LiteralValueDetector {
             return { value: false, type: LiteralValueType.BOOLEAN };
         }
 
+        // eslint-disable-next-line security/detect-unsafe-regex
         if (/^-?\d+(?:\.\d*)?$/.test(text)) {
             return { value: Number.parseFloat(text), type: LiteralValueType.NUMBER };
         }

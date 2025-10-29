@@ -12,7 +12,7 @@ describe('YAML End of File Properties', () => {
     describe('No empty lines start', () => {
         const template = new TemplateBuilder(DocumentType.YAML);
 
-        it('Property key Type', () => {
+        it('Property key Type', async () => {
             const scenario: TemplateScenario = {
                 name: 'No empty lines Type property key',
                 steps: [
@@ -35,10 +35,10 @@ describe('YAML End of File Properties', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
 
-        it('Property key Value', () => {
+        it('Property key Value', async () => {
             const scenario: TemplateScenario = {
                 name: 'No empty lines Value property key',
                 steps: [
@@ -52,14 +52,14 @@ describe('YAML End of File Properties', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 
     describe('Empty lines start', () => {
         const template = new TemplateBuilder(DocumentType.YAML);
 
-        it('Property key Type', () => {
+        it('Property key Type', async () => {
             const scenario: TemplateScenario = {
                 name: 'Empty lines Type property key',
                 steps: [
@@ -82,10 +82,10 @@ describe('YAML End of File Properties', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
 
-        it('Property key Value', () => {
+        it('Property key Value', async () => {
             const scenario: TemplateScenario = {
                 name: 'Empty lines Value property key',
                 steps: [
@@ -99,14 +99,14 @@ describe('YAML End of File Properties', () => {
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 
     describe('Blank lines in middle of document', () => {
         const template = new TemplateBuilder(DocumentType.YAML);
 
-        it('Blank line after Properties before Tags', () => {
+        it('Blank line after Properties before Tags', async () => {
             const scenario: TemplateScenario = {
                 name: 'Blank line after Properties in middle of document',
                 steps: [
@@ -140,10 +140,10 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
 
-        it('Blank line after Tags array item before next resource', () => {
+        it('Blank line after Tags array item before next resource', async () => {
             const scenario: TemplateScenario = {
                 name: 'Blank line after Tags array item in middle of document',
                 steps: [
@@ -177,14 +177,14 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 
     describe('Comments with empty lines', () => {
         const template = new TemplateBuilder(DocumentType.YAML);
 
-        it('Empty line after comment should provide property completions', () => {
+        it('Empty line after comment should provide property completions', async () => {
             const scenario: TemplateScenario = {
                 name: 'Empty line after comment',
                 steps: [
@@ -212,10 +212,10 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
 
-        it('Empty line after inline comment should provide remaining property completions', () => {
+        it('Empty line after inline comment should provide remaining property completions', async () => {
             const scenario: TemplateScenario = {
                 name: 'Empty line after inline comment',
                 steps: [
@@ -238,10 +238,10 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
 
-        it('Empty line in array after comment should provide key-value completions', () => {
+        it('Empty line in array after comment should provide key-value completions', async () => {
             const scenario: TemplateScenario = {
                 name: 'Empty line in array after comment',
                 steps: [
@@ -264,7 +264,7 @@ Resources:
                     },
                 ],
             };
-            template.executeScenario(scenario);
+            await template.executeScenario(scenario);
         });
     });
 });

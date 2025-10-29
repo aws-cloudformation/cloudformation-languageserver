@@ -1,8 +1,6 @@
 import { readFile } from 'fs/promises';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
-import { NodeType } from '../../context/syntaxtree/utils/NodeType';
-import { FieldNames } from '../../context/syntaxtree/utils/TreeSitterTypes';
 import { CloudFormationFileType } from '../../document/Document';
 import { DocumentManager } from '../../document/DocumentManager';
 import { ServerComponents } from '../../server/ServerComponents';
@@ -259,14 +257,8 @@ export class GuardService implements SettingsConfigurable, Closeable {
     private getViolationRange(uri: string, violation: GuardViolation): Range {
         // If we have a CloudFormation path, try to resolve it to precise location
         if (violation.location.path && uri) {
-            // Guard provides paths like "/Resources/User/Properties/Policies"
-            // Remove leading slash if present and split by '/'
-            const pathSegments = violation.location.path.startsWith('/')
-                ? violation.location.path.slice(1).split('/')
-                : violation.location.path.split('/');
-
             // Try to get just the key part of the key/value pair using syntax tree directly
-            const keyRange = this.getKeyRangeFromPath(uri, pathSegments);
+            const keyRange = this.diagnosticCoordinator.getKeyRangeFromPath(uri, violation.location.path);
             if (keyRange) {
                 return keyRange;
             }
@@ -281,42 +273,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
             start: { line: startLine, character: startCharacter },
             end: { line: startLine, character: startCharacter },
         };
-    }
-
-    /**
-     * Extract the key range from a path using syntax tree directly
-     */
-    private getKeyRangeFromPath(uri: string, pathSegments: ReadonlyArray<string>): Range | undefined {
-        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);
-        if (!syntaxTree) {
-            return undefined;
-        }
-
-        // Get the node at the path
-        const result = syntaxTree.getNodeByPath(pathSegments);
-        if (!result.node) {
-            return undefined;
-        }
-
-        // Check if this is a pair node (key/value pair)
-        if (NodeType.isPairNode(result.node, syntaxTree.type)) {
-            // Get the key node from the pair
-            const keyNode = result.node.childForFieldName(FieldNames.KEY);
-            if (keyNode) {
-                return {
-                    start: {
-                        line: keyNode.startPosition.row,
-                        character: keyNode.startPosition.column,
-                    },
-                    end: {
-                        line: keyNode.endPosition.row,
-                        character: keyNode.endPosition.column,
-                    },
-                };
-            }
-        }
-
-        return undefined;
     }
 
     /**
@@ -640,6 +596,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         // Extract messages from rule blocks and store them
         const ruleBlockMatches = content.matchAll(
+            // eslint-disable-next-line security/detect-unsafe-regex
             /^rule\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:when\s+[^{]+)?\s*\{([\s\S]*?)^\}/gm,
         );
         for (const match of ruleBlockMatches) {

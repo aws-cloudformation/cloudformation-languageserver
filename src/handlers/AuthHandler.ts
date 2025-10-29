@@ -5,8 +5,8 @@ import { ServerComponents } from '../server/ServerComponents';
 export function iamCredentialsUpdateHandler(
     components: ServerComponents,
 ): RequestHandler<UpdateCredentialsParams, UpdateCredentialsResult, void> {
-    return (params: UpdateCredentialsParams): UpdateCredentialsResult => {
-        const success = components.awsCredentials.handleIamCredentialsUpdate(params);
+    return async (params: UpdateCredentialsParams): Promise<UpdateCredentialsResult> => {
+        const success = await components.awsCredentials.handleIamCredentialsUpdate(params);
         return { success };
     };
 }

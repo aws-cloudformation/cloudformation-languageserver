@@ -1,0 +1,51 @@
+name: Performance Benchmark
+
+on:
+  schedule:
+    # Run every Monday at 9:00 AM UTC
+    - cron: '0 9 * * 1'
+    # Run every Wednesday at 9:00 AM UTC
+    - cron: '0 9 * * 3'
+  workflow_dispatch:
+
+jobs:
+  get-configs:
+    uses: ./.github/workflows/configs.yml
+
+  benchmark:
+    needs: [get-configs]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.get-configs.outputs.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run Benchmark
+        run: |
+          npm run benchmark -- \
+            --templates tst/resources/templates/*.json tst/resources/templates/*.yaml \
+            --output benchmark-results.md \
+            --iterations 5000
+
+      - name: Generate timestamp
+        id: timestamp
+        run: echo "date=$(date +'%Y-%m-%d-%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Upload Benchmark Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ steps.timestamp.outputs.date }}
+          path: benchmark-results.md
+          retention-days: 90
