@@ -34,12 +34,20 @@ const defaultContextParams: Partial<ContextParams> = {
 };
 
 function node(text: string, startPosition?: Point, endPosition?: Point, type?: string): SyntaxNode {
-    return {
+    const mockNode: Partial<SyntaxNode> = {
         text,
         startPosition,
         endPosition,
         type,
-    } as SyntaxNode;
+        parent: null,
+        childCount: 0,
+        child: () => null,
+        childForFieldName: () => null,
+        descendantsOfType: () => [],
+        namedChildren: [],
+        children: [],
+    };
+    return mockNode as SyntaxNode;
 }
 
 export function createMockContext(
