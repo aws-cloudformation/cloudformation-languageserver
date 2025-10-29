@@ -77,12 +77,12 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - { os: "ubuntu-latest", arch: "x64", platform: "linux" }
-          - { os: "ubuntu-latest", arch: "arm64", platform: "linux" }
-          - { os: "ubuntu-latest", arch: "arm", platform: "linux" }
-          - { os: "macos-latest", arch: "x64", platform: "darwin" }
-          - { os: "macos-latest", arch: "arm64", platform: "darwin" }
-          - { os: "windows-latest", arch: "x64", platform: "win32" }
+          - { os: "ubuntu-latest", arch: "x64", platform: "linux", go-arch: "amd64" }
+          - { os: "ubuntu-latest", arch: "arm64", platform: "linux", go-arch: "arm64" }
+          - { os: "ubuntu-latest", arch: "arm", platform: "linux", go-arch: "arm64" }
+          - { os: "macos-latest", arch: "x64", platform: "darwin", go-arch: "amd64" }
+          - { os: "macos-latest", arch: "arm64", platform: "darwin", go-arch: "arm64" }
+          - { os: "windows-latest", arch: "x64", platform: "win32", go-arch: "amd64" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -127,9 +127,9 @@ jobs:
           GOPROXY: direct
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            go build -C ./cfn-init -v -o ../bundle/production/bin/cfn-init.exe
+            GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../bundle/production/bin/cfn-init.exe
           else
-            go build -C ./cfn-init -v -o ../bundle/production/bin/cfn-init
+            GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../bundle/production/bin/cfn-init
           fi
           cp ./cfn-init/THIRD-PARTY-LICENSES.txt ./bundle/production/bin/
 
