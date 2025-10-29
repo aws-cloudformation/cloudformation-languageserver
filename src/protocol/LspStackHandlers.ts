@@ -40,6 +40,11 @@ import {
     ListChangeSetParams,
     ListChangeSetResult,
     ListChangeSetRequest,
+    GetStackEventsParams,
+    GetStackEventsResult,
+    GetStackEventsRequest,
+    ClearStackEventsParams,
+    ClearStackEventsRequest,
 } from '../stacks/StackRequestType';
 import { Identifiable } from './LspTypes';
 
@@ -108,5 +113,13 @@ export class LspStackHandlers {
 
     onDescribeChangeSetDeletionStatus(handler: RequestHandler<Identifiable, DescribeDeletionStatusResult, void>) {
         this.connection.onRequest(DescribeChangeSetDeletionStatusRequest.method, handler);
+    }
+
+    onGetStackEvents(handler: RequestHandler<GetStackEventsParams, GetStackEventsResult, void>) {
+        this.connection.onRequest(GetStackEventsRequest.method, handler);
+    }
+
+    onClearStackEvents(handler: RequestHandler<ClearStackEventsParams, void, void>) {
+        this.connection.onRequest(ClearStackEventsRequest.method, handler);
     }
 }

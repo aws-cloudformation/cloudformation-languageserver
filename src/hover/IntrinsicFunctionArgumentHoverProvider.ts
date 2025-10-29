@@ -5,12 +5,14 @@ import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntitie
 import { Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { determineGetAttPosition, extractAttributeName, extractGetAttResourceLogicalId } from '../utils/GetAttUtils';
+import {
+    determineGetAttPosition,
+    extractAttributeName,
+    extractGetAttResourceLogicalId,
+    getAttributeDocumentationFromSchema,
+} from '../utils/GetAttUtils';
 import { formatIntrinsicArgumentHover, getResourceAttributeValueDoc } from './HoverFormatter';
 import { HoverProvider } from './HoverProvider';
-
-const log = LoggerFactory.getLogger('IntrinsicFunctionArgumentHoverProvider');
 
 export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
@@ -146,27 +148,7 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
      * Gets documentation for a specific resource attribute from the schema
      */
     private getAttributeDocumentation(resourceType: string, attributeName: string): string | undefined {
-        const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
-
-        // Provide fallback description even when schema is not available
-        let description = `**${attributeName}** attribute of **${resourceType}**\n\nReturns the value of this attribute when used with the GetAtt intrinsic function.`;
-
-        if (schema) {
-            const jsonPointerPath = `/properties/${attributeName.replaceAll('.', '/')}`;
-
-            try {
-                const resolvedSchemas = schema.resolveJsonPointerPath(jsonPointerPath);
-                if (resolvedSchemas.length === 1) {
-                    const firstSchema = resolvedSchemas[0];
-                    if (firstSchema.description) {
-                        description = firstSchema.description;
-                    }
-                }
-            } catch (error) {
-                log.debug({ error, resourceType, attributeName }, 'Error resolving attribute documentation');
-            }
-        }
-
+        const description = getAttributeDocumentationFromSchema(this.schemaRetriever, resourceType, attributeName);
         return this.formatAttributeHover(resourceType, description);
     }
 

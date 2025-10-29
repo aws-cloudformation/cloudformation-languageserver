@@ -1,11 +1,5 @@
 import { InitializedParams } from 'vscode-languageserver-protocol';
-import {
-    bearerCredentialsDeleteHandler,
-    bearerCredentialsUpdateHandler,
-    iamCredentialsDeleteHandler,
-    iamCredentialsUpdateHandler,
-    ssoTokenChangedHandler,
-} from '../handlers/AuthHandler';
+import { iamCredentialsDeleteHandler, iamCredentialsUpdateHandler } from '../handlers/AuthHandler';
 import { codeActionHandler } from '../handlers/CodeActionHandler';
 import { codeLensHandler } from '../handlers/CodeLensHandler';
 import { completionHandler } from '../handlers/CompletionHandler';
@@ -42,6 +36,8 @@ import {
     deleteChangeSetHandler,
     getChangeSetDeletionStatusHandler,
     describeChangeSetDeletionStatusHandler,
+    getStackEventsHandler,
+    clearStackEventsHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
 import { closeSafely } from '../utils/Closeable';
@@ -99,10 +95,7 @@ export class CfnServer {
         this.lsp.handlers.onCodeLens(codeLensHandler(this.components));
 
         this.lsp.authHandlers.onIamCredentialsUpdate(iamCredentialsUpdateHandler(this.components));
-        this.lsp.authHandlers.onBearerCredentialsUpdate(bearerCredentialsUpdateHandler(this.components));
         this.lsp.authHandlers.onIamCredentialsDelete(iamCredentialsDeleteHandler(this.components));
-        this.lsp.authHandlers.onBearerCredentialsDelete(bearerCredentialsDeleteHandler(this.components));
-        this.lsp.authHandlers.onSsoTokenChanged(ssoTokenChangedHandler(this.components));
 
         this.lsp.stackHandlers.onGetParameters(getParametersHandler(this.components));
         this.lsp.stackHandlers.onCreateValidation(createValidationHandler(this.components));
@@ -122,6 +115,8 @@ export class CfnServer {
         this.lsp.stackHandlers.onListChangeSets(listChangeSetsHandler(this.components));
         this.lsp.stackHandlers.onListStackResources(listStackResourcesHandler(this.components));
         this.lsp.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
+        this.lsp.stackHandlers.onGetStackEvents(getStackEventsHandler(this.components));
+        this.lsp.stackHandlers.onClearStackEvents(clearStackEventsHandler(this.components));
 
         this.lsp.resourceHandlers.onListResources(listResourcesHandler(this.components));
         this.lsp.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));

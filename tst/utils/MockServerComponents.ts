@@ -56,6 +56,7 @@ import { SettingsManager } from '../../src/settings/SettingsManager';
 import { ChangeSetDeletionWorkflow } from '../../src/stacks/actions/ChangeSetDeletionWorkflow';
 import { DeploymentWorkflow } from '../../src/stacks/actions/DeploymentWorkflow';
 import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow';
+import { StackEventManager } from '../../src/stacks/StackEventManager';
 import { StackManager } from '../../src/stacks/StackManager';
 import { ClientMessage } from '../../src/telemetry/ClientMessage';
 import { Closeable } from '../../src/utils/Closeable';
@@ -370,6 +371,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         stackManagementInfoProvider:
             overrides.stackManagementInfoProvider ?? stubInterface<StackManagementInfoProvider>(),
         stackManager: overrides.stackManager ?? stubInterface<StackManager>(),
+        stackEventManager: overrides.stackEventManager ?? stubInterface<StackEventManager>(),
         validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
         deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
         changeSetDeletionWorkflowService:
