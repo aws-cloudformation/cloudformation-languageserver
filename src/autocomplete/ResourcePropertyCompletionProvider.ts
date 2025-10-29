@@ -21,8 +21,8 @@ import {
 } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
-import { Resource } from '../context/semantic/Entity';
-import { CfnValue } from '../context/semantic/SemanticTypes';
+import { ForEachResource, Resource } from '../context/semantic/Entity';
+import { CfnValue, EntityType } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { propertyTypesToMarkdown } from '../hover/HoverFormatter';
@@ -66,7 +66,17 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Uses robust schema resolution approach from hover provider
      */
     private getPropertyCompletions(context: Context): PropertyCompletionsResult {
-        const resource = context.entity as Resource;
+        let resource: Resource;
+
+        if (context.entity.entityType === EntityType.ForEachResource) {
+            const forEachResource = context.entity as ForEachResource;
+            if (!forEachResource.resource) {
+                return [];
+            }
+            resource = forEachResource.resource;
+        } else {
+            resource = context.entity as Resource;
+        }
         let completions: CompletionItem[] = [];
         let skipFuzzySearch = false;
 
@@ -138,7 +148,12 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     }
 
     private getSchemaPath(context: Context): string {
-        let segments = context.propertyPath.slice(3);
+        const propertiesIndex = context.propertyPath.indexOf('Properties');
+        if (propertiesIndex === -1) {
+            return '/properties';
+        }
+
+        let segments = context.propertyPath.slice(propertiesIndex + 1);
 
         // For key completions (except SYNTHETIC_KEY_OR_VALUE), remove last segment
         if (

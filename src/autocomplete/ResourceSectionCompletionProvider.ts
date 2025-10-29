@@ -1,7 +1,8 @@
 import { CompletionItem, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { ResourceAttributesSet, TopLevelSection } from '../context/ContextType';
-import { Resource } from '../context/semantic/Entity';
+import { ResourceAttributesSet } from '../context/ContextType';
+import { ForEachResource, Resource } from '../context/semantic/Entity';
+import { EntityType } from '../context/semantic/SemanticTypes';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnLspProviders } from '../server/CfnLspProviders';
@@ -39,25 +40,33 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
             return this.resourceProviders
                 .get(ResourceCompletionType.Entity)
                 ?.getCompletions(context, params) as CompletionItem[];
-        } else if (context.entitySection === 'Type' || context.propertyPath[context.propertyPath.length - 1] === 'Type') {
+        } else if (
+            context.entitySection === 'Type' ||
+            context.propertyPath[context.propertyPath.length - 1] === 'Type'
+        ) {
             return this.resourceProviders
                 .get(ResourceCompletionType.Type)
                 ?.getCompletions(context, params) as CompletionItem[];
         } else if (
             context.entitySection === 'Properties' ||
             ResourceAttributesSet.has(context.entitySection as string) ||
-            (context.matchPathWithLogicalId(TopLevelSection.Resources, 'Properties') && context.propertyPath.length > 3)
+            this.isInPropertiesSection(context)
         ) {
             const schemaPropertyCompletions = this.resourceProviders
                 .get(ResourceCompletionType.Property)
                 ?.getCompletions(context, params) as CompletionItem[];
 
-            if (
-                params.context?.triggerKind === CompletionTriggerKind.Invoked &&
-                context.matchPathWithLogicalId(TopLevelSection.Resources, 'Properties')
-            ) {
-                const resource = context.entity as Resource;
-                if (resource.Type) {
+            if (params.context?.triggerKind === CompletionTriggerKind.Invoked && this.isInPropertiesSection(context)) {
+                let resource: Resource | undefined;
+
+                if (context.entity.entityType === EntityType.ForEachResource) {
+                    const forEachResource = context.entity as ForEachResource;
+                    resource = forEachResource.resource;
+                } else {
+                    resource = context.entity as Resource;
+                }
+
+                if (resource?.Type) {
                     const stateCompletionPromise = this.resourceProviders
                         .get(ResourceCompletionType.State)
                         ?.getCompletions(context, params) as Promise<CompletionItem[]>;
@@ -76,6 +85,13 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
             return schemaPropertyCompletions;
         }
         return [];
+    }
+
+    private isInPropertiesSection(context: Context): boolean {
+        // Find 'Properties' starting after the resource structure
+        const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
+        const propertiesIndex = context.propertyPath.indexOf('Properties', startIndex);
+        return propertiesIndex !== -1 && context.propertyPath.length >= propertiesIndex + 1;
     }
 }
 
