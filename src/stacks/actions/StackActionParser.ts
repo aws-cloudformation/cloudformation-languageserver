@@ -5,6 +5,7 @@ import {
     GetStackEventsParams,
     ClearStackEventsParams,
     GetStackOutputsParams,
+    DescribeChangeSetParams,
 } from '../StackRequestType';
 import {
     CreateDeploymentParams,
@@ -65,6 +66,11 @@ const DeleteChangeSetParamsSchema = z.object({
     changeSetName: z.string().min(1).max(128),
 });
 
+const DescribeChangeSetParamsSchema = z.object({
+    stackName: z.string().min(1).max(128),
+    changeSetName: z.string().min(1).max(128),
+});
+
 const TemplateUriSchema = z.string().min(1);
 
 const ListStackResourcesParamsSchema = z.object({
@@ -117,4 +123,8 @@ export function parseClearStackEventsParams(input: unknown): ClearStackEventsPar
 
 export function parseGetStackOutputsParams(input: unknown): GetStackOutputsParams {
     return GetStackOutputsParamsSchema.parse(input);
+}
+
+export function parseDescribeChangeSetParams(input: unknown): DescribeChangeSetParams {
+    return DescribeChangeSetParamsSchema.parse(input);
 }

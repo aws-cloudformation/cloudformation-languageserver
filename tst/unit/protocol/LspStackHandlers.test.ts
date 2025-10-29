@@ -36,6 +36,9 @@ import {
     ListStackResourcesRequest,
     ListStackResourcesParams,
     ListStackResourcesResult,
+    DescribeChangeSetParams,
+    DescribeChangeSetResult,
+    DescribeChangeSetRequest,
 } from '../../../src/stacks/StackRequestType';
 
 describe('LspTemplateHandlers', () => {
@@ -149,5 +152,13 @@ describe('LspTemplateHandlers', () => {
         stackActionHandlers.onListStackResources(mockHandler);
 
         expect(connection.onRequest.calledWith(ListStackResourcesRequest.method)).toBe(true);
+    });
+
+    it('should register onDescribeChangeSet handler', () => {
+        const mockHandler: RequestHandler<DescribeChangeSetParams, DescribeChangeSetResult, void> = vi.fn();
+
+        stackActionHandlers.onDescribeChangeSet(mockHandler);
+
+        expect(connection.onRequest.calledWith(DescribeChangeSetRequest.method)).toBe(true);
     });
 });

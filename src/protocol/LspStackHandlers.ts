@@ -48,6 +48,9 @@ import {
     GetStackOutputsParams,
     GetStackOutputsResult,
     GetStackOutputsRequest,
+    DescribeChangeSetParams,
+    DescribeChangeSetResult,
+    DescribeChangeSetRequest,
 } from '../stacks/StackRequestType';
 import { Identifiable } from './LspTypes';
 
@@ -104,6 +107,10 @@ export class LspStackHandlers {
 
     onListChangeSets(handler: RequestHandler<ListChangeSetParams, ListChangeSetResult, void>) {
         this.connection.onRequest(ListChangeSetRequest.method, handler);
+    }
+
+    onDescribeChangeSet(handler: RequestHandler<DescribeChangeSetParams, DescribeChangeSetResult, void>) {
+        this.connection.onRequest(DescribeChangeSetRequest.method, handler);
     }
 
     onDeleteChangeSet(handler: RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void>) {

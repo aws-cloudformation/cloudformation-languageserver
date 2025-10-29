@@ -1,5 +1,6 @@
 import { StackSummary, StackStatus, StackResourceSummary, StackEvent, Output } from '@aws-sdk/client-cloudformation';
 import { RequestType } from 'vscode-languageserver-protocol';
+import { ChangeSetReference, StackChange } from './actions/StackActionRequestType';
 
 export type ListStacksParams = {
     statusToInclude?: StackStatus[];
@@ -33,14 +34,23 @@ export type ListChangeSetParams = {
     nextToken?: string;
 };
 
+export type DescribeChangeSetParams = ChangeSetReference;
+
+export type ChangeSetSummary = {
+    changeSetName: string;
+    status: string;
+    creationTime?: string;
+    description?: string;
+};
+
 export type ListChangeSetResult = {
-    changeSets: Array<{
-        changeSetName: string;
-        status: string;
-        creationTime?: string;
-        description?: string;
-    }>;
+    changeSets: Array<ChangeSetSummary>;
     nextToken?: string;
+};
+
+export type DescribeChangeSetResult = ChangeSetSummary & {
+    stackName: string;
+    changes?: StackChange[];
 };
 
 export const ListChangeSetRequest = new RequestType<ListChangeSetParams, ListChangeSetResult, void>(
@@ -95,4 +105,8 @@ export type GetStackOutputsResult = {
 
 export const GetStackOutputsRequest = new RequestType<GetStackOutputsParams, GetStackOutputsResult, void>(
     'aws/cfn/stack/outputs',
+);
+
+export const DescribeChangeSetRequest = new RequestType<DescribeChangeSetParams, DescribeChangeSetResult, void>(
+    'aws/cfn/stack/changeSet/describe',
 );

@@ -6,11 +6,13 @@ import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
+import { mapChangesToStackChanges } from '../stacks/actions/StackActionOperations';
 import {
     parseCreateDeploymentParams,
     parseDeleteChangeSetParams,
     parseListStackResourcesParams,
     parseCreateValidationParams,
+    parseDescribeChangeSetParams,
     parseTemplateUriParams,
     parseGetStackEventsParams,
     parseClearStackEventsParams,
@@ -42,6 +44,8 @@ import {
     ClearStackEventsParams,
     GetStackOutputsParams,
     GetStackOutputsResult,
+    DescribeChangeSetParams,
+    DescribeChangeSetResult,
 } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
@@ -335,6 +339,31 @@ export function listStackResourcesHandler(
             log.error(error, 'Error listing stack resources');
             return { resources: [] };
         }
+    };
+}
+
+export function describeChangeSetHandler(
+    components: ServerComponents,
+): RequestHandler<DescribeChangeSetParams, DescribeChangeSetResult, void> {
+    return async (rawParams: DescribeChangeSetParams): Promise<DescribeChangeSetResult> => {
+        log.debug({ Handler: 'describeChangeSetsHandler', rawParams });
+
+        const params = parseWithPrettyError(parseDescribeChangeSetParams, rawParams);
+
+        const result = await components.cfnService.describeChangeSet({
+            ChangeSetName: params.changeSetName,
+            IncludePropertyValues: true,
+            StackName: params.stackName,
+        });
+
+        return {
+            changeSetName: params.changeSetName,
+            stackName: params.stackName,
+            status: result.Status ?? '',
+            creationTime: result.CreationTime?.toISOString(),
+            description: result.Description,
+            changes: mapChangesToStackChanges(result.Changes),
+        };
     };
 }
 

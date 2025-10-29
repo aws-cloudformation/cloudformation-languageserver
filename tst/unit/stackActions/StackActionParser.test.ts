@@ -1,7 +1,11 @@
 import { Capability, OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
-import { parseCreateValidationParams, parseTemplateUriParams } from '../../../src/stacks/actions/StackActionParser';
+import {
+    parseCreateValidationParams,
+    parseTemplateUriParams,
+    parseDescribeChangeSetParams,
+} from '../../../src/stacks/actions/StackActionParser';
 
 describe('StackActionParser', () => {
     describe('parseCreateValidationParams', () => {
@@ -195,6 +199,64 @@ describe('StackActionParser', () => {
 
         it('should throw ZodError for undefined input', () => {
             expect(() => parseTemplateUriParams(undefined)).toThrow(ZodError);
+        });
+    });
+
+    describe('parseDescribeChangeSetParams', () => {
+        it('should parse valid describe changeset params', () => {
+            const input = {
+                stackName: 'test-stack',
+                changeSetName: 'test-changeset',
+            };
+
+            const result = parseDescribeChangeSetParams(input);
+
+            expect(result).toEqual({
+                stackName: 'test-stack',
+                changeSetName: 'test-changeset',
+            });
+        });
+
+        it('should throw ZodError for missing stackName', () => {
+            const input = {
+                changeSetName: 'test-changeset',
+            };
+
+            expect(() => parseDescribeChangeSetParams(input)).toThrow(ZodError);
+        });
+
+        it('should throw ZodError for missing changeSetName', () => {
+            const input = {
+                stackName: 'test-stack',
+            };
+
+            expect(() => parseDescribeChangeSetParams(input)).toThrow(ZodError);
+        });
+
+        it('should throw ZodError for stackName exceeding 128 characters', () => {
+            const input = {
+                stackName: 'a'.repeat(129),
+                changeSetName: 'test-changeset',
+            };
+
+            expect(() => parseDescribeChangeSetParams(input)).toThrow(ZodError);
+        });
+
+        it('should throw ZodError for changeSetName exceeding 128 characters', () => {
+            const input = {
+                stackName: 'test-stack',
+                changeSetName: 'a'.repeat(129),
+            };
+
+            expect(() => parseDescribeChangeSetParams(input)).toThrow(ZodError);
+        });
+
+        it('should throw ZodError for null input', () => {
+            expect(() => parseDescribeChangeSetParams(null)).toThrow(ZodError);
+        });
+
+        it('should throw ZodError for undefined input', () => {
+            expect(() => parseDescribeChangeSetParams(undefined)).toThrow(ZodError);
         });
     });
 });
