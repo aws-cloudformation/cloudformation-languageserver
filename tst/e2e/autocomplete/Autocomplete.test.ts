@@ -1856,6 +1856,36 @@ Resources:
             };
             await template.executeScenario(scenario);
         });
+
+        it('test boolean autocomplete', async () => {
+            const template = new TemplateBuilder(DocumentType.YAML);
+            const scenario: TemplateScenario = {
+                name: 'boolean autocompletion',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `AWSTemplateFormatVersion: '2010-09-09'
+Description: Test boolean autocomplete bug
+
+Resources:
+  TestVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: `,
+                        position: { line: 0, character: 0 },
+                        description: 'Test autocomplete in nested object within Properties',
+                        verification: {
+                            position: { line: 8, character: 26 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['true', 'false'])
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            await template.executeScenario(scenario);
+        });
     });
 
     describe('JSON', () => {
@@ -2029,12 +2059,24 @@ Resources:
     },
     "DatabasePassword": {
       "Type": "String",
-      "NoEcho": true,
-      "MinLength": 8, 
-      "M"`,
+      "NoEcho": `,
                         position: { line: 55, character: 8 },
                         description: 'Parameter fields',
                         verification: {
+                            position: { line: 59, character: 16 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['true', 'false'])
+                                .build(),
+                        },
+                    },
+                    {
+                      action: 'type',
+                      content:`true,
+      "MinLength": 8, 
+      "M"`,
+                      position: { line: 59, character: 16 },
+                      description: 'Parameter fields',
+                      verification: {
                             position: { line: 61, character: 8 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectExcludesItems(['Type', 'NoEcho', 'MinLength'])

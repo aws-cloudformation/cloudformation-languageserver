@@ -178,7 +178,13 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Creates enum value completions from resolved schemas
      */
     private getEnumCompletions(resolvedSchemas: PropertyType[], context: Context): CompletionItem[] {
-        const enumValues: (string | number)[] = [];
+        const enumValues: (string | number | boolean)[] = [];
+
+        console.log("DEBUG");
+        console.log("Property path is ", context.propertyPath);
+        console.log("Resolved schema is ", resolvedSchemas);
+        console.log("Is value?", context.isValue());  // Add this
+        console.log("Is key?", context.isKey());      // Add this
 
         for (const resolvedSchema of resolvedSchemas) {
             if (resolvedSchema.enum && resolvedSchema.enum.length > 0) {
@@ -188,6 +194,17 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
                     if (!enumValues.includes(typedEnumValue)) {
                         enumValues.push(typedEnumValue);
                     }
+                }
+            }
+
+            if (resolvedSchema.type === 'boolean') {
+              console.log("Resolve schema type is boolean");
+                if (!enumValues.includes(true)) {
+                    enumValues.push(true);
+                }
+
+                if (!enumValues.includes(false)) {
+                    enumValues.push(false);
                 }
             }
         }
