@@ -342,9 +342,11 @@ export function listStackResourcesHandler(
             const response = await components.cfnService.listStackResources({
                 StackName: params.stackName,
                 NextToken: params.nextToken,
-                MaxItems: params.maxItems,
             });
-            return { resources: response.StackResourceSummaries ?? [] };
+            return {
+                resources: response.StackResourceSummaries ?? [],
+                nextToken: response.NextToken,
+            };
         } catch (error) {
             log.error({ error: extractErrorMessage(error) }, 'Error listing stack resources');
             return { resources: [] };
