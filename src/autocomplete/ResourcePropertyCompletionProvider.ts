@@ -98,35 +98,17 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private getSchemaPath(context: Context): string {
         let segments = context.propertyPath.slice(3);
 
-        // For SYNTHETIC_KEY_OR_VALUE, both key and value need the same path (current property)
+        // For key completions (except SYNTHETIC_KEY_OR_VALUE), remove last segment
         if (
-            NodeType.isNodeType(context['node'], CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE) ||
-            (context.isKey() && context.isValue())
+            context.isKey() &&
+            segments.length > 0 &&
+            !NodeType.isNodeType(context['node'], CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE) &&
+            !(context.isKey() && context.isValue())
         ) {
-            const path = templatePathToJsonPointerPath(segments);
-            return path;
+            segments = segments.slice(0, -1);
         }
 
-        // For key completions, we need to determine the correct path
-        if (context.isKey() && segments.length > 0) {
-            // Special case: if we're in an array item (last segment is a number),
-            // keep the full path to get array item schema
-            const lastSegment = segments[segments.length - 1];
-
-            if (typeof lastSegment === 'number' || lastSegment === '') {
-                segments = segments.slice(0, -1); // Remove the index/empty string
-                const path = templatePathToJsonPointerPath(segments);
-                return path;
-            } else {
-                // Regular case: remove last segment to get parent properties
-                segments = segments.slice(0, -1);
-                const path = templatePathToJsonPointerPath(segments);
-                return path;
-            }
-        }
-
-        const finalPath = templatePathToJsonPointerPath(segments);
-        return finalPath;
+        return templatePathToJsonPointerPath(segments);
     }
 
     /**
