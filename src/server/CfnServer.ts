@@ -1,10 +1,7 @@
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import {
-    bearerCredentialsDeleteHandler,
-    bearerCredentialsUpdateHandler,
     iamCredentialsDeleteHandler,
     iamCredentialsUpdateHandler,
-    ssoTokenChangedHandler,
 } from '../handlers/AuthHandler';
 import { codeActionHandler } from '../handlers/CodeActionHandler';
 import { codeLensHandler } from '../handlers/CodeLensHandler';
@@ -99,10 +96,7 @@ export class CfnServer {
         this.lsp.handlers.onCodeLens(codeLensHandler(this.components));
 
         this.lsp.authHandlers.onIamCredentialsUpdate(iamCredentialsUpdateHandler(this.components));
-        this.lsp.authHandlers.onBearerCredentialsUpdate(bearerCredentialsUpdateHandler(this.components));
         this.lsp.authHandlers.onIamCredentialsDelete(iamCredentialsDeleteHandler(this.components));
-        this.lsp.authHandlers.onBearerCredentialsDelete(bearerCredentialsDeleteHandler(this.components));
-        this.lsp.authHandlers.onSsoTokenChanged(ssoTokenChangedHandler(this.components));
 
         this.lsp.stackHandlers.onGetParameters(getParametersHandler(this.components));
         this.lsp.stackHandlers.onCreateValidation(createValidationHandler(this.components));
