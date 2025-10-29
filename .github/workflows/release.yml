@@ -127,9 +127,9 @@ jobs:
           GOPROXY: direct
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../bundle/production/bin/cfn-init.exe
+            GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../../bundle/production/bin/cfn-init.exe
           else
-            GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../bundle/production/bin/cfn-init
+            GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../../bundle/production/bin/cfn-init
           fi
           cp ./cfn-init/THIRD-PARTY-LICENSES.txt ./bundle/production/bin/
 
