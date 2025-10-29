@@ -56,36 +56,35 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Uses robust schema resolution approach from hover provider
      */
     private getPropertyCompletions(context: Context): {
-      completions: CompletionItem[];
-      skipFuzzySearch: boolean;
+        completions: CompletionItem[];
+        skipFuzzySearch: boolean;
     } {
         const resource = context.entity as Resource;
         let completions: CompletionItem[] = [];
         let skipFuzzySearch = false;
-      
+
         if (!resource.Type) {
             return {
-              completions,
-              skipFuzzySearch
-            }
+                completions,
+                skipFuzzySearch,
+            };
         }
 
         if (context.isResourceAttributeProperty() || this.isAtResourceAttributeLevel(context)) {
             return {
-              completions: this.getResourceAttributePropertyCompletions(context, resource),
-              skipFuzzySearch
-            }
+                completions: this.getResourceAttributePropertyCompletions(context, resource),
+                skipFuzzySearch,
+            };
         }
         const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
         if (!schema) {
             return {
-              completions,
-              skipFuzzySearch
-            }
+                completions,
+                skipFuzzySearch,
+            };
         }
 
-        const { isBooleanType, resolvedSchemas: booleanResolvedSchemas } = 
-            this.getBooleanTypeInfo(context, schema);
+        const { isBooleanType, resolvedSchemas: booleanResolvedSchemas } = this.getBooleanTypeInfo(context, schema);
 
         if (context.isKey() && !isBooleanType) {
             const schemaPath = this.getSchemaPath(context);
@@ -98,11 +97,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             completions = [...completions, ...propertyCompletions];
         }
 
-        if(isBooleanType){
-          console.log("isBooleanType")
-          completions = [...completions, ...this.getEnumCompletions(booleanResolvedSchemas, context)];
-          console.log(completions);
-          skipFuzzySearch = true;
+        if (isBooleanType) {
+            completions = [...completions, ...this.getEnumCompletions(booleanResolvedSchemas, context)];
+            skipFuzzySearch = true;
         } else if (context.isValue()) {
             const enumSchemaPath = this.getSchemaPath(context);
             const enumResolvedSchemas = schema.resolveJsonPointerPath(enumSchemaPath, {
@@ -110,36 +107,39 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
                 requireFullyResolved: true,
             });
             completions = [...completions, ...this.getEnumCompletions(enumResolvedSchemas, context)];
-        } 
+        }
 
         return {
-          completions, 
-          skipFuzzySearch
-        }
+            completions,
+            skipFuzzySearch,
+        };
     }
 
-    private getBooleanTypeInfo(context: Context, schema: ResourceSchema): {
-      isBooleanType: boolean;
-      resolvedSchemas: PropertyType[];
+    private getBooleanTypeInfo(
+        context: Context,
+        schema: ResourceSchema,
+    ): {
+        isBooleanType: boolean;
+        resolvedSchemas: PropertyType[];
     } {
-      const propertySchemaPath = templatePathToJsonPointerPath(context.propertyPath.slice(3));
-      const resolvedSchemas = schema.resolveJsonPointerPath(propertySchemaPath, {
-                excludeReadOnly: true,
-                requireFullyResolved: true,
-            });
+        const propertySchemaPath = templatePathToJsonPointerPath(context.propertyPath.slice(3));
+        const resolvedSchemas = schema.resolveJsonPointerPath(propertySchemaPath, {
+            excludeReadOnly: true,
+            requireFullyResolved: true,
+        });
 
-      let isBooleanType = false;
-      for(const resolvedSchema of resolvedSchemas){
-        if( resolvedSchema.type === 'boolean'){
-          isBooleanType = true;
-          break;
+        let isBooleanType = false;
+        for (const resolvedSchema of resolvedSchemas) {
+            if (resolvedSchema.type === 'boolean') {
+                isBooleanType = true;
+                break;
+            }
         }
-      }
 
-      return {
-        isBooleanType, 
-        resolvedSchemas
-      }
+        return {
+            isBooleanType,
+            resolvedSchemas,
+        };
     }
 
     private getSchemaPath(context: Context): string {
@@ -239,21 +239,17 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             }
 
             if (resolvedSchema.type === 'boolean') {
-              console.log("Resolve schema type is boolean");
                 if (!enumValues.includes(true)) {
-                    console.log("pushing true");
                     enumValues.push(true);
                 }
 
                 if (!enumValues.includes(false)) {
-                    console.log("pushing false");
                     enumValues.push(false);
                 }
             }
         }
 
         if (enumValues.length === 0) {
-            console.log("Enum values length is 0");
             return [];
         }
 
@@ -266,7 +262,6 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
 
         // Apply fuzzy search if there's text
         if (context.text.length > 0 && context.isValue()) {
-            console.log("context.text.length>0");
             return this.fuzzySearch(completions, context.text);
         }
 

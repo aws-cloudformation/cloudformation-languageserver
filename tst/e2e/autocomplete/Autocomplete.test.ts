@@ -2059,24 +2059,12 @@ Resources:
     },
     "DatabasePassword": {
       "Type": "String",
-      "NoEcho": `,
+      "NoEcho": true,
+      "MinLength": 8, 
+      "M" `,
                         position: { line: 55, character: 8 },
                         description: 'Parameter fields',
                         verification: {
-                            position: { line: 59, character: 16 },
-                            expectation: CompletionExpectationBuilder.create()
-                                .expectContainsItems(['true', 'false'])
-                                .build(),
-                        },
-                    },
-                    {
-                      action: 'type',
-                      content:`true,
-      "MinLength": 8, 
-      "M"`,
-                      position: { line: 59, character: 16 },
-                      description: 'Parameter fields',
-                      verification: {
                             position: { line: 61, character: 8 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectExcludesItems(['Type', 'NoEcho', 'MinLength'])
@@ -3814,7 +3802,11 @@ Resources:
             await template.executeScenario(scenario);
         });
 
+<<<<<<< HEAD
         it('test nested array property completion', async () => {
+=======
+        it('test boolean as enum suggestion', async () => {
+>>>>>>> 95c6c15 (revision to test, lint fix)
             const template = new TemplateBuilder(DocumentType.JSON);
             const scenario: TemplateScenario = {
                 name: 'Nested array property completion',
