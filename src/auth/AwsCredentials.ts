@@ -49,12 +49,15 @@ export class AwsCredentials {
     private iamCredentials?: IamCredentials;
     private bearerCredentials?: BearerCredentials;
     private connectionMetadata?: ConnectionMetadata;
-    private encryptionKey?: Buffer;
+    private readonly encryptionKey: Buffer;
 
     constructor(
         private readonly awsHandlers: LspAuthHandlers,
         private readonly settingsManager: SettingsManager,
-    ) {}
+        encryptionKey: string,
+    ) {
+        this.encryptionKey = Buffer.from(encryptionKey, 'base64');
+    }
 
     getIAM(): DeepReadonly<IamCredentials> {
         if (!this.iamCredentials) {
@@ -150,16 +153,8 @@ export class AwsCredentials {
         }
     }
 
-    setEncryptionKey(key: Buffer): void {
-        this.encryptionKey = key;
-    }
-
     async handleIamCredentialsUpdate(params: UpdateCredentialsParams): Promise<boolean> {
         try {
-            if (!this.encryptionKey) {
-                throw new Error('Encryption key not configured');
-            }
-
             const decrypted = await compactDecrypt(params.data as unknown as string, this.encryptionKey);
             const rawCredentials = JSON.parse(new TextDecoder().decode(decrypted.plaintext)) as unknown;
 

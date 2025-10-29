@@ -108,6 +108,11 @@ export class TestExtension implements Closeable {
             capabilities: {},
             clientInfo,
             workspaceFolders: [],
+            initializationOptions: {
+                encryption: {
+                    key: 'dGVzdGtleQ==', // base64 encoded 'testkey'
+                },
+            },
         } as InitializeParams,
     ) {
         this.serverConnection = new LspConnection(

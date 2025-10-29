@@ -22,7 +22,7 @@ describe('AwsCredentials', () => {
         vi.clearAllMocks();
         mockAwsHandlers = createMockAuthHandlers();
         mockSettingsManager = createMockSettingsManager();
-        awsCredentials = new AwsCredentials(mockAwsHandlers, mockSettingsManager);
+        awsCredentials = new AwsCredentials(mockAwsHandlers, mockSettingsManager, 'dGVzdGtleQ==');
     });
 
     describe('connection metadata', () => {
