@@ -86,7 +86,8 @@ describe('StackEventManager', () => {
                 StackEvents: [createEvent('event-newest', new Date(), 'Bucket1', ResourceStatus.CREATE_COMPLETE)],
             });
             const refreshResult = await manager.refresh('TestStack');
-            expect(refreshResult).toHaveLength(0);
+            expect(refreshResult.events).toHaveLength(0);
+            expect(refreshResult.gapDetected).toBe(false);
         });
 
         it('clear cache when switching stacks', async () => {
@@ -129,7 +130,8 @@ describe('StackEventManager', () => {
             await manager.fetchEvents('TestStack');
             const newEvents = await manager.refresh('TestStack');
 
-            expect(newEvents).toHaveLength(0);
+            expect(newEvents.events).toHaveLength(0);
+            expect(newEvents.gapDetected).toBe(false);
         });
 
         it('fetch new events since last refresh', async () => {
@@ -151,9 +153,10 @@ describe('StackEventManager', () => {
             await manager.fetchEvents('TestStack');
             const result = await manager.refresh('TestStack');
 
-            expect(result).toHaveLength(2);
-            expect(result[0].EventId).toBe('event-4');
-            expect(result[1].EventId).toBe('event-3');
+            expect(result.events).toHaveLength(2);
+            expect(result.events[0].EventId).toBe('event-4');
+            expect(result.events[1].EventId).toBe('event-3');
+            expect(result.gapDetected).toBe(false);
         });
 
         it('exhaust up to 5 pages to find last event', async () => {
@@ -183,9 +186,10 @@ describe('StackEventManager', () => {
             const result = await manager.refresh('TestStack');
 
             expect(mockCfnService.describeStackEvents).toHaveBeenCalledTimes(6);
-            expect(result).toHaveLength(5);
-            expect(result[0].EventId).toBe('event-5');
-            expect(result[4].EventId).toBe('event-1');
+            expect(result.events).toHaveLength(5);
+            expect(result.events[0].EventId).toBe('event-5');
+            expect(result.events[4].EventId).toBe('event-1');
+            expect(result.gapDetected).toBe(false);
         });
 
         it('stop after 5 pages even if last event not found', async () => {
@@ -219,7 +223,8 @@ describe('StackEventManager', () => {
             const result = await manager.refresh('TestStack');
 
             expect(mockCfnService.describeStackEvents).toHaveBeenCalledTimes(6);
-            expect(result).toHaveLength(5);
+            expect(result.events).toHaveLength(5);
+            expect(result.gapDetected).toBe(true);
         });
 
         it('stop when no more pages available', async () => {
@@ -238,7 +243,8 @@ describe('StackEventManager', () => {
             const result = await manager.refresh('TestStack');
 
             expect(mockCfnService.describeStackEvents).toHaveBeenCalledTimes(2);
-            expect(result).toHaveLength(2);
+            expect(result.events).toHaveLength(2);
+            expect(result.gapDetected).toBe(false);
         });
 
         it('update most recent event ID after refresh', async () => {
@@ -258,7 +264,8 @@ describe('StackEventManager', () => {
             await manager.refresh('TestStack');
             const secondRefresh = await manager.refresh('TestStack');
 
-            expect(secondRefresh).toHaveLength(0);
+            expect(secondRefresh.events).toHaveLength(0);
+            expect(secondRefresh.gapDetected).toBe(false);
         });
 
         it('fetch initial events if stack name changes', async () => {
@@ -273,8 +280,9 @@ describe('StackEventManager', () => {
             await manager.fetchEvents('Stack1');
             const result = await manager.refresh('Stack2');
 
-            expect(result).toHaveLength(1);
-            expect(result[0].EventId).toBe('event-2');
+            expect(result.events).toHaveLength(1);
+            expect(result.events[0].EventId).toBe('event-2');
+            expect(result.gapDetected).toBe(false);
         });
     });
 
@@ -342,13 +350,15 @@ describe('StackEventManager', () => {
 
             await manager.fetchEvents('TestStack');
             const newEvents1 = await manager.refresh('TestStack');
-            expect(newEvents1).toHaveLength(1);
-            expect(newEvents1[0].ResourceStatus).toBe(ResourceStatus.CREATE_COMPLETE);
+            expect(newEvents1.events).toHaveLength(1);
+            expect(newEvents1.events[0].ResourceStatus).toBe(ResourceStatus.CREATE_COMPLETE);
+            expect(newEvents1.gapDetected).toBe(false);
 
             const newEvents2 = await manager.refresh('TestStack');
-            expect(newEvents2).toHaveLength(1);
-            expect(newEvents2[0].ResourceStatus).toBe(ResourceStatus.CREATE_COMPLETE);
-            expect(newEvents2[0].LogicalResourceId).toBe('TestStack');
+            expect(newEvents2.events).toHaveLength(1);
+            expect(newEvents2.events[0].ResourceStatus).toBe(ResourceStatus.CREATE_COMPLETE);
+            expect(newEvents2.events[0].LogicalResourceId).toBe('TestStack');
+            expect(newEvents2.gapDetected).toBe(false);
         });
 
         it('handle pagination during active deployment', async () => {
@@ -372,9 +382,10 @@ describe('StackEventManager', () => {
             await manager.fetchEvents('TestStack');
             const newEvents = await manager.refresh('TestStack');
 
-            expect(newEvents).toHaveLength(51);
-            expect(newEvents[0].EventId).toBe('event-100');
-            expect(newEvents[50].EventId).toBe('event-2');
+            expect(newEvents.events).toHaveLength(51);
+            expect(newEvents.events[0].EventId).toBe('event-100');
+            expect(newEvents.events[50].EventId).toBe('event-2');
+            expect(newEvents.gapDetected).toBe(false);
         });
 
         it('handle view close and reopen', async () => {
