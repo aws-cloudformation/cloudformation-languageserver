@@ -8,6 +8,7 @@ import {
 import { DateTime } from 'luxon';
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
 import { Identifiable } from '../../protocol/LspTypes';
+import { ResourceChangeDetailV2 } from '../../services/CfnServiceV2';
 
 export type ResourceToImport = {
     ResourceType: string;
@@ -65,7 +66,8 @@ export type StackChange = {
         scope?: string[];
         beforeContext?: string;
         afterContext?: string;
-        details?: ResourceChangeDetail[];
+        resourceDriftStatus?: string
+        details?: ResourceChangeDetailV2[];
     };
 };
 

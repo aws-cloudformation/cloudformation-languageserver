@@ -120,6 +120,7 @@ export class CfnService {
         Capabilities?: Capability[];
         ChangeSetType?: 'CREATE' | 'UPDATE' | 'IMPORT';
         ResourcesToImport?: ResourceToImport[];
+        CompareWith?: string;
     }): Promise<CreateChangeSetCommandOutput> {
         return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)));
     }
