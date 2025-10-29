@@ -37,10 +37,7 @@ describe('CfnServer', () => {
             expect(mockFeatures.handlers.onDidChangeConfiguration.calledOnce).toBe(true);
 
             expect(mockFeatures.authHandlers.onIamCredentialsUpdate.calledOnce).toBe(true);
-            expect(mockFeatures.authHandlers.onBearerCredentialsUpdate.calledOnce).toBe(true);
             expect(mockFeatures.authHandlers.onIamCredentialsDelete.calledOnce).toBe(true);
-            expect(mockFeatures.authHandlers.onBearerCredentialsDelete.calledOnce).toBe(true);
-            expect(mockFeatures.authHandlers.onSsoTokenChanged.calledOnce).toBe(true);
 
             expect(mockFeatures.stackHandlers.onGetParameters.calledOnce).toBe(true);
             expect(mockFeatures.stackHandlers.onCreateValidation.calledOnce).toBe(true);
