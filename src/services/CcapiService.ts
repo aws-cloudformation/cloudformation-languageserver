@@ -5,6 +5,7 @@ import {
     ListResourcesCommand,
     ListResourcesOutput,
 } from '@aws-sdk/client-cloudcontrol';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
 export interface ListResourcesOptions {
@@ -20,6 +21,7 @@ export class CcapiService {
         return await request(client);
     }
 
+    @Measure({ name: 'listResources' })
     public async listResources(typeName: string, options?: ListResourcesOptions): Promise<ListResourcesOutput> {
         return await this.withClient(async (client) => {
             const response = await client.send(
@@ -38,6 +40,7 @@ export class CcapiService {
         });
     }
 
+    @Measure({ name: 'getResource' })
     public async getResource(typeName: string, identifier: string) {
         return await this.withClient(async (client) => {
             const getResourceInput: GetResourceInput = {
