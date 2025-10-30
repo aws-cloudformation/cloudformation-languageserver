@@ -14,6 +14,7 @@ import {
     parseTemplateUriParams,
     parseGetStackEventsParams,
     parseClearStackEventsParams,
+    parseGetStackOutputsParams,
 } from '../stacks/actions/StackActionParser';
 import {
     TemplateUri,
@@ -39,6 +40,8 @@ import {
     GetStackEventsParams,
     GetStackEventsResult,
     ClearStackEventsParams,
+    GetStackOutputsParams,
+    GetStackOutputsResult,
 } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
@@ -361,6 +364,21 @@ export function clearStackEventsHandler(
             components.stackEventManager.clear();
         } catch (error) {
             handleStackActionError(error, 'Failed to clear stack events');
+        }
+    };
+}
+
+export function getStackOutputsHandler(
+    components: ServerComponents,
+): RequestHandler<GetStackOutputsParams, GetStackOutputsResult, void> {
+    return async (rawParams): Promise<GetStackOutputsResult> => {
+        try {
+            const params = parseWithPrettyError(parseGetStackOutputsParams, rawParams);
+            const response = await components.cfnService.describeStacks({ StackName: params.stackName });
+            const outputs = response.Stacks?.[0]?.Outputs ?? [];
+            return { outputs };
+        } catch (error) {
+            handleStackActionError(error, 'Failed to get stack outputs');
         }
     };
 }
