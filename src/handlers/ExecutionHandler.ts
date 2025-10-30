@@ -14,7 +14,8 @@ export function executionHandler(
     components: ServerComponents,
 ): ServerRequestHandler<ExecuteCommandParams, unknown, never, void> {
     return (params): unknown => {
-        TelemetryService.instance.get('ExecutionHandler').count(`execute.${params.command}`, 1, { unit: '1' });
+        TelemetryService.instance.get('ExecutionHandler').count('count', 1);
+        TelemetryService.instance.get('ExecutionHandler').count(`count.${params.command}`, 1);
 
         switch (params.command) {
             case DESCRIBE_TEMPLATE: {
