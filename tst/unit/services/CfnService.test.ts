@@ -21,6 +21,7 @@ import {
     waitUntilChangeSetCreateComplete,
     waitUntilStackUpdateComplete,
     waitUntilStackCreateComplete,
+    OnFailure,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { mockClient } from 'aws-sdk-client-mock';
@@ -195,6 +196,21 @@ describe('CfnService', () => {
                 StackName: TEST_CONSTANTS.STACK_NAME,
                 ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                 TemplateBody: TEST_CONSTANTS.TEMPLATE_BODY,
+                Parameters: [
+                    {
+                        ParameterKey: 'Key',
+                        ParameterValue: 'Value',
+                    },
+                ],
+                Tags: [
+                    {
+                        Key: 'Key',
+                        Value: 'Value',
+                    },
+                ],
+                IncludeNestedStacks: true,
+                ImportExistingResources: false,
+                OnStackFailure: OnFailure.DELETE,
             });
 
             expect(result).toEqual(MOCK_RESPONSES.CREATE_CHANGE_SET);

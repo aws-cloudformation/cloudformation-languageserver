@@ -56,6 +56,10 @@ export async function processChangeSet(
         Capabilities: params.capabilities,
         ChangeSetType: changeSetType,
         ResourcesToImport: params.resourcesToImport,
+        OnStackFailure: params.onStackFailure,
+        IncludeNestedStacks: params.includeNestedStacks,
+        Tags: params.tags,
+        ImportExistingResources: params.importExistingResources,
     });
 
     return changeSetName;

@@ -10,7 +10,7 @@ import {
     parseCreateDeploymentParams,
     parseDeleteChangeSetParams,
     parseListStackResourcesParams,
-    parseStackActionParams,
+    parseCreateValidationParams,
     parseTemplateUriParams,
     parseGetStackEventsParams,
     parseClearStackEventsParams,
@@ -80,7 +80,7 @@ export function createValidationHandler(
 ): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         try {
-            const params = parseWithPrettyError(parseStackActionParams, rawParams);
+            const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
             return await components.validationWorkflowService.start(params);
         } catch (error) {
             handleStackActionError(error, 'Failed to start validation workflow');

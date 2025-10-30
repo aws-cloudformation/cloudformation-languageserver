@@ -56,12 +56,13 @@ vi.mock('../../../src/protocol/LspParser', () => ({
 }));
 
 vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
-    parseStackActionParams: vi.fn((input) => input),
+    parseCreateValidationParams: vi.fn((input) => input),
     parseTemplateUriParams: vi.fn((input) => input),
     parseCreateDeploymentParams: vi.fn((input) => input),
     parseDeleteChangeSetParams: vi.fn((input) => input),
     parseListStackResourcesParams: vi.fn((input) => input),
     parseGetStackOutputsParams: vi.fn((input) => input),
+    parseDescribeChangeSetParams: vi.fn((input) => input),
 }));
 
 vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
