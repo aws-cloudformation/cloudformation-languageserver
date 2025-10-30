@@ -5,4 +5,4 @@ export type UploadFileParams = {
     s3Url: string;
 };
 
-export const UploadFileRequest = new RequestType<UploadFileParams, void, void>('aws/s3/uploadFile');
+export const UploadFileRequest = new RequestType<UploadFileParams, void, void>('aws/s3/file/upload');
