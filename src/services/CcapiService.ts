@@ -4,6 +4,7 @@ import {
     GetResourceInput,
     ListResourcesCommand,
     ListResourcesOutput,
+    CloudControlServiceException,
 } from '@aws-sdk/client-cloudcontrol';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
@@ -18,7 +19,14 @@ export class CcapiService {
 
     private async withClient<T>(request: (client: CloudControlClient) => Promise<T>): Promise<T> {
         const client = this.awsClient.getCloudControlClient();
-        return await request(client);
+        try {
+            return await request(client);
+        } catch (error) {
+            if (error instanceof CloudControlServiceException && error.$metadata?.httpStatusCode === 401) {
+                await this.awsClient.validateCredentials();
+            }
+            throw error;
+        }
     }
 
     @Measure({ name: 'listResources' })

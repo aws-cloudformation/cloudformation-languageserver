@@ -26,4 +26,8 @@ export class LspCommunication {
     logMessage(params: LogMessageParams) {
         return this.connection.sendNotification(LogMessageNotification.method, params);
     }
+
+    sendAuthErrorNotification() {
+        return this.connection.sendNotification('aws/credentials/authError', {});
+    }
 }

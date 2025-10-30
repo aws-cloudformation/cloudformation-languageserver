@@ -55,6 +55,7 @@ import {
     waitUntilStackDeleteComplete,
     Tag,
     OnStackFailure,
+    CloudFormationServiceException,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { Measure } from '../telemetry/TelemetryDecorator';
@@ -65,7 +66,14 @@ export class CfnService {
 
     protected async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
         const client = this.awsClient.getCloudFormationClient();
-        return await request(client);
+        try {
+            return await request(client);
+        } catch (error) {
+            if (error instanceof CloudFormationServiceException && error.$metadata?.httpStatusCode === 401) {
+                await this.awsClient.validateCredentials();
+            }
+            throw error;
+        }
     }
 
     public async listStacks(
