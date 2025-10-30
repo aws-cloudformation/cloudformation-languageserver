@@ -12,7 +12,7 @@ export function completionHandler(
     void
 > {
     return (params, _token, _workDoneProgress, _resultProgress) => {
-        TelemetryService.instance.get('CompletionHandler').count(`execute`, 1);
+        TelemetryService.instance.get('CompletionHandler').count('count', 1);
         return components.completionRouter.getCompletions(params);
     };
 }
