@@ -7,7 +7,7 @@ export function inlineCompletionHandler(
     components: ServerComponents,
 ): RequestHandler<InlineCompletionParams, InlineCompletionList | InlineCompletionItem[] | null | undefined, void> {
     return (params, _token) => {
-        TelemetryService.instance.get('InlineCompletionHandler').count('execute', 1, { unit: '1' });
+        TelemetryService.instance.get('InlineCompletionHandler').count('count', 1);
         return components.inlineCompletionRouter.getInlineCompletions(params);
     };
 }

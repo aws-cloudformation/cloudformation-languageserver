@@ -424,6 +424,7 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
             // Force evaluate lazy properties
             context?.entity;
             context?.intrinsicContext;
+            context?.transformContext;
             contextLatencies.push((performance.now() - contextStartTime) * 1000);
             contextSuccess = true;
         } catch (error) {
@@ -446,6 +447,7 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
             // Force evaluate lazy properties
             contextWithEntities?.entity;
             contextWithEntities?.intrinsicContext;
+            contextWithEntities?.transformContext;
             const relatedEntities = contextWithEntities?.relatedEntities;
 
             contextWithEntitiesLatencies.push((performance.now() - contextWithEntitiesStartTime) * 1000);

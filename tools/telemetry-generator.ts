@@ -22,7 +22,6 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { generatePositions, TestPosition, discoverTemplateFiles } from './utils';
 import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
-import { ContextManager } from '../src/context/ContextManager';
 import { DocumentManager } from '../src/document/DocumentManager';
 import { TextDocuments } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -32,12 +31,17 @@ import {
     createMockResourceStateManager,
 } from '../tst/utils/MockServerComponents';
 import { combinedSchemas } from '../tst/utils/SchemaUtils';
-import { CompletionRouter, createCompletionProviders } from '../src/autocomplete/CompletionRouter';
-import { HoverRouter } from '../src/hover/HoverRouter';
 import { MultiDataStoreFactoryProvider } from '../src/datastore/DataStore';
 import { SchemaStore } from '../src/schema/SchemaStore';
 import { GetSchemaTaskManager } from '../src/schema/GetSchemaTaskManager';
 import { getRemotePublicSchemas } from '../src/schema/GetSchemaTask';
+import { completionHandler } from '../src/handlers/CompletionHandler';
+import { hoverHandler } from '../src/handlers/HoverHandler';
+import { definitionHandler } from '../src/handlers/DefinitionHandler';
+import { documentSymbolHandler } from '../src/handlers/DocumentSymbolHandler';
+import { codeLensHandler } from '../src/handlers/CodeLensHandler';
+import { codeActionHandler } from '../src/handlers/CodeActionHandler';
+import { inlineCompletionHandler } from '../src/handlers/InlineCompletionHandler';
 
 const argv = yargs(hideBin(process.argv))
     .option('templates', {
@@ -83,20 +87,25 @@ function sleep(ms: number) {
 
 const textDocuments = new TextDocuments(TextDocument);
 
-async function processTemplate(uri: string, content: string, pos: TestPosition, components: any) {
+async function processTemplate(uri: string, content: string, pos: TestPosition, handlers: any) {
     const position = { line: pos.line, character: pos.character };
-    const params = { textDocument: { uri }, position };
-
     const textDocument = TextDocument.create(uri, '', 1, content);
     (textDocuments as any)._syncedDocuments.set(uri, textDocument);
 
-    components.syntaxTreeManager.add(uri, content);
-    components.contextManager.getContext(params);
-    components.contextManager.getContextAndRelatedEntities(params);
-    components.hoverRouter.getHoverDoc(params);
-    components.completionRouter.getCompletions({ ...params, context: { triggerKind: 2 } });
-    components.definitionProvider.getDefinitions(params);
-    components.inlineCompletionRouter.getInlineCompletions({ ...params, context: { triggerKind: 0 } });
+    handlers.syntaxTreeManager.add(uri, content);
+
+    handlers.completion({ textDocument: { uri }, position, context: { triggerKind: 2 } }, null, null, null);
+    handlers.hover({ textDocument: { uri }, position }, null, null, null);
+    handlers.definition({ textDocument: { uri }, position }, null, null, null);
+    handlers.documentSymbol({ textDocument: { uri } }, null, null, null);
+    handlers.codeLens({ textDocument: { uri } }, null, null, null);
+    handlers.codeAction(
+        { textDocument: { uri }, range: { start: position, end: position }, context: { diagnostics: [] } },
+        null,
+        null,
+        null,
+    );
+    handlers.inlineCompletion({ textDocument: { uri }, position, context: { triggerKind: 0 } }, null);
 
     await sleep(INTERVAL_MS);
 }
@@ -120,7 +129,6 @@ function main() {
 
     const syntaxTreeManager = new SyntaxTreeManager();
     const documentManager = new DocumentManager(textDocuments);
-    const contextManager = new ContextManager(syntaxTreeManager);
     const schemaRetriever = createMockSchemaRetriever(combinedSchemas());
 
     const dataStoreFactory = new MultiDataStoreFactoryProvider();
@@ -139,18 +147,15 @@ function main() {
         resourceStateManager: createMockResourceStateManager(),
     });
 
-    const { core, external, providers } = createMockComponents(mockTestComponents);
-    const completionProviders = createCompletionProviders(core, external, providers);
-    const completionRouter = new CompletionRouter(contextManager, completionProviders, documentManager);
-    const hoverRouter = new HoverRouter(contextManager, schemaRetriever);
-
-    const components = {
+    const handlers = {
         syntaxTreeManager,
-        contextManager,
-        hoverRouter,
-        completionRouter,
-        definitionProvider: providers.definitionProvider,
-        inlineCompletionRouter: providers.inlineCompletionRouter,
+        completion: completionHandler(mockTestComponents),
+        hover: hoverHandler(mockTestComponents),
+        definition: definitionHandler(mockTestComponents),
+        documentSymbol: documentSymbolHandler(mockTestComponents),
+        codeLens: codeLensHandler(mockTestComponents),
+        codeAction: codeActionHandler(mockTestComponents),
+        inlineCompletion: inlineCompletionHandler(mockTestComponents),
     };
 
     const templates = discoverTemplateFiles(TEMPLATE_PATHS);
@@ -165,7 +170,7 @@ function main() {
     setInterval(() => {
         const template = pickRandom(templates);
         const pos = pickRandom(positions.get(template.path)!);
-        processTemplate(template.path, template.content, pos, components).catch(console.error);
+        processTemplate(template.path, template.content, pos, handlers).catch(console.error);
 
         iteration++;
         if (iteration % 100 === 0) {
