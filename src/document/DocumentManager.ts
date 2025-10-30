@@ -97,6 +97,9 @@ export class DocumentManager implements SettingsConfigurable {
                 delay,
             )
             .catch((error) => {
+                if (error instanceof Error && error.message.includes('Request cancelled')) {
+                    return;
+                }
                 this.log.error(error, 'Failed to send document metadata');
             });
     }
