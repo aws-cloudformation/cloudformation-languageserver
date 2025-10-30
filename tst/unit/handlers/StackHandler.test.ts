@@ -1,4 +1,10 @@
-import { Capability, StackSummary, StackStatus, StackResourceSummary } from '@aws-sdk/client-cloudformation';
+import {
+    Capability,
+    StackSummary,
+    StackStatus,
+    StackResourceSummary,
+    ChangeSetStatus,
+} from '@aws-sdk/client-cloudformation';
 import { StubbedInstance } from 'ts-sinon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
@@ -23,8 +29,10 @@ import {
     describeChangeSetDeletionStatusHandler,
     getChangeSetDeletionStatusHandler,
     getStackOutputsHandler,
+    describeChangeSetHandler,
 } from '../../../src/handlers/StackHandler';
 import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
+import { mapChangesToStackChanges } from '../../../src/stacks/actions/StackActionOperations';
 import {
     TemplateUri,
     GetCapabilitiesResult,
@@ -38,6 +46,8 @@ import {
     ListStacksResult,
     ListStackResourcesResult,
     GetStackOutputsResult,
+    DescribeChangeSetParams,
+    DescribeChangeSetResult,
 } from '../../../src/stacks/StackRequestType';
 import {
     createMockComponents,
@@ -71,6 +81,10 @@ vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
 
 vi.mock('../../../src/stacks/actions/CapabilityAnalyzer', () => ({
     analyzeCapabilities: vi.fn(),
+}));
+
+vi.mock('../../../src/stacks/actions/StackActionOperations', () => ({
+    mapChangesToStackChanges: vi.fn(),
 }));
 
 describe('StackActionHandler', () => {
@@ -761,6 +775,109 @@ describe('StackActionHandler', () => {
             const handler = getStackOutputsHandler(mockComponents);
 
             await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
+        });
+    });
+
+    describe('describeChangeSetHandler', () => {
+        it('should return changeset details on success', async () => {
+            const mockChangeSetResponse = {
+                Status: ChangeSetStatus.CREATE_COMPLETE,
+                CreationTime: new Date('2023-01-01T00:00:00Z'),
+                Description: 'Test changeset',
+                Changes: [
+                    {
+                        Action: 'Add',
+                        ResourceChange: {
+                            LogicalResourceId: 'MyBucket',
+                            ResourceType: 'AWS::S3::Bucket',
+                        },
+                    },
+                ],
+                $metadata: {},
+            };
+
+            const mockMappedChanges = [
+                {
+                    type: 'Resource',
+                    resourceChange: {
+                        action: 'Add',
+                        logicalResourceId: 'MyBucket',
+                        resourceType: 'AWS::S3::Bucket',
+                    },
+                },
+            ];
+
+            mockComponents.cfnService.describeChangeSet.resolves(mockChangeSetResponse);
+            vi.mocked(mapChangesToStackChanges).mockReturnValue(mockMappedChanges);
+
+            const handler = describeChangeSetHandler(mockComponents);
+            const params: DescribeChangeSetParams = {
+                changeSetName: 'test-changeset',
+                stackName: 'test-stack',
+            };
+
+            const result = (await handler(params, {} as any)) as DescribeChangeSetResult;
+
+            expect(result).toEqual({
+                changeSetName: 'test-changeset',
+                stackName: 'test-stack',
+                status: ChangeSetStatus.CREATE_COMPLETE,
+                creationTime: '2023-01-01T00:00:00.000Z',
+                description: 'Test changeset',
+                changes: mockMappedChanges,
+            });
+
+            expect(
+                mockComponents.cfnService.describeChangeSet.calledWith({
+                    ChangeSetName: 'test-changeset',
+                    IncludePropertyValues: true,
+                    StackName: 'test-stack',
+                }),
+            ).toBe(true);
+            expect(mapChangesToStackChanges).toHaveBeenCalledWith(mockChangeSetResponse.Changes);
+        });
+
+        it('should handle undefined optional fields', async () => {
+            const mockChangeSetResponse = {
+                Status: undefined,
+                CreationTime: undefined,
+                Description: undefined,
+                Changes: undefined,
+                $metadata: {},
+            };
+
+            mockComponents.cfnService.describeChangeSet.resolves(mockChangeSetResponse);
+            vi.mocked(mapChangesToStackChanges).mockReturnValue([]);
+
+            const handler = describeChangeSetHandler(mockComponents);
+            const params: DescribeChangeSetParams = {
+                changeSetName: 'test-changeset',
+                stackName: 'test-stack',
+            };
+
+            const result = (await handler(params, {} as any)) as DescribeChangeSetResult;
+
+            expect(result).toEqual({
+                changeSetName: 'test-changeset',
+                stackName: 'test-stack',
+                status: '',
+                creationTime: undefined,
+                description: undefined,
+                changes: [],
+            });
+        });
+
+        it('should propagate errors from cfnService', async () => {
+            const error = new Error('ChangeSet not found');
+            mockComponents.cfnService.describeChangeSet.rejects(error);
+
+            const handler = describeChangeSetHandler(mockComponents);
+            const params: DescribeChangeSetParams = {
+                changeSetName: 'non-existent-changeset',
+                stackName: 'test-stack',
+            };
+
+            await expect(handler(params, {} as any)).rejects.toThrow('ChangeSet not found');
         });
     });
 });

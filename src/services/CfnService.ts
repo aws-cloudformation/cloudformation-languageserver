@@ -135,6 +135,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)));
     }
 
+    @Measure({ name: 'describeChangeSet' })
     public async describeChangeSet(params: {
         ChangeSetName: string;
         IncludePropertyValues: boolean;
