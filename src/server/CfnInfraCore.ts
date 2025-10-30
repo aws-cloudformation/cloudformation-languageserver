@@ -60,9 +60,6 @@ export class CfnInfraCore implements Configurables, Closeable {
         this.fileContextManager = overrides.fileContextManager ?? new FileContextManager(this.documentManager);
 
         const encryptionKey = initializeParams.initializationOptions?.encryption?.key;
-        if (!encryptionKey) {
-            throw new Error('Encryption key is required');
-        }
 
         this.awsCredentials =
             overrides.awsCredentials ??

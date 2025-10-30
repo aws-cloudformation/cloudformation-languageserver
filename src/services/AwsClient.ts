@@ -23,11 +23,15 @@ export class AwsClient {
     }
 
     private iamClientConfig(): IamClientConfig {
-        const credential = this.credentialsProvider.getIAM();
-        return {
-            region: credential.region,
-            credentials: this.credentialsProvider.getIAM(),
-            customUserAgent: `${ExtensionId}/${ExtensionVersion}`,
-        };
+        try {
+            const credential = this.credentialsProvider.getIAM();
+            return {
+                region: credential.region,
+                credentials: credential,
+                customUserAgent: `${ExtensionId}/${ExtensionVersion}`,
+            };
+        } catch {
+            throw new Error('AWS credentials not configured. Authentication required for online features.');
+        }
     }
 }
