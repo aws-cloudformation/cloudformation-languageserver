@@ -1,10 +1,10 @@
-import { Capability } from '@aws-sdk/client-cloudformation';
+import { Capability, OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
-import { parseStackActionParams, parseTemplateUriParams } from '../../../src/stacks/actions/StackActionParser';
+import { parseCreateValidationParams, parseTemplateUriParams } from '../../../src/stacks/actions/StackActionParser';
 
 describe('StackActionParser', () => {
-    describe('parseStackActionParams', () => {
+    describe('parseCreateValidationParams', () => {
         it('should parse valid stack action params', () => {
             const input = {
                 id: 'test-id',
@@ -19,7 +19,7 @@ describe('StackActionParser', () => {
                 capabilities: [Capability.CAPABILITY_IAM],
             };
 
-            const result = parseStackActionParams(input);
+            const result = parseCreateValidationParams(input);
 
             expect(result).toEqual({
                 id: 'test-id',
@@ -42,7 +42,7 @@ describe('StackActionParser', () => {
                 stackName: 'test-stack',
             };
 
-            const result = parseStackActionParams(input);
+            const result = parseCreateValidationParams(input);
 
             expect(result).toEqual({
                 id: 'test-id',
@@ -58,7 +58,7 @@ describe('StackActionParser', () => {
                 stackName: 'test-stack',
             };
 
-            expect(() => parseStackActionParams(input)).toThrow(ZodError);
+            expect(() => parseCreateValidationParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for missing id', () => {
@@ -67,7 +67,7 @@ describe('StackActionParser', () => {
                 stackName: 'test-stack',
             };
 
-            expect(() => parseStackActionParams(input)).toThrow(ZodError);
+            expect(() => parseCreateValidationParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for empty uri', () => {
@@ -77,7 +77,7 @@ describe('StackActionParser', () => {
                 stackName: 'test-stack',
             };
 
-            expect(() => parseStackActionParams(input)).toThrow(ZodError);
+            expect(() => parseCreateValidationParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for empty stackName', () => {
@@ -87,7 +87,7 @@ describe('StackActionParser', () => {
                 stackName: '',
             };
 
-            expect(() => parseStackActionParams(input)).toThrow(ZodError);
+            expect(() => parseCreateValidationParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for stackName exceeding 128 characters', () => {
@@ -97,7 +97,7 @@ describe('StackActionParser', () => {
                 stackName: 'a'.repeat(129),
             };
 
-            expect(() => parseStackActionParams(input)).toThrow(ZodError);
+            expect(() => parseCreateValidationParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for invalid capability', () => {
@@ -108,7 +108,7 @@ describe('StackActionParser', () => {
                 capabilities: ['INVALID_CAPABILITY'],
             };
 
-            expect(() => parseStackActionParams(input)).toThrow(ZodError);
+            expect(() => parseCreateValidationParams(input)).toThrow(ZodError);
         });
 
         it('should parse all valid capabilities', () => {
@@ -123,7 +123,7 @@ describe('StackActionParser', () => {
                 ],
             };
 
-            const result = parseStackActionParams(input);
+            const result = parseCreateValidationParams(input);
 
             expect(result.capabilities).toEqual([
                 Capability.CAPABILITY_IAM,
@@ -145,9 +145,18 @@ describe('StackActionParser', () => {
                         ResolvedValue: 'development',
                     },
                 ],
+                tags: [
+                    {
+                        Key: 'Key',
+                        Value: 'Value',
+                    },
+                ],
+                onStackFailure: OnStackFailure.DO_NOTHING,
+                includeNestedStacks: true,
+                importExistingResources: false,
             };
 
-            const result = parseStackActionParams(input);
+            const result = parseCreateValidationParams(input);
 
             expect(result.parameters?.[0]).toEqual({
                 ParameterKey: 'Environment',
@@ -155,6 +164,13 @@ describe('StackActionParser', () => {
                 UsePreviousValue: true,
                 ResolvedValue: 'development',
             });
+            expect(result.tags?.[0]).toEqual({
+                Key: 'Key',
+                Value: 'Value',
+            });
+            expect(result.onStackFailure).toEqual(OnStackFailure.DO_NOTHING);
+            expect(result.includeNestedStacks).toEqual(true);
+            expect(result.importExistingResources).toEqual(false);
         });
     });
 

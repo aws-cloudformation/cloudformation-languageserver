@@ -4,6 +4,8 @@ import {
     ResourceChangeDetail,
     ResourceStatus,
     DetailedStatus,
+    OnStackFailure,
+    Tag,
 } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
@@ -22,6 +24,10 @@ export type CreateValidationParams = Identifiable & {
     capabilities?: Capability[];
     resourcesToImport?: ResourceToImport[];
     keepChangeSet?: boolean;
+    onStackFailure?: OnStackFailure;
+    includeNestedStacks?: boolean;
+    tags?: Tag[];
+    importExistingResources?: boolean;
 };
 
 export type ChangeSetReference = {
