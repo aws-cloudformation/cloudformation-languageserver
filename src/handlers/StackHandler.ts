@@ -346,8 +346,6 @@ export function describeChangeSetHandler(
     components: ServerComponents,
 ): RequestHandler<DescribeChangeSetParams, DescribeChangeSetResult, void> {
     return async (rawParams: DescribeChangeSetParams): Promise<DescribeChangeSetResult> => {
-        log.debug({ Handler: 'describeChangeSetsHandler', rawParams });
-
         const params = parseWithPrettyError(parseDescribeChangeSetParams, rawParams);
 
         const result = await components.cfnService.describeChangeSet({
