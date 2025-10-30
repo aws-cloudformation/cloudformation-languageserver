@@ -81,7 +81,29 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         }
 
         const privateSchemas = this.schemaStore.privateSchemas.get<PrivateSchemasType>(profile);
-        return CombinedSchemas.from(regionalSchemas, privateSchemas);
+        const samSchemas = this.getSamSchemasFromStore();
+        return CombinedSchemas.from(regionalSchemas, privateSchemas, samSchemas);
+    }
+
+    private getSamSchemasFromStore(): Map<string, unknown> | undefined {
+        try {
+            const schemas = new Map<string, unknown>();
+            const keys = this.schemaStore.publicSchemas.keys(1000); // Get up to 1000 keys
+            const samKeys = keys.filter((key: string) => key.startsWith('sam-schemas:'));
+
+            for (const key of samKeys) {
+                const schemaJson = this.schemaStore.publicSchemas.get<string>(key);
+                if (schemaJson) {
+                    const resourceType = key.replace('sam-schemas:', '');
+                    schemas.set(resourceType, JSON.parse(schemaJson));
+                }
+            }
+
+            return schemas.size > 0 ? schemas : undefined;
+        } catch (error) {
+            this.log.debug({ error }, 'Failed to load SAM schemas');
+            return undefined;
+        }
     }
 
     updatePrivateSchemas() {
