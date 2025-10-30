@@ -204,7 +204,10 @@ export function getCapabilitiesHandler(
             const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
             const document = components.documentManager.get(params);
             if (!document) {
-                throw new ResponseError(ErrorCodes.InvalidRequest, 'Template body document not available');
+                throw new ResponseError(
+                    ErrorCodes.InvalidRequest,
+                    `Template body document not available for uri: ${params}`,
+                );
             }
 
             const capabilities = await analyzeCapabilities(document, components.cfnService);

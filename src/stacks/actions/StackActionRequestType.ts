@@ -28,6 +28,7 @@ export type CreateValidationParams = Identifiable & {
     includeNestedStacks?: boolean;
     tags?: Tag[];
     importExistingResources?: boolean;
+    s3Url?: string;
 };
 
 export type ChangeSetReference = {

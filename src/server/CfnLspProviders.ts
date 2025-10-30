@@ -11,6 +11,7 @@ import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../resourceState/StackManagementInfoProvider';
 import { CodeActionService } from '../services/CodeActionService';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
+import { S3Service } from '../services/S3Service';
 import { ChangeSetDeletionWorkflow } from '../stacks/actions/ChangeSetDeletionWorkflow';
 import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
 import {
@@ -44,6 +45,7 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly resourceStateImporter: ResourceStateImporter;
     readonly relationshipSchemaService: RelationshipSchemaService;
     readonly relatedResourcesSnippetProvider: RelatedResourcesSnippetProvider;
+    readonly s3Service: S3Service;
 
     // LSP feature providers
     readonly hoverRouter: HoverRouter;
@@ -78,6 +80,7 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.relatedResourcesSnippetProvider =
             overrides.relatedResourcesSnippetProvider ??
             new RelatedResourcesSnippetProvider(core.documentManager, core.syntaxTreeManager, external.schemaRetriever);
+        this.s3Service = overrides.s3Service ?? new S3Service(external.awsClient);
 
         this.hoverRouter = overrides.hoverRouter ?? new HoverRouter(core.contextManager, external.schemaRetriever);
         this.completionRouter = overrides.completionRouter ?? CompletionRouter.create(core, external, this);

@@ -25,6 +25,7 @@ import {
     searchResourceHandler,
     getStackMgmtInfo,
 } from '../handlers/ResourceHandler';
+import { uploadFileToS3Handler } from '../handlers/S3Handler';
 import {
     listStacksHandler,
     listChangeSetsHandler,
@@ -137,6 +138,8 @@ export class CfnServer {
         this.lsp.resourceHandlers.onGetResourceTypes(getResourceTypesHandler(this.components));
         this.lsp.resourceHandlers.onResourceStateImport(importResourceStateHandler(this.components));
         this.lsp.resourceHandlers.onStackMgmtInfo(getStackMgmtInfo(this.components));
+
+        this.lsp.s3Handlers.onUploadFile(uploadFileToS3Handler(this.components));
     }
 
     async close(): Promise<void> {
