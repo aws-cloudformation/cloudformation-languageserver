@@ -85,14 +85,13 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         }
 
         const { isBooleanType, resolvedSchemas: booleanResolvedSchemas } = this.getBooleanTypeInfo(context, schema);
+        const schemaPath = this.getSchemaPath(context);
+        const resolvedSchemas = schema.resolveJsonPointerPath(schemaPath, {
+            excludeReadOnly: true,
+            requireFullyResolved: true,
+        });
 
         if (context.isKey() && !isBooleanType) {
-            const schemaPath = this.getSchemaPath(context);
-            const resolvedSchemas = schema.resolveJsonPointerPath(schemaPath, {
-                excludeReadOnly: true,
-                requireFullyResolved: true,
-            });
-
             const propertyCompletions = this.getPropertyCompletionsFromSchemas(resolvedSchemas, context, schema);
             completions = [...completions, ...propertyCompletions];
         }
@@ -101,12 +100,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             completions = [...completions, ...this.getEnumCompletions(booleanResolvedSchemas, context)];
             skipFuzzySearch = true;
         } else if (context.isValue()) {
-            const enumSchemaPath = this.getSchemaPath(context);
-            const enumResolvedSchemas = schema.resolveJsonPointerPath(enumSchemaPath, {
-                excludeReadOnly: true,
-                requireFullyResolved: true,
-            });
-            completions = [...completions, ...this.getEnumCompletions(enumResolvedSchemas, context)];
+            completions = [...completions, ...this.getEnumCompletions(resolvedSchemas, context)];
         }
 
         return {
