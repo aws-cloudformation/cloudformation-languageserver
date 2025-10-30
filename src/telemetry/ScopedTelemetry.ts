@@ -215,9 +215,9 @@ export class ScopedTelemetry implements Closeable {
 
     private recordDuration(name: string, duration: number, config?: MetricConfig) {
         this.histogram(`${name}.duration`, duration, {
+            ...config,
             unit: 'ms',
             valueType: ValueType.DOUBLE,
-            ...config,
         });
     }
 
