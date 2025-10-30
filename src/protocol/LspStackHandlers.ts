@@ -45,6 +45,9 @@ import {
     GetStackEventsRequest,
     ClearStackEventsParams,
     ClearStackEventsRequest,
+    GetStackOutputsParams,
+    GetStackOutputsResult,
+    GetStackOutputsRequest,
 } from '../stacks/StackRequestType';
 import { Identifiable } from './LspTypes';
 
@@ -121,5 +124,9 @@ export class LspStackHandlers {
 
     onClearStackEvents(handler: RequestHandler<ClearStackEventsParams, void, void>) {
         this.connection.onRequest(ClearStackEventsRequest.method, handler);
+    }
+
+    onGetStackOutputs(handler: RequestHandler<GetStackOutputsParams, GetStackOutputsResult, void>) {
+        this.connection.onRequest(GetStackOutputsRequest.method, handler);
     }
 }

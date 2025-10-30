@@ -38,6 +38,7 @@ import {
     describeChangeSetDeletionStatusHandler,
     getStackEventsHandler,
     clearStackEventsHandler,
+    getStackOutputsHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
 import { closeSafely } from '../utils/Closeable';
@@ -117,6 +118,7 @@ export class CfnServer {
         this.lsp.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
         this.lsp.stackHandlers.onGetStackEvents(getStackEventsHandler(this.components));
         this.lsp.stackHandlers.onClearStackEvents(clearStackEventsHandler(this.components));
+        this.lsp.stackHandlers.onGetStackOutputs(getStackOutputsHandler(this.components));
 
         this.lsp.resourceHandlers.onListResources(listResourcesHandler(this.components));
         this.lsp.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));

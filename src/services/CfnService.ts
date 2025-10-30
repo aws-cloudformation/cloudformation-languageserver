@@ -103,6 +103,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new CreateStackCommand(params)));
     }
 
+    @Measure({ name: 'describeStacks' })
     public async describeStacks(params?: {
         StackName?: string;
         NextToken?: string;
