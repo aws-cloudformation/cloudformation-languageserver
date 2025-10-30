@@ -49,7 +49,7 @@ export class CompletionFormatter {
                 items: formattedItems,
             };
         } catch (error) {
-            CompletionFormatter.log.warn({ error }, 'Failed to adapt completions');
+            CompletionFormatter.log.warn(error, 'Failed to adapt completions');
             return completions;
         }
     }

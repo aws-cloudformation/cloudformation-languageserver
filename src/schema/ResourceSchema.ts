@@ -69,6 +69,7 @@ export class ResourceSchema {
 
     public readonly propertyKeys: ReadonlySet<string>;
     public readonly isAws: boolean;
+    public readonly isSam: boolean;
     public readonly rootSchema: PropertyType;
 
     constructor(jsonString: string) {
@@ -104,6 +105,7 @@ export class ResourceSchema {
         this.required = schema.required;
         this.replacementStrategy = schema.replacementStrategy;
         this.isAws = this.typeName.startsWith('AWS::');
+        this.isSam = this.typeName.startsWith('AWS::Serverless::');
 
         this.properties = this.parseProperties(schema.properties);
 

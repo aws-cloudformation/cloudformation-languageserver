@@ -117,7 +117,7 @@ export class ChangeSetDeletionWorkflow
                 failureReason: isSuccessful ? undefined : String(deploymentResult.reason), // reason only appears on failure
             });
         } catch (error) {
-            this.log.error({ error, workflowId }, 'Deletion workflow threw exception');
+            this.log.error(error, `Deletion workflow threw exception ${workflowId}`);
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: StackActionPhase.DELETION_FAILED,
                 state: StackActionState.FAILED,

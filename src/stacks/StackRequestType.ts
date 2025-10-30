@@ -70,6 +70,7 @@ export type GetStackEventsParams = {
 export type GetStackEventsResult = {
     events: StackEvent[];
     nextToken?: string;
+    gapDetected?: boolean;
 };
 
 export const GetStackEventsRequest = new RequestType<GetStackEventsParams, GetStackEventsResult, void>(

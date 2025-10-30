@@ -10,14 +10,19 @@ export class ResourceTypeCompletionProvider implements CompletionProvider {
 
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
-    getCompletions(context: Context, _: CompletionParams): CompletionItem[] | undefined {
+    getCompletions(context: Context, _params: CompletionParams): CompletionItem[] | undefined {
         const resourceTypeCompletions = this.getResourceTypeCompletions(context);
         return this.fuzzySearch(resourceTypeCompletions, context.text);
     }
 
-    private getResourceTypeCompletions(context?: Context): CompletionItem[] {
+    private getResourceTypeCompletions(context: Context): CompletionItem[] {
         const schemas = this.schemaRetriever.getDefault().schemas;
-        const resourceTypes = [...schemas.keys()];
+        let resourceTypes = [...schemas.keys()];
+
+        // Filter out AWS::Serverless types if SAM transform is not present
+        if (!context.transformContext.hasSamTransform()) {
+            resourceTypes = resourceTypes.filter((type) => !type.startsWith('AWS::Serverless::'));
+        }
 
         return resourceTypes.map((resourceType) => {
             const item: CompletionItem = createCompletionItem(resourceType, CompletionItemKind.Class);

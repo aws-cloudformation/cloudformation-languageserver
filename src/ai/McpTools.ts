@@ -4,7 +4,6 @@ import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from 
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Closeable } from '../utils/Closeable';
-import { extractErrorMessage } from '../utils/Errors';
 
 const logger = LoggerFactory.getLogger('McpTools');
 
@@ -57,7 +56,7 @@ export class McpTools implements SettingsConfigurable, Closeable {
             await this.mcpClient.initializeConnections();
             logger.info('Initialized MCP tools');
         } catch (error) {
-            logger.error({ error: extractErrorMessage(error) }, 'Failed to initialize MCP tools');
+            logger.error(error, 'Failed to initialize MCP tools');
         }
     }
 
@@ -67,7 +66,7 @@ export class McpTools implements SettingsConfigurable, Closeable {
 
             if (this.mcpClient) {
                 await this.mcpClient.close().catch((error: unknown) => {
-                    logger.error({ error }, 'Failed to close MCP client');
+                    logger.error(error, 'Failed to close MCP client');
                 });
             }
             await this.initializeMCP();

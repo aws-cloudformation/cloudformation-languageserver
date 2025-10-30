@@ -95,7 +95,7 @@ export class PyodideWorkerManager {
 
                 // Set up error handler
                 this.worker.on('error', (error) => {
-                    this.log.error({ error }, 'Worker error');
+                    this.log.error(error, 'Worker error');
                     reject(new Error(`Worker error: ${error.message}`));
                 });
 
@@ -225,7 +225,7 @@ export class PyodideWorkerManager {
             try {
                 await this.worker.terminate();
             } catch (error) {
-                this.log.error({ error }, 'Error terminating worker');
+                this.log.error(error, 'Error terminating worker');
             }
             this.worker = undefined;
             this.initialized = false;

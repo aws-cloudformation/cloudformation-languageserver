@@ -43,7 +43,7 @@ export class FileContext {
 
             this.cacheSectionsAndEntities(parsed);
         } catch (error) {
-            this.log.error({ error, uri: this.uri }, `Failed to parse and cache ${this.documentType} document`);
+            this.log.error(error, `Failed to parse and cache ${this.documentType} document ${this.uri}`);
         }
     }
 
@@ -91,7 +91,7 @@ export class FileContext {
                 createEntityFromObject(logicalId, parseObject(data, this.documentType), section),
             );
         } catch (error) {
-            this.log.error({ error, uri: this.uri, section }, 'Failed to create entities for section');
+            this.log.error(error, `Failed to create entities for section ${this.uri} - ${section}`);
             return [];
         }
     }

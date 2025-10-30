@@ -50,8 +50,6 @@ export function getParametersHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, GetParametersResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'getParametersHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
             const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params);
@@ -78,8 +76,6 @@ export function createValidationHandler(
     components: ServerComponents,
 ): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'createValidationHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseStackActionParams, rawParams);
             return await components.validationWorkflowService.start(params);
@@ -93,8 +89,6 @@ export function createDeploymentHandler(
     components: ServerComponents,
 ): RequestHandler<CreateDeploymentParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'createDeploymentHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
             return await components.deploymentWorkflowService.start(params);
@@ -108,8 +102,6 @@ export function getValidationStatusHandler(
     components: ServerComponents,
 ): RequestHandler<Identifiable, GetStackActionStatusResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'getValidationStatusHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.validationWorkflowService.getStatus(params);
@@ -123,8 +115,6 @@ export function getDeploymentStatusHandler(
     components: ServerComponents,
 ): RequestHandler<Identifiable, GetStackActionStatusResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'getDeploymentStatusHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.deploymentWorkflowService.getStatus(params);
@@ -138,8 +128,6 @@ export function describeValidationStatusHandler(
     components: ServerComponents,
 ): RequestHandler<Identifiable, DescribeValidationStatusResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'describeValidationStatusHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.validationWorkflowService.describeStatus(params);
@@ -153,8 +141,6 @@ export function describeDeploymentStatusHandler(
     components: ServerComponents,
 ): RequestHandler<Identifiable, DescribeDeploymentStatusResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'describeDeploymentStatusHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.deploymentWorkflowService.describeStatus(params);
@@ -168,8 +154,6 @@ export function deleteChangeSetHandler(
     components: ServerComponents,
 ): RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'deleteChangeSetHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
             return await components.changeSetDeletionWorkflowService.start(params);
@@ -183,8 +167,6 @@ export function getChangeSetDeletionStatusHandler(
     components: ServerComponents,
 ): RequestHandler<Identifiable, GetStackActionStatusResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'getChangeSetDeletionStatusHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.changeSetDeletionWorkflowService.getStatus(params);
@@ -198,8 +180,6 @@ export function describeChangeSetDeletionStatusHandler(
     components: ServerComponents,
 ): RequestHandler<Identifiable, DescribeDeletionStatusResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'describeChangeSetDeletionStatusHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.changeSetDeletionWorkflowService.describeStatus(params);
@@ -213,8 +193,6 @@ export function getCapabilitiesHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, GetCapabilitiesResult, void> {
     return async (rawParams) => {
-        log.debug({ Handler: 'getCapabilitiesHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
             const document = components.documentManager.get(params);
@@ -235,8 +213,6 @@ export function getTemplateResourcesHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, GetTemplateResourcesResult, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'getTemplateResourcesHandler', rawParams });
-
         try {
             const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
             const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params);
@@ -311,7 +287,7 @@ export function listStacksHandler(
                 params.loadMore,
             );
         } catch (error) {
-            log.error({ error: extractErrorMessage(error) }, 'Error listing stacks');
+            log.error(error, 'Error listing stacks');
             return { stacks: [], nextToken: undefined };
         }
     };
@@ -353,7 +329,7 @@ export function listStackResourcesHandler(
                 nextToken: response.NextToken,
             };
         } catch (error) {
-            log.error({ error: extractErrorMessage(error) }, 'Error listing stack resources');
+            log.error(error, 'Error listing stack resources');
             return { resources: [] };
         }
     };
@@ -366,8 +342,8 @@ export function getStackEventsHandler(
         try {
             const params = parseWithPrettyError(parseGetStackEventsParams, rawParams);
             if (params.refresh) {
-                const events = await components.stackEventManager.refresh(params.stackName);
-                return { events, nextToken: undefined };
+                const result = await components.stackEventManager.refresh(params.stackName);
+                return { events: result.events, nextToken: undefined, gapDetected: result.gapDetected };
             }
             return await components.stackEventManager.fetchEvents(params.stackName, params.nextToken);
         } catch (error) {

@@ -25,7 +25,7 @@ export function contextEntitiesInSections(
         try {
             entityNodes = findEntityNodesInSection(sectionNode, syntaxTree.type, targetLogicalIds);
         } catch (error) {
-            log.warn({ error, section }, 'Failed to process entities in section');
+            log.warn(error, `Failed to process entities in section ${section}`);
             continue;
         }
 
@@ -41,7 +41,7 @@ export function contextEntitiesInSections(
                     entities.set(context.logicalId, context);
                 }
             } catch (error) {
-                log.warn({ error, section }, 'Failed to create context for entity in section');
+                log.warn(error, `Failed to create context for entity in section ${section}`);
             }
         }
 

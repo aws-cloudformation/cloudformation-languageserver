@@ -11,7 +11,6 @@ import { ServerComponents } from '../server/ServerComponents';
 import { LintTrigger } from '../services/cfnLint/CfnLintService';
 import { ValidationTrigger } from '../services/guard/GuardService';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
 
 const log = LoggerFactory.getLogger('DocumentHandler');
 
@@ -30,16 +29,16 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
             try {
                 components.syntaxTreeManager.addWithTypes(uri, content, document.documentType, document.cfnFileType);
             } catch (error) {
-                log.error({ error: extractErrorMessage(error), uri }, 'Error creating tree');
+                log.error(error, `Error creating tree ${uri}`);
             }
         }
 
         components.cfnLintService.lintDelayed(content, uri, LintTrigger.OnOpen).catch((reason) => {
             // Handle cancellation gracefully - user might have closed/changed the document
             if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                log.debug(`Linting cancelled for ${uri}: ${reason.message}`);
+                // Do nothing
             } else {
-                log.error(`Linting error for ${uri}: ${extractErrorMessage(reason)}`);
+                log.error(reason, `Linting error for ${uri}`);
             }
         });
 
@@ -47,9 +46,9 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
         components.guardService.validateDelayed(content, uri, ValidationTrigger.OnOpen).catch((reason) => {
             // Handle cancellation gracefully - user might have closed/changed the document
             if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                log.debug(`Guard validation cancelled for ${uri}: ${reason.message}`);
+                // Do nothing
             } else {
-                log.error(`Guard validation error for ${uri}: ${extractErrorMessage(reason)}`);
+                log.error(reason, `Guard validation error for ${uri}`);
             }
         });
 
@@ -97,7 +96,7 @@ export function didChangeHandler(
                 components.syntaxTreeManager.add(documentUri, content);
             }
         } catch (error) {
-            log.error({ error: extractErrorMessage(error), uri: documentUri }, 'Error updating tree');
+            log.error(error, `Error updating tree ${documentUri}`);
             // Create a new tree if partial updates fail
             components.syntaxTreeManager.add(documentUri, content);
         }
@@ -106,9 +105,9 @@ export function didChangeHandler(
         components.cfnLintService.lintDelayed(content, documentUri, LintTrigger.OnChange, true).catch((reason) => {
             // Handle both getTextDocument and linting errors
             if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                log.debug(`Linting cancelled for ${documentUri}: ${reason.message}`);
+                // Do nothing
             } else {
-                log.error(`Error in didChange processing for ${documentUri}: ${extractErrorMessage(reason)}`);
+                log.error(reason, `Error in didChange processing for ${documentUri}`);
             }
         });
 
@@ -118,9 +117,9 @@ export function didChangeHandler(
             .catch((reason) => {
                 // Handle both getTextDocument and validation errors
                 if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                    log.debug(`Guard validation cancelled for ${documentUri}: ${reason.message}`);
+                    // Do nothing
                 } else {
-                    log.error(`Error in Guard didChange processing for ${documentUri}: ${extractErrorMessage(reason)}`);
+                    log.error(reason, `Error in Guard didChange processing for ${documentUri}`);
                 }
             });
 
@@ -145,7 +144,7 @@ export function didCloseHandler(components: ServerComponents): (event: TextDocum
 
         // Clear all diagnostics for this document from all sources
         components.diagnosticCoordinator.clearDiagnosticsForUri(documentUri).catch((reason) => {
-            log.error(`Error clearing diagnostics for ${documentUri}: ${extractErrorMessage(reason)}`);
+            log.error(reason, `Error clearing diagnostics for ${documentUri}`);
         });
 
         components.documentManager.sendDocumentMetadata(0);
@@ -160,9 +159,9 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
         // Trigger cfn-lint validation
         components.cfnLintService.lintDelayed(documentContent, documentUri, LintTrigger.OnSave).catch((reason) => {
             if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                log.debug(`Linting cancelled for ${documentUri}: ${reason.message}`);
+                // Do nothing
             } else {
-                log.error(`Linting error for ${documentUri}: ${extractErrorMessage(reason)}`);
+                log.error(reason, `Linting error for ${documentUri}`);
             }
         });
 
@@ -171,9 +170,9 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
             .validateDelayed(documentContent, documentUri, ValidationTrigger.OnSave)
             .catch((reason) => {
                 if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                    log.debug(`Guard validation cancelled for ${documentUri}: ${reason.message}`);
+                    // Do nothing
                 } else {
-                    log.error(`Guard validation error for ${documentUri}: ${extractErrorMessage(reason)}`);
+                    log.error(reason, `Guard validation error for ${documentUri}`);
                 }
             });
 

@@ -32,7 +32,7 @@ import { CFN_VALIDATION_SOURCE } from './ValidationWorkflow';
 const logger = LoggerFactory.getLogger('StackActionOperations');
 
 function logCleanupError(error: unknown, workflowId: string, changeSetName: string, operation: string): void {
-    logger.warn({ error, workflowId, changeSetName }, `Failed to cleanup ${operation}`);
+    logger.warn(error, `Failed to cleanup ${operation} ${workflowId} ${changeSetName}`);
 }
 
 export async function processChangeSet(
@@ -100,7 +100,7 @@ export async function waitForChangeSetValidation(
             };
         }
     } catch (error) {
-        logger.error({ error: extractErrorMessage(error) }, 'Validation failed with error');
+        logger.error(error, 'Validation failed with error');
         return {
             phase: StackActionPhase.VALIDATION_FAILED,
             state: StackActionState.FAILED,
@@ -146,7 +146,7 @@ export async function waitForDeployment(
             };
         }
     } catch (error) {
-        logger.error({ error: extractErrorMessage(error) }, 'Deployment failed with error');
+        logger.error(error, 'Deployment failed with error');
         return {
             phase: StackActionPhase.DEPLOYMENT_FAILED,
             state: StackActionState.FAILED,
@@ -275,12 +275,10 @@ export async function publishValidationDiagnostics(
         let range: Range | undefined;
 
         if (event.ResourcePropertyPath) {
-            logger.debug({ event }, 'Getting property-specific start and end positions');
-
             range = diagnosticCoordinator.getKeyRangeFromPath(uri, event.ResourcePropertyPath);
         } else if (event.LogicalId) {
             // fall back to using LogicalId and underlining entire resource
-            logger.debug({ event }, 'No ResourcePropertyPath found, falling back to using LogicalId');
+            logger.warn(event, 'No ResourcePropertyPath found, falling back to using LogicalId');
             const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
 
             const startPosition = resourcesMap?.get(event.LogicalId)?.startPosition;

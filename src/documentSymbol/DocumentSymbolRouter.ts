@@ -8,7 +8,6 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Track } from '../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../utils/Errors';
 import { nodeToRange, pointToPosition } from '../utils/TypeConverters';
 
 // Configuration for CloudFormation sections - defines all section behavior in one place
@@ -123,7 +122,7 @@ export class DocumentSymbolRouter {
 
             return symbols;
         } catch (error) {
-            log.error(`Error creating document symbols for ${params.textDocument.uri}: ${extractErrorMessage(error)}`);
+            log.error(error, `Error creating document symbols for ${params.textDocument.uri}`);
             return [];
         }
     }
@@ -227,9 +226,9 @@ export class DocumentSymbolRouter {
                 }
             }
         } catch (error) {
-            this.log.debug(
-                { error, logicalId, entityType },
-                'Failed to extract type information from entity during document symbol creation',
+            this.log.warn(
+                error,
+                `Failed to extract type information from entity during document symbol creation ${logicalId} ${entityType}`,
             );
         }
 

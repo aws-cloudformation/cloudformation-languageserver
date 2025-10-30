@@ -165,6 +165,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DetectStackDriftCommand(params)));
     }
 
+    @Measure({ name: 'describeStackEvents' })
     public async describeStackEvents(
         params: {
             StackName: string;

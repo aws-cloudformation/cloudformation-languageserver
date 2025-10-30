@@ -3,7 +3,6 @@ import { homedir } from 'os';
 import { join } from 'path';
 import { DeepReadonly } from 'ts-essentials';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../../utils/Errors';
 import { parseWithPrettyError } from '../../utils/ZodErrorWrapper';
 import { LLMConfigType, parseLLMConfig } from './LLMTypes';
 
@@ -27,7 +26,7 @@ export class LLMConfig {
             logger.info({ provider: llmConfig.provider, model: llmConfig.model }, 'LLM configuration');
             return llmConfig;
         } catch (error) {
-            logger.error(`Failed to parse LLM config. ${extractErrorMessage(error)}`);
+            logger.error(error, `Failed to parse LLM config`);
         }
     }
 

@@ -97,7 +97,7 @@ export class DocumentManager implements SettingsConfigurable {
                 delay,
             )
             .catch((error) => {
-                this.log.debug(error);
+                this.log.error(error, 'Failed to send document metadata');
             });
     }
 

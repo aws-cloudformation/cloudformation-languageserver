@@ -1,7 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
 
 const logger = LoggerFactory.getLogger('RelationshipSchemaService');
 
@@ -55,14 +54,11 @@ export class RelationshipSchemaService {
                         relationships: processedRelationships,
                     });
                 } catch (error) {
-                    logger.warn(
-                        { error: extractErrorMessage(error) },
-                        `Failed to load relationship schema for ${resourceTypeKey}`,
-                    );
+                    logger.warn(error, `Failed to load relationship schema for ${resourceTypeKey}`);
                 }
             }
         } catch (error) {
-            logger.error({ error: extractErrorMessage(error) }, 'Failed to load relationship schemas');
+            logger.error(error, 'Failed to load relationship schemas');
         }
     }
 
@@ -150,7 +146,7 @@ export class RelationshipSchemaService {
                 }
             }
         } catch (error) {
-            logger.warn({ error: extractErrorMessage(error) }, 'Failed to extract resource types from template');
+            logger.warn(error, 'Failed to extract resource types from template');
         }
 
         return [...resourceTypes];

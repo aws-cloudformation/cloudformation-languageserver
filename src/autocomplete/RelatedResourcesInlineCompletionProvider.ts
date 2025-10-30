@@ -30,16 +30,6 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
         context: Context,
         params: InlineCompletionParams,
     ): Promise<InlineCompletionItem[]> | InlineCompletionItem[] | undefined {
-        this.log.debug(
-            {
-                provider: 'RelatedResourcesInlineCompletion',
-                position: params.position,
-                section: context.section,
-                propertyPath: context.propertyPath,
-            },
-            'Processing related resources inline completion request',
-        );
-
         try {
             const document = this.documentManager.get(params.textDocument.uri);
             if (!document) {
@@ -62,7 +52,7 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
 
             return this.generateInlineCompletionItems(relatedResourceTypes, params);
         } catch (error) {
-            this.log.error({ error: String(error) }, 'Error generating related resources inline completion');
+            this.log.error(error, 'Error generating related resources inline completion');
             return undefined;
         }
     }
@@ -184,10 +174,7 @@ export class RelatedResourcesInlineCompletionProvider implements InlineCompletio
 
             return this.formatSnippetForDocumentType(snippet, documentType, params);
         } catch (error) {
-            this.log.warn(
-                { error: String(error), resourceType },
-                'Error generating property snippet, falling back to simple format',
-            );
+            this.log.warn(error, `Error generating property snippet, falling back to simple format ${resourceType}`);
             return this.formatSnippetForDocumentType(
                 documentType === DocumentType.JSON
                     ? `"${logicalId}": {\n${indent1}"Type": "${resourceType}"\n}`

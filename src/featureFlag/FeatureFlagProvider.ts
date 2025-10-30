@@ -5,7 +5,6 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
-import { extractErrorMessage } from '../utils/Errors';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 import { FeatureFlagSupplier, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey } from './FeatureFlagSupplier';
 
@@ -30,7 +29,7 @@ export class FeatureFlagProvider implements Closeable {
         this.timeout = setInterval(
             () => {
                 this.refresh().catch((err) => {
-                    log.error(`Failed to sync feature flags from remote: ${extractErrorMessage(err)}`);
+                    log.error(err, `Failed to sync feature flags from remote`);
                 });
             },
             5 * 60 * 1000,

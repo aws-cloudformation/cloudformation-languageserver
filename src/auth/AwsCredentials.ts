@@ -5,7 +5,6 @@ import { LspAuthHandlers } from '../protocol/LspAuthHandlers';
 import { DefaultSettings } from '../settings/Settings';
 import { SettingsManager } from '../settings/SettingsManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
 import { getRegion } from '../utils/Region';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import { UpdateCredentialsParams, IamCredentials } from './AwsLspAuthTypes';
@@ -24,14 +23,14 @@ export class AwsCredentials {
     private readonly logger = LoggerFactory.getLogger(AwsCredentials);
 
     private iamCredentials?: IamCredentials;
-    private readonly encryptionKey: Buffer;
+    private readonly encryptionKey?: Buffer;
 
     constructor(
         private readonly awsHandlers: LspAuthHandlers,
         private readonly settingsManager: SettingsManager,
-        encryptionKey: string,
+        encryptionKey?: string,
     ) {
-        this.encryptionKey = Buffer.from(encryptionKey, 'base64');
+        this.encryptionKey = encryptionKey ? Buffer.from(encryptionKey, 'base64') : undefined;
     }
 
     getIAM(): DeepReadonly<IamCredentials> {
@@ -42,6 +41,11 @@ export class AwsCredentials {
     }
 
     async handleIamCredentialsUpdate(params: UpdateCredentialsParams): Promise<boolean> {
+        if (!this.encryptionKey) {
+            this.logger.error('Authentication failed: encryption key not configured');
+            return false;
+        }
+
         try {
             const decrypted = await compactDecrypt(params.data, this.encryptionKey);
             const rawCredentials = JSON.parse(new TextDecoder().decode(decrypted.plaintext)) as unknown;
@@ -63,7 +67,7 @@ export class AwsCredentials {
         } catch (error) {
             this.iamCredentials = undefined;
 
-            this.logger.error(`Failed to update IAM credentials: ${extractErrorMessage(error)}`);
+            this.logger.error(error, `Failed to update IAM credentials`);
             this.settingsManager.updateProfileSettings(DefaultSettings.profile.profile, DefaultSettings.profile.region);
             return false;
         }

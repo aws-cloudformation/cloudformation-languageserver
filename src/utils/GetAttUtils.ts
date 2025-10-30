@@ -131,7 +131,7 @@ export function getAttributeDocumentationFromSchema(
                 }
             }
         } catch (error) {
-            log.debug({ error, resourceType, attributeName }, 'Error resolving attribute documentation');
+            log.warn(error, `Error resolving attribute documentation ${resourceType} ${attributeName}`);
         }
     }
 

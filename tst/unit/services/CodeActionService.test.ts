@@ -260,11 +260,11 @@ describe('CodeActionService', () => {
             const result = codeActionService.generateCodeActions(params);
 
             verifyCodeAction(params, result, {
-                title: 'Remove validation error',
+                title: 'Hide validation error',
                 kind: 'quickfix',
                 diagnostics: [diagnostic],
                 command: {
-                    title: 'Remove validation error',
+                    title: 'Hide validation error',
                     command: '/command/template/clear-diagnostic',
                     arguments: [params.textDocument.uri, 'test-uuid-123'],
                 },

@@ -16,6 +16,7 @@ import { normalizeIntrinsicFunction } from './semantic/Intrinsics';
 import { PropertyPath } from './syntaxtree/SyntaxTree';
 import { NodeType } from './syntaxtree/utils/NodeType';
 import { YamlNodeTypes, CommonNodeTypes } from './syntaxtree/utils/TreeSitterTypes';
+import { TransformContext } from './TransformContext';
 
 export type SectionType = TopLevelSection | 'Unknown';
 export type QuoteCharacter = '"' | "'";
@@ -34,6 +35,7 @@ export class Context {
     public readonly isResourceAttribute: boolean;
 
     private _intrinsicContext?: IntrinsicContext;
+    private _transformContext?: TransformContext;
 
     constructor(
         private readonly node: SyntaxNode,
@@ -65,6 +67,16 @@ export class Context {
     public get intrinsicContext(): IntrinsicContext {
         this._intrinsicContext ??= new IntrinsicContext(this.pathToRoot, this.documentType);
         return this._intrinsicContext;
+    }
+
+    public get transformContext(): TransformContext {
+        // Find root node by traversing up from current node
+        let rootNode = this.node;
+        while (rootNode.parent) {
+            rootNode = rootNode.parent;
+        }
+        this._transformContext ??= new TransformContext(rootNode, this.documentType);
+        return this._transformContext;
     }
 
     public get startPosition() {
