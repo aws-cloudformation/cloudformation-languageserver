@@ -2,14 +2,14 @@ import { RequestType, CodeAction, Position } from 'vscode-languageserver-protoco
 
 export type TemplateUri = string;
 
-export type ResourceTypeRequest = {
-    resourceType: string;
+export type GetRelatedResourceTypesParams = {
+    parentResourceType: string;
 };
 
-export type InsertRelatedResourcesRequest = {
+export type InsertRelatedResourcesParams = {
     templateUri: string;
-    resourceTypes: string[];
-    selectedResourceType: string;
+    relatedResourceTypes: string[];
+    parentResourceType: string;
 };
 
 export interface RelatedResourcesCodeAction extends CodeAction {
@@ -23,12 +23,12 @@ export const GetAuthoredResourceTypesRequest = new RequestType<TemplateUri, stri
     'aws/cfn/template/resources/authored',
 );
 
-export const GetRelatedResourceTypesRequest = new RequestType<ResourceTypeRequest, string[], void>(
+export const GetRelatedResourceTypesRequest = new RequestType<GetRelatedResourceTypesParams, string[], void>(
     'aws/cfn/template/resources/related',
 );
 
 export const InsertRelatedResourcesRequest = new RequestType<
-    InsertRelatedResourcesRequest,
+    InsertRelatedResourcesParams,
     RelatedResourcesCodeAction,
     void
 >('aws/cfn/template/resources/insert');

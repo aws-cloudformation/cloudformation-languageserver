@@ -3,26 +3,26 @@ import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Resource } from '../context/semantic/Entity';
 import {
-    InsertRelatedResourcesRequest,
+    GetRelatedResourceTypesParams,
+    InsertRelatedResourcesParams,
     RelatedResourcesCodeAction,
-    ResourceTypeRequest,
     TemplateUri,
 } from '../protocol/RelatedResourcesProtocol';
-import { RelatedResourcesSnippetProvider } from '../relatedResources/RelatedResourcesSnippetProvider';
 import { ServerComponents } from '../server/ServerComponents';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { handleLspError } from '../utils/Errors';
-
-const log = LoggerFactory.getLogger('RelatedResourcesHandler');
+import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
+import {
+    parseGetRelatedResourceTypesParams,
+    parseInsertRelatedResourcesParams,
+    parseTemplateUriParams,
+} from './RelatedResourcesParser';
 
 export function getAuthoredResourceTypesHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, string[], void> {
     return (rawParams) => {
-        log.debug({ Handler: 'getAuthoredResourceTypesHandler', rawParams });
-
         try {
-            const templateUri = rawParams;
+            const templateUri = parseWithPrettyError(parseTemplateUriParams, rawParams);
             const syntaxTree = components.syntaxTreeManager.getSyntaxTree(templateUri);
             if (syntaxTree) {
                 const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
@@ -38,7 +38,6 @@ export function getAuthoredResourceTypesHandler(
                 }
             }
 
-            log.debug('No resources found in template');
             return [];
         } catch (error) {
             handleLspError(error, 'Failed to get authored resource types');
@@ -48,17 +47,12 @@ export function getAuthoredResourceTypesHandler(
 
 export function getRelatedResourceTypesHandler(
     components: ServerComponents,
-): RequestHandler<ResourceTypeRequest, string[], void> {
+): RequestHandler<GetRelatedResourceTypesParams, string[], void> {
     return (rawParams) => {
-        log.debug({ Handler: 'getRelatedResourceTypesHandler', rawParams });
-
         try {
-            const { resourceType } = rawParams;
-            const relatedTypes = components.relationshipSchemaService.getAllRelatedResourceTypes(resourceType);
-            const result = [...relatedTypes];
-
-            log.debug({ resourceType, relatedTypes: result }, 'Found related resource types');
-            return result;
+            const { parentResourceType } = parseWithPrettyError(parseGetRelatedResourceTypesParams, rawParams);
+            const relatedTypes = components.relationshipSchemaService.getAllRelatedResourceTypes(parentResourceType);
+            return [...relatedTypes];
         } catch (error) {
             handleLspError(error, 'Failed to get related resource types');
         }
@@ -67,17 +61,18 @@ export function getRelatedResourceTypesHandler(
 
 export function insertRelatedResourcesHandler(
     components: ServerComponents,
-): RequestHandler<InsertRelatedResourcesRequest, RelatedResourcesCodeAction, void> {
+): RequestHandler<InsertRelatedResourcesParams, RelatedResourcesCodeAction, void> {
     return (rawParams) => {
-        log.debug({ Handler: 'insertRelatedResourcesHandler', rawParams });
-
         try {
-            const { templateUri, resourceTypes, selectedResourceType } = rawParams;
-            const snippetProvider = new RelatedResourcesSnippetProvider(components);
-            const result = snippetProvider.insertRelatedResources(templateUri, resourceTypes, selectedResourceType);
-
-            log.debug({ resourceTypes }, 'Inserted related resources');
-            return result;
+            const { templateUri, relatedResourceTypes, parentResourceType } = parseWithPrettyError(
+                parseInsertRelatedResourcesParams,
+                rawParams,
+            );
+            return components.relatedResourcesSnippetProvider.insertRelatedResources(
+                templateUri,
+                relatedResourceTypes,
+                parentResourceType,
+            );
         } catch (error) {
             handleLspError(error, 'Failed to insert related resources');
         }

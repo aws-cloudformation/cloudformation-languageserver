@@ -60,7 +60,11 @@ export function getInsertPosition(resourcesSection: SyntaxNode | undefined, docu
         line--;
     }
     // malformed case, allow import to end of document
-    return { position: { line: 0, character: 0 }, commaPrefixNeeded: false, newLineSuffixNeeded: false };
+    return {
+        position: { line: document.lineCount, character: 0 },
+        commaPrefixNeeded: false,
+        newLineSuffixNeeded: false,
+    };
 }
 
 export function combineResourcesToDocumentFormat(

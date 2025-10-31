@@ -1,6 +1,9 @@
 import { CodeActionKind, Range, TextEdit } from 'vscode-languageserver';
+import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
+import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
+import { DocumentManager } from '../document/DocumentManager';
 import { RelatedResourcesCodeAction } from '../protocol/RelatedResourcesProtocol';
-import { ServerComponents } from '../server/ServerComponents';
+import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import {
     combineResourcesToDocumentFormat,
@@ -21,27 +24,31 @@ export interface RelatedResourceObject {
 export class RelatedResourcesSnippetProvider {
     private currentTemplateUri: string = '';
 
-    constructor(private readonly components: ServerComponents) {}
+    constructor(
+        private readonly documentManager: DocumentManager,
+        private readonly syntaxTreeManager: SyntaxTreeManager,
+        private readonly schemaRetriever: SchemaRetriever,
+    ) {}
 
     insertRelatedResources(
         templateUri: string,
-        resourceTypes: string[],
-        selectedResourceType: string,
+        relatedResourceTypes: string[],
+        parentResourceType: string,
     ): RelatedResourcesCodeAction {
         this.currentTemplateUri = templateUri;
 
         try {
-            const document = this.components.documentManager.get(templateUri);
+            const document = this.documentManager.get(templateUri);
             if (!document) {
                 throw new Error('Document not found');
             }
 
             const documentType = document.documentType;
-            const syntaxTree = this.components.syntaxTreeManager.getSyntaxTree(templateUri);
-            const editorSettings = this.components.documentManager.getEditorSettingsForDocument(templateUri);
+            const syntaxTree: SyntaxTree | undefined = this.syntaxTreeManager.getSyntaxTree(templateUri);
+            const editorSettings = this.documentManager.getEditorSettingsForDocument(templateUri);
 
-            const resources = resourceTypes.map((resourceType) =>
-                this.generateResourceObject(resourceType, selectedResourceType),
+            const resources = relatedResourceTypes.map((resourceType) =>
+                this.generateResourceObject(resourceType, parentResourceType),
             );
 
             const resourceSection = syntaxTree ? getResourceSection(syntaxTree) : undefined;
@@ -65,7 +72,7 @@ export class RelatedResourcesSnippetProvider {
             };
 
             return {
-                title: `Insert ${resourceTypes.length} related resources`,
+                title: `Insert ${relatedResourceTypes.length} related resources`,
                 kind: CodeActionKind.Refactor,
                 edit: {
                     changes: {
@@ -74,7 +81,7 @@ export class RelatedResourcesSnippetProvider {
                 },
                 data: {
                     scrollToPosition: insertPosition.position,
-                    firstLogicalId: this.generateLogicalId(resourceTypes[0], selectedResourceType),
+                    firstLogicalId: this.generateLogicalId(relatedResourceTypes[0], parentResourceType),
                 },
             };
         } catch (error) {
@@ -83,11 +90,11 @@ export class RelatedResourcesSnippetProvider {
         }
     }
 
-    private generateResourceObject(resourceType: string, selectedResourceType: string): RelatedResourceObject {
-        const logicalId = this.generateLogicalId(resourceType, selectedResourceType);
+    private generateResourceObject(resourceType: string, parentResourceType: string): RelatedResourceObject {
+        const logicalId = this.generateLogicalId(resourceType, parentResourceType);
 
         try {
-            const schema = this.components.schemaRetriever.getDefault().schemas.get(resourceType);
+            const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
             const resource: { Type: string; Properties?: Record<string, string> } = { Type: resourceType };
 
             if (schema?.required && schema.required.length > 0) {
@@ -103,27 +110,27 @@ export class RelatedResourcesSnippetProvider {
         }
     }
 
-    private generateLogicalId(resourceType: string, selectedResourceType: string): string {
-        const baseId = this.generateBaseLogicalId(resourceType, selectedResourceType);
+    private generateLogicalId(resourceType: string, parentResourceType: string): string {
+        const baseId = this.generateBaseLogicalId(resourceType, parentResourceType);
         return this.getUniqueLogicalId(baseId);
     }
 
-    private generateBaseLogicalId(resourceType: string, selectedResourceType: string): string {
+    private generateBaseLogicalId(resourceType: string, parentResourceType: string): string {
         const resourceTypeName = resourceType
             .split('::')
             .slice(1)
             .join('')
             .replaceAll(/[^a-zA-Z0-9]/g, '');
-        const selectedResourceTypeName = selectedResourceType
+        const parentResourceTypeName = parentResourceType
             .split('::')
             .slice(1)
             .join('')
             .replaceAll(/[^a-zA-Z0-9]/g, '');
-        return `${resourceTypeName}RelatedTo${selectedResourceTypeName}`;
+        return `${resourceTypeName}RelatedTo${parentResourceTypeName}`;
     }
 
     private getUniqueLogicalId(baseId: string): string {
-        const syntaxTree = this.components.syntaxTreeManager.getSyntaxTree(this.currentTemplateUri);
+        const syntaxTree: SyntaxTree | undefined = this.syntaxTreeManager.getSyntaxTree(this.currentTemplateUri);
         if (!syntaxTree) {
             return baseId;
         }
