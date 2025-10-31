@@ -1,5 +1,6 @@
 import { CloudControlClient } from '@aws-sdk/client-cloudcontrol';
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation';
+import { S3Client } from '@aws-sdk/client-s3';
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { IamCredentials } from '../auth/AwsLspAuthTypes';
 import { ExtensionId, ExtensionVersion } from '../utils/ExtensionConfig';
@@ -20,6 +21,10 @@ export class AwsClient {
 
     public getCloudControlClient() {
         return new CloudControlClient(this.iamClientConfig());
+    }
+
+    public getS3Client() {
+        return new S3Client(this.iamClientConfig());
     }
 
     private iamClientConfig(): IamClientConfig {

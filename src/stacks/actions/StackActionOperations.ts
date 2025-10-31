@@ -51,7 +51,8 @@ export async function processChangeSet(
     await cfnService.createChangeSet({
         StackName: params.stackName,
         ChangeSetName: changeSetName,
-        TemplateBody: document.contents(),
+        TemplateBody: params.s3Url ? undefined : document.contents(),
+        TemplateURL: params.s3Url,
         Parameters: params.parameters,
         Capabilities: params.capabilities,
         ChangeSetType: changeSetType,

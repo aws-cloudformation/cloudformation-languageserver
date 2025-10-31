@@ -83,9 +83,42 @@ describe('StackActionWorkflowOperations', () => {
                 StackName: 'test-stack',
                 ChangeSetName: expect.stringContaining(ExtensionName.replaceAll(' ', '-')),
                 TemplateBody: 'template content',
+                TemplateURL: undefined,
                 Parameters: undefined,
                 Capabilities: undefined,
                 ChangeSetType: 'CREATE',
+                ResourcesToImport: undefined,
+            });
+        });
+
+        it('should create change set with S3 URL when provided', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+                s3Url: 's3://test-bucket/template.yaml',
+            };
+
+            (mockDocumentManager.get as any).mockReturnValue({
+                contents: () => 'template content',
+            });
+
+            (mockCfnService.createChangeSet as any).mockResolvedValue({
+                Id: 'changeset-123',
+            });
+
+            const result = await processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE');
+
+            expect(result).toContain('AWS-CloudFormation');
+            expect(mockCfnService.createChangeSet).toHaveBeenCalledWith({
+                StackName: 'test-stack',
+                ChangeSetName: expect.stringContaining(ExtensionName.replaceAll(' ', '-')),
+                TemplateBody: undefined,
+                TemplateURL: 's3://test-bucket/template.yaml',
+                Parameters: undefined,
+                Capabilities: undefined,
+                ChangeSetType: 'CREATE',
+                ResourcesToImport: undefined,
             });
         });
 

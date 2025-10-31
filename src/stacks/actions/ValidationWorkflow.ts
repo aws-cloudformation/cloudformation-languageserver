@@ -68,6 +68,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             changeSetName,
             params.parameters,
             params.capabilities,
+            params.s3Url,
         );
         validation.setPhase(StackActionPhase.VALIDATION_IN_PROGRESS);
         this.validationManager.add(validation);
