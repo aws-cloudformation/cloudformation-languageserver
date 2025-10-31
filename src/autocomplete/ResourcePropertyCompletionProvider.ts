@@ -33,10 +33,18 @@ import { templatePathToJsonPointerPath } from '../utils/PathUtils';
 import { CompletionItemData, ExtendedCompletionItem } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, createMarkupContent } from './CompletionUtils';
+type PropertyCompletionsResult = {
+      completions: CompletionItem[];
+      skipFuzzySearch: boolean;
+    };
+type GetBooleanTypeInfoResult = {
+        isBooleanType: boolean;
+        resolvedSchemas: PropertyType[];
+    };
 
 export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private readonly fuzzySearch = getFuzzySearchFunction();
-
+    
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
     getCompletions(context: Context, _params: CompletionParams): CompletionItem[] | undefined {
@@ -55,10 +63,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Also handles enum value completions when appropriate
      * Uses robust schema resolution approach from hover provider
      */
-    private getPropertyCompletions(context: Context): {
-        completions: CompletionItem[];
-        skipFuzzySearch: boolean;
-    } {
+    private getPropertyCompletions(context: Context): PropertyCompletionsResult {
         const resource = context.entity as Resource;
         let completions: CompletionItem[] = [];
         let skipFuzzySearch = false;
@@ -112,10 +117,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private getBooleanTypeInfo(
         context: Context,
         schema: ResourceSchema,
-    ): {
-        isBooleanType: boolean;
-        resolvedSchemas: PropertyType[];
-    } {
+    ): GetBooleanTypeInfoResult {
         const propertySchemaPath = templatePathToJsonPointerPath(context.propertyPath.slice(3));
         const resolvedSchemas = schema.resolveJsonPointerPath(propertySchemaPath, {
             excludeReadOnly: true,
