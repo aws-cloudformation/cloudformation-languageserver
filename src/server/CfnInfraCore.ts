@@ -16,6 +16,11 @@ import { Configurable, Configurables } from '../utils/Configurable';
 
 interface ExtendedInitializeParams extends InitializeParams {
     initializationOptions?: {
+        aws?: {
+            cloudformation?: {
+                endpoint?: string;
+            };
+        };
         encryption?: {
             key?: string;
         };
@@ -40,6 +45,7 @@ export class CfnInfraCore implements Configurables, Closeable {
 
     readonly awsCredentials: AwsCredentials;
     readonly diagnosticCoordinator: DiagnosticCoordinator;
+    readonly cloudformationEndpoint?: string;
 
     constructor(
         lspComponents: LspComponents,
@@ -60,6 +66,7 @@ export class CfnInfraCore implements Configurables, Closeable {
         this.fileContextManager = overrides.fileContextManager ?? new FileContextManager(this.documentManager);
 
         const encryptionKey = initializeParams.initializationOptions?.encryption?.key;
+        this.cloudformationEndpoint = initializeParams.initializationOptions?.aws?.cloudformation?.endpoint;
 
         this.awsCredentials =
             overrides.awsCredentials ??
