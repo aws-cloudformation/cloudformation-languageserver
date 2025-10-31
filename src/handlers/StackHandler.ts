@@ -48,34 +48,38 @@ import {
     DescribeChangeSetResult,
 } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { TelemetryService } from '../telemetry/TelemetryService';
 import { handleLspError } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('StackHandler');
+const telemetry = TelemetryService.instance.get('StackHandler');
 
 export function getParametersHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, GetParametersResult, void> {
     return (rawParams) => {
-        try {
-            const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
-            const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params);
-            if (syntaxTree) {
-                const parametersMap = getEntityMap(syntaxTree, TopLevelSection.Parameters);
-                if (parametersMap) {
-                    const parameters = [...parametersMap.values()].map((context) => context.entity as Parameter);
-                    return {
-                        parameters,
-                    };
+        return telemetry.measure('getParameters', () => {
+            try {
+                const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
+                const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params);
+                if (syntaxTree) {
+                    const parametersMap = getEntityMap(syntaxTree, TopLevelSection.Parameters);
+                    if (parametersMap) {
+                        const parameters = [...parametersMap.values()].map((context) => context.entity as Parameter);
+                        return {
+                            parameters,
+                        };
+                    }
                 }
-            }
 
-            return {
-                parameters: [],
-            };
-        } catch (error) {
-            handleLspError(error, 'Failed to get parameters');
-        }
+                return {
+                    parameters: [],
+                };
+            } catch (error) {
+                handleLspError(error, 'Failed to get parameters');
+            }
+        });
     };
 }
 
@@ -83,12 +87,14 @@ export function createValidationHandler(
     components: ServerComponents,
 ): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        try {
-            const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
-            return await components.validationWorkflowService.start(params);
-        } catch (error) {
-            handleLspError(error, 'Failed to start validation workflow');
-        }
+        return await telemetry.measureAsync('createValidation', async () => {
+            try {
+                const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
+                return await components.validationWorkflowService.start(params);
+            } catch (error) {
+                handleLspError(error, 'Failed to start validation workflow');
+            }
+        });
     };
 }
 
@@ -96,12 +102,14 @@ export function createDeploymentHandler(
     components: ServerComponents,
 ): RequestHandler<CreateDeploymentParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        try {
-            const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
-            return await components.deploymentWorkflowService.start(params);
-        } catch (error) {
-            handleLspError(error, 'Failed to start deployment workflow');
-        }
+        return await telemetry.measureAsync('createDeployment', async () => {
+            try {
+                const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
+                return await components.deploymentWorkflowService.start(params);
+            } catch (error) {
+                handleLspError(error, 'Failed to start deployment workflow');
+            }
+        });
     };
 }
 
@@ -161,12 +169,14 @@ export function deleteChangeSetHandler(
     components: ServerComponents,
 ): RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        try {
-            const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
-            return await components.changeSetDeletionWorkflowService.start(params);
-        } catch (error) {
-            handleLspError(error, 'Failed to start change set deletion workflow');
-        }
+        return await telemetry.measureAsync('deleteChangeSet', async () => {
+            try {
+                const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
+                return await components.changeSetDeletionWorkflowService.start(params);
+            } catch (error) {
+                handleLspError(error, 'Failed to start change set deletion workflow');
+            }
+        });
     };
 }
 
@@ -200,22 +210,24 @@ export function getCapabilitiesHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, GetCapabilitiesResult, void> {
     return async (rawParams) => {
-        try {
-            const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
-            const document = components.documentManager.get(params);
-            if (!document) {
-                throw new ResponseError(
-                    ErrorCodes.InvalidRequest,
-                    `Template body document not available for uri: ${params}`,
-                );
+        return await telemetry.measureAsync('getCapabilities', async () => {
+            try {
+                const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
+                const document = components.documentManager.get(params);
+                if (!document) {
+                    throw new ResponseError(
+                        ErrorCodes.InvalidRequest,
+                        `Template body document not available for uri: ${params}`,
+                    );
+                }
+
+                const capabilities = await analyzeCapabilities(document, components.cfnService);
+
+                return { capabilities };
+            } catch (error) {
+                handleLspError(error, 'Failed to analyze template capabilities');
             }
-
-            const capabilities = await analyzeCapabilities(document, components.cfnService);
-
-            return { capabilities };
-        } catch (error) {
-            handleLspError(error, 'Failed to analyze template capabilities');
-        }
+        });
     };
 }
 
@@ -287,19 +299,21 @@ export function listStacksHandler(
     components: ServerComponents,
 ): RequestHandler<ListStacksParams, ListStacksResult, void> {
     return async (params: ListStacksParams): Promise<ListStacksResult> => {
-        try {
-            if (params.statusToInclude?.length && params.statusToExclude?.length) {
-                throw new Error('Cannot specify both statusToInclude and statusToExclude');
+        return await telemetry.measureAsync('listStacks', async () => {
+            try {
+                if (params.statusToInclude?.length && params.statusToExclude?.length) {
+                    throw new Error('Cannot specify both statusToInclude and statusToExclude');
+                }
+                return await components.stackManager.listStacks(
+                    params.statusToInclude,
+                    params.statusToExclude,
+                    params.loadMore,
+                );
+            } catch (error) {
+                log.error(error, 'Error listing stacks');
+                return { stacks: [], nextToken: undefined };
             }
-            return await components.stackManager.listStacks(
-                params.statusToInclude,
-                params.statusToExclude,
-                params.loadMore,
-            );
-        } catch (error) {
-            log.error(error, 'Error listing stacks');
-            return { stacks: [], nextToken: undefined };
-        }
+        });
     };
 }
 
@@ -307,20 +321,22 @@ export function listChangeSetsHandler(
     components: ServerComponents,
 ): RequestHandler<ListChangeSetParams, ListChangeSetResult, void> {
     return async (params: ListChangeSetParams): Promise<ListChangeSetResult> => {
-        try {
-            const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
-            return {
-                changeSets: result.changeSets.map((cs) => ({
-                    changeSetName: cs.ChangeSetName ?? '',
-                    status: cs.Status ?? '',
-                    creationTime: cs.CreationTime?.toISOString(),
-                    description: cs.Description,
-                })),
-                nextToken: result.nextToken,
-            };
-        } catch {
-            return { changeSets: [] };
-        }
+        return await telemetry.measureAsync('listChangeSets', async () => {
+            try {
+                const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
+                return {
+                    changeSets: result.changeSets.map((cs) => ({
+                        changeSetName: cs.ChangeSetName ?? '',
+                        status: cs.Status ?? '',
+                        creationTime: cs.CreationTime?.toISOString(),
+                        description: cs.Description,
+                    })),
+                    nextToken: result.nextToken,
+                };
+            } catch {
+                return { changeSets: [] };
+            }
+        });
     };
 }
 
