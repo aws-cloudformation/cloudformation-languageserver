@@ -1,6 +1,12 @@
-import { Capability } from '@aws-sdk/client-cloudformation';
+import { Capability, OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
-import { ListStackResourcesParams, GetStackEventsParams, ClearStackEventsParams } from '../StackRequestType';
+import {
+    ListStackResourcesParams,
+    GetStackEventsParams,
+    ClearStackEventsParams,
+    GetStackOutputsParams,
+    DescribeChangeSetParams,
+} from '../StackRequestType';
 import {
     CreateDeploymentParams,
     CreateValidationParams,
@@ -21,13 +27,20 @@ const ParameterSchema = z.object({
     ResolvedValue: z.string().optional(),
 });
 
+const TagSchema = z.object({
+    Key: z.string(),
+    Value: z.string(),
+});
+
+const OnStackFailureSchema = z.enum([OnStackFailure.DELETE, OnStackFailure.DO_NOTHING, OnStackFailure.ROLLBACK]);
+
 const ResourceToImportSchema = z.object({
     ResourceType: z.string(),
     LogicalResourceId: z.string(),
     ResourceIdentifier: z.record(z.string(), z.string()),
 });
 
-const StackActionParamsSchema = z.object({
+const CreateValidationParamsSchema = z.object({
     id: z.string().min(1),
     uri: z.string().min(1),
     stackName: z.string().min(1).max(128),
@@ -35,6 +48,10 @@ const StackActionParamsSchema = z.object({
     capabilities: z.array(CapabilitySchema).optional(),
     resourcesToImport: z.array(ResourceToImportSchema).optional(),
     keepChangeSet: z.boolean().optional(),
+    onStackFailure: OnStackFailureSchema.optional(),
+    includeNestedStacks: z.boolean().optional(),
+    tags: z.array(TagSchema).optional(),
+    importExistingResources: z.boolean().optional(),
 });
 
 const CreateDeploymentParamsSchema = z.object({
@@ -45,6 +62,11 @@ const CreateDeploymentParamsSchema = z.object({
 
 const DeleteChangeSetParamsSchema = z.object({
     id: z.string().min(1),
+    stackName: z.string().min(1).max(128),
+    changeSetName: z.string().min(1).max(128),
+});
+
+const DescribeChangeSetParamsSchema = z.object({
     stackName: z.string().min(1).max(128),
     changeSetName: z.string().min(1).max(128),
 });
@@ -67,8 +89,12 @@ const ClearStackEventsParamsSchema = z.object({
     stackName: z.string().min(1).max(128),
 });
 
-export function parseStackActionParams(input: unknown): CreateValidationParams {
-    return StackActionParamsSchema.parse(input);
+const GetStackOutputsParamsSchema = z.object({
+    stackName: z.string().min(1).max(128),
+});
+
+export function parseCreateValidationParams(input: unknown): CreateValidationParams {
+    return CreateValidationParamsSchema.parse(input);
 }
 
 export function parseCreateDeploymentParams(input: unknown): CreateDeploymentParams {
@@ -93,4 +119,12 @@ export function parseGetStackEventsParams(input: unknown): GetStackEventsParams 
 
 export function parseClearStackEventsParams(input: unknown): ClearStackEventsParams {
     return ClearStackEventsParamsSchema.parse(input);
+}
+
+export function parseGetStackOutputsParams(input: unknown): GetStackOutputsParams {
+    return GetStackOutputsParamsSchema.parse(input);
+}
+
+export function parseDescribeChangeSetParams(input: unknown): DescribeChangeSetParams {
+    return DescribeChangeSetParamsSchema.parse(input);
 }

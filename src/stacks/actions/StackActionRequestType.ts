@@ -1,4 +1,11 @@
-import { Parameter, Capability, ResourceStatus, DetailedStatus } from '@aws-sdk/client-cloudformation';
+import {
+    Parameter,
+    Capability,
+    ResourceStatus,
+    DetailedStatus,
+    OnStackFailure,
+    Tag,
+} from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
 import { Identifiable } from '../../protocol/LspTypes';
@@ -17,6 +24,10 @@ export type CreateValidationParams = Identifiable & {
     capabilities?: Capability[];
     resourcesToImport?: ResourceToImport[];
     keepChangeSet?: boolean;
+    onStackFailure?: OnStackFailure;
+    includeNestedStacks?: boolean;
+    tags?: Tag[];
+    importExistingResources?: boolean;
 };
 
 export type ChangeSetReference = {

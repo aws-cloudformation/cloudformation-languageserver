@@ -6,14 +6,17 @@ import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
+import { mapChangesToStackChanges } from '../stacks/actions/StackActionOperations';
 import {
     parseCreateDeploymentParams,
     parseDeleteChangeSetParams,
     parseListStackResourcesParams,
-    parseStackActionParams,
+    parseCreateValidationParams,
+    parseDescribeChangeSetParams,
     parseTemplateUriParams,
     parseGetStackEventsParams,
     parseClearStackEventsParams,
+    parseGetStackOutputsParams,
 } from '../stacks/actions/StackActionParser';
 import {
     TemplateUri,
@@ -39,6 +42,10 @@ import {
     GetStackEventsParams,
     GetStackEventsResult,
     ClearStackEventsParams,
+    GetStackOutputsParams,
+    GetStackOutputsResult,
+    DescribeChangeSetParams,
+    DescribeChangeSetResult,
 } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../utils/Errors';
@@ -77,7 +84,7 @@ export function createValidationHandler(
 ): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         try {
-            const params = parseWithPrettyError(parseStackActionParams, rawParams);
+            const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
             return await components.validationWorkflowService.start(params);
         } catch (error) {
             handleStackActionError(error, 'Failed to start validation workflow');
@@ -335,6 +342,29 @@ export function listStackResourcesHandler(
     };
 }
 
+export function describeChangeSetHandler(
+    components: ServerComponents,
+): RequestHandler<DescribeChangeSetParams, DescribeChangeSetResult, void> {
+    return async (rawParams: DescribeChangeSetParams): Promise<DescribeChangeSetResult> => {
+        const params = parseWithPrettyError(parseDescribeChangeSetParams, rawParams);
+
+        const result = await components.cfnService.describeChangeSet({
+            ChangeSetName: params.changeSetName,
+            IncludePropertyValues: true,
+            StackName: params.stackName,
+        });
+
+        return {
+            changeSetName: params.changeSetName,
+            stackName: params.stackName,
+            status: result.Status ?? '',
+            creationTime: result.CreationTime?.toISOString(),
+            description: result.Description,
+            changes: mapChangesToStackChanges(result.Changes),
+        };
+    };
+}
+
 export function getStackEventsHandler(
     components: ServerComponents,
 ): RequestHandler<GetStackEventsParams, GetStackEventsResult, void> {
@@ -361,6 +391,21 @@ export function clearStackEventsHandler(
             components.stackEventManager.clear();
         } catch (error) {
             handleStackActionError(error, 'Failed to clear stack events');
+        }
+    };
+}
+
+export function getStackOutputsHandler(
+    components: ServerComponents,
+): RequestHandler<GetStackOutputsParams, GetStackOutputsResult, void> {
+    return async (rawParams): Promise<GetStackOutputsResult> => {
+        try {
+            const params = parseWithPrettyError(parseGetStackOutputsParams, rawParams);
+            const response = await components.cfnService.describeStacks({ StackName: params.stackName });
+            const outputs = response.Stacks?.[0]?.Outputs ?? [];
+            return { outputs };
+        } catch (error) {
+            handleStackActionError(error, 'Failed to get stack outputs');
         }
     };
 }
