@@ -41,7 +41,11 @@ describe('RelatedResourcesSnippetProvider', () => {
             schemaRetriever,
             relationshipSchemaService,
         });
-        provider = new RelatedResourcesSnippetProvider(mockComponents);
+        provider = new RelatedResourcesSnippetProvider(
+            mockComponents.documentManager,
+            mockComponents.syntaxTreeManager,
+            mockComponents.schemaRetriever,
+        );
         mockGetEntityMap = vi.mocked(getEntityMap);
     });
 

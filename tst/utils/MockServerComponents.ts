@@ -29,6 +29,7 @@ import { LspRelatedResourcesHandlers } from '../../src/protocol/LspRelatedResour
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
 import { LspStackHandlers } from '../../src/protocol/LspStackHandlers';
 import { LspWorkspace } from '../../src/protocol/LspWorkspace';
+import { RelatedResourcesSnippetProvider } from '../../src/relatedResources/RelatedResourcesSnippetProvider';
 import { ResourceStateImporter } from '../../src/resourceState/ResourceStateImporter';
 import { ResourceStateManager } from '../../src/resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../../src/resourceState/StackManagementInfoProvider';
@@ -381,6 +382,8 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         resourceStateManager: overrides.resourceStateManager ?? createMockResourceStateManager(),
         resourceStateImporter: overrides.resourceStateImporter ?? createMockResourceStateImporter(),
         relationshipSchemaService: overrides.relationshipSchemaService ?? stubInterface<RelationshipSchemaService>(),
+        relatedResourcesSnippetProvider:
+            overrides.relatedResourcesSnippetProvider ?? stubInterface<RelatedResourcesSnippetProvider>(),
         hoverRouter: overrides.hoverRouter ?? createMockHoverRouter(),
         completionRouter: overrides.completionRouter ?? createMockCompletionRouter(),
         inlineCompletionRouter: overrides.inlineCompletionRouter ?? createMockInlineCompletionRouter(),

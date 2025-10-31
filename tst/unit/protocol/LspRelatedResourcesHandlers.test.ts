@@ -4,10 +4,11 @@ import { Connection, RequestHandler } from 'vscode-languageserver/node';
 import { LspRelatedResourcesHandlers } from '../../../src/protocol/LspRelatedResourcesHandlers';
 import {
     GetAuthoredResourceTypesRequest,
+    GetRelatedResourceTypesParams,
     GetRelatedResourceTypesRequest,
+    InsertRelatedResourcesParams,
     InsertRelatedResourcesRequest,
     RelatedResourcesCodeAction,
-    ResourceTypeRequest,
     TemplateUri,
 } from '../../../src/protocol/RelatedResourcesProtocol';
 
@@ -29,7 +30,7 @@ describe('LspRelatedResourcesHandlers', () => {
     });
 
     it('should register onGetRelatedResourceTypes handler', () => {
-        const mockHandler: RequestHandler<ResourceTypeRequest, string[], void> = vi.fn();
+        const mockHandler: RequestHandler<GetRelatedResourceTypesParams, string[], void> = vi.fn();
 
         relatedResourcesHandlers.onGetRelatedResourceTypes(mockHandler);
 
@@ -37,7 +38,7 @@ describe('LspRelatedResourcesHandlers', () => {
     });
 
     it('should register onInsertRelatedResources handler', () => {
-        const mockHandler: RequestHandler<InsertRelatedResourcesRequest, RelatedResourcesCodeAction, void> = vi.fn();
+        const mockHandler: RequestHandler<InsertRelatedResourcesParams, RelatedResourcesCodeAction, void> = vi.fn();
 
         relatedResourcesHandlers.onInsertRelatedResources(mockHandler);
 

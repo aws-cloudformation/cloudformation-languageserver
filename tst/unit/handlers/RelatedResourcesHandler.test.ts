@@ -6,7 +6,6 @@ import {
     getRelatedResourceTypesHandler,
     insertRelatedResourcesHandler,
 } from '../../../src/handlers/RelatedResourcesHandler';
-import { RelatedResourcesSnippetProvider } from '../../../src/relatedResources/RelatedResourcesSnippetProvider';
 import {
     createMockComponents,
     createMockRelationshipSchemaService,
@@ -16,13 +15,6 @@ import {
 // Mock the SectionContextBuilder module
 vi.mock('../../../src/context/SectionContextBuilder', () => ({
     getEntityMap: vi.fn(),
-}));
-
-// Mock the RelatedResourcesSnippetProvider
-vi.mock('../../../src/relatedResources/RelatedResourcesSnippetProvider', () => ({
-    RelatedResourcesSnippetProvider: vi.fn().mockImplementation(() => ({
-        insertRelatedResources: vi.fn(),
-    })),
 }));
 
 describe('RelatedResourcesHandler', () => {
@@ -139,7 +131,7 @@ describe('RelatedResourcesHandler', () => {
     describe('getRelatedResourceTypesHandler', () => {
         it('should return related resource types for a given resource type', () => {
             const handler = getRelatedResourceTypesHandler(mockComponents);
-            const params = { resourceType: 'AWS::S3::Bucket' };
+            const params = { parentResourceType: 'AWS::S3::Bucket' };
 
             const relatedTypes = new Set(['AWS::Lambda::Function', 'AWS::IAM::Role']);
             relationshipSchemaService.getAllRelatedResourceTypes.withArgs('AWS::S3::Bucket').returns(relatedTypes);
@@ -152,7 +144,7 @@ describe('RelatedResourcesHandler', () => {
 
         it('should return empty array when no related types found', () => {
             const handler = getRelatedResourceTypesHandler(mockComponents);
-            const params = { resourceType: 'AWS::Custom::Resource' };
+            const params = { parentResourceType: 'AWS::Custom::Resource' };
 
             relationshipSchemaService.getAllRelatedResourceTypes.withArgs('AWS::Custom::Resource').returns(new Set());
 
@@ -163,7 +155,7 @@ describe('RelatedResourcesHandler', () => {
 
         it('should handle errors and rethrow them', () => {
             const handler = getRelatedResourceTypesHandler(mockComponents);
-            const params = { resourceType: 'AWS::S3::Bucket' };
+            const params = { parentResourceType: 'AWS::S3::Bucket' };
             const error = new Error('Relationship service error');
 
             relationshipSchemaService.getAllRelatedResourceTypes.withArgs('AWS::S3::Bucket').throws(error);
@@ -177,8 +169,8 @@ describe('RelatedResourcesHandler', () => {
             const handler = insertRelatedResourcesHandler(mockComponents);
             const params = {
                 templateUri: 'file:///test/template.yaml',
-                resourceTypes: ['AWS::Lambda::Function', 'AWS::IAM::Role'],
-                selectedResourceType: 'AWS::S3::Bucket',
+                relatedResourceTypes: ['AWS::Lambda::Function', 'AWS::IAM::Role'],
+                parentResourceType: 'AWS::S3::Bucket',
             };
 
             const mockCodeAction = {
@@ -191,37 +183,32 @@ describe('RelatedResourcesHandler', () => {
                 },
             };
 
-            const mockSnippetProvider = {
-                insertRelatedResources: vi.fn().mockReturnValue(mockCodeAction),
-            };
-            vi.mocked(RelatedResourcesSnippetProvider).mockImplementation(() => mockSnippetProvider as any);
+            mockComponents.relatedResourcesSnippetProvider.insertRelatedResources
+                .withArgs('file:///test/template.yaml', ['AWS::Lambda::Function', 'AWS::IAM::Role'], 'AWS::S3::Bucket')
+                .returns(mockCodeAction);
 
             const result = handler(params, mockToken);
 
             expect(result).toEqual(mockCodeAction);
-            expect(RelatedResourcesSnippetProvider).toHaveBeenCalledWith(mockComponents);
-            expect(mockSnippetProvider.insertRelatedResources).toHaveBeenCalledWith(
-                'file:///test/template.yaml',
-                ['AWS::Lambda::Function', 'AWS::IAM::Role'],
-                'AWS::S3::Bucket',
-            );
+            expect(
+                mockComponents.relatedResourcesSnippetProvider.insertRelatedResources.calledWith(
+                    'file:///test/template.yaml',
+                    ['AWS::Lambda::Function', 'AWS::IAM::Role'],
+                    'AWS::S3::Bucket',
+                ),
+            ).toBe(true);
         });
 
         it('should handle errors and rethrow them', () => {
             const handler = insertRelatedResourcesHandler(mockComponents);
             const params = {
                 templateUri: 'file:///test/template.yaml',
-                resourceTypes: ['AWS::Lambda::Function'],
-                selectedResourceType: 'AWS::S3::Bucket',
+                relatedResourceTypes: ['AWS::Lambda::Function'],
+                parentResourceType: 'AWS::S3::Bucket',
             };
             const error = new Error('Snippet provider error');
 
-            const mockSnippetProvider = {
-                insertRelatedResources: vi.fn().mockImplementation(() => {
-                    throw error;
-                }),
-            };
-            vi.mocked(RelatedResourcesSnippetProvider).mockImplementation(() => mockSnippetProvider as any);
+            mockComponents.relatedResourcesSnippetProvider.insertRelatedResources.throws(error);
 
             expect(() => handler(params, mockToken)).toThrow('Snippet provider error');
         });
