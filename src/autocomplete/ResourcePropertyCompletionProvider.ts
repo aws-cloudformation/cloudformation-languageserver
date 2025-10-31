@@ -34,17 +34,17 @@ import { CompletionItemData, ExtendedCompletionItem } from './CompletionFormatte
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, createMarkupContent } from './CompletionUtils';
 type PropertyCompletionsResult = {
-      completions: CompletionItem[];
-      skipFuzzySearch: boolean;
-    };
+    completions: CompletionItem[];
+    skipFuzzySearch: boolean;
+};
 type GetBooleanTypeInfoResult = {
-        isBooleanType: boolean;
-        resolvedSchemas: PropertyType[];
-    };
+    isBooleanType: boolean;
+    resolvedSchemas: PropertyType[];
+};
 
 export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private readonly fuzzySearch = getFuzzySearchFunction();
-    
+
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
     getCompletions(context: Context, _params: CompletionParams): CompletionItem[] | undefined {
@@ -114,10 +114,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         };
     }
 
-    private getBooleanTypeInfo(
-        context: Context,
-        schema: ResourceSchema,
-    ): GetBooleanTypeInfoResult {
+    private getBooleanTypeInfo(context: Context, schema: ResourceSchema): GetBooleanTypeInfoResult {
         const propertySchemaPath = templatePathToJsonPointerPath(context.propertyPath.slice(3));
         const resolvedSchemas = schema.resolveJsonPointerPath(propertySchemaPath, {
             excludeReadOnly: true,
