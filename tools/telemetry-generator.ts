@@ -41,7 +41,6 @@ import { definitionHandler } from '../src/handlers/DefinitionHandler';
 import { documentSymbolHandler } from '../src/handlers/DocumentSymbolHandler';
 import { codeLensHandler } from '../src/handlers/CodeLensHandler';
 import { codeActionHandler } from '../src/handlers/CodeActionHandler';
-import { inlineCompletionHandler } from '../src/handlers/InlineCompletionHandler';
 
 const argv = yargs(hideBin(process.argv))
     .option('templates', {
@@ -105,7 +104,6 @@ async function processTemplate(uri: string, content: string, pos: TestPosition, 
         null,
         null,
     );
-    handlers.inlineCompletion({ textDocument: { uri }, position, context: { triggerKind: 0 } }, null);
 
     await sleep(INTERVAL_MS);
 }
@@ -155,7 +153,6 @@ function main() {
         documentSymbol: documentSymbolHandler(mockTestComponents),
         codeLens: codeLensHandler(mockTestComponents),
         codeAction: codeActionHandler(mockTestComponents),
-        inlineCompletion: inlineCompletionHandler(mockTestComponents),
     };
 
     const templates = discoverTemplateFiles(TEMPLATE_PATHS);

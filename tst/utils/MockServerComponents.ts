@@ -4,7 +4,6 @@ import { RemoteConsole } from 'vscode-languageserver/node';
 import { CfnAI } from '../../src/ai/CfnAI';
 import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { CompletionRouter } from '../../src/autocomplete/CompletionRouter';
-import { InlineCompletionRouter } from '../../src/autocomplete/InlineCompletionRouter';
 import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
 import { ResourceStateCompletionProvider } from '../../src/autocomplete/ResourceStateCompletionProvider';
 import { TopLevelSectionCompletionProvider } from '../../src/autocomplete/TopLevelSectionCompletionProvider';
@@ -219,10 +218,6 @@ export function createMockCompletionRouter() {
     return stubInterface<CompletionRouter>();
 }
 
-export function createMockInlineCompletionRouter() {
-    return stubInterface<InlineCompletionRouter>();
-}
-
 export function createMockDocumentSymbolRouter() {
     return stubInterface<DocumentSymbolRouter>();
 }
@@ -390,7 +385,6 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         s3Service: overrides.s3Service ?? stubInterface<S3Service>(),
         hoverRouter: overrides.hoverRouter ?? createMockHoverRouter(),
         completionRouter: overrides.completionRouter ?? createMockCompletionRouter(),
-        inlineCompletionRouter: overrides.inlineCompletionRouter ?? createMockInlineCompletionRouter(),
         definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
         codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
         documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),

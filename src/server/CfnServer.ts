@@ -10,7 +10,6 @@ import { documentSymbolHandler } from '../handlers/DocumentSymbolHandler';
 import { executionHandler } from '../handlers/ExecutionHandler';
 import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
-import { inlineCompletionHandler } from '../handlers/InlineCompletionHandler';
 import {
     getAuthoredResourceTypesHandler,
     getRelatedResourceTypesHandler,
@@ -93,7 +92,6 @@ export class CfnServer {
         this.lsp.documents.onDidSave(didSaveHandler(this.components));
 
         this.lsp.handlers.onCompletion(completionHandler(this.components));
-        this.lsp.handlers.onInlineCompletion(inlineCompletionHandler(this.components));
         this.lsp.handlers.onHover(hoverHandler(this.components));
         this.lsp.handlers.onExecuteCommand(executionHandler(this.lsp.documents, this.components));
         this.lsp.handlers.onCodeAction(codeActionHandler(this.components));
