@@ -298,6 +298,35 @@ describe('CfnLintService', () => {
 
             await expect(service.mountFolder(mockWorkspaceFolder)).rejects.toThrow('Failed to mount directory');
         });
+
+        test('should not mount folder twice', async () => {
+            await service.initialize();
+
+            // Mount folder first time
+            await service.mountFolder(mockWorkspaceFolder);
+            expect(mockWorkerManager.mountFolder.callCount).toBe(1);
+
+            // Mount same folder again - should not call worker
+            await service.mountFolder(mockWorkspaceFolder);
+            expect(mockWorkerManager.mountFolder.callCount).toBe(1);
+        });
+
+        test('should remount folders after worker recovery', async () => {
+            await service.initialize();
+            await service.mountFolder(mockWorkspaceFolder);
+            expect(mockWorkerManager.mountFolder.callCount).toBe(1);
+
+            // Simulate worker crash - this sets status to uninitialized
+            mockWorkerManager.lintTemplate.rejects(new Error('Worker crashed'));
+            await service.lintDelayed(mockTemplate, mockUri, LintTrigger.OnSave);
+
+            // Reset mock to succeed and trigger recovery
+            mockWorkerManager.lintTemplate.resolves([]);
+            await service.lintDelayed(mockTemplate, mockUri, LintTrigger.OnSave);
+
+            // Should have remounted during recovery
+            expect(mockWorkerManager.mountFolder.callCount).toBe(2);
+        });
     });
 
     describe('lint', () => {
@@ -352,6 +381,7 @@ describe('CfnLintService', () => {
             await service.lint(mockTemplate, mockUri);
 
             expect(mockComponents.workspace.getWorkspaceFolder.calledWith(mockUri)).toBe(true);
+            expect(mockWorkerManager.mountFolder.calledWith('/path/to/workspace/project', '/project')).toBe(true);
             expect(
                 mockWorkerManager.lintFile.calledWith(
                     '/project/template.yaml',
@@ -374,6 +404,30 @@ describe('CfnLintService', () => {
                     CloudFormationFileType.Template,
                 ),
             ).toBe(true);
+        });
+
+        test('should handle worker crash during standalone linting', async () => {
+            mockComponents.workspace.getWorkspaceFolder.returns(undefined);
+            mockWorkerManager.lintTemplate.rejects(new Error('Worker exited unexpectedly with code 1'));
+
+            await service.lint(mockTemplate, mockUri);
+
+            // Should publish empty diagnostics and not crash
+            expect(mockComponents.diagnosticCoordinator.publishDiagnostics.called).toBe(true);
+            // Service should be marked as uninitialized for recovery
+            expect(service.isInitialized()).toBe(false);
+        });
+
+        test('should handle worker crash during workspace file linting', async () => {
+            mockComponents.workspace.getWorkspaceFolder.returns(mockWorkspaceFolder);
+            mockWorkerManager.lintFile.rejects(new Error('Worker exited unexpectedly with code 1'));
+
+            await service.lint(mockTemplate, mockUri);
+
+            // Should publish empty diagnostics and not crash
+            expect(mockComponents.diagnosticCoordinator.publishDiagnostics.called).toBe(true);
+            // Service should be marked as uninitialized for recovery
+            expect(service.isInitialized()).toBe(false);
         });
 
         test('should handle JSON templates', async () => {
