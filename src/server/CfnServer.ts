@@ -12,6 +12,11 @@ import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
 import { inlineCompletionHandler } from '../handlers/InlineCompletionHandler';
 import {
+    getAuthoredResourceTypesHandler,
+    getRelatedResourceTypesHandler,
+    insertRelatedResourcesHandler,
+} from '../handlers/RelatedResourcesHandler';
+import {
     getManagedResourceStackTemplateHandler,
     listResourcesHandler,
     getResourceTypesHandler,
@@ -121,6 +126,10 @@ export class CfnServer {
         this.lsp.stackHandlers.onGetStackEvents(getStackEventsHandler(this.components));
         this.lsp.stackHandlers.onClearStackEvents(clearStackEventsHandler(this.components));
         this.lsp.stackHandlers.onGetStackOutputs(getStackOutputsHandler(this.components));
+
+        this.lsp.relatedResourcesHandlers.onGetAuthoredResourceTypes(getAuthoredResourceTypesHandler(this.components));
+        this.lsp.relatedResourcesHandlers.onGetRelatedResourceTypes(getRelatedResourceTypesHandler(this.components));
+        this.lsp.relatedResourcesHandlers.onInsertRelatedResources(insertRelatedResourcesHandler(this.components));
 
         this.lsp.resourceHandlers.onListResources(listResourcesHandler(this.components));
         this.lsp.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));

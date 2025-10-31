@@ -48,7 +48,7 @@ import {
     DescribeChangeSetResult,
 } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../utils/Errors';
+import { handleLspError } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('StackHandler');
@@ -74,7 +74,7 @@ export function getParametersHandler(
                 parameters: [],
             };
         } catch (error) {
-            handleStackActionError(error, 'Failed to get parameters');
+            handleLspError(error, 'Failed to get parameters');
         }
     };
 }
@@ -87,7 +87,7 @@ export function createValidationHandler(
             const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
             return await components.validationWorkflowService.start(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to start validation workflow');
+            handleLspError(error, 'Failed to start validation workflow');
         }
     };
 }
@@ -100,7 +100,7 @@ export function createDeploymentHandler(
             const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
             return await components.deploymentWorkflowService.start(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to start deployment workflow');
+            handleLspError(error, 'Failed to start deployment workflow');
         }
     };
 }
@@ -113,7 +113,7 @@ export function getValidationStatusHandler(
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.validationWorkflowService.getStatus(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to get validation status');
+            handleLspError(error, 'Failed to get validation status');
         }
     };
 }
@@ -126,7 +126,7 @@ export function getDeploymentStatusHandler(
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.deploymentWorkflowService.getStatus(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to get deployment status');
+            handleLspError(error, 'Failed to get deployment status');
         }
     };
 }
@@ -139,7 +139,7 @@ export function describeValidationStatusHandler(
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.validationWorkflowService.describeStatus(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to describe validation status');
+            handleLspError(error, 'Failed to describe validation status');
         }
     };
 }
@@ -152,7 +152,7 @@ export function describeDeploymentStatusHandler(
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.deploymentWorkflowService.describeStatus(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to describe deployment status');
+            handleLspError(error, 'Failed to describe deployment status');
         }
     };
 }
@@ -165,7 +165,7 @@ export function deleteChangeSetHandler(
             const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
             return await components.changeSetDeletionWorkflowService.start(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to start change set deletion workflow');
+            handleLspError(error, 'Failed to start change set deletion workflow');
         }
     };
 }
@@ -178,7 +178,7 @@ export function getChangeSetDeletionStatusHandler(
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.changeSetDeletionWorkflowService.getStatus(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to get change set deletion status');
+            handleLspError(error, 'Failed to get change set deletion status');
         }
     };
 }
@@ -191,7 +191,7 @@ export function describeChangeSetDeletionStatusHandler(
             const params = parseWithPrettyError(parseIdentifiable, rawParams);
             return components.changeSetDeletionWorkflowService.describeStatus(params);
         } catch (error) {
-            handleStackActionError(error, 'Failed to describe change set deletion status');
+            handleLspError(error, 'Failed to describe change set deletion status');
         }
     };
 }
@@ -211,7 +211,7 @@ export function getCapabilitiesHandler(
 
             return { capabilities };
         } catch (error) {
-            handleStackActionError(error, 'Failed to analyze template capabilities');
+            handleLspError(error, 'Failed to analyze template capabilities');
         }
     };
 }
@@ -252,7 +252,7 @@ export function getTemplateResourcesHandler(
 
             return { resources };
         } catch (error) {
-            handleStackActionError(error, 'Failed to get template resources');
+            handleLspError(error, 'Failed to get template resources');
         }
     };
 }
@@ -377,7 +377,7 @@ export function getStackEventsHandler(
             }
             return await components.stackEventManager.fetchEvents(params.stackName, params.nextToken);
         } catch (error) {
-            handleStackActionError(error, 'Failed to get stack events');
+            handleLspError(error, 'Failed to get stack events');
         }
     };
 }
@@ -390,7 +390,7 @@ export function clearStackEventsHandler(
             parseWithPrettyError(parseClearStackEventsParams, rawParams);
             components.stackEventManager.clear();
         } catch (error) {
-            handleStackActionError(error, 'Failed to clear stack events');
+            handleLspError(error, 'Failed to clear stack events');
         }
     };
 }
@@ -405,17 +405,7 @@ export function getStackOutputsHandler(
             const outputs = response.Stacks?.[0]?.Outputs ?? [];
             return { outputs };
         } catch (error) {
-            handleStackActionError(error, 'Failed to get stack outputs');
+            handleLspError(error, 'Failed to get stack outputs');
         }
     };
-}
-
-function handleStackActionError(error: unknown, contextMessage: string): never {
-    if (error instanceof ResponseError) {
-        throw error;
-    }
-    if (error instanceof TypeError) {
-        throw new ResponseError(ErrorCodes.InvalidParams, error.message);
-    }
-    throw new ResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`);
 }

@@ -65,8 +65,8 @@ describe('CodeLensHandler', () => {
         const result = await handler(params, CancellationToken.None);
 
         expect(result).toHaveLength(3); // 2 stack actions + 1 managed resource
-        expect(result[0].command?.title).toBe('Dry Run Deployment');
-        expect(result[1].command?.title).toBe('Deploy');
+        expect(result[0].command?.title).toBe('Validate Deployment');
+        expect(result[1].command?.title).toBe('Deploy Template');
         expect(result[2].command?.title).toBe('Open Stack Template');
     });
 

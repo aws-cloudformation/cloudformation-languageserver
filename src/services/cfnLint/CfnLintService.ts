@@ -51,6 +51,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     private initializationPromise?: Promise<void>;
     private readonly workerManager: PyodideWorkerManager;
     private readonly log = LoggerFactory.getLogger(CfnLintService);
+    private readonly mountedFolders = new Map<string, WorkspaceFolder>();
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
@@ -123,6 +124,19 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         try {
             // Initialize the worker manager
             await this.workerManager.initialize();
+
+            // Remount previously mounted folders after worker recovery
+            if (this.mountedFolders.size > 0) {
+                for (const [mountDir, folder] of this.mountedFolders) {
+                    try {
+                        const fsDir = URI.parse(folder.uri).fsPath;
+                        await this.workerManager.mountFolder(fsDir, mountDir);
+                    } catch (error) {
+                        this.logError(`remounting folder ${mountDir}`, error);
+                    }
+                }
+            }
+
             this.status = STATUS.Initialized;
             this.telemetry.count('initialized', 1, { unit: '1' });
         } catch (error) {
@@ -147,8 +161,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         const fsDir = URI.parse(folder.uri).fsPath;
         const mountDir = '/'.concat(folder.name);
 
+        // Check if already mounted
+        if (this.mountedFolders.has(mountDir)) {
+            return;
+        }
+
         try {
             await this.workerManager.mountFolder(fsDir, mountDir);
+            this.mountedFolders.set(mountDir, folder);
             this.telemetry.count('mount.success', 1, { unit: '1' });
         } catch (error) {
             this.logError('mounting folder', error);
@@ -260,6 +280,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                 }
             }
         } catch (error) {
+            this.status = STATUS.Uninitialized;
             const errorMessage = extractErrorMessage(error);
             this.logError(`linting ${fileType} by string`, error);
             this.publishErrorDiagnostics(uri, errorMessage);
@@ -299,6 +320,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         content: string,
     ): Promise<void> {
         try {
+            // Ensure folder is mounted before linting
+            await this.mountFolder(folder);
+
             const relativePath = uri.replace(folder.uri, '/'.concat(folder.name));
 
             // Use worker to lint file
@@ -330,6 +354,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                 }
             }
         } catch (error) {
+            this.status = STATUS.Uninitialized;
             const errorMessage = extractErrorMessage(error);
             this.logError(`linting ${fileType} by file`, error);
             this.publishErrorDiagnostics(uri, errorMessage);

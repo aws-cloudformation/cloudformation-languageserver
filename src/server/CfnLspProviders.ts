@@ -5,6 +5,7 @@ import { CodeLensProvider } from '../codeLens/CodeLensProvider';
 import { DefinitionProvider } from '../definition/DefinitionProvider';
 import { DocumentSymbolRouter } from '../documentSymbol/DocumentSymbolRouter';
 import { HoverRouter } from '../hover/HoverRouter';
+import { RelatedResourcesSnippetProvider } from '../relatedResources/RelatedResourcesSnippetProvider';
 import { ResourceStateImporter } from '../resourceState/ResourceStateImporter';
 import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../resourceState/StackManagementInfoProvider';
@@ -42,6 +43,7 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly resourceStateManager: ResourceStateManager;
     readonly resourceStateImporter: ResourceStateImporter;
     readonly relationshipSchemaService: RelationshipSchemaService;
+    readonly relatedResourcesSnippetProvider: RelatedResourcesSnippetProvider;
 
     // LSP feature providers
     readonly hoverRouter: HoverRouter;
@@ -73,6 +75,9 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.resourceStateImporter =
             overrides.resourceStateImporter ?? ResourceStateImporter.create(core, external, this);
         this.relationshipSchemaService = overrides.relationshipSchemaService ?? new RelationshipSchemaService();
+        this.relatedResourcesSnippetProvider =
+            overrides.relatedResourcesSnippetProvider ??
+            new RelatedResourcesSnippetProvider(core.documentManager, core.syntaxTreeManager, external.schemaRetriever);
 
         this.hoverRouter = overrides.hoverRouter ?? new HoverRouter(core.contextManager, external.schemaRetriever);
         this.completionRouter = overrides.completionRouter ?? CompletionRouter.create(core, external, this);

@@ -3,6 +3,7 @@ import { LspCommunication } from './LspCommunication';
 import { LspDiagnostics } from './LspDiagnostics';
 import { LspDocuments } from './LspDocuments';
 import { LspHandlers } from './LspHandlers';
+import { LspRelatedResourcesHandlers } from './LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from './LspResourceHandlers';
 import { LspStackHandlers } from './LspStackHandlers';
 import { LspWorkspace } from './LspWorkspace';
@@ -17,5 +18,6 @@ export class LspComponents {
         public readonly authHandlers: LspAuthHandlers,
         public readonly stackHandlers: LspStackHandlers,
         public readonly resourceHandlers: LspResourceHandlers,
+        public readonly relatedResourcesHandlers: LspRelatedResourcesHandlers,
     ) {}
 }
