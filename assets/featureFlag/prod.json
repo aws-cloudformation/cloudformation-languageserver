@@ -2,5 +2,10 @@
   "version": 1,
   "description": "Feature flags for prod environment",
   "features": {
+    "EnhancedDryRun": {
+      "enabled": false,
+      "fleetPercentage": 100,
+      "allowlistedRegions": []
+    }
   }
 }
