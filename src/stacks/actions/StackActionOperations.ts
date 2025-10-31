@@ -8,7 +8,7 @@ import { getEntityMap } from '../../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
 import { CfnService } from '../../services/CfnService';
-import { DescribeEventsOutput } from '../../services/CfnServiceV2';
+import { DescribeEventsOutput, ChangeV2 } from '../../services/CfnServiceV2';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
@@ -56,6 +56,7 @@ export async function processChangeSet(
         Capabilities: params.capabilities,
         ChangeSetType: changeSetType,
         ResourcesToImport: params.resourcesToImport,
+        CompareWith: changeSetType === 'UPDATE' ? 'LIVE_STATE' : undefined,
         OnStackFailure: params.onStackFailure,
         IncludeNestedStacks: params.includeNestedStacks,
         Tags: params.tags,
@@ -205,23 +206,30 @@ export async function deleteChangeSet(
     }
 }
 
-export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | undefined {
-    return changes?.map((change: Change) => ({
-        type: change.Type,
-        resourceChange: change.ResourceChange
-            ? {
-                  action: change.ResourceChange.Action,
-                  logicalResourceId: change.ResourceChange.LogicalResourceId,
-                  physicalResourceId: change.ResourceChange.PhysicalResourceId,
-                  resourceType: change.ResourceChange.ResourceType,
-                  replacement: change.ResourceChange.Replacement,
-                  scope: change.ResourceChange.Scope,
-                  beforeContext: change.ResourceChange.BeforeContext,
-                  afterContext: change.ResourceChange.AfterContext,
-                  details: change.ResourceChange.Details,
-              }
-            : undefined,
-    }));
+export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | undefined;
+export function mapChangesToStackChanges(changes?: ChangeV2[]): StackChange[] | undefined;
+export function mapChangesToStackChanges(changes?: Change[] | ChangeV2[]): StackChange[] | undefined {
+    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
+    return changes?.map((change: Change | ChangeV2) => {
+        const resourceChange = change.ResourceChange as any;
+        return {
+            type: change.Type,
+            resourceChange: resourceChange
+                ? {
+                      action: resourceChange.Action,
+                      logicalResourceId: resourceChange.LogicalResourceId,
+                      physicalResourceId: resourceChange.PhysicalResourceId,
+                      resourceType: resourceChange.ResourceType,
+                      replacement: resourceChange.Replacement,
+                      scope: resourceChange.Scope,
+                      beforeContext: resourceChange.BeforeContext,
+                      afterContext: resourceChange.AfterContext,
+                      resourceDriftStatus: resourceChange.ResourceDriftStatus,
+                      details: resourceChange.Details,
+                  }
+                : undefined,
+        };
+    });
 }
 
 export function processWorkflowUpdates(

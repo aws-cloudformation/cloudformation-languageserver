@@ -127,6 +127,7 @@ export class CfnService {
         Capabilities?: Capability[];
         ChangeSetType?: 'CREATE' | 'UPDATE' | 'IMPORT';
         ResourcesToImport?: ResourceToImport[];
+        CompareWith?: string;
         OnStackFailure?: OnStackFailure;
         IncludeNestedStacks?: boolean;
         Tags?: Tag[];
