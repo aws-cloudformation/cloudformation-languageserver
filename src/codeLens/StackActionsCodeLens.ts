@@ -1,12 +1,12 @@
 import { CodeLens, Position, Range } from 'vscode-languageserver';
 
 const STACK_ACTION_TITLES = {
-    DRY_RUN: 'Dry Run Template',
+    VALIDATE_DEPLOYMENT: 'Validate Deployment',
     DEPLOY: 'Deploy Template',
 } as const;
 
 const STACK_ACTION_COMMANDS = {
-    DRY_RUN: 'aws.cloudformation.api.dryRunTemplate',
+    VALIDATE_DEPLOYMENT: 'aws.cloudformation.api.validateDeployment',
     DEPLOY: 'aws.cloudformation.api.deployTemplate',
 } as const;
 
@@ -17,8 +17,8 @@ export function getStackActionsCodeLenses(uri: string): CodeLens[] {
         {
             range,
             command: {
-                title: STACK_ACTION_TITLES.DRY_RUN,
-                command: STACK_ACTION_COMMANDS.DRY_RUN,
+                title: STACK_ACTION_TITLES.VALIDATE_DEPLOYMENT,
+                command: STACK_ACTION_COMMANDS.VALIDATE_DEPLOYMENT,
                 arguments: [uri],
             },
         },
