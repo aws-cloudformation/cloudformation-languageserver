@@ -1,8 +1,10 @@
 import { DateTime } from 'luxon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AwsCredentials } from '../../../src/auth/AwsCredentials';
 import { FileContextManager } from '../../../src/context/FileContextManager';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../../src/document/DocumentManager';
+import { TargetedFeatureFlag } from '../../../src/featureFlag/FeatureFlagI';
 import { CfnServiceV2 } from '../../../src/services/CfnServiceV2';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import {
@@ -37,6 +39,8 @@ describe('ValidationWorkflowV2', () => {
     let mockSyntaxTreeManager: SyntaxTreeManager;
     let mockFileContextManager: FileContextManager;
     let mockValidationManager: ValidationManager;
+    let mockFeatureFlag: TargetedFeatureFlag<string>;
+    let mockAwsCredentials: AwsCredentials;
 
     const waitForWorkflowCompletion = async (workflowId: string): Promise<void> => {
         let attempts = 0;
@@ -67,7 +71,22 @@ describe('ValidationWorkflowV2', () => {
 
         mockValidationManager = { add: vi.fn(), get: vi.fn(), remove: vi.fn() } as any;
 
+        mockFeatureFlag = {
+            isEnabled: vi.fn(),
+            describe: vi.fn(),
+        };
+
+        mockAwsCredentials = {
+            getIAM: vi.fn(),
+        } as any;
+
         mockCfnServiceV2.describeStacks = vi.fn().mockRejectedValue(new Error('Stack does not exist'));
+
+        mockFeatureFlag.isEnabled = vi.fn().mockReturnValue(true);
+
+        mockAwsCredentials.getIAM = vi.fn().mockResolvedValue({
+            region: 'testRegion',
+        });
 
         (processChangeSet as any).mockResolvedValue('changeset-123');
 
@@ -104,6 +123,8 @@ describe('ValidationWorkflowV2', () => {
             mockSyntaxTreeManager,
             mockValidationManager,
             mockFileContextManager,
+            mockFeatureFlag,
+            mockAwsCredentials,
         );
 
         vi.clearAllMocks();
@@ -178,6 +199,40 @@ describe('ValidationWorkflowV2', () => {
                 mockSyntaxTreeManager,
                 mockDiagnosticCoordinator,
             );
+        });
+
+        it('should skip enhanced validation workflow when region is not supported', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+            };
+
+            mockFeatureFlag.isEnabled = vi.fn().mockReturnValueOnce(false);
+
+            const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
+                changes: mockChanges,
+            });
+
+            const result = await validationWorkflowV2.start(params);
+            await waitForWorkflowCompletion('test-id');
+
+            // Verify workflow execution
+            expect(result.changeSetName).toBe('changeset-123');
+            expect(mockValidationManager.add).toHaveBeenCalled();
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnServiceV2, 'changeset-123', 'test-stack');
+
+            // Verify workflow state
+            const workflow = (validationWorkflowV2 as any).workflows.get('test-id');
+            expect(workflow.changes).toEqual(mockChanges);
+
+            // Verify enhanced validation is not used
+            expect(mockCfnServiceV2.describeEvents).not.toBeCalled();
+            expect(parseValidationEvents).not.toBeCalled();
+            expect(publishValidationDiagnostics).not.toBeCalled();
         });
 
         it('should handle validation failure', async () => {
