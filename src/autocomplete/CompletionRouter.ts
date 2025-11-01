@@ -1,7 +1,12 @@
 import { CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
-import { IntrinsicFunction, IntrinsicsUsingConditionKeyword, TopLevelSection } from '../context/ContextType';
+import {
+    IntrinsicFunction,
+    IntrinsicsUsingConditionKeyword,
+    ResourceAttribute,
+    TopLevelSection,
+} from '../context/ContextType';
 import { isCondition } from '../context/ContextUtils';
 import { Entity, Output, Parameter } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
@@ -79,7 +84,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         } else if (context.section === TopLevelSection.Resources) {
             provider = this.completionProviderMap.get(EntityType.Resource);
         } else if (context.atEntityKeyLevel()) {
-            provider = this.entityFieldCompletionProviderMap.get(context.entity.entityType);
+            provider = this.entityFieldCompletionProviderMap.get(context.getEntityType());
         }
 
         const completions = provider?.getCompletions(context, params) ?? [];
@@ -137,12 +142,12 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         }
 
         // Resource UpdatePolicy Condition: ['Resources', 'LogicalId', 'UpdatePolicy', this.CONDITION]
-        if (context.matchPathWithLogicalId(TopLevelSection.Resources, 'UpdatePolicy', Condition)) {
+        if (context.matchPathWithLogicalId(TopLevelSection.Resources, ResourceAttribute.UpdatePolicy, Condition)) {
             return true;
         }
 
         // Resource Metadata Condition: ['Resources', 'LogicalId', 'Metadata', this.CONDITION]
-        if (context.matchPathWithLogicalId(TopLevelSection.Resources, 'Metadata', Condition)) {
+        if (context.matchPathWithLogicalId(TopLevelSection.Resources, ResourceAttribute.Metadata, Condition)) {
             return true;
         }
 

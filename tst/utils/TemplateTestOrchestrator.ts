@@ -104,7 +104,7 @@ export class TemplateTestOrchestrator {
             ) {
                 record = context?.entity.value;
             } else {
-                record = context?.entity.record();
+                record = context?.entity.logRecord();
             }
             // Normalize both entities for comparison
             const normalizedExpected = this.normalizeEntity(expectedEntity);

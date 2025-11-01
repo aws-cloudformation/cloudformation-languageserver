@@ -1,5 +1,6 @@
 import { Condition } from './Entity';
 
+/* eslint-disable no-restricted-syntax -- enum definitions */
 export enum EntityType {
     Metadata = 'Metadata',
     Output = 'Output',

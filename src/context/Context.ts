@@ -5,21 +5,22 @@ import {
     IntrinsicsSet,
     PseudoParametersSet,
     ResourceAttributesSet,
+    SectionType,
     TopLevelSection,
     TopLevelSectionsSet,
     TopLevelSectionsWithLogicalIdsSet,
 } from './ContextType';
 import { IntrinsicContext } from './IntrinsicContext';
 import { Entity } from './semantic/Entity';
-import { nodeToEntity } from './semantic/EntityBuilder';
+import { entityTypeFromSection, nodeToEntity } from './semantic/EntityBuilder';
 import { normalizeIntrinsicFunction } from './semantic/Intrinsics';
+import { EntityType } from './semantic/SemanticTypes';
 import { PropertyPath } from './syntaxtree/SyntaxTree';
 import { NodeType } from './syntaxtree/utils/NodeType';
 import { YamlNodeTypes, CommonNodeTypes } from './syntaxtree/utils/TreeSitterTypes';
 import { TransformContext } from './TransformContext';
 
-export type SectionType = TopLevelSection | 'Unknown';
-export type QuoteCharacter = '"' | "'";
+type QuoteCharacter = '"' | "'";
 
 export class Context {
     public readonly section: SectionType;
@@ -62,6 +63,10 @@ export class Context {
     public get entity(): Entity {
         this._entity ??= nodeToEntity(this.documentType, this.entityRootNode, this.section, this.logicalId);
         return this._entity;
+    }
+
+    public getEntityType(): EntityType {
+        return entityTypeFromSection(this.section, this.logicalId);
     }
 
     public get intrinsicContext(): IntrinsicContext {
@@ -310,7 +315,7 @@ export class Context {
         return undefined;
     }
 
-    public record() {
+    public logRecord() {
         return {
             section: this.section,
             logicalId: this.logicalId,
@@ -322,7 +327,7 @@ export class Context {
             node: { start: this.node.startPosition, end: this.node.endPosition },
             root: { start: this.entityRootNode?.startPosition, end: this.entityRootNode?.endPosition },
             entity: this.entity,
-            intrinsicContext: this.intrinsicContext.record(),
+            intrinsicContext: this.intrinsicContext.logRecord(), // eslint-disable-line no-restricted-syntax
             isKey: this.isKey(),
             isValue: this.isValue(),
         };

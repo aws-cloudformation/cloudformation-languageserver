@@ -117,6 +117,53 @@ export default tseslint.config([
         },
     },
     {
+        files: ['src/**'],
+        rules: {
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: 'CallExpression[callee.property.name="logRecord"]',
+                    message:
+                        'Usage of logRecord() function is restricted in src code. This is meant for debugging purposes only',
+                },
+                {
+                    selector: 'MemberExpression[property.name="entityType"]',
+                    message:
+                        'Usage of entityType property is restricted in src code. This call is an expensive operations, use getEntityType from Context instead',
+                },
+                {
+                    selector:
+                        'Literal[value=/^(Resources|Parameters|Outputs|Mappings|Metadata|Rules|Conditions|Transform|AWSTemplateFormatVersion)$/]',
+                    message:
+                        'Usage of raw TopLevelSection strings is restricted in src code. Use TopLevelSection enum instead',
+                },
+                {
+                    selector:
+                        'Literal[value=/^(Output|Mapping|Metadata|Rule|Transform|AWSTemplateFormatVersion|ForEachResource)$/]',
+                    message: 'Usage of raw EntityType strings is restricted in src code. Use EntityType enum instead',
+                },
+                {
+                    selector:
+                        'Literal[value=/^Fn::(Base64|Cidr|FindInMap|ForEach|GetAtt|GetAZs|ImportValue|Join|Length|Select|Split|Sub|ToJsonString|Transform|And|Equals|If|Not|Or|Contains|EachMemberEquals|EachMemberIn|RefAll|ValueOf|ValueOfAll|Implies)$/]',
+                    message:
+                        'Usage of raw IntrinsicFunction strings is restricted in src code. Use IntrinsicFunction enum instead',
+                },
+                {
+                    selector:
+                        'Literal[value=/^AWS::(AccountId|Region|StackId|StackName|NotificationARNs|NoValue|Partition|URLSuffix)$/]',
+                    message:
+                        'Usage of raw PseudoParameter strings is restricted in src code. Use PseudoParameter enum instead',
+                },
+                {
+                    selector:
+                        'Literal[value=/^(CreationPolicy|DeletionPolicy|UpdatePolicy|UpdateReplacePolicy|DependsOn|Metadata)$/]',
+                    message:
+                        'Usage of raw ResourceAttribute strings is restricted in src code. Use ResourceAttribute enum instead',
+                },
+            ],
+        },
+    },
+    {
         files: ['tst/**'],
         plugins: {
             vitest,

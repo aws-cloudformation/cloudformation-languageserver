@@ -333,7 +333,7 @@ class DebugTreeTool {
 
                 if (context) {
                     // Store the JSON string for markdown output
-                    const record = context.record();
+                    const record = context.logRecord();
                     record['text'] = this.truncateWithEllipsis(context.text, 25);
                     contextInfo.contextJson = toString(record);
 

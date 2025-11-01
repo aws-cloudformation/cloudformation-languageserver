@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-syntax -- enum definitions */
 export enum TopLevelSection {
     Resources = 'Resources',
     Parameters = 'Parameters',
@@ -10,6 +11,8 @@ export enum TopLevelSection {
     AWSTemplateFormatVersion = 'AWSTemplateFormatVersion',
     Description = 'Description',
 }
+
+export type SectionType = TopLevelSection | 'Unknown';
 
 export enum IntrinsicFunction {
     Base64 = 'Fn::Base64',

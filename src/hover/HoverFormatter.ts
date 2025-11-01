@@ -1,5 +1,6 @@
 import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { updateReplacePolicyValueDocsMap } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
+import { Context } from '../context/Context';
 import { ResourceAttribute } from '../context/ContextType';
 import { Condition, Entity, Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
@@ -853,44 +854,42 @@ function buildConstraintsDocumentation(property: PropertyType): string[] {
 
     return typeInfo;
 }
+
 /**
  * Formats hover information for intrinsic function arguments (like !Ref, !GetAtt arguments)
  *
- * @param entity - The entity being referenced (Resource, Parameter, Condition, Mapping)
  * @returns Formatted markdown string for hover display
  */
-export function formatIntrinsicArgumentHover(entity: Entity): string {
+export function formatIntrinsicArgumentHover(context: Context): string {
     const doc: string[] = [];
 
     // Add entity-specific information
-    switch (entity.entityType) {
+    switch (context.getEntityType()) {
         case EntityType.Resource: {
-            doc.push(formatResourceHover(entity as Resource));
+            doc.push(formatResourceHover(context.entity as Resource));
             break;
         }
 
         case EntityType.Parameter: {
             // Use the shared parameter formatter for consistent formatting
-            doc.push(formatParameterHover(entity as Parameter));
+            doc.push(formatParameterHover(context.entity as Parameter));
             break;
         }
 
         case EntityType.Condition: {
-            const condition = entity as Condition;
+            const condition = context.entity as Condition;
             doc.push(`**Condition:** ${condition.name}`);
             break;
         }
 
         case EntityType.Mapping: {
-            const mapping = entity as Mapping;
+            const mapping = context.entity as Mapping;
             doc.push(`**Mapping:** ${mapping.name}`);
             break;
         }
     }
 
-    const result = doc.filter((item) => item.trim() !== '').join('\n\n');
-
-    return result;
+    return doc.filter((item) => item.trim() !== '').join('\n\n');
 }
 
 /**
@@ -899,6 +898,7 @@ export function formatIntrinsicArgumentHover(entity: Entity): string {
 function getIntrinsicReturnType(intrinsicType: string, entity: Entity): string {
     switch (intrinsicType) {
         case 'Ref': {
+            // eslint-disable-next-line no-restricted-syntax -- Entity is already resolved
             switch (entity.entityType) {
                 case EntityType.Resource: {
                     return 'string';
@@ -1102,8 +1102,7 @@ export function formatParameterHover(parameter: Parameter): string {
         doc.push(`**Constraint Description:** ${parameter.ConstraintDescription}`);
     }
 
-    const result = doc.filter((item) => item.trim() !== '').join('\n\n');
-    return result;
+    return doc.filter((item) => item.trim() !== '').join('\n\n');
 }
 
 /**
@@ -1138,8 +1137,7 @@ export function formatResourceHover(resource: Resource): string {
         doc.push(`**Update Replace Policy:** ${resource.UpdateReplacePolicy}`);
     }
 
-    const result = doc.filter((item) => item.trim() !== '').join('\n\n');
-    return result;
+    return doc.filter((item) => item.trim() !== '').join('\n\n');
 }
 
 /**
