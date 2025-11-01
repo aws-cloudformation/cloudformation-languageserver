@@ -1,6 +1,5 @@
 import { CfnAI } from '../ai/CfnAI';
 import { CompletionRouter } from '../autocomplete/CompletionRouter';
-import { InlineCompletionRouter } from '../autocomplete/InlineCompletionRouter';
 import { CodeLensProvider } from '../codeLens/CodeLensProvider';
 import { DefinitionProvider } from '../definition/DefinitionProvider';
 import { DocumentSymbolRouter } from '../documentSymbol/DocumentSymbolRouter';
@@ -11,6 +10,7 @@ import { ResourceStateManager } from '../resourceState/ResourceStateManager';
 import { StackManagementInfoProvider } from '../resourceState/StackManagementInfoProvider';
 import { CodeActionService } from '../services/CodeActionService';
 import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
+import { S3Service } from '../services/S3Service';
 import { ChangeSetDeletionWorkflow } from '../stacks/actions/ChangeSetDeletionWorkflow';
 import { DeploymentWorkflow } from '../stacks/actions/DeploymentWorkflow';
 import {
@@ -44,11 +44,11 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly resourceStateImporter: ResourceStateImporter;
     readonly relationshipSchemaService: RelationshipSchemaService;
     readonly relatedResourcesSnippetProvider: RelatedResourcesSnippetProvider;
+    readonly s3Service: S3Service;
 
     // LSP feature providers
     readonly hoverRouter: HoverRouter;
     readonly completionRouter: CompletionRouter;
-    readonly inlineCompletionRouter: InlineCompletionRouter;
     readonly definitionProvider: DefinitionProvider;
     readonly codeActionService: CodeActionService;
     readonly documentSymbolRouter: DocumentSymbolRouter;
@@ -78,13 +78,11 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.relatedResourcesSnippetProvider =
             overrides.relatedResourcesSnippetProvider ??
             new RelatedResourcesSnippetProvider(core.documentManager, core.syntaxTreeManager, external.schemaRetriever);
+        this.s3Service = overrides.s3Service ?? new S3Service(external.awsClient);
 
         this.hoverRouter = overrides.hoverRouter ?? new HoverRouter(core.contextManager, external.schemaRetriever);
         this.completionRouter = overrides.completionRouter ?? CompletionRouter.create(core, external, this);
 
-        this.inlineCompletionRouter =
-            overrides.inlineCompletionRouter ??
-            InlineCompletionRouter.create(core, external, this.relationshipSchemaService);
         this.definitionProvider = overrides.definitionProvider ?? new DefinitionProvider(core.contextManager);
         this.codeActionService = overrides.codeActionService ?? CodeActionService.create(core);
         this.documentSymbolRouter = overrides.documentSymbolRouter ?? new DocumentSymbolRouter(core.syntaxTreeManager);
@@ -96,22 +94,10 @@ export class CfnLspProviders implements Configurables, Closeable {
     }
 
     configurables(): Configurable[] {
-        return [
-            this.resourceStateManager,
-            this.hoverRouter,
-            this.completionRouter,
-            this.inlineCompletionRouter,
-            this.cfnAI,
-        ];
+        return [this.resourceStateManager, this.hoverRouter, this.completionRouter, this.cfnAI];
     }
 
     async close() {
-        return await closeSafely(
-            this.cfnAI,
-            this.resourceStateManager,
-            this.hoverRouter,
-            this.completionRouter,
-            this.inlineCompletionRouter,
-        );
+        return await closeSafely(this.cfnAI, this.resourceStateManager, this.hoverRouter, this.completionRouter);
     }
 }

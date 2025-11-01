@@ -4,7 +4,6 @@ import { RemoteConsole } from 'vscode-languageserver/node';
 import { CfnAI } from '../../src/ai/CfnAI';
 import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { CompletionRouter } from '../../src/autocomplete/CompletionRouter';
-import { InlineCompletionRouter } from '../../src/autocomplete/InlineCompletionRouter';
 import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
 import { ResourceStateCompletionProvider } from '../../src/autocomplete/ResourceStateCompletionProvider';
 import { TopLevelSectionCompletionProvider } from '../../src/autocomplete/TopLevelSectionCompletionProvider';
@@ -27,6 +26,7 @@ import { LspDocuments } from '../../src/protocol/LspDocuments';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
 import { LspRelatedResourcesHandlers } from '../../src/protocol/LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
+import { LspS3Handlers } from '../../src/protocol/LspS3Handlers';
 import { LspStackHandlers } from '../../src/protocol/LspStackHandlers';
 import { LspWorkspace } from '../../src/protocol/LspWorkspace';
 import { RelatedResourcesSnippetProvider } from '../../src/relatedResources/RelatedResourcesSnippetProvider';
@@ -53,6 +53,7 @@ import { GuardService } from '../../src/services/guard/GuardService';
 import { IacGeneratorService } from '../../src/services/IacGeneratorService';
 import { OnlineStatus } from '../../src/services/OnlineStatus';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
+import { S3Service } from '../../src/services/S3Service';
 import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
 import { ChangeSetDeletionWorkflow } from '../../src/stacks/actions/ChangeSetDeletionWorkflow';
@@ -217,10 +218,6 @@ export function createMockCompletionRouter() {
     return stubInterface<CompletionRouter>();
 }
 
-export function createMockInlineCompletionRouter() {
-    return stubInterface<InlineCompletionRouter>();
-}
-
 export function createMockDocumentSymbolRouter() {
     return stubInterface<DocumentSymbolRouter>();
 }
@@ -338,6 +335,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         stackHandlers: overrides.stackHandlers ?? stubInterface<LspStackHandlers>(),
         resourceHandlers: overrides.resourceHandlers ?? stubInterface<LspResourceHandlers>(),
         relatedResourcesHandlers: overrides.relatedResourcesHandlers ?? stubInterface<LspRelatedResourcesHandlers>(),
+        s3Handlers: overrides.s3Handlers ?? stubInterface<LspS3Handlers>(),
     };
 
     const core: MockInfraCoreComponents = {
@@ -384,9 +382,9 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         relationshipSchemaService: overrides.relationshipSchemaService ?? stubInterface<RelationshipSchemaService>(),
         relatedResourcesSnippetProvider:
             overrides.relatedResourcesSnippetProvider ?? stubInterface<RelatedResourcesSnippetProvider>(),
+        s3Service: overrides.s3Service ?? stubInterface<S3Service>(),
         hoverRouter: overrides.hoverRouter ?? createMockHoverRouter(),
         completionRouter: overrides.completionRouter ?? createMockCompletionRouter(),
-        inlineCompletionRouter: overrides.inlineCompletionRouter ?? createMockInlineCompletionRouter(),
         definitionProvider: overrides.definitionProvider ?? createMockDefinitionProvider(),
         codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
         documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),

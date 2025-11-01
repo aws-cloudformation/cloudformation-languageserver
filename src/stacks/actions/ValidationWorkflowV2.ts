@@ -1,6 +1,8 @@
+import { AwsCredentials } from '../../auth/AwsCredentials';
 import { FileContextManager } from '../../context/FileContextManager';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
+import { TargetedFeatureFlag } from '../../featureFlag/FeatureFlagI';
 import { CfnExternal } from '../../server/CfnExternal';
 import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnServiceV2 } from '../../services/CfnServiceV2';
@@ -29,6 +31,8 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
         syntaxTreeManager: SyntaxTreeManager,
         validationManager: ValidationManager,
         protected fileContextManager: FileContextManager,
+        protected featureFlag: TargetedFeatureFlag<string>,
+        protected awsCredentials: AwsCredentials,
     ) {
         super(cfnServiceV2, documentManager, diagnosticCoordinator, syntaxTreeManager, validationManager);
     }
@@ -67,23 +71,25 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
                 });
             }
 
-            const describeEventsResponse = await this.cfnServiceV2.describeEvents({
-                ChangeSetName: changeSetName,
-                StackName: stackName,
-            });
+            if (this.featureFlag.isEnabled(this.awsCredentials.getIAM().region)) {
+                const describeEventsResponse = await this.cfnServiceV2.describeEvents({
+                    ChangeSetName: changeSetName,
+                    StackName: stackName,
+                });
 
-            const validationDetails = parseValidationEvents(describeEventsResponse, VALIDATION_V2_NAME);
+                const validationDetails = parseValidationEvents(describeEventsResponse, VALIDATION_V2_NAME);
 
-            existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
-                validationDetails: validationDetails,
-            });
+                existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
+                    validationDetails: validationDetails,
+                });
 
-            await publishValidationDiagnostics(
-                uri,
-                validationDetails,
-                this.syntaxTreeManager,
-                this.diagnosticCoordinator,
-            );
+                await publishValidationDiagnostics(
+                    uri,
+                    validationDetails,
+                    this.syntaxTreeManager,
+                    this.diagnosticCoordinator,
+                );
+            }
         } catch (error) {
             this.log.error(error, `Validation workflow threw exception ${workflowId}`);
 
@@ -110,6 +116,8 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
             core.syntaxTreeManager,
             new ValidationManager(),
             core.fileContextManager,
+            external.featureFlags.getTargeted<string>('EnhancedDryRun'),
+            core.awsCredentials,
         );
     }
 }

@@ -16,6 +16,7 @@ import { LspDocuments } from './LspDocuments';
 import { LspHandlers } from './LspHandlers';
 import { LspRelatedResourcesHandlers } from './LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from './LspResourceHandlers';
+import { LspS3Handlers } from './LspS3Handlers';
 import { LspStackHandlers } from './LspStackHandlers';
 import { LspWorkspace } from './LspWorkspace';
 
@@ -36,6 +37,7 @@ export class LspConnection {
     private readonly stackHandlers: LspStackHandlers;
     private readonly resourceHandlers: LspResourceHandlers;
     private readonly relatedResourcesHandlers: LspRelatedResourcesHandlers;
+    private readonly s3Handlers: LspS3Handlers;
 
     private initializeParams?: InitializeParams;
 
@@ -59,6 +61,7 @@ export class LspConnection {
         this.stackHandlers = new LspStackHandlers(this.connection);
         this.resourceHandlers = new LspResourceHandlers(this.connection);
         this.relatedResourcesHandlers = new LspRelatedResourcesHandlers(this.connection);
+        this.s3Handlers = new LspS3Handlers(this.connection);
 
         this.communication.console.info(`${ExtensionName} launched from ${__dirname}`);
 
@@ -92,6 +95,7 @@ export class LspConnection {
             this.stackHandlers,
             this.resourceHandlers,
             this.relatedResourcesHandlers,
+            this.s3Handlers,
         );
     }
 

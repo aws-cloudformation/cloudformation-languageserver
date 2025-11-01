@@ -10,7 +10,6 @@ import { documentSymbolHandler } from '../handlers/DocumentSymbolHandler';
 import { executionHandler } from '../handlers/ExecutionHandler';
 import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
-import { inlineCompletionHandler } from '../handlers/InlineCompletionHandler';
 import {
     getAuthoredResourceTypesHandler,
     getRelatedResourceTypesHandler,
@@ -25,6 +24,7 @@ import {
     searchResourceHandler,
     getStackMgmtInfo,
 } from '../handlers/ResourceHandler';
+import { uploadFileToS3Handler } from '../handlers/S3Handler';
 import {
     listStacksHandler,
     listChangeSetsHandler,
@@ -92,7 +92,6 @@ export class CfnServer {
         this.lsp.documents.onDidSave(didSaveHandler(this.components));
 
         this.lsp.handlers.onCompletion(completionHandler(this.components));
-        this.lsp.handlers.onInlineCompletion(inlineCompletionHandler(this.components));
         this.lsp.handlers.onHover(hoverHandler(this.components));
         this.lsp.handlers.onExecuteCommand(executionHandler(this.lsp.documents, this.components));
         this.lsp.handlers.onCodeAction(codeActionHandler(this.components));
@@ -137,6 +136,8 @@ export class CfnServer {
         this.lsp.resourceHandlers.onGetResourceTypes(getResourceTypesHandler(this.components));
         this.lsp.resourceHandlers.onResourceStateImport(importResourceStateHandler(this.components));
         this.lsp.resourceHandlers.onStackMgmtInfo(getStackMgmtInfo(this.components));
+
+        this.lsp.s3Handlers.onUploadFile(uploadFileToS3Handler(this.components));
     }
 
     async close(): Promise<void> {
