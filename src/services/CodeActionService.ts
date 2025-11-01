@@ -15,23 +15,26 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeSearch } from '../context/syntaxtree/utils/NodeSearch';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
-import { ANALYZE_DIAGNOSTIC } from '../handlers/ExecutionHandler';
+import { ANALYZE_DIAGNOSTIC, TRACK_CODE_ACTION_ACCEPTED } from '../handlers/ExecutionHandler';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { Track } from '../telemetry/TelemetryDecorator';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry, Track } from '../telemetry/TelemetryDecorator';
 import { pointToPosition } from '../utils/TypeConverters';
 import { ExtractToParameterProvider } from './extractToParameter/ExtractToParameterProvider';
 
 export interface CodeActionFix {
     title: string;
     kind: string;
+    actionType: string;
     diagnostic: Diagnostic;
     textEdits: TextEdit[];
     command?: Command;
 }
 
 export class CodeActionService {
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private static readonly REMOVE_ERROR_TITLE = 'Hide validation error';
     private readonly log = LoggerFactory.getLogger(CodeActionService);
 
@@ -44,7 +47,9 @@ export class CodeActionService {
         private readonly documentManager: DocumentManager,
         private readonly contextManager: ContextManager,
         private readonly extractToParameterProvider?: ExtractToParameterProvider,
-    ) {}
+    ) {
+        this.initializeCounters();
+    }
 
     /**
      * Process diagnostics and generate code actions with fixes
@@ -74,6 +79,13 @@ export class CodeActionService {
         }
 
         return codeActions;
+    }
+
+    private initializeCounters(): void {
+        this.telemetry.count('quickfix.cfnLintFixOffered', 0);
+        this.telemetry.count('quickfix.clearDiagnosticOffered', 0);
+        this.telemetry.count('refactor.extractToParameterOffered', 0);
+        this.telemetry.count('refactor.extractAllToParameterOffered', 0);
     }
 
     /**
@@ -112,10 +124,12 @@ export class CodeActionService {
      * Generate fixes for CFN Validation diagnostics
      */
     private generateCfnValidationFixes(diagnostic: Diagnostic, uri: string): CodeActionFix[] {
+        this.telemetry.count('quickfix.clearDiagnosticOffered', 1)
         return [
             {
                 title: CodeActionService.REMOVE_ERROR_TITLE,
                 kind: 'quickfix',
+                actionType: 'clearDiagnostic',
                 diagnostic,
                 textEdits: [],
                 command: {
@@ -165,6 +179,8 @@ export class CodeActionService {
             }
         }
 
+        this.telemetry.count('quickfix.cfnLintFixOffered', fixes.length);
+
         return fixes;
     }
 
@@ -182,6 +198,7 @@ export class CodeActionService {
             fixes.push({
                 title: `Remove invalid property '${propertyName}'`,
                 kind: 'quickfix',
+                actionType: 'removeProperty',
                 diagnostic,
                 textEdits: [
                     {
@@ -284,6 +301,7 @@ export class CodeActionService {
                 fixes.push({
                     title: `Add required property '${propertyName}'`,
                     kind: 'quickfix',
+                    actionType: 'addRequiredProperty',
                     diagnostic,
                     textEdits: [
                         {
@@ -324,6 +342,12 @@ export class CodeActionService {
 
             if (fix.command) {
                 codeAction.command = fix.command;
+            } else {
+                codeAction.command = {
+                    title: 'Track code action',
+                    command: TRACK_CODE_ACTION_ACCEPTED,
+                    arguments: [fix.actionType],
+                };
             }
 
             return codeAction;
@@ -520,20 +544,27 @@ export class CodeActionService {
             const canExtract = this.extractToParameterProvider.canExtract(context);
 
             if (canExtract) {
-                const extractAction = this.generateExtractToParameterAction(params, context);
+                const extractAction = this.telemetry.measure('refactor.extractToParameter', () =>
+                    this.generateExtractToParameterAction(params, context)
+                );
+                
                 if (extractAction) {
                     refactorActions.push(extractAction);
+                    this.telemetry.count('refactor.extractToParameterOffered', 1);
                 }
 
-                const hasMultiple = this.extractToParameterProvider.hasMultipleOccurrences(
-                    context,
-                    params.textDocument.uri,
+                const hasMultiple = this.telemetry.measure('refactor.hasMultipleOccurrences', () =>
+                    this.extractToParameterProvider!.hasMultipleOccurrences(context, params.textDocument.uri)
                 );
 
                 if (hasMultiple) {
-                    const extractAllAction = this.generateExtractAllOccurrencesToParameterAction(params, context);
+                    const extractAllAction = this.telemetry.measure('refactor.extractAllToParameter', () =>
+                        this.generateExtractAllOccurrencesToParameterAction(params, context)
+                    );
+                    
                     if (extractAllAction) {
                         refactorActions.push(extractAllAction);
+                        this.telemetry.count('refactor.extractAllToParameterOffered', 1);
                     }
                 }
             }
@@ -579,7 +610,13 @@ export class CodeActionService {
                 command: {
                     title: 'Position cursor in parameter description',
                     command: 'aws.cloudformation.extractToParameter.positionCursor',
-                    arguments: [params.textDocument.uri, extractionResult.parameterName, context.documentType],
+                    arguments: [
+                        params.textDocument.uri,
+                        extractionResult.parameterName,
+                        context.documentType,
+                        TRACK_CODE_ACTION_ACCEPTED,
+                        'extractToParameter',
+                    ],
                 },
             };
         } catch (error) {
@@ -625,7 +662,13 @@ export class CodeActionService {
                 command: {
                     title: 'Position cursor in parameter description',
                     command: 'aws.cloudformation.extractToParameter.positionCursor',
-                    arguments: [params.textDocument.uri, extractionResult.parameterName, context.documentType],
+                    arguments: [
+                        params.textDocument.uri,
+                        extractionResult.parameterName,
+                        context.documentType,
+                        TRACK_CODE_ACTION_ACCEPTED,
+                        'extractAllToParameter',
+                    ],
                 },
             };
         } catch (error) {
