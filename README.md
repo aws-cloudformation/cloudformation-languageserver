@@ -48,6 +48,10 @@ A LSP server implementation that provides intelligent editing support for CloudF
 - **Node.js**: Version 22.15.0 to 22.17.0
 - **npm**: Version 10.5.0 or higher
 
+## Telemetry
+
+The CloudFormation Language Server collects anonymous usage metrics. See [Telemetry](src/telemetry/README.md) for details on what is collected and how to control telemetry settings.
+
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
