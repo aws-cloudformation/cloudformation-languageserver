@@ -53,13 +53,12 @@ import { handleLspError } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('StackHandler');
-const telemetry = TelemetryService.instance.get('StackHandler');
 
 export function getParametersHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, GetParametersResult, void> {
     return (rawParams) => {
-        return telemetry.measure('getParameters', () => {
+        return TelemetryService.instance.get('StackHandler').measure('getParameters', () => {
             try {
                 const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
                 const syntaxTree = components.syntaxTreeManager.getSyntaxTree(params);
@@ -87,7 +86,7 @@ export function createValidationHandler(
     components: ServerComponents,
 ): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        return await telemetry.measureAsync('createValidation', async () => {
+        return await TelemetryService.instance.get('StackHandler').measureAsync('createValidation', async () => {
             try {
                 const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
                 return await components.validationWorkflowService.start(params);
@@ -102,7 +101,7 @@ export function createDeploymentHandler(
     components: ServerComponents,
 ): RequestHandler<CreateDeploymentParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        return await telemetry.measureAsync('createDeployment', async () => {
+        return await TelemetryService.instance.get('StackHandler').measureAsync('createDeployment', async () => {
             try {
                 const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
                 return await components.deploymentWorkflowService.start(params);
@@ -169,7 +168,7 @@ export function deleteChangeSetHandler(
     components: ServerComponents,
 ): RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> {
     return async (rawParams) => {
-        return await telemetry.measureAsync('deleteChangeSet', async () => {
+        return await TelemetryService.instance.get('StackHandler').measureAsync('deleteChangeSet', async () => {
             try {
                 const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
                 return await components.changeSetDeletionWorkflowService.start(params);
@@ -210,7 +209,7 @@ export function getCapabilitiesHandler(
     components: ServerComponents,
 ): RequestHandler<TemplateUri, GetCapabilitiesResult, void> {
     return async (rawParams) => {
-        return await telemetry.measureAsync('getCapabilities', async () => {
+        return await TelemetryService.instance.get('StackHandler').measureAsync('getCapabilities', async () => {
             try {
                 const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
                 const document = components.documentManager.get(params);
@@ -299,7 +298,7 @@ export function listStacksHandler(
     components: ServerComponents,
 ): RequestHandler<ListStacksParams, ListStacksResult, void> {
     return async (params: ListStacksParams): Promise<ListStacksResult> => {
-        return await telemetry.measureAsync('listStacks', async () => {
+        return await TelemetryService.instance.get('StackHandler').measureAsync('listStacks', async () => {
             try {
                 if (params.statusToInclude?.length && params.statusToExclude?.length) {
                     throw new Error('Cannot specify both statusToInclude and statusToExclude');
@@ -321,7 +320,7 @@ export function listChangeSetsHandler(
     components: ServerComponents,
 ): RequestHandler<ListChangeSetParams, ListChangeSetResult, void> {
     return async (params: ListChangeSetParams): Promise<ListChangeSetResult> => {
-        return await telemetry.measureAsync('listChangeSets', async () => {
+        return await TelemetryService.instance.get('StackHandler').measureAsync('listChangeSets', async () => {
             try {
                 const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
                 return {
