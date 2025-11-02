@@ -118,6 +118,7 @@ export class CfnService {
         return response.TemplateBody;
     }
 
+    @Measure({ name: 'createChangeSet' })
     public async createChangeSet(params: {
         StackName: string;
         ChangeSetName: string;
@@ -273,6 +274,7 @@ export class CfnService {
         });
     }
 
+    @Measure({ name: 'executeChangeSet' })
     public async executeChangeSet(params: {
         ChangeSetName: string;
         StackName?: string;
@@ -281,6 +283,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new ExecuteChangeSetCommand(params)));
     }
 
+    @Measure({ name: 'deleteChangeSet' })
     public async deleteChangeSet(params: {
         ChangeSetName: string;
         StackName?: string;
@@ -288,6 +291,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DeleteChangeSetCommand(params)));
     }
 
+    @Measure({ name: 'deleteStack' })
     public async deleteStack(params: { StackName: string }): Promise<DeleteStackCommandOutput> {
         return await this.withClient((client) => client.send(new DeleteStackCommand(params)));
     }
@@ -357,10 +361,12 @@ export class CfnService {
         });
     }
 
+    @Measure({ name: 'validateTemplate' })
     public async validateTemplate(params: ValidateTemplateInput): Promise<ValidateTemplateOutput> {
         return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
     }
 
+    @Measure({ name: 'listChangeSets' })
     public async listChangeSets(
         stackName: string,
         nextToken?: string,
