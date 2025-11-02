@@ -66,18 +66,20 @@ export function createEntityFromObject(logicalId: string, entityObject: any, sec
                 const collection = Array.isArray(entityObject) ? entityObject[1] : undefined;
                 const outputMap = Array.isArray(entityObject) ? entityObject[2] : {};
                 const [key, value]: [string, any] = Object.entries(outputMap ?? {})[0] || [undefined, {}];
-                const resourceInsideForEach = new Resource(
-                    key,
-                    value?.Type,
-                    value?.Properties,
-                    value?.DependsOn,
-                    value?.Condition,
-                    value?.Metadata,
-                    value?.CreationPolicy,
-                    value?.DeletionPolicy,
-                    value?.UpdatePolicy,
-                    value?.UpdateReplacePolicy,
-                );
+                const resourceInsideForEach = key
+                    ? new Resource(
+                          key,
+                          value?.Type,
+                          value?.Properties,
+                          value?.DependsOn,
+                          value?.Condition,
+                          value?.Metadata,
+                          value?.CreationPolicy,
+                          value?.DeletionPolicy,
+                          value?.UpdatePolicy,
+                          value?.UpdateReplacePolicy,
+                      )
+                    : undefined;
                 return new ForEachResource(loopName, identifier, collection, resourceInsideForEach);
             }
             return new Resource(

@@ -56,7 +56,9 @@ export class ResourceSectionHoverProvider implements HoverProvider {
             return this.getResourceAttributeDoc(context.text);
         }
 
-        const propertiesIndex = context.propertyPath.indexOf('Properties');
+        // Find 'Properties' starting after the resource structure
+        const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
+        const propertiesIndex = context.propertyPath.indexOf('Properties', startIndex);
         if (propertiesIndex !== -1 && context.propertyPath.length >= propertiesIndex + 1) {
             return this.getPropertyDefinitionDoc(schema, context, propertiesIndex);
         }
