@@ -11,9 +11,9 @@ import {
     ViewOptions,
 } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
+import { ClientInfo } from '../server/InitParams';
 import { isBeta, isAlpha, isProd, isTest, IsAlphaApp } from '../utils/Environment';
 import { ExtensionId, ExtensionVersion } from '../utils/ExtensionConfig';
-import { ClientInfo } from './TelemetryConfig';
 
 const ExportIntervalSeconds = 30;
 

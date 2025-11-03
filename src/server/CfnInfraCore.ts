@@ -1,4 +1,3 @@
-import { InitializeParams } from 'vscode-languageserver/node';
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { ContextManager } from '../context/ContextManager';
 import { FileContextManager } from '../context/FileContextManager';
@@ -13,15 +12,7 @@ import { ClientMessage } from '../telemetry/ClientMessage';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
-
-interface ExtendedInitializeParams extends InitializeParams {
-    initializationOptions?: {
-        encryption?: {
-            key?: string;
-        };
-        [key: string]: unknown;
-    };
-}
+import { ExtendedInitializeParams } from './InitParams';
 
 /**
  * Core Infrastructure
@@ -59,11 +50,13 @@ export class CfnInfraCore implements Configurables, Closeable {
         this.contextManager = overrides.contextManager ?? new ContextManager(this.syntaxTreeManager);
         this.fileContextManager = overrides.fileContextManager ?? new FileContextManager(this.documentManager);
 
-        const encryptionKey = initializeParams.initializationOptions?.encryption?.key;
-
         this.awsCredentials =
             overrides.awsCredentials ??
-            new AwsCredentials(lspComponents.authHandlers, this.settingsManager, encryptionKey);
+            new AwsCredentials(
+                lspComponents.authHandlers,
+                this.settingsManager,
+                initializeParams.initializationOptions?.encryption?.key,
+            );
 
         this.diagnosticCoordinator =
             overrides.diagnosticCoordinator ??

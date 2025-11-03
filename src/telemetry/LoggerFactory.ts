@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 import pino, { LevelWithSilent, Logger } from 'pino';
+import { AwsMetadata } from '../server/InitParams';
 import { ExtensionName } from '../utils/ExtensionConfig';
-import { AwsMetadata, TelemetrySettings } from './TelemetryConfig';
+import { TelemetrySettings } from './TelemetryConfig';
 
 export const LogLevel: Record<LevelWithSilent, number> = {
     silent: 0,

@@ -87,7 +87,7 @@ export class MemoryStoreFactory implements DataStoreFactory {
     }
 
     private registerMemoryStoreGauges(): void {
-        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size, { unit: '1' });
+        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size);
         this.telemetry.registerGaugeProvider(
             'global.entries',
             () => {

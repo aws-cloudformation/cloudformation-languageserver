@@ -134,10 +134,10 @@ export class GuardService implements SettingsConfigurable, Closeable {
         try {
             // Initialize Guard engine only - rules are now statically available
             await this.guardEngine.initialize();
-            this.telemetry.count('initialized', 1, { unit: '1' });
+            this.telemetry.count('initialized', 1);
         } catch (error) {
             this.log.error(`Failed to initialize Guard service: ${extractErrorMessage(error)}`);
-            this.telemetry.count('uninitialized', 1, { unit: '1' });
+            this.telemetry.count('uninitialized', 1);
             throw error;
         }
     }
@@ -153,7 +153,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
         if (!fileType || fileType === CloudFormationFileType.Unknown) {
-            this.telemetry.count(`validate.file.${CloudFormationFileType.Unknown}`, 1, { unit: '1' });
+            this.telemetry.count(`validate.file.${CloudFormationFileType.Unknown}`, 1);
             // Not a CloudFormation file, publish empty diagnostics to clear any previous issues
             this.publishDiagnostics(uri, []);
             return;
@@ -161,12 +161,12 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         // Guard doesn't support GitSync deployment files (similar to cfn-lint handling)
         if (fileType === CloudFormationFileType.GitSyncDeployment) {
-            this.telemetry.count(`validate.file.${CloudFormationFileType.GitSyncDeployment}`, 1, { unit: '1' });
+            this.telemetry.count(`validate.file.${CloudFormationFileType.GitSyncDeployment}`, 1);
             this.publishDiagnostics(uri, []);
             return;
         }
 
-        this.telemetry.count(`validate.file.${CloudFormationFileType.Template}`, 1, { unit: '1' });
+        this.telemetry.count(`validate.file.${CloudFormationFileType.Template}`, 1);
 
         try {
             // Ensure Guard service is initialized

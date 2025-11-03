@@ -1,7 +1,8 @@
-import { createConnection, InitializeParams, ProposedFeatures } from 'vscode-languageserver/node';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';
+import { ExtendedInitializeParams } from '../server/InitParams';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { AwsEnv, NodeEnv } from '../utils/Environment';
@@ -13,10 +14,10 @@ function getLogger() {
     return LoggerFactory.getLogger('Init');
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-assignment */
-async function onInitialize(params: InitializeParams) {
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access */
+async function onInitialize(params: ExtendedInitializeParams) {
     const ClientInfo = params.clientInfo;
-    const AwsMetadata = params.initializationOptions['aws'];
+    const AwsMetadata = params.initializationOptions?.['aws'];
 
     getLogger().info(
         {

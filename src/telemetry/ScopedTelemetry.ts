@@ -2,7 +2,6 @@ import { performance } from 'perf_hooks';
 import {
     Attributes,
     Counter,
-    Gauge,
     Histogram,
     Meter,
     MetricOptions,
@@ -29,7 +28,6 @@ export class ScopedTelemetry implements Closeable {
     private readonly upDownCounters = new Map<string, UpDownCounter>();
     private readonly histograms = new Map<string, Histogram>();
     private readonly gauges = new Map<string, ObservableGauge>();
-    private readonly syncGauges = new Map<string, Gauge>();
 
     constructor(
         readonly scope: string,
@@ -52,28 +50,20 @@ export class ScopedTelemetry implements Closeable {
         this.getOrCreateUpDownCounter(name, options)?.add(value, attributes);
     }
 
-    countUpDownBoolean(name: string, value: boolean, config?: MetricConfig): void {
-        const { options, attributes } = generateConfig(config);
-        this.getOrCreateUpDownCounter(name, options)?.add(value ? 1 : 0, attributes);
-    }
-
     histogram(name: string, value: number, config?: MetricConfig): void {
         const { options, attributes } = generateConfig(config);
         this.getOrCreateHistogram(name, options)?.record(value, attributes);
     }
 
-    gauge(name: string, value: number, config?: MetricConfig): void {
-        const { options, attributes } = generateConfig(config);
-        this.getOrCreateGauge(name, options)?.record(value, attributes);
-    }
-
-    registerGaugeProvider(name: string, provider: () => number, options?: MetricOptions): void {
+    registerGaugeProvider(name: string, provider: () => number, config?: MetricConfig): void {
         if (!this.meter) {
             return;
         }
 
-        const gauge = this.meter.createObservableGauge(name, options);
-        this.gauges.set(name, gauge);
+        const gauge = this.getOrCreateGauge(name, generateConfig(config).options);
+        if (!gauge) {
+            return;
+        }
 
         this.meter.addBatchObservableCallback(
             (observableResult) => {
@@ -161,6 +151,20 @@ export class ScopedTelemetry implements Closeable {
         this.count(`${name}.response.type.${type}`, 1, config);
     }
 
+    private recordDuration(name: string, duration: number, config?: MetricConfig) {
+        this.histogram(`${name}.duration`, duration, {
+            ...config,
+            unit: 'ms',
+            valueType: ValueType.DOUBLE,
+        });
+    }
+
+    /**
+     * ================================================
+     * Create the OTEL instruments with configured options
+     * ============================================
+     */
+
     private getOrCreateUpDownCounter(name: string, options?: MetricOptions): UpDownCounter | undefined {
         if (!this.meter) {
             return undefined;
@@ -200,25 +204,18 @@ export class ScopedTelemetry implements Closeable {
         return histogram;
     }
 
-    private getOrCreateGauge(name: string, options?: MetricOptions): Gauge | undefined {
+    private getOrCreateGauge(name: string, options?: MetricOptions): ObservableGauge | undefined {
         if (!this.meter) {
             return undefined;
         }
 
-        let gauge = this.syncGauges.get(name);
+        let gauge = this.gauges.get(name);
         if (!gauge) {
-            gauge = this.meter.createGauge(name, options);
-            this.syncGauges.set(name, gauge);
+            gauge = this.meter.createObservableGauge(name, options);
+            this.gauges.set(name, gauge);
         }
-        return gauge;
-    }
 
-    private recordDuration(name: string, duration: number, config?: MetricConfig) {
-        this.histogram(`${name}.duration`, duration, {
-            ...config,
-            unit: 'ms',
-            valueType: ValueType.DOUBLE,
-        });
+        return gauge;
     }
 
     close(): void {
@@ -226,14 +223,13 @@ export class ScopedTelemetry implements Closeable {
         this.upDownCounters.clear();
         this.histograms.clear();
         this.gauges.clear();
-        this.syncGauges.clear();
     }
 }
 
 const AwsEmfStorageResolution = 1; // High-resolution metrics (1-second granularity) https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsemfexporter#metric-attributes
 
 function generateConfig(config?: MetricConfig) {
-    const { attributes = {}, unit = '1', valueType = ValueType.INT, ...options } = config ?? {};
+    const { attributes = {}, unit = '1', valueType = ValueType.DOUBLE, ...options } = config ?? {};
     return {
         options: { unit, valueType, ...options },
         attributes: generateAttr(attributes),

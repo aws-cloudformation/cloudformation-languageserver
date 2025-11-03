@@ -136,14 +136,14 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private registerLMDBGauges(): void {
-        this.telemetry.registerGaugeProvider('version', () => VersionNumber, { unit: '1' });
+        this.telemetry.registerGaugeProvider('version', () => VersionNumber);
         this.telemetry.registerGaugeProvider('global.size_mb', () => stats(this.env).totalSizeMB, { unit: 'MB' });
         this.telemetry.registerGaugeProvider('global.max_size_mb', () => stats(this.env).maxSizeMB, {
             unit: 'MB',
         });
-        this.telemetry.registerGaugeProvider('global.entries', () => stats(this.env).entries, { unit: '1' });
-        this.telemetry.registerGaugeProvider('global.readers', () => stats(this.env).numReaders, { unit: '1' });
-        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size, { unit: '1' });
+        this.telemetry.registerGaugeProvider('global.entries', () => stats(this.env).entries);
+        this.telemetry.registerGaugeProvider('global.readers', () => stats(this.env).numReaders);
+        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size);
     }
 }
 
