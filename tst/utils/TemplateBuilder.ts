@@ -6,9 +6,9 @@ import {
 } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { Position, Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { CompletionRouter, createCompletionProviders } from '../../src/autocomplete/CompletionRouter';
-import { Context, SectionType } from '../../src/context/Context';
+import { Context } from '../../src/context/Context';
 import { ContextManager } from '../../src/context/ContextManager';
-import { TopLevelSection } from '../../src/context/ContextType';
+import { SectionType, TopLevelSection } from '../../src/context/ContextType';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
@@ -340,7 +340,7 @@ export class TemplateBuilder {
         }
 
         if (expected.entityProperties !== undefined) {
-            const actualProperties = context!.entity.record();
+            const actualProperties = context!.entity.logRecord();
             for (const [key, expectedValue] of Object.entries(expected.entityProperties)) {
                 expectAt(
                     actualProperties[key],

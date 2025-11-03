@@ -31,6 +31,7 @@ export class CfnInfraCore implements Configurables, Closeable {
 
     readonly awsCredentials: AwsCredentials;
     readonly diagnosticCoordinator: DiagnosticCoordinator;
+    readonly cloudformationEndpoint?: string;
 
     constructor(
         lspComponents: LspComponents,
@@ -49,6 +50,8 @@ export class CfnInfraCore implements Configurables, Closeable {
             });
         this.contextManager = overrides.contextManager ?? new ContextManager(this.syntaxTreeManager);
         this.fileContextManager = overrides.fileContextManager ?? new FileContextManager(this.documentManager);
+
+        this.cloudformationEndpoint = initializeParams.initializationOptions?.aws?.cloudformation?.endpoint;
 
         this.awsCredentials =
             overrides.awsCredentials ??

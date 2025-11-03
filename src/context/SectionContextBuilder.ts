@@ -1,8 +1,8 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../document/Document';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { Context, SectionType } from './Context';
-import { TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from './ContextType';
+import { Context } from './Context';
+import { SectionType, TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from './ContextType';
 import { SyntaxTree } from './syntaxtree/SyntaxTree';
 import { NodeType } from './syntaxtree/utils/NodeType';
 import { FieldNames, YamlNodeTypes } from './syntaxtree/utils/TreeSitterTypes';

@@ -149,7 +149,7 @@ export class LiteralValueDetector {
         // These are functions where the value is already a reference to another resource/parameter
         const referenceFunctions = [
             'Ref',
-            'Fn::GetAtt',
+            IntrinsicFunction.GetAtt,
             'GetAtt', // YAML allows short forms without Fn:: prefix
             'Condition', // Condition references should also not be extractable
         ];

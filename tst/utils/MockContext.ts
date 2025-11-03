@@ -1,7 +1,7 @@
 import { Point, SyntaxNode } from 'tree-sitter';
 import { Position } from 'vscode-languageserver';
-import { Context, SectionType } from '../../src/context/Context';
-import { TopLevelSection } from '../../src/context/ContextType';
+import { Context } from '../../src/context/Context';
+import { SectionType, TopLevelSection } from '../../src/context/ContextType';
 import { ContextWithRelatedEntities } from '../../src/context/ContextWithRelatedEntities';
 import { Condition, Entity, Mapping, Output, Parameter, Resource, Unknown } from '../../src/context/semantic/Entity';
 import { PropertyPath } from '../../src/context/syntaxtree/SyntaxTree';

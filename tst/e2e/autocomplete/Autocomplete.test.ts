@@ -1856,6 +1856,36 @@ Resources:
             };
             await template.executeScenario(scenario);
         });
+
+        it('test boolean autocomplete', async () => {
+            const template = new TemplateBuilder(DocumentType.YAML);
+            const scenario: TemplateScenario = {
+                name: 'boolean autocompletion',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `AWSTemplateFormatVersion: '2010-09-09'
+Description: Test boolean autocomplete bug
+
+Resources:
+  TestVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsHostnames: `,
+                        position: { line: 0, character: 0 },
+                        description: 'Test autocomplete in nested object within Properties',
+                        verification: {
+                            position: { line: 8, character: 26 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['true', 'false'])
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            await template.executeScenario(scenario);
+        });
     });
 
     describe('JSON', () => {
@@ -2031,7 +2061,7 @@ Resources:
       "Type": "String",
       "NoEcho": true,
       "MinLength": 8, 
-      "M"`,
+      "M" `,
                         position: { line: 55, character: 8 },
                         description: 'Parameter fields',
                         verification: {
@@ -3855,6 +3885,41 @@ Resources:
                             position: { line: 18, character: 17 },
                             expectation: CompletionExpectationBuilder.create()
                                 .expectContainsItems(['KMSMasterKeyID'])
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            await template.executeScenario(scenario);
+        });
+
+        it('test boolean as enum suggestion', async () => {
+            const template = new TemplateBuilder(DocumentType.JSON);
+            const scenario: TemplateScenario = {
+                name: 'boolean completion',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Test boolean autocomplete bug",
+  "Resources": {
+    "TestVPC": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": 
+      }
+    }
+  }
+}`,
+                        position: { line: 0, character: 0 },
+                        description: 'Test boolean as enum suggestion',
+                        verification: {
+                            position: { line: 9, character: 28 },
+                            expectation: CompletionExpectationBuilder.create()
+                                .expectContainsItems(['true', 'false'])
                                 .build(),
                         },
                     },

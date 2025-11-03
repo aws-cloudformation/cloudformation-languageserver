@@ -92,7 +92,7 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
     }
 
     private buildSchemaAndFormat(relatedContext: Context): string | undefined {
-        return formatIntrinsicArgumentHover(relatedContext.entity);
+        return formatIntrinsicArgumentHover(relatedContext);
     }
 
     /**
@@ -126,13 +126,13 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
         }
 
         const resourceContext = resourcesSection.get(resourceLogicalId);
-        if (!resourceContext?.entity || resourceContext.entity.entityType !== EntityType.Resource) {
+        if (!resourceContext || resourceContext.getEntityType() !== EntityType.Resource) {
             return undefined;
         }
 
         const resource = resourceContext.entity as Resource;
         const resourceType = resource.Type;
-        if (!resourceType || typeof resourceType !== 'string') {
+        if (!resourceType) {
             return undefined;
         }
 

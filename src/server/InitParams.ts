@@ -14,6 +14,9 @@ export type AwsMetadata = {
     };
     telemetryEnabled?: boolean;
     logLevel?: LevelWithSilent;
+    cloudformation?: {
+        endpoint?: string;
+    };
 };
 
 export interface ExtendedInitializeParams extends InitializeParams {

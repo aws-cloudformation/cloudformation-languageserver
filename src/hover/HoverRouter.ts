@@ -155,7 +155,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
     }
 
     private getInfoForReference(context: Context): string | undefined {
-        switch (context.entity.entityType) {
+        switch (context.getEntityType()) {
             case EntityType.Parameter: {
                 return this.hoverProviderMap.get(HoverType.Parameter)?.getInformation(context);
             }

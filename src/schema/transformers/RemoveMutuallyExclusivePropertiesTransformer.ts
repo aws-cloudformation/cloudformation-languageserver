@@ -1,3 +1,4 @@
+import { IntrinsicFunction } from '../../context/ContextType';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { PropertyType, ResourceSchema } from '../ResourceSchema';
 import { dependentExcludedMap } from './MutuallyExclusivePropertiesForValidation';
@@ -17,7 +18,7 @@ export class RemoveMutuallyExclusivePropertiesTransformer implements ResourceTem
     private readonly PATH_START = '#';
     private readonly UNINDEXED_PATH = '0';
     private readonly REFERENCE_MAX_DEPTH = 5;
-    private readonly GETATT_ID = 'Fn::GetAtt';
+    private readonly GETATT_ID = IntrinsicFunction.GetAtt as string;
     private readonly REF_ID = 'Ref';
     private readonly dependentExcludedMap = dependentExcludedMap;
 

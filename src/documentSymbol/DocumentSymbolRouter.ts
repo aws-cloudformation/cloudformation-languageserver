@@ -1,7 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentSymbol, SymbolKind, DocumentSymbolParams, Range, Position } from 'vscode-languageserver';
-import { Context, SectionType } from '../context/Context';
-import { TopLevelSection } from '../context/ContextType';
+import { Context } from '../context/Context';
+import { SectionType, TopLevelSection } from '../context/ContextType';
 import { contextEntitiesInSections } from '../context/SectionContextBuilder';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
@@ -90,6 +90,7 @@ const SECTION_CONFIGS: SectionConfig[] = [
 ];
 const log = LoggerFactory.getLogger('DocumentSymbolRouter');
 
+/* eslint-disable no-restricted-syntax -- Entire class depends on Entity values */
 export class DocumentSymbolRouter {
     private readonly log = LoggerFactory.getLogger(DocumentSymbolRouter);
 
