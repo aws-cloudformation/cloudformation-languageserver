@@ -36,7 +36,7 @@ export class CfnExternal implements Configurables, Closeable {
     readonly featureFlags: FeatureFlagProvider;
 
     constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Partial<CfnExternal> = {}) {
-        this.awsClient = overrides.awsClient ?? new AwsClient(core.awsCredentials);
+        this.awsClient = overrides.awsClient ?? new AwsClient(core.awsCredentials, core.cloudformationEndpoint);
 
         this.cfnService = overrides.cfnService ?? new CfnService(this.awsClient);
         this.ccapiService = overrides.ccapiService ?? new CcapiService(this.awsClient);

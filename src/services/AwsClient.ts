@@ -9,10 +9,14 @@ type IamClientConfig = {
     region: string;
     credentials: IamCredentials;
     customUserAgent: string;
+    endpoint?: string;
 };
 
 export class AwsClient {
-    constructor(private readonly credentialsProvider: AwsCredentials) {}
+    constructor(
+        private readonly credentialsProvider: AwsCredentials,
+        private readonly cloudformationEndpoint?: string,
+    ) {}
 
     // By default, clients will retry on throttling exceptions 3 times
     public getCloudFormationClient() {
@@ -34,6 +38,7 @@ export class AwsClient {
                 region: credential.region,
                 credentials: credential,
                 customUserAgent: `${ExtensionId}/${ExtensionVersion}`,
+                endpoint: this.cloudformationEndpoint,
             };
         } catch {
             throw new Error('AWS credentials not configured. Authentication required for online features.');
