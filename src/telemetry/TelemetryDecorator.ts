@@ -11,8 +11,8 @@ type ScopedMetricsDecoratorOptions = {
     ScopeDecoratorOptions;
 
 type MethodNames = {
-    sync: 'trackExecution' | 'measure';
-    async: 'trackExecutionAsync' | 'measureAsync';
+    sync: 'trackExecution' | 'measure' | 'countExecution';
+    async: 'trackExecutionAsync' | 'measureAsync' | 'countExecutionAsync';
 };
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
@@ -75,4 +75,9 @@ export const Track = createTelemetryMethodDecorator({
 export const Measure = createTelemetryMethodDecorator({
     sync: 'measure',
     async: 'measureAsync',
+});
+
+export const Count = createTelemetryMethodDecorator({
+    sync: 'countExecution',
+    async: 'countExecutionAsync',
 });

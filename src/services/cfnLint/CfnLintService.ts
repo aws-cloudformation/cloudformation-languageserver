@@ -138,10 +138,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             }
 
             this.status = STATUS.Initialized;
-            this.telemetry.count('initialized', 1, { unit: '1' });
+            this.telemetry.count('initialized', 1);
         } catch (error) {
             this.status = STATUS.Uninitialized;
-            this.telemetry.count('uninitialized', 1, { unit: '1' });
+            this.telemetry.count('uninitialized', 1);
             throw new Error(`Failed to initialize Pyodide worker: ${extractErrorMessage(error)}`);
         }
     }
@@ -169,10 +169,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         try {
             await this.workerManager.mountFolder(fsDir, mountDir);
             this.mountedFolders.set(mountDir, folder);
-            this.telemetry.count('mount.success', 1, { unit: '1' });
+            this.telemetry.count('mount.success', 1);
         } catch (error) {
             this.logError('mounting folder', error);
-            this.telemetry.count('mount.fault', 1, { unit: '1' });
+            this.telemetry.count('mount.fault', 1);
             throw error; // Re-throw to notify caller
         }
     }
@@ -386,7 +386,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
         if (!fileType || fileType === CloudFormationFileType.Unknown) {
-            this.telemetry.count(`lint.file.${CloudFormationFileType.Unknown}`, 1, { unit: '1' });
+            this.telemetry.count(`lint.file.${CloudFormationFileType.Unknown}`, 1);
             this.publishDiagnostics(uri, []);
             return;
         }
@@ -395,14 +395,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         try {
             await this.waitForInitialization();
         } catch (error) {
-            this.telemetry.count('lint.uninitialized', 1, { unit: '1' });
+            this.telemetry.count('lint.uninitialized', 1);
             this.logError('waiting for CfnLintService initialization', error);
             throw error;
         }
 
         // Redundant check but clears up TypeScript errors
         if (this.status === STATUS.Uninitialized) {
-            this.telemetry.count('lint.uninitialized', 1, { unit: '1' });
+            this.telemetry.count('lint.uninitialized', 1);
             throw new Error('CfnLintService not initialized. Call initialize() first.');
         }
 
@@ -410,7 +410,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         if (folder === undefined || folder === null || forceUseContent) {
             // GitSync deployment files require workspace context to resolve relative template paths
             if (fileType === CloudFormationFileType.GitSyncDeployment) {
-                this.telemetry.count(`lint.file.${CloudFormationFileType.GitSyncDeployment}`, 1, { unit: '1' });
+                this.telemetry.count(`lint.file.${CloudFormationFileType.GitSyncDeployment}`, 1);
 
                 this.logError(
                     `processing GitSync deployment file ${uri}`,
@@ -420,7 +420,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                 return;
             }
 
-            this.telemetry.count(`lint.file.${CloudFormationFileType.Template}`, 1, { unit: '1' });
+            this.telemetry.count(`lint.file.${CloudFormationFileType.Template}`, 1);
             // Standalone file (not in workspace) or forced to use content - lint as string
             await this.lintStandaloneFile(content, uri, fileType);
         } else {

@@ -1,4 +1,3 @@
-import { InitializeParams } from 'vscode-languageserver/node';
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { ContextManager } from '../context/ContextManager';
 import { FileContextManager } from '../context/FileContextManager';
@@ -14,20 +13,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
-
-interface ExtendedInitializeParams extends InitializeParams {
-    initializationOptions?: {
-        aws?: {
-            cloudformation?: {
-                endpoint?: string;
-            };
-        };
-        encryption?: {
-            key?: string;
-        };
-        [key: string]: unknown;
-    };
-}
+import { ExtendedInitializeParams } from './InitParams';
 
 /**
  * Core Infrastructure
@@ -67,11 +53,14 @@ export class CfnInfraCore implements Configurables, Closeable {
         this.fileContextManager = overrides.fileContextManager ?? new FileContextManager(this.documentManager);
 
         this.cloudformationEndpoint = initializeParams.initializationOptions?.aws?.cloudformation?.endpoint;
-        const encryptionKey = initializeParams.initializationOptions?.encryption?.key;
 
         this.awsCredentials =
             overrides.awsCredentials ??
-            new AwsCredentials(lspComponents.authHandlers, this.settingsManager, encryptionKey);
+            new AwsCredentials(
+                lspComponents.authHandlers,
+                this.settingsManager,
+                initializeParams.initializationOptions?.encryption?.key,
+            );
 
         this.diagnosticCoordinator =
             overrides.diagnosticCoordinator ??

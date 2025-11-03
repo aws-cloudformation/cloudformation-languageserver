@@ -136,40 +136,24 @@ export class DocumentManager implements SettingsConfigurable {
     }
 
     private registerDocumentGauges(): void {
-        this.telemetry.registerGaugeProvider('documents.open.total', () => this.documentMap.size, {
-            unit: '1',
-        });
+        this.telemetry.registerGaugeProvider('documents.open.total', () => this.documentMap.size);
 
         for (const type of Object.values(CloudFormationFileType)) {
-            this.telemetry.registerGaugeProvider(
-                `documents.open.cfn.type.${type}`,
-                () => this.countDocumentsByCfnType(type),
-                {
-                    unit: '1',
-                },
+            this.telemetry.registerGaugeProvider(`documents.open.cfn.type.${type}`, () =>
+                this.countDocumentsByCfnType(type),
             );
         }
 
         for (const type of Object.values(DocumentType)) {
-            this.telemetry.registerGaugeProvider(
-                `documents.open.doc.type.${type}`,
-                () => this.countDocumentsByDocType(type),
-                {
-                    unit: '1',
-                },
+            this.telemetry.registerGaugeProvider(`documents.open.doc.type.${type}`, () =>
+                this.countDocumentsByDocType(type),
             );
         }
 
-        // eslint-disable-next-line unicorn/no-array-reduce
-        const grouped = [...this.documentMap.values()].reduce<Record<string, number>>((acc, doc) => {
-            acc[doc.extension] = (acc[doc.extension] || 0) + 1;
-            return acc;
-        }, {});
-
-        for (const [key, value] of Object.entries(grouped)) {
-            this.telemetry.registerGaugeProvider(`documents.open.extension.type.${key}`, () => value, {
-                unit: '1',
-            });
+        for (const ext of ['yaml', 'yml', 'json', 'template', 'cfn', 'txt', '']) {
+            this.telemetry.registerGaugeProvider(`documents.open.extension.type.${ext}`, () =>
+                this.countDocumentsByExtension(ext),
+            );
         }
     }
 
@@ -179,5 +163,9 @@ export class DocumentManager implements SettingsConfigurable {
 
     private countDocumentsByDocType(docType: DocumentType): number {
         return [...this.documentMap.values()].filter((doc) => doc.documentType === docType).length;
+    }
+
+    private countDocumentsByExtension(extension: string): number {
+        return [...this.documentMap.values()].filter((doc) => doc.isTemplate() && doc.extension === extension).length;
     }
 }

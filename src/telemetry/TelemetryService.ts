@@ -2,12 +2,13 @@ import { metrics, trace } from '@opentelemetry/api';
 import { MetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { v4 } from 'uuid';
+import { AwsMetadata, ClientInfo } from '../server/InitParams';
 import { Closeable } from '../utils/Closeable';
 import { extractLocationFromStack } from '../utils/Errors';
 import { LoggerFactory } from './LoggerFactory';
 import { otelSdk } from './OTELInstrumentation';
 import { ScopedTelemetry } from './ScopedTelemetry';
-import { AwsMetadata, ClientInfo, TelemetrySettings } from './TelemetryConfig';
+import { TelemetrySettings } from './TelemetryConfig';
 
 export class TelemetryService implements Closeable {
     private static _instance: TelemetryService | undefined = undefined;

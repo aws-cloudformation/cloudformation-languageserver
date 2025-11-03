@@ -3,10 +3,11 @@ import { readdir, stat, unlink, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { DateTime } from 'luxon';
 import pino, { LevelWithSilent, Logger } from 'pino';
+import { AwsMetadata } from '../server/InitParams';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { Closeable } from '../utils/Closeable';
 import { ExtensionId, ExtensionName } from '../utils/ExtensionConfig';
-import { TelemetrySettings, AwsMetadata } from './TelemetryConfig';
+import { TelemetrySettings } from './TelemetryConfig';
 
 export const LogLevel: Record<LevelWithSilent, number> = {
     silent: 0,

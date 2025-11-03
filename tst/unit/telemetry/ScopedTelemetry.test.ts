@@ -20,7 +20,7 @@ describe('ScopedTelemetry', () => {
         it('should increment counter', () => {
             scopedTelemetry.count('test', 5);
 
-            expect(mockMeter.createCounter).toHaveBeenCalledWith('test', { unit: '1', valueType: 0 });
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test', { unit: '1', valueType: 1 });
         });
     });
 
@@ -42,7 +42,7 @@ describe('ScopedTelemetry', () => {
         it('should record histogram value', () => {
             scopedTelemetry.histogram('test', 100);
 
-            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test', { unit: '1', valueType: 0 });
+            expect(mockMeter.createHistogram).toHaveBeenCalledWith('test', { unit: '1', valueType: 1 });
         });
     });
 

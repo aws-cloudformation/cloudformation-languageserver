@@ -135,23 +135,15 @@ export class SettingsManager implements ISettingsSubscriber {
     private registerSettingsGauges(): void {
         const settings = this.getCurrentSettings();
 
-        this.telemetry.registerGaugeProvider('settings.hover.enabled', () => (settings.hover.enabled ? 1 : 0), {
-            unit: '1',
-        });
-        this.telemetry.registerGaugeProvider(
-            'settings.completion.enabled',
-            () => (settings.completion.enabled ? 1 : 0),
-            { unit: '1' },
+        this.telemetry.registerGaugeProvider('settings.hover.enabled', () => (settings.hover.enabled ? 1 : 0));
+        this.telemetry.registerGaugeProvider('settings.completion.enabled', () =>
+            settings.completion.enabled ? 1 : 0,
         );
-        this.telemetry.registerGaugeProvider(
-            'settings.diagnostics.cfnLint.enabled',
-            () => (settings.diagnostics.cfnLint.enabled ? 1 : 0),
-            { unit: '1' },
+        this.telemetry.registerGaugeProvider('settings.diagnostics.cfnLint.enabled', () =>
+            settings.diagnostics.cfnLint.enabled ? 1 : 0,
         );
-        this.telemetry.registerGaugeProvider(
-            'settings.diagnostics.cfnGuard.enabled',
-            () => (settings.diagnostics.cfnGuard.enabled ? 1 : 0),
-            { unit: '1' },
+        this.telemetry.registerGaugeProvider('settings.diagnostics.cfnGuard.enabled', () =>
+            settings.diagnostics.cfnGuard.enabled ? 1 : 0,
         );
     }
 }
