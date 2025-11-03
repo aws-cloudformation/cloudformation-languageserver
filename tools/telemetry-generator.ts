@@ -232,7 +232,7 @@ function main() {
         processTemplate(template.path, template.content, pos, components);
 
         iteration++;
-        if (iteration % 1 === 0) {
+        if (iteration % 50 === 0) {
             console.log(`📊 Completed ${iteration} iterations`);
         }
     }, INTERVAL_MS);
