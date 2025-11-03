@@ -55,6 +55,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
     // Track custom messages from rules files
     private readonly ruleCustomMessages = new Map<string, string>();
 
+    // Cache loaded rules
+    private enabledRules: GuardRule[] = [];
+
     // Validation queuing for concurrent requests
     private readonly validationQueue: ValidationQueueEntry[] = [];
     private readonly activeValidations = new Map<string, Promise<GuardViolation[]>>();
@@ -77,6 +80,15 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         // Initialize rule configuration with current settings
         this.ruleConfiguration.updateFromSettings(this.settings);
+
+        // Load initial rules
+        this.getEnabledRulesByConfiguration()
+            .then((rules) => {
+                this.enabledRules = rules;
+            })
+            .catch((error) => {
+                this.log.error(`Failed to load initial rules: ${extractErrorMessage(error)}`);
+            });
     }
 
     /**
@@ -90,6 +102,15 @@ export class GuardService implements SettingsConfigurable, Closeable {
         }
 
         this.settings = settingsManager.getCurrentSettings().diagnostics.cfnGuard;
+
+        // Load rules with current settings
+        this.getEnabledRulesByConfiguration()
+            .then((rules) => {
+                this.enabledRules = rules;
+            })
+            .catch((error) => {
+                this.log.error(`Failed to load rules during configuration: ${extractErrorMessage(error)}`);
+            });
 
         // Subscribe to diagnostics settings changes
         this.settingsSubscription = settingsManager.subscribe('diagnostics', (newDiagnosticsSettings) => {
@@ -112,6 +133,17 @@ export class GuardService implements SettingsConfigurable, Closeable {
         const rulesFileChanged = previousSettings.rulesFile !== newSettings.rulesFile;
 
         if (packListChanged || rulesFileChanged) {
+            // Clear maps only when rule configuration actually changes
+            this.ruleToPacksMap.clear();
+            this.ruleCustomMessages.clear();
+            // Preload rules with new settings
+            this.getEnabledRulesByConfiguration()
+                .then((rules) => {
+                    this.enabledRules = rules;
+                })
+                .catch((error) => {
+                    this.log.error(`Failed to preload rules after settings change: ${extractErrorMessage(error)}`);
+                });
             this.revalidateAllDocuments();
         }
     }
@@ -182,15 +214,13 @@ export class GuardService implements SettingsConfigurable, Closeable {
                 // Continue with validation but log the issues
             }
 
-            const enabledRules = await this.getEnabledRulesByConfiguration();
-
-            if (enabledRules.length === 0) {
+            if (this.enabledRules.length === 0) {
                 this.publishDiagnostics(uri, []);
                 return;
             }
 
             // Execute Guard validation with queuing for concurrent requests
-            const violations = await this.queueValidation(uri, content, enabledRules);
+            const violations = await this.queueValidation(uri, content, this.enabledRules);
 
             // Convert violations to LSP diagnostics
             const diagnostics = this.convertViolationsToDiagnostics(uri, violations);
@@ -443,7 +473,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
     /**
      * Process the validation queue
      */
-    private async processValidationQueue(): Promise<void> {
+    private processValidationQueue(): void {
         if (this.isProcessingQueue || this.validationQueue.length === 0) {
             return;
         }
@@ -468,10 +498,10 @@ export class GuardService implements SettingsConfigurable, Closeable {
                     continue;
                 }
 
-                const enabledRules = await this.getEnabledRulesByConfiguration();
-
                 // Execute the validation
-                this.executeValidation(entry.uri, entry.content, enabledRules).then(entry.resolve).catch(entry.reject);
+                this.executeValidation(entry.uri, entry.content, this.enabledRules)
+                    .then(entry.resolve)
+                    .catch(entry.reject);
             }
         } finally {
             this.isProcessingQueue = false;
@@ -520,12 +550,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
      */
     private async getEnabledRulesByConfiguration(): Promise<GuardRule[]> {
         const enabledRules: GuardRule[] = [];
-
-        // Track which packs each rule comes from for proper reporting
-        this.ruleToPacksMap.clear();
-
-        // Clear custom messages when getting new rules
-        this.ruleCustomMessages.clear();
 
         // If rulesFile is specified, load rules from file
         if (this.settings.rulesFile) {
