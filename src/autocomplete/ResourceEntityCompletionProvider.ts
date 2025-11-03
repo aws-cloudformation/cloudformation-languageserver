@@ -1,6 +1,7 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, InsertTextFormat } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { Resource } from '../context/semantic/Entity';
+import { ForEachResource, Resource } from '../context/semantic/Entity';
+import { EntityType } from '../context/semantic/SemanticTypes';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
@@ -26,21 +27,30 @@ export class ResourceEntityCompletionProvider implements CompletionProvider {
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const entityCompletions = this.entityFieldProvider.getCompletions(context, params);
 
+        // Extract the actual resource entity (handle both regular and ForEach resources)
+        let resource: Resource;
+        if (context.entity.entityType === EntityType.ForEachResource) {
+            const forEachResource = context.entity as ForEachResource;
+            if (!forEachResource.resource) {
+                return entityCompletions;
+            }
+            resource = forEachResource.resource;
+        } else {
+            resource = context.entity as Resource;
+        }
+
         // Enhance the "Properties" completion with a snippet
         if (entityCompletions) {
             const propertiesIndex = entityCompletions.findIndex((item) => item.label === 'Properties');
 
-            if (propertiesIndex !== -1) {
-                const resource = context.entity as Resource;
-                if (resource.Type) {
-                    const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
-                    if (schema) {
-                        entityCompletions[propertiesIndex] = this.createPropertiesSnippetCompletion(
-                            schema,
-                            context,
-                            params,
-                        );
-                    }
+            if (propertiesIndex !== -1 && resource.Type) {
+                const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
+                if (schema) {
+                    entityCompletions[propertiesIndex] = this.createPropertiesSnippetCompletion(
+                        schema,
+                        context,
+                        params,
+                    );
                 }
             }
         }

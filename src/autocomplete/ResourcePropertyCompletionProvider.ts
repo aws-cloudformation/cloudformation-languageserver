@@ -71,7 +71,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         if (context.entity.entityType === EntityType.ForEachResource) {
             const forEachResource = context.entity as ForEachResource;
             if (!forEachResource.resource) {
-                return [];
+                return { completions: [], skipFuzzySearch: false };
             }
             resource = forEachResource.resource;
         } else {
