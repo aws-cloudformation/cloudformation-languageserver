@@ -1,7 +1,7 @@
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType } from './RegionalSchemas';
 import { ResourceSchema } from './ResourceSchema';
-import { SamSchemas } from './SamSchemas';
+import { SamSchemas, SamSchemasType } from './SamSchemas';
 
 export class CombinedSchemas {
     readonly numSchemas: number;
@@ -26,11 +26,11 @@ export class CombinedSchemas {
     static from(
         regionalSchemas?: RegionalSchemasType,
         privateSchemas?: PrivateSchemasType,
-        samSchemas?: Map<string, unknown>,
+        samSchemas?: SamSchemasType,
     ) {
         const regionalSchema = regionalSchemas === undefined ? undefined : RegionalSchemas.from(regionalSchemas);
         const privateSchema = privateSchemas === undefined ? undefined : PrivateSchemas.from(privateSchemas);
-        const samSchema = samSchemas === undefined ? undefined : new SamSchemas(samSchemas);
+        const samSchema = samSchemas === undefined ? undefined : SamSchemas.from(samSchemas);
 
         return new CombinedSchemas(regionalSchema, privateSchema, samSchema);
     }
