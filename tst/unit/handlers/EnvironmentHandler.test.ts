@@ -1,6 +1,7 @@
 import { OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DocumentType } from '../../../src/document/Document';
+import { parseDeploymentConfig, parseEnvironmentFileParams } from '../../../src/environments/EnvironmentParser';
 import {
     ParseEnvironmentFilesParams,
     DocumentInfo,
@@ -9,7 +10,7 @@ import {
 import { parseEnvironmentFilesHandler } from '../../../src/handlers/EnvironmentHandler';
 
 // Mock the parsers
-vi.mock('../../../src/environments/environmentParser', () => ({
+vi.mock('../../../src/environments/EnvironmentParser', () => ({
     parseEnvironmentFileParams: vi.fn((input) => input),
     parseDeploymentConfig: vi.fn(),
 }));
@@ -24,7 +25,7 @@ describe('EnvironmentHandler', () => {
     });
 
     describe('parseEnvironmentFilesHandler', () => {
-        it('should successfully parse environment files', async () => {
+        it('should successfully parse environment files', () => {
             const mockDocuments: DocumentInfo[] = [
                 {
                     type: DocumentType.YAML,
@@ -39,9 +40,6 @@ parameters:
                 documents: mockDocuments,
             };
 
-            const { parseDeploymentConfig: parseDeploymentConfig } = await import(
-                '../../../src/environments/EnvironmentParser'
-            );
             vi.mocked(parseDeploymentConfig).mockReturnValue({
                 templateFilePath: 'test.yaml',
                 parameters: { BucketName: 'test-bucket' },
@@ -56,7 +54,7 @@ parameters:
             expect(result.parsedFiles[0].deploymentConfig.templateFilePath).toBe('test.yaml');
         });
 
-        it('should handle malformed deployment files', async () => {
+        it('should handle malformed deployment files', () => {
             const mockDocuments: DocumentInfo[] = [
                 {
                     type: DocumentType.YAML,
@@ -76,9 +74,6 @@ parameters:
                 documents: mockDocuments,
             };
 
-            const { parseDeploymentConfig: parseDeploymentConfig } = await import(
-                '../../../src/environments/EnvironmentParser'
-            );
             vi.mocked(parseDeploymentConfig)
                 .mockImplementationOnce(() => {
                     throw new Error('Invalid deployment file');
@@ -95,7 +90,7 @@ parameters:
             expect(result.parsedFiles[0].fileName).toBe('valid.yaml');
         });
 
-        it('should handle multiple documents', async () => {
+        it('should handle multiple documents', () => {
             const mockDocuments: DocumentInfo[] = [
                 {
                     type: DocumentType.YAML,
@@ -118,9 +113,6 @@ parameters:
                 documents: mockDocuments,
             };
 
-            const { parseDeploymentConfig: parseDeploymentConfig } = await import(
-                '../../../src/environments/EnvironmentParser'
-            );
             vi.mocked(parseDeploymentConfig)
                 .mockReturnValueOnce({
                     templateFilePath: 'test1.yaml',
@@ -139,12 +131,11 @@ parameters:
             expect(result.parsedFiles[1].fileName).toBe('env2.json');
         });
 
-        it('should handle parser validation errors', async () => {
+        it('should handle parser validation errors', () => {
             const params: ParseEnvironmentFilesParams = {
                 documents: [],
             };
 
-            const { parseEnvironmentFileParams } = await import('../../../src/environments/EnvironmentParser');
             vi.mocked(parseEnvironmentFileParams).mockImplementation(() => {
                 throw new Error('Invalid parameters');
             });
