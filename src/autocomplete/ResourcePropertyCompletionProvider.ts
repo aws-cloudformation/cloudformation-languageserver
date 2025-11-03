@@ -33,6 +33,14 @@ import { templatePathToJsonPointerPath } from '../utils/PathUtils';
 import { CompletionItemData, ExtendedCompletionItem } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, createMarkupContent } from './CompletionUtils';
+type PropertyCompletionsResult = {
+    completions: CompletionItem[];
+    skipFuzzySearch: boolean;
+};
+type GetBooleanTypeInfoResult = {
+    isBooleanType: boolean;
+    resolvedSchemas: PropertyType[];
+};
 
 export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private readonly fuzzySearch = getFuzzySearchFunction();
@@ -41,9 +49,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
 
     getCompletions(context: Context, _params: CompletionParams): CompletionItem[] | undefined {
         // Use unified property completion method for all scenarios
-        const propertyCompletions = this.getPropertyCompletions(context);
+        const { completions: propertyCompletions, skipFuzzySearch } = this.getPropertyCompletions(context);
 
-        if (context.text.length > 0 && !context.atBlockMappingLevel()) {
+        if (context.text.length > 0 && !context.atBlockMappingLevel() && !skipFuzzySearch) {
             return this.fuzzySearch(propertyCompletions, context.text);
         }
 
@@ -55,44 +63,76 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Also handles enum value completions when appropriate
      * Uses robust schema resolution approach from hover provider
      */
-    private getPropertyCompletions(context: Context): CompletionItem[] {
+    private getPropertyCompletions(context: Context): PropertyCompletionsResult {
         const resource = context.entity as Resource;
+        let completions: CompletionItem[] = [];
+        let skipFuzzySearch = false;
 
         if (!resource.Type) {
-            return [];
+            return {
+                completions,
+                skipFuzzySearch,
+            };
         }
 
         if (context.isResourceAttributeProperty() || this.isAtResourceAttributeLevel(context)) {
-            return this.getResourceAttributePropertyCompletions(context, resource);
+            return {
+                completions: this.getResourceAttributePropertyCompletions(context, resource),
+                skipFuzzySearch,
+            };
         }
         const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
         if (!schema) {
-            return [];
+            return {
+                completions,
+                skipFuzzySearch,
+            };
         }
 
-        let completions: CompletionItem[] = [];
+        const { isBooleanType, resolvedSchemas: booleanResolvedSchemas } = this.getBooleanTypeInfo(context, schema);
+        const schemaPath = this.getSchemaPath(context);
+        const resolvedSchemas = schema.resolveJsonPointerPath(schemaPath, {
+            excludeReadOnly: true,
+            requireFullyResolved: true,
+        });
 
-        if (context.isKey()) {
-            const schemaPath = this.getSchemaPath(context);
-            const resolvedSchemas = schema.resolveJsonPointerPath(schemaPath, {
-                excludeReadOnly: true,
-                requireFullyResolved: true,
-            });
-
+        if (context.isKey() && !isBooleanType) {
             const propertyCompletions = this.getPropertyCompletionsFromSchemas(resolvedSchemas, context, schema);
             completions = [...completions, ...propertyCompletions];
         }
 
-        if (context.isValue()) {
-            const enumSchemaPath = this.getSchemaPath(context);
-            const enumResolvedSchemas = schema.resolveJsonPointerPath(enumSchemaPath, {
-                excludeReadOnly: true,
-                requireFullyResolved: true,
-            });
-            completions = [...completions, ...this.getEnumCompletions(enumResolvedSchemas, context)];
+        if (isBooleanType) {
+            completions = [...completions, ...this.getEnumCompletions(booleanResolvedSchemas, context)];
+            skipFuzzySearch = true;
+        } else if (context.isValue()) {
+            completions = [...completions, ...this.getEnumCompletions(resolvedSchemas, context)];
         }
 
-        return completions;
+        return {
+            completions,
+            skipFuzzySearch,
+        };
+    }
+
+    private getBooleanTypeInfo(context: Context, schema: ResourceSchema): GetBooleanTypeInfoResult {
+        const propertySchemaPath = templatePathToJsonPointerPath(context.propertyPath.slice(3));
+        const resolvedSchemas = schema.resolveJsonPointerPath(propertySchemaPath, {
+            excludeReadOnly: true,
+            requireFullyResolved: true,
+        });
+
+        let isBooleanType = false;
+        for (const resolvedSchema of resolvedSchemas) {
+            if (resolvedSchema.type === 'boolean') {
+                isBooleanType = true;
+                break;
+            }
+        }
+
+        return {
+            isBooleanType,
+            resolvedSchemas,
+        };
     }
 
     private getSchemaPath(context: Context): string {
@@ -178,7 +218,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Creates enum value completions from resolved schemas
      */
     private getEnumCompletions(resolvedSchemas: PropertyType[], context: Context): CompletionItem[] {
-        const enumValues: (string | number)[] = [];
+        const enumValues: (string | number | boolean)[] = [];
 
         for (const resolvedSchema of resolvedSchemas) {
             if (resolvedSchema.enum && resolvedSchema.enum.length > 0) {
@@ -188,6 +228,16 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
                     if (!enumValues.includes(typedEnumValue)) {
                         enumValues.push(typedEnumValue);
                     }
+                }
+            }
+
+            if (resolvedSchema.type === 'boolean') {
+                if (!enumValues.includes(true)) {
+                    enumValues.push(true);
+                }
+
+                if (!enumValues.includes(false)) {
+                    enumValues.push(false);
                 }
             }
         }
@@ -204,7 +254,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         );
 
         // Apply fuzzy search if there's text
-        if (context.text.length > 0) {
+        if (context.text.length > 0 && context.isValue()) {
             return this.fuzzySearch(completions, context.text);
         }
 
