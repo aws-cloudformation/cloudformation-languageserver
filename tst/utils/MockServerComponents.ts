@@ -163,6 +163,10 @@ export function createMockSchemaTaskManager() {
     return stubInterface<GetSchemaTaskManager>();
 }
 
+export function createMockSchemaStore() {
+    return stubInterface<SchemaStore>();
+}
+
 export function createMockSchemaRetriever(schemas?: CombinedSchemas) {
     const mock = stubInterface<SchemaRetriever>();
     if (schemas) {
@@ -359,7 +363,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         cfnService: overrides.cfnService ?? createMockCfnService(),
         ccapiService: overrides.ccapiService ?? createMockCcapiService(),
         iacGeneratorService: overrides.iacGeneratorService ?? createMockIacGeneratorService(),
-        schemaStore: overrides.schemaStore ?? new SchemaStore(dataStoreFactory),
+        schemaStore: overrides.schemaStore ?? createMockSchemaStore(),
         schemaTaskManager: overrides.schemaTaskManager ?? createMockSchemaTaskManager(),
         schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
         cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),

@@ -72,12 +72,16 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
     }
 
     runPrivateTask() {
-        this.privateTask.run(this.schemas.privateSchemas, this.log).catch(() => {});
+        this.privateTask
+            .run(this.schemas.privateSchemas, this.log)
+            .then(() => this.schemas.invalidateCombinedSchemas())
+            .catch(() => {});
     }
 
     private async runSamTask(): Promise<void> {
         try {
             await this.samTask.run(this.schemas.publicSchemas);
+            this.schemas.invalidateCombinedSchemas();
         } catch (error) {
             this.log.error({ error }, 'Failed to run SAM schema task');
         }
@@ -98,6 +102,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         const task = this.tasks.shift();
         if (task) {
             task.run(this.schemas.publicSchemas, this.log)
+                .then(() => this.schemas.invalidateCombinedSchemas())
                 .catch(() => {
                     this.tasks.push(task);
                 })

@@ -1,20 +1,17 @@
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType } from './RegionalSchemas';
 import { ResourceSchema } from './ResourceSchema';
+import { SamSchemas } from './SamSchemas';
 
 export class CombinedSchemas {
     readonly numSchemas: number;
     readonly schemas: Map<string, ResourceSchema>;
 
-    constructor(regionalSchemas?: RegionalSchemas, privateSchemas?: PrivateSchemas, samSchemas?: Map<string, unknown>) {
-        const samEntries: [string, ResourceSchema][] = samSchemas
-            ? [...samSchemas.entries()].map(([type, schema]) => [type, new ResourceSchema(JSON.stringify(schema))])
-            : [];
-
+    constructor(regionalSchemas?: RegionalSchemas, privateSchemas?: PrivateSchemas, samSchemas?: SamSchemas) {
         this.schemas = new Map<string, ResourceSchema>([
             ...(privateSchemas?.schemas ?? []),
             ...(regionalSchemas?.schemas ?? []),
-            ...samEntries,
+            ...(samSchemas?.schemas ?? []),
         ]);
         this.numSchemas = this.schemas.size;
     }
@@ -33,6 +30,8 @@ export class CombinedSchemas {
     ) {
         const regionalSchema = regionalSchemas === undefined ? undefined : RegionalSchemas.from(regionalSchemas);
         const privateSchema = privateSchemas === undefined ? undefined : PrivateSchemas.from(privateSchemas);
-        return new CombinedSchemas(regionalSchema, privateSchema, samSchemas);
+        const samSchema = samSchemas === undefined ? undefined : new SamSchemas(samSchemas);
+
+        return new CombinedSchemas(regionalSchema, privateSchema, samSchema);
     }
 }
