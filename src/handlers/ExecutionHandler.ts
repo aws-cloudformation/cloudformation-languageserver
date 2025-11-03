@@ -73,7 +73,7 @@ export function executionHandler(
             }
             case TRACK_CODE_ACTION_ACCEPTED: {
                 const args = params.arguments ?? [];
-                if (args.length >= 1) {
+                if (args.length > 0) {
                     const actionType = args[0] as string;
                     TelemetryService.instance.get('CodeAction').count(`accepted.${actionType}`, 1);
                 }

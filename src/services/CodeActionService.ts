@@ -46,7 +46,7 @@ export class CodeActionService {
         private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly documentManager: DocumentManager,
         private readonly contextManager: ContextManager,
-        private readonly extractToParameterProvider?: ExtractToParameterProvider,
+        private readonly extractToParameterProvider: ExtractToParameterProvider,
     ) {
         this.initializeCounters();
     }
@@ -124,7 +124,7 @@ export class CodeActionService {
      * Generate fixes for CFN Validation diagnostics
      */
     private generateCfnValidationFixes(diagnostic: Diagnostic, uri: string): CodeActionFix[] {
-        this.telemetry.count('quickfix.clearDiagnosticOffered', 1)
+        this.telemetry.count('quickfix.clearDiagnosticOffered', 1);
         return [
             {
                 title: CodeActionService.REMOVE_ERROR_TITLE,
@@ -545,23 +545,23 @@ export class CodeActionService {
 
             if (canExtract) {
                 const extractAction = this.telemetry.measure('refactor.extractToParameter', () =>
-                    this.generateExtractToParameterAction(params, context)
+                    this.generateExtractToParameterAction(params, context),
                 );
-                
+
                 if (extractAction) {
                     refactorActions.push(extractAction);
                     this.telemetry.count('refactor.extractToParameterOffered', 1);
                 }
 
                 const hasMultiple = this.telemetry.measure('refactor.hasMultipleOccurrences', () =>
-                    this.extractToParameterProvider!.hasMultipleOccurrences(context, params.textDocument.uri)
+                    this.extractToParameterProvider.hasMultipleOccurrences(context, params.textDocument.uri),
                 );
 
                 if (hasMultiple) {
                     const extractAllAction = this.telemetry.measure('refactor.extractAllToParameter', () =>
-                        this.generateExtractAllOccurrencesToParameterAction(params, context)
+                        this.generateExtractAllOccurrencesToParameterAction(params, context),
                     );
-                    
+
                     if (extractAllAction) {
                         refactorActions.push(extractAllAction);
                         this.telemetry.count('refactor.extractAllToParameterOffered', 1);
