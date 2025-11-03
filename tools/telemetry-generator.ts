@@ -69,6 +69,7 @@ import { LspS3Handlers } from '../src/protocol/LspS3Handlers';
 import { ExtendedInitializeParams } from '../src/server/InitParams';
 import { FeatureFlagProvider } from '../src/featureFlag/FeatureFlagProvider';
 import { RelationshipSchemaService } from '../src/services/RelationshipSchemaService';
+import { LspEnvironmentHandlers } from '../src/protocol/LspEnvironmentHandlers';
 
 const argv = yargs(hideBin(process.argv))
     .option('templates', {
@@ -184,6 +185,7 @@ function main() {
         stubInterface<LspHandlers>(),
         createMockAuthHandlers(),
         stubInterface<LspStackHandlers>(),
+        stubInterface<LspEnvironmentHandlers>(),
         stubInterface<LspResourceHandlers>(),
         stubInterface<LspRelatedResourcesHandlers>(),
         stubInterface<LspS3Handlers>(),
