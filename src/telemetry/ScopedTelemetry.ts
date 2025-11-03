@@ -89,6 +89,28 @@ export class ScopedTelemetry implements Closeable {
         return await this.executeWithMetricsAsync(name, fn, true, config);
     }
 
+    countExecution<T>(name: string, fn: () => T, config?: MetricConfig): T {
+        this.count(`${name}.count`, 1, config);
+        this.count(`${name}.fault`, 0, config);
+        try {
+            return fn();
+        } catch (error) {
+            this.count(`${name}.fault`, 1, config);
+            throw error;
+        }
+    }
+
+    async countExecutionAsync<T>(name: string, fn: () => Promise<T>, config?: MetricConfig): Promise<T> {
+        this.count(`${name}.count`, 1, config);
+        this.count(`${name}.fault`, 0, config);
+        try {
+            return await fn();
+        } catch (error) {
+            this.count(`${name}.fault`, 1, config);
+            throw error;
+        }
+    }
+
     private executeWithMetrics<T>(name: string, fn: () => T, trackResponse: boolean, config?: MetricConfig): T {
         if (!this.meter) {
             return fn();
@@ -164,7 +186,6 @@ export class ScopedTelemetry implements Closeable {
      * Create the OTEL instruments with configured options
      * ============================================
      */
-
     private getOrCreateUpDownCounter(name: string, options?: MetricOptions): UpDownCounter | undefined {
         if (!this.meter) {
             return undefined;
