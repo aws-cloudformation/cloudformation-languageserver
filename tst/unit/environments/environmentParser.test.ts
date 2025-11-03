@@ -2,7 +2,7 @@ import { OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
 import { DocumentType } from '../../../src/document/Document';
-import { parseEnvironmentFileParams, parseDeploymentConfig } from '../../../src/environments/environmentParser';
+import { parseEnvironmentFileParams, parseDeploymentConfig } from '../../../src/environments/EnvironmentParser';
 
 describe('environmentParser', () => {
     describe('parseEnvironmentFileParams', () => {

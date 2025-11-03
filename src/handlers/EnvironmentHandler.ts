@@ -1,12 +1,12 @@
 import { load } from 'js-yaml';
 import { RequestHandler } from 'vscode-languageserver';
 import { DocumentType } from '../document/Document';
-import { parseDeploymentConfig, parseEnvironmentFileParams } from '../environments/environmentParser';
+import { parseDeploymentConfig, parseEnvironmentFileParams } from '../environments/EnvironmentParser';
 import {
     ParsedEnvironmentFile,
     ParseEnvironmentFilesParams,
     ParseEnvironmentFilesResult,
-} from '../environments/environmentRequestType';
+} from '../environments/EnvironmentRequestType';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { handleLspError } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';

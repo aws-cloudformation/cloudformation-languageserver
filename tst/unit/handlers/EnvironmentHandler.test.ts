@@ -5,7 +5,7 @@ import {
     ParseEnvironmentFilesParams,
     DocumentInfo,
     ParseEnvironmentFilesResult,
-} from '../../../src/environments/environmentRequestType';
+} from '../../../src/environments/EnvironmentRequestType';
 import { parseEnvironmentFilesHandler } from '../../../src/handlers/EnvironmentHandler';
 
 // Mock the parsers
@@ -40,7 +40,7 @@ parameters:
             };
 
             const { parseDeploymentConfig: parseDeploymentConfig } = await import(
-                '../../../src/environments/environmentParser'
+                '../../../src/environments/EnvironmentParser'
             );
             vi.mocked(parseDeploymentConfig).mockReturnValue({
                 templateFilePath: 'test.yaml',
@@ -77,7 +77,7 @@ parameters:
             };
 
             const { parseDeploymentConfig: parseDeploymentConfig } = await import(
-                '../../../src/environments/environmentParser'
+                '../../../src/environments/EnvironmentParser'
             );
             vi.mocked(parseDeploymentConfig)
                 .mockImplementationOnce(() => {
@@ -119,7 +119,7 @@ parameters:
             };
 
             const { parseDeploymentConfig: parseDeploymentConfig } = await import(
-                '../../../src/environments/environmentParser'
+                '../../../src/environments/EnvironmentParser'
             );
             vi.mocked(parseDeploymentConfig)
                 .mockReturnValueOnce({
@@ -144,7 +144,7 @@ parameters:
                 documents: [],
             };
 
-            const { parseEnvironmentFileParams } = await import('../../../src/environments/environmentParser');
+            const { parseEnvironmentFileParams } = await import('../../../src/environments/EnvironmentParser');
             vi.mocked(parseEnvironmentFileParams).mockImplementation(() => {
                 throw new Error('Invalid parameters');
             });

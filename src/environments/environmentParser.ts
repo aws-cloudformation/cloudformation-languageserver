@@ -1,7 +1,7 @@
 import { OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
 import { DocumentType } from '../document/Document';
-import { ParseEnvironmentFilesParams, DeploymentConfig } from './environmentRequestType';
+import { ParseEnvironmentFilesParams, DeploymentConfig } from './EnvironmentRequestType';
 
 const DocumentInfoSchema = z.object({
     type: z.enum(DocumentType),

@@ -3,7 +3,7 @@ import {
     ParseEnvironmentFilesParams,
     ParseEnvironmentFilesResult,
     ParseEnvironmentFilesRequest,
-} from '../environments/environmentRequestType';
+} from '../environments/EnvironmentRequestType';
 
 export class LspEnvironmentHandlers {
     constructor(private readonly connection: Connection) {}
