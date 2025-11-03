@@ -7,6 +7,7 @@ import { configurationHandler } from '../handlers/ConfigurationHandler';
 import { definitionHandler } from '../handlers/DefinitionHandler';
 import { didChangeHandler, didCloseHandler, didOpenHandler, didSaveHandler } from '../handlers/DocumentHandler';
 import { documentSymbolHandler } from '../handlers/DocumentSymbolHandler';
+import { parseEnvironmentFilesHandler } from '../handlers/EnvironmentHandler';
 import { executionHandler } from '../handlers/ExecutionHandler';
 import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
@@ -125,6 +126,8 @@ export class CfnServer {
         this.lsp.stackHandlers.onGetStackEvents(getStackEventsHandler(this.components));
         this.lsp.stackHandlers.onClearStackEvents(clearStackEventsHandler(this.components));
         this.lsp.stackHandlers.onGetStackOutputs(getStackOutputsHandler(this.components));
+
+        this.lsp.environmentHandlers.onParseEnvironmentFiles(parseEnvironmentFilesHandler());
 
         this.lsp.relatedResourcesHandlers.onGetAuthoredResourceTypes(getAuthoredResourceTypesHandler(this.components));
         this.lsp.relatedResourcesHandlers.onGetRelatedResourceTypes(getRelatedResourceTypesHandler(this.components));

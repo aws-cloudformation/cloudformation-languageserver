@@ -13,6 +13,7 @@ import { LspCommunication } from './LspCommunication';
 import { LspComponents } from './LspComponents';
 import { LspDiagnostics } from './LspDiagnostics';
 import { LspDocuments } from './LspDocuments';
+import { LspEnvironmentHandlers } from './LspEnvironmentHandlers';
 import { LspHandlers } from './LspHandlers';
 import { LspRelatedResourcesHandlers } from './LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from './LspResourceHandlers';
@@ -35,6 +36,7 @@ export class LspConnection {
     private readonly handlers: LspHandlers;
     private readonly authHandlers: LspAuthHandlers;
     private readonly stackHandlers: LspStackHandlers;
+    private readonly environmentHandlers: LspEnvironmentHandlers;
     private readonly resourceHandlers: LspResourceHandlers;
     private readonly relatedResourcesHandlers: LspRelatedResourcesHandlers;
     private readonly s3Handlers: LspS3Handlers;
@@ -59,6 +61,7 @@ export class LspConnection {
         this.handlers = new LspHandlers(this.connection);
         this.authHandlers = new LspAuthHandlers(this.connection);
         this.stackHandlers = new LspStackHandlers(this.connection);
+        this.environmentHandlers = new LspEnvironmentHandlers(this.connection);
         this.resourceHandlers = new LspResourceHandlers(this.connection);
         this.relatedResourcesHandlers = new LspRelatedResourcesHandlers(this.connection);
         this.s3Handlers = new LspS3Handlers(this.connection);
@@ -93,6 +96,7 @@ export class LspConnection {
             this.handlers,
             this.authHandlers,
             this.stackHandlers,
+            this.environmentHandlers,
             this.resourceHandlers,
             this.relatedResourcesHandlers,
             this.s3Handlers,
