@@ -94,7 +94,13 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
             // Verify that the command for cursor positioning is included
             expect(result[0].command).toBeDefined();
             expect(result[0].command?.command).toBe('aws.cloudformation.extractToParameter.positionCursor');
-            expect(result[0].command?.arguments).toEqual(['file:///test.yaml', 'TestParameter', DocumentType.YAML]);
+            expect(result[0].command?.arguments).toEqual([
+                'file:///test.yaml',
+                'TestParameter',
+                DocumentType.YAML,
+                '/command/codeAction/track',
+                'extractToParameter',
+            ]);
         });
 
         it('should not offer Extract to Parameter when canExtract returns false', () => {
