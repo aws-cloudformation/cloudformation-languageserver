@@ -23,6 +23,7 @@ import { LspCommunication } from '../../src/protocol/LspCommunication';
 import { LspComponents } from '../../src/protocol/LspComponents';
 import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
 import { LspDocuments } from '../../src/protocol/LspDocuments';
+import { LspEnvironmentHandlers } from '../../src/protocol/LspEnvironmentHandlers';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
 import { LspRelatedResourcesHandlers } from '../../src/protocol/LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
@@ -333,6 +334,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         handlers: overrides.handlers ?? stubInterface<LspHandlers>(),
         authHandlers: overrides.authHandlers ?? createMockAuthHandlers(),
         stackHandlers: overrides.stackHandlers ?? stubInterface<LspStackHandlers>(),
+        environmentHandlers: overrides.environmentHandlers ?? stubInterface<LspEnvironmentHandlers>(),
         resourceHandlers: overrides.resourceHandlers ?? stubInterface<LspResourceHandlers>(),
         relatedResourcesHandlers: overrides.relatedResourcesHandlers ?? stubInterface<LspRelatedResourcesHandlers>(),
         s3Handlers: overrides.s3Handlers ?? stubInterface<LspS3Handlers>(),
