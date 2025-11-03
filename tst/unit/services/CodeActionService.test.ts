@@ -24,7 +24,12 @@ describe('CodeActionService', () => {
         mockSyntaxTree = stubInterface<SyntaxTree>();
         const mockContextManager = stubInterface<ContextManager>();
         const mockExtractToParameterProvider = stubInterface<ExtractToParameterProvider>();
-        codeActionService = new CodeActionService(mockSyntaxTreeManager, mockDocumentManager, mockContextManager, mockExtractToParameterProvider);
+        codeActionService = new CodeActionService(
+            mockSyntaxTreeManager,
+            mockDocumentManager,
+            mockContextManager,
+            mockExtractToParameterProvider,
+        );
     });
 
     function verifyCodeAction(params: CodeActionParams, actual: CodeAction[], ...expected: CodeAction[]) {
