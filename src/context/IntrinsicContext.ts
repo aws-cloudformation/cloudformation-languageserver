@@ -89,11 +89,11 @@ export class IntrinsicContext {
         return IntrinsicsSet.has(normalized) ? (normalized as IntrinsicFunction) : undefined;
     }
 
-    public record() {
+    public logRecord() {
         const intrinsicFunction = this.intrinsicFunction();
         return {
             isInsideIntrinsic: intrinsicFunction !== undefined,
-            intrinsicFunction: intrinsicFunction?.record(),
+            intrinsicFunction: intrinsicFunction?.logRecord(), // eslint-disable-line no-restricted-syntax
         };
     }
 }
@@ -208,7 +208,7 @@ class IntrinsicFunctionInfo {
         set.add(text.split('.')[0].trim());
     }
 
-    public record() {
+    public logRecord() {
         return {
             type: this.type,
             args: this.args,

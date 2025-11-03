@@ -6,6 +6,7 @@ import { FuzzySearchFunction, getFuzzySearchFunction } from '../utils/FuzzySearc
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem } from './CompletionUtils';
 
+/* eslint-disable no-restricted-syntax -- Entire class depends on Entity */
 export class EntityFieldCompletionProvider<T extends Entity> implements CompletionProvider {
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] {
         const entity = context.entity as T;

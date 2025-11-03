@@ -19,7 +19,7 @@ export abstract class Entity {
         return this._keys;
     }
 
-    record() {
+    logRecord() {
         const record: Record<string, unknown> = {};
         for (const key of this.keys) {
             record[key] = this[key as keyof this];

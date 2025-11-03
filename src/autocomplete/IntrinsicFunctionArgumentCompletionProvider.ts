@@ -310,7 +310,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             }
 
             const resource = resourceContext.entity as Resource;
-            if (!resource.Type || typeof resource.Type !== 'string') {
+            if (!resource.Type) {
                 continue;
             }
 
@@ -601,7 +601,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     private getMappingEntity(mappingsEntities: Map<string, Context>, mappingName: string): Mapping | undefined {
         try {
             const mappingContext = mappingsEntities.get(mappingName);
-            if (!mappingContext?.entity || mappingContext.entity.entityType !== EntityType.Mapping) {
+            if (!mappingContext || mappingContext.getEntityType() !== EntityType.Mapping) {
                 return undefined;
             }
             return mappingContext.entity as Mapping;
@@ -655,13 +655,13 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const resourceContext = resourceEntities.get(resourceLogicalId);
-        if (!resourceContext?.entity || resourceContext.entity.entityType !== EntityType.Resource) {
+        if (!resourceContext || resourceContext.getEntityType() !== EntityType.Resource) {
             return undefined;
         }
 
         const resource = resourceContext.entity as Resource;
         const resourceType = resource.Type;
-        if (!resourceType || typeof resourceType !== 'string') {
+        if (!resourceType) {
             return undefined;
         }
 

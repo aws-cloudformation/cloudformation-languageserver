@@ -61,7 +61,7 @@ describe('IntrinsicContext', () => {
     }
 
     function expectProperRecord(intrinsicContext: any, isInside: boolean, expectedType?: IntrinsicFunction) {
-        const record = intrinsicContext!.record();
+        const record = intrinsicContext!.logRecord();
         expect(record.isInsideIntrinsic).toBe(isInside);
 
         if (isInside && expectedType) {
@@ -208,7 +208,7 @@ describe('IntrinsicContext', () => {
                 expect(intrinsicContext).toBeDefined();
                 expectProperRecord(intrinsicContext, true, IntrinsicFunction.Ref);
 
-                const record = intrinsicContext!.record();
+                const record = intrinsicContext!.logRecord();
                 expect(record.intrinsicFunction!.logicalIds).toContain('StringParam');
             });
 
@@ -226,7 +226,7 @@ describe('IntrinsicContext', () => {
                 const functionInfo = expectIntrinsicFunction(context, IntrinsicFunction.FindInMap);
                 expectArrayProperties(functionInfo);
 
-                const record = functionInfo!.record();
+                const record = functionInfo!.logRecord();
                 expect(record.type).toBe(IntrinsicFunction.FindInMap);
                 expect(record.args).toBeDefined();
                 expect(Array.isArray(record.logicalIds)).toBe(true);
@@ -338,7 +338,7 @@ describe('IntrinsicContext', () => {
                 expect(intrinsicContext).toBeDefined();
                 expectProperRecord(intrinsicContext, true, IntrinsicFunction.Ref);
 
-                const record = intrinsicContext!.record();
+                const record = intrinsicContext!.logRecord();
                 expect(record.intrinsicFunction!.logicalIds).toContain('StringParam');
             });
 
@@ -356,7 +356,7 @@ describe('IntrinsicContext', () => {
                 const functionInfo = expectIntrinsicFunction(context, IntrinsicFunction.FindInMap);
                 expectArrayProperties(functionInfo);
 
-                const record = functionInfo!.record();
+                const record = functionInfo!.logRecord();
                 expect(record.type).toBe(IntrinsicFunction.FindInMap);
                 expect(record.args).toBeDefined();
                 expect(Array.isArray(record.logicalIds)).toBe(true);

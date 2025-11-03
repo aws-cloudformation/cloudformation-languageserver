@@ -2,8 +2,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../../document/Document';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { SectionType } from '../Context';
-import { TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from '../ContextType';
+import { IntrinsicFunction, SectionType, TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from '../ContextType';
 import { nodeToObject, parseSyntheticNode } from '../syntaxtree/utils/NodeParse';
 import { NodeType } from '../syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../syntaxtree/utils/TreeSitterTypes';
@@ -19,6 +18,7 @@ import {
     Transform,
     Unknown,
 } from './Entity';
+import { EntityType } from './SemanticTypes';
 
 const log = LoggerFactory.getLogger('EntityBuilder');
 
@@ -60,8 +60,8 @@ export function createEntityFromObject(logicalId: string, entityObject: any, sec
             return Parameter.from(logicalId, entityObject);
         }
         case TopLevelSection.Resources: {
-            if (logicalId.startsWith('Fn::ForEach')) {
-                const loopName = logicalId.replace('Fn::ForEach::', '');
+            if (logicalId.startsWith(IntrinsicFunction.ForEach)) {
+                const loopName = logicalId.replace(`${IntrinsicFunction.ForEach}::`, '');
                 const identifier = Array.isArray(entityObject) ? entityObject[0] : undefined;
                 const collection = Array.isArray(entityObject) ? entityObject[1] : undefined;
                 const outputMap = Array.isArray(entityObject) ? entityObject[2] : {};
@@ -119,6 +119,42 @@ export function createEntityFromObject(logicalId: string, entityObject: any, sec
         }
         default: {
             return new Unknown(entityObject);
+        }
+    }
+}
+
+export function entityTypeFromSection(section: SectionType, logicalId?: string) {
+    switch (section) {
+        case TopLevelSection.Metadata: {
+            return EntityType.Metadata;
+        }
+        case TopLevelSection.Outputs: {
+            return EntityType.Output;
+        }
+        case TopLevelSection.Resources: {
+            if (logicalId?.startsWith(IntrinsicFunction.ForEach)) {
+                return EntityType.ForEachResource;
+            }
+
+            return EntityType.Resource;
+        }
+        case TopLevelSection.Transform: {
+            return EntityType.Transform;
+        }
+        case TopLevelSection.Rules: {
+            return EntityType.Rule;
+        }
+        case TopLevelSection.Conditions: {
+            return EntityType.Condition;
+        }
+        case TopLevelSection.Mappings: {
+            return EntityType.Mapping;
+        }
+        case TopLevelSection.Parameters: {
+            return EntityType.Parameter;
+        }
+        default: {
+            return EntityType.Unknown;
         }
     }
 }

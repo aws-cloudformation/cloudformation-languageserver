@@ -1,4 +1,4 @@
-import { IntrinsicsSet } from '../context/ContextType';
+import { IntrinsicFunction, IntrinsicsSet } from '../context/ContextType';
 
 /**
  * Convert CloudFormation template path to JSON Pointer path format
@@ -20,7 +20,7 @@ export function templatePathToJsonPointerPath(templatePath: (string | number)[])
         if (typeof segment === 'number') {
             // Convert any number to wildcard
             segments.push('*');
-        } else if (segment === 'Fn::If') {
+        } else if (segment === (IntrinsicFunction.If as string)) {
             // Handle Fn::If specially
             const nextSegment = templatePath[i + 1];
             if (typeof nextSegment === 'number') {

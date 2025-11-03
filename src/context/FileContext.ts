@@ -82,7 +82,7 @@ export class FileContext {
 
         try {
             if (section === TopLevelSection.Transform) {
-                return [createEntityFromObject('Transform', parseObject(parsedData, this.documentType), section)];
+                return [createEntityFromObject('Unknown', parseObject(parsedData, this.documentType), section)];
             }
 
             if (typeof parsedData !== 'object') return [];

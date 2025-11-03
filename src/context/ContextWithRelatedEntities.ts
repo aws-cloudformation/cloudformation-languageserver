@@ -1,7 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../document/Document';
-import { Context, SectionType, logicalIdAndSection } from './Context';
-import { TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from './ContextType';
+import { Context, logicalIdAndSection } from './Context';
+import { SectionType, TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from './ContextType';
 import { contextEntitiesInSections } from './SectionContextBuilder';
 import { Entity } from './semantic/Entity';
 import { referencedLogicalIds, selectText } from './semantic/LogicalIdReferenceFinder';
@@ -29,9 +29,9 @@ export class ContextWithRelatedEntities extends Context {
         return this._relatedEntities;
     }
 
-    override record() {
+    override logRecord() {
         return {
-            ...super.record(),
+            ...super.logRecord(), // eslint-disable-line no-restricted-syntax
             relatedEntities: this.transformNestedMap(this.relatedEntities),
         };
     }

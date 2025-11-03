@@ -1,6 +1,6 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../../document/Document';
-import { PseudoParametersSet } from '../ContextType';
+import { PseudoParametersSet, ResourceAttributes } from '../ContextType';
 
 export function selectText(specificNode: SyntaxNode, fullEntitySearch: boolean, rootNode?: SyntaxNode): string {
     let text: string | undefined;
@@ -175,13 +175,8 @@ const CommonProperties = new Set(
     [
         'Type',
         'Properties',
-        'DependsOn',
+        ...ResourceAttributes,
         'Condition',
-        'Metadata',
-        'CreationPolicy',
-        'DeletionPolicy',
-        'UpdatePolicy',
-        'UpdateReplacePolicy',
         'Description',
         'Value',
         'Export',
