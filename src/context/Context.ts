@@ -1,5 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../document/Document';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { removeQuotes } from '../utils/String';
 import {
     IntrinsicsSet,
@@ -23,6 +25,9 @@ import { TransformContext } from './TransformContext';
 type QuoteCharacter = '"' | "'";
 
 export class Context {
+    @Telemetry()
+    protected readonly telemetry!: ScopedTelemetry;
+
     public readonly section: SectionType;
     public readonly isTopLevel: boolean;
     public readonly logicalId?: string;
@@ -61,7 +66,9 @@ export class Context {
     }
 
     public get entity(): Entity {
-        this._entity ??= nodeToEntity(this.documentType, this.entityRootNode, this.section, this.logicalId);
+        this._entity ??= this.telemetry.measure('create.entity', () =>
+            nodeToEntity(this.documentType, this.entityRootNode, this.section, this.logicalId),
+        );
         return this._entity;
     }
 
@@ -70,17 +77,21 @@ export class Context {
     }
 
     public get intrinsicContext(): IntrinsicContext {
-        this._intrinsicContext ??= new IntrinsicContext(this.pathToRoot, this.documentType);
+        this._intrinsicContext ??= this.telemetry.measure(
+            'create.intrinsicContext',
+            () => new IntrinsicContext(this.pathToRoot, this.documentType),
+        );
         return this._intrinsicContext;
     }
 
     public get transformContext(): TransformContext {
-        // Find root node by traversing up from current node
-        let rootNode = this.node;
-        while (rootNode.parent) {
-            rootNode = rootNode.parent;
-        }
-        this._transformContext ??= new TransformContext(rootNode, this.documentType);
+        this._transformContext ??= this.telemetry.measure('create.transformContext', () => {
+            let rootNode = this.node;
+            while (rootNode.parent) {
+                rootNode = rootNode.parent;
+            }
+            return new TransformContext(rootNode, this.documentType);
+        });
         return this._transformContext;
     }
 

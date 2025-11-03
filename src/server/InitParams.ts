@@ -17,15 +17,15 @@ export type AwsMetadata = {
     cloudformation?: {
         endpoint?: string;
     };
+    encryption?: {
+        key: string;
+        mode: string;
+    };
 };
 
 export interface ExtendedInitializeParams extends InitializeParams {
     initializationOptions?: {
         aws?: AwsMetadata;
-        encryption?: {
-            key: string;
-            mode: string;
-        };
         [key: string]: unknown;
     };
 }
