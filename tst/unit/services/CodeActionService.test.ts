@@ -8,6 +8,7 @@ import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CodeActionService } from '../../../src/services/CodeActionService';
+import { ExtractToParameterProvider } from '../../../src/services/extractToParameter/ExtractToParameterProvider';
 import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
 
 /* eslint-disable vitest/expect-expect */
@@ -22,7 +23,13 @@ describe('CodeActionService', () => {
         mockDocumentManager = stubInterface<DocumentManager>();
         mockSyntaxTree = stubInterface<SyntaxTree>();
         const mockContextManager = stubInterface<ContextManager>();
-        codeActionService = new CodeActionService(mockSyntaxTreeManager, mockDocumentManager, mockContextManager);
+        const mockExtractToParameterProvider = stubInterface<ExtractToParameterProvider>();
+        codeActionService = new CodeActionService(
+            mockSyntaxTreeManager,
+            mockDocumentManager,
+            mockContextManager,
+            mockExtractToParameterProvider,
+        );
     });
 
     function verifyCodeAction(params: CodeActionParams, actual: CodeAction[], ...expected: CodeAction[]) {
@@ -113,6 +120,11 @@ describe('CodeActionService', () => {
                         ],
                     },
                 },
+                command: {
+                    title: 'Track code action',
+                    command: '/command/codeAction/track',
+                    arguments: ['addRequiredProperty'],
+                },
             });
         });
 
@@ -172,6 +184,11 @@ describe('CodeActionService', () => {
                             },
                         ],
                     },
+                },
+                command: {
+                    title: 'Track code action',
+                    command: '/command/codeAction/track',
+                    arguments: ['removeProperty'],
                 },
             });
         });

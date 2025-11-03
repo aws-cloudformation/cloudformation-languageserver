@@ -7,9 +7,9 @@ const log = LoggerFactory.getLogger('ConfigurationHandler');
 
 export function configurationHandler(components: ServerComponents): (params: DidChangeConfigurationParams) => void {
     return (_params: DidChangeConfigurationParams): void => {
+        TelemetryService.instance.get('ConfigurationHandler').count('count', 1);
         // Pull configuration from LSP workspace and notify all components via subscriptions (fire-and-forget)
         components.settingsManager.syncConfiguration().catch((error) => {
-            TelemetryService.instance.get('ConfigurationHandler').count('count', 1);
             log.error(error, `Failed to sync configuration`);
         });
     };

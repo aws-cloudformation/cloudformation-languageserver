@@ -37,6 +37,7 @@ export function executionHandler(
                 });
             }
             case ANALYZE_DIAGNOSTIC: {
+                TelemetryService.instance.get('CodeAction').count(`accepted.diagnoseWithAI`, 1);
                 return executeWithError(components, async () => {
                     const message = await components.cfnAI.analyzeDiagnostic(
                         params.arguments?.[0] as string,
@@ -66,6 +67,15 @@ export function executionHandler(
                     components.diagnosticCoordinator
                         .handleClearCfnDiagnostic(uri, diagnosticId)
                         .catch((err) => log.error(err, `Error clearing diagnostic`));
+                    TelemetryService.instance.get('CodeAction').count(`accepted.clearDiagnostic`, 1);
+                }
+                break;
+            }
+            case TRACK_CODE_ACTION_ACCEPTED: {
+                const args = params.arguments ?? [];
+                if (args.length > 0) {
+                    const actionType = args[0] as string;
+                    TelemetryService.instance.get('CodeAction').count(`accepted.${actionType}`, 1);
                 }
                 break;
             }
@@ -91,3 +101,4 @@ export const OPTIMIZE_TEMPLATE = '/command/llm/template/optimize';
 export const ANALYZE_DIAGNOSTIC = '/command/llm/diagnostic/analyze';
 export const RECOMMEND_RELATED_RESOURCES = '/command/llm/template/recommend-related';
 export const CLEAR_DIAGNOSTIC = '/command/template/clear-diagnostic';
+export const TRACK_CODE_ACTION_ACCEPTED = '/command/codeAction/track';
