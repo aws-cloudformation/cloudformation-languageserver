@@ -40,10 +40,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
             return this.resourceProviders
                 .get(ResourceCompletionType.Entity)
                 ?.getCompletions(context, params) as CompletionItem[];
-        } else if (
-            context.entitySection === 'Type' ||
-            context.propertyPath[context.propertyPath.length - 1] === 'Type'
-        ) {
+        } else if (context.entitySection === 'Type' || this.isAtResourceTypeField(context)) {
             return this.resourceProviders
                 .get(ResourceCompletionType.Type)
                 ?.getCompletions(context, params) as CompletionItem[];
@@ -92,6 +89,15 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
         const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
         const propertiesIndex = context.propertyPath.indexOf('Properties', startIndex);
         return propertiesIndex !== -1 && context.propertyPath.length >= propertiesIndex + 1;
+    }
+
+    private isAtResourceTypeField(context: Context): boolean {
+        if (context.propertyPath[context.propertyPath.length - 1] !== 'Type') {
+            return false;
+        }
+        const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
+        const propertiesIndex = context.propertyPath.indexOf('Properties', startIndex);
+        return propertiesIndex === -1;
     }
 }
 
