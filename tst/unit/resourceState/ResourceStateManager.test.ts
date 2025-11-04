@@ -2,6 +2,7 @@ import { GetResourceCommandOutput, ResourceNotFoundException } from '@aws-sdk/cl
 import { DateTime } from 'luxon';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResourceStateManager } from '../../../src/resourceState/ResourceStateManager';
+import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { CcapiService } from '../../../src/services/CcapiService';
 import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
 
@@ -96,6 +97,48 @@ describe('ResourceStateManager', () => {
             const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');
 
             expect(result).toBeUndefined();
+        });
+    });
+
+    describe('getResourceTypes()', () => {
+        it('should filter out resource types without list support', () => {
+            const mockSchemas: CombinedSchemas = {
+                schemas: new Map([
+                    ['AWS::S3::Bucket', {}],
+                    ['AWS::IAM::Role', {}],
+                    ['AWS::IAM::RolePolicy', {}],
+                ]),
+            } as CombinedSchemas;
+            const managerWithSchemas = new ResourceStateManager(
+                mockCcapiService,
+                createMockSchemaRetriever(mockSchemas),
+            );
+
+            const result = managerWithSchemas.getResourceTypes();
+
+            expect(result).toContain('AWS::S3::Bucket');
+            expect(result).toContain('AWS::IAM::Role');
+            expect(result).not.toContain('AWS::IAM::RolePolicy');
+        });
+
+        it('should filter out resource types requiring resource model properties', () => {
+            const mockSchemas: CombinedSchemas = {
+                schemas: new Map([
+                    ['AWS::S3::Bucket', {}],
+                    ['AWS::EKS::Cluster', {}],
+                    ['AWS::EKS::AddOn', {}],
+                ]),
+            } as CombinedSchemas;
+            const managerWithSchemas = new ResourceStateManager(
+                mockCcapiService,
+                createMockSchemaRetriever(mockSchemas),
+            );
+
+            const result = managerWithSchemas.getResourceTypes();
+
+            expect(result).toContain('AWS::S3::Bucket');
+            expect(result).toContain('AWS::EKS::Cluster');
+            expect(result).not.toContain('AWS::EKS::AddOn');
         });
     });
 });

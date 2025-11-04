@@ -9,6 +9,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
+import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
 
 const log = LoggerFactory.getLogger('ResourceStateManager');
@@ -156,7 +157,8 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
 
     public getResourceTypes(): string[] {
         const schemas = this.schemaRetriever.getDefault().schemas;
-        return [...schemas.keys()];
+        const allTypes = new Set(schemas.keys());
+        return [...allTypes].filter((type) => !NO_LIST_SUPPORT.has(type) && !REQUIRES_RESOURCE_MODEL.has(type));
     }
 
     private storeResourceState(typeName: ResourceType, id: ResourceId, state: ResourceState) {
