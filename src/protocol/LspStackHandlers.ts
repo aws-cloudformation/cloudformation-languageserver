@@ -45,9 +45,9 @@ import {
     GetStackEventsRequest,
     ClearStackEventsParams,
     ClearStackEventsRequest,
-    GetStackOutputsParams,
-    GetStackOutputsResult,
-    GetStackOutputsRequest,
+    DescribeStackParams,
+    DescribeStackResult,
+    DescribeStackRequest,
     DescribeChangeSetParams,
     DescribeChangeSetResult,
     DescribeChangeSetRequest,
@@ -133,7 +133,7 @@ export class LspStackHandlers {
         this.connection.onRequest(ClearStackEventsRequest.method, handler);
     }
 
-    onGetStackOutputs(handler: RequestHandler<GetStackOutputsParams, GetStackOutputsResult, void>) {
-        this.connection.onRequest(GetStackOutputsRequest.method, handler);
+    onDescribeStack(handler: RequestHandler<DescribeStackParams, DescribeStackResult, void>) {
+        this.connection.onRequest(DescribeStackRequest.method, handler);
     }
 }

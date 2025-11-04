@@ -4,7 +4,7 @@ import {
     ListStackResourcesParams,
     GetStackEventsParams,
     ClearStackEventsParams,
-    GetStackOutputsParams,
+    DescribeStackParams,
     DescribeChangeSetParams,
 } from '../StackRequestType';
 import {
@@ -89,7 +89,7 @@ const ClearStackEventsParamsSchema = z.object({
     stackName: z.string().min(1).max(128),
 });
 
-const GetStackOutputsParamsSchema = z.object({
+const DescribeStackParamsSchema = z.object({
     stackName: z.string().min(1).max(128),
 });
 
@@ -121,8 +121,8 @@ export function parseClearStackEventsParams(input: unknown): ClearStackEventsPar
     return ClearStackEventsParamsSchema.parse(input);
 }
 
-export function parseGetStackOutputsParams(input: unknown): GetStackOutputsParams {
-    return GetStackOutputsParamsSchema.parse(input);
+export function parseDescribeStackParams(input: unknown): DescribeStackParams {
+    return DescribeStackParamsSchema.parse(input);
 }
 
 export function parseDescribeChangeSetParams(input: unknown): DescribeChangeSetParams {

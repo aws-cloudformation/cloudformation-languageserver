@@ -16,7 +16,7 @@ import {
     parseTemplateUriParams,
     parseGetStackEventsParams,
     parseClearStackEventsParams,
-    parseGetStackOutputsParams,
+    parseDescribeStackParams,
 } from '../stacks/actions/StackActionParser';
 import {
     TemplateUri,
@@ -42,8 +42,8 @@ import {
     GetStackEventsParams,
     GetStackEventsResult,
     ClearStackEventsParams,
-    GetStackOutputsParams,
-    GetStackOutputsResult,
+    DescribeStackParams,
+    DescribeStackResult,
     DescribeChangeSetParams,
     DescribeChangeSetResult,
 } from '../stacks/StackRequestType';
@@ -398,17 +398,17 @@ export function clearStackEventsHandler(
     };
 }
 
-export function getStackOutputsHandler(
+export function describeStackHandler(
     components: ServerComponents,
-): RequestHandler<GetStackOutputsParams, GetStackOutputsResult, void> {
-    return async (rawParams): Promise<GetStackOutputsResult> => {
+): RequestHandler<DescribeStackParams, DescribeStackResult, void> {
+    return async (rawParams): Promise<DescribeStackResult> => {
         try {
-            const params = parseWithPrettyError(parseGetStackOutputsParams, rawParams);
+            const params = parseWithPrettyError(parseDescribeStackParams, rawParams);
             const response = await components.cfnService.describeStacks({ StackName: params.stackName });
-            const outputs = response.Stacks?.[0]?.Outputs ?? [];
-            return { outputs };
+            const stack = response.Stacks?.[0];
+            return { stack };
         } catch (error) {
-            handleLspError(error, 'Failed to get stack outputs');
+            handleLspError(error, 'Failed to describe stack');
         }
     };
 }
