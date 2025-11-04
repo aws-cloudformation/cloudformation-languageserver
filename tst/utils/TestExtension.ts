@@ -44,7 +44,7 @@ import {
     CodeLensParams,
     CodeLensRequest,
 } from 'vscode-languageserver';
-import { InitializeParams, createConnection } from 'vscode-languageserver/node';
+import { createConnection } from 'vscode-languageserver/node';
 import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '../../src/auth/AuthProtocol';
 import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';
 import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
@@ -58,6 +58,7 @@ import { CfnExternal } from '../../src/server/CfnExternal';
 import { CfnInfraCore } from '../../src/server/CfnInfraCore';
 import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
+import { AwsMetadata, ExtendedInitializeParams } from '../../src/server/InitParams';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
@@ -66,7 +67,19 @@ import { createMockCfnLintService, createMockGuardService, mockCfnAi } from './M
 import { getTestPrivateSchemas } from './SchemaUtils';
 import { wait } from './Utils';
 
-const clientInfo = { name: `Test ${ExtensionName}`, version: '1.0.0-test' };
+const awsMetadata: AwsMetadata = {
+    clientInfo: {
+        extension: {
+            name: `Test ${ExtensionName}`,
+            version: '1.0.0-test',
+        },
+        clientId: '1111-1111-1111-1111',
+    },
+    encryption: {
+        key: randomBytes(32).toString('base64'),
+        mode: 'JWT',
+    },
+};
 
 export class TestExtension implements Closeable {
     private readonly readStream = new PassThrough();
@@ -85,32 +98,23 @@ export class TestExtension implements Closeable {
     private isReady = false;
 
     constructor(
-        private readonly initializeParams = {
+        private readonly initializeParams: ExtendedInitializeParams = {
             processId: process.pid,
             rootUri: null,
             capabilities: {},
-            clientInfo,
+            clientInfo: awsMetadata.clientInfo?.extension,
             workspaceFolders: [],
             initializationOptions: {
-                encryption: {
-                    key: randomBytes(32).toString('base64'),
-                },
+                aws: awsMetadata,
             },
-        } as InitializeParams,
+        },
     ) {
         this.serverConnection = new LspConnection(
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
             {
                 onInitialize: (params) => {
                     const lsp = this.serverConnection.components;
-                    LoggerFactory.initialize({
-                        clientInfo: {
-                            extension: clientInfo,
-                            clientId: '1111-1111-1111-1111',
-                        },
-                        telemetryEnabled: true,
-                        logLevel: 'info',
-                    });
+                    LoggerFactory.initialize(awsMetadata);
 
                     const dataStoreFactory = new MultiDataStoreFactoryProvider();
                     this.core = new CfnInfraCore(lsp, params, {

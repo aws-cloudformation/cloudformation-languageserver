@@ -59,7 +59,7 @@ export class CfnInfraCore implements Configurables, Closeable {
             new AwsCredentials(
                 lspComponents.authHandlers,
                 this.settingsManager,
-                initializeParams.initializationOptions?.encryption?.key,
+                initializeParams.initializationOptions?.aws?.encryption?.key,
             );
 
         this.diagnosticCoordinator =
