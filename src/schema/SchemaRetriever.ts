@@ -6,7 +6,6 @@ import { Closeable } from '../utils/Closeable';
 import { AwsRegion, getRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
 import { GetSchemaTaskManager } from './GetSchemaTaskManager';
-import { PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemasType } from './RegionalSchemas';
 import { SchemaStore } from './SchemaStore';
 
@@ -80,34 +79,17 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             this.schemaTaskManager.addTask(region);
         }
 
-        const privateSchemas = this.schemaStore.privateSchemas.get<PrivateSchemasType>(profile);
-        const samSchemas = this.getSamSchemasFromStore();
-        return CombinedSchemas.from(regionalSchemas, privateSchemas, samSchemas);
-    }
-
-    private getSamSchemasFromStore(): Map<string, unknown> | undefined {
-        try {
-            const schemas = new Map<string, unknown>();
-            const keys = this.schemaStore.publicSchemas.keys(1000); // Get up to 1000 keys
-            const samKeys = keys.filter((key: string) => key.startsWith('sam-schemas:'));
-
-            for (const key of samKeys) {
-                const schemaJson = this.schemaStore.publicSchemas.get<string>(key);
-                if (schemaJson) {
-                    const resourceType = key.replace('sam-schemas:', '');
-                    schemas.set(resourceType, JSON.parse(schemaJson));
-                }
-            }
-
-            return schemas.size > 0 ? schemas : undefined;
-        } catch (error) {
-            this.log.debug({ error }, 'Failed to load SAM schemas');
-            return undefined;
-        }
+        return this.schemaStore.getCombinedSchemas(region, profile);
     }
 
     updatePrivateSchemas() {
+        this.schemaStore.invalidateCombinedSchemas();
         this.schemaTaskManager.runPrivateTask();
+    }
+
+    // Method to invalidate cache when any schemas are updated
+    invalidateCache() {
+        this.schemaStore.invalidateCombinedSchemas();
     }
 
     private getRegionalSchemasFromStore(region: AwsRegion) {
