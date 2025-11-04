@@ -46,7 +46,7 @@ export class CfnExternal implements Configurables, Closeable {
         this.schemaTaskManager =
             overrides.schemaTaskManager ??
             new GetSchemaTaskManager(this.schemaStore, getRemotePublicSchemas, () => {
-                return getRemotePrivateSchemas(this.cfnService);
+                return getRemotePrivateSchemas(core.awsCredentials, this.cfnService);
             });
         this.schemaRetriever =
             overrides.schemaRetriever ?? new SchemaRetriever(this.schemaTaskManager, this.schemaStore);

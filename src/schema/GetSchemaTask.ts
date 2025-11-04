@@ -1,5 +1,6 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { Logger } from 'pino';
+import { AwsCredentials } from '../auth/AwsCredentials';
 import { DataStore } from '../datastore/DataStore';
 import { CfnService } from '../services/CfnService';
 import { Measure } from '../telemetry/TelemetryDecorator';
@@ -98,6 +99,10 @@ export function getRemotePublicSchemas(region: AwsRegion) {
     return unZipFile(downloadFile(cfnResourceSchemaLink(region)));
 }
 
-export function getRemotePrivateSchemas(cfnService: CfnService) {
-    return cfnService.getAllPrivateResourceSchemas();
+export function getRemotePrivateSchemas(awsCredentials: AwsCredentials, cfnService: CfnService) {
+    if (awsCredentials.credentialsAvailable()) {
+        return cfnService.getAllPrivateResourceSchemas();
+    }
+
+    return Promise.resolve([]);
 }

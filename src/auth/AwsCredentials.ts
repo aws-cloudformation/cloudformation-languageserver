@@ -34,6 +34,10 @@ export class AwsCredentials {
         this.logger.info(`AWS credentials ${encryptionKey ? 'encrypted' : 'unencrypted'}`);
     }
 
+    credentialsAvailable() {
+        return this.iamCredentials !== undefined;
+    }
+
     getIAM(): DeepReadonly<IamCredentials> {
         if (!this.iamCredentials) {
             throw new Error('IAM credentials not configured');

@@ -58,7 +58,8 @@ initializationOptions: {
 }
 ...
 ```
+
+Your LSP client controls telemetry settings. Consult your LSP client's documentation for configuration options. Changes require restarting the language server to take effect.
+
 * **Alpha environment**: Telemetry is enabled by default if no initialization parameter is provided
 * **Beta and Production environments**: Telemetry is disabled by default if no initialization parameter is provided
-
-Your LSP client application controls telemetry settings. Consult your LSP client's documentation for configuration options. Changes require restarting the language server to take effect.

@@ -6,6 +6,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Delayer } from '../utils/Delayer';
+import { byteSize } from '../utils/String';
 import { CloudFormationFileType, Document, DocumentType } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
@@ -154,6 +155,9 @@ export class DocumentManager implements SettingsConfigurable {
             this.telemetry.registerGaugeProvider(`documents.open.extension.type.${ext}`, () =>
                 this.countDocumentsByExtension(ext),
             );
+            this.telemetry.registerGaugeProvider(`documents.size.extension.type.${ext}`, () =>
+                this.getTotalSizeByExtension(ext),
+            );
         }
     }
 
@@ -167,5 +171,11 @@ export class DocumentManager implements SettingsConfigurable {
 
     private countDocumentsByExtension(extension: string): number {
         return [...this.documentMap.values()].filter((doc) => doc.isTemplate() && doc.extension === extension).length;
+    }
+
+    private getTotalSizeByExtension(extension: string): number {
+        return [...this.documentMap.values()]
+            .filter((doc) => doc.isTemplate() && doc.extension === extension)
+            .reduce((total, doc) => total + byteSize(doc.getText()), 0);
     }
 }

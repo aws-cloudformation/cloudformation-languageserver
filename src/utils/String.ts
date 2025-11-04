@@ -37,3 +37,8 @@ export function isStringABoolean(value: string): boolean {
 export function stringToBoolean(value: string): boolean {
     return value.trim().toLowerCase() === 'true';
 }
+
+export function byteSize(str: string) {
+    const bytes: Uint8Array = new TextEncoder().encode(str);
+    return bytes.length;
+}
