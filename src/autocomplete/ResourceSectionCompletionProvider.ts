@@ -30,7 +30,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
         private readonly resourceProviders = createResourceCompletionProviders(core, external, providers),
     ) {}
 
-    @Measure({ name: 'getResourceSectionCompletions' })
+    @Measure({ name: 'getCompletions' })
     getCompletions(
         context: Context,
         params: CompletionParams,

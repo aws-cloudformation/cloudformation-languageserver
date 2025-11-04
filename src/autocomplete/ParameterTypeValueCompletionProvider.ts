@@ -18,7 +18,7 @@ export class ParameterTypeValueCompletionProvider implements CompletionProvider 
         ignoreLocation: false,
     });
 
-    @Measure({ name: 'getParameterTypeValueCompletions' })
+    @Measure({ name: 'getCompletions' })
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] | undefined {
         const items = this.getParameterTypesAsCompletionItems();
 

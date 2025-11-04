@@ -48,7 +48,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
 
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
-    @Measure({ name: 'getResourcePropertyCompletions' })
+    @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, _params: CompletionParams): CompletionItem[] | undefined {
         // Use unified property completion method for all scenarios
         const { completions: propertyCompletions, skipFuzzySearch } = this.getPropertyCompletions(context);

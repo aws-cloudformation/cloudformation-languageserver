@@ -56,7 +56,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         private readonly documentManager: DocumentManager,
     ) {}
 
-    @Measure({ name: 'getIntrinsicFunctionArgumentCompletions' })
+    @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {

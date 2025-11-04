@@ -17,7 +17,7 @@ export class IntrinsicFunctionCompletionProvider implements CompletionProvider {
         ignoreLocation: false,
     });
 
-    @Measure({ name: 'getIntrinsicFunctionCompletions' })
+    @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const triggerChar = params.context?.triggerCharacter ?? '';
         const isYaml = context.documentType !== DocumentType.JSON;

@@ -22,7 +22,7 @@ export class ConditionCompletionProvider implements CompletionProvider {
 
     public constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
-    @Measure({ name: 'getConditionCompletions' })
+    @Measure({ name: 'getCompletions' })
     public getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {

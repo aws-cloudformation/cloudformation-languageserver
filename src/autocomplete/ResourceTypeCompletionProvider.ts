@@ -11,7 +11,7 @@ export class ResourceTypeCompletionProvider implements CompletionProvider {
 
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
-    @Measure({ name: 'getResourceTypeCompletions' })
+    @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, _params: CompletionParams): CompletionItem[] | undefined {
         const resourceTypeCompletions = this.getResourceTypeCompletions(context);
         return this.fuzzySearch(resourceTypeCompletions, context.text);
