@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { ZipFile, fromBuffer, Entry } from 'yauzl';
 import { AwsRegion } from '../utils/Region';
 import { SchemaFileType } from './RegionalSchemas';
@@ -9,16 +8,6 @@ export function cfnResourceSchemaLink(region: AwsRegion) {
     }
 
     return `https://schema.cloudformation.${region}.amazonaws.com/CloudformationSchema.zip`;
-}
-
-export async function downloadFile(url: string): Promise<Buffer> {
-    const response = await axios({
-        method: 'get',
-        url: url,
-        responseType: 'arraybuffer',
-    });
-
-    return Buffer.from(response.data);
 }
 
 export async function unZipFile(buffer: Promise<Buffer>): Promise<SchemaFileType[]> {
@@ -81,13 +70,4 @@ export async function unZipFile(buffer: Promise<Buffer>): Promise<SchemaFileType
             );
         });
     });
-}
-
-export async function downloadJson<T = unknown>(url: string): Promise<T> {
-    const response = await axios<T>({
-        method: 'get',
-        url: url,
-    });
-
-    return response.data;
 }

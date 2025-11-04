@@ -31,6 +31,7 @@ export class AwsCredentials {
         encryptionKey?: string,
     ) {
         this.encryptionKey = encryptionKey ? Buffer.from(encryptionKey, 'base64') : undefined;
+        this.logger.info(`AWS credentials ${encryptionKey ? 'encrypted' : 'unencrypted'}`);
     }
 
     getIAM(): DeepReadonly<IamCredentials> {

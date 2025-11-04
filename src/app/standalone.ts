@@ -22,9 +22,14 @@ async function onInitialize(params: ExtendedInitializeParams) {
     getLogger().info(
         {
             ClientInfo,
-            AwsMetadata,
             NodeEnv,
             AwsEnv,
+            aws: {
+                clientInfo: AwsMetadata?.clientInfo,
+                telemetryEnabled: AwsMetadata?.telemetryEnabled,
+                logLevel: AwsMetadata?.logLevel,
+                cloudformation: AwsMetadata?.cloudformation,
+            },
         },
         `${ExtensionName} initializing...`,
     );

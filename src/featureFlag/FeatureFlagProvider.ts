@@ -1,10 +1,10 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { downloadJson } from '../schema/RemoteSchemaHelper';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
+import { downloadJson } from '../utils/RemoteDownload';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 import { FeatureFlagSupplier, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey } from './FeatureFlagSupplier';
 
