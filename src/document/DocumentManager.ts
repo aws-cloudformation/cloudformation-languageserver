@@ -155,9 +155,6 @@ export class DocumentManager implements SettingsConfigurable {
             this.telemetry.registerGaugeProvider(`documents.open.extension.type.${ext}`, () =>
                 this.countDocumentsByExtension(ext),
             );
-            this.telemetry.registerGaugeProvider(`documents.size.extension.type.${ext}`, () =>
-                this.getTotalSizeByExtension(ext),
-            );
         }
     }
 
@@ -171,11 +168,5 @@ export class DocumentManager implements SettingsConfigurable {
 
     private countDocumentsByExtension(extension: string): number {
         return [...this.documentMap.values()].filter((doc) => doc.isTemplate() && doc.extension === extension).length;
-    }
-
-    private getTotalSizeByExtension(extension: string): number {
-        return [...this.documentMap.values()]
-            .filter((doc) => doc.isTemplate() && doc.extension === extension)
-            .reduce((total, doc) => total + byteSize(doc.getText()), 0);
     }
 }
