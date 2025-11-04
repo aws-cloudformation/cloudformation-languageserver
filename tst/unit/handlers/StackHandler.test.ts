@@ -175,6 +175,16 @@ describe('StackActionHandler', () => {
 
             await expect(handler(templateUri, mockToken)).rejects.toThrow(ResponseError);
         });
+
+        it('duplicate', async () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            mockComponents.documentManager.get.withArgs(templateUri).returns(undefined);
+
+            const handler = getCapabilitiesHandler(mockComponents);
+
+            await expect(handler(templateUri, mockToken)).rejects.toThrow(ResponseError);
+        });
+
     });
 
     describe('createValidationHandler', () => {
