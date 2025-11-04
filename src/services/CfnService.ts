@@ -57,7 +57,7 @@ import {
     OnStackFailure,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
-import { Measure } from '../telemetry/TelemetryDecorator';
+import { Count } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
 export class CfnService {
@@ -105,7 +105,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new CreateStackCommand(params)));
     }
 
-    @Measure({ name: 'describeStacks' })
+    @Count({ name: 'describeStacks' })
     public async describeStacks(params?: {
         StackName?: string;
         NextToken?: string;
@@ -118,6 +118,7 @@ export class CfnService {
         return response.TemplateBody;
     }
 
+    @Count({ name: 'createChangeSet' })
     public async createChangeSet(params: {
         StackName: string;
         ChangeSetName: string;
@@ -136,7 +137,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)));
     }
 
-    @Measure({ name: 'describeChangeSet' })
+    @Count({ name: 'describeChangeSet' })
     public async describeChangeSet(params: {
         ChangeSetName: string;
         IncludePropertyValues: boolean;
@@ -173,7 +174,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DetectStackDriftCommand(params)));
     }
 
-    @Measure({ name: 'describeStackEvents' })
+    @Count({ name: 'describeStackEvents' })
     public async describeStackEvents(
         params: {
             StackName: string;
@@ -190,7 +191,7 @@ export class CfnService {
         });
     }
 
-    @Measure({ name: 'describeStackResources' })
+    @Count({ name: 'describeStackResources' })
     public async describeStackResources(params: {
         StackName?: string;
         LogicalResourceId?: string;
@@ -273,6 +274,7 @@ export class CfnService {
         });
     }
 
+    @Count({ name: 'executeChangeSet' })
     public async executeChangeSet(params: {
         ChangeSetName: string;
         StackName?: string;
@@ -281,6 +283,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new ExecuteChangeSetCommand(params)));
     }
 
+    @Count({ name: 'deleteChangeSet' })
     public async deleteChangeSet(params: {
         ChangeSetName: string;
         StackName?: string;
@@ -288,6 +291,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DeleteChangeSetCommand(params)));
     }
 
+    @Count({ name: 'deleteStack' })
     public async deleteStack(params: { StackName: string }): Promise<DeleteStackCommandOutput> {
         return await this.withClient((client) => client.send(new DeleteStackCommand(params)));
     }
@@ -357,10 +361,12 @@ export class CfnService {
         });
     }
 
+    @Count({ name: 'validateTemplate' })
     public async validateTemplate(params: ValidateTemplateInput): Promise<ValidateTemplateOutput> {
         return await this.withClient((client) => client.send(new ValidateTemplateCommand(params)));
     }
 
+    @Count({ name: 'listChangeSets' })
     public async listChangeSets(
         stackName: string,
         nextToken?: string,
