@@ -7,6 +7,7 @@ import { CfnExternal } from '../../server/CfnExternal';
 import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnService } from '../../services/CfnService';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
+import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
@@ -42,6 +43,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
         protected readonly diagnosticCoordinator: DiagnosticCoordinator,
         protected readonly syntaxTreeManager: SyntaxTreeManager,
         protected readonly validationManager: ValidationManager,
+        protected readonly s3Service: S3Service,
     ) {}
 
     async start(params: CreateValidationParams): Promise<CreateStackActionResult> {
@@ -59,7 +61,13 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             }
         }
 
-        const changeSetName = await processChangeSet(this.cfnService, this.documentManager, params, changeSetType);
+        const changeSetName = await processChangeSet(
+            this.cfnService,
+            this.documentManager,
+            params,
+            changeSetType,
+            this.s3Service,
+        );
 
         // Create and store validation after ChangeSet creation
         const validation = new Validation(
@@ -68,7 +76,8 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             changeSetName,
             params.parameters,
             params.capabilities,
-            params.s3Url,
+            params.s3Bucket,
+            params.s3Key,
         );
         validation.setPhase(StackActionPhase.VALIDATION_IN_PROGRESS);
         this.validationManager.add(validation);
@@ -212,6 +221,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             core.diagnosticCoordinator,
             core.syntaxTreeManager,
             new ValidationManager(),
+            external.s3Service,
         );
     }
 }

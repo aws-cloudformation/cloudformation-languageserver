@@ -6,6 +6,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
     let workflow: ValidationWorkflow;
     let mockCfnService: any;
     let mockValidationManager: any;
+    let mockS3Service: any;
 
     beforeEach(() => {
         mockCfnService = {
@@ -29,6 +30,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
             {} as any, // DiagnosticCoordinator
             {} as any, // SyntaxTreeManager
             mockValidationManager,
+            mockS3Service,
         );
     });
 

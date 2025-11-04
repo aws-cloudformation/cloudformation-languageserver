@@ -7,7 +7,8 @@ export class Validation {
     private readonly changeSetName: string;
     private readonly parameters?: Parameter[];
     private capabilities?: Capability[];
-    private readonly s3Url?: string;
+    private readonly s3Bucket?: string;
+    private readonly s3Key?: string;
     private phase: StackActionPhase | undefined;
     private changes: StackChange[] | undefined;
 
@@ -17,14 +18,16 @@ export class Validation {
         changeSetName: string,
         parameters?: Parameter[],
         capabilities?: Capability[],
-        s3Url?: string,
+        s3Bucket?: string,
+        s3Key?: string,
     ) {
         this.uri = uri;
         this.stackName = stackName;
         this.changeSetName = changeSetName;
         this.parameters = parameters;
         this.capabilities = capabilities;
-        this.s3Url = s3Url;
+        this.s3Bucket = s3Bucket;
+        this.s3Key = s3Key;
     }
 
     getUri(): string {
@@ -67,7 +70,11 @@ export class Validation {
         this.capabilities = capabilities;
     }
 
-    getS3Url(): string | undefined {
-        return this.s3Url;
+    getS3Bucket(): string | undefined {
+        return this.s3Bucket;
+    }
+
+    getS3Key(): string | undefined {
+        return this.s3Key;
     }
 }

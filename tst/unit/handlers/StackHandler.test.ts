@@ -8,6 +8,7 @@ import {
 import { StubbedInstance } from 'ts-sinon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
+import { Template } from '../../../src/artifactexporter/ArtifactExporter';
 import { Context } from '../../../src/context/Context';
 import * as SectionContextBuilder from '../../../src/context/SectionContextBuilder';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
@@ -16,6 +17,7 @@ import { Document } from '../../../src/document/Document';
 import {
     getCapabilitiesHandler,
     getParametersHandler,
+    getTemplateArtifactsHandler,
     createValidationHandler,
     createDeploymentHandler,
     getValidationStatusHandler,
@@ -37,6 +39,7 @@ import {
     TemplateUri,
     GetCapabilitiesResult,
     GetParametersResult,
+    GetTemplateArtifactsResult,
     GetTemplateResourcesResult,
     StackActionPhase,
     StackActionState,
@@ -58,6 +61,12 @@ import { combinedSchemas } from '../../utils/SchemaUtils';
 
 vi.mock('../../../src/context/SectionContextBuilder', () => ({
     getEntityMap: vi.fn(),
+}));
+
+vi.mock('../../../src/artifactexporter/ArtifactExporter', () => ({
+    Template: vi.fn().mockImplementation(() => ({
+        getTemplateArtifacts: vi.fn().mockReturnValue([]),
+    })),
 }));
 
 // Mock the parsers
@@ -149,6 +158,42 @@ describe('StackActionHandler', () => {
             expect(result.parameters).toHaveLength(2);
             expect(result.parameters[0]).toBe(mockParam1);
             expect(result.parameters[1]).toBe(mockParam2);
+        });
+    });
+
+    describe('getTemplateArtifactsHandler', () => {
+        it('should return artifacts when document is available', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+            const mockDocument = { uri: templateUri } as unknown as Document;
+            const mockArtifacts = [
+                { resourceType: 'AWS::Lambda::Function', filePath: './src/handler.js' },
+                { resourceType: 'AWS::S3::Bucket', filePath: './assets/data.json' },
+            ];
+
+            mockComponents.documentManager.get.withArgs(templateUri).returns(mockDocument);
+
+            // Mock the Template constructor to return a mock with getTemplateArtifacts
+            const mockTemplateInstance = {
+                getTemplateArtifacts: vi.fn().mockReturnValue(mockArtifacts),
+            };
+            vi.mocked(Template).mockImplementation(() => mockTemplateInstance as any);
+
+            const handler = getTemplateArtifactsHandler(mockComponents);
+            const result = handler(templateUri, mockToken) as GetTemplateArtifactsResult;
+
+            expect(result.artifacts).toEqual(mockArtifacts);
+        });
+
+        it('should throw error when document is not found', () => {
+            const templateUri: TemplateUri = 'test://template.yaml';
+
+            mockComponents.documentManager.get.withArgs(templateUri).returns(undefined);
+
+            const handler = getTemplateArtifactsHandler(mockComponents);
+
+            expect(() => handler(templateUri, mockToken)).toThrow(
+                'Cannot retrieve file with uri: test://template.yaml',
+            );
         });
     });
 

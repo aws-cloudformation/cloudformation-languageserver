@@ -1,15 +1,19 @@
 import { Change, ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
+import { dump } from 'js-yaml';
 import { DateTime } from 'luxon';
 import { v4 as uuidv4 } from 'uuid';
 import { ResponseError, ErrorCodes, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
+import { Template } from '../../artifactexporter/ArtifactExporter';
 import { TopLevelSection } from '../../context/ContextType';
 import { getEntityMap } from '../../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
+import { DocumentType } from '../../document/Document';
 import { DocumentManager } from '../../document/DocumentManager';
 import { CfnService } from '../../services/CfnService';
 import { DescribeEventsOutput, ChangeV2 } from '../../services/CfnServiceV2';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
+import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
@@ -40,10 +44,36 @@ export async function processChangeSet(
     documentManager: DocumentManager,
     params: CreateValidationParams,
     changeSetType: ChangeSetType,
+    s3Service: S3Service,
 ): Promise<string> {
     const document = documentManager.get(params.uri);
     if (!document) {
         throw new ResponseError(ErrorCodes.InvalidParams, `Document not found: ${params.uri}`);
+    }
+    let templateBody = document.contents();
+    let templateS3Url: string | undefined;
+    try {
+        if (params.s3Bucket) {
+            const s3KeyPrefix = params.s3Key ? params.s3Key.slice(0, params.s3Key.lastIndexOf('/') + 1) : undefined;
+            const template = new Template(s3Service, params.s3Bucket, s3KeyPrefix, document);
+
+            const exportedTemplate = await template.export();
+
+            // Detect file type and stringify accordingly
+            if (document.documentType === DocumentType.YAML) {
+                templateBody = dump(exportedTemplate);
+            } else {
+                templateBody = JSON.stringify(exportedTemplate, undefined, 2);
+            }
+        }
+
+        if (params.s3Bucket && params.s3Key) {
+            // If both bucket and key is present, user has opted to upload template to S3
+            templateS3Url = `s3://${params.s3Bucket}/${params.s3Key}`;
+            await s3Service.putObjectContent(templateBody, params.s3Bucket, params.s3Key);
+        }
+    } catch (error) {
+        logger.error(error, 'Failed to upload to S3:');
     }
 
     const changeSetName = `${changeSetNamePrefix}-${params.id}-${uuidv4()}`;
@@ -51,8 +81,8 @@ export async function processChangeSet(
     await cfnService.createChangeSet({
         StackName: params.stackName,
         ChangeSetName: changeSetName,
-        TemplateBody: params.s3Url ? undefined : document.contents(),
-        TemplateURL: params.s3Url,
+        TemplateBody: templateS3Url ? undefined : templateBody,
+        TemplateURL: templateS3Url,
         Parameters: params.parameters,
         Capabilities: params.capabilities,
         ChangeSetType: changeSetType,

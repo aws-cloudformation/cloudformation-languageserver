@@ -52,6 +52,8 @@ const CreateValidationParamsSchema = z.object({
     includeNestedStacks: z.boolean().optional(),
     tags: z.array(TagSchema).optional(),
     importExistingResources: z.boolean().optional(),
+    s3Bucket: z.string().optional(),
+    s3Key: z.string().optional(),
 });
 
 const CreateDeploymentParamsSchema = z.object({

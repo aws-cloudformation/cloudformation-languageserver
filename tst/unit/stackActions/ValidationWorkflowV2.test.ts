@@ -7,6 +7,7 @@ import { DocumentManager } from '../../../src/document/DocumentManager';
 import { TargetedFeatureFlag } from '../../../src/featureFlag/FeatureFlagI';
 import { CfnServiceV2 } from '../../../src/services/CfnServiceV2';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
+import { S3Service } from '../../../src/services/S3Service';
 import {
     processChangeSet,
     waitForChangeSetValidation,
@@ -41,6 +42,7 @@ describe('ValidationWorkflowV2', () => {
     let mockValidationManager: ValidationManager;
     let mockFeatureFlag: TargetedFeatureFlag<string>;
     let mockAwsCredentials: AwsCredentials;
+    let mockS3Service: S3Service;
 
     const waitForWorkflowCompletion = async (workflowId: string): Promise<void> => {
         let attempts = 0;
@@ -79,6 +81,8 @@ describe('ValidationWorkflowV2', () => {
         mockAwsCredentials = {
             getIAM: vi.fn(),
         } as any;
+
+        mockS3Service = {} as any;
 
         mockCfnServiceV2.describeStacks = vi.fn().mockRejectedValue(new Error('Stack does not exist'));
 
@@ -125,6 +129,7 @@ describe('ValidationWorkflowV2', () => {
             mockFileContextManager,
             mockFeatureFlag,
             mockAwsCredentials,
+            mockS3Service,
         );
 
         vi.clearAllMocks();

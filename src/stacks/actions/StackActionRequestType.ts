@@ -28,7 +28,8 @@ export type CreateValidationParams = Identifiable & {
     includeNestedStacks?: boolean;
     tags?: Tag[];
     importExistingResources?: boolean;
-    s3Url?: string;
+    s3Bucket?: string;
+    s3Key?: string;
 };
 
 export type ChangeSetReference = {
@@ -46,6 +47,15 @@ export type TemplateUri = string;
 
 export type GetParametersResult = {
     parameters: EntityParameter[];
+};
+
+export type Artifact = {
+    resourceType: string;
+    filePath: string;
+};
+
+export type GetTemplateArtifactsResult = {
+    artifacts: Artifact[];
 };
 
 export type GetCapabilitiesResult = {
