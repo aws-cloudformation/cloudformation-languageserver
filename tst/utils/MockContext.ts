@@ -155,18 +155,20 @@ export function createForEachResourceContext(
     other?: Partial<EntityTypeParams>,
     relatedEntities?: Map<SectionType, Map<string, Context>>,
 ) {
-    const resource = new Resource(
-        resourceKey,
-        other?.data?.Type,
-        other?.data?.Properties,
-        other?.data?.DependsOn,
-        other?.data?.Condition,
-        other?.data?.Metadata,
-        other?.data?.CreationPolicy,
-        other?.data?.DeletionPolicy,
-        other?.data?.UpdatePolicy,
-        other?.data?.UpdateReplacePolicy,
-    );
+    const resource = other?.data
+        ? new Resource(
+              resourceKey,
+              other.data.Type,
+              other.data.Properties,
+              other.data.DependsOn,
+              other.data.Condition,
+              other.data.Metadata,
+              other.data.CreationPolicy,
+              other.data.DeletionPolicy,
+              other.data.UpdatePolicy,
+              other.data.UpdateReplacePolicy,
+          )
+        : undefined;
 
     return createMockContextWithRelatedEntity(TopLevelSection.Resources, forEachName, relatedEntities, {
         text: other?.text,
