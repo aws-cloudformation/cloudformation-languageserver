@@ -1,29 +1,29 @@
 import { load } from 'js-yaml';
 import { RequestHandler } from 'vscode-languageserver';
-import { DocumentType } from '../document/Document';
-import { parseDeploymentConfig, parseEnvironmentFileParams } from '../environments/EnvironmentParser';
+import { parseDeploymentConfig, parseCfnEnvironmentFileParams } from '../cfnEnvironments/CfnEnvironmentParser';
 import {
-    ParsedEnvironmentFile,
-    ParseEnvironmentFilesParams,
-    ParseEnvironmentFilesResult,
-} from '../environments/EnvironmentRequestType';
+    ParsedCfnEnvironmentFile,
+    ParseCfnEnvironmentFilesParams,
+    ParseCfnEnvironmentFilesResult,
+} from '../cfnEnvironments/CfnEnvironmentRequestType';
+import { DocumentType } from '../document/Document';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { handleLspError } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
-export function parseEnvironmentFilesHandler(): RequestHandler<
-    ParseEnvironmentFilesParams,
-    ParseEnvironmentFilesResult,
+export function parseCfnEnvironmentFilesHandler(): RequestHandler<
+    ParseCfnEnvironmentFilesParams,
+    ParseCfnEnvironmentFilesResult,
     void
 > {
-    const telemetry = TelemetryService.instance.get('EnvironmentHandler');
+    const telemetry = TelemetryService.instance.get('CfnEnvironmentHandler');
 
-    return (rawParams): ParseEnvironmentFilesResult => {
-        return telemetry.measure('parseEnvironmentFiles', () => {
+    return (rawParams): ParseCfnEnvironmentFilesResult => {
+        return telemetry.measure('parseCfnEnvironmentFiles', () => {
             try {
-                const parsedFiles: ParsedEnvironmentFile[] = [];
+                const parsedFiles: ParsedCfnEnvironmentFile[] = [];
 
-                const params = parseWithPrettyError(parseEnvironmentFileParams, rawParams);
+                const params = parseWithPrettyError(parseCfnEnvironmentFileParams, rawParams);
 
                 for (const document of params.documents) {
                     try {
@@ -43,7 +43,7 @@ export function parseEnvironmentFilesHandler(): RequestHandler<
                             deploymentConfig: deploymentConfig,
                         });
                     } catch {
-                        telemetry.count('environmentFile.malformed', 1);
+                        telemetry.count('cfnEnvironmentFile.malformed', 1);
                     }
                 }
 

@@ -1,8 +1,8 @@
 import { LspAuthHandlers } from './LspAuthHandlers';
+import { LspCfnEnvironmentHandlers } from './LspCfnEnvironmentHandlers';
 import { LspCommunication } from './LspCommunication';
 import { LspDiagnostics } from './LspDiagnostics';
 import { LspDocuments } from './LspDocuments';
-import { LspEnvironmentHandlers } from './LspEnvironmentHandlers';
 import { LspHandlers } from './LspHandlers';
 import { LspRelatedResourcesHandlers } from './LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from './LspResourceHandlers';
@@ -19,7 +19,7 @@ export class LspComponents {
         public readonly handlers: LspHandlers,
         public readonly authHandlers: LspAuthHandlers,
         public readonly stackHandlers: LspStackHandlers,
-        public readonly environmentHandlers: LspEnvironmentHandlers,
+        public readonly cfnEnvironmentHandlers: LspCfnEnvironmentHandlers,
         public readonly resourceHandlers: LspResourceHandlers,
         public readonly relatedResourcesHandlers: LspRelatedResourcesHandlers,
         public readonly s3Handlers: LspS3Handlers,

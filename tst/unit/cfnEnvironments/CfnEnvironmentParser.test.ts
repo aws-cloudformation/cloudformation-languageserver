@@ -1,11 +1,14 @@
 import { OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect } from 'vitest';
 import { ZodError } from 'zod';
+import {
+    parseCfnEnvironmentFileParams,
+    parseDeploymentConfig,
+} from '../../../src/cfnEnvironments/CfnEnvironmentParser';
 import { DocumentType } from '../../../src/document/Document';
-import { parseEnvironmentFileParams, parseDeploymentConfig } from '../../../src/environments/EnvironmentParser';
 
-describe('environmentParser', () => {
-    describe('parseEnvironmentFileParams', () => {
+describe('cfnEnvironmentParser', () => {
+    describe('parseCfnEnvironmentFileParams', () => {
         it('should parse valid environment file params', () => {
             const input = {
                 documents: [
@@ -17,7 +20,7 @@ describe('environmentParser', () => {
                 ],
             };
 
-            const result = parseEnvironmentFileParams(input);
+            const result = parseCfnEnvironmentFileParams(input);
 
             expect(result).toEqual({
                 documents: [
@@ -33,7 +36,7 @@ describe('environmentParser', () => {
         it('should throw ZodError for missing documents', () => {
             const input = {};
 
-            expect(() => parseEnvironmentFileParams(input)).toThrow(ZodError);
+            expect(() => parseCfnEnvironmentFileParams(input)).toThrow(ZodError);
         });
 
         it('should handle empty documents array', () => {
@@ -41,7 +44,7 @@ describe('environmentParser', () => {
                 documents: [],
             };
 
-            const result = parseEnvironmentFileParams(input);
+            const result = parseCfnEnvironmentFileParams(input);
             expect(result.documents).toEqual([]);
         });
 
@@ -56,7 +59,7 @@ describe('environmentParser', () => {
                 ],
             };
 
-            expect(() => parseEnvironmentFileParams(input)).toThrow(ZodError);
+            expect(() => parseCfnEnvironmentFileParams(input)).toThrow(ZodError);
         });
 
         it('should throw ZodError for missing document properties', () => {
@@ -70,7 +73,7 @@ describe('environmentParser', () => {
                 ],
             };
 
-            expect(() => parseEnvironmentFileParams(input)).toThrow(ZodError);
+            expect(() => parseCfnEnvironmentFileParams(input)).toThrow(ZodError);
         });
     });
 
