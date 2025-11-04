@@ -36,7 +36,7 @@ export class LspConnection {
     private readonly handlers: LspHandlers;
     private readonly authHandlers: LspAuthHandlers;
     private readonly stackHandlers: LspStackHandlers;
-    private readonly environmentHandlers: LspCfnEnvironmentHandlers;
+    private readonly cfnEnvironmentHandlers: LspCfnEnvironmentHandlers;
     private readonly resourceHandlers: LspResourceHandlers;
     private readonly relatedResourcesHandlers: LspRelatedResourcesHandlers;
     private readonly s3Handlers: LspS3Handlers;
@@ -61,7 +61,7 @@ export class LspConnection {
         this.handlers = new LspHandlers(this.connection);
         this.authHandlers = new LspAuthHandlers(this.connection);
         this.stackHandlers = new LspStackHandlers(this.connection);
-        this.environmentHandlers = new LspCfnEnvironmentHandlers(this.connection);
+        this.cfnEnvironmentHandlers = new LspCfnEnvironmentHandlers(this.connection);
         this.resourceHandlers = new LspResourceHandlers(this.connection);
         this.relatedResourcesHandlers = new LspRelatedResourcesHandlers(this.connection);
         this.s3Handlers = new LspS3Handlers(this.connection);
@@ -96,7 +96,7 @@ export class LspConnection {
             this.handlers,
             this.authHandlers,
             this.stackHandlers,
-            this.environmentHandlers,
+            this.cfnEnvironmentHandlers,
             this.resourceHandlers,
             this.relatedResourcesHandlers,
             this.s3Handlers,
