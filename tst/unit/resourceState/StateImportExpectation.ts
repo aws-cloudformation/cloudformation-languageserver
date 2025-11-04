@@ -1,5 +1,6 @@
 import { DocumentType } from '../../../src/document/Document';
 import { DeletionPolicyOnImport } from '../../../src/resourceState/ResourceStateTypes';
+import { PlaceholderConstants, PlaceholderReplacer } from '../../../src/schema/transformers/PlaceholderConstants';
 import { getMockResourceProperties } from './MockResourceState';
 
 export interface TestScenario {
@@ -10,6 +11,27 @@ export interface TestScenario {
 }
 
 export const TestScenarios: TestScenario[] = [
+    {
+        name: 'JSON empty object',
+        documentType: DocumentType.JSON,
+        hasExistingResources: false,
+        initialContent: `{}`,
+    },
+    {
+        name: 'JSON empty object multiline',
+        documentType: DocumentType.JSON,
+        hasExistingResources: false,
+        initialContent: `{
+}`,
+    },
+    {
+        name: 'JSON with only version',
+        documentType: DocumentType.JSON,
+        hasExistingResources: false,
+        initialContent: `{
+  "AWSTemplateFormatVersion": "2010-09-09"
+}`,
+    },
     {
         name: 'JSON without existing Resources',
         documentType: DocumentType.JSON,
@@ -62,7 +84,7 @@ function getResourceLogicalName(resourceType: string): string {
     return parts.length >= 3 ? parts[1] + parts[2] : parts[parts.length - 1];
 }
 
-function formatPropertiesForJson(properties: any, indent: number = 6): string {
+function formatPropertiesForJson(properties: any, indent: number = 4): string {
     const spaces = ' '.repeat(indent);
     return JSON.stringify(properties, null, 2)
         .split('\n')
@@ -125,35 +147,58 @@ export function getImportExpectation(scenario: TestScenario, resourceType: strin
 
     if (scenario.documentType === DocumentType.JSON) {
         if (scenario.hasExistingResources) {
-            return `,
-    "${logicalName}": {
-      "Type": "${resourceType}",
-      "DeletionPolicy": "${DeletionPolicyOnImport}",
-      "Properties": ${formatPropertiesForJson(properties)},
-      "Metadata": {
-        "PrimaryIdentifier": "${identifier}",
-        "ManagedByStack": "true",
-        "StackName": "test-stack"
-      }
-    }`;
+            return PlaceholderReplacer.replaceWithTabStops(`,
+"${logicalName}": {
+  "Type": "${resourceType}",
+  "DeletionPolicy": "${DeletionPolicyOnImport}",
+  "Properties": ${formatPropertiesForJson(properties, 2)},
+  "Metadata": {
+    "PrimaryIdentifier": "${identifier}",
+    "ManagedByStack": "true",
+    "StackName": "test-stack"
+  }
+}`);
         } else {
-            return `,
+            // Check if file is truly empty (only { and } with optional whitespace)
+            const contentWithoutWhitespace = scenario.initialContent.replaceAll(/\s/g, '');
+            const isEmptyFile = contentWithoutWhitespace === '{}' || contentWithoutWhitespace === '';
+
+            if (isEmptyFile) {
+                // For empty files, return full JSON with braces
+                return PlaceholderReplacer.replaceWithTabStops(`{
   "Resources": {
     "${logicalName}": {
       "Type": "${resourceType}",
       "DeletionPolicy": "${DeletionPolicyOnImport}",
-      "Properties": ${formatPropertiesForJson(properties)},
+      "Properties": ${formatPropertiesForJson(properties, 6)},
       "Metadata": {
         "PrimaryIdentifier": "${identifier}",
         "ManagedByStack": "true",
         "StackName": "test-stack"
       }
     }
-  }`;
+  }
+}`);
+            }
+
+            // For files with content, add comma prefix
+            return PlaceholderReplacer.replaceWithTabStops(`,
+"Resources": {
+  "${logicalName}": {
+    "Type": "${resourceType}",
+    "DeletionPolicy": "${DeletionPolicyOnImport}",
+    "Properties": ${formatPropertiesForJson(properties, 4)},
+    "Metadata": {
+      "PrimaryIdentifier": "${identifier}",
+      "ManagedByStack": "true",
+      "StackName": "test-stack"
+    }
+  }
+}`);
         }
     } else {
         if (scenario.hasExistingResources) {
-            return `
+            return PlaceholderReplacer.replaceWithTabStops(`
   ${logicalName}:
     Type: ${resourceType}
     DeletionPolicy: ${DeletionPolicyOnImport}
@@ -162,9 +207,9 @@ ${formatPropertiesForYaml(properties)}
     Metadata:
       PrimaryIdentifier: ${identifier}
       ManagedByStack: "true"
-      StackName: test-stack`;
+      StackName: test-stack`);
         } else {
-            return `
+            return PlaceholderReplacer.replaceWithTabStops(`
 Resources:
   ${logicalName}:
     Type: ${resourceType}
@@ -174,7 +219,7 @@ ${formatPropertiesForYaml(properties)}
     Metadata:
       PrimaryIdentifier: ${identifier}
       ManagedByStack: "true"
-      StackName: test-stack`;
+      StackName: test-stack`);
         }
     }
 }
@@ -184,49 +229,69 @@ export function getCloneExpectation(scenario: TestScenario, resourceType: string
     const properties = getMockResourceProperties(resourceType);
     const identifier = getResourceIdentifier(resourceType);
 
-    // For clone, replace primary identifier properties with <CLONE INPUT REQUIRED>
-    const cloneProperties = replaceCloneProperties(properties, resourceType);
+    // For clone, replace primary identifier properties with placeholder
+    const cloneProperties = replaceCloneProperties(properties, resourceType, logicalName);
 
     if (scenario.documentType === DocumentType.JSON) {
         if (scenario.hasExistingResources) {
-            return `,
-    "${logicalName}": {
-      "Type": "${resourceType}",
-      "Properties": ${formatPropertiesForJson(cloneProperties)},
-      "Metadata": {
-        "PrimaryIdentifier": "<CLONE>${identifier}"
-      }
-    }`;
+            return PlaceholderReplacer.replaceWithTabStops(`,
+"${logicalName}": {
+  "Type": "${resourceType}",
+  "Properties": ${formatPropertiesForJson(cloneProperties, 2)},
+  "Metadata": {
+    "PrimaryIdentifier": "<CLONE>${identifier}"
+  }
+}`);
         } else {
-            return `,
+            // Check if file is truly empty (only { and } with optional whitespace)
+            const contentWithoutWhitespace = scenario.initialContent.replaceAll(/\s/g, '');
+            const isEmptyFile = contentWithoutWhitespace === '{}' || contentWithoutWhitespace === '';
+
+            if (isEmptyFile) {
+                // For empty files, return full JSON with braces
+                return PlaceholderReplacer.replaceWithTabStops(`{
   "Resources": {
     "${logicalName}": {
       "Type": "${resourceType}",
-      "Properties": ${formatPropertiesForJson(cloneProperties)},
+      "Properties": ${formatPropertiesForJson(cloneProperties, 6)},
       "Metadata": {
         "PrimaryIdentifier": "<CLONE>${identifier}"
       }
     }
-  }`;
+  }
+}`);
+            }
+
+            // For files with content, add comma prefix
+            return PlaceholderReplacer.replaceWithTabStops(`,
+"Resources": {
+  "${logicalName}": {
+    "Type": "${resourceType}",
+    "Properties": ${formatPropertiesForJson(cloneProperties, 4)},
+    "Metadata": {
+      "PrimaryIdentifier": "<CLONE>${identifier}"
+    }
+  }
+}`);
         }
     } else {
         if (scenario.hasExistingResources) {
-            return `
+            return PlaceholderReplacer.replaceWithTabStops(`
   ${logicalName}:
     Type: ${resourceType}
     Properties:
 ${formatPropertiesForYaml(cloneProperties)}
     Metadata:
-      PrimaryIdentifier: <CLONE>${identifier}`;
+      PrimaryIdentifier: <CLONE>${identifier}`);
         } else {
-            return `
+            return PlaceholderReplacer.replaceWithTabStops(`
 Resources:
   ${logicalName}:
     Type: ${resourceType}
     Properties:
 ${formatPropertiesForYaml(cloneProperties)}
     Metadata:
-      PrimaryIdentifier: <CLONE>${identifier}`;
+      PrimaryIdentifier: <CLONE>${identifier}`);
         }
     }
 }
@@ -246,15 +311,24 @@ function getResourceIdentifier(resourceType: string): string {
         'AWS::CloudWatch::Alarm': 'MyTestAlarm',
         'AWS::SNS::Topic': 'arn:aws:sns:us-east-1:123456789012:MyTestTopic',
         'AWS::SSM::Parameter': '/myapp/config/database-url',
+        'AWS::Synthetics::Canary': 'my-test-canary',
+        'AWS::SecurityLake::SubscriberNotification':
+            'arn:aws:securitylake:us-east-1:123456789012:subscriber/test-subscriber',
     };
     return identifierMap[resourceType] || 'unknown';
 }
 
-function replaceCloneProperties(properties: any, resourceType: string): any {
+function replaceCloneProperties(properties: any, resourceType: string, logicalId: string): any {
     const cloneProperties = structuredClone(properties);
 
-    // Replace primary identifier properties with <CLONE INPUT REQUIRED>
-    const primaryIdentifierProps: Record<string, string[]> = {
+    // Resources with REQUIRED primary identifiers get placeholders
+    const requiredPrimaryIdentifiers: Record<string, string[]> = {
+        'AWS::Synthetics::Canary': ['Name'],
+        'AWS::SecurityLake::SubscriberNotification': ['SubscriberArn'],
+    };
+
+    // Resources with NON-REQUIRED primary identifiers get removed
+    const nonRequiredPrimaryIdentifiers: Record<string, string[]> = {
         'AWS::S3::Bucket': ['BucketName'],
         'AWS::IAM::Role': ['RoleName'],
         'AWS::Lambda::Function': ['FunctionName'],
@@ -264,11 +338,21 @@ function replaceCloneProperties(properties: any, resourceType: string): any {
         'AWS::SSM::Parameter': ['Name'],
     };
 
-    const propsToReplace = primaryIdentifierProps[resourceType] || [];
+    // Add placeholders for required primary identifiers
+    const propsToReplace = requiredPrimaryIdentifiers[resourceType] || [];
     for (const prop of propsToReplace) {
         if (cloneProperties[prop] !== undefined) {
-            cloneProperties[prop] = '<CLONE INPUT REQUIRED>';
+            cloneProperties[prop] = PlaceholderConstants.createPlaceholder(
+                PlaceholderConstants.CLONE_INPUT_REQUIRED,
+                logicalId,
+            );
         }
+    }
+
+    // Remove non-required primary identifiers
+    const propsToRemove = nonRequiredPrimaryIdentifiers[resourceType] || [];
+    for (const prop of propsToRemove) {
+        delete cloneProperties[prop];
     }
 
     return cloneProperties;

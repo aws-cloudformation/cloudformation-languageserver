@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { PlaceholderConstants } from '../../../../src/schema/transformers/PlaceholderConstants';
 import { ReplacePrimaryIdentifierTransformer } from '../../../../src/schema/transformers/ReplacePrimaryIdentifierTransformer';
 import { combinedSchemas } from '../../../utils/SchemaUtils';
 
 describe('ReplacePrimaryIdentifierTransformer', () => {
     const schemas = combinedSchemas();
     const transformer = new ReplacePrimaryIdentifierTransformer();
+    const testLogicalId = 'TestResource';
 
     // Test with all 13 available resource schemas
     const resourceTests = [
@@ -15,7 +17,7 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
                 VersioningConfiguration: { Status: 'Enabled' },
             },
             expectedAfterTransform: {
-                BucketName: '<CLONE INPUT REQUIRED>',
+                // BucketName is NOT required, so it should be removed
                 VersioningConfiguration: { Status: 'Enabled' },
             },
         },
@@ -38,7 +40,7 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
                 AssumeRolePolicyDocument: { Version: '2012-10-17' },
             },
             expectedAfterTransform: {
-                RoleName: '<CLONE INPUT REQUIRED>',
+                // RoleName is NOT required, so it should be removed
                 AssumeRolePolicyDocument: { Version: '2012-10-17' },
             },
         },
@@ -50,7 +52,7 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
                 Code: { ZipFile: 'exports.handler = async () => {}' },
             },
             expectedAfterTransform: {
-                FunctionName: '<CLONE INPUT REQUIRED>',
+                // FunctionName is NOT required, so it should be removed
                 Runtime: 'nodejs18.x',
                 Code: { ZipFile: 'exports.handler = async () => {}' },
             },
@@ -111,7 +113,7 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
                 MaxSize: 3,
             },
             expectedAfterTransform: {
-                AutoScalingGroupName: '<CLONE INPUT REQUIRED>',
+                // AutoScalingGroupName is NOT required, so it should be removed
                 MinSize: 1,
                 MaxSize: 3,
             },
@@ -124,7 +126,7 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
                 Engine: 'mysql',
             },
             expectedAfterTransform: {
-                DBInstanceIdentifier: '<CLONE INPUT REQUIRED>',
+                // DBInstanceIdentifier is NOT required, so it should be removed
                 DBInstanceClass: 'db.t3.micro',
                 Engine: 'mysql',
             },
@@ -137,7 +139,7 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
                 EvaluationPeriods: 2,
             },
             expectedAfterTransform: {
-                AlarmName: '<CLONE INPUT REQUIRED>',
+                // AlarmName is NOT required, so it should be removed
                 ComparisonOperator: 'GreaterThanThreshold',
                 EvaluationPeriods: 2,
             },
@@ -162,7 +164,7 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
                 Value: 'test-value',
             },
             expectedAfterTransform: {
-                Name: '<CLONE INPUT REQUIRED>',
+                // Name is NOT required, so it should be removed
                 Type: 'String',
                 Value: 'test-value',
             },
@@ -174,9 +176,57 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
             const schema = schemas.schemas.get(typeName)!;
             const resourceProperties = { ...properties };
 
-            transformer.transform(resourceProperties, schema);
+            transformer.transform(resourceProperties, schema, testLogicalId);
 
             expect(resourceProperties).toEqual(expectedAfterTransform);
         });
     }
+
+    describe('required primary identifier behavior', () => {
+        it('should add placeholder when primary identifier is required', () => {
+            // Synthetics::Canary has Name as both primary identifier and required
+            const schema = schemas.schemas.get('AWS::Synthetics::Canary')!;
+            const resourceProperties = {
+                Name: 'existing-canary',
+                Code: { Handler: 'index.handler' },
+                ArtifactS3Location: 's3://bucket/path',
+                ExecutionRoleArn: 'arn:aws:iam::123456789012:role/role',
+                Schedule: { Expression: 'rate(5 minutes)' },
+                RuntimeVersion: 'syn-nodejs-puppeteer-3.9',
+            };
+
+            transformer.transform(resourceProperties, schema, testLogicalId);
+
+            expect(resourceProperties.Name).toBe(
+                PlaceholderConstants.createPlaceholder(PlaceholderConstants.CLONE_INPUT_REQUIRED, testLogicalId),
+            );
+        });
+
+        it('should remove primary identifier when it is not required', () => {
+            // S3::Bucket has BucketName as primary identifier but it's not required
+            const schema = schemas.schemas.get('AWS::S3::Bucket')!;
+            const resourceProperties = {
+                BucketName: 'my-bucket',
+                VersioningConfiguration: { Status: 'Enabled' },
+            };
+
+            transformer.transform(resourceProperties, schema, testLogicalId);
+
+            expect(resourceProperties).not.toHaveProperty('BucketName');
+            expect(resourceProperties.VersioningConfiguration).toEqual({ Status: 'Enabled' });
+        });
+
+        it('should not modify properties when primary identifier is read-only', () => {
+            // EC2::Instance has InstanceId as primary identifier but it's read-only
+            const schema = schemas.schemas.get('AWS::EC2::Instance')!;
+            const resourceProperties = {
+                ImageId: 'ami-12345678',
+            };
+
+            transformer.transform(resourceProperties, schema, testLogicalId);
+
+            expect(resourceProperties).not.toHaveProperty('InstanceId');
+            expect(resourceProperties.ImageId).toBe('ami-12345678');
+        });
+    });
 });

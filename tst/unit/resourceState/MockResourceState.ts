@@ -196,6 +196,40 @@ export const MockResourceStates = {
             Description: 'Database connection URL',
         }),
     } as ResourceState,
+
+    'AWS::Synthetics::Canary': {
+        typeName: 'AWS::Synthetics::Canary',
+        identifier: 'my-test-canary',
+        createdTimestamp: baseTimestamp,
+        properties: JSON.stringify({
+            Name: 'my-test-canary',
+            Code: {
+                Handler: 'index.handler',
+                Script: 'exports.handler = async () => {};',
+            },
+            ArtifactS3Location: 's3://my-bucket/canary-artifacts',
+            ExecutionRoleArn: 'arn:aws:iam::123456789012:role/canary-role',
+            Schedule: {
+                Expression: 'rate(5 minutes)',
+            },
+            RuntimeVersion: 'syn-nodejs-puppeteer-3.9',
+        }),
+    } as ResourceState,
+
+    'AWS::SecurityLake::SubscriberNotification': {
+        typeName: 'AWS::SecurityLake::SubscriberNotification',
+        identifier: 'arn:aws:securitylake:us-east-1:123456789012:subscriber/test-subscriber',
+        createdTimestamp: baseTimestamp,
+        properties: JSON.stringify({
+            SubscriberArn: 'arn:aws:securitylake:us-east-1:123456789012:subscriber/test-subscriber',
+            NotificationConfiguration: {
+                HttpsNotificationConfiguration: {
+                    TargetRoleArn: 'arn:aws:iam::123456789012:role/notification-role',
+                    Endpoint: 'https://example.com/webhook',
+                },
+            },
+        }),
+    } as ResourceState,
 };
 
 export function createMockResourceState(resourceType: string): ResourceState {

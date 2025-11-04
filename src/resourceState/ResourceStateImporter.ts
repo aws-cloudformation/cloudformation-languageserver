@@ -1,4 +1,4 @@
-import { CodeActionKind, Position, Range, TextEdit } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit } from 'vscode-languageserver';
 import { stringify as yamlStringify } from 'yaml';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
@@ -8,6 +8,7 @@ import { Document, DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { PlaceholderReplacer } from '../schema/transformers/PlaceholderConstants';
 import { TransformersUtil } from '../schema/transformers/TransformersUtil';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
@@ -15,6 +16,7 @@ import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
+import { getIndentationString } from '../utils/IndentationUtils';
 import { ResourceStateManager } from './ResourceStateManager';
 import {
     DeletionPolicyOnImport,
@@ -77,6 +79,10 @@ export class ResourceStateImporter {
 
         this.recordStateFetchMetrics(resourceSelections, importResult);
 
+        if (fetchedResourceStates.length === 0) {
+            return importResult;
+        }
+
         let warning: string | undefined;
         if (purpose === ResourceStatePurpose.IMPORT) {
             warning = this.checkAndWarnManagedResources(fetchedResourceStates);
@@ -96,25 +102,39 @@ export class ResourceStateImporter {
             fetchedResourceStates,
             document.documentType,
             resourceSectionExists,
+            document.uri,
+            insertPosition.commaPrefixNeeded,
+            insertPosition.replaceEntireFile,
         );
 
-        const commaPrefix = insertPosition.commaPrefixNeeded ? ',\n' : '';
-        const newLineSuffix = insertPosition.newLineSuffixNeeded ? '\n' : '';
+        let snippetText: string;
+        let textEdit: TextEdit;
 
-        const textEdit: TextEdit = {
-            range: Range.create(insertPosition.position, insertPosition.position),
-            newText: commaPrefix + docFormattedText + newLineSuffix,
+        if (insertPosition.replaceEntireFile) {
+            // Replace entire file with properly formatted JSON
+            snippetText = docFormattedText;
+            const endPosition = { line: document.lineCount, character: 0 };
+            textEdit = TextEdit.replace(Range.create({ line: 0, character: 0 }, endPosition), snippetText);
+        } else {
+            // Insert at specific position
+            const commaPrefix = insertPosition.commaPrefixNeeded ? ',\n' : '';
+            const newLineSuffix = insertPosition.newLineSuffixNeeded ? '\n' : '';
+            snippetText = commaPrefix + docFormattedText + newLineSuffix;
+            textEdit = TextEdit.replace(Range.create(insertPosition.position, insertPosition.position), snippetText);
+        }
+
+        const completionItem: CompletionItem = {
+            label: purpose === ResourceStatePurpose.IMPORT ? 'Import Resource State' : 'Clone Resource',
+            kind: CompletionItemKind.Snippet,
+            insertText: snippetText,
+            insertTextFormat: InsertTextFormat.Snippet,
+            textEdit,
         };
 
         return {
             ...importResult,
             warning,
-            kind: CodeActionKind.Refactor,
-            edit: {
-                changes: {
-                    [document.uri]: [textEdit],
-                },
-            },
+            completionItem,
         };
     }
 
@@ -135,7 +155,7 @@ export class ResourceStateImporter {
     ): Promise<{ fetchedResourceStates: ResourceTemplateFormat[]; importResult: ResourceStateResult }> {
         const fetchedResourceStates: ResourceTemplateFormat[] = [];
         const importResult: ResourceStateResult = {
-            title: 'Resource State Import',
+            completionItem: undefined,
             failedImports: {},
             successfulImports: {},
         };
@@ -168,7 +188,12 @@ export class ResourceStateImporter {
                                 Type: resourceType,
                                 DeletionPolicy:
                                     purpose === ResourceStatePurpose.IMPORT ? DeletionPolicyOnImport : undefined,
-                                Properties: this.applyTransformations(resourceState.properties, schema, purpose),
+                                Properties: this.applyTransformations(
+                                    resourceState.properties,
+                                    schema,
+                                    purpose,
+                                    logicalId,
+                                ),
                                 Metadata: await this.createMetadata(resourceIdentifier, purpose),
                             },
                         });
@@ -232,6 +257,9 @@ export class ResourceStateImporter {
         resources: ResourceTemplateFormat[],
         documentType: DocumentType,
         resourceSectionExists: boolean,
+        documentUri: string,
+        commaPrefixNeeded: boolean,
+        replaceEntireFile: boolean,
     ): string {
         const combined = {};
         for (const resource of resources) {
@@ -239,19 +267,52 @@ export class ResourceStateImporter {
         }
         const output = resourceSectionExists ? combined : { Resources: combined };
         if (documentType === DocumentType.JSON) {
-            const outputWithoutEnclosingBracesAndNewline = JSON.stringify(output, undefined, 2).slice(2, -2);
+            const editorSettings = this.documentManager.getEditorSettingsForDocument(documentUri);
+            const indentStr = getIndentationString(editorSettings, documentType);
+            const indentSize = editorSettings.insertSpaces ? editorSettings.tabSize : 1;
+            const jsonStr = this.stringifyPreservingSnippets(output, indentSize);
 
-            if (resourceSectionExists) {
-                // Existing resource section - add 2 spaces to all lines
-                return '  ' + outputWithoutEnclosingBracesAndNewline.replaceAll('\n', '\n  ');
+            // For empty files, return the full JSON with braces
+            if (replaceEntireFile) {
+                return jsonStr;
+            }
+
+            const outputWithoutEnclosingBracesAndNewline = jsonStr.slice(2, -2);
+
+            if (resourceSectionExists && !commaPrefixNeeded) {
+                // Add base indentation when NOT inserting at end of line
+                return indentStr + outputWithoutEnclosingBracesAndNewline.replaceAll('\n', '\n' + indentStr);
+            } else if (resourceSectionExists && commaPrefixNeeded) {
+                // Inserting at end of line with comma - VS Code will auto-indent by one level
+                // Remove one indent level from the output to compensate
+                const lines = outputWithoutEnclosingBracesAndNewline.split('\n');
+                const dedented = lines
+                    .map((line) => {
+                        // Remove one indent level if line starts with indentation
+                        if (line.startsWith(indentStr)) {
+                            return line.slice(indentStr.length);
+                        }
+                        return line;
+                    })
+                    .join('\n');
+                return dedented;
             } else {
-                // No resource section - content is already properly indented by JSON.stringify
-                return outputWithoutEnclosingBracesAndNewline;
+                // No resource section - remove one indent level from all lines
+                const lines = outputWithoutEnclosingBracesAndNewline.split('\n');
+                const dedented = lines
+                    .map((line) => {
+                        if (line.startsWith(indentStr)) {
+                            return line.slice(indentStr.length);
+                        }
+                        return line;
+                    })
+                    .join('\n');
+                return dedented;
             }
         }
 
         // YAML handling adds new line prefix always to work around some YAML end of file parsing errors
-        const yamlOutput = yamlStringify(output, { indent: 2 });
+        const yamlOutput = this.yamlStringifyPreservingSnippets(output);
         if (resourceSectionExists) {
             // Existing resource section - add 2 spaces to all lines for proper indentation
             return '\n  ' + yamlOutput.replaceAll('\n', '\n  ').trim();
@@ -261,10 +322,58 @@ export class ResourceStateImporter {
         }
     }
 
+    private stringifyPreservingSnippets(obj: unknown, indent: number): string {
+        const SNIPPET_MARKER = '__SNIPPET_PLACEHOLDER__';
+        const snippetMap = new Map<string, string>();
+        let snippetCounter = 0;
+
+        const replacer = (_key: string, value: unknown): unknown => {
+            if (typeof value === 'string' && (/^\$\{/.test(value) || PlaceholderReplacer.hasPlaceholders(value))) {
+                const marker = `${SNIPPET_MARKER}${snippetCounter++}`;
+                snippetMap.set(marker, value);
+                return marker;
+            }
+            return value;
+        };
+
+        let result = JSON.stringify(obj, replacer, indent);
+
+        // Restore snippets after stringification (keep placeholders as-is for now)
+        for (const [marker, snippet] of snippetMap.entries()) {
+            // For JSON, we need to keep the quotes around the snippet
+            result = result.replaceAll(`"${marker}"`, `"${snippet}"`);
+        }
+
+        // Replace all placeholders in the final JSON string to maintain sequential tabstop numbering
+        return PlaceholderReplacer.replaceWithTabStops(result);
+    }
+
+    private yamlStringifyPreservingSnippets(obj: unknown): string {
+        const processed = this.processValue(obj);
+        const yamlStr = yamlStringify(processed, { indent: 2 });
+        // Replace all placeholders in the final YAML string to maintain sequential tabstop numbering
+        return PlaceholderReplacer.replaceWithTabStops(yamlStr);
+    }
+
+    private processValue(value: unknown): unknown {
+        if (typeof value === 'object' && value !== null) {
+            if (Array.isArray(value)) {
+                return value.map((item) => this.processValue(item));
+            }
+            const processed: Record<string, unknown> = {};
+            for (const [k, v] of Object.entries(value)) {
+                processed[k] = this.processValue(v);
+            }
+            return processed;
+        }
+        return value;
+    }
+
     private applyTransformations(
         properties: string,
         schema: ResourceSchema,
         purpose: ResourceStatePurpose,
+        logicalId: string,
     ): Record<string, string> {
         const propertiesObj = JSON.parse(properties) as Record<string, string>;
 
@@ -272,7 +381,7 @@ export class ResourceStateImporter {
             const transformers =
                 purpose === ResourceStatePurpose.CLONE ? this.cloneTransformers : this.importTransformers;
             for (const transformer of transformers) {
-                transformer.transform(propertiesObj, schema);
+                transformer.transform(propertiesObj, schema, logicalId);
             }
         }
         return propertiesObj;
@@ -281,7 +390,7 @@ export class ResourceStateImporter {
     private getInsertPosition(
         resourcesSection: ResourcesSection | undefined,
         document: Document,
-    ): { position: Position; commaPrefixNeeded: boolean; newLineSuffixNeeded: boolean } {
+    ): { position: Position; commaPrefixNeeded: boolean; newLineSuffixNeeded: boolean; replaceEntireFile: boolean } {
         if (document.documentType === DocumentType.YAML) {
             let position: Position;
             if (resourcesSection) {
@@ -290,31 +399,76 @@ export class ResourceStateImporter {
                         ? { line: resourcesSection.endPosition.row, character: 0 }
                         : { line: resourcesSection.endPosition.row + 1, character: 0 };
             } else {
-                position =
-                    document.getLine(document.lineCount - 1)?.trim().length === 0
-                        ? { line: document.lineCount - 1, character: 0 }
-                        : { line: document.lineCount, character: 0 };
+                // Find the last non-empty line
+                let lastNonEmptyLine = document.lineCount - 1;
+                while (lastNonEmptyLine >= 0 && document.getLine(lastNonEmptyLine)?.trim().length === 0) {
+                    lastNonEmptyLine--;
+                }
+                position = { line: lastNonEmptyLine + 1, character: 0 };
             }
-            return { position: position, commaPrefixNeeded: false, newLineSuffixNeeded: false };
+            return {
+                position: position,
+                commaPrefixNeeded: false,
+                newLineSuffixNeeded: false,
+                replaceEntireFile: false,
+            };
         }
 
         let line = resourcesSection ? resourcesSection.endPosition.row : document.lineCount - 1;
+
+        // For JSON without Resources section, check if file is essentially empty
+        if (!resourcesSection) {
+            try {
+                const parsed = JSON.parse(document.getText()) as Record<string, unknown>;
+                const hasContent = Object.keys(parsed).length > 0;
+
+                // If no content, replace entire file
+                if (!hasContent) {
+                    return {
+                        position: { line: 0, character: 0 },
+                        commaPrefixNeeded: false,
+                        newLineSuffixNeeded: false,
+                        replaceEntireFile: true,
+                    };
+                }
+            } catch {
+                // If JSON is invalid, fall through to normal insertion logic
+            }
+        }
+
         while (line > 0) {
             const previousLine = document.getLine(line - 1);
             if (previousLine === undefined) {
-                return { position: { line: line, character: 0 }, commaPrefixNeeded: false, newLineSuffixNeeded: false };
+                return {
+                    position: { line: line, character: 0 },
+                    commaPrefixNeeded: false,
+                    newLineSuffixNeeded: false,
+                    replaceEntireFile: false,
+                };
             } else if (previousLine.trim().length > 0) {
                 if (previousLine.trimEnd().endsWith(',') || previousLine.trimEnd().endsWith('{')) {
                     return {
                         position: { line: line, character: 0 },
                         commaPrefixNeeded: false,
                         newLineSuffixNeeded: true,
+                        replaceEntireFile: false,
+                    };
+                }
+                // Check if we're at the closing brace of the root object (no Resources section)
+                if (!resourcesSection && previousLine.trim() !== '}') {
+                    // Insert after the last property, before the closing brace
+                    return {
+                        position: { line: line - 1, character: previousLine.trimEnd().length },
+                        commaPrefixNeeded: true,
+                        newLineSuffixNeeded: false,
+                        replaceEntireFile: false,
                     };
                 }
                 return {
                     position: { line: line - 1, character: previousLine.trimEnd().length },
                     commaPrefixNeeded: true,
                     newLineSuffixNeeded: false,
+                    replaceEntireFile: false,
                 };
             }
             line--;
@@ -324,6 +478,7 @@ export class ResourceStateImporter {
             position: { line: document.lineCount, character: 0 },
             commaPrefixNeeded: false,
             newLineSuffixNeeded: false,
+            replaceEntireFile: false,
         };
     }
 
@@ -358,7 +513,7 @@ export class ResourceStateImporter {
         failedImports?: Record<ResourceType, ResourceIdentifier[]>,
     ): ResourceStateResult {
         return {
-            title: title,
+            completionItem: undefined,
             successfulImports: successfulImports ?? {},
             failedImports: failedImports ?? {},
         };

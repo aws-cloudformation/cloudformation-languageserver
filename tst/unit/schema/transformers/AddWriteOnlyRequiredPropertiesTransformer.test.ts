@@ -1,11 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { AddWriteOnlyRequiredPropertiesTransformer } from '../../../../src/schema/transformers/AddWriteOnlyRequiredPropertiesTransformer';
+import { PlaceholderConstants } from '../../../../src/schema/transformers/PlaceholderConstants';
 import { combinedSchemas } from '../../../utils/SchemaUtils';
 
 describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
     const schemas = combinedSchemas();
     const transformer = new AddWriteOnlyRequiredPropertiesTransformer();
-    const PLACEHOLDER = '${1:update required write only property}';
+    const testLogicalId = 'TestResource';
 
     const resourceTests = [
         {
@@ -14,7 +15,7 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
             expectedAfterTransform: {
                 FunctionName: 'test-function',
                 Role: 'arn:aws:iam::123456789012:role/lambda-role',
-                Code: PLACEHOLDER,
+                Code: PlaceholderConstants.createPlaceholder(PlaceholderConstants.WRITE_ONLY_REQUIRED, testLogicalId),
             },
         },
         {
@@ -22,7 +23,10 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
             properties: { LaunchTemplateName: 'test-template' },
             expectedAfterTransform: {
                 LaunchTemplateName: 'test-template',
-                LaunchTemplateData: PLACEHOLDER,
+                LaunchTemplateData: PlaceholderConstants.createPlaceholder(
+                    PlaceholderConstants.WRITE_ONLY_REQUIRED,
+                    testLogicalId,
+                ),
             },
         },
         {
@@ -40,7 +44,7 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
                 Schedule: { Expression: 'rate(5 minutes)' },
                 RuntimeVersion: 'syn-nodejs-puppeteer-3.9',
                 ArtifactS3Location: 's3://my-bucket/canary',
-                Code: PLACEHOLDER,
+                Code: PlaceholderConstants.createPlaceholder(PlaceholderConstants.WRITE_ONLY_REQUIRED, testLogicalId),
             },
         },
         {
@@ -48,7 +52,10 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
             properties: { SubscriberArn: 'arn:aws:securitylake:us-east-1:123456789012:subscriber/test' },
             expectedAfterTransform: {
                 SubscriberArn: 'arn:aws:securitylake:us-east-1:123456789012:subscriber/test',
-                NotificationConfiguration: PLACEHOLDER,
+                NotificationConfiguration: PlaceholderConstants.createPlaceholder(
+                    PlaceholderConstants.WRITE_ONLY_REQUIRED,
+                    testLogicalId,
+                ),
             },
         },
         {
@@ -92,7 +99,10 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
                 ListenerArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:listener/test',
                 Priority: 1,
                 Conditions: [{ Field: 'path-pattern', Values: ['/test'] }],
-                Actions: PLACEHOLDER,
+                Actions: PlaceholderConstants.createPlaceholder(
+                    PlaceholderConstants.WRITE_ONLY_REQUIRED,
+                    testLogicalId,
+                ),
             },
         },
         {
@@ -102,7 +112,10 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
             },
             expectedAfterTransform: {
                 LoadBalancerArn: 'arn:aws:elasticloadbalancing:us-east-1:123456789012:loadbalancer/test',
-                DefaultActions: PLACEHOLDER,
+                DefaultActions: PlaceholderConstants.createPlaceholder(
+                    PlaceholderConstants.WRITE_ONLY_REQUIRED,
+                    testLogicalId,
+                ),
             },
         },
     ];
@@ -115,7 +128,7 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
             }
 
             const resourceProperties = structuredClone(properties);
-            transformer.transform(resourceProperties, schema);
+            transformer.transform(resourceProperties, schema, testLogicalId);
 
             expect(resourceProperties).toEqual(expectedAfterTransform);
         });
@@ -125,7 +138,7 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
         const schema = schemas.schemas.get('AWS::S3::Bucket')!;
         const resourceProperties = { BucketName: 'my-bucket' };
 
-        transformer.transform(resourceProperties, schema);
+        transformer.transform(resourceProperties, schema, testLogicalId);
 
         expect(resourceProperties).toEqual({ BucketName: 'my-bucket' });
     });
@@ -138,7 +151,7 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
             Code: { S3Bucket: 'my-bucket', S3Key: 'my-key' },
         };
 
-        transformer.transform(resourceProperties, schema);
+        transformer.transform(resourceProperties, schema, testLogicalId);
 
         expect(resourceProperties.Code).toEqual({ S3Bucket: 'my-bucket', S3Key: 'my-key' });
     });
@@ -151,8 +164,25 @@ describe('AddWriteOnlyRequiredPropertiesTransformer', () => {
             Code: {},
         };
 
+        transformer.transform(resourceProperties, schema, testLogicalId);
+
+        expect(resourceProperties.Code).toEqual(
+            PlaceholderConstants.createPlaceholder(PlaceholderConstants.WRITE_ONLY_REQUIRED, testLogicalId),
+        );
+    });
+
+    it('should not add placeholders when logicalId is not provided', () => {
+        const schema = schemas.schemas.get('AWS::Lambda::Function')!;
+        const resourceProperties = {
+            FunctionName: 'test-function',
+            Role: 'arn:aws:iam::123456789012:role/lambda-role',
+        };
+
         transformer.transform(resourceProperties, schema);
 
-        expect(resourceProperties.Code).toEqual(PLACEHOLDER);
+        expect(resourceProperties).toEqual({
+            FunctionName: 'test-function',
+            Role: 'arn:aws:iam::123456789012:role/lambda-role',
+        });
     });
 });
