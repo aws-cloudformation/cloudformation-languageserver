@@ -21,7 +21,7 @@ export class ResourceSectionHoverProvider implements HoverProvider {
     getInformation(context: Context) {
         let resource: Resource;
 
-        if (context.entity.entityType === EntityType.ForEachResource) {
+        if (context.getEntityType() === EntityType.ForEachResource) {
             const forEachResource = context.entity as ForEachResource;
             if (!forEachResource.resource) {
                 return;
@@ -57,7 +57,7 @@ export class ResourceSectionHoverProvider implements HoverProvider {
         }
 
         // Find 'Properties' starting after the resource structure
-        const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
+        const startIndex = context.getEntityType() === EntityType.ForEachResource ? 4 : 2;
         const propertiesIndex = context.propertyPath.indexOf('Properties', startIndex);
         if (propertiesIndex !== -1 && context.propertyPath.length >= propertiesIndex + 1) {
             return this.getPropertyDefinitionDoc(schema, context, propertiesIndex);
