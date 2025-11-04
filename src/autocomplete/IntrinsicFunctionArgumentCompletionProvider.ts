@@ -10,6 +10,7 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../document/DocumentManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import {
     determineGetAttPosition,
@@ -55,6 +56,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         private readonly documentManager: DocumentManager,
     ) {}
 
+    @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {

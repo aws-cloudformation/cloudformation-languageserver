@@ -4,6 +4,7 @@ import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem } from './CompletionUtils';
@@ -21,6 +22,7 @@ export class ConditionCompletionProvider implements CompletionProvider {
 
     public constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
+    @Measure({ name: 'getCompletions' })
     public getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {

@@ -28,6 +28,7 @@ import { CommonNodeTypes } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { propertyTypesToMarkdown } from '../hover/HoverFormatter';
 import { PropertyType, ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { templatePathToJsonPointerPath } from '../utils/PathUtils';
 import { CompletionItemData, ExtendedCompletionItem } from './CompletionFormatter';
@@ -47,6 +48,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
 
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
+    @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, _params: CompletionParams): CompletionItem[] | undefined {
         // Use unified property completion method for all scenarios
         const { completions: propertyCompletions, skipFuzzySearch } = this.getPropertyCompletions(context);

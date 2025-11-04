@@ -6,6 +6,7 @@ import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { CompletionProvider } from './CompletionProvider';
 import { ResourceEntityCompletionProvider } from './ResourceEntityCompletionProvider';
 import { ResourcePropertyCompletionProvider } from './ResourcePropertyCompletionProvider';
@@ -29,6 +30,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
         private readonly resourceProviders = createResourceCompletionProviders(core, external, providers),
     ) {}
 
+    @Measure({ name: 'getCompletions' })
     getCompletions(
         context: Context,
         params: CompletionParams,

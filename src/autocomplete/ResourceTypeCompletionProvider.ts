@@ -1,6 +1,7 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, TextEdit } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, createReplacementRange } from './CompletionUtils';
@@ -10,6 +11,7 @@ export class ResourceTypeCompletionProvider implements CompletionProvider {
 
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
+    @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, _params: CompletionParams): CompletionItem[] | undefined {
         const resourceTypeCompletions = this.getResourceTypeCompletions(context);
         return this.fuzzySearch(resourceTypeCompletions, context.text);
