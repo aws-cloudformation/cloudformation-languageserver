@@ -184,7 +184,6 @@ describe('StackActionHandler', () => {
 
             await expect(handler(templateUri, mockToken)).rejects.toThrow(ResponseError);
         });
-
     });
 
     describe('createValidationHandler', () => {
