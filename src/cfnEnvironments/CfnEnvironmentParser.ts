@@ -1,7 +1,7 @@
 import { OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
 import { DocumentType } from '../document/Document';
-import { ParseEnvironmentFilesParams, DeploymentConfig } from './EnvironmentRequestType';
+import { ParseCfnEnvironmentFilesParams, DeploymentConfig } from './CfnEnvironmentRequestType';
 
 const DocumentInfoSchema = z.object({
     type: z.enum(DocumentType),
@@ -9,7 +9,7 @@ const DocumentInfoSchema = z.object({
     fileName: z.string(),
 });
 
-const ParseEnvironmentFilesParamsSchema = z.object({
+const ParseCfnEnvironmentFilesParamsSchema = z.object({
     documents: z.array(DocumentInfoSchema),
 });
 
@@ -26,8 +26,8 @@ const DeploymentConfigSchema = z
         message: 'At least one property must be provided',
     });
 
-export function parseEnvironmentFileParams(input: unknown): ParseEnvironmentFilesParams {
-    return ParseEnvironmentFilesParamsSchema.parse(input);
+export function parseCfnEnvironmentFileParams(input: unknown): ParseCfnEnvironmentFilesParams {
+    return ParseCfnEnvironmentFilesParamsSchema.parse(input);
 }
 
 export function parseDeploymentConfig(input: unknown): DeploymentConfig {

@@ -1,17 +1,20 @@
 import { OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DocumentType } from '../../../src/document/Document';
-import { parseDeploymentConfig, parseEnvironmentFileParams } from '../../../src/environments/EnvironmentParser';
 import {
-    ParseEnvironmentFilesParams,
+    parseDeploymentConfig,
+    parseCfnEnvironmentFileParams,
+} from '../../../src/cfnEnvironments/CfnEnvironmentParser';
+import {
+    ParseCfnEnvironmentFilesParams,
     DocumentInfo,
-    ParseEnvironmentFilesResult,
-} from '../../../src/environments/EnvironmentRequestType';
-import { parseEnvironmentFilesHandler } from '../../../src/handlers/EnvironmentHandler';
+    ParseCfnEnvironmentFilesResult,
+} from '../../../src/cfnEnvironments/CfnEnvironmentRequestType';
+import { DocumentType } from '../../../src/document/Document';
+import { parseCfnEnvironmentFilesHandler } from '../../../src/handlers/CfnEnvironmentHandler';
 
 // Mock the parsers
-vi.mock('../../../src/environments/EnvironmentParser', () => ({
-    parseEnvironmentFileParams: vi.fn((input) => input),
+vi.mock('../../../src/cfnEnvironments/CfnEnvironmentParser', () => ({
+    parseCfnEnvironmentFileParams: vi.fn((input) => input),
     parseDeploymentConfig: vi.fn(),
 }));
 
@@ -19,12 +22,12 @@ vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
     parseWithPrettyError: vi.fn((parser, input) => parser(input)),
 }));
 
-describe('EnvironmentHandler', () => {
+describe('CfnEnvironmentHandler', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    describe('parseEnvironmentFilesHandler', () => {
+    describe('parseCfnEnvironmentFilesHandler', () => {
         it('should successfully parse environment files', () => {
             const mockDocuments: DocumentInfo[] = [
                 {
@@ -36,7 +39,7 @@ parameters:
                 },
             ];
 
-            const params: ParseEnvironmentFilesParams = {
+            const params: ParseCfnEnvironmentFilesParams = {
                 documents: mockDocuments,
             };
 
@@ -45,8 +48,8 @@ parameters:
                 parameters: { BucketName: 'test-bucket' },
             });
 
-            const handler = parseEnvironmentFilesHandler();
-            const result = handler(params, {} as any) as ParseEnvironmentFilesResult;
+            const handler = parseCfnEnvironmentFilesHandler();
+            const result = handler(params, {} as any) as ParseCfnEnvironmentFilesResult;
 
             expect(result).toBeDefined();
             expect(result.parsedFiles).toHaveLength(1);
@@ -70,7 +73,7 @@ parameters:
                 },
             ];
 
-            const params: ParseEnvironmentFilesParams = {
+            const params: ParseCfnEnvironmentFilesParams = {
                 documents: mockDocuments,
             };
 
@@ -83,8 +86,8 @@ parameters:
                     parameters: { BucketName: 'test-bucket' },
                 });
 
-            const handler = parseEnvironmentFilesHandler();
-            const result = handler(params, {} as any) as ParseEnvironmentFilesResult;
+            const handler = parseCfnEnvironmentFilesHandler();
+            const result = handler(params, {} as any) as ParseCfnEnvironmentFilesResult;
 
             expect(result.parsedFiles).toHaveLength(1);
             expect(result.parsedFiles[0].fileName).toBe('valid.yaml');
@@ -109,7 +112,7 @@ parameters:
                 },
             ];
 
-            const params: ParseEnvironmentFilesParams = {
+            const params: ParseCfnEnvironmentFilesParams = {
                 documents: mockDocuments,
             };
 
@@ -123,8 +126,8 @@ parameters:
                     onStackFailure: OnStackFailure.DO_NOTHING,
                 });
 
-            const handler = parseEnvironmentFilesHandler();
-            const result = handler(params, {} as any) as ParseEnvironmentFilesResult;
+            const handler = parseCfnEnvironmentFilesHandler();
+            const result = handler(params, {} as any) as ParseCfnEnvironmentFilesResult;
 
             expect(result.parsedFiles).toHaveLength(2);
             expect(result.parsedFiles[0].fileName).toBe('env1.yaml');
@@ -132,15 +135,15 @@ parameters:
         });
 
         it('should handle parser validation errors', () => {
-            const params: ParseEnvironmentFilesParams = {
+            const params: ParseCfnEnvironmentFilesParams = {
                 documents: [],
             };
 
-            vi.mocked(parseEnvironmentFileParams).mockImplementation(() => {
+            vi.mocked(parseCfnEnvironmentFileParams).mockImplementation(() => {
                 throw new Error('Invalid parameters');
             });
 
-            const handler = parseEnvironmentFilesHandler();
+            const handler = parseCfnEnvironmentFilesHandler();
 
             expect(() => handler(params, {} as any)).toThrow();
         });
