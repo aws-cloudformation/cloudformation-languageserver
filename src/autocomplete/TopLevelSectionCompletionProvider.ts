@@ -5,6 +5,7 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
 import { CompletionFormatter, ExtendedCompletionItem } from './CompletionFormatter';
@@ -84,6 +85,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
         private readonly documentManager: DocumentManager,
     ) {}
 
+    @Measure({ name: 'getTopLevelSectionCompletions' })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         // Get both regular and snippet completions
         const stringCompletions = this.getTopLevelSectionCompletions();

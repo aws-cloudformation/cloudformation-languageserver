@@ -2,6 +2,7 @@ import { CompletionItem, CompletionItemKind, CompletionParams, TextEdit } from '
 import { Context } from '../context/Context';
 import { Intrinsics } from '../context/ContextType';
 import { DocumentType } from '../document/Document';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, createReplacementRange } from './CompletionUtils';
@@ -16,6 +17,7 @@ export class IntrinsicFunctionCompletionProvider implements CompletionProvider {
         ignoreLocation: false,
     });
 
+    @Measure({ name: 'getIntrinsicFunctionCompletions' })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const triggerChar = params.context?.triggerCharacter ?? '';
         const isYaml = context.documentType !== DocumentType.JSON;

@@ -2,6 +2,7 @@ import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-lan
 import { Context } from '../context/Context';
 import { PARAMETER_TYPES } from '../context/semantic/parameter/ParameterType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem } from './CompletionUtils';
@@ -17,6 +18,7 @@ export class ParameterTypeValueCompletionProvider implements CompletionProvider 
         ignoreLocation: false,
     });
 
+    @Measure({ name: 'getParameterTypeValueCompletions' })
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] | undefined {
         const items = this.getParameterTypesAsCompletionItems();
 
