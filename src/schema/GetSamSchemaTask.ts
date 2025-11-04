@@ -1,8 +1,8 @@
 import { DataStore } from '../datastore/DataStore';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
+import { downloadJson } from '../utils/RemoteDownload';
 import { GetSchemaTask } from './GetSchemaTask';
-import { downloadJson } from './RemoteSchemaHelper';
 import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';
 import { SamSchemaTransformer, SamSchema } from './SamSchemaTransformer';
 
@@ -15,8 +15,6 @@ export class GetSamSchemaTask extends GetSchemaTask {
     @Measure({ name: 'getSchemas' })
     override async runImpl(dataStore: DataStore): Promise<void> {
         try {
-            logger.info('Downloading SAM schema');
-
             const samSchema = await downloadJson<Record<string, unknown>>(GetSamSchemaTask.SAM_SCHEMA_URL);
 
             const resourceSchemas = SamSchemaTransformer.transformSamSchema(samSchema as unknown as SamSchema);

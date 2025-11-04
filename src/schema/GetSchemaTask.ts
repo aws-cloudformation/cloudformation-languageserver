@@ -4,9 +4,10 @@ import { DataStore } from '../datastore/DataStore';
 import { CfnService } from '../services/CfnService';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { AwsRegion } from '../utils/Region';
+import { downloadFile } from '../utils/RemoteDownload';
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
-import { cfnResourceSchemaLink, downloadFile, unZipFile } from './RemoteSchemaHelper';
+import { cfnResourceSchemaLink, unZipFile } from './RemoteSchemaHelper';
 
 export abstract class GetSchemaTask {
     protected abstract runImpl(dataStore: DataStore, logger?: Logger): Promise<void>;
