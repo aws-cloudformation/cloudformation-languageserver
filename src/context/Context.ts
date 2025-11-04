@@ -263,7 +263,7 @@ export class Context {
         // Determine the entity key level based on entity type
         // Regular: ['Resources', 'LogicalId', 'Key'] - level 3
         // ForEachResource: ['Resources', 'Fn::ForEach::Name', 2, 'ResourceKey', 'Key'] - level 5
-        const entityKeyLevel = this.entity.entityType === EntityType.ForEachResource ? 5 : 3;
+        const entityKeyLevel = this.getEntityType() === EntityType.ForEachResource ? 5 : 3;
 
         // Case 1: If we are beyond the entity key level
         if (this.propertyPath.length > entityKeyLevel) {

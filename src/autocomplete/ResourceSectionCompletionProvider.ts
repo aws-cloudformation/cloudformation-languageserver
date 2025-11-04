@@ -56,7 +56,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
             if (params.context?.triggerKind === CompletionTriggerKind.Invoked && this.isInPropertiesSection(context)) {
                 let resource: Resource | undefined;
 
-                if (context.entity.entityType === EntityType.ForEachResource) {
+                if (context.getEntityType() === EntityType.ForEachResource) {
                     const forEachResource = context.entity as ForEachResource;
                     resource = forEachResource.resource;
                 } else {
@@ -86,7 +86,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
 
     private isInPropertiesSection(context: Context): boolean {
         // Find 'Properties' starting after the resource structure
-        const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
+        const startIndex = context.getEntityType() === EntityType.ForEachResource ? 4 : 2;
         const propertiesIndex = context.propertyPath.indexOf('Properties', startIndex);
         return propertiesIndex !== -1 && context.propertyPath.length >= propertiesIndex + 1;
     }
@@ -95,7 +95,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
         if (context.propertyPath[context.propertyPath.length - 1] !== 'Type') {
             return false;
         }
-        const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
+        const startIndex = context.getEntityType() === EntityType.ForEachResource ? 4 : 2;
         const propertiesIndex = context.propertyPath.indexOf('Properties', startIndex);
         return propertiesIndex === -1;
     }

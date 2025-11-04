@@ -68,7 +68,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     private getPropertyCompletions(context: Context): PropertyCompletionsResult {
         let resource: Resource;
 
-        if (context.entity.entityType === EntityType.ForEachResource) {
+        if (context.getEntityType() === EntityType.ForEachResource) {
             const forEachResource = context.entity as ForEachResource;
             if (!forEachResource.resource) {
                 return { completions: [], skipFuzzySearch: false };
@@ -287,13 +287,13 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         const isArrayItemContext = typeof lastSegment === 'number' || lastSegment === '';
 
         // Find the Properties index dynamically
-        const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
+        const startIndex = context.getEntityType() === EntityType.ForEachResource ? 4 : 2;
         const propertiesIndex = propertyPath.indexOf('Properties', startIndex);
 
         if (propertiesIndex !== -1 && isArrayItemContext) {
             let resource: Resource | undefined;
 
-            if (context.entity.entityType === EntityType.ForEachResource) {
+            if (context.getEntityType() === EntityType.ForEachResource) {
                 const forEachResource = context.entity as ForEachResource;
                 resource = forEachResource.resource;
             } else {

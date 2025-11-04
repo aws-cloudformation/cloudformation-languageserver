@@ -29,7 +29,7 @@ export class ResourceEntityCompletionProvider implements CompletionProvider {
 
         // Extract the actual resource entity (handle both regular and ForEach resources)
         let resource: Resource;
-        if (context.entity.entityType === EntityType.ForEachResource) {
+        if (context.getEntityType() === EntityType.ForEachResource) {
             const forEachResource = context.entity as ForEachResource;
             if (!forEachResource.resource) {
                 return entityCompletions;
