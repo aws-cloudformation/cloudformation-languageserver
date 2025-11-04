@@ -36,7 +36,6 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         this.timeout = setTimeout(() => {
             // Wait before trying to call CFN APIs so that credentials have time to update
             this.runPrivateTask();
-            void this.runSamTask();
         }, TenSeconds);
 
         this.interval = setInterval(() => {
@@ -78,13 +77,11 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
             .catch(() => {});
     }
 
-    private async runSamTask(): Promise<void> {
-        try {
-            await this.samTask.run(this.schemas.publicSchemas);
-            this.schemas.invalidateCombinedSchemas();
-        } catch (error) {
-            this.log.error({ error }, 'Failed to run SAM schema task');
-        }
+    runSamTask() {
+        this.samTask
+            .run(this.schemas.samSchemas, this.log)
+            .then(() => this.schemas.invalidateCombinedSchemas())
+            .catch(() => {});
     }
 
     public currentRegionalTasks() {

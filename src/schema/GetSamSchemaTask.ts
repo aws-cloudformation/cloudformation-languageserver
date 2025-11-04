@@ -1,24 +1,23 @@
 import { DataStore } from '../datastore/DataStore';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../utils/Errors';
-import { downloadFile } from './RemoteSchemaHelper';
-import { SamSchemas, SamSchemasType } from './SamSchemas';
+import { GetSchemaTask } from './GetSchemaTask';
+import { downloadJson } from './RemoteSchemaHelper';
+import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';
 import { SamSchemaTransformer, SamSchema } from './SamSchemaTransformer';
 
 const logger = LoggerFactory.getLogger('GetSamSchemaTask');
 
-export class GetSamSchemaTask {
+export class GetSamSchemaTask extends GetSchemaTask {
     private static readonly SAM_SCHEMA_URL =
         'https://raw.githubusercontent.com/aws/serverless-application-model/refs/heads/main/schema_source/sam.schema.json';
 
-    @Measure({ name: 'getSamSchema' })
-    async run(dataStore: DataStore): Promise<void> {
+    @Measure({ name: 'getSchemas' })
+    override async runImpl(dataStore: DataStore): Promise<void> {
         try {
             logger.info('Downloading SAM schema');
 
-            const schemaBuffer = await downloadFile(GetSamSchemaTask.SAM_SCHEMA_URL);
-            const samSchema = JSON.parse(schemaBuffer.toString()) as Record<string, unknown>;
+            const samSchema = await downloadJson<Record<string, unknown>>(GetSamSchemaTask.SAM_SCHEMA_URL);
 
             const resourceSchemas = SamSchemaTransformer.transformSamSchema(samSchema as unknown as SamSchema);
 
@@ -36,11 +35,11 @@ export class GetSamSchemaTask {
                 lastModifiedMs: Date.now(),
             };
 
-            await dataStore.put('sam-schemas', samSchemasData);
+            await dataStore.put(SamStoreKey, samSchemasData);
 
             logger.info(`Downloaded and stored ${resourceSchemas.size} SAM resource schemas`);
         } catch (error) {
-            logger.error({ error: extractErrorMessage(error) }, 'Failed to download SAM schema');
+            logger.error(error, 'Failed to download SAM schema');
             throw error;
         }
     }

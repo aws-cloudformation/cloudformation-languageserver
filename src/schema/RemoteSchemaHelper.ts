@@ -82,3 +82,12 @@ export async function unZipFile(buffer: Promise<Buffer>): Promise<SchemaFileType
         });
     });
 }
+
+export async function downloadJson<T = unknown>(url: string): Promise<T> {
+    const response = await axios<T>({
+        method: 'get',
+        url: url,
+    });
+
+    return response.data;
+}

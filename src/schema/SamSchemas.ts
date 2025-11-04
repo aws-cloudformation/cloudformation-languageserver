@@ -7,6 +7,8 @@ export type SamSchemasType = {
     lastModifiedMs: number;
 };
 
+export const SamStoreKey = 'SamSchemas';
+
 export class SamSchemas {
     static readonly V1 = 'v1';
 
