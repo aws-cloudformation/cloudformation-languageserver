@@ -44,7 +44,7 @@ import {
     describeChangeSetDeletionStatusHandler,
     getStackEventsHandler,
     clearStackEventsHandler,
-    getStackOutputsHandler,
+    describeStackHandler,
     describeChangeSetHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
@@ -125,7 +125,7 @@ export class CfnServer {
         this.lsp.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
         this.lsp.stackHandlers.onGetStackEvents(getStackEventsHandler(this.components));
         this.lsp.stackHandlers.onClearStackEvents(clearStackEventsHandler(this.components));
-        this.lsp.stackHandlers.onGetStackOutputs(getStackOutputsHandler(this.components));
+        this.lsp.stackHandlers.onDescribeStack(describeStackHandler(this.components));
 
         this.lsp.environmentHandlers.onParseEnvironmentFiles(parseEnvironmentFilesHandler());
 

@@ -28,7 +28,7 @@ import {
     deleteChangeSetHandler,
     describeChangeSetDeletionStatusHandler,
     getChangeSetDeletionStatusHandler,
-    getStackOutputsHandler,
+    describeStackHandler,
     describeChangeSetHandler,
 } from '../../../src/handlers/StackHandler';
 import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
@@ -45,7 +45,7 @@ import {
     ListStacksParams,
     ListStacksResult,
     ListStackResourcesResult,
-    GetStackOutputsResult,
+    DescribeStackResult,
     DescribeChangeSetParams,
     DescribeChangeSetResult,
 } from '../../../src/stacks/StackRequestType';
@@ -71,7 +71,7 @@ vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
     parseCreateDeploymentParams: vi.fn((input) => input),
     parseDeleteChangeSetParams: vi.fn((input) => input),
     parseListStackResourcesParams: vi.fn((input) => input),
-    parseGetStackOutputsParams: vi.fn((input) => input),
+    parseDescribeStackParams: vi.fn((input) => input),
     parseDescribeChangeSetParams: vi.fn((input) => input),
 }));
 
@@ -713,56 +713,55 @@ describe('StackActionHandler', () => {
         });
     });
 
-    describe('getStackOutputsHandler', () => {
-        it('returns outputs for a stack', async () => {
+    describe('describeStackHandler', () => {
+        it('returns stack info', async () => {
             const params = { stackName: 'MyStack' };
             const mockOutputs = [
                 { OutputKey: 'BucketName', OutputValue: 'my-bucket', Description: 'S3 Bucket' },
                 { OutputKey: 'FunctionArn', OutputValue: 'arn:aws:lambda:...', ExportName: 'MyFunction' },
             ];
+            const mockParams = [
+                { ParameterKey: 'RoleName', ParameterValue: 'MyRole' },
+                { ParameterKey: 'LambdaName', ParameterValue: 'MyLambda' },
+            ];
+            const mockTags = [
+                { Key: 'Org', Value: 'Aws' },
+                { Key: 'CostCenter', Value: '123' },
+            ];
 
             mockComponents.cfnService.describeStacks.resolves({
-                Stacks: [{ StackName: 'MyStack', Outputs: mockOutputs }],
+                Stacks: [{ StackName: 'MyStack', Outputs: mockOutputs, Parameters: mockParams, Tags: mockTags }],
             } as any);
 
-            const handler = getStackOutputsHandler(mockComponents);
-            const result = (await handler(params, {} as any)) as GetStackOutputsResult;
+            const handler = describeStackHandler(mockComponents);
+            const result = (await handler(params, {} as any)) as DescribeStackResult;
 
-            expect(result.outputs).toHaveLength(2);
-            expect(result.outputs[0].OutputKey).toBe('BucketName');
-            expect(result.outputs[1].ExportName).toBe('MyFunction');
+            expect(result.stack?.Outputs).toHaveLength(2);
+            expect(result.stack?.Outputs?.[0].OutputKey).toBe('BucketName');
+            expect(result.stack?.Outputs?.[1].ExportName).toBe('MyFunction');
+            expect(result.stack?.Parameters?.[0].ParameterKey).toBe('RoleName');
+            expect(result.stack?.Parameters?.[1].ParameterValue).toBe('MyLambda');
+            expect(result.stack?.Tags?.[0].Key).toBe('Org');
+            expect(result.stack?.Tags?.[1].Value).toBe('123');
         });
 
-        it('returns empty array when stack has no outputs', async () => {
-            const params = { stackName: 'MyStack' };
-
-            mockComponents.cfnService.describeStacks.resolves({
-                Stacks: [{ StackName: 'MyStack', Outputs: undefined }],
-            } as any);
-
-            const handler = getStackOutputsHandler(mockComponents);
-            const result = (await handler(params, {} as any)) as GetStackOutputsResult;
-
-            expect(result.outputs).toEqual([]);
-        });
-
-        it('returns empty array when Stacks array is empty', async () => {
+        it('returns undefined when Stacks array is empty', async () => {
             const params = { stackName: 'MyStack' };
 
             mockComponents.cfnService.describeStacks.resolves({
                 Stacks: [],
             } as any);
 
-            const handler = getStackOutputsHandler(mockComponents);
-            const result = (await handler(params, {} as any)) as GetStackOutputsResult;
+            const handler = describeStackHandler(mockComponents);
+            const result = (await handler(params, {} as any)) as DescribeStackResult;
 
-            expect(result.outputs).toEqual([]);
+            expect(result.stack).toBeUndefined();
         });
 
         it('throws ResponseError for invalid stack name', async () => {
             const params = { stackName: '' };
 
-            const handler = getStackOutputsHandler(mockComponents);
+            const handler = describeStackHandler(mockComponents);
 
             await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
         });
@@ -772,7 +771,7 @@ describe('StackActionHandler', () => {
 
             mockComponents.cfnService.describeStacks.rejects(new Error('Stack not found'));
 
-            const handler = getStackOutputsHandler(mockComponents);
+            const handler = describeStackHandler(mockComponents);
 
             await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
         });
