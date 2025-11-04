@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import axios from 'axios';
+import { downloadJson } from '../schema/RemoteSchemaHelper';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
@@ -58,12 +58,9 @@ export class FeatureFlagProvider implements Closeable {
 
     @Measure({ name: 'getFromOnline' })
     private async getFromOnline(env: string): Promise<unknown> {
-        const response = await axios<unknown>({
-            method: 'get',
-            url: `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/head/main/assets/featureFlag/${env.toLowerCase()}.json`,
-        });
-
-        return response.data;
+        return await downloadJson(
+            `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/head/main/assets/featureFlag/${env.toLowerCase()}.json`,
+        );
     }
 
     private log() {

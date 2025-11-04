@@ -3,7 +3,7 @@ import { AwsRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
 import { PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemasType } from './RegionalSchemas';
-import { SamSchemasType } from './SamSchemas';
+import { SamSchemasType, SamStoreKey } from './SamSchemas';
 
 export class SchemaStore {
     public readonly publicSchemas = this.dataStoreFactory.get('public_schemas', Persistence.local);
@@ -20,7 +20,7 @@ export class SchemaStore {
         if (!cached) {
             const regionalSchemas = this.publicSchemas.get<RegionalSchemasType>(region);
             const privateSchemas = this.privateSchemas.get<PrivateSchemasType>(profile);
-            const samSchemas = this.samSchemas.get<SamSchemasType>('sam-schemas');
+            const samSchemas = this.samSchemas.get<SamSchemasType>(SamStoreKey);
 
             cached = CombinedSchemas.from(regionalSchemas, privateSchemas, samSchemas);
             void this.combinedSchemas.put(cacheKey, cached);

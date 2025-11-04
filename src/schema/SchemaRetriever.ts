@@ -2,11 +2,13 @@ import { DateTime } from 'luxon';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { TelemetryService } from '../telemetry/TelemetryService';
 import { Closeable } from '../utils/Closeable';
 import { AwsRegion, getRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
 import { GetSchemaTaskManager } from './GetSchemaTaskManager';
 import { RegionalSchemasType } from './RegionalSchemas';
+import { SamSchemasType, SamStoreKey } from './SamSchemas';
 import { SchemaStore } from './SchemaStore';
 
 const StaleDaysThreshold = 7;
@@ -16,11 +18,18 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     private settingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
     private readonly log = LoggerFactory.getLogger(SchemaRetriever);
+    private readonly telemetry = TelemetryService.instance.get('SchemaRetriever');
 
     constructor(
         private readonly schemaTaskManager: GetSchemaTaskManager,
         private readonly schemaStore: SchemaStore,
-    ) {}
+    ) {
+        this.telemetry.registerGaugeProvider('schema.public.maxAge', () => this.getPublicSchemaMaxAge(), {
+            unit: 'ms',
+        });
+
+        this.telemetry.registerGaugeProvider('schema.sam.maxAge', () => this.getSamSchemaAge(), { unit: 'ms' });
+    }
 
     configure(settingsManager: ISettingsSubscriber): void {
         // Clean up existing subscription if present
@@ -35,6 +44,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         // Initialize schemas with current region
         this.getRegionalSchemasIfMissing([this.settings.region]);
         this.getRegionalSchemasIfStale();
+        this.getSamSchemasIfMissingOrStale();
 
         // Subscribe to profile settings changes
         this.settingsSubscription = settingsManager.subscribe('profile', (newProfileSettings) => {
@@ -124,5 +134,43 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
                 this.schemaTaskManager.addTask(region);
             }
         }
+    }
+
+    private getSamSchemasIfMissingOrStale() {
+        const existingValue = this.schemaStore.samSchemas.get<SamSchemasType>(SamStoreKey);
+
+        if (existingValue === undefined) {
+            this.schemaTaskManager.runSamTask();
+            return;
+        }
+
+        const now = DateTime.now();
+        const lastModified = DateTime.fromMillis(existingValue.lastModifiedMs);
+        const isStale = now.diff(lastModified, 'days').days >= StaleDaysThreshold;
+
+        if (isStale) {
+            this.schemaTaskManager.runSamTask();
+        }
+    }
+
+    private getPublicSchemaMaxAge(): number {
+        let maxAge = 0;
+        for (const key of this.schemaStore.publicSchemas.keys(50)) {
+            const region = getRegion(key);
+            const existingValue = this.getRegionalSchemasFromStore(region);
+            if (existingValue) {
+                const age = DateTime.now().diff(DateTime.fromMillis(existingValue.lastModifiedMs)).milliseconds;
+                maxAge = Math.max(maxAge, age);
+            }
+        }
+        return maxAge;
+    }
+
+    private getSamSchemaAge(): number {
+        const existingValue = this.schemaStore.samSchemas.get<SamSchemasType>(SamStoreKey);
+        if (!existingValue) {
+            return 0;
+        }
+        return DateTime.now().diff(DateTime.fromMillis(existingValue.lastModifiedMs)).milliseconds;
     }
 }

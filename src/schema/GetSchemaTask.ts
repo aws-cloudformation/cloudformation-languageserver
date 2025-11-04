@@ -8,7 +8,7 @@ import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
 import { cfnResourceSchemaLink, downloadFile, unZipFile } from './RemoteSchemaHelper';
 
-abstract class GetSchemaTask {
+export abstract class GetSchemaTask {
     protected abstract runImpl(dataStore: DataStore, logger?: Logger): Promise<void>;
 
     async run(dataStore: DataStore, logger?: Logger) {
