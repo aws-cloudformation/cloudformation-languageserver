@@ -286,11 +286,23 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         const lastSegment = propertyPath[propertyPath.length - 1];
         const isArrayItemContext = typeof lastSegment === 'number' || lastSegment === '';
 
-        if (propertyPath.length > 3 && isArrayItemContext) {
-            const entity = context.entity as Resource;
-            if (entity?.Properties) {
-                const pathSegments = propertyPath.slice(3); // Remove ['Resources', 'LogicalId', 'Properties']
-                let current: Record<string, CfnValue> | CfnValue | undefined = entity.Properties;
+        // Find the Properties index dynamically
+        const startIndex = context.entity.entityType === EntityType.ForEachResource ? 4 : 2;
+        const propertiesIndex = propertyPath.indexOf('Properties', startIndex);
+
+        if (propertiesIndex !== -1 && isArrayItemContext) {
+            let resource: Resource | undefined;
+
+            if (context.entity.entityType === EntityType.ForEachResource) {
+                const forEachResource = context.entity as ForEachResource;
+                resource = forEachResource.resource;
+            } else {
+                resource = context.entity as Resource;
+            }
+
+            if (resource?.Properties) {
+                const pathSegments = propertyPath.slice(propertiesIndex + 1);
+                let current: Record<string, CfnValue> | CfnValue | undefined = resource.Properties;
 
                 for (let i = 0; i < pathSegments.length - 1; i++) {
                     if (current && typeof current === 'object' && pathSegments[i] in current) {

@@ -4,7 +4,11 @@ import { ResourcePropertyCompletionProvider } from '../../../src/autocomplete/Re
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
-import { createContextFromYamlContentAndPath, createResourceContext } from '../../utils/MockContext';
+import {
+    createContextFromYamlContentAndPath,
+    createForEachResourceContext,
+    createResourceContext,
+} from '../../utils/MockContext';
 import { createMockComponents } from '../../utils/MockServerComponents';
 import { Schemas, combinedSchemas } from '../../utils/SchemaUtils';
 
@@ -1696,6 +1700,203 @@ describe('ResourcePropertyCompletionProvider', () => {
 
             const snapshotItem = result!.find((item) => item.label === 'Snapshot');
             expect(snapshotItem).toBeUndefined();
+        });
+    });
+
+    describe('Fn::ForEach Resource Property Completions', () => {
+        test('should return property completions for ForEach resource', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', 'Properties', ''],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {},
+                },
+            });
+            setupS3Schema();
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBeGreaterThan(0);
+
+            const bucketNameItem = result!.find((item) => item.label === 'BucketName');
+            expect(bucketNameItem).toBeDefined();
+        });
+
+        test('should return filtered property completions for ForEach resource with text', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: 'Bucket',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', 'Properties', 'Bucket'],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {},
+                },
+            });
+            setupS3Schema();
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBeGreaterThan(0);
+
+            const bucketNameItem = result!.find((item) => item.label === 'BucketName');
+            expect(bucketNameItem).toBeDefined();
+
+            const bucketEncryptionItem = result!.find((item) => item.label === 'BucketEncryption');
+            expect(bucketEncryptionItem).toBeDefined();
+        });
+
+        test('should handle nested properties in ForEach resources', () => {
+            const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
+            const mockSchemas = new Map<string, ResourceSchema>();
+            mockSchemas.set('AWS::S3::Bucket', mockSchema);
+
+            const combinedSchemas = new CombinedSchemas();
+            Object.defineProperty(combinedSchemas, 'schemas', {
+                get: () => mockSchemas,
+            });
+            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: [
+                    'Resources',
+                    'Fn::ForEach::Buckets',
+                    2,
+                    'S3Bucket${BucketName}',
+                    'Properties',
+                    'CorsConfiguration',
+                ],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {
+                        CorsConfiguration: {
+                            CorsRules: [{ AllowedMethods: ['GET'] }],
+                        },
+                    },
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            const corsRulesItem = result?.find((item) => item.label === 'CorsRules');
+            expect(corsRulesItem).toBeUndefined();
+        });
+
+        test('should return empty when ForEach resource has no resource property', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', 'Properties', ''],
+                data: undefined,
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(0);
+        });
+
+        test('should handle enum values in ForEach resource properties', () => {
+            const mockSchema = {
+                typeName: 'AWS::S3::Bucket',
+                propertyKeys: new Set(['AccessControl']),
+                getByPath: (path: string) => {
+                    if (path === '/properties/AccessControl') {
+                        return {
+                            type: 'string',
+                            enum: ['Private', 'PublicRead'],
+                        };
+                    }
+                    return undefined;
+                },
+                isReadOnly: () => false,
+                isRequired: () => false,
+                resolveJsonPointerPath: (path: string) => {
+                    if (path === '/properties/AccessControl') {
+                        return [{ type: 'string', enum: ['Private', 'PublicRead'] }];
+                    }
+                    return [];
+                },
+            } as unknown as ResourceSchema;
+
+            const mockSchemas = new Map<string, ResourceSchema>();
+            mockSchemas.set('AWS::S3::Bucket', mockSchema);
+
+            const combinedSchemas = new CombinedSchemas();
+            Object.defineProperty(combinedSchemas, 'schemas', {
+                get: () => mockSchemas,
+            });
+            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: [
+                    'Resources',
+                    'Fn::ForEach::Buckets',
+                    2,
+                    'S3Bucket${BucketName}',
+                    'Properties',
+                    'AccessControl',
+                ],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: { AccessControl: '' },
+                },
+                nodeType: 'plain_scalar',
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(2);
+
+            const privateItem = result!.find((item) => item.label === 'Private');
+            expect(privateItem).toBeDefined();
+            expect(privateItem!.kind).toBe(CompletionItemKind.EnumMember);
+
+            const publicReadItem = result!.find((item) => item.label === 'PublicRead');
+            expect(publicReadItem).toBeDefined();
+            expect(publicReadItem!.kind).toBe(CompletionItemKind.EnumMember);
+        });
+
+        test('should handle DeletionPolicy for ForEach resources', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Clusters', 'DBCluster${Name}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Clusters', 2, 'DBCluster${Name}', 'DeletionPolicy'],
+                data: {
+                    Type: 'AWS::RDS::DBCluster',
+                    DeletionPolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(4);
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeDefined();
+        });
+
+        test('should handle UpdateReplacePolicy for ForEach resources', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Clusters', 'DBCluster${Name}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Clusters', 2, 'DBCluster${Name}', 'UpdateReplacePolicy'],
+                data: {
+                    Type: 'AWS::RDS::DBCluster',
+                    UpdateReplacePolicy: '',
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(3);
+
+            const snapshotItem = result!.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeDefined();
         });
     });
 });
