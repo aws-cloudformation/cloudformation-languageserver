@@ -92,12 +92,12 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
     }
 
     private isAtResourceTypeField(context: Context): boolean {
-        if (context.propertyPath[context.propertyPath.length - 1] !== 'Type') {
-            return false;
-        }
-        const startIndex = context.getEntityType() === EntityType.ForEachResource ? 4 : 2;
-        const propertiesIndex = context.propertyPath.indexOf('Properties', startIndex);
-        return propertiesIndex === -1;
+        const propertyPathLength = context.getEntityType() === EntityType.ForEachResource ? 5 : 3;
+
+        return (
+            context.propertyPath.length === propertyPathLength &&
+            context.propertyPath[context.propertyPath.length - 1] === 'Type'
+        );
     }
 }
 
