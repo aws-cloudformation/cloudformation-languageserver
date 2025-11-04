@@ -10,6 +10,7 @@ import {
     Change,
     ResourceChangeDetail,
 } from '@aws-sdk/client-cloudformation';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { CFN_CLIENT_PATH } from '../utils/ClientUtil';
 import { DynamicModuleLoader } from '../utils/DynamicModuleLoader';
 import { CfnService } from './CfnService';
@@ -85,6 +86,7 @@ export class CfnServiceV2 extends CfnService {
         });
     }
 
+    @Measure({ name: 'describeChangeSetV2' })
     public override async describeChangeSet(params: {
         ChangeSetName: string;
         IncludePropertyValues: boolean;
@@ -128,6 +130,7 @@ export class CfnServiceV2 extends CfnService {
         });
     }
 
+    @Measure({ name: 'describeEvents' })
     public async describeEvents(params: { ChangeSetName: string; StackName: string }): Promise<DescribeEventsOutput> {
         type CfnClient = typeof import('@aws-sdk/client-cloudformation') & {
             DescribeEventsCommand: new (input: { ChangeSetName: string; StackName: string; NextToken?: string }) => any;
