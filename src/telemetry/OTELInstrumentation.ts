@@ -105,7 +105,7 @@ function configureDiagnostics() {
 
 function telemetryBaseUrl() {
     if (isTest) {
-        return 'http://locahost:1234';
+        return 'http://localhost:1234';
     } else if (isAlpha) {
         return 'https://development-ide-telemetry.cloudformation.aws.dev';
     } else if (isBeta) {
