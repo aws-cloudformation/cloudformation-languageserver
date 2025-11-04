@@ -47,7 +47,7 @@ import {
 import { createConnection } from 'vscode-languageserver/node';
 import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '../../src/auth/AuthProtocol';
 import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';
-import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
+import { MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
@@ -116,7 +116,7 @@ export class TestExtension implements Closeable {
                     const lsp = this.serverConnection.components;
                     LoggerFactory.initialize(awsMetadata);
 
-                    const dataStoreFactory = new MultiDataStoreFactoryProvider();
+                    const dataStoreFactory = new MemoryDataStoreFactoryProvider();
                     this.core = new CfnInfraCore(lsp, params, {
                         dataStoreFactory,
                     });
