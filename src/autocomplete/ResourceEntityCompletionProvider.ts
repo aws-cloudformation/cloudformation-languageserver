@@ -1,7 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, InsertTextFormat } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { ForEachResource, Resource } from '../context/semantic/Entity';
-import { EntityType } from '../context/semantic/SemanticTypes';
+import { Resource } from '../context/semantic/Entity';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
@@ -28,15 +27,9 @@ export class ResourceEntityCompletionProvider implements CompletionProvider {
         const entityCompletions = this.entityFieldProvider.getCompletions(context, params);
 
         // Extract the actual resource entity (handle both regular and ForEach resources)
-        let resource: Resource;
-        if (context.getEntityType() === EntityType.ForEachResource) {
-            const forEachResource = context.entity as ForEachResource;
-            if (!forEachResource.resource) {
-                return entityCompletions;
-            }
-            resource = forEachResource.resource;
-        } else {
-            resource = context.entity as Resource;
+        const resource = context.getResourceEntity();
+        if (!resource) {
+            return entityCompletions;
         }
 
         // Enhance the "Properties" completion with a snippet

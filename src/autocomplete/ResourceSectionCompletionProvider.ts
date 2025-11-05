@@ -1,7 +1,6 @@
 import { CompletionItem, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { ResourceAttributesSet } from '../context/ContextType';
-import { ForEachResource, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
@@ -54,14 +53,7 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
                 ?.getCompletions(context, params) as CompletionItem[];
 
             if (params.context?.triggerKind === CompletionTriggerKind.Invoked && this.isInPropertiesSection(context)) {
-                let resource: Resource | undefined;
-
-                if (context.getEntityType() === EntityType.ForEachResource) {
-                    const forEachResource = context.entity as ForEachResource;
-                    resource = forEachResource.resource;
-                } else {
-                    resource = context.entity as Resource;
-                }
+                const resource = context.getResourceEntity();
 
                 if (resource?.Type) {
                     const stateCompletionPromise = this.resourceProviders

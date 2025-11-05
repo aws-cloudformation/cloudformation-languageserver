@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { Entity, ForEachResource } from '../context/semantic/Entity';
+import { Entity } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { FuzzySearchFunction, getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';
@@ -10,15 +10,9 @@ import { createCompletionItem } from './CompletionUtils';
 export class EntityFieldCompletionProvider<T extends Entity> implements CompletionProvider {
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] {
         // Extract the actual entity (handle both regular and ForEach resources)
-        let entity: T;
-        if (context.entity.entityType === EntityType.ForEachResource) {
-            const forEachResource = context.entity as ForEachResource;
-            if (!forEachResource.resource) {
-                return [];
-            }
-            entity = forEachResource.resource as unknown as T;
-        } else {
-            entity = context.entity as T;
+        const entity = context.getResourceEntity() as unknown as T;
+        if (!entity) {
+            return [];
         }
 
         const items = this.getFieldsAsCompletionItems(entity);

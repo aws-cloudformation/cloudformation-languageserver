@@ -13,7 +13,7 @@ import {
     TopLevelSectionsWithLogicalIdsSet,
 } from './ContextType';
 import { IntrinsicContext } from './IntrinsicContext';
-import { Entity } from './semantic/Entity';
+import { Entity, ForEachResource, Resource } from './semantic/Entity';
 import { entityTypeFromSection, nodeToEntity } from './semantic/EntityBuilder';
 import { normalizeIntrinsicFunction } from './semantic/Intrinsics';
 import { EntityType } from './semantic/SemanticTypes';
@@ -74,6 +74,14 @@ export class Context {
 
     public getEntityType(): EntityType {
         return entityTypeFromSection(this.section, this.logicalId);
+    }
+
+    public getResourceEntity(): Resource | undefined {
+        if (this.getEntityType() === EntityType.ForEachResource) {
+            const forEachResource = this.entity as ForEachResource;
+            return forEachResource.resource;
+        }
+        return this.entity as Resource;
     }
 
     public get intrinsicContext(): IntrinsicContext {

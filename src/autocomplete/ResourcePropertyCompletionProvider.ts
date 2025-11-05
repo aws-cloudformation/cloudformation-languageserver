@@ -21,7 +21,7 @@ import {
 } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
-import { ForEachResource, Resource } from '../context/semantic/Entity';
+import { Resource } from '../context/semantic/Entity';
 import { CfnValue, EntityType } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../context/syntaxtree/utils/TreeSitterTypes';
@@ -66,16 +66,9 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Uses robust schema resolution approach from hover provider
      */
     private getPropertyCompletions(context: Context): PropertyCompletionsResult {
-        let resource: Resource;
-
-        if (context.getEntityType() === EntityType.ForEachResource) {
-            const forEachResource = context.entity as ForEachResource;
-            if (!forEachResource.resource) {
-                return { completions: [], skipFuzzySearch: false };
-            }
-            resource = forEachResource.resource;
-        } else {
-            resource = context.entity as Resource;
+        const resource = context.getResourceEntity();
+        if (!resource) {
+            return { completions: [], skipFuzzySearch: false };
         }
         let completions: CompletionItem[] = [];
         let skipFuzzySearch = false;
@@ -291,14 +284,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         const propertiesIndex = propertyPath.indexOf('Properties', startIndex);
 
         if (propertiesIndex !== -1 && isArrayItemContext) {
-            let resource: Resource | undefined;
-
-            if (context.getEntityType() === EntityType.ForEachResource) {
-                const forEachResource = context.entity as ForEachResource;
-                resource = forEachResource.resource;
-            } else {
-                resource = context.entity as Resource;
-            }
+            const resource = context.getResourceEntity();
 
             if (resource?.Properties) {
                 const pathSegments = propertyPath.slice(propertiesIndex + 1);
