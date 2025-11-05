@@ -1,4 +1,5 @@
 import { readFile } from 'fs/promises';
+import { performance } from 'perf_hooks';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { CloudFormationFileType } from '../../document/Document';
@@ -8,10 +9,11 @@ import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from 
 import { DefaultSettings, GuardSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
-import { Telemetry } from '../../telemetry/TelemetryDecorator';
+import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
+import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
 import { getRulesForPack, getAvailableRulePacks, GuardRuleData } from './GeneratedGuardRules';
 import { GuardEngine, GuardViolation, GuardRule } from './GuardEngine';
@@ -181,6 +183,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
      * @param uri The document URI
      * @param forceUseContent If true, always use the provided content (for consistency with CfnLintService)
      */
+    @Count({ name: 'validate' })
     async validate(content: string, uri: string, _forceUseContent?: boolean): Promise<void> {
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
@@ -200,6 +203,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         this.telemetry.count(`validate.file.${CloudFormationFileType.Template}`, 1);
 
+        const startTime = performance.now();
         try {
             // Ensure Guard service is initialized
             if (!this.guardEngine.isReady()) {
@@ -240,6 +244,10 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
             // For other errors (WASM issues, timeouts, etc.), log as error and show diagnostic
             this.publishErrorDiagnostics(uri, errorMessage);
+        } finally {
+            this.telemetry.histogram('validate.duration', (performance.now() - startTime) / byteSize(content), {
+                unit: 'ms/byte',
+            });
         }
     }
 

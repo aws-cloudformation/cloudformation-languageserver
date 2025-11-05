@@ -97,6 +97,9 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
             apply: (compiler) => {
                 compiler.hooks.beforeRun.tapAsync('InstallDependencies', (compilation, callback) => {
                     try {
+                        console.log('[InstallDependencies] Starting dependency installation...');
+                        console.log(`[InstallDependencies] Target: ${targetPlatform}-${targetArch}`);
+
                         const tmpPkg = {
                             ...Package,
                             main: `./${BUNDLE_NAME}.js`,
@@ -107,6 +110,7 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                         delete tmpPkg['externalDependencies'];
                         delete tmpPkg['nativePrebuilds'];
 
+                        console.log('[InstallDependencies] Cleaning temp directory...');
                         if (fs.existsSync(tmpDir)) {
                             fs.rmSync(tmpDir, { recursive: true, force: true });
                         }
@@ -114,6 +118,7 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                         fs.writeFileSync(path.join(tmpDir, 'package.json'), JSON.stringify(tmpPkg, null, 2));
                         fs.copyFileSync('package-lock.json', `${tmpDir}/package-lock.json`);
 
+                        console.log('[InstallDependencies] Running npm ci --omit=dev');
                         execSync('npm ci --omit=dev', { cwd: tmpDir, stdio: 'inherit' });
                         const otherDeps = Object.entries(Package.nativePrebuilds)
                             .filter(([key, _version]) => {
@@ -124,17 +129,24 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                             })
                             .join(' ');
 
+                        console.log(`[InstallDependencies] Installing native prebuilds: ${JSON.stringify(otherDeps)}`);
                         execSync(`npm install --save-exact --force ${otherDeps}`, { cwd: tmpDir, stdio: 'inherit' });
                         callback();
                     } catch (error) {
+                        console.error('[InstallDependencies] Error:', error);
                         callback(error);
                     }
                 });
 
                 compiler.hooks.afterEmit.tap('CleanUnusedNativeModules', () => {
+                    console.log('[CleanUnusedNativeModules] Starting cleanup of unused native modules...');
+
                     const nodeModulesPath = path.join(outputPath, 'node_modules');
 
-                    if (!fs.existsSync(nodeModulesPath)) return;
+                    if (!fs.existsSync(nodeModulesPath)) {
+                        console.log('[CleanUnusedNativeModules] No node_modules found, skipping cleanup');
+                        return;
+                    }
 
                     function cleanPlatformDirs(dir) {
                         if (!fs.existsSync(dir)) return;
@@ -148,9 +160,10 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                             const shouldKeep = entry.name.includes(`${targetPlatform}-${targetArch}`);
 
                             if (isPlatformDir && !shouldKeep) {
+                                console.log(`[CleanUnusedNativeModules] Deleted: ${entryPath}`);
                                 fs.rmSync(entryPath, { recursive: true, force: true });
-                                console.log(`Deleted: ${entryPath}`);
                             } else if (entry.name === 'prebuilds') {
+                                console.log(`[CleanUnusedNativeModules] Scanning prebuilds: ${entryPath}`);
                                 cleanPlatformDirs(entryPath);
                             } else {
                                 cleanPlatformDirs(entryPath);
@@ -159,17 +172,22 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                     }
 
                     cleanPlatformDirs(nodeModulesPath);
+                    console.log('[CleanUnusedNativeModules] Cleanup complete');
                 });
 
                 compiler.hooks.done.tap('CleanupTemp', () => {
+                    console.log('[CleanupTemp] Cleaning up temporary files...');
                     if (fs.existsSync(tmpDir)) {
+                        console.log(`[CleanupTemp] Removing: ${tmpDir}`);
                         fs.rmSync(tmpDir, { recursive: true, force: true });
                     }
 
                     const dotPackageLock = 'bundle/production/node_modules/.package-lock.json';
                     if (fs.existsSync(dotPackageLock)) {
+                        console.log(`[CleanupTemp] Removing: ${dotPackageLock}`);
                         fs.rmSync(dotPackageLock, { force: true });
                     }
+                    console.log('[CleanupTemp] Cleanup complete');
                 });
             },
         });
@@ -260,13 +278,7 @@ const baseConfig = {
             },
         ],
     },
-    stats: {
-        colors: true,
-        modules: false,
-        children: false,
-        chunks: false,
-        chunkModules: false,
-    },
+    stats: 'normal',
     performance: {
         hints: 'warning',
     },
