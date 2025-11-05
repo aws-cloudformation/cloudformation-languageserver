@@ -92,17 +92,17 @@ describe('ResourceExporters', () => {
             vi.mocked(existsSync).mockReturnValue(true);
             vi.mocked(statSync).mockReturnValue({ isFile: () => true, isDirectory: () => false } as any);
 
-            const resource = new ServerlessFunctionResource(mockS3Service, 'test-bucket', 'prefix/');
+            const resource = new ServerlessFunctionResource(mockS3Service);
             const resourceDict = { CodeUri: 'local-path' };
 
-            await resource.export(resourceDict, './src/handler.js');
+            await resource.export(resourceDict, './src/handler.js', 'test-bucket', 'prefix/');
 
             expect(mockS3Service.putObject).toHaveBeenCalled();
             expect(resourceDict.CodeUri).toMatch(/^s3:\/\/test-bucket\//);
         });
 
         it('should have correct resource type and property', () => {
-            const resource = new ServerlessFunctionResource(mockS3Service, 'test-bucket');
+            const resource = new ServerlessFunctionResource(mockS3Service);
             expect(resource.resourceType).toBe('AWS::Serverless::Function');
             expect(resource.propertyName).toBe('CodeUri');
         });
@@ -113,21 +113,21 @@ describe('ResourceExporters', () => {
             vi.mocked(existsSync).mockReturnValue(true);
             vi.mocked(statSync).mockReturnValue({ isFile: () => true, isDirectory: () => false } as any);
 
-            const resource = new LambdaFunctionResource(mockS3Service, 'test-bucket', 'prefix/');
+            const resource = new LambdaFunctionResource(mockS3Service);
             const resourceDict = { Code: 'local-path' };
 
-            await resource.export(resourceDict, './src/handler.js');
+            await resource.export(resourceDict, './src/handler.js', 'test-bucket', 'prefix/');
 
             expect(mockS3Service.putObject).toHaveBeenCalled();
             expect(resourceDict.Code).toEqual({
                 S3Bucket: 'test-bucket',
-                S3Key: expect.stringMatching(/^prefix\/artifact\/cfn-\d+-\d+$/),
+                S3Key: expect.stringMatching(/^prefix\/+artifact\/cfn-\d+-\d+$/),
                 S3ObjectVersion: 'version123',
             });
         });
 
         it('should have correct resource type and property', () => {
-            const resource = new LambdaFunctionResource(mockS3Service, 'test-bucket');
+            const resource = new LambdaFunctionResource(mockS3Service);
             expect(resource.resourceType).toBe('AWS::Lambda::Function');
             expect(resource.propertyName).toBe('Code');
         });

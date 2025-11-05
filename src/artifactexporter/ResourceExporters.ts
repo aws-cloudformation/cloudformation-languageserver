@@ -80,8 +80,7 @@ function getS3Key(keyPrefix: string, filePath: string): string {
     const filename = basename(filePath);
     const timestamp = Date.now();
     const parts = filename.split('.');
-    const normalizedPrefix = keyPrefix ? keyPrefix.replace(/\/+$/, '') : '';
-    const prefix = normalizedPrefix ? `${normalizedPrefix}/artifact` : 'artifact';
+    const prefix = keyPrefix ? `${keyPrefix}/artifact` : 'artifact';
 
     if (parts.length > 1) {
         const nameWithoutExt = parts.slice(0, -1).join('.');
@@ -97,47 +96,42 @@ export abstract class Resource {
     public abstract propertyName: string;
     protected packageNullProperty = true;
     protected forceZip = false;
-    protected bucketName: string;
-    protected s3KeyPrefix: string;
 
-    constructor(
-        protected s3Service: S3Service,
+    constructor(protected s3Service: S3Service) {}
+
+    async export(
+        resourcePropertyDict: Record<string, unknown>,
+        artifactAbsPath: string,
         bucketName: string,
-        s3KeyPrefix: string = '',
-    ) {
-        this.bucketName = bucketName;
-        this.s3KeyPrefix = s3KeyPrefix;
-    }
-
-    async export(resourcePropertyDict: Record<string, unknown>, artifactAbsPath: string): Promise<void> {
+        s3KeyPrefix: string,
+    ): Promise<void> {
         if (!resourcePropertyDict) {
             return;
         }
 
-        const property = resourcePropertyDict;
-        if (!property) {
+        if (!resourcePropertyDict) {
             return;
         }
 
-        const propertyValue = property[this.propertyName];
+        const propertyValue = resourcePropertyDict[this.propertyName];
 
         if (!propertyValue && !this.packageNullProperty) {
             return;
         }
 
-        if (typeof propertyValue === 'object' && propertyValue !== undefined) {
+        if (typeof propertyValue === 'object') {
             return;
         }
 
         let tempDir: string | undefined = undefined;
         if (isLocalFile(artifactAbsPath) && !isArchiveFile(artifactAbsPath) && this.forceZip) {
             tempDir = copyToTempDir(artifactAbsPath);
-            property[this.propertyName] = tempDir;
+            resourcePropertyDict[this.propertyName] = tempDir;
         }
 
         try {
             const pathToUse = tempDir ?? artifactAbsPath;
-            await this.doExport(resourcePropertyDict, pathToUse);
+            await this.doExport(resourcePropertyDict, pathToUse, bucketName, s3KeyPrefix);
         } finally {
             if (tempDir && existsSync(tempDir)) {
                 rmSync(tempDir, { recursive: true });
@@ -145,13 +139,17 @@ export abstract class Resource {
         }
     }
 
-    async doExport(resourcePropertyDict: Record<string, unknown>, artifactAbsPath: string): Promise<void> {
-        const property = resourcePropertyDict;
-        if (!property) {
+    async doExport(
+        resourcePropertyDict: Record<string, unknown>,
+        artifactAbsPath: string,
+        bucketName: string,
+        s3KeyPrefix: string,
+    ): Promise<void> {
+        if (!resourcePropertyDict) {
             return;
         }
 
-        const localPath = property[this.propertyName];
+        const localPath = resourcePropertyDict[this.propertyName];
 
         if (typeof localPath !== 'string' || isS3Url(localPath)) {
             return;
@@ -167,12 +165,13 @@ export abstract class Resource {
         }
 
         try {
-            const key = getS3Key(this.s3KeyPrefix, uploadPath);
-            const s3Url = `s3://${this.bucketName}/${key}`;
+            const key = getS3Key(s3KeyPrefix, uploadPath);
+            const s3Url = `s3://${bucketName}/${key}`;
 
             await this.s3Service.putObject(uploadPath, s3Url);
 
-            property[this.propertyName] = s3Url;
+            // eslint-disable-next-line require-atomic-updates
+            resourcePropertyDict[this.propertyName] = s3Url;
         } finally {
             if (tempZipFile && existsSync(tempZipFile)) {
                 rmSync(tempZipFile);
@@ -186,13 +185,17 @@ export abstract class ResourceWithS3UrlDict extends Resource {
     protected abstract objectKeyProperty: string;
     protected versionProperty?: string;
 
-    override async doExport(resourcePropertyDict: Record<string, unknown>, artifactAbsPath: string): Promise<void> {
-        const property = resourcePropertyDict;
-        if (!property) {
+    override async doExport(
+        resourcePropertyDict: Record<string, unknown>,
+        artifactAbsPath: string,
+        bucketName: string,
+        s3KeyPrefix: string,
+    ): Promise<void> {
+        if (!resourcePropertyDict) {
             return;
         }
 
-        const localPath = property[this.propertyName];
+        const localPath = resourcePropertyDict[this.propertyName];
 
         if (typeof localPath !== 'string' || isS3Url(localPath)) {
             return;
@@ -208,18 +211,19 @@ export abstract class ResourceWithS3UrlDict extends Resource {
         }
 
         try {
-            const key = getS3Key(this.s3KeyPrefix, uploadPath);
-            const s3Url = `s3://${this.bucketName}/${key}`;
+            const key = getS3Key(s3KeyPrefix, uploadPath);
+            const s3Url = `s3://${bucketName}/${key}`;
 
             const result = await this.s3Service.putObject(uploadPath, s3Url);
 
             const s3Record: Record<string, string> = {};
-            s3Record[this.bucketNameProperty] = this.bucketName;
+            s3Record[this.bucketNameProperty] = bucketName;
             s3Record[this.objectKeyProperty] = key;
             if (result.VersionId && this.versionProperty) {
                 s3Record[this.versionProperty] = result.VersionId;
             }
-            property[this.propertyName] = s3Record;
+            // eslint-disable-next-line require-atomic-updates
+            resourcePropertyDict[this.propertyName] = s3Record;
         } finally {
             if (tempZipFile && existsSync(tempZipFile)) {
                 rmSync(tempZipFile);
@@ -268,72 +272,71 @@ export class CloudFormationStackResource extends Resource {
     public override resourceType = 'AWS::CloudFormation::Stack';
     public override propertyName = 'TemplateURL';
 
-    override async doExport(resourcePropertyDict: Record<string, unknown>, templateAbsPath: string): Promise<void> {
+    override async doExport(
+        resourcePropertyDict: Record<string, unknown>,
+        templateAbsPath: string,
+        bucketName: string,
+        s3KeyPrefix: string,
+    ): Promise<void> {
         if (!isLocalFile(templateAbsPath)) {
             throw new Error(`Invalid template path: ${templateAbsPath}`);
         }
 
-        const template = new ArtifactExporter(
-            this.s3Service,
-            this.bucketName,
-            this.s3KeyPrefix,
-            undefined,
-            templateAbsPath,
-        );
-        const exportedTemplateDict = await template.export();
+        const template = new ArtifactExporter(this.s3Service, undefined, templateAbsPath);
+        const exportedTemplateDict = await template.export(bucketName, s3KeyPrefix);
         const exportedTemplateStr = dump(exportedTemplateDict);
 
-        const key = getS3Key(this.s3KeyPrefix, templateAbsPath);
-        await this.s3Service.putObjectContent(exportedTemplateStr, this.bucketName, key);
-        const s3Url = `s3://${this.bucketName}/${key}`;
+        const key = getS3Key(s3KeyPrefix, templateAbsPath);
+        await this.s3Service.putObjectContent(exportedTemplateStr, bucketName, key);
+        const s3Url = `s3://${bucketName}/${key}`;
 
         resourcePropertyDict[this.propertyName] = s3Url;
     }
 }
 
-export class ServerlessApplicationResource extends CloudFormationStackResource {
+class ServerlessApplicationResource extends CloudFormationStackResource {
     public override resourceType = 'AWS::Serverless::Application';
     public override propertyName = 'Location';
 }
 
-export class AppSyncResolverRequestTemplateResource extends Resource {
+class AppSyncResolverRequestTemplateResource extends Resource {
     public override resourceType = 'AWS::AppSync::Resolver';
     public override propertyName = 'RequestMappingTemplateS3Location';
     protected override packageNullProperty = false;
 }
 
-export class AppSyncResolverResponseTemplateResource extends Resource {
+class AppSyncResolverResponseTemplateResource extends Resource {
     public override resourceType = 'AWS::AppSync::Resolver';
     public override propertyName = 'ResponseMappingTemplateS3Location';
     protected override packageNullProperty = false;
 }
 
-export class AppSyncFunctionConfigurationRequestTemplateResource extends Resource {
+class AppSyncFunctionConfigurationRequestTemplateResource extends Resource {
     public override resourceType = 'AWS::AppSync::FunctionConfiguration';
     public override propertyName = 'RequestMappingTemplateS3Location';
     protected override packageNullProperty = false;
 }
 
-export class AppSyncFunctionConfigurationResponseTemplateResource extends Resource {
+class AppSyncFunctionConfigurationResponseTemplateResource extends Resource {
     public override resourceType = 'AWS::AppSync::FunctionConfiguration';
     public override propertyName = 'ResponseMappingTemplateS3Location';
     protected override packageNullProperty = false;
 }
 
-export class ElasticBeanstalkApplicationVersion extends ResourceWithS3UrlDict {
+class ElasticBeanstalkApplicationVersion extends ResourceWithS3UrlDict {
     public override resourceType = 'AWS::ElasticBeanstalk::ApplicationVersion';
     public override propertyName = 'SourceBundle';
     protected override bucketNameProperty = 'S3Bucket';
     protected override objectKeyProperty = 'S3Key';
 }
 
-export class ServerlessLayerVersionResource extends Resource {
+class ServerlessLayerVersionResource extends Resource {
     public override resourceType = 'AWS::Serverless::LayerVersion';
     public override propertyName = 'ContentUri';
     protected override forceZip = true;
 }
 
-export class LambdaLayerVersionResource extends ResourceWithS3UrlDict {
+class LambdaLayerVersionResource extends ResourceWithS3UrlDict {
     public override resourceType = 'AWS::Lambda::LayerVersion';
     public override propertyName = 'Content';
     protected override bucketNameProperty = 'S3Bucket';
@@ -342,12 +345,12 @@ export class LambdaLayerVersionResource extends ResourceWithS3UrlDict {
     protected override forceZip = true;
 }
 
-export class GlueJobCommandScriptLocationResource extends Resource {
+class GlueJobCommandScriptLocationResource extends Resource {
     public resourceType = 'AWS::Glue::Job';
     public propertyName = 'Command.ScriptLocation';
 }
 
-export class StepFunctionsStateMachineDefinitionResource extends ResourceWithS3UrlDict {
+class StepFunctionsStateMachineDefinitionResource extends ResourceWithS3UrlDict {
     public override resourceType = 'AWS::StepFunctions::StateMachine';
     public override propertyName = 'DefinitionS3Location';
     protected override bucketNameProperty = 'Bucket';
@@ -356,7 +359,7 @@ export class StepFunctionsStateMachineDefinitionResource extends ResourceWithS3U
     protected override packageNullProperty = false;
 }
 
-export class ServerlessStateMachineDefinitionResource extends ResourceWithS3UrlDict {
+class ServerlessStateMachineDefinitionResource extends ResourceWithS3UrlDict {
     public override resourceType = 'AWS::Serverless::StateMachine';
     public override propertyName = 'DefinitionUri';
     protected override bucketNameProperty = 'Bucket';
@@ -365,7 +368,7 @@ export class ServerlessStateMachineDefinitionResource extends ResourceWithS3UrlD
     protected override packageNullProperty = false;
 }
 
-export class CodeCommitRepositoryS3Resource extends ResourceWithS3UrlDict {
+class CodeCommitRepositoryS3Resource extends ResourceWithS3UrlDict {
     public override resourceType = 'AWS::CodeCommit::Repository';
     public override propertyName = 'Code.S3';
     protected override bucketNameProperty = 'Bucket';
@@ -397,25 +400,6 @@ export const RESOURCES_EXPORT_LIST: Array<
     ServerlessStateMachineDefinitionResource,
     CodeCommitRepositoryS3Resource,
 ];
-
-export const RESOURCES_WITH_ARTIFACT = new Set([
-    'AWS::Serverless::Function',
-    'AWS::Serverless::Api',
-    'AWS::AppSync::GraphQLSchema',
-    'AWS::AppSync::Resolver',
-    'AWS::AppSync::FunctionConfiguration',
-    'AWS::ApiGateway::RestApi',
-    'AWS::Lambda::Function',
-    'AWS::ElasticBeanstalk::ApplicationVersion',
-    'AWS::CloudFormation::Stack',
-    'AWS::Serverless::Application',
-    'AWS::Serverless::LayerVersion',
-    'AWS::Lambda::LayerVersion',
-    'AWS::Glue::Job',
-    'AWS::StepFunctions::StateMachine',
-    'AWS::Serverless::StateMachine',
-    'AWS::CodeCommit::Repository',
-]);
 
 export const RESOURCE_EXPORTER_MAP = new Map([
     ['AWS::Serverless::Function', ServerlessFunctionResource],

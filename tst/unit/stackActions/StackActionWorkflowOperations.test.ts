@@ -38,7 +38,7 @@ vi.mock('../../../src/context/SectionContextBuilder', () => ({
 }));
 
 vi.mock('../../../src/artifactexporter/ArtifactExporter', () => ({
-    Template: vi.fn().mockImplementation(() => ({
+    ArtifactExporter: vi.fn().mockImplementation(() => ({
         export: vi.fn().mockResolvedValue({ Resources: {} }),
     })),
 }));
@@ -134,7 +134,7 @@ describe('StackActionWorkflowOperations', () => {
                 StackName: 'test-stack',
                 ChangeSetName: expect.stringContaining(ExtensionName.replaceAll(' ', '-')),
                 TemplateBody: undefined,
-                TemplateURL: 's3://test-bucket/template.yaml',
+                TemplateURL: 'https://s3.amazonaws.com/test-bucket/template.yaml',
                 Parameters: undefined,
                 Capabilities: undefined,
                 ChangeSetType: 'CREATE',

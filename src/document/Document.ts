@@ -44,7 +44,7 @@ export class Document {
         if (this.documentType === DocumentType.JSON) {
             return parseJson(this.contents());
         }
-        return parseYaml(this.contents(), 0, false);
+        return parseYaml(this.contents(), 0, true);
     }
 
     public getLine(lineNumber: number): string | undefined {

@@ -64,7 +64,7 @@ vi.mock('../../../src/context/SectionContextBuilder', () => ({
 }));
 
 vi.mock('../../../src/artifactexporter/ArtifactExporter', () => ({
-    Template: vi.fn().mockImplementation(() => ({
+    ArtifactExporter: vi.fn().mockImplementation(() => ({
         getTemplateArtifacts: vi.fn().mockReturnValue([]),
     })),
 }));

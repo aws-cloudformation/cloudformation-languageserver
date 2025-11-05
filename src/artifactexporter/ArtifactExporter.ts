@@ -44,8 +44,6 @@ export class ArtifactExporter {
 
     constructor(
         private readonly s3Service: S3Service,
-        private readonly bucketName: string,
-        private readonly s3KeyPrefix: string = '',
         private readonly document?: Document,
         private readonly templateAbsPath?: string,
     ) {
@@ -100,7 +98,7 @@ export class ArtifactExporter {
 
             const properties = resource.Properties as Record<string, unknown> | undefined;
             if (properties) {
-                const exporter = new ExporterClass(this.s3Service, this.bucketName, this.s3KeyPrefix);
+                const exporter = new ExporterClass(this.s3Service);
                 const propertyName = exporter.propertyName;
                 const localFilePath = properties[propertyName];
 
@@ -157,7 +155,7 @@ export class ArtifactExporter {
         return result;
     }
 
-    async export(): Promise<unknown> {
+    async export(bucketName: string, s3KeyPrefix: string = ''): Promise<unknown> {
         if (
             this.templateDict === undefined ||
             this.templateDict === null ||
@@ -167,13 +165,13 @@ export class ArtifactExporter {
             return this.templateDict;
         }
 
-        await this.exportResources();
+        await this.exportResources(bucketName, s3KeyPrefix);
         return this.templateType === DocumentType.YAML
             ? this.convertIntrinsicFunctionKeys(this.templateDict)
             : this.templateDict;
     }
 
-    private async exportResources(): Promise<void> {
+    private async exportResources(bucketName: string, s3KeyPrefix: string): Promise<void> {
         const artifactMap = this.getResourceMapWithArtifact();
 
         for (const [resourceType, artifacts] of Object.entries(artifactMap)) {
@@ -190,14 +188,14 @@ export class ArtifactExporter {
                         continue;
                     }
 
-                    const exporter = new ExporterClass(this.s3Service, this.bucketName, this.s3KeyPrefix);
+                    const exporter = new ExporterClass(this.s3Service);
                     const templateUri = this.templateUri;
                     const templatePath = templateUri.startsWith('file:') ? fileURLToPath(templateUri) : templateUri;
                     const templateDir = dirname(templatePath);
                     const artifactAbsPath = isAbsolute(artifact.localFilePath)
                         ? artifact.localFilePath
                         : resolve(templateDir, artifact.localFilePath);
-                    await exporter.export(artifact.resourcePropertyDict, artifactAbsPath);
+                    await exporter.export(artifact.resourcePropertyDict, artifactAbsPath, bucketName, s3KeyPrefix);
                 }
             }
         }
