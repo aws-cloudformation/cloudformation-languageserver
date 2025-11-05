@@ -70,4 +70,44 @@ describe('S3Service', () => {
             });
         });
     });
+
+    describe('putObjectContent', () => {
+        it('should successfully upload string content to S3', async () => {
+            const content = 'test content';
+            const bucketName = 'test-bucket';
+            const key = 'test-key.txt';
+            const mockResult = { VersionId: 'version123' };
+
+            s3Mock.on(PutObjectCommand).resolves(mockResult);
+
+            const result = await service.putObjectContent(content, bucketName, key);
+
+            expect(result).toEqual(mockResult);
+            expect(s3Mock.commandCalls(PutObjectCommand)).toHaveLength(1);
+            expect(s3Mock.commandCalls(PutObjectCommand)[0].args[0].input).toEqual({
+                Bucket: bucketName,
+                Key: key,
+                Body: content,
+            });
+        });
+
+        it('should successfully upload Buffer content to S3', async () => {
+            const content = Buffer.from('test content');
+            const bucketName = 'test-bucket';
+            const key = 'test-key.txt';
+            const mockResult = { VersionId: 'version456' };
+
+            s3Mock.on(PutObjectCommand).resolves(mockResult);
+
+            const result = await service.putObjectContent(content, bucketName, key);
+
+            expect(result).toEqual(mockResult);
+            expect(s3Mock.commandCalls(PutObjectCommand)).toHaveLength(1);
+            expect(s3Mock.commandCalls(PutObjectCommand)[0].args[0].input).toEqual({
+                Bucket: bucketName,
+                Key: key,
+                Body: content,
+            });
+        });
+    });
 });

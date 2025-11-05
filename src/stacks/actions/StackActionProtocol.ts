@@ -13,6 +13,7 @@ import {
     CreateDeploymentParams,
     DeleteChangeSetParams,
     DescribeDeletionStatusResult,
+    GetTemplateArtifactsResult,
 } from './StackActionRequestType';
 
 export const CreateValidationRequest = new RequestType<CreateValidationParams, CreateStackActionResult, void>(
@@ -40,6 +41,10 @@ export const DescribeDeploymentStatusRequest = new RequestType<Identifiable, Des
 );
 
 export const GetParametersRequest = new RequestType<TemplateUri, GetParametersResult, void>('aws/cfn/stack/parameters');
+
+export const GetTemplateArtifactsRequest = new RequestType<TemplateUri, GetTemplateArtifactsResult, void>(
+    'aws/cfn/stack/template/artifacts',
+);
 
 export const GetCapabilitiesRequest = new RequestType<TemplateUri, GetCapabilitiesResult, void>(
     'aws/cfn/stack/capabilities',

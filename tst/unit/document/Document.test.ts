@@ -113,4 +113,56 @@ describe('Document', () => {
             expect(doc.getLine(1)).toBe('');
         });
     });
+
+    describe('getParsedDocumentContent', () => {
+        it('should parse JSON document content', () => {
+            const content = '{"Resources": {"Bucket": {"Type": "AWS::S3::Bucket"}}}';
+            const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+            const doc = new Document(textDocument);
+
+            const parsed = doc.getParsedDocumentContent();
+
+            expect(parsed).toEqual({
+                Resources: {
+                    Bucket: {
+                        Type: 'AWS::S3::Bucket',
+                    },
+                },
+            });
+        });
+
+        it('should parse YAML document content', () => {
+            const content = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            const parsed = doc.getParsedDocumentContent();
+
+            expect(parsed).toEqual({
+                Resources: {
+                    Bucket: {
+                        Type: 'AWS::S3::Bucket',
+                    },
+                },
+            });
+        });
+
+        it('should handle invalid JSON gracefully', () => {
+            const content = '{"invalid": json}';
+            const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+            const doc = new Document(textDocument);
+
+            const result = doc.getParsedDocumentContent();
+            expect(result).toBeDefined();
+        });
+
+        it('should handle invalid YAML gracefully', () => {
+            const content = 'invalid:\n  - yaml\n    - structure';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            const result = doc.getParsedDocumentContent();
+            expect(result).toBeDefined();
+        });
+    });
 });

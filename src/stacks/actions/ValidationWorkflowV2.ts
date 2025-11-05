@@ -7,6 +7,7 @@ import { CfnExternal } from '../../server/CfnExternal';
 import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnServiceV2 } from '../../services/CfnServiceV2';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
+import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
@@ -33,8 +34,9 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
         protected fileContextManager: FileContextManager,
         protected featureFlag: TargetedFeatureFlag<string>,
         protected awsCredentials: AwsCredentials,
+        s3Service: S3Service,
     ) {
-        super(cfnServiceV2, documentManager, diagnosticCoordinator, syntaxTreeManager, validationManager);
+        super(cfnServiceV2, documentManager, diagnosticCoordinator, syntaxTreeManager, validationManager, s3Service);
     }
 
     override async runValidationAsync(params: CreateValidationParams, changeSetName: string): Promise<void> {
@@ -118,6 +120,7 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
             core.fileContextManager,
             external.featureFlags.getTargeted<string>('EnhancedDryRun'),
             core.awsCredentials,
+            external.s3Service,
         );
     }
 }

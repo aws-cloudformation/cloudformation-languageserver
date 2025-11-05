@@ -35,6 +35,7 @@ import {
     getValidationStatusHandler,
     getDeploymentStatusHandler,
     getParametersHandler,
+    getTemplateArtifactsHandler,
     getCapabilitiesHandler,
     describeValidationStatusHandler,
     describeDeploymentStatusHandler,
@@ -105,6 +106,7 @@ export class CfnServer {
         this.lsp.authHandlers.onIamCredentialsDelete(iamCredentialsDeleteHandler(this.components));
 
         this.lsp.stackHandlers.onGetParameters(getParametersHandler(this.components));
+        this.lsp.stackHandlers.onGetTemplateArtifacts(getTemplateArtifactsHandler(this.components));
         this.lsp.stackHandlers.onCreateValidation(createValidationHandler(this.components));
         this.lsp.stackHandlers.onGetCapabilities(getCapabilitiesHandler(this.components));
         this.lsp.stackHandlers.onGetTemplateResources(getTemplateResourcesHandler(this.components));

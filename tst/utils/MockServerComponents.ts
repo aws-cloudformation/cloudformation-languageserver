@@ -368,6 +368,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
         cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
         guardService: overrides.guardService ?? createMockGuardService(),
+        s3Service: overrides.s3Service ?? stubInterface(),
         onlineStatus: overrides.onlineStatus ?? stubInterface<OnlineStatus>(),
         featureFlags: overrides.featureFlags ?? stubInterface<FeatureFlagProvider>(),
         close: () => Promise.resolve(),

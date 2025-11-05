@@ -3,6 +3,7 @@ import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeMan
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
+import { S3Service } from '../../../src/services/S3Service';
 import {
     processChangeSet,
     waitForChangeSetValidation,
@@ -26,6 +27,7 @@ describe('ValidationWorkflow', () => {
     let mockDocumentManager: DocumentManager;
     let mockDiagnosticCoordinator: DiagnosticCoordinator;
     let mockSyntaxTreeManager: SyntaxTreeManager;
+    let mockS3Service: S3Service;
 
     beforeEach(() => {
         mockCfnService = {
@@ -34,12 +36,14 @@ describe('ValidationWorkflow', () => {
         mockDocumentManager = {} as DocumentManager;
         mockDiagnosticCoordinator = {} as DiagnosticCoordinator;
         mockSyntaxTreeManager = {} as SyntaxTreeManager;
+        mockS3Service = {} as S3Service;
         validationWorkflow = new ValidationWorkflow(
             mockCfnService,
             mockDocumentManager,
             mockDiagnosticCoordinator,
             mockSyntaxTreeManager,
             { add: vi.fn(), get: vi.fn(), remove: vi.fn() } as any, // ValidationManager
+            mockS3Service,
         );
         vi.clearAllMocks();
     });
@@ -63,7 +67,13 @@ describe('ValidationWorkflow', () => {
                 stackName: 'test-stack',
             });
 
-            expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'CREATE');
+            expect(processChangeSet).toHaveBeenCalledWith(
+                mockCfnService,
+                mockDocumentManager,
+                params,
+                'CREATE',
+                mockS3Service,
+            );
         });
 
         it('should start validation workflow with UPDATE when stack exists', async () => {
@@ -84,7 +94,13 @@ describe('ValidationWorkflow', () => {
                 stackName: 'test-stack',
             });
 
-            expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'UPDATE');
+            expect(processChangeSet).toHaveBeenCalledWith(
+                mockCfnService,
+                mockDocumentManager,
+                params,
+                'UPDATE',
+                mockS3Service,
+            );
         });
     });
 
@@ -112,7 +128,13 @@ describe('ValidationWorkflow', () => {
             stackName: 'test-stack',
         });
 
-        expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'IMPORT');
+        expect(processChangeSet).toHaveBeenCalledWith(
+            mockCfnService,
+            mockDocumentManager,
+            params,
+            'IMPORT',
+            mockS3Service,
+        );
         expect(mockCfnService.describeStacks).not.toHaveBeenCalled();
     });
 
@@ -135,7 +157,13 @@ describe('ValidationWorkflow', () => {
             stackName: 'test-stack',
         });
 
-        expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'CREATE');
+        expect(processChangeSet).toHaveBeenCalledWith(
+            mockCfnService,
+            mockDocumentManager,
+            params,
+            'CREATE',
+            mockS3Service,
+        );
     });
 
     it('should start validation workflow with UPDATE when resourcesToImport is undefined and stack exists', async () => {
@@ -157,7 +185,13 @@ describe('ValidationWorkflow', () => {
             stackName: 'test-stack',
         });
 
-        expect(processChangeSet).toHaveBeenCalledWith(mockCfnService, mockDocumentManager, params, 'UPDATE');
+        expect(processChangeSet).toHaveBeenCalledWith(
+            mockCfnService,
+            mockDocumentManager,
+            params,
+            'UPDATE',
+            mockS3Service,
+        );
     });
 
     describe('getStatus', () => {
@@ -241,6 +275,7 @@ describe('ValidationWorkflow', () => {
                 mockDiagnosticCoordinator,
                 mockSyntaxTreeManager,
                 mockValidationManager,
+                mockS3Service,
             );
         });
 
@@ -358,6 +393,7 @@ describe('ValidationWorkflow', () => {
                 mockDiagnosticCoordinator,
                 mockSyntaxTreeManager,
                 mockValidationManager,
+                mockS3Service,
             );
         });
 

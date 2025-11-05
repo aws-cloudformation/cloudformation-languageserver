@@ -7,6 +7,7 @@ import { ResponseError } from 'vscode-languageserver';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
+import { S3Service } from '../../../src/services/S3Service';
 import {
     processChangeSet,
     waitForChangeSetValidation,
@@ -36,9 +37,16 @@ vi.mock('../../../src/context/SectionContextBuilder', () => ({
     getEntityMap: vi.fn().mockImplementation(() => new Map()),
 }));
 
+vi.mock('../../../src/artifactexporter/ArtifactExporter', () => ({
+    ArtifactExporter: vi.fn().mockImplementation(() => ({
+        export: vi.fn().mockResolvedValue({ Resources: {} }),
+    })),
+}));
+
 describe('StackActionWorkflowOperations', () => {
     let mockCfnService: CfnService;
     let mockDocumentManager: DocumentManager;
+    let mockS3Service: S3Service;
 
     beforeEach(() => {
         mockCfnService = {
@@ -56,6 +64,8 @@ describe('StackActionWorkflowOperations', () => {
             get: vi.fn(),
             getLine: vi.fn(),
         } as any;
+
+        mockS3Service = {} as any;
 
         vi.clearAllMocks();
     });
@@ -76,7 +86,7 @@ describe('StackActionWorkflowOperations', () => {
                 Id: 'changeset-123',
             });
 
-            const result = await processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE');
+            const result = await processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE', mockS3Service);
 
             expect(result).toContain('AWS-CloudFormation');
             expect(mockCfnService.createChangeSet).toHaveBeenCalledWith({
@@ -96,25 +106,35 @@ describe('StackActionWorkflowOperations', () => {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
-                s3Url: 's3://test-bucket/template.yaml',
+                s3Bucket: 'test-bucket',
+                s3Key: 'template.yaml',
             };
 
-            (mockDocumentManager.get as any).mockReturnValue({
+            const mockDocument = {
                 contents: () => 'template content',
-            });
+                documentType: 'YAML',
+            };
+            (mockDocumentManager.get as any).mockReturnValue(mockDocument);
 
             (mockCfnService.createChangeSet as any).mockResolvedValue({
                 Id: 'changeset-123',
             });
 
-            const result = await processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE');
+            mockS3Service.putObjectContent = vi.fn().mockResolvedValue({});
+
+            const result = await processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE', mockS3Service);
 
             expect(result).toContain('AWS-CloudFormation');
+            expect(mockS3Service.putObjectContent).toHaveBeenCalledWith(
+                expect.any(String),
+                'test-bucket',
+                'template.yaml',
+            );
             expect(mockCfnService.createChangeSet).toHaveBeenCalledWith({
                 StackName: 'test-stack',
                 ChangeSetName: expect.stringContaining(ExtensionName.replaceAll(' ', '-')),
                 TemplateBody: undefined,
-                TemplateURL: 's3://test-bucket/template.yaml',
+                TemplateURL: 'https://s3.amazonaws.com/test-bucket/template.yaml',
                 Parameters: undefined,
                 Capabilities: undefined,
                 ChangeSetType: 'CREATE',
@@ -131,9 +151,9 @@ describe('StackActionWorkflowOperations', () => {
 
             (mockDocumentManager.get as any).mockReturnValue(undefined);
 
-            await expect(processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE')).rejects.toThrow(
-                ResponseError,
-            );
+            await expect(
+                processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE', mockS3Service),
+            ).rejects.toThrow(ResponseError);
         });
     });
 

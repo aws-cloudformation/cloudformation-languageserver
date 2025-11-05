@@ -1,4 +1,5 @@
 import { ErrorCodes, RequestHandler, ResponseError } from 'vscode-languageserver';
+import { ArtifactExporter } from '../artifactexporter/ArtifactExporter';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Parameter, Resource } from '../context/semantic/Entity';
@@ -25,6 +26,7 @@ import {
     DescribeValidationStatusResult,
     GetCapabilitiesResult,
     GetParametersResult,
+    GetTemplateArtifactsResult,
     GetStackActionStatusResult,
     GetTemplateResourcesResult,
     CreateDeploymentParams,
@@ -79,6 +81,26 @@ export function getParametersHandler(
                 handleLspError(error, 'Failed to get parameters');
             }
         });
+    };
+}
+
+export function getTemplateArtifactsHandler(
+    components: ServerComponents,
+): RequestHandler<TemplateUri, GetTemplateArtifactsResult, void> {
+    return (rawParams) => {
+        try {
+            const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
+            const document = components.documentManager.get(params);
+            if (!document) {
+                throw new Error(`Cannot retrieve file with uri: ${params}`);
+            }
+
+            const template = new ArtifactExporter(components.s3Service, document);
+            const artifacts = template.getTemplateArtifacts();
+            return { artifacts };
+        } catch (error) {
+            handleLspError(error, 'Failed to get template artifacts');
+        }
     };
 }
 
