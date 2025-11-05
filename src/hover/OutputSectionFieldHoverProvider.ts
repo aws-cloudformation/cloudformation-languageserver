@@ -1,10 +1,12 @@
 import { outputSectionFieldDocsMap } from '../artifacts/OutputSectionFieldDocs';
 import { Context } from '../context/Context';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { HoverProvider } from './HoverProvider';
 
 export class OutputSectionFieldHoverProvider implements HoverProvider {
     private static readonly OUTPUT_SECTION_FIELDS = new Set(['Description', 'Value', 'Export']);
 
+    @Measure({ name: 'getInformation' })
     getInformation(context: Context): string | undefined {
         const attributeName = context.text;
 
