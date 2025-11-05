@@ -156,13 +156,12 @@ describe('Document', () => {
             expect(result).toBeDefined();
         });
 
-        it('should handle invalid YAML gracefully', () => {
-            const content = 'invalid:\n  - yaml\n    - structure';
+        it('should throw for invalid YAML', () => {
+            const content = 'key: value\n  invalid: indentation';
             const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
             const doc = new Document(textDocument);
 
-            const result = doc.getParsedDocumentContent();
-            expect(result).toBeDefined();
+            expect(() => doc.getParsedDocumentContent()).toThrow();
         });
     });
 });
