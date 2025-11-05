@@ -1,8 +1,10 @@
 import { Context } from '../context/Context';
 import { Mapping } from '../context/semantic/Entity';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { HoverProvider } from './HoverProvider';
 
 export class MappingHoverProvider implements HoverProvider {
+    @Measure({ name: 'getInformation' })
     getInformation(context: Context): string | undefined {
         const mapping = context.entity as Mapping;
         if (!mapping) {

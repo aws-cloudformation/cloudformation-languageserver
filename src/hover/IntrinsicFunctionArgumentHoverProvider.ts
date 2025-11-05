@@ -5,6 +5,7 @@ import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntitie
 import { Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import {
     determineGetAttPosition,
     extractAttributeName,
@@ -17,6 +18,7 @@ import { HoverProvider } from './HoverProvider';
 export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
+    @Measure({ name: 'getInformation' })
     getInformation(context: Context, position?: Position): string | undefined {
         // Only handle contexts that are inside intrinsic functions
         if (!context.intrinsicContext.inIntrinsic() || context.isIntrinsicFunc) {
