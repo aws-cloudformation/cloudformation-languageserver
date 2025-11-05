@@ -10,7 +10,13 @@ import { createCompletionItem } from './CompletionUtils';
 export class EntityFieldCompletionProvider<T extends Entity> implements CompletionProvider {
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] {
         // Extract the actual entity (handle both regular and ForEach resources)
-        const entity = context.getResourceEntity() as unknown as T;
+        let entity;
+        if (context.getEntityType() === EntityType.ForEachResource) {
+            entity = context.getResourceEntity() as unknown as T;
+        } else {
+            entity = context.entity as T;
+        }
+
         if (!entity) {
             return [];
         }

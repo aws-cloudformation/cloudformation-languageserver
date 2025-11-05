@@ -77,11 +77,15 @@ export class Context {
     }
 
     public getResourceEntity(): Resource | undefined {
-        if (this.getEntityType() === EntityType.ForEachResource) {
+        const entityType = this.getEntityType();
+        if (entityType === EntityType.Resource) {
+            return this.entity as Resource;
+        }
+        if (entityType === EntityType.ForEachResource) {
             const forEachResource = this.entity as ForEachResource;
             return forEachResource.resource;
         }
-        return this.entity as Resource;
+        return undefined;
     }
 
     public get intrinsicContext(): IntrinsicContext {
