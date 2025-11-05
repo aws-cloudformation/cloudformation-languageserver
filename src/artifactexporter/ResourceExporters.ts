@@ -109,10 +109,6 @@ export abstract class Resource {
             return;
         }
 
-        if (!resourcePropertyDict) {
-            return;
-        }
-
         const propertyValue = resourcePropertyDict[this.propertyName];
 
         if (!propertyValue && !this.packageNullProperty) {
