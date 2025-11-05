@@ -1,5 +1,6 @@
 import { parameterAttributeDocsMap } from '../artifacts/ParameterAttributeDocs';
 import { Context } from '../context/Context';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { HoverProvider } from './HoverProvider';
 
 export class ParameterAttributeHoverProvider implements HoverProvider {
@@ -17,6 +18,7 @@ export class ParameterAttributeHoverProvider implements HoverProvider {
         'Type',
     ]);
 
+    @Measure({ name: 'getInformation' })
     getInformation(context: Context): string | undefined {
         const attributeName = context.text;
 

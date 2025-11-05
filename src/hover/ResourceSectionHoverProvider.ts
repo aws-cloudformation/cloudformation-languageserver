@@ -8,6 +8,7 @@ import { ResourceAttribute, TopLevelSection } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { templatePathToJsonPointerPath } from '../utils/PathUtils';
 import { propertyTypesToMarkdown, formatResourceHover, getResourceAttributeValueDoc } from './HoverFormatter';
 import { HoverProvider } from './HoverProvider';
@@ -15,6 +16,7 @@ import { HoverProvider } from './HoverProvider';
 export class ResourceSectionHoverProvider implements HoverProvider {
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
+    @Measure({ name: 'getInformation' })
     getInformation(context: Context) {
         const resource = context.entity as Resource;
 
