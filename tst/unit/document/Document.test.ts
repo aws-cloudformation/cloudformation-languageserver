@@ -147,13 +147,12 @@ describe('Document', () => {
             });
         });
 
-        it('should handle invalid JSON gracefully', () => {
+        it('should throw for invalid JSON', () => {
             const content = '{"invalid": json}';
             const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
             const doc = new Document(textDocument);
 
-            const result = doc.getParsedDocumentContent();
-            expect(result).toBeDefined();
+            expect(() => doc.getParsedDocumentContent()).toThrow();
         });
 
         it('should throw for invalid YAML', () => {
