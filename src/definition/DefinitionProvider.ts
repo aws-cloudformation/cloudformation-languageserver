@@ -17,7 +17,10 @@ export class DefinitionProvider {
         }
         const locations = [];
         for (const section of context.relatedEntities.values()) {
-            const relatedContext = section.get(context.text);
+            // For GetAtt expressions like "Vpc.VpcId", extract just the resource name "Vpc"
+            const searchText = context.text.includes('.') ? context.text.split('.')[0] : context.text;
+
+            const relatedContext = section.get(searchText);
             if (relatedContext) {
                 locations.push(
                     Location.create(params.textDocument.uri, {
