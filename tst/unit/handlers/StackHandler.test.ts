@@ -8,7 +8,7 @@ import {
 import { StubbedInstance } from 'ts-sinon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CancellationToken, ResponseError, ErrorCodes } from 'vscode-languageserver';
-import { Template } from '../../../src/artifactexporter/ArtifactExporter';
+import { ArtifactExporter } from '../../../src/artifactexporter/ArtifactExporter';
 import { Context } from '../../../src/context/Context';
 import * as SectionContextBuilder from '../../../src/context/SectionContextBuilder';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
@@ -176,7 +176,7 @@ describe('StackActionHandler', () => {
             const mockTemplateInstance = {
                 getTemplateArtifacts: vi.fn().mockReturnValue(mockArtifacts),
             };
-            vi.mocked(Template).mockImplementation(() => mockTemplateInstance as any);
+            vi.mocked(ArtifactExporter).mockImplementation(() => mockTemplateInstance as any);
 
             const handler = getTemplateArtifactsHandler(mockComponents);
             const result = handler(templateUri, mockToken) as GetTemplateArtifactsResult;

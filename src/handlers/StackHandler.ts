@@ -1,5 +1,5 @@
 import { ErrorCodes, RequestHandler, ResponseError } from 'vscode-languageserver';
-import { Template } from '../artifactexporter/ArtifactExporter';
+import { ArtifactExporter } from '../artifactexporter/ArtifactExporter';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Parameter, Resource } from '../context/semantic/Entity';
@@ -95,7 +95,7 @@ export function getTemplateArtifactsHandler(
                 throw new Error(`Cannot retrieve file with uri: ${params}`);
             }
 
-            const template = new Template(components.s3Service, '', '', document);
+            const template = new ArtifactExporter(components.s3Service, '', '', document);
             const artifacts = template.getTemplateArtifacts();
             return { artifacts };
         } catch (error) {

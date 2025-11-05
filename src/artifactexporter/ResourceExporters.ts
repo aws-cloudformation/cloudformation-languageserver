@@ -14,7 +14,7 @@ import path, { join, basename } from 'path';
 import archiver from 'archiver';
 import { dump } from 'js-yaml';
 import { S3Service } from '../services/S3Service';
-import { Template } from './ArtifactExporter';
+import { ArtifactExporter } from './ArtifactExporter';
 
 export function isS3Url(url: string): boolean {
     return typeof url === 'string' && /^s3:\/\/[^/]+\/.+/.test(url);
@@ -273,7 +273,13 @@ export class CloudFormationStackResource extends Resource {
             throw new Error(`Invalid template path: ${templateAbsPath}`);
         }
 
-        const template = new Template(this.s3Service, this.bucketName, this.s3KeyPrefix, undefined, templateAbsPath);
+        const template = new ArtifactExporter(
+            this.s3Service,
+            this.bucketName,
+            this.s3KeyPrefix,
+            undefined,
+            templateAbsPath,
+        );
         const exportedTemplateDict = await template.export();
         const exportedTemplateStr = dump(exportedTemplateDict);
 
