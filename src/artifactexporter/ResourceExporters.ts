@@ -1,23 +1,15 @@
-import {
-    existsSync,
-    mkdtempSync,
-    copyFileSync,
-    rmSync,
-    createWriteStream,
-    statSync,
-    openSync,
-    readSync,
-    closeSync,
-} from 'fs';
+import { existsSync, mkdtempSync, copyFileSync, rmSync, createWriteStream, statSync, readFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path, { join, basename } from 'path';
+import { pathToFileURL } from 'url';
 import archiver from 'archiver';
 import { dump } from 'js-yaml';
+import { detectDocumentType } from '../document/DocumentUtils';
 import { S3Service } from '../services/S3Service';
 import { ArtifactExporter } from './ArtifactExporter';
 
 export function isS3Url(url: string): boolean {
-    return typeof url === 'string' && /^s3:\/\/[^/]+\/.+/.test(url);
+    return /^s3:\/\/[^/]+\/.+/.test(url);
 }
 
 export function isLocalFile(filePath: string): boolean {
@@ -31,26 +23,9 @@ function isLocalFolder(path: string): boolean {
 function isArchiveFile(filePath: string) {
     // Quick extension check
     const ext = path.extname(filePath).toLowerCase();
-    const archiveExts = ['.zip', '.rar', '.7z', '.tar', '.gz', '.tgz'];
+    const archiveExts = ['.zip', '.rar', '.7z', '.tar', '.gz', '.tgz', '.zst', '.war'];
 
-    if (!archiveExts.includes(ext)) return false;
-
-    // Verify with magic numbers
-    try {
-        const fd = openSync(filePath, 'r');
-        const buffer = Buffer.alloc(8);
-        readSync(fd, buffer, 0, 8, 0);
-        closeSync(fd);
-
-        return (
-            (buffer[0] === 0x50 && buffer[1] === 0x4b) || // ZIP
-            buffer.toString('ascii', 0, 4) === 'Rar!' || // RAR
-            (buffer[0] === 0x37 && buffer[1] === 0x7a) || // 7Z
-            (buffer[0] === 0x1f && buffer[1] === 0x8b) // GZIP
-        );
-    } catch {
-        return false;
-    }
+    return archiveExts.includes(ext);
 }
 
 function copyToTempDir(filePath: string): string {
@@ -278,7 +253,11 @@ export class CloudFormationStackResource extends Resource {
             throw new Error(`Invalid template path: ${templateAbsPath}`);
         }
 
-        const template = new ArtifactExporter(this.s3Service, undefined, templateAbsPath);
+        const templateUri = pathToFileURL(templateAbsPath).href;
+        const content = readFileSync(templateAbsPath, 'utf8');
+        const templateType = detectDocumentType(templateUri, content).type;
+
+        const template = new ArtifactExporter(this.s3Service, templateType, templateUri, content);
         const exportedTemplateDict = await template.export(bucketName, s3KeyPrefix);
         const exportedTemplateStr = dump(exportedTemplateDict);
 
