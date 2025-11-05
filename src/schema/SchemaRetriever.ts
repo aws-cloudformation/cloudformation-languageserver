@@ -2,7 +2,8 @@ import { DateTime } from 'luxon';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { TelemetryService } from '../telemetry/TelemetryService';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsRegion, getRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
@@ -18,7 +19,9 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     private settingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
     private readonly log = LoggerFactory.getLogger(SchemaRetriever);
-    private readonly telemetry = TelemetryService.instance.get('SchemaRetriever');
+
+    @Telemetry()
+    private readonly telemetry!: ScopedTelemetry;
 
     constructor(
         private readonly schemaTaskManager: GetSchemaTaskManager,
