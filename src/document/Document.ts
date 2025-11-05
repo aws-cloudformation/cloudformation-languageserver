@@ -4,7 +4,6 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { detectCfnFileType } from './CloudFormationDetection';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
-import { parseJson } from './JsonParser';
 import { parseValidYaml } from './YamlParser';
 
 export class Document {
@@ -42,7 +41,7 @@ export class Document {
 
     public getParsedDocumentContent(): unknown {
         if (this.documentType === DocumentType.JSON) {
-            return parseJson(this.contents());
+            return JSON.parse(this.contents());
         }
         return parseValidYaml(this.contents());
     }
