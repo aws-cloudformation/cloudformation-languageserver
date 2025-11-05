@@ -1,3 +1,4 @@
+import { performance } from 'perf_hooks';
 import { DateTime } from 'luxon';
 import { Diagnostic, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
@@ -9,10 +10,11 @@ import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from 
 import { DefaultSettings, CfnLintSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
-import { Telemetry } from '../../telemetry/TelemetryDecorator';
+import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
+import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
 import { PyodideWorkerManager } from './PyodideWorkerManager';
 
@@ -261,7 +263,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
      * @param uri The document URI
      * @param fileType The CloudFormation file type
      */
+    @Count({ name: 'lint.standaloneFile' })
     private async lintStandaloneFile(content: string, uri: string, fileType: CloudFormationFileType): Promise<void> {
+        const startTime = performance.now();
         try {
             // Use worker to lint template
             const diagnosticPayloads = await this.workerManager.lintTemplate(content, uri, fileType);
@@ -284,6 +288,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             const errorMessage = extractErrorMessage(error);
             this.logError(`linting ${fileType} by string`, error);
             this.publishErrorDiagnostics(uri, errorMessage);
+        } finally {
+            this.telemetry.histogram(
+                'lint.standaloneFile.duration',
+                (performance.now() - startTime) / byteSize(content),
+                {
+                    unit: 'ms/byte',
+                },
+            );
         }
     }
 
@@ -313,12 +325,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
      * @param fileType The CloudFormation file type
      * @param content The document content (used for GitSync deployment files)
      */
+    @Count({ name: 'lint.workspaceFile' })
     private async lintWorkspaceFile(
         uri: string,
         folder: WorkspaceFolder,
         fileType: CloudFormationFileType,
         content: string,
     ): Promise<void> {
+        const startTime = performance.now();
         try {
             // Ensure folder is mounted before linting
             await this.mountFolder(folder);
@@ -358,6 +372,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             const errorMessage = extractErrorMessage(error);
             this.logError(`linting ${fileType} by file`, error);
             this.publishErrorDiagnostics(uri, errorMessage);
+        } finally {
+            this.telemetry.histogram(
+                'lint.workspaceFile.duration',
+                (performance.now() - startTime) / byteSize(content),
+                {
+                    unit: 'ms/byte',
+                },
+            );
         }
     }
 
