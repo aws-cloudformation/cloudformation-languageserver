@@ -31,6 +31,7 @@ export interface ResourceStateParams {
     textDocument: TextDocumentIdentifier;
     resourceSelections?: ResourceSelection[];
     purpose: ResourceStatePurpose;
+    parentResourceType?: string;
 }
 
 export interface ResourceStateResult {

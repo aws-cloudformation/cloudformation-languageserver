@@ -53,7 +53,7 @@ export class ResourceStateImporter {
 
     @Measure({ name: 'importResourceState' })
     public async importResourceState(params: ResourceStateParams): Promise<ResourceStateResult> {
-        const { resourceSelections, textDocument, purpose } = params;
+        const { resourceSelections, textDocument, purpose, parentResourceType } = params;
 
         this.telemetry.count(`purpose.${purpose.toLowerCase()}`, 1);
 
@@ -75,6 +75,7 @@ export class ResourceStateImporter {
             resourceSelections,
             syntaxTree,
             purpose,
+            parentResourceType,
         );
 
         this.recordStateFetchMetrics(resourceSelections, importResult);
@@ -152,6 +153,7 @@ export class ResourceStateImporter {
         resourceSelections: ResourceSelection[],
         syntaxTree: SyntaxTree,
         purpose: ResourceStatePurpose,
+        parentResourceType?: string,
     ): Promise<{ fetchedResourceStates: ResourceTemplateFormat[]; importResult: ResourceStateResult }> {
         const fetchedResourceStates: ResourceTemplateFormat[] = [];
         const importResult: ResourceStateResult = {
@@ -181,6 +183,7 @@ export class ResourceStateImporter {
                             resourceIdentifier,
                             syntaxTree,
                             generatedLogicalIds,
+                            parentResourceType,
                         );
                         generatedLogicalIds.add(logicalId);
                         fetchedResourceStates.push({
@@ -214,6 +217,7 @@ export class ResourceStateImporter {
         resourceIdentifier: string,
         syntaxTree: SyntaxTree,
         idsAlreadyGenerated?: Set<string>,
+        parentResourceType?: string,
     ): string {
         const entities = getEntityMap(syntaxTree, TopLevelSection.Resources);
         const existingLogicalIds = new Set<string>(entities?.keys());
@@ -225,12 +229,28 @@ export class ResourceStateImporter {
             }
         }
 
-        return this.generateLogicalId(resourceType, resourceIdentifier, existingLogicalIds);
+        return this.generateLogicalId(resourceType, resourceIdentifier, existingLogicalIds, parentResourceType);
     }
 
-    private generateLogicalId(resourceType: string, identifier: string, existingLogicalIds?: Set<string>): string {
+    private generateLogicalId(
+        resourceType: string,
+        identifier: string,
+        existingLogicalIds?: Set<string>,
+        parentResourceType?: string,
+    ): string {
         const parts = resourceType.split('::');
-        const baseName = parts.length >= 3 ? parts[1] + parts[2] : parts[parts.length - 1];
+        const resourceTypeName = parts.length >= 3 ? parts[1] + parts[2] : parts[parts.length - 1];
+
+        let baseName: string;
+        if (parentResourceType) {
+            // Generate relationship-aware name like "IAMRoleRelatedToS3Bucket"
+            const parentParts = parentResourceType.split('::');
+            const parentTypeName =
+                parentParts.length >= 3 ? parentParts[1] + parentParts[2] : parentParts[parentParts.length - 1];
+            baseName = `${resourceTypeName}RelatedTo${parentTypeName}`;
+        } else {
+            baseName = resourceTypeName;
+        }
 
         if (!existingLogicalIds?.has(baseName)) {
             return baseName;
