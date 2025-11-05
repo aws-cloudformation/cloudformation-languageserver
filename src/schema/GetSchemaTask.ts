@@ -3,7 +3,8 @@ import { Logger } from 'pino';
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { DataStore } from '../datastore/DataStore';
 import { CfnService } from '../services/CfnService';
-import { Measure } from '../telemetry/TelemetryDecorator';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { AwsRegion } from '../utils/Region';
 import { downloadFile } from '../utils/RemoteDownload';
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
@@ -19,6 +20,9 @@ export abstract class GetSchemaTask {
 }
 
 export class GetPublicSchemaTask extends GetSchemaTask {
+    @Telemetry()
+    private readonly telemetry!: ScopedTelemetry;
+
     static readonly MaxAttempts = 3;
     private attempts = 0;
 
@@ -38,6 +42,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         }
 
         this.attempts++;
+        this.telemetry.count(`getSchemas.${this.region}`, 1);
         const schemas = await this.getSchemas(this.region);
         const value: RegionalSchemasType = {
             version: RegionalSchemas.V1,

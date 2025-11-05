@@ -77,13 +77,7 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
                     enabled: false,
                 },
                 '@opentelemetry/instrumentation-http': {
-                    ignoreOutgoingRequestHook: (request) => {
-                        if (!request.hostname) {
-                            return false;
-                        }
-
-                        return telemetryUrl.includes(request.hostname);
-                    },
+                    enabled: false,
                 },
                 '@opentelemetry/instrumentation-runtime-node': {
                     monitoringPrecision: ExportIntervalSeconds * 1000,
