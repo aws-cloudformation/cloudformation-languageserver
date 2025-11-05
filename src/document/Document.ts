@@ -5,7 +5,7 @@ import { detectCfnFileType } from './CloudFormationDetection';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
 import { parseJson } from './JsonParser';
-import { parseYaml } from './YamlParser';
+import { parseValidYaml } from './YamlParser';
 
 export class Document {
     private readonly log = LoggerFactory.getLogger(Document);
@@ -44,7 +44,7 @@ export class Document {
         if (this.documentType === DocumentType.JSON) {
             return parseJson(this.contents());
         }
-        return parseYaml(this.contents(), 0, true);
+        return parseValidYaml(this.contents());
     }
 
     public getLine(lineNumber: number): string | undefined {

@@ -37,6 +37,10 @@ export function parseYaml(yamlString: string, parseAttempt: number = 0, jsonPars
     }
 }
 
+export function parseValidYaml(validYamlString: string): any {
+    return load(validYamlString, { schema: CloudFormationSchema });
+}
+
 const CloudFormationYamlTypes = [
     // !Ref
     new Type('!Ref', {
