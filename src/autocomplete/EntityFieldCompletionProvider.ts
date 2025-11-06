@@ -9,7 +9,17 @@ import { createCompletionItem } from './CompletionUtils';
 /* eslint-disable no-restricted-syntax -- Entire class depends on Entity */
 export class EntityFieldCompletionProvider<T extends Entity> implements CompletionProvider {
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] {
-        const entity = context.entity as T;
+        // Extract the actual entity (handle both regular and ForEach resources)
+        let entity;
+        if (context.getEntityType() === EntityType.ForEachResource) {
+            entity = context.getResourceEntity() as unknown as T;
+        } else {
+            entity = context.entity as T;
+        }
+
+        if (!entity) {
+            return [];
+        }
 
         const items = this.getFieldsAsCompletionItems(entity);
         if (context.text.length > 0) {

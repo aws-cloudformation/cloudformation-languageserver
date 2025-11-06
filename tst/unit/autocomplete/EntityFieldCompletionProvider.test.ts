@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { CompletionParams } from 'vscode-languageserver';
 import { EntityFieldCompletionProvider } from '../../../src/autocomplete/EntityFieldCompletionProvider';
 import { Output, Parameter } from '../../../src/context/semantic/Entity';
-import { createOutputContext, createParameterContext } from '../../utils/MockContext';
+import { createForEachResourceContext, createOutputContext, createParameterContext } from '../../utils/MockContext';
 
 describe('EntityFieldCompletionProvider', () => {
     const parameterFieldCompletionProvider = new EntityFieldCompletionProvider<Parameter>();
@@ -151,6 +151,94 @@ describe('EntityFieldCompletionProvider', () => {
             expect(result).toBeDefined();
             expect(result?.length).equal(1);
             expect(result?.at(0)?.label).equal('Export');
+        });
+    });
+
+    describe('Fn::ForEach Resource', () => {
+        const resourceFieldCompletionProvider = new EntityFieldCompletionProvider();
+
+        test('should suggest resource fields for ForEach resource', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', ''],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                },
+            });
+
+            const result = resourceFieldCompletionProvider.getCompletions(mockContext, mockParams);
+            expect(result).toBeDefined();
+            expect(result.length).toBeGreaterThan(0);
+
+            const resultLabels = result?.map((item) => item.label);
+            expect(resultLabels).toContain('Properties');
+            expect(resultLabels).toContain('DependsOn');
+            expect(resultLabels).toContain('Metadata');
+        });
+
+        test('should filter resource fields with partial text for ForEach resource', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Instances', 'Instance${Name}', {
+                text: 'Prop',
+                propertyPath: ['Resources', 'Fn::ForEach::Instances', 2, 'Instance${Name}', 'Prop'],
+                data: {
+                    Type: 'AWS::EC2::Instance',
+                },
+            });
+
+            const result = resourceFieldCompletionProvider.getCompletions(mockContext, mockParams);
+            expect(result).toBeDefined();
+            expect(result.length).toBeGreaterThan(0);
+
+            const propertiesItem = result?.find((item) => item.label === 'Properties');
+            expect(propertiesItem).toBeDefined();
+        });
+
+        test('should not suggest already defined fields for ForEach resource', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', ''],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {},
+                    DependsOn: 'SomeResource',
+                },
+            });
+
+            const result = resourceFieldCompletionProvider.getCompletions(mockContext, mockParams);
+            expect(result).toBeDefined();
+
+            const resultLabels = result?.map((item) => item.label);
+            expect(resultLabels).not.toContain('Type');
+            expect(resultLabels).not.toContain('Properties');
+            expect(resultLabels).not.toContain('DependsOn');
+        });
+
+        test('should suggest all fields when ForEach resource has no fields defined', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', ''],
+                data: {},
+            });
+
+            const result = resourceFieldCompletionProvider.getCompletions(mockContext, mockParams);
+            expect(result).toBeDefined();
+            expect(result.length).toBeGreaterThan(0);
+
+            const resultLabels = result?.map((item) => item.label);
+            expect(resultLabels).toContain('Type');
+            expect(resultLabels).toContain('Properties');
+        });
+
+        test('should return empty when ForEach resource has no resource property', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', ''],
+                data: undefined,
+            });
+
+            const result = resourceFieldCompletionProvider.getCompletions(mockContext, mockParams);
+            expect(result).toBeDefined();
+            expect(result.length).toBe(0);
         });
     });
 });

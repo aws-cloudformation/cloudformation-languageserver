@@ -22,7 +22,7 @@ import {
 import { Context } from '../context/Context';
 import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
-import { CfnValue } from '../context/semantic/SemanticTypes';
+import { CfnValue, EntityType } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { propertyTypesToMarkdown } from '../hover/HoverFormatter';
@@ -66,7 +66,10 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
      * Uses robust schema resolution approach from hover provider
      */
     private getPropertyCompletions(context: Context): PropertyCompletionsResult {
-        const resource = context.entity as Resource;
+        const resource = context.getResourceEntity();
+        if (!resource) {
+            return { completions: [], skipFuzzySearch: false };
+        }
         let completions: CompletionItem[] = [];
         let skipFuzzySearch = false;
 
@@ -138,7 +141,12 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     }
 
     private getSchemaPath(context: Context): string {
-        let segments = context.propertyPath.slice(3);
+        const propertiesIndex = context.propertyPath.indexOf('Properties');
+        if (propertiesIndex === -1) {
+            return '/properties';
+        }
+
+        let segments = context.propertyPath.slice(propertiesIndex + 1);
 
         // For key completions (except SYNTHETIC_KEY_OR_VALUE), remove last segment
         if (
@@ -271,11 +279,16 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
         const lastSegment = propertyPath[propertyPath.length - 1];
         const isArrayItemContext = typeof lastSegment === 'number' || lastSegment === '';
 
-        if (propertyPath.length > 3 && isArrayItemContext) {
-            const entity = context.entity as Resource;
-            if (entity?.Properties) {
-                const pathSegments = propertyPath.slice(3); // Remove ['Resources', 'LogicalId', 'Properties']
-                let current: Record<string, CfnValue> | CfnValue | undefined = entity.Properties;
+        // Find the Properties index dynamically
+        const startIndex = context.getEntityType() === EntityType.ForEachResource ? 4 : 2;
+        const propertiesIndex = propertyPath.indexOf('Properties', startIndex);
+
+        if (propertiesIndex !== -1 && isArrayItemContext) {
+            const resource = context.getResourceEntity();
+
+            if (resource?.Properties) {
+                const pathSegments = propertyPath.slice(propertiesIndex + 1);
+                let current: Record<string, CfnValue> | CfnValue | undefined = resource.Properties;
 
                 for (let i = 0; i < pathSegments.length - 1; i++) {
                     if (current && typeof current === 'object' && pathSegments[i] in current) {

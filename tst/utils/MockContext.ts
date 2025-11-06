@@ -3,7 +3,16 @@ import { Position } from 'vscode-languageserver';
 import { Context } from '../../src/context/Context';
 import { SectionType, TopLevelSection } from '../../src/context/ContextType';
 import { ContextWithRelatedEntities } from '../../src/context/ContextWithRelatedEntities';
-import { Condition, Entity, Mapping, Output, Parameter, Resource, Unknown } from '../../src/context/semantic/Entity';
+import {
+    Condition,
+    Entity,
+    ForEachResource,
+    Mapping,
+    Output,
+    Parameter,
+    Resource,
+    Unknown,
+} from '../../src/context/semantic/Entity';
 import { PropertyPath } from '../../src/context/syntaxtree/SyntaxTree';
 import { DocumentType } from '../../src/document/Document';
 import { createYamlTree } from './TestTree';
@@ -137,6 +146,36 @@ export function createResourceContext(
             other?.data?.UpdatePolicy,
             other?.data?.UpdateReplacePolicy,
         ),
+    });
+}
+
+export function createForEachResourceContext(
+    forEachName: string,
+    resourceKey: string,
+    other?: Partial<EntityTypeParams>,
+    relatedEntities?: Map<SectionType, Map<string, Context>>,
+) {
+    const resource = other?.data
+        ? new Resource(
+              resourceKey,
+              other.data.Type,
+              other.data.Properties,
+              other.data.DependsOn,
+              other.data.Condition,
+              other.data.Metadata,
+              other.data.CreationPolicy,
+              other.data.DeletionPolicy,
+              other.data.UpdatePolicy,
+              other.data.UpdateReplacePolicy,
+          )
+        : undefined;
+
+    return createMockContextWithRelatedEntity(TopLevelSection.Resources, forEachName, relatedEntities, {
+        text: other?.text,
+        type: other?.type,
+        propertyPath: other?.propertyPath,
+        nodeType: other?.nodeType,
+        entity: new ForEachResource(forEachName, other?.data?.identifier, other?.data?.collection, resource),
     });
 }
 

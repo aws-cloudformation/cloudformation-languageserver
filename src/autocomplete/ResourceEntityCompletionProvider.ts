@@ -26,21 +26,24 @@ export class ResourceEntityCompletionProvider implements CompletionProvider {
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const entityCompletions = this.entityFieldProvider.getCompletions(context, params);
 
+        // Extract the actual resource entity (handle both regular and ForEach resources)
+        const resource = context.getResourceEntity();
+        if (!resource) {
+            return entityCompletions;
+        }
+
         // Enhance the "Properties" completion with a snippet
         if (entityCompletions) {
             const propertiesIndex = entityCompletions.findIndex((item) => item.label === 'Properties');
 
-            if (propertiesIndex !== -1) {
-                const resource = context.entity as Resource;
-                if (resource.Type) {
-                    const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
-                    if (schema) {
-                        entityCompletions[propertiesIndex] = this.createPropertiesSnippetCompletion(
-                            schema,
-                            context,
-                            params,
-                        );
-                    }
+            if (propertiesIndex !== -1 && resource.Type) {
+                const schema = this.schemaRetriever.getDefault().schemas.get(resource.Type);
+                if (schema) {
+                    entityCompletions[propertiesIndex] = this.createPropertiesSnippetCompletion(
+                        schema,
+                        context,
+                        params,
+                    );
                 }
             }
         }

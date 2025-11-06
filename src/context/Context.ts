@@ -13,7 +13,7 @@ import {
     TopLevelSectionsWithLogicalIdsSet,
 } from './ContextType';
 import { IntrinsicContext } from './IntrinsicContext';
-import { Entity } from './semantic/Entity';
+import { Entity, ForEachResource, Resource } from './semantic/Entity';
 import { entityTypeFromSection, nodeToEntity } from './semantic/EntityBuilder';
 import { normalizeIntrinsicFunction } from './semantic/Intrinsics';
 import { EntityType } from './semantic/SemanticTypes';
@@ -74,6 +74,18 @@ export class Context {
 
     public getEntityType(): EntityType {
         return entityTypeFromSection(this.section, this.logicalId);
+    }
+
+    public getResourceEntity(): Resource | undefined {
+        const entityType = this.getEntityType();
+        if (entityType === EntityType.Resource) {
+            return this.entity as Resource;
+        }
+        if (entityType === EntityType.ForEachResource) {
+            const forEachResource = this.entity as ForEachResource;
+            return forEachResource.resource;
+        }
+        return undefined;
     }
 
     public get intrinsicContext(): IntrinsicContext {
@@ -260,19 +272,24 @@ export class Context {
             return false;
         }
 
-        // Case 1: If we are over 3 we know for sure we are beyond the entity level
-        if (this.propertyPath.length > 3) {
+        // Determine the entity key level based on entity type
+        // Regular: ['Resources', 'LogicalId', 'Key'] - level 3
+        // ForEachResource: ['Resources', 'Fn::ForEach::Name', 2, 'ResourceKey', 'Key'] - level 5
+        const entityKeyLevel = this.getEntityType() === EntityType.ForEachResource ? 5 : 3;
+
+        // Case 1: If we are beyond the entity key level
+        if (this.propertyPath.length > entityKeyLevel) {
             return false;
         }
 
         // Case 2: Two situations exist that we need to account for:
         // isKey and isValue can be True when at the first key inside a value
         // when we are at level 2 this means we are at Entity/LogicalId as the first key
-        // when we are at level 3 this means we are at Entity/LogicalId/Properties as the first key
+        // when we are at level 3 (or 5 for ForEach) this means we are at Entity/LogicalId/Properties as the first key
         if (this.isKey() && this.isValue()) {
             if (this.propertyPath.length === 2) {
                 return true;
-            } else if (this.propertyPath.length === 3) {
+            } else if (this.propertyPath.length === entityKeyLevel) {
                 return false;
             }
         }

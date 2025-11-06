@@ -6,7 +6,7 @@ import { YamlNodeTypes } from '../../../src/context/syntaxtree/utils/TreeSitterT
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
-import { createResourceContext } from '../../utils/MockContext';
+import { createForEachResourceContext, createResourceContext } from '../../utils/MockContext';
 import { createMockComponents } from '../../utils/MockServerComponents';
 import { combinedSchemas } from '../../utils/SchemaUtils';
 
@@ -272,5 +272,124 @@ describe('ResourceEntityCompletionProvider', () => {
         // Verify it's not a snippet
         expect(propertiesItem!.kind).toBe(CompletionItemKind.Property);
         expect(propertiesItem!.insertTextFormat).toBeUndefined();
+    });
+
+    describe('Fn::ForEach Resource Entity Completions', () => {
+        test('should return resource entity completions for ForEach resource', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', ''],
+                data: {},
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+
+            const typeItem = result!.find((item) => item.label === 'Type');
+            expect(typeItem).toBeDefined();
+            expect(typeItem!.kind).toBe(CompletionItemKind.Property);
+
+            const propertiesItem = result!.find((item) => item.label === 'Properties');
+            expect(propertiesItem).toBeDefined();
+            expect(propertiesItem!.kind).toBe(CompletionItemKind.Property);
+
+            const dependsOnItem = result!.find((item) => item.label === ResourceAttribute.DependsOn.toString());
+            expect(dependsOnItem).toBeDefined();
+        });
+
+        test('should enhance Properties completion with snippet for ForEach resource', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Instances', 'Instance${Name}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Instances', 2, 'Instance${Name}', ''],
+                data: {
+                    Type: 'AWS::EC2::Instance',
+                },
+            });
+
+            const setupSchemaWithRequiredProps = () => {
+                const mockSchema = {
+                    typeName: 'AWS::EC2::Instance',
+                    propertyKeys: new Set(['InstanceType', 'ImageId']),
+                    required: ['InstanceType', 'ImageId'],
+                    isReadOnly: () => false,
+                    isRequired: (prop: string) => ['InstanceType', 'ImageId'].includes(prop),
+                    getByPath: () => ({ type: 'string' }),
+                    resolveRef: () => ({ type: 'string' }),
+                } as unknown as ResourceSchema;
+
+                const mockSchemas = new Map<string, ResourceSchema>();
+                mockSchemas.set('AWS::EC2::Instance', mockSchema);
+
+                const combinedSchemas = new CombinedSchemas();
+                Object.defineProperty(combinedSchemas, 'schemas', {
+                    get: () => mockSchemas,
+                });
+
+                mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+            };
+
+            setupSchemaWithRequiredProps();
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            const propertiesItem = result!.find((item) => item.label === 'Properties');
+            expect(propertiesItem).toBeDefined();
+            expect(propertiesItem!.kind).toBe(CompletionItemKind.File);
+            expect(propertiesItem!.insertTextFormat).toBe(InsertTextFormat.Snippet);
+
+            const snippetText = propertiesItem!.insertText as string;
+            expect(snippetText).toContain('Properties:');
+            expect(snippetText).toContain('InstanceType: $1');
+            expect(snippetText).toContain('ImageId: $2');
+        });
+
+        test('should return empty when ForEach resource has no resource property', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}', ''],
+                data: undefined,
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(0);
+        });
+
+        test('should not enhance Properties when ForEach resource has no Type', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Resources', 'Resource${Name}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Resources', 2, 'Resource${Name}', ''],
+                data: {},
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            const propertiesItem = result!.find((item) => item.label === 'Properties');
+            expect(propertiesItem).toBeDefined();
+            expect(propertiesItem!.kind).toBe(CompletionItemKind.Property);
+            expect(propertiesItem!.insertTextFormat).toBeUndefined();
+        });
+
+        test('should not enhance Properties when schema not found for ForEach resource', () => {
+            const mockContext = createForEachResourceContext('Fn::ForEach::Resources', 'Resource${Name}', {
+                text: '',
+                propertyPath: ['Resources', 'Fn::ForEach::Resources', 2, 'Resource${Name}', ''],
+                data: {
+                    Type: 'AWS::Unknown::Resource',
+                },
+            });
+
+            const testSchemas = combinedSchemas([]);
+            mockComponents.schemaRetriever.getDefault.returns(testSchemas);
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            const propertiesItem = result!.find((item) => item.label === 'Properties');
+            expect(propertiesItem).toBeDefined();
+            expect(propertiesItem!.kind).toBe(CompletionItemKind.Property);
+            expect(propertiesItem!.insertTextFormat).toBeUndefined();
+        });
     });
 });
