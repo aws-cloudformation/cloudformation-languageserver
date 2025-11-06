@@ -128,6 +128,15 @@ export class Parameter extends Entity {
     }
 }
 
+export class Constant extends Entity {
+    constructor(
+        public readonly name: string,
+        public readonly value?: string | Record<string, unknown>,
+    ) {
+        super(EntityType.Constant);
+    }
+}
+
 export class Mapping extends Entity {
     constructor(
         public readonly name: string,

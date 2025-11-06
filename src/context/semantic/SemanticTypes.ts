@@ -10,6 +10,7 @@ export enum EntityType {
     Condition = 'Condition',
     Mapping = 'Mapping',
     Parameter = 'Parameter',
+    Constant = 'Constant',
     Unknown = 'Unknown',
     ForEachResource = 'ForEachResource',
 }

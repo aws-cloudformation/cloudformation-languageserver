@@ -2,6 +2,7 @@
 export enum TopLevelSection {
     Resources = 'Resources',
     Parameters = 'Parameters',
+    Constants = 'Constants',
     Outputs = 'Outputs',
     Mappings = 'Mappings',
     Metadata = 'Metadata',
@@ -130,6 +131,7 @@ export const ResourceAttributes: ReadonlyArray<string> = Object.values(ResourceA
 export const TopLevelSectionsWithLogicalIds: ReadonlyArray<string> = [
     TopLevelSection.Resources,
     TopLevelSection.Parameters,
+    TopLevelSection.Constants,
     TopLevelSection.Outputs,
     TopLevelSection.Mappings,
     TopLevelSection.Metadata,

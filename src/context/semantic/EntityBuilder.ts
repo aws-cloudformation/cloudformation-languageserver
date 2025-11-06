@@ -13,6 +13,7 @@ import {
     Metadata,
     Output,
     Parameter,
+    Constant,
     Resource,
     Rule,
     Transform,
@@ -58,6 +59,9 @@ export function createEntityFromObject(logicalId: string, entityObject: any, sec
     switch (section) {
         case TopLevelSection.Parameters: {
             return Parameter.from(logicalId, entityObject);
+        }
+        case TopLevelSection.Constants: {
+            return new Constant(logicalId, entityObject);
         }
         case TopLevelSection.Resources: {
             if (logicalId.startsWith(IntrinsicFunction.ForEach)) {
@@ -154,6 +158,9 @@ export function entityTypeFromSection(section: SectionType, logicalId?: string) 
         }
         case TopLevelSection.Parameters: {
             return EntityType.Parameter;
+        }
+        case TopLevelSection.Constants: {
+            return EntityType.Constant;
         }
         default: {
             return EntityType.Unknown;
