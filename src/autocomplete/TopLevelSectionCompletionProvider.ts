@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, InsertTextFormat } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { TopLevelSection, TopLevelSections, TopLevelSectionsWithLogicalIdsSet } from '../context/ContextType';
+import { TopLevelSection, TopLevelSections } from '../context/ContextType';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
@@ -90,12 +90,8 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
     @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         // Get both regular and snippet completions
+        const stringCompletions = this.getTopLevelSectionCompletions();
         const snippetCompletions = this.getTopLevelSectionSnippetCompletions(context, params);
-        const sectionsWithSnippets = new Set(Object.keys(this.sectionSnippets));
-
-        const stringCompletions = this.getTopLevelSectionCompletions().filter(
-            (item) => !sectionsWithSnippets.has(item.label),
-        );
 
         // Combine both types of completions
         let completions = [...stringCompletions, ...snippetCompletions];

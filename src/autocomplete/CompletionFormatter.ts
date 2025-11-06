@@ -262,7 +262,7 @@ export class CompletionFormatter {
             }
 
             const entity = context.entity;
-            if (!entity || entity.entityType !== EntityType.Resource) {
+            if (!entity || context.getEntityType() !== EntityType.Resource) {
                 return undefined;
             }
 
@@ -271,10 +271,8 @@ export class CompletionFormatter {
                 return undefined;
             }
 
-            // Get the combined schemas
             const combinedSchemas = schemaRetriever.getDefault();
 
-            // Get the schema for this resource type
             const resourceSchema = combinedSchemas.schemas.get(resourceType);
             if (!resourceSchema) {
                 return undefined;
@@ -286,27 +284,35 @@ export class CompletionFormatter {
             if (propertiesIndex === -1) {
                 propertyPath = [propertyName];
             } else {
-                propertyPath = [
-                    ...context.propertyPath
-                        .slice(propertiesIndex + 1)
-                        .map(String)
-                        .filter((p) => p !== ''),
-                    propertyName,
-                ];
+                const pathAfterProperties = context.propertyPath.slice(propertiesIndex + 1).map(String);
+                //.filter((p) => p !== '');
+
+                if (
+                    pathAfterProperties.length > 0 &&
+                    pathAfterProperties[pathAfterProperties.length - 1] === context.text
+                ) {
+                    propertyPath = [...pathAfterProperties.slice(0, -1), propertyName];
+                } else if (pathAfterProperties[pathAfterProperties.length - 1] === propertyName) {
+                    propertyPath = pathAfterProperties;
+                } else {
+                    propertyPath = [...pathAfterProperties, propertyName];
+                }
             }
 
-            const jsonPointerPath = '/properties/' + propertyPath.join('/');
+            // Build JSON pointer path using wildcard notation for array indices
+            // CloudFormation schemas use /properties/Tags/*/Key format for array item properties
+            const schemaPath = propertyPath.map((part) => (Number.isNaN(Number(part)) ? part : '*'));
+            const jsonPointerParts = ['properties', ...schemaPath];
 
+            const jsonPointerPath = '/' + jsonPointerParts.join('/');
             const propertyDefinitions = resourceSchema.resolveJsonPointerPath(jsonPointerPath);
 
             if (propertyDefinitions.length === 0) {
                 return undefined;
             }
 
-            // Get the first property definition (there may be multiple due to oneOf/anyOf)
             const propertyDef = propertyDefinitions[0];
 
-            // Return the first type found
             if (propertyDef && 'type' in propertyDef) {
                 const type = propertyDef.type;
                 if (Array.isArray(type)) {
