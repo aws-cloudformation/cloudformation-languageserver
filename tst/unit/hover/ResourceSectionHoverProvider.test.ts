@@ -13,10 +13,11 @@ import {
     UpdatePolicyProperty,
     AutoScalingRollingUpdateProperty,
 } from '../../../src/context/ContextType';
+import { ForEachResource, Resource } from '../../../src/context/semantic/Entity';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { ResourceSectionHoverProvider } from '../../../src/hover/ResourceSectionHoverProvider';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
-import { createResourceContext } from '../../utils/MockContext';
+import { createMockContext, createResourceContext } from '../../utils/MockContext';
 import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
 import { combinedSchemas, combineSchema, Schemas } from '../../utils/SchemaUtils';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
@@ -961,6 +962,91 @@ describe('ResourceSectionHoverProvider', () => {
 
                 expect(result).toBeUndefined();
             });
+        });
+    });
+
+    describe('ForEach Resource Hover', () => {
+        function createForEachResourceContext(
+            text: string,
+            resourceType: string,
+            properties?: Record<string, any>,
+            propertyPath?: any[],
+        ): Context {
+            const nestedResource = new Resource('S3Bucket${BucketName}', resourceType, properties);
+
+            const forEachEntity = new ForEachResource('Buckets', 'BucketName', { Ref: 'BucketNames' }, nestedResource);
+
+            return createMockContext(TopLevelSection.Resources, 'Fn::ForEach::Buckets', {
+                text,
+                entity: forEachEntity,
+                propertyPath: propertyPath ?? ['Resources', 'Fn::ForEach::Buckets', 2, 'S3Bucket${BucketName}'],
+            });
+        }
+
+        it('should return documentation for resource type in ForEach', () => {
+            const mockContext = createForEachResourceContext('AWS::S3::Bucket', 'AWS::S3::Bucket', undefined, [
+                'Resources',
+                'Fn::ForEach::Buckets',
+                2,
+                'S3Bucket${BucketName}',
+                'Type',
+            ]);
+
+            const result = hoverProvider.getInformation(mockContext);
+
+            expect(result).toContain('### AWS::S3::Bucket');
+            expect(result).toContain('The ``AWS::S3::Bucket`` resource creates an Amazon S3 bucket');
+        });
+
+        it('should return property documentation for ForEach resource property', () => {
+            const properties = { BucketName: 'my-bucket' };
+            const mockContext = createForEachResourceContext('BucketName', 'AWS::S3::Bucket', properties, [
+                'Resources',
+                'Fn::ForEach::Buckets',
+                2,
+                'S3Bucket${BucketName}',
+                'Properties',
+                'BucketName',
+            ]);
+
+            const result = hoverProvider.getInformation(mockContext);
+
+            expect(result).toContain('```typescript');
+            expect(result).toContain('string');
+            expect(result).toContain('A name for the bucket');
+        });
+
+        it('should return nested property documentation for ForEach resource', () => {
+            const properties = {
+                VersioningConfiguration: { Status: 'Enabled' },
+            };
+            const mockContext = createForEachResourceContext('Status', 'AWS::S3::Bucket', properties, [
+                'Resources',
+                'Fn::ForEach::Buckets',
+                2,
+                'S3Bucket${BucketName}',
+                'Properties',
+                'VersioningConfiguration',
+                'Status',
+            ]);
+
+            const result = hoverProvider.getInformation(mockContext);
+
+            expect(result).toBeDefined();
+            expect(result).toContain('Status');
+        });
+
+        it('should return undefined when ForEach resource has no nested resource', () => {
+            const forEachEntity = new ForEachResource('Buckets', 'BucketName', { Ref: 'BucketNames' }, undefined);
+
+            const mockContext = createMockContext(TopLevelSection.Resources, 'Fn::ForEach::Buckets', {
+                text: 'AWS::S3::Bucket',
+                entity: forEachEntity,
+            });
+
+            const result = hoverProvider.getInformation(mockContext);
+
+            expect(result).toBeUndefined();
         });
     });
 });
