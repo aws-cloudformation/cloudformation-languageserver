@@ -64,7 +64,7 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, windows-latest, macos-latest, ubuntu-22.04]
     with:
       ref: ${{ needs.version-and-tag.outputs.tag }}
       runs-on: ${{ matrix.os }}
@@ -145,8 +145,8 @@ jobs:
           PLATFORM=${{ matrix.platform }}
           ARCH=${{ matrix.arch }}
           
-          if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
-            PLATFORM="linux22"
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            PLATFORM="linux24"
           fi
           
           TAG=${{ needs.version-and-tag.outputs.tag }}
