@@ -63,10 +63,10 @@ export class AllOccurrencesFinder {
             // Only compute propertyPath for matching literals to check if extractable
             const syntaxTree = this.syntaxTreeManager.getSyntaxTree(documentUri);
             const propertyPath = syntaxTree?.getPathAndEntityInfo(node)?.propertyPath;
-            
+
             // Re-check with propertyPath to exclude non-extractable paths
             const literalInfoWithPath = this.literalDetector.detectLiteralValue(node, propertyPath);
-            
+
             if (literalInfoWithPath) {
                 occurrences.push(literalInfoWithPath.range);
             }

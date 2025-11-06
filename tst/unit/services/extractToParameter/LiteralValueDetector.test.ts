@@ -22,7 +22,6 @@ describe('LiteralValueDetector', () => {
 
             expect(result?.type).toBe(LiteralValueType.STRING);
             expect(result?.value).toBe('hello world');
-            
         });
 
         it('should detect empty string literals', () => {
@@ -138,7 +137,7 @@ describe('LiteralValueDetector', () => {
             };
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
-
+            expect(result).toBeUndefined();
         });
 
         it('should detect YAML Ref as non-extractable', () => {
@@ -154,7 +153,7 @@ describe('LiteralValueDetector', () => {
             };
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
-
+            expect(result).toBeUndefined();
         });
     });
 
@@ -293,7 +292,7 @@ describe('LiteralValueDetector', () => {
             };
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
-
+            expect(result).toBeUndefined();
         });
     });
 
@@ -329,7 +328,7 @@ describe('LiteralValueDetector', () => {
             pairNode.children = [{ type: 'string', text: '"Ref"', parent: pairNode }, stringNode];
 
             const result = detector.detectLiteralValue(stringNode as any);
-
+            expect(result).toBeUndefined();
         });
 
         it('should detect string value inside YAML !Ref as non-extractable', () => {
@@ -353,7 +352,7 @@ describe('LiteralValueDetector', () => {
             flowNode.children = [{ type: 'tag', text: '!Ref', parent: flowNode }, scalarNode];
 
             const result = detector.detectLiteralValue(scalarNode as any);
-
+            expect(result).toBeUndefined();
         });
 
         it('should detect string value inside JSON Fn::GetAtt as non-extractable', () => {
@@ -397,7 +396,7 @@ describe('LiteralValueDetector', () => {
             arrayNode.children = [stringNode];
 
             const result = detector.detectLiteralValue(stringNode as any);
-
+            expect(result).toBeUndefined();
         });
 
         it('should allow extracting string value inside YAML !Sub (not a reference type)', () => {
@@ -423,7 +422,7 @@ describe('LiteralValueDetector', () => {
             const result = detector.detectLiteralValue(stringNode as any);
 
             // !Sub is not a reference type, so values inside it can be extracted
-            
+            expect(result).toBeDefined();
         });
 
         it('should allow extracting string value inside JSON Fn::Join array (not a reference type)', () => {
@@ -479,7 +478,7 @@ describe('LiteralValueDetector', () => {
             const result = detector.detectLiteralValue(stringNode as any);
 
             // Fn::Join is not a reference type, so values inside it can be extracted
-            
+            expect(result).toBeDefined();
         });
     });
 

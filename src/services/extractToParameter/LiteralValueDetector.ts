@@ -1,6 +1,6 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
-import { IntrinsicFunction } from '../../context/ContextType';
+import { IntrinsicFunction, TopLevelSection } from '../../context/ContextType';
 import { PropertyPath } from '../../context/syntaxtree/SyntaxTree';
 import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
 
@@ -44,21 +44,17 @@ export class LiteralValueDetector {
     }
 
     private isNonExtractablePath(propertyPath?: PropertyPath): boolean {
-        if (!propertyPath || propertyPath.length < 1) {
+        if (!propertyPath || propertyPath.length === 0) {
             return false;
         }
 
         // Exclude all values in Parameters section
-        if (propertyPath[0] === 'Parameters') {
+        if (propertyPath[0] === TopLevelSection.Parameters) {
             return true;
         }
 
         // Exclude Resources > LogicalId > Type
-        if (
-            propertyPath.length === 3 &&
-            propertyPath[0] === 'Resources' &&
-            propertyPath[2] === 'Type'
-        ) {
+        if (propertyPath.length === 3 && propertyPath[0] === TopLevelSection.Resources && propertyPath[2] === 'Type') {
             return true;
         }
 

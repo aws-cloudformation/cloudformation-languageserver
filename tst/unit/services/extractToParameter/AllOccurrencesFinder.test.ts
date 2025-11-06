@@ -142,7 +142,7 @@ describe('AllOccurrencesFinder', () => {
 
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
-            
+
             // Mock getPathAndEntityInfo to return Resource Type path
             mockSyntaxTree.getPathAndEntityInfo.returns({
                 path: [],
@@ -150,7 +150,11 @@ describe('AllOccurrencesFinder', () => {
                 entityRootNode: undefined,
             });
 
-            const occurrences = finder.findAllOccurrences('file:///test.json', 'AWS::S3::Bucket', LiteralValueType.STRING);
+            const occurrences = finder.findAllOccurrences(
+                'file:///test.json',
+                'AWS::S3::Bucket',
+                LiteralValueType.STRING,
+            );
 
             // Should find 0 occurrences because Resource Type values are excluded
             expect(occurrences).toHaveLength(0);
@@ -175,7 +179,7 @@ describe('AllOccurrencesFinder', () => {
 
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
-            
+
             // Mock getPathAndEntityInfo to return Parameters path
             mockSyntaxTree.getPathAndEntityInfo.returns({
                 path: [],
