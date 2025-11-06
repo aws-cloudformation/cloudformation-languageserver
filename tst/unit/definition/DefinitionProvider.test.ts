@@ -62,6 +62,29 @@ describe('DefinitionProvider', () => {
             );
         });
 
+        it('should handle GetAtt expressions by extracting resource name', () => {
+            const mockRelatedContext = {
+                startPosition: { row: 2, column: 5 },
+                endPosition: { row: 2, column: 15 },
+            };
+            const mockSection = new Map();
+            mockSection.set('MyVpc', mockRelatedContext);
+            const relatedEntities = new Map([[TopLevelSection.Resources, mockSection]]);
+            // Context text contains the full GetAtt expression "MyVpc.VpcId"
+            const mockContext = createResourceContext('MySubnet', { text: 'MyVpc.VpcId' }, relatedEntities);
+
+            mockComponents.contextManager.getContextAndRelatedEntities.returns(mockContext);
+
+            const result = definitionProvider.getDefinitions(params);
+
+            expect(result).toEqual(
+                Location.create(params.textDocument.uri, {
+                    start: { line: 2, character: 5 },
+                    end: { line: 2, character: 15 },
+                }),
+            );
+        });
+
         it('should return multiple Locations when multiple related entities are found', () => {
             const logicalId = 'MyResource';
             const mockRelatedContext1 = {
