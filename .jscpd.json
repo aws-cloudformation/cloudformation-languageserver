@@ -15,7 +15,7 @@
     "src"
   ],
   "gitignore": true,
-  "threshold": 1,
+  "threshold": 0.8,
   "minLines": 10,
   "output": "./jscpd",
   "reporters": [

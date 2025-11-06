@@ -15,7 +15,7 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeSearch } from '../context/syntaxtree/utils/NodeSearch';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
-import { ANALYZE_DIAGNOSTIC, TRACK_CODE_ACTION_ACCEPTED } from '../handlers/ExecutionHandler';
+import { TRACK_CODE_ACTION_ACCEPTED } from '../handlers/ExecutionHandler';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -69,10 +69,6 @@ export class CodeActionService {
             }
         }
 
-        if (params.context.diagnostics.length > 0) {
-            codeActions.push(this.generateAIAnalysisAction(params.textDocument.uri, params.context.diagnostics));
-        }
-
         if (this.shouldOfferRefactorActions(params)) {
             const refactorActions = this.generateRefactorActions(params);
             codeActions.push(...refactorActions);
@@ -105,19 +101,6 @@ export class CodeActionService {
         }
 
         return fixes;
-    }
-
-    private generateAIAnalysisAction(uri: string, diagnostics: Diagnostic[]): CodeAction {
-        return {
-            title: 'Ask AI',
-            kind: 'quickfix',
-            diagnostics,
-            command: {
-                title: 'Ask AI',
-                command: ANALYZE_DIAGNOSTIC,
-                arguments: [uri, diagnostics],
-            },
-        };
     }
 
     /**
