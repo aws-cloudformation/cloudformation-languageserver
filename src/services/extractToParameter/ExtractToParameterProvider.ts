@@ -55,13 +55,9 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
             return false;
         }
 
-        const literalInfo = this.literalDetector.detectLiteralValue(context.syntaxNode);
+        const literalInfo = this.literalDetector.detectLiteralValue(context.syntaxNode, context.propertyPath);
 
         if (!literalInfo) {
-            return false;
-        }
-
-        if (literalInfo.isReference) {
             return false;
         }
 
@@ -77,9 +73,9 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
             return false;
         }
 
-        const literalInfo = this.literalDetector.detectLiteralValue(context.syntaxNode);
+        const literalInfo = this.literalDetector.detectLiteralValue(context.syntaxNode, context.propertyPath);
 
-        if (!literalInfo || literalInfo.isReference) {
+        if (!literalInfo) {
             return false;
         }
 
@@ -178,8 +174,8 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
             return undefined;
         }
 
-        const literalInfo = this.literalDetector.detectLiteralValue(context.syntaxNode);
-        if (!literalInfo || literalInfo.isReference) {
+        const literalInfo = this.literalDetector.detectLiteralValue(context.syntaxNode, context.propertyPath);
+        if (!literalInfo) {
             return undefined;
         }
 

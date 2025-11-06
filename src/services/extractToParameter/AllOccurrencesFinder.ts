@@ -43,7 +43,7 @@ export class AllOccurrencesFinder {
         const sections = syntaxTree.findTopLevelSections([TopLevelSection.Resources, TopLevelSection.Outputs]);
 
         for (const sectionNode of sections.values()) {
-            this.traverseForMatches(sectionNode, targetValue, targetType, occurrences);
+            this.traverseForMatches(sectionNode, targetValue, targetType, occurrences, documentUri);
         }
 
         return occurrences;
@@ -54,16 +54,27 @@ export class AllOccurrencesFinder {
         targetValue: string | number | boolean | unknown[],
         targetType: LiteralValueType,
         occurrences: Range[],
+        documentUri: string,
     ): void {
+        // First check without propertyPath for performance
         const literalInfo = this.literalDetector.detectLiteralValue(node);
 
-        if (literalInfo && this.isMatchingLiteral(literalInfo, targetValue, targetType) && !literalInfo.isReference) {
-            occurrences.push(literalInfo.range);
+        if (literalInfo && this.isMatchingLiteral(literalInfo, targetValue, targetType)) {
+            // Only compute propertyPath for matching literals to check if extractable
+            const syntaxTree = this.syntaxTreeManager.getSyntaxTree(documentUri);
+            const propertyPath = syntaxTree?.getPathAndEntityInfo(node)?.propertyPath;
+            
+            // Re-check with propertyPath to exclude non-extractable paths
+            const literalInfoWithPath = this.literalDetector.detectLiteralValue(node, propertyPath);
+            
+            if (literalInfoWithPath) {
+                occurrences.push(literalInfoWithPath.range);
+            }
             return; // Don't traverse children to avoid duplicates
         }
 
         for (const child of node.children) {
-            this.traverseForMatches(child, targetValue, targetType, occurrences);
+            this.traverseForMatches(child, targetValue, targetType, occurrences, documentUri);
         }
     }
 

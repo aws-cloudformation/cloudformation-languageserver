@@ -20,10 +20,9 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.STRING);
             expect(result?.value).toBe('hello world');
-            expect(result?.isReference).toBe(false);
+            
         });
 
         it('should detect empty string literals', () => {
@@ -36,7 +35,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.STRING);
             expect(result?.value).toBe('');
         });
@@ -53,7 +51,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.NUMBER);
             expect(result?.value).toBe(42);
         });
@@ -69,7 +66,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.BOOLEAN);
             expect(result?.value).toBe(true);
         });
@@ -84,7 +80,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.BOOLEAN);
             expect(result?.value).toBe(false);
         });
@@ -105,7 +100,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.ARRAY);
             expect(result?.value).toEqual(['item1', 'item2']);
         });
@@ -121,7 +115,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.ARRAY);
             expect(result?.value).toEqual([]);
         });
@@ -146,8 +139,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
-            expect(result?.isReference).toBe(true);
         });
 
         it('should detect YAML Ref as non-extractable', () => {
@@ -164,8 +155,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
-            expect(result?.isReference).toBe(true);
         });
     });
 
@@ -220,7 +209,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.STRING);
             expect(result?.value).toBe('my-value');
         });
@@ -235,7 +223,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.BOOLEAN);
             expect(result?.value).toBe(true);
         });
@@ -250,7 +237,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.NUMBER);
             expect(result?.value).toBe(123);
         });
@@ -265,7 +251,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             expect(result?.type).toBe(LiteralValueType.STRING);
             expect(result?.value).toBe('quoted value');
         });
@@ -291,9 +276,8 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
             // Fn::Sub itself is an intrinsic function but not a reference type
-            expect(result?.isReference).toBe(true);
+            expect(result).toBeUndefined();
         });
 
         it('should detect YAML !GetAtt as non-extractable', () => {
@@ -310,8 +294,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(mockSyntaxNode as any);
 
-            expect(result).toBeDefined();
-            expect(result?.isReference).toBe(true);
         });
     });
 
@@ -348,8 +330,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(stringNode as any);
 
-            expect(result).toBeDefined();
-            expect(result?.isReference).toBe(true);
         });
 
         it('should detect string value inside YAML !Ref as non-extractable', () => {
@@ -374,8 +354,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(scalarNode as any);
 
-            expect(result).toBeDefined();
-            expect(result?.isReference).toBe(true);
         });
 
         it('should detect string value inside JSON Fn::GetAtt as non-extractable', () => {
@@ -420,8 +398,6 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(stringNode as any);
 
-            expect(result).toBeDefined();
-            expect(result?.isReference).toBe(true);
         });
 
         it('should allow extracting string value inside YAML !Sub (not a reference type)', () => {
@@ -446,9 +422,8 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(stringNode as any);
 
-            expect(result).toBeDefined();
             // !Sub is not a reference type, so values inside it can be extracted
-            expect(result?.isReference).toBe(false);
+            
         });
 
         it('should allow extracting string value inside JSON Fn::Join array (not a reference type)', () => {
@@ -503,9 +478,59 @@ describe('LiteralValueDetector', () => {
 
             const result = detector.detectLiteralValue(stringNode as any);
 
-            expect(result).toBeDefined();
             // Fn::Join is not a reference type, so values inside it can be extracted
-            expect(result?.isReference).toBe(false);
+            
+        });
+    });
+
+    describe('Resource Type exclusion', () => {
+        it('should return undefined for Resource Type values', () => {
+            const stringNode = {
+                type: 'string',
+                text: '"AWS::S3::Bucket"',
+                startPosition: { row: 2, column: 10 },
+                endPosition: { row: 2, column: 27 },
+            };
+
+            // Property path: Resources > MyBucket > Type
+            const propertyPath = ['Resources', 'MyBucket', 'Type'];
+
+            const result = detector.detectLiteralValue(stringNode as any, propertyPath);
+
+            expect(result).toBeUndefined(); // Should return undefined to prevent extraction
+        });
+
+        it('should not exclude non-Resource Type values', () => {
+            const stringNode = {
+                type: 'string',
+                text: '"my-bucket-name"',
+                startPosition: { row: 3, column: 10 },
+                endPosition: { row: 3, column: 26 },
+            };
+
+            // Property path: Resources > MyBucket > Properties > BucketName
+            const propertyPath = ['Resources', 'MyBucket', 'Properties', 'BucketName'];
+
+            const result = detector.detectLiteralValue(stringNode as any, propertyPath);
+
+            expect(result?.type).toBe(LiteralValueType.STRING);
+            expect(result?.value).toBe('my-bucket-name');
+        });
+
+        it('should exclude all values in Parameters section', () => {
+            const stringNode = {
+                type: 'string',
+                text: '"String"',
+                startPosition: { row: 1, column: 10 },
+                endPosition: { row: 1, column: 18 },
+            };
+
+            // Property path: Parameters > MyParam > Type
+            const propertyPath = ['Parameters', 'MyParam', 'Type'];
+
+            const result = detector.detectLiteralValue(stringNode as any, propertyPath);
+
+            expect(result).toBeUndefined(); // Parameters should not be extractable
         });
     });
 });

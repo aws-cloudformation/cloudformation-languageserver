@@ -115,5 +115,74 @@ describe('AllOccurrencesFinder', () => {
 
             expect(occurrences).toHaveLength(2);
         });
+
+        it('should exclude Resource Type values from occurrences', () => {
+            const mockResourcesSection = {
+                type: 'object',
+                children: [
+                    {
+                        type: 'string',
+                        text: '"AWS::S3::Bucket"',
+                        startPosition: { row: 2, column: 0 },
+                        endPosition: { row: 2, column: 17 },
+                        children: [],
+                    },
+                    {
+                        type: 'string',
+                        text: '"AWS::S3::Bucket"',
+                        startPosition: { row: 5, column: 0 },
+                        endPosition: { row: 5, column: 17 },
+                        children: [],
+                    },
+                ],
+            };
+
+            const sectionsMap = new Map();
+            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+
+            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+            
+            // Mock getPathAndEntityInfo to return Resource Type path
+            mockSyntaxTree.getPathAndEntityInfo.returns({
+                propertyPath: ['Resources', 'MyBucket', 'Type'],
+            });
+
+            const occurrences = finder.findAllOccurrences('file:///test.json', 'AWS::S3::Bucket', LiteralValueType.STRING);
+
+            // Should find 0 occurrences because Resource Type values are excluded
+            expect(occurrences).toHaveLength(0);
+        });
+
+        it('should exclude Parameters section values from occurrences', () => {
+            const mockResourcesSection = {
+                type: 'object',
+                children: [
+                    {
+                        type: 'string',
+                        text: '"String"',
+                        startPosition: { row: 2, column: 0 },
+                        endPosition: { row: 2, column: 8 },
+                        children: [],
+                    },
+                ],
+            };
+
+            const sectionsMap = new Map();
+            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+
+            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+            
+            // Mock getPathAndEntityInfo to return Parameters path
+            mockSyntaxTree.getPathAndEntityInfo.returns({
+                propertyPath: ['Parameters', 'MyParam', 'Type'],
+            });
+
+            const occurrences = finder.findAllOccurrences('file:///test.json', 'String', LiteralValueType.STRING);
+
+            // Should find 0 occurrences because Parameters values are excluded
+            expect(occurrences).toHaveLength(0);
+        });
     });
 });
