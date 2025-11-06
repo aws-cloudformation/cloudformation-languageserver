@@ -277,7 +277,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
     }
 
     static create(core: CfnInfraCore, external: CfnExternal, providers: CfnLspProviders) {
-      CompletionFormatter.getInstance();
+        CompletionFormatter.getInstance();
         return new CompletionRouter(
             core.contextManager,
             createCompletionProviders(core, external, providers),

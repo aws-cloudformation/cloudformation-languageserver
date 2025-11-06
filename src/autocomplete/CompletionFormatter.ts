@@ -17,7 +17,7 @@ import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getIndentationString } from '../utils/IndentationUtils';
-import { RESOURCE_ATTRIBUTE_TYPES } from './CompletionUtils';
+import { RESOURCE_ATTRIBUTE_TYPES} from './CompletionUtils';
 
 export type CompletionItemData = {
     type?: 'object' | 'array' | 'simple';
@@ -134,6 +134,13 @@ export class CompletionFormatter {
         let formatAsArray = itemData?.type === 'array';
         let formatAsString = false;
 
+        if (this.isTopLevelSection(label)) {
+            if (label === String(TopLevelSection.Description)) {
+                formatAsString = true;
+            } else {
+                formatAsObject = true;
+            }
+        }
         // If type is not in item.data and we have schemaRetriever, look it up from schema
         if ((!itemData?.type || itemData?.type === 'simple') && schemaRetriever && context.entity) {
             const propertyType = this.getPropertyTypeFromSchema(schemaRetriever, context, label);
@@ -141,7 +148,6 @@ export class CompletionFormatter {
             switch (propertyType) {
                 case 'object': {
                     formatAsObject = true;
-
                     break;
                 }
                 case 'array': {
