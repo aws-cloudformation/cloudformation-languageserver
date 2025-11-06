@@ -12,7 +12,11 @@ import { createMockYamlSyntaxTree } from '../../utils/TestTree';
 describe('TopLevelSectionCompletionProvider', () => {
     const mockComponents = createMockComponents();
     const mockDocumentManager = createMockDocumentManager();
-    const provider = new TopLevelSectionCompletionProvider(mockComponents.syntaxTreeManager, mockDocumentManager);
+    const provider = new TopLevelSectionCompletionProvider(
+        mockComponents.syntaxTreeManager,
+        mockDocumentManager,
+        mockComponents.external,
+    );
     const mockSyntaxTree = createMockYamlSyntaxTree();
 
     const mockParams: CompletionParams = {
@@ -24,6 +28,9 @@ describe('TopLevelSectionCompletionProvider', () => {
         mockComponents.syntaxTreeManager.getSyntaxTree.reset();
         mockSyntaxTree.topLevelSections.reset();
         mockComponents.syntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+        mockComponents.external.featureFlags.get.returns({ isEnabled: () => true, describe: () => 'mock' });
+
         vi.restoreAllMocks();
     });
 
@@ -54,11 +61,11 @@ describe('TopLevelSectionCompletionProvider', () => {
         const result = provider.getCompletions(mockContext, mockParams);
 
         expect(result).toBeDefined();
-        expect(result).toHaveLength(15); // All TopLevelSection enum values (10) + snippets (5)
+        expect(result).toHaveLength(16); // All TopLevelSection enum values (11) + snippets (5)
 
         // Should return all regular sections
         const regularSections = result!.filter((item) => item.kind === CompletionItemKind.Class);
-        expect(regularSections).toHaveLength(10);
+        expect(regularSections).toHaveLength(11);
 
         // Should return all snippet sections
         const snippetSections = result!.filter((item) => item.kind === CompletionItemKind.File);
@@ -96,7 +103,7 @@ describe('TopLevelSectionCompletionProvider', () => {
         const result = provider.getCompletions(mockContext, mockParams);
 
         expect(result).toBeDefined();
-        expect(result).toHaveLength(15); // Should return all sections (10) + snippets (5)
+        expect(result).toHaveLength(16); // Should return all sections (11) + snippets (5)
     });
 
     test('should return all top-level CloudFormation sections when text is empty', () => {
@@ -109,7 +116,7 @@ describe('TopLevelSectionCompletionProvider', () => {
         expect(result).toBeDefined();
 
         const regularSections = result!.filter((item) => item.kind === CompletionItemKind.Class);
-        expect(regularSections).toHaveLength(10); // All TopLevelSection enum values
+        expect(regularSections).toHaveLength(11); // All TopLevelSection enum values
 
         // Verify all top-level sections are present
         const expectedSections = Object.values(TopLevelSection);
@@ -373,6 +380,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
+                    mockComponents.external,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -398,6 +406,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
+                    mockComponents.external,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -425,6 +434,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
+                    mockComponents.external,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -452,6 +462,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
+                    mockComponents.external,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -484,6 +495,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
+                    mockComponents.external,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -505,6 +517,51 @@ describe('TopLevelSectionCompletionProvider', () => {
                     '"Resources": {\n\t"${1:MyLogicalId}": {\n\t\t"Type": "$2",\n\t\t$3\n\t}\n}',
                 );
             });
+        });
+    });
+
+    describe('TopLevelSection Feature Flag Tests', () => {
+        test('should include Constants when feature flag is enabled', () => {
+            mockComponents.external.featureFlags.get.returns({ isEnabled: () => true, describe: () => 'mock' });
+
+            const testProvider = new TopLevelSectionCompletionProvider(
+                mockComponents.syntaxTreeManager,
+                mockDocumentManager,
+                mockComponents.external,
+            );
+
+            mockSyntaxTree.topLevelSections.returns([]);
+            const mockContext = createTopLevelContext('Unknown', { text: '' });
+
+            const result = testProvider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+
+            // Should include Constants
+            const regularSections = result!.filter((item) => item.kind === CompletionItemKind.Class);
+            expect(regularSections).toHaveLength(11); // All 11 sections including Constants
+
+            const constantsItem = regularSections.find((item) => item.label === 'Constants');
+            expect(constantsItem).toBeDefined();
+            expect(constantsItem!.label).toBe('Constants');
+        });
+
+        test('should exclude Constants when feature flag is disabled', () => {
+            mockComponents.external.featureFlags.get.returns({ isEnabled: () => false, describe: () => 'mock' });
+
+            mockSyntaxTree.topLevelSections.returns([]);
+            const mockContext = createTopLevelContext('Unknown', { text: '' });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+
+            // Should NOT include Constants
+            const regularSections = result!.filter((item) => item.kind === CompletionItemKind.Class);
+            expect(regularSections).toHaveLength(10); // 10 sections without Constants
+
+            const constantsItem = regularSections.find((item) => item.label === 'Constants');
+            expect(constantsItem).toBeUndefined();
         });
     });
 });

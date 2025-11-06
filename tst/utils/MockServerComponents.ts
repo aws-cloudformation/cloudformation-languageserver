@@ -38,6 +38,7 @@ import { CombinedSchemas } from '../../src/schema/CombinedSchemas';
 import { GetSchemaTaskManager } from '../../src/schema/GetSchemaTaskManager';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../src/schema/SchemaStore';
+import { CfnExternal } from '../../src/server/CfnExternal';
 import {
     CfnExternalType,
     CfnInfraCoreType,
@@ -234,9 +235,10 @@ export function createMockManagedResourceCodeLens() {
 export function createMockTopLevelSectionCompletionProvider(
     syntaxTreeManager?: SyntaxTreeManager,
     documentManager?: DocumentManager,
+    external?: CfnExternal,
 ) {
-    if (syntaxTreeManager && documentManager) {
-        return new TopLevelSectionCompletionProvider(syntaxTreeManager, documentManager);
+    if (syntaxTreeManager && documentManager && external) {
+        return new TopLevelSectionCompletionProvider(syntaxTreeManager, documentManager, external);
     }
     return stubInterface<TopLevelSectionCompletionProvider>();
 }
