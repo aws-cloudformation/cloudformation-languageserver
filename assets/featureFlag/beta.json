@@ -2,6 +2,9 @@
   "version": 1,
   "description": "Feature flags for beta environment",
   "features": {
+    "Constants": {
+      "enabled": false
+    },
     "EnhancedDryRun": {
       "enabled": true,
       "fleetPercentage": 100,
