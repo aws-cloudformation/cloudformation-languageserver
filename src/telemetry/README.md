@@ -1,28 +1,28 @@
 # Telemetry
 
-## Why We Collect Telemetry
+The CloudFormation Language Server collects anonymous usage metrics (telemetry) using OpenTelemetry, the industry-standard observability framework, to measure and maintain real-time performance. 
+Language servers must deliver suggestions quickly to avoid interrupting your workflow.
 
-The CloudFormation Language Server collects anonymous usage metrics using OpenTelemetry, the industry-standard observability framework, to ensure we provide a near real-time experience. Language servers must deliver suggestions quickly and accurately to avoid interrupting your workflow. These metrics help us:
-
-* Measure response times for autocomplete, validation, and hover documentation
-* Understand the quality and relevance of suggestions we provide
-* Detect performance degradation that impacts your editing experience
-* Identify errors that prevent features from working correctly
-
-Without telemetry, we cannot determine if suggestions appear fast enough or if the language server is meeting the performance expectations of a real-time editing experience.
+Telemetry enablement is controlled by your LSP client via initialization options passed to the language server, see [Enable or Disable Telemetry](#enable-or-disable-telemetry) for details.
+The CloudFormation Language Server environment you use will determine the default telemetry collection behaviour:
+* Alpha - Telemetry is enabled by default if no initialization parameter is provided
+* Beta and Prod - Telemetry is disabled by default if no initialization parameter is provided
 
 ## What We Collect
+Language servers must deliver suggestions quickly and accurately to avoid interrupting your workflow. These metrics help us:
+* Measure response time: How long an operation took to complete (hover, autocomplete, go-to, etc.)
+* Understand the quality and relevance of suggestions we provide
+* Usage metrics: Invocation counts for operations
+* Error metrics: Fault counts when operations fail
+* Response metrics: Type and size of data returned by operations
+    * Primitive data types only, actual data is not recorded
+* System Information: Operating system, LSP client version, Node.js version
+    * Does the hardware impact customer experience?
+* Detect performance degradations that impacts the authoring experience
 
-We collect anonymous operational metrics including:
-
-* **Performance data**: Response times for autocomplete, validation, and hover documentation (in milliseconds)
-* **Usage counts**: Number of times you use specific features
-* **Error information**: Exception types and volume
-* **System information**: Operating system type, LSP client version, Node.js version
-* **Session identifier**: A unique ID that tracks your session without identifying you personally
+Without telemetry, we cannot objectively evaluate if suggestions are accurate or if the language server is meeting the performance expectations of a real-time authoring experience.
 
 ### Metrics Metadata
-
 Every metric includes the following metadata attributes:
 
 | Attribute | Description | Example                                                    |
@@ -36,16 +36,11 @@ Every metric includes the following metadata attributes:
 | `process.version` | Node.js and V8 versions | `node=22.18.0 v8=12.4.254.21-node.27 uv=1.51.0 modules=127` |
 | `OTelLib` | Operation name | `Hover`, `AutoComplete`, etc.                              |
 
-## How Data is Transmitted
+## Data Transmission
+Metrics export every 30 seconds via HTTPS with TLS 1.2+ encryption using OpenTelemetry Protocol (OTLP).
 
-* Metrics export every 30 seconds via HTTPS with TLS 1.2+ encryption
-* Data is sent using the OpenTelemetry Protocol (OTLP) over HTTP
-
-## How to Enable or Disable Telemetry
-
-Telemetry is controlled by your LSP client via extend initialization options passed to the language server:
-
-For example, 
+## Enable or Disable Telemetry
+Your LSP client (AWS ToolKit, VSCode, JetBrains, etc.) controls telemetry enablement via initialization options. For example:
 ```
 ...
 initializationOptions: {
@@ -59,7 +54,4 @@ initializationOptions: {
 ...
 ```
 
-Your LSP client controls telemetry settings. Consult your LSP client's documentation for configuration options. Changes require restarting the language server to take effect.
-
-* **Alpha environment**: Telemetry is enabled by default if no initialization parameter is provided
-* **Beta and Production environments**: Telemetry is disabled by default if no initialization parameter is provided
+Consult your LSP client's documentation for configuration options. Changes to telemetry enablement require restarting the language server to take effect.
