@@ -1,4 +1,4 @@
-# AWS CloudFormation Language Server for Code Editors
+# AWS CloudFormation Language Server
 
 <div align="center">
 
@@ -8,45 +8,56 @@
 
 </div>
 
-A LSP server implementation that provides intelligent editing support for CloudFormation templates in JSON and YAML formats.
+The AWS CloudFormation Language Server provides auto-completion, validation, navigation, and refactoring for CloudFormation templates.
+The server implements the Language Server Protocol (LSP) to enable code editors to offer intelligent editing support for JSON and YAML Infrastructure as Code templates.
 
 ## Features
 
-### Intelligent Code Completion
-- **Resource Types**: Auto-complete AWS resource types with fuzzy matching
-- **Properties**: Context-aware property suggestions for CloudFormation resources
-- **Intrinsic Functions**: Complete function names and parameter suggestions
-- **Parameters & References**: Auto-complete template parameters, conditions, and mappings
-- **Template Sections**: Top-level CloudFormation section completion
+### Code Completion
+- **Resource Types** - Auto-completes AWS resource types with fuzzy matching
+- **Properties** - Context-aware property suggestions for CloudFormation resources
+- **Intrinsic Functions** - Function names and parameter suggestions
+- **Parameters & References** - Template parameters, conditions, and mappings
+- **Template Sections** - Top-level CloudFormation sections
 
-### Real-time Validation
-- **Syntax Validation**: Immediate feedback on JSON/YAML syntax errors
-- **Schema Validation**: CloudFormation resource schema enforcement with regional support
-- **cfn-lint Integration**: Python-based linting with comprehensive rule validation
-- **AWS Guard Integration**: Policy-as-code validation for security and compliance
+### Validation
+- **Syntax** - Immediate feedback on JSON and YAML syntax errors
+- **Schema** - CloudFormation resource schema enforcement with regional support
+- **cfn-lint** - Python-based linting with comprehensive rules
+- **AWS Guard** - Policy-as-code validation for security and compliance
+
+### Code Actions & Refactoring
+- **Quick Fixes** - Fixes for common template errors
+- **Extract to Parameter** - Refactors hardcoded values into template parameters
+- **Related Resources** - Inserts related AWS resources based on template context
+- **Diagnostic Actions** - Actionable suggestions for validation errors
 
 ### Documentation & Navigation
-- **Hover Documentation**: Contextual help for resources, properties, and functions
-- **Go-to-Definition**: Navigate to CloudFormation reference definitions
-- **Document Symbols**: Template structure navigation and outline view
-- **Parameter Information**: Type and constraint documentation
+- **Hover Documentation** - Contextual help for resources, properties, and functions
+- **Go-to-Definition** - Navigate to CloudFormation reference definitions
+- **Document Symbols** - Template structure navigation and outline view
+- **Parameter Information** - Type and constraint documentation
 
 ### AWS Integration
-- **Stack Operations**: List and manage CloudFormation stacks
-- **Resource Discovery**: Browse available AWS resource types by region
-- **Template Validation**: Server-side CloudFormation template validation
-- **Template Deployment**: Deploy templates directly from the editor
-- **Resource State Import**: Import existing AWS resources into templates
+- **Stack Operations** - List and manage CloudFormation stacks
+- **Resource Discovery** - Browse available AWS resource types by region
+- **Template Validation** - Server-side template validation using CloudFormation
+- **Template Deployment** - Deploy templates directly from the editor
+- **Resource State Import** - Import existing AWS resources into templates
+- **Clone Resource** - Create new resources using existing resource configurations as reference
+- **IaC Generator** - Scan AWS accounts and generate CloudFormation templates from existing resources
+- **Artifact Export** - Export and upload template artifacts to S3 for deployment
+
+### Code Lens Actions
+- **Validate Deployment** - Validate template deployment from the editor
+- **Deploy Template** - Deploy templates with a single click
+- **Open Stack Template** - Open managed stack templates for resources
 
 ### Advanced Capabilities
-- **Multi-Format Support**: Native JSON and YAML CloudFormation template processing
-- **Partial Parsing**: Intelligent completion even in incomplete or malformed templates
-- **Regional Schemas**: Automatic schema retrieval and caching for different AWS regions
-
-## Requirements
-
-- **Node.js**: Version 22.15.0 to 22.17.0
-- **npm**: Version 10.5.0 or higher
+- **Multi-Format Support** - JSON and YAML CloudFormation template processing
+- **Partial Parsing** - Completion in incomplete or malformed templates
+- **Regional Schemas** - Automatic schema retrieval and caching for different AWS regions
+- **Tree-sitter Parsing** - Fast and accurate syntax parsing
 
 ## Telemetry
 
@@ -54,4 +65,4 @@ The CloudFormation Language Server collects anonymous usage metrics. See [Teleme
 
 ## License
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+This project is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
