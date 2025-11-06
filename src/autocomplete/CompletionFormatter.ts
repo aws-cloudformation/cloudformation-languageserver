@@ -291,7 +291,6 @@ export class CompletionFormatter {
                 propertyPath = [propertyName];
             } else {
                 const pathAfterProperties = context.propertyPath.slice(propertiesIndex + 1).map(String);
-                //.filter((p) => p !== '');
 
                 if (
                     pathAfterProperties.length > 0 &&
