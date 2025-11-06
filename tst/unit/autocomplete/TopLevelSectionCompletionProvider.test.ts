@@ -15,7 +15,7 @@ describe('TopLevelSectionCompletionProvider', () => {
     const provider = new TopLevelSectionCompletionProvider(
         mockComponents.syntaxTreeManager,
         mockDocumentManager,
-        mockComponents.external,
+        mockComponents.external.featureFlags,
     );
     const mockSyntaxTree = createMockYamlSyntaxTree();
 
@@ -380,7 +380,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
-                    mockComponents.external,
+                    mockComponents.external.featureFlags,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -406,7 +406,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
-                    mockComponents.external,
+                    mockComponents.external.featureFlags,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -434,7 +434,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
-                    mockComponents.external,
+                    mockComponents.external.featureFlags,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -462,7 +462,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
-                    mockComponents.external,
+                    mockComponents.external.featureFlags,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -495,7 +495,7 @@ describe('TopLevelSectionCompletionProvider', () => {
                 const testProvider = new TopLevelSectionCompletionProvider(
                     mockComponents.syntaxTreeManager,
                     mockDocumentManager,
-                    mockComponents.external,
+                    mockComponents.external.featureFlags,
                 );
 
                 mockSyntaxTree.topLevelSections.returns([]);
@@ -527,7 +527,7 @@ describe('TopLevelSectionCompletionProvider', () => {
             const testProvider = new TopLevelSectionCompletionProvider(
                 mockComponents.syntaxTreeManager,
                 mockDocumentManager,
-                mockComponents.external,
+                mockComponents.external.featureFlags,
             );
 
             mockSyntaxTree.topLevelSections.returns([]);

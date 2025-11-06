@@ -16,8 +16,12 @@ Resources:
       TestObj: !Ref Const::obj
     Properties:
       BucketName: !Sub ${Const::foo}
-  
+      Tags:
+        - Key: Environment
+          Value: !Ref Const::foo
+    
   PersonalS3:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: my-personal-bucket
+

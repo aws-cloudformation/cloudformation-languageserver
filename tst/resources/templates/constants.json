@@ -24,7 +24,15 @@
       "Properties": {
         "BucketName": {
           "Fn::Sub": "${Const::foo}"
-        }
+        },
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "Const::foo"
+            }
+          }
+        ]
       }
     },
     "PersonalS3": {

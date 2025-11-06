@@ -288,7 +288,7 @@ export function createCompletionProviders(
     const completionProviderMap = new Map<CompletionProviderType, CompletionProvider>();
     completionProviderMap.set(
         'TopLevelSection',
-        new TopLevelSectionCompletionProvider(core.syntaxTreeManager, core.documentManager, external),
+        new TopLevelSectionCompletionProvider(core.syntaxTreeManager, core.documentManager, external.featureFlags),
     );
     completionProviderMap.set(EntityType.Resource, new ResourceSectionCompletionProvider(core, external, providers));
     completionProviderMap.set(EntityType.Condition, new ConditionCompletionProvider(core.syntaxTreeManager));
