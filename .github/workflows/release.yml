@@ -80,6 +80,9 @@ jobs:
           - { os: "ubuntu-latest", arch: "x64", platform: "linux", go-arch: "amd64" }
           - { os: "ubuntu-latest", arch: "arm64", platform: "linux", go-arch: "arm64" }
           - { os: "ubuntu-latest", arch: "arm", platform: "linux", go-arch: "arm" }
+          - { os: "ubuntu-22.04", arch: "x64", platform: "linux", go-arch: "amd64" }
+          - { os: "ubuntu-22.04", arch: "arm64", platform: "linux", go-arch: "arm64" }
+          - { os: "ubuntu-22.04", arch: "arm", platform: "linux", go-arch: "arm" }
           - { os: "macos-latest", arch: "x64", platform: "darwin", go-arch: "amd64" }
           - { os: "macos-latest", arch: "arm64", platform: "darwin", go-arch: "arm64" }
           - { os: "windows-latest", arch: "x64", platform: "win32", go-arch: "amd64" }
@@ -141,6 +144,10 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           PLATFORM=${{ matrix.platform }}
           ARCH=${{ matrix.arch }}
+          
+          if [[ "${{ matrix.os }}" == "ubuntu-22.04" ]]; then
+            PLATFORM="linux22"
+          fi
           
           TAG=${{ needs.version-and-tag.outputs.tag }}
           if [[ "$TAG" =~ -alpha$ ]]; then
