@@ -125,6 +125,9 @@ export class CompletionFormatter {
                 schemaRetriever,
             );
             formattedItem.textEdit = TextEdit.replace(result.range, result.text);
+            if (result.isSnippet) {
+                formattedItem.insertTextFormat = InsertTextFormat.Snippet;
+            }
             delete formattedItem.insertText;
 >>>>>>> 1a469e4 (Working json indentation improvement)
         } else {
@@ -184,7 +187,7 @@ export class CompletionFormatter {
         }
 =======
         schemaRetriever?: SchemaRetriever,
-    ): { text: string; range: Range } {
+    ): { text: string; range: Range; isSnippet: boolean } {
         const shouldFormat = context.syntaxNode.type === 'string' && !context.isValue() && lineContent;
 
         const itemData = item.data as CompletionItemData | undefined;
@@ -221,14 +224,16 @@ export class CompletionFormatter {
         const indentString = getIndentationString(editorSettings, DocumentType.JSON);
 
         let replacementText = `${indentation}"${label}":`;
+        let isSnippet = false;
 
         if (shouldFormat) {
+            isSnippet = true;
             if (formatAsObject) {
-                replacementText = `${indentation}"${label}": {\n${indentation}${indentString}\n${indentation}}`;
+                replacementText = `${indentation}"${label}": {\n${indentation}${indentString}$0\n${indentation}}`;
             } else if (formatAsArray) {
-                replacementText = `${indentation}"${label}": [\n${indentation}${indentString}\n${indentation}]`;
+                replacementText = `${indentation}"${label}": [\n${indentation}${indentString}$0\n${indentation}]`;
             } else if (formatAsString) {
-                replacementText = `${indentation}"${label}": ""`;
+                replacementText = `${indentation}"${label}": "$0"`;
             }
         }
 
@@ -241,6 +246,7 @@ export class CompletionFormatter {
         return {
             text: replacementText,
             range: range,
+            isSnippet: isSnippet,
         };
     }
 

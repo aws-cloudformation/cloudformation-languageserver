@@ -434,7 +434,7 @@ describe('CompletionFormatAdapter', () => {
             );
 
             expect(result.items[0].textEdit).toBeDefined();
-            expect(result.items[0].textEdit?.newText).toContain('"BucketName": ""');
+            expect(result.items[0].textEdit?.newText).toContain('"BucketName": "$0"');
         });
 
         test('should use explicit data.type when provided', () => {
