@@ -205,7 +205,7 @@ export class CompletionFormatter {
             }
 
             const entity = context.entity;
-            if (!entity || context.getEntityType() !== EntityType.Resource) {
+            if (!entity || entity.entityType !== EntityType.Resource) {
                 return undefined;
             }
 
