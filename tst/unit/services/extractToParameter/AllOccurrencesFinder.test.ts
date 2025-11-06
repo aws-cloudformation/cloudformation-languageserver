@@ -145,7 +145,9 @@ describe('AllOccurrencesFinder', () => {
             
             // Mock getPathAndEntityInfo to return Resource Type path
             mockSyntaxTree.getPathAndEntityInfo.returns({
+                path: [],
                 propertyPath: ['Resources', 'MyBucket', 'Type'],
+                entityRootNode: undefined,
             });
 
             const occurrences = finder.findAllOccurrences('file:///test.json', 'AWS::S3::Bucket', LiteralValueType.STRING);
@@ -176,7 +178,9 @@ describe('AllOccurrencesFinder', () => {
             
             // Mock getPathAndEntityInfo to return Parameters path
             mockSyntaxTree.getPathAndEntityInfo.returns({
+                path: [],
                 propertyPath: ['Parameters', 'MyParam', 'Type'],
+                entityRootNode: undefined,
             });
 
             const occurrences = finder.findAllOccurrences('file:///test.json', 'String', LiteralValueType.STRING);
