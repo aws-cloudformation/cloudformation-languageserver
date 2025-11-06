@@ -33,23 +33,10 @@ describe('CodeActionService', () => {
     });
 
     function verifyCodeAction(params: CodeActionParams, actual: CodeAction[], ...expected: CodeAction[]) {
-        expect(actual.length).toBe(expected.length + 1);
+        expect(actual.length).toBe(expected.length);
         for (const [index, expectedAction] of expected.entries()) {
             expect(equal(actual[index], expectedAction)).toBe(true);
         }
-
-        expect(
-            equal(actual[actual.length - 1], {
-                title: 'Ask AI',
-                kind: 'quickfix',
-                diagnostics: params.context.diagnostics,
-                command: {
-                    title: 'Ask AI',
-                    command: '/command/llm/diagnostic/analyze',
-                    arguments: [params.textDocument.uri, params.context.diagnostics],
-                },
-            }),
-        ).toBe(true);
     }
 
     describe('generateCodeActions', () => {

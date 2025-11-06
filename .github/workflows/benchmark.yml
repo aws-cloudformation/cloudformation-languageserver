@@ -37,7 +37,7 @@ jobs:
           npm run benchmark -- \
             --templates tst/resources/templates/*.json tst/resources/templates/*.yaml \
             --output benchmark-results.md \
-            --iterations 5000
+            --iterations 2500
 
       - name: Generate timestamp
         id: timestamp
