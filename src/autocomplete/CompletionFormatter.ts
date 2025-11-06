@@ -10,21 +10,14 @@ import {
 import { Context } from '../context/Context';
 import { ResourceAttributesSet, TopLevelSection, TopLevelSectionsSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
-<<<<<<< HEAD
-=======
 import { EntityType } from '../context/semantic/SemanticTypes';
->>>>>>> 1a469e4 (Working json indentation improvement)
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentType } from '../document/Document';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getIndentationString } from '../utils/IndentationUtils';
-<<<<<<< HEAD
-import { Item } from '@langchain/langgraph';
-=======
 import { RESOURCE_ATTRIBUTE_TYPES } from './CompletionUtils';
->>>>>>> 1a469e4 (Working json indentation improvement)
 
 export type CompletionItemData = {
     type?: 'object' | 'array' | 'simple';
@@ -46,7 +39,7 @@ export class CompletionFormatter {
     static getInstance(): CompletionFormatter {
         if (!CompletionFormatter.instance) {
             CompletionFormatter.instance = new CompletionFormatter();
-        } 
+        }
         return CompletionFormatter.instance;
     }
 
@@ -105,17 +98,6 @@ export class CompletionFormatter {
         const textToFormat = item.insertText ?? item.label;
 
         if (documentType === DocumentType.JSON) {
-<<<<<<< HEAD
-            const result = this.formatForJson(editorSettings, textToFormat, context, item, lineContent);
-            if (typeof result === 'string') {
-                formattedItem.insertText = result;
-            } else if (result.range) {
-                formattedItem.textEdit = TextEdit.replace(result.range, result.text);
-                delete formattedItem.insertText;
-            } else {
-                formattedItem.insertText = result.text;
-            }
-=======
             const result = this.formatForJson(
                 editorSettings,
                 textToFormat,
@@ -129,63 +111,19 @@ export class CompletionFormatter {
                 formattedItem.insertTextFormat = InsertTextFormat.Snippet;
             }
             delete formattedItem.insertText;
->>>>>>> 1a469e4 (Working json indentation improvement)
         } else {
             formattedItem.insertText = this.formatForYaml(textToFormat, item, editorSettings);
         }
+
         return formattedItem;
     }
 
     private formatForJson(
         editorSettings: EditorSettings,
         label: string,
-        context: Context,
         item: CompletionItem,
+        context: Context,
         lineContent?: string,
-<<<<<<< HEAD
-    ): { text: string; range?: Range } {
-
-      console.error("=== formatForJson called for label:", label);
-        const isTopLevelSectionWithSnippet =
-            this.isTopLevelSection(label) &&
-            CompletionFormatter.TOP_LEVEL_SECTIONS_WITH_SNIPPETS.has(label as TopLevelSection);
-
-        const shouldFormat = 
-            context.syntaxNode.type === 'string' &&
-            !context.isValue() &&
-            lineContent &&
-            !isTopLevelSectionWithSnippet &&
-            item.data?.type !== undefined;
-
-        const shouldFormatAsObject = item.data?.type === 'object';
-        const shouldFormatAsArray = item.data?.type === 'array';
-
-        console.log("Item data type is ", item.data?.type);
-        console.error("shouldFormatAsObject:", shouldFormatAsObject);
-        console.error("shouldFormatAsArray:", shouldFormatAsArray);
-
-        if (shouldFormat) {
-           let replacementText = label;
-           const indentation = ' '.repeat(context.startPosition.column);
-           const indentString = getIndentationString(editorSettings, DocumentType.JSON);
-           
-           if (shouldFormatAsObject) { //OBJECT
-                replacementText = `${indentation}"${label}": {\n${indentation}${indentString}\n${indentation}}`;
-            } else if (shouldFormatAsArray) { //ARRAY
-                replacementText = `${indentation}"${label}": [\n${indentation}${indentString}\n${indentation}]`;
-            }
-
-          const range = Range.create(
-              Position.create(context.startPosition.row, 0),
-              Position.create(context.endPosition.row, context.endPosition.column + 1),
-          );
-
-          return {
-              text: replacementText,
-              range: range,
-          };
-        }
-=======
         schemaRetriever?: SchemaRetriever,
     ): { text: string; range: Range; isSnippet: boolean } {
         const shouldFormat = context.syntaxNode.type === 'string' && !context.isValue() && lineContent;
@@ -242,7 +180,6 @@ export class CompletionFormatter {
             Position.create(context.endPosition.row, context.endPosition.column + 1),
         );
 
->>>>>>> 1a469e4 (Working json indentation improvement)
         return {
             text: replacementText,
             range: range,
