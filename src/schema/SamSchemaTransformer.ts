@@ -59,7 +59,10 @@ export const SamSchemaTransformer = {
                 typeName: resourceType,
                 description: SAM_RESOURCE_DESCRIPTIONS.get(resourceType) ?? `${resourceType} resource`,
                 documentationUrl: SAM_DOCUMENTATION_URLS.get(resourceType) ?? '',
-                properties: (propertiesSchema?.properties as Record<string, unknown>) ?? {},
+                properties: this.resolvePropertyTypes(
+                    (propertiesSchema?.properties as Record<string, unknown>) ?? {},
+                    samSchema.definitions,
+                ),
                 definitions: samSchema.definitions,
                 additionalProperties: false,
                 required: (propertiesSchema?.required as string[]) ?? [],
@@ -74,5 +77,51 @@ export const SamSchemaTransformer = {
         }
 
         return resourceSchemas;
+    },
+
+    resolvePropertyTypes(
+        properties: Record<string, unknown>,
+        definitions: Record<string, unknown>,
+    ): Record<string, unknown> {
+        const resolved: Record<string, unknown> = {};
+
+        for (const [key, value] of Object.entries(properties)) {
+            resolved[key] = this.resolveProperty(value as Record<string, unknown>, definitions);
+        }
+
+        return resolved;
+    },
+
+    resolveProperty(property: Record<string, unknown>, definitions: Record<string, unknown>): Record<string, unknown> {
+        // Convert markdownDescription to description for hover formatter
+        if (property.markdownDescription && !property.description) {
+            property = { ...property, description: property.markdownDescription };
+        }
+
+        // If property already has a type, keep it
+        if (property.type) {
+            return property;
+        }
+
+        // Handle allOf patterns
+        if (property.allOf && Array.isArray(property.allOf)) {
+            const allOfItem = property.allOf[0] as Record<string, unknown>;
+            if (allOfItem?.$ref) {
+                const resolved = this.resolveProperty(allOfItem, definitions);
+                return { ...resolved, ...property, allOf: undefined };
+            }
+        }
+
+        // Handle $ref
+        if (property.$ref) {
+            const refKey = (property.$ref as string).replace('#/definitions/', '');
+            const refDef = definitions[refKey] as Record<string, unknown>;
+            if (refDef) {
+                const resolved = this.resolveProperty(refDef, definitions);
+                return { ...resolved, ...property, $ref: undefined };
+            }
+        }
+
+        return property;
     },
 };

@@ -10,7 +10,7 @@ const logger = LoggerFactory.getLogger('GetSamSchemaTask');
 
 export class GetSamSchemaTask extends GetSchemaTask {
     private static readonly SAM_SCHEMA_URL =
-        'https://raw.githubusercontent.com/aws/serverless-application-model/refs/heads/main/schema_source/sam.schema.json';
+        'https://raw.githubusercontent.com/aws/serverless-application-model/refs/heads/develop/samtranslator/schema/schema.json';
 
     @Measure({ name: 'getSchemas' })
     override async runImpl(dataStore: DataStore): Promise<void> {
