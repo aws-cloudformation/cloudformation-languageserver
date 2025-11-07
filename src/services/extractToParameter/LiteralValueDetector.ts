@@ -1,6 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
-import { IntrinsicFunction } from '../../context/ContextType';
+import { IntrinsicFunction, TopLevelSection } from '../../context/ContextType';
+import { PropertyPath } from '../../context/syntaxtree/SyntaxTree';
 import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
 
 /**
@@ -9,8 +10,13 @@ import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
  * actual literals and existing references/intrinsic functions.
  */
 export class LiteralValueDetector {
-    public detectLiteralValue(node: SyntaxNode): LiteralValueInfo | undefined {
+    public detectLiteralValue(node: SyntaxNode, propertyPath?: PropertyPath): LiteralValueInfo | undefined {
         if (!node || node.type === 'ERROR') {
+            return undefined;
+        }
+
+        // Exclude non-extractable paths (Parameters, Resource Type)
+        if (this.isNonExtractablePath(propertyPath)) {
             return undefined;
         }
 
@@ -19,7 +25,11 @@ export class LiteralValueDetector {
             nodeForRange = node.parent;
         }
 
-        const isReference = this.isIntrinsicFunctionOrReference(nodeForRange);
+        // Exclude intrinsic functions and references from extraction
+        if (this.isIntrinsicFunctionOrReference(nodeForRange)) {
+            return undefined;
+        }
+
         const literalInfo = this.extractLiteralInfo(node);
 
         if (literalInfo?.value === undefined) {
@@ -30,8 +40,25 @@ export class LiteralValueDetector {
             value: literalInfo.value,
             type: literalInfo.type,
             range: this.nodeToRange(nodeForRange),
-            isReference,
         };
+    }
+
+    private isNonExtractablePath(propertyPath?: PropertyPath): boolean {
+        if (!propertyPath || propertyPath.length === 0) {
+            return false;
+        }
+
+        // Exclude all values in Parameters section
+        if (propertyPath[0] === TopLevelSection.Parameters) {
+            return true;
+        }
+
+        // Exclude Resources > LogicalId > Type
+        if (propertyPath.length === 3 && propertyPath[0] === TopLevelSection.Resources && propertyPath[2] === 'Type') {
+            return true;
+        }
+
+        return false;
     }
 
     private isIntrinsicFunctionOrReference(node: SyntaxNode): boolean {

@@ -124,7 +124,6 @@ export type LiteralValueInfo = {
     value: string | number | boolean | unknown[];
     type: LiteralValueType;
     range: Range;
-    isReference: boolean;
 };
 
 /**
