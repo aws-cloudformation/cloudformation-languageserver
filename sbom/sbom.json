@@ -2,22 +2,22 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "@aws/cloudformation-languageserver@0.0.3",
-  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-0.0.3-***",
+  "name": "@aws/cloudformation-languageserver@0.0.5",
+  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-0.0.5-10917d5e-8766-4203-8433-0b4cdad240a9",
   "creationInfo": {
-    "created": "2025-10-29T17:03:52.696Z",
+    "created": "2025-11-07T17:17:43.925Z",
     "creators": [
-      "Tool: npm/cli-11.6.0"
+      "Tool: npm/cli-10.9.2"
     ]
   },
   "documentDescribes": [
-    "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3"
+    "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5"
   ],
   "packages": [
     {
       "name": "@aws/cloudformation-languageserver",
-      "SPDXID": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
-      "versionInfo": "0.0.3",
+      "SPDXID": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
+      "versionInfo": "0.0.5",
       "packageFileName": "",
       "description": "AWS CloudFormation Language Server implementation",
       "primaryPackagePurpose": "LIBRARY",
@@ -29,7 +29,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws/cloudformation-languageserver@0.0.3"
+          "referenceLocator": "pkg:npm/%40aws/cloudformation-languageserver@0.0.5"
         }
       ]
     },
@@ -221,6 +221,77 @@
       ]
     },
     {
+      "name": "@smithy/is-array-buffer",
+      "SPDXID": "SPDXRef-Package-smithy.is-array-buffer-2.2.0",
+      "versionInfo": "2.2.0",
+      "packageFileName": "node_modules/@aws-crypto/sha256-browser/node_modules/@smithy/is-array-buffer",
+      "description": "Provides a function for detecting if an argument is an ArrayBuffer",
+      "downloadLocation": "https://registry.npmjs.org/@smithy/is-array-buffer/-/is-array-buffer-2.2.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/awslabs/smithy-typescript/tree/main/packages/is-array-buffer",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40smithy/is-array-buffer@2.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1863f73bd4050f6e2e19e0176148f04935c0468aa967290769d3a603c1b9bdf24f2b4fc30baeea6bfff4aafaab2732f5c5cf164165fbff273b7f0b9d8cf1cf84"
+        }
+      ]
+    },
+    {
+      "name": "@smithy/util-buffer-from",
+      "SPDXID": "SPDXRef-Package-smithy.util-buffer-from-2.2.0",
+      "versionInfo": "2.2.0",
+      "packageFileName": "node_modules/@aws-crypto/sha256-browser/node_modules/@smithy/util-buffer-from",
+      "downloadLocation": "https://registry.npmjs.org/@smithy/util-buffer-from/-/util-buffer-from-2.2.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/awslabs/smithy-typescript/tree/main/packages/util-buffer-from",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40smithy/util-buffer-from@2.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "20975605b4dc310e8303481d36187f070acb90347e0035b92abd5a6667789370c817a7b3315e11d8d200993d3cc10277c942bcdad8475a60bf4e72bfc2930c20"
+        }
+      ]
+    },
+    {
+      "name": "@smithy/util-utf8",
+      "SPDXID": "SPDXRef-Package-smithy.util-utf8-2.3.0",
+      "versionInfo": "2.3.0",
+      "packageFileName": "node_modules/@aws-crypto/sha256-browser/node_modules/@smithy/util-utf8",
+      "description": "A UTF-8 string <-> UInt8Array converter",
+      "downloadLocation": "https://registry.npmjs.org/@smithy/util-utf8/-/util-utf8-2.3.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/awslabs/smithy-typescript/tree/main/packages/util-utf8",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40smithy/util-utf8@2.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "47c45d9fc1f2ef628a71e6e02e2bfc8d0710917a0b30e186bf9b88d7f93497eb27aa43b34354740a15010b158c941b0531e9168ead3046e748c1e16ceec293e4"
+        }
+      ]
+    },
+    {
       "name": "@aws-crypto/sha256-js",
       "SPDXID": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
       "versionInfo": "5.2.0",
@@ -287,6 +358,77 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "e11914f44b08e99a41bdee5fb1e42518d51628c6b544b3d0d5d9e39d0a1ed3b95d7c8cdcb066f9842e56d039bbbb8db7296cdac25ae96e35c1ad7084bfdcdacd"
+        }
+      ]
+    },
+    {
+      "name": "@smithy/is-array-buffer",
+      "SPDXID": "SPDXRef-Package-smithy.is-array-buffer-2.2.0",
+      "versionInfo": "2.2.0",
+      "packageFileName": "node_modules/@aws-crypto/util/node_modules/@smithy/is-array-buffer",
+      "description": "Provides a function for detecting if an argument is an ArrayBuffer",
+      "downloadLocation": "https://registry.npmjs.org/@smithy/is-array-buffer/-/is-array-buffer-2.2.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/awslabs/smithy-typescript/tree/main/packages/is-array-buffer",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40smithy/is-array-buffer@2.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1863f73bd4050f6e2e19e0176148f04935c0468aa967290769d3a603c1b9bdf24f2b4fc30baeea6bfff4aafaab2732f5c5cf164165fbff273b7f0b9d8cf1cf84"
+        }
+      ]
+    },
+    {
+      "name": "@smithy/util-buffer-from",
+      "SPDXID": "SPDXRef-Package-smithy.util-buffer-from-2.2.0",
+      "versionInfo": "2.2.0",
+      "packageFileName": "node_modules/@aws-crypto/util/node_modules/@smithy/util-buffer-from",
+      "downloadLocation": "https://registry.npmjs.org/@smithy/util-buffer-from/-/util-buffer-from-2.2.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/awslabs/smithy-typescript/tree/main/packages/util-buffer-from",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40smithy/util-buffer-from@2.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "20975605b4dc310e8303481d36187f070acb90347e0035b92abd5a6667789370c817a7b3315e11d8d200993d3cc10277c942bcdad8475a60bf4e72bfc2930c20"
+        }
+      ]
+    },
+    {
+      "name": "@smithy/util-utf8",
+      "SPDXID": "SPDXRef-Package-smithy.util-utf8-2.3.0",
+      "versionInfo": "2.3.0",
+      "packageFileName": "node_modules/@aws-crypto/util/node_modules/@smithy/util-utf8",
+      "description": "A UTF-8 string <-> UInt8Array converter",
+      "downloadLocation": "https://registry.npmjs.org/@smithy/util-utf8/-/util-utf8-2.3.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/awslabs/smithy-typescript/tree/main/packages/util-utf8",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40smithy/util-utf8@2.3.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "47c45d9fc1f2ef628a71e6e02e2bfc8d0710917a0b30e186bf9b88d7f93497eb27aa43b34354740a15010b158c941b0531e9168ead3046e748c1e16ceec293e4"
         }
       ]
     },
@@ -1927,6 +2069,30 @@
       ]
     },
     {
+      "name": "uuid",
+      "SPDXID": "SPDXRef-Package-uuid-10.0.0",
+      "versionInfo": "10.0.0",
+      "packageFileName": "node_modules/@langchain/core/node_modules/uuid",
+      "description": "RFC9562 UUIDs",
+      "downloadLocation": "https://registry.npmjs.org/uuid/-/uuid-10.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/uuidjs/uuid#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/uuid@10.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f17900a6110bb039c41ab0f150e1c1dd11af5f3e937ae6121846413a3b53b4f9b69708460632e03b32c707adc85167c1a4db9c423343e9ddc03ae74ef87dd159"
+        }
+      ]
+    },
+    {
       "name": "zod",
       "SPDXID": "SPDXRef-Package-zod-3.25.76",
       "versionInfo": "3.25.76",
@@ -1995,6 +2161,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "4599971970c9716d2a74e7bacafa78dbf1882db7b6bcebe067ead4575a27640254626e098f2072a23e3e671cb1cdaddbe048d66aaa3a41e8038b2179e6cc6982"
+        }
+      ]
+    },
+    {
+      "name": "uuid",
+      "SPDXID": "SPDXRef-Package-uuid-10.0.0",
+      "versionInfo": "10.0.0",
+      "packageFileName": "node_modules/@langchain/google-common/node_modules/uuid",
+      "description": "RFC9562 UUIDs",
+      "downloadLocation": "https://registry.npmjs.org/uuid/-/uuid-10.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/uuidjs/uuid#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/uuid@10.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f17900a6110bb039c41ab0f150e1c1dd11af5f3e937ae6121846413a3b53b4f9b69708460632e03b32c707adc85167c1a4db9c423343e9ddc03ae74ef87dd159"
         }
       ]
     },
@@ -2143,6 +2333,30 @@
       ]
     },
     {
+      "name": "uuid",
+      "SPDXID": "SPDXRef-Package-uuid-10.0.0",
+      "versionInfo": "10.0.0",
+      "packageFileName": "node_modules/@langchain/langgraph-checkpoint/node_modules/uuid",
+      "description": "RFC9562 UUIDs",
+      "downloadLocation": "https://registry.npmjs.org/uuid/-/uuid-10.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/uuidjs/uuid#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/uuid@10.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f17900a6110bb039c41ab0f150e1c1dd11af5f3e937ae6121846413a3b53b4f9b69708460632e03b32c707adc85167c1a4db9c423343e9ddc03ae74ef87dd159"
+        }
+      ]
+    },
+    {
       "name": "@langchain/langgraph-sdk",
       "SPDXID": "SPDXRef-Package-langchain.langgraph-sdk-0.0.109",
       "versionInfo": "0.0.109",
@@ -2163,6 +2377,54 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "5298cbd1cebcd4226abcac60583f28f5fc145d16737037eccfc11c2763e45c5c5014a44b7b840a64cb41af838a15347de2926d94eb935656b8395e48e70fa675"
+        }
+      ]
+    },
+    {
+      "name": "uuid",
+      "SPDXID": "SPDXRef-Package-uuid-10.0.0",
+      "versionInfo": "10.0.0",
+      "packageFileName": "node_modules/@langchain/langgraph/node_modules/uuid",
+      "description": "RFC9562 UUIDs",
+      "downloadLocation": "https://registry.npmjs.org/uuid/-/uuid-10.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/uuidjs/uuid#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/uuid@10.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f17900a6110bb039c41ab0f150e1c1dd11af5f3e937ae6121846413a3b53b4f9b69708460632e03b32c707adc85167c1a4db9c423343e9ddc03ae74ef87dd159"
+        }
+      ]
+    },
+    {
+      "name": "zod",
+      "SPDXID": "SPDXRef-Package-zod-3.25.76",
+      "versionInfo": "3.25.76",
+      "packageFileName": "node_modules/@langchain/langgraph/node_modules/zod",
+      "description": "TypeScript-first schema declaration and validation library with static type inference",
+      "downloadLocation": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://zod.dev",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/zod@3.25.76"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "83352dfeab7cd675ec14628815c0b76277c4031e4d92e9c27e70e5bee0524854b4d9b717bb82e679ad001485306cb5b158fc7777da7c4b94286ae8ca70d43171"
         }
       ]
     },
@@ -2191,6 +2453,30 @@
       ]
     },
     {
+      "name": "zod",
+      "SPDXID": "SPDXRef-Package-zod-3.25.76",
+      "versionInfo": "3.25.76",
+      "packageFileName": "node_modules/@langchain/mcp-adapters/node_modules/zod",
+      "description": "TypeScript-first schema declaration and validation library with static type inference",
+      "downloadLocation": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://zod.dev",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/zod@3.25.76"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "83352dfeab7cd675ec14628815c0b76277c4031e4d92e9c27e70e5bee0524854b4d9b717bb82e679ad001485306cb5b158fc7777da7c4b94286ae8ca70d43171"
+        }
+      ]
+    },
+    {
       "name": "@langchain/ollama",
       "SPDXID": "SPDXRef-Package-langchain.ollama-0.2.3",
       "versionInfo": "0.2.3",
@@ -2211,6 +2497,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "d4e6dee398e042ca6a2cc05595ac906c6772c059ab8bc0e098645dccdbb4962e7a706e5145e6254421550d905130cbc5f4986c3f97974727f28afb4a7c84c759"
+        }
+      ]
+    },
+    {
+      "name": "uuid",
+      "SPDXID": "SPDXRef-Package-uuid-10.0.0",
+      "versionInfo": "10.0.0",
+      "packageFileName": "node_modules/@langchain/ollama/node_modules/uuid",
+      "description": "RFC9562 UUIDs",
+      "downloadLocation": "https://registry.npmjs.org/uuid/-/uuid-10.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/uuidjs/uuid#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/uuid@10.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f17900a6110bb039c41ab0f150e1c1dd11af5f3e937ae6121846413a3b53b4f9b69708460632e03b32c707adc85167c1a4db9c423343e9ddc03ae74ef87dd159"
         }
       ]
     },
@@ -2263,6 +2573,30 @@
       ]
     },
     {
+      "name": "zod",
+      "SPDXID": "SPDXRef-Package-zod-3.25.76",
+      "versionInfo": "3.25.76",
+      "packageFileName": "node_modules/@langchain/openai/node_modules/zod",
+      "description": "TypeScript-first schema declaration and validation library with static type inference",
+      "downloadLocation": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://zod.dev",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/zod@3.25.76"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "83352dfeab7cd675ec14628815c0b76277c4031e4d92e9c27e70e5bee0524854b4d9b717bb82e679ad001485306cb5b158fc7777da7c4b94286ae8ca70d43171"
+        }
+      ]
+    },
+    {
       "name": "@lmdb/lmdb-darwin-arm64",
       "SPDXID": "SPDXRef-Package-lmdb.lmdb-darwin-arm64-3.4.2",
       "versionInfo": "3.4.2",
@@ -2307,6 +2641,54 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "ceadb885fb809a694d66f8a4d052c8e7cb84e6cae2374596b10cc89589f34ae28300716a26d045ae5fcb7c1d4d2e0253e58edd101cda5f8c802aa38fadc7ad6b"
+        }
+      ]
+    },
+    {
+      "name": "zod",
+      "SPDXID": "SPDXRef-Package-zod-3.25.76",
+      "versionInfo": "3.25.76",
+      "packageFileName": "node_modules/@modelcontextprotocol/sdk/node_modules/zod",
+      "description": "TypeScript-first schema declaration and validation library with static type inference",
+      "downloadLocation": "https://registry.npmjs.org/zod/-/zod-3.25.76.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://zod.dev",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/zod@3.25.76"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "83352dfeab7cd675ec14628815c0b76277c4031e4d92e9c27e70e5bee0524854b4d9b717bb82e679ad001485306cb5b158fc7777da7c4b94286ae8ca70d43171"
+        }
+      ]
+    },
+    {
+      "name": "zod-to-json-schema",
+      "SPDXID": "SPDXRef-Package-zod-to-json-schema-3.24.6",
+      "versionInfo": "3.24.6",
+      "packageFileName": "node_modules/@modelcontextprotocol/sdk/node_modules/zod-to-json-schema",
+      "description": "Converts Zod schemas to Json Schemas",
+      "downloadLocation": "https://registry.npmjs.org/zod-to-json-schema/-/zod-to-json-schema-3.24.6.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/StefanTerdell/zod-to-json-schema#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/zod-to-json-schema@3.24.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "87fcf73cabdc4dc4deb728e5d5f923efd3073448e6f87a43e8d5e17968f339e918ee457e9700d89c7c3e8af1e48a39c248ccf5c89696043f6fbbf15c9a4faf12"
         }
       ]
     },
@@ -5567,6 +5949,29 @@
       ]
     },
     {
+      "name": "@smithy/util-buffer-from",
+      "SPDXID": "SPDXRef-Package-smithy.util-buffer-from-4.2.0",
+      "versionInfo": "4.2.0",
+      "packageFileName": "node_modules/@smithy/util-utf8/node_modules/@smithy/util-buffer-from",
+      "downloadLocation": "https://registry.npmjs.org/@smithy/util-buffer-from/-/util-buffer-from-4.2.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/smithy-lang/smithy-typescript/tree/main/packages/util-buffer-from",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40smithy/util-buffer-from@4.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "90063d8532ae95335ebccda7951b71006d85437076391e9022b3d8df31392ea272d68c739a0046b072d64dc36159729c8600345875be999910ae783fa607027b"
+        }
+      ]
+    },
+    {
       "name": "@smithy/util-waiter",
       "SPDXID": "SPDXRef-Package-smithy.util-waiter-4.0.7",
       "versionInfo": "4.0.7",
@@ -5999,6 +6404,102 @@
       ]
     },
     {
+      "name": "archiver",
+      "SPDXID": "SPDXRef-Package-archiver-7.0.1",
+      "versionInfo": "7.0.1",
+      "packageFileName": "node_modules/archiver",
+      "description": "a streaming interface for archive generation",
+      "downloadLocation": "https://registry.npmjs.org/archiver/-/archiver-7.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/archiverjs/node-archiver",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/archiver@7.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "65c6d3688a8939f09cd374300f8ebc527cffe48afc013b6f007b0af857576c321b19f8a1aa1f66aef75c62e9d0cea9f81ebbd659a1726b12611996a06892693d"
+        }
+      ]
+    },
+    {
+      "name": "archiver-utils",
+      "SPDXID": "SPDXRef-Package-archiver-utils-5.0.2",
+      "versionInfo": "5.0.2",
+      "packageFileName": "node_modules/archiver-utils",
+      "description": "utility functions for archiver",
+      "downloadLocation": "https://registry.npmjs.org/archiver-utils/-/archiver-utils-5.0.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/archiverjs/archiver-utils#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/archiver-utils@5.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c2e2c93262014180ac1998182d3cb9148076a45e8b7dbe9c5cc485f10cb0c24deddb4cd69c08bbccb71015d29098807cc32669639111dfcc74f066f0b51d9c2c"
+        }
+      ]
+    },
+    {
+      "name": "buffer-crc32",
+      "SPDXID": "SPDXRef-Package-buffer-crc32-1.0.0",
+      "versionInfo": "1.0.0",
+      "packageFileName": "node_modules/archiver/node_modules/buffer-crc32",
+      "description": "A pure javascript CRC32 algorithm that plays nice with binary data",
+      "downloadLocation": "https://registry.npmjs.org/buffer-crc32/-/buffer-crc32-1.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/brianloveswords/buffer-crc32",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/buffer-crc32@1.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0dbd526e0052fdf83fdfdd806e5acc264f7b2a0826bd886be290796483135ad6a2bc23cc58b9266fb9b6d5c26fa6f80af89de7b14d829a68b1341671e2f163ff"
+        }
+      ]
+    },
+    {
+      "name": "async",
+      "SPDXID": "SPDXRef-Package-async-3.2.6",
+      "versionInfo": "3.2.6",
+      "packageFileName": "node_modules/async",
+      "description": "Higher-order functions and common patterns for asynchronous code",
+      "downloadLocation": "https://registry.npmjs.org/async/-/async-3.2.6.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://caolan.github.io/async/",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/async@3.2.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "86d0940e5c72c822cc81a337c578340b42d6db1a9fb90ea9d39a42108b17bb243e6b592860a4ee04ccd13709b26df2e0bc90cc774af52d39f8f84d138ba0b600"
+        }
+      ]
+    },
+    {
       "name": "asynckit",
       "SPDXID": "SPDXRef-Package-asynckit-0.4.0",
       "versionInfo": "0.4.0",
@@ -6067,6 +6568,54 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "d4bc7758b1505a6de8a0a0d8643d5e5e6a063bd7f16108ebc9c7c7142f0fd2c09f4155f244ea74a7d3c55817a17b004e742c0773e7ff6fc2347ccb68e5e49fc0"
+        }
+      ]
+    },
+    {
+      "name": "b4a",
+      "SPDXID": "SPDXRef-Package-b4a-1.7.3",
+      "versionInfo": "1.7.3",
+      "packageFileName": "node_modules/b4a",
+      "description": "Bridging the gap between buffers and typed arrays",
+      "downloadLocation": "https://registry.npmjs.org/b4a/-/b4a-1.7.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/holepunchto/b4a#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/b4a@1.7.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e50da67ead967c6b85a77b92fffd2ce9b68e24b32855db8f61578d983631bb9394035fdc05fbebd91212eef8bad8b74d8ffbab93585f9a3f3aec8deab7ab99ed"
+        }
+      ]
+    },
+    {
+      "name": "bare-events",
+      "SPDXID": "SPDXRef-Package-bare-events-2.8.1",
+      "versionInfo": "2.8.1",
+      "packageFileName": "node_modules/bare-events",
+      "description": "Event emitters for JavaScript",
+      "downloadLocation": "https://registry.npmjs.org/bare-events/-/bare-events-2.8.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/holepunchto/bare-events#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/bare-events@2.8.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a31480c534b58517e7ca2b7608be50a40392e62c5f0638fa7b1df24cdbd7c98fe413bd7d8d0fc88ee1122412b6c39bf8c304110071ac795257c7d40160eb4519"
         }
       ]
     },
@@ -6334,6 +6883,30 @@
       ]
     },
     {
+      "name": "compress-commons",
+      "SPDXID": "SPDXRef-Package-compress-commons-6.0.2",
+      "versionInfo": "6.0.2",
+      "packageFileName": "node_modules/compress-commons",
+      "description": "a library that defines a common interface for working with archive formats within node",
+      "downloadLocation": "https://registry.npmjs.org/compress-commons/-/compress-commons-6.0.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/archiverjs/node-compress-commons",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/compress-commons@6.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e85a955de113a963e819c7f3ad76f7ec4e7434fd0b5d3f2400cbb9a2865aca1596760118e2504411c6d0357b64b8a42c19dbb1888708e20393b314e6baafdb4a"
+        }
+      ]
+    },
+    {
       "name": "console-table-printer",
       "SPDXID": "SPDXRef-Package-console-table-printer-2.14.6",
       "versionInfo": "2.14.6",
@@ -6478,6 +7051,30 @@
       ]
     },
     {
+      "name": "core-util-is",
+      "SPDXID": "SPDXRef-Package-core-util-is-1.0.3",
+      "versionInfo": "1.0.3",
+      "packageFileName": "node_modules/core-util-is",
+      "description": "The `util.is*` functions introduced in Node v0.12.",
+      "downloadLocation": "https://registry.npmjs.org/core-util-is/-/core-util-is-1.0.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/core-util-is#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/core-util-is@1.0.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "65006f8b50dca49e060ea6a78ee719d878f7c043b9a590d2f3d0566e472bbddc64b09a2bc140c365a997f65745929f5ac369660432e090e6c40380d6349f4561"
+        }
+      ]
+    },
+    {
       "name": "cors",
       "SPDXID": "SPDXRef-Package-cors-2.8.5",
       "versionInfo": "2.8.5",
@@ -6498,6 +7095,54 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "2881db2c9aaeef7446aff8676eb3bdb817a2c4d1aebd2423ba5fe3745bd2fca152207d615957759e0ef3387c7e62b11f2272c6eeae27e861d0f5c0edc6ffcfea"
+        }
+      ]
+    },
+    {
+      "name": "crc-32",
+      "SPDXID": "SPDXRef-Package-crc-32-1.2.2",
+      "versionInfo": "1.2.2",
+      "packageFileName": "node_modules/crc-32",
+      "description": "Pure-JS CRC-32",
+      "downloadLocation": "https://registry.npmjs.org/crc-32/-/crc-32-1.2.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://sheetjs.com/",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/crc-32@1.2.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "44e9b308aad39cec326cf709029000e960568a3db71d57c654d2aaaab669bb264e1ea2b60b01d2be91aecadfd434dbda22311df17e48146a78321f887b520725"
+        }
+      ]
+    },
+    {
+      "name": "crc32-stream",
+      "SPDXID": "SPDXRef-Package-crc32-stream-6.0.0",
+      "versionInfo": "6.0.0",
+      "packageFileName": "node_modules/crc32-stream",
+      "description": "a streaming CRC32 checksumer",
+      "downloadLocation": "https://registry.npmjs.org/crc32-stream/-/crc32-stream-6.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/archiverjs/node-crc32-stream",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/crc32-stream@6.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a62202501e9e8b82254efd7eeb9df2ab9f8aa2a7c16268fd6f0e8ba97a0e9de4cc0d79399ccd6ab75da6156d5c686dcb9495c4296d41a745a08049887d0077e2"
         }
       ]
     },
@@ -6838,6 +7483,30 @@
       ]
     },
     {
+      "name": "events-universal",
+      "SPDXID": "SPDXRef-Package-events-universal-1.0.1",
+      "versionInfo": "1.0.1",
+      "packageFileName": "node_modules/events-universal",
+      "description": "Universal wrapper for the Node.js events module",
+      "downloadLocation": "https://registry.npmjs.org/events-universal/-/events-universal-1.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/holepunchto/events-universal#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/events-universal@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "2d47797aebdb30ba70385f26ea2bcf09b85079289854d6fc56cd1f43c4235e8d094e4107a73f29c5d41fd204ad96d68fa70d0271af1bdfd2b1bcaf5c7ca46203"
+        }
+      ]
+    },
+    {
       "name": "eventsource",
       "SPDXID": "SPDXRef-Package-eventsource-3.0.7",
       "versionInfo": "3.0.7",
@@ -7002,6 +7671,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "765d0ef55863bbc22b70b9ddbf6794e2576dd5fb5732aa9f80de07d5ca66195ecfea3781f45c2937d6b673c0cf184d58b3cf2b3542556031eaef708600638f7d"
+        }
+      ]
+    },
+    {
+      "name": "fast-fifo",
+      "SPDXID": "SPDXRef-Package-fast-fifo-1.3.2",
+      "versionInfo": "1.3.2",
+      "packageFileName": "node_modules/fast-fifo",
+      "description": "A fast fifo implementation similar to the one powering nextTick in Node.js core",
+      "downloadLocation": "https://registry.npmjs.org/fast-fifo/-/fast-fifo-1.3.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/mafintosh/fast-fifo",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/fast-fifo@1.3.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "fddf6c7e8b38cb1ce9c240e4b8dee4d92a852ad60d9824f381f129cfcdb1df820cf7fcdcf0a1b14285e0d6588d0bf8b3a5133f30176de38366c78d595aa93e15"
         }
       ]
     },
@@ -7606,6 +8299,54 @@
       ]
     },
     {
+      "name": "gaxios",
+      "SPDXID": "SPDXRef-Package-gaxios-7.1.1",
+      "versionInfo": "7.1.1",
+      "packageFileName": "node_modules/gtoken/node_modules/gaxios",
+      "description": "A simple common HTTP client specifically for Google APIs and services.",
+      "downloadLocation": "https://registry.npmjs.org/gaxios/-/gaxios-7.1.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/googleapis/gaxios#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/gaxios@7.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "39d8eedee054272542916eb89cb0f8c0a2e16e1f776e1eaf220fd921791688b3c1add82d73ae7eb65b3faa697eba7de9afa26a61514365b6e62c3413ebcad339"
+        }
+      ]
+    },
+    {
+      "name": "node-fetch",
+      "SPDXID": "SPDXRef-Package-node-fetch-3.3.2",
+      "versionInfo": "3.3.2",
+      "packageFileName": "node_modules/gtoken/node_modules/node-fetch",
+      "description": "A light-weight module that brings Fetch API to node.js",
+      "downloadLocation": "https://registry.npmjs.org/node-fetch/-/node-fetch-3.3.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/node-fetch/node-fetch",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/node-fetch@3.3.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "75107bf2cacdfe5ea0a96ba56a1f52af17989f179d7481b7d3e18ea8affd3a52d5c8b8371cf9ebe92a8e59358e5ca4700b6786602919e7d34db9282f4aba6038"
+        }
+      ]
+    },
+    {
       "name": "help-me",
       "SPDXID": "SPDXRef-Package-help-me-5.0.0",
       "versionInfo": "5.0.0",
@@ -8038,6 +8779,126 @@
       ]
     },
     {
+      "name": "lazystream",
+      "SPDXID": "SPDXRef-Package-lazystream-1.0.1",
+      "versionInfo": "1.0.1",
+      "packageFileName": "node_modules/lazystream",
+      "description": "Open Node Streams on demand.",
+      "downloadLocation": "https://registry.npmjs.org/lazystream/-/lazystream-1.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/jpommerening/node-lazystream",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lazystream@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6fde0688d1d0372e89353aede70eb33727df32b3645d96f72939026496f6575c5a1060a4d3ddef919da3937b6969e3f7dff3a25c2f96bcaf40c5479b9dfe676f"
+        }
+      ]
+    },
+    {
+      "name": "isarray",
+      "SPDXID": "SPDXRef-Package-isarray-1.0.0",
+      "versionInfo": "1.0.0",
+      "packageFileName": "node_modules/lazystream/node_modules/isarray",
+      "description": "Array#isArray for older browsers",
+      "downloadLocation": "https://registry.npmjs.org/isarray/-/isarray-1.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/juliangruber/isarray",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/isarray@1.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "54b82121634ce842d0ce8ef3c26720d0d99357258a623bc878cf37ca3a74c110d39949eb33aefc7d06dc281a3a9f6089105d2cce81bfff2b60f932a56bcf402d"
+        }
+      ]
+    },
+    {
+      "name": "readable-stream",
+      "SPDXID": "SPDXRef-Package-readable-stream-2.3.8",
+      "versionInfo": "2.3.8",
+      "packageFileName": "node_modules/lazystream/node_modules/readable-stream",
+      "description": "Streams3, a user-land copy of the stream library from Node.js",
+      "downloadLocation": "https://registry.npmjs.org/readable-stream/-/readable-stream-2.3.8.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/nodejs/readable-stream#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/readable-stream@2.3.8"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f29d00524e173838087b04a2d25f04a63b3e1159d688aecda03204194d07844efe67263c0f520c63ba1dbb9951ac55c683bd4bd79286f10acf9ae9b8e514ed74"
+        }
+      ]
+    },
+    {
+      "name": "safe-buffer",
+      "SPDXID": "SPDXRef-Package-safe-buffer-5.1.2",
+      "versionInfo": "5.1.2",
+      "packageFileName": "node_modules/lazystream/node_modules/safe-buffer",
+      "description": "Safer Node.js Buffer API",
+      "downloadLocation": "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/feross/safe-buffer",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/safe-buffer@5.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "19dd94641243917958ec66c9c5fb04f3f9ef2a45045351b7f1cd6c88de903fa6bd3d3f4c98707c1a7a6c71298c252a05f0b388aedf2e77fc0fb688f2b381bafa"
+        }
+      ]
+    },
+    {
+      "name": "string_decoder",
+      "SPDXID": "SPDXRef-Package-string_decoder-1.1.1",
+      "versionInfo": "1.1.1",
+      "packageFileName": "node_modules/lazystream/node_modules/string_decoder",
+      "description": "The string_decoder module from Node core",
+      "downloadLocation": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.1.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/nodejs/string_decoder",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/string_decoder@1.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "9ff4a19ef0e2e851db6d57ef8aba3e5a88e2173bfeb3c30f30705ccd578f7d4a4324bc282d3d21b759786300426e2f29240bde104767907c8fc933ff9b345fc2"
+        }
+      ]
+    },
+    {
       "name": "lmdb",
       "SPDXID": "SPDXRef-Package-lmdb-3.4.2",
       "versionInfo": "3.4.2",
@@ -8082,6 +8943,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "f9e6b03a5220cbaf34174901ccf50d1613191ad275626a8cea5e3e0ab7f82242268d8acefe6a8fc11321df9da0db7b8869028522d710eb823b28c689c4780054"
+        }
+      ]
+    },
+    {
+      "name": "lodash",
+      "SPDXID": "SPDXRef-Package-lodash-4.17.21",
+      "versionInfo": "4.17.21",
+      "packageFileName": "node_modules/lodash",
+      "description": "Lodash modular utilities.",
+      "downloadLocation": "https://registry.npmjs.org/lodash/-/lodash-4.17.21.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://lodash.com/",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lodash@4.17.21"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "bf690311ee7b95e713ba568322e3533f2dd1cb880b189e99d4edef13592b81764daec43e2c54c61d5c558dc5cfb35ecb85b65519e74026ff17675b6f8f916f4a"
         }
       ]
     },
@@ -9094,6 +9979,30 @@
       ]
     },
     {
+      "name": "process-nextick-args",
+      "SPDXID": "SPDXRef-Package-process-nextick-args-2.0.1",
+      "versionInfo": "2.0.1",
+      "packageFileName": "node_modules/process-nextick-args",
+      "description": "process.nextTick but always with args",
+      "downloadLocation": "https://registry.npmjs.org/process-nextick-args/-/process-nextick-args-2.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/calvinmetcalf/process-nextick-args",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/process-nextick-args@2.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "de8b943a9421b60adb39ad7b27bfaec4e4e92136166863fbfc0868477f80fbfd5ef6c92bcde9468bf757cc4632bdbc6e6c417a5a7db2a6c7132a22891459f56a"
+        }
+      ]
+    },
+    {
       "name": "process-warning",
       "SPDXID": "SPDXRef-Package-process-warning-5.0.0",
       "versionInfo": "5.0.0",
@@ -9330,6 +10239,78 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "a0818699ca532f03e06bc067ebf67be5255a1f5cf9754badda26d2c80315866520816a660e7d9d6a90749fb7fc9f0692891b5ea40b1f2727d720ee4309500e0e"
+        }
+      ]
+    },
+    {
+      "name": "readdir-glob",
+      "SPDXID": "SPDXRef-Package-readdir-glob-1.1.3",
+      "versionInfo": "1.1.3",
+      "packageFileName": "node_modules/readdir-glob",
+      "description": "Recursive fs.readdir with streaming API and glob filtering.",
+      "downloadLocation": "https://registry.npmjs.org/readdir-glob/-/readdir-glob-1.1.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/Yqnn/node-readdir-glob",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/readdir-glob@1.1.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "bf4e48da4ef137ccd7bcf0fd37ecffba15cf6a3d2c50509edab716648a41b2ac5f3fbc57150d2d8a901dff08e3d58c56c96b544b9203269386f3624ab7610054"
+        }
+      ]
+    },
+    {
+      "name": "brace-expansion",
+      "SPDXID": "SPDXRef-Package-brace-expansion-2.0.2",
+      "versionInfo": "2.0.2",
+      "packageFileName": "node_modules/readdir-glob/node_modules/brace-expansion",
+      "description": "Brace expansion as known from sh/bash",
+      "downloadLocation": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.0.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/juliangruber/brace-expansion",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/brace-expansion@2.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "26dd2f1f233e8e6501aa88c1ec4d4d21869db74bc8d10c63c5dd9312b5bde300f3f84d8b026e6f28c5d7c20e996414c73ee5250e0407297be318175f705d590d"
+        }
+      ]
+    },
+    {
+      "name": "minimatch",
+      "SPDXID": "SPDXRef-Package-minimatch-5.1.6",
+      "versionInfo": "5.1.6",
+      "packageFileName": "node_modules/readdir-glob/node_modules/minimatch",
+      "description": "a glob matcher in javascript",
+      "downloadLocation": "https://registry.npmjs.org/minimatch/-/minimatch-5.1.6.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/minimatch#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/minimatch@5.1.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "94ac15ff56eba46ea6054147b5becd526b400426f65996669b6c0d88e0398406fc55d092e01dddb4c5b2bdca1589c730016fc23844635cbb74ccfd735d4376ea"
         }
       ]
     },
@@ -9694,6 +10675,30 @@
       ]
     },
     {
+      "name": "streamx",
+      "SPDXID": "SPDXRef-Package-streamx-2.23.0",
+      "versionInfo": "2.23.0",
+      "packageFileName": "node_modules/streamx",
+      "description": "An iteration of the Node.js core streams with a series of improvements",
+      "downloadLocation": "https://registry.npmjs.org/streamx/-/streamx-2.23.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/mafintosh/streamx",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/streamx@2.23.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "927f9ee387ac55f9f615afced023c571ec76edf8c82fa32455a7b4326eaaf84e9fd215afe7bf1808445bbfee26d36723c6f0ec3ca2e79b1ada97fad1ea504c02"
+        }
+      ]
+    },
+    {
       "name": "string_decoder",
       "SPDXID": "SPDXRef-Package-string_decoder-1.3.0",
       "versionInfo": "1.3.0",
@@ -9738,6 +10743,54 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "ed9be81538829c6c41b43a89fff0aee9f5ad66d73b637c7e40e8ab1b5e70ced6dd9e0192921b76ee8da9c865ab572d1be16032de36ca9a7a0aea0e5595535453"
+        }
+      ]
+    },
+    {
+      "name": "tar-stream",
+      "SPDXID": "SPDXRef-Package-tar-stream-3.1.7",
+      "versionInfo": "3.1.7",
+      "packageFileName": "node_modules/tar-stream",
+      "description": "tar-stream is a streaming tar parser and generator and nothing else. It operates purely using streams which means you can easily extract/parse tarballs without ever hitting the file system.",
+      "downloadLocation": "https://registry.npmjs.org/tar-stream/-/tar-stream-3.1.7.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/mafintosh/tar-stream",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/tar-stream@3.1.7"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a898fad025edec853515fc9cdcd24c8e1e8492e0857a3e3acd4a89e09ee9a9895387277d6ced1705399c388852cd925559fb0b92cd3e9e57bf8f9dfc6005bd45"
+        }
+      ]
+    },
+    {
+      "name": "text-decoder",
+      "SPDXID": "SPDXRef-Package-text-decoder-1.2.3",
+      "versionInfo": "1.2.3",
+      "packageFileName": "node_modules/text-decoder",
+      "description": "Streaming text decoder that preserves multibyte Unicode characters",
+      "downloadLocation": "https://registry.npmjs.org/text-decoder/-/text-decoder-1.2.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/holepunchto/text-decoder#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/text-decoder@1.2.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "dffa3dcf75f45f47d3ba9c2c62f474de927f0e35aeaaaadfc018134337560e24129bd2a2b40cb3ffd5aab13d89416eca5769be6c2da897fceaa56dfb347c4b68"
         }
       ]
     },
@@ -9954,6 +11007,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "8e4d7e40fe9926ac8e8ae108f4011641f8eefe70763f0e3aea46c0d0b1199631f029e32077d5ab0048041b18cf0c3dbe4cd6db6f7eeb4f28447eb0977ee2979c"
+        }
+      ]
+    },
+    {
+      "name": "util-deprecate",
+      "SPDXID": "SPDXRef-Package-util-deprecate-1.0.2",
+      "versionInfo": "1.0.2",
+      "packageFileName": "node_modules/util-deprecate",
+      "description": "The Node.js `util.deprecate()` function with browser support",
+      "downloadLocation": "https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/TooTallNate/util-deprecate",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/util-deprecate@1.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "10f0f9ab5b97c85c49a42acb9c27359c79eade039ae83641a1c008888d93692080ed5089d5424331a802cc891736c5187c3d5d68afff2d3110f318886eb1ed73"
         }
       ]
     },
@@ -10366,6 +11443,30 @@
       ]
     },
     {
+      "name": "zip-stream",
+      "SPDXID": "SPDXRef-Package-zip-stream-6.0.1",
+      "versionInfo": "6.0.1",
+      "packageFileName": "node_modules/zip-stream",
+      "description": "a streaming zip archive generator.",
+      "downloadLocation": "https://registry.npmjs.org/zip-stream/-/zip-stream-6.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/archiverjs/node-zip-stream",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/zip-stream@6.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "ccaed81c7cf8657a56f3d0075d43db41518a23bbaf91dde1ceeb13768b42835531c9a56d834cc52524df5bf0eae5fece041567aba71921a0bc4e2e216fa76d08"
+        }
+      ]
+    },
+    {
       "name": "zod",
       "SPDXID": "SPDXRef-Package-zod-4.0.15",
       "versionInfo": "4.0.15",
@@ -10393,232 +11494,237 @@
   "relationships": [
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DESCRIBES"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.873.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudformation-3.873.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-iam-3.873.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-s3-3.873.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-sts-3.873.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.873.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-base2.pretty-print-object-1.0.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.anthropic-0.3.26",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.aws-0.1.14",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.cohere-0.3.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.core-0.3.72",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.google-genai-0.2.16",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.google-vertexai-0.2.16",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.langgraph-0.4.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.mcp-adapters-0.6.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.ollama-0.2.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.openai-0.6.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.auto-instrumentations-node-0.62.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.resources-2.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-logs-0.203.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-metrics-2.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-node-0.203.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-trace-base-2.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-trace-node-2.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-tree-sitter-grammars.tree-sitter-yaml-0.7.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-archiver-7.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-axios-1.11.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-deep-object-diff-1.1.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-fuse.js-7.1.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-ini-5.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-jose-4.15.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-lmdb-3.4.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-luxon-3.7.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-partial-json-0.1.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-pino-9.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-pino-pretty-13.1.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-pyodide-0.28.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-tree-sitter-0.22.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-tree-sitter-json-0.24.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-ts-essentials-10.1.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-vscode-languageserver-9.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-vscode-languageserver-textdocument-1.0.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-vscode-uri-3.1.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-yauzl-3.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-zod-4.0.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -16472,6 +17578,56 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-archiver-utils-5.0.2",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-7.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-async-3.2.6",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-7.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-buffer-crc32-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-7.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-readable-stream-4.7.0",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-7.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-readdir-glob-1.1.3",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-7.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-tar-stream-3.1.7",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-7.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-zip-stream-6.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-7.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-lazystream-1.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-utils-5.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-lodash-4.17.21",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-utils-5.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-readable-stream-4.7.0",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-utils-5.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-follow-redirects-1.15.11",
       "relatedSpdxElement": "SPDXRef-Package-axios-1.11.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -16602,6 +17758,21 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-crc-32-1.2.2",
+      "relatedSpdxElement": "SPDXRef-Package-compress-commons-6.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-crc32-stream-6.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-compress-commons-6.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-readable-stream-4.7.0",
+      "relatedSpdxElement": "SPDXRef-Package-compress-commons-6.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-simple-wcswidth-1.1.2",
       "relatedSpdxElement": "SPDXRef-Package-console-table-printer-2.14.6",
       "relationshipType": "DEPENDENCY_OF"
@@ -16619,6 +17790,21 @@
     {
       "spdxElementId": "SPDXRef-Package-vary-1.1.2",
       "relatedSpdxElement": "SPDXRef-Package-cors-2.8.5",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-crc-32-1.2.2",
+      "relatedSpdxElement": "SPDXRef-Package-crc32-stream-6.0.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-readable-stream-4.7.0",
+      "relatedSpdxElement": "SPDXRef-Package-crc32-stream-6.0.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-bare-events-2.8.1",
+      "relatedSpdxElement": "SPDXRef-Package-events-universal-1.0.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -17052,6 +18238,51 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-readable-stream-2.3.8",
+      "relatedSpdxElement": "SPDXRef-Package-lazystream-1.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-core-util-is-1.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-readable-stream-2.3.8",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-inherits-2.0.4",
+      "relatedSpdxElement": "SPDXRef-Package-readable-stream-2.3.8",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-isarray-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-readable-stream-2.3.8",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-process-nextick-args-2.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-readable-stream-2.3.8",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-safe-buffer-5.1.2",
+      "relatedSpdxElement": "SPDXRef-Package-readable-stream-2.3.8",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-string_decoder-1.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-readable-stream-2.3.8",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-util-deprecate-1.0.2",
+      "relatedSpdxElement": "SPDXRef-Package-readable-stream-2.3.8",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-safe-buffer-5.1.2",
+      "relatedSpdxElement": "SPDXRef-Package-string_decoder-1.1.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-msgpackr-1.11.5",
       "relatedSpdxElement": "SPDXRef-Package-lmdb-3.4.2",
       "relationshipType": "DEPENDENCY_OF"
@@ -17387,6 +18618,16 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-minimatch-5.1.6",
+      "relatedSpdxElement": "SPDXRef-Package-readdir-glob-1.1.3",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-brace-expansion-2.0.2",
+      "relatedSpdxElement": "SPDXRef-Package-minimatch-5.1.6",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-module-details-from-path-1.0.4",
       "relatedSpdxElement": "SPDXRef-Package-require-in-the-middle-7.5.2",
       "relationshipType": "DEPENDENCY_OF"
@@ -17477,6 +18718,41 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-events-universal-1.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-streamx-2.23.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-fast-fifo-1.3.2",
+      "relatedSpdxElement": "SPDXRef-Package-streamx-2.23.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-text-decoder-1.2.3",
+      "relatedSpdxElement": "SPDXRef-Package-streamx-2.23.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-b4a-1.7.3",
+      "relatedSpdxElement": "SPDXRef-Package-tar-stream-3.1.7",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-fast-fifo-1.3.2",
+      "relatedSpdxElement": "SPDXRef-Package-tar-stream-3.1.7",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-streamx-2.23.0",
+      "relatedSpdxElement": "SPDXRef-Package-tar-stream-3.1.7",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-b4a-1.7.3",
+      "relatedSpdxElement": "SPDXRef-Package-text-decoder-1.2.3",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-real-require-0.2.0",
       "relatedSpdxElement": "SPDXRef-Package-thread-stream-3.1.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -17554,6 +18830,21 @@
     {
       "spdxElementId": "SPDXRef-Package-pend-1.2.0",
       "relatedSpdxElement": "SPDXRef-Package-yauzl-3.2.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-archiver-utils-5.0.2",
+      "relatedSpdxElement": "SPDXRef-Package-zip-stream-6.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-compress-commons-6.0.2",
+      "relatedSpdxElement": "SPDXRef-Package-zip-stream-6.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-readable-stream-4.7.0",
+      "relatedSpdxElement": "SPDXRef-Package-zip-stream-6.0.1",
       "relationshipType": "DEPENDENCY_OF"
     }
   ]

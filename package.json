@@ -98,7 +98,7 @@
   "devDependencies": {
     "@aws-sdk/types": "3.862.0",
     "@eslint/js": "9.34.0",
-    "@types/archiver": "^7.0.0",
+    "@types/archiver": "7.0.0",
     "@types/js-yaml": "4.0.9",
     "@types/luxon": "3.7.1",
     "@types/yargs": "17.0.33",
@@ -129,7 +129,7 @@
     "webpack": "5.101.3",
     "webpack-bundle-analyzer": "4.10.2",
     "webpack-cli": "6.0.1",
-    "webpack-node-externals": "^3.0.0",
+    "webpack-node-externals": "3.0.0",
     "worker-loader": "3.0.8",
     "yargs": "18.0.0"
   },
