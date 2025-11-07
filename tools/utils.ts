@@ -1,7 +1,7 @@
 import { readFileSync, statSync } from 'fs';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { detectDocumentType, uriToPath } from '../src/document/DocumentUtils';
-import { CloudFormationFileType, DocumentType } from '../src/document/Document';
-import { detectCfnFileType } from '../src/document/CloudFormationDetection';
+import { CloudFormationFileType, DocumentType, Document } from '../src/document/Document';
 
 export type TestPosition = {
     line: number;
@@ -173,13 +173,15 @@ export function discoverTemplateFiles(paths: string[]): TemplateFile[] {
         .map((path): TemplateFile => {
             const content = readFileSync(path, 'utf8');
             const { extension, type } = detectDocumentType(path, content);
+            const textDocument = TextDocument.create(path, type === DocumentType.JSON ? 'json' : 'yaml', 1, content);
+            const document = new Document(textDocument);
 
             return {
                 name: uriToPath(path).base,
                 path: path,
                 extension,
                 documentType: type,
-                cfnFileType: detectCfnFileType(content, type),
+                cfnFileType: document.cfnFileType,
                 content,
                 size: statSync(path).size,
             };

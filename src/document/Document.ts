@@ -37,6 +37,13 @@ export class Document {
     }
 
     public updateCfnFileType(): void {
+        const content = this.textDocument.getText();
+        if (!content.trim()) {
+            this.cfnFileType = CloudFormationFileType.Unknown;
+            this.cachedParsedContent = undefined;
+            return;
+        }
+
         try {
             this.cachedParsedContent = this.parseContent();
             this.cfnFileType = this.detectCfnFileType();

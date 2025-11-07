@@ -265,5 +265,44 @@ describe('Document', () => {
                 expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
             });
         });
+
+        describe('should handle empty content', () => {
+            it('empty file should be Unknown', () => {
+                const content = '';
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+            });
+
+            it('whitespace-only file should be Unknown', () => {
+                const content = '   \n\n  \t  ';
+                const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+            });
+        });
+
+        describe('should maintain stateful behavior', () => {
+            it('should keep Template status when content becomes unparseable', () => {
+                // Start with valid CloudFormation template
+                const validContent = '{"AWSTemplateFormatVersion": "2010-09-09", "Resources": {}}';
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, validContent);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Template);
+
+                // Simulate content change to invalid JSON (missing closing brace)
+                Object.defineProperty(textDocument, 'getText', {
+                    value: () => '{"AWSTemplateFormatVersion": "2010-09-09", "Resources": {',
+                });
+
+                doc.updateCfnFileType();
+
+                // Should maintain Template status despite being unparseable
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Template);
+            });
+        });
     });
 });
