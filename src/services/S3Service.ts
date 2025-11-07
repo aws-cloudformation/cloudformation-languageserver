@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { S3Client, PutObjectCommand, ListBucketsCommand } from '@aws-sdk/client-s3';
-import { Count } from '../telemetry/TelemetryDecorator';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
 export class S3Service {
@@ -12,7 +12,7 @@ export class S3Service {
         return await request(client);
     }
 
-    @Count({ name: 'listBuckets' })
+    @Measure({ name: 'listBuckets' })
     async listBuckets(region: string, continuationToken?: string): Promise<{ buckets: string[]; nextToken?: string }> {
         return await this.withClient(async (client) => {
             const response = await client.send(
