@@ -28,7 +28,7 @@ describe('ScopedTelemetry with TelemetryContext', () => {
         );
     });
 
-    it('should not include HandlerSource when no context is set', () => {
+    it('should include Unknown HandlerSource when no context is set', () => {
         const counter = meter.createCounter('test.counter');
         const addSpy = vi.spyOn(counter, 'add');
 
@@ -36,8 +36,8 @@ describe('ScopedTelemetry with TelemetryContext', () => {
 
         expect(addSpy).toHaveBeenCalledWith(
             1,
-            expect.not.objectContaining({
-                HandlerSource: expect.anything(),
+            expect.objectContaining({
+                HandlerSource: 'Unknown',
             }),
         );
     });
