@@ -3949,7 +3949,7 @@ Resources:
                         position: { line: 0, character: 0 },
                         description: 'Test hover on ForEach function nested Sub function',
                         verification: {
-                            position: { line: 19, character: 40 },
+                            position: { line: 19, character: 30 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContent(intrinsicFunctionsDocsMap.get(IntrinsicFunction.Sub))
                                 .build(),
