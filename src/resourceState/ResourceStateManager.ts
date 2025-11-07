@@ -3,6 +3,7 @@ import { DateTime } from 'luxon';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { CfnExternal } from '../server/CfnExternal';
 import { CcapiService } from '../services/CcapiService';
+import { S3Service } from '../services/S3Service';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -47,6 +48,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     constructor(
         private readonly ccapiService: CcapiService,
         private readonly schemaRetriever: SchemaRetriever,
+        private readonly s3Service: S3Service,
     ) {
         this.registerCacheGauges();
         this.initializeCounters();
@@ -176,6 +178,23 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     }
 
     private async retrieveResourceList(typeName: string, nextToken?: string): Promise<ResourceList | undefined> {
+        if (typeName === 'AWS::S3::Bucket') {
+            try {
+                const response = await this.s3Service.listBuckets(this.settings.region, nextToken);
+                const now = DateTime.now();
+                return {
+                    typeName,
+                    resourceIdentifiers: response.buckets,
+                    createdTimestamp: now,
+                    lastUpdatedTimestamp: now,
+                    nextToken: response.nextToken,
+                };
+            } catch (error) {
+                log.error(error, `S3 ListBuckets failed for region ${this.settings.region}`);
+                return;
+            }
+        }
+
         try {
             const output = await this.ccapiService.listResources(typeName, { nextToken });
 
@@ -310,6 +329,6 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     }
 
     static create(external: CfnExternal) {
-        return new ResourceStateManager(external.ccapiService, external.schemaRetriever);
+        return new ResourceStateManager(external.ccapiService, external.schemaRetriever, external.s3Service);
     }
 }
