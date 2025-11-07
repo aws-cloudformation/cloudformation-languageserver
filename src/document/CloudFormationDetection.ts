@@ -1,4 +1,4 @@
-import { TopLevelSection, TopLevelSections } from '../context/ContextType';
+import { TopLevelSection } from '../context/ContextType';
 import { CloudFormationFileType, DocumentType } from './Document';
 
 const TemplateKeys = [
@@ -8,7 +8,8 @@ const TemplateKeys = [
 ];
 
 export function isCloudFormationTemplate(content: string, documentType: DocumentType): boolean {
-    return hasSufficientKeys(content, TopLevelSections, 2, documentType, TemplateKeys);
+    // Require at least one definitive CloudFormation key (AWSTemplateFormatVersion, Resources, or Transform)
+    return hasSufficientKeys(content, TemplateKeys, 1, documentType, TemplateKeys);
 }
 
 const GitSyncKeys = ['template-file-path', 'templateFilePath', 'templatePath'];

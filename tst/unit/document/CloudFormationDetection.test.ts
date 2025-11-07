@@ -101,6 +101,30 @@ describe('CloudFormationDetection', () => {
                 expect(isCloudFormationTemplate(content, DocumentType.JSON)).toBe(false);
             });
 
+            it('should reject changeset diff JSON', () => {
+                const content = `{
+                    "StackId": "arn:aws:cloudformation:us-east-1:123456789012:stack/MyStack/1a2345b6-0000-00a0-a123-00abc0abc000",
+                    "Status": "CREATE_COMPLETE",
+                    "ChangeSetName": "SampleChangeSet-direct",
+                    "Parameters": [
+                        {
+                            "ParameterValue": "testing",
+                            "ParameterKey": "Purpose"
+                        }
+                    ],
+                    "Changes": [
+                        {
+                            "ResourceChange": {
+                                "ResourceType": "AWS::EC2::Instance",
+                                "Action": "Modify"
+                            }
+                        }
+                    ]
+                }`;
+
+                expect(isCloudFormationTemplate(content, DocumentType.JSON)).toBe(false);
+            });
+
             it('should handle case sensitivity', () => {
                 const content = '{"resources": {}, "parameters": {}}';
 
