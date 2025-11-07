@@ -103,6 +103,20 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
             },
         },
     },
+    constants: {
+        json: {
+            fileName: 'file://constants.json',
+            get contents() {
+                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'constants.json'), 'utf8');
+            },
+        },
+        yaml: {
+            fileName: 'file://constants.yaml',
+            get contents() {
+                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'constants.yaml'), 'utf8');
+            },
+        },
+    },
 };
 
 export function point(row: number, column: number): Point {

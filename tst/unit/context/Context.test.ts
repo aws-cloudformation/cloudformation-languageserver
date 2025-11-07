@@ -9,6 +9,7 @@ import {
     Mapping,
     Unknown,
     ForEachResource,
+    Constant,
 } from '../../../src/context/semantic/Entity';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
@@ -790,6 +791,148 @@ Resources:
                 expect(nestedResource?.Properties?.BucketName).toHaveProperty('Fn::Sub');
                 expect(nestedResource?.Properties).toHaveProperty('VersioningConfiguration');
                 expect(nestedResource?.Properties?.VersioningConfiguration).toHaveProperty('Status', 'Enabled');
+            });
+        });
+    });
+
+    describe('Constants Entity Parsing', () => {
+        const constantsYamlUri = Templates.constants.yaml.fileName;
+        const constantsJsonUri = Templates.constants.json.fileName;
+        const constantsYamlContent = Templates.constants.yaml.contents;
+        const constantsJsonContent = Templates.constants.json.contents;
+
+        beforeAll(() => {
+            syntaxTreeManager.add(constantsYamlUri, constantsYamlContent);
+            syntaxTreeManager.add(constantsJsonUri, constantsJsonContent);
+        });
+
+        afterAll(() => {
+            syntaxTreeManager.deleteAllTrees();
+        });
+
+        describe('YAML Constants', () => {
+            it('should parse Constants section header', () => {
+                const context = getContextAt(3, 0, constantsYamlUri); // Position at "Constants:"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Constants);
+                expect(context!.isTopLevel).toBe(true);
+            });
+
+            it('should parse simple constant name', () => {
+                const context = getContextAt(4, 2, constantsYamlUri); // Position at "foo:"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Constants);
+                expect(context!.logicalId).toBe('foo');
+                expect(context!.text).toBe('foo');
+            });
+
+            it('should parse simple constant value', () => {
+                const context = getContextAt(4, 7, constantsYamlUri); // Position at "bar"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Constants);
+                expect(context!.logicalId).toBe('foo');
+                expect(context!.text).toBe('bar');
+            });
+
+            it('should parse constant with string interpolation', () => {
+                const context = getContextAt(5, 2, constantsYamlUri); // Position at "sub:"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Constants);
+                expect(context!.logicalId).toBe('sub');
+                expect(context!.text).toBe('sub');
+            });
+
+            it('should parse constant with object value', () => {
+                const context = getContextAt(6, 2, constantsYamlUri); // Position at "obj:"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Constants);
+                expect(context!.logicalId).toBe('obj');
+                expect(context!.text).toBe('obj');
+            });
+
+            it('should create Constant entity with simple value', () => {
+                const context = getContextAt(4, 2, constantsYamlUri); // foo constant
+
+                expect(context).toBeDefined();
+                const entity = context!.entity;
+                expect(entity).toBeInstanceOf(Constant);
+
+                const constant = entity as Constant;
+                expect(constant.name).toBe('foo');
+                expect(constant.value).toBe('bar');
+            });
+
+            it('should create Constant entity with string interpolation', () => {
+                const context = getContextAt(5, 2, constantsYamlUri); // sub constant
+
+                expect(context).toBeDefined();
+                const entity = context!.entity;
+                expect(entity).toBeInstanceOf(Constant);
+
+                const constant = entity as Constant;
+                expect(constant.name).toBe('sub');
+                expect(constant.value).toContain('${Const::foo}');
+                expect(constant.value).toContain('${AWS::AccountId}');
+            });
+
+            it('should create Constant entity with object value', () => {
+                const context = getContextAt(6, 2, constantsYamlUri); // obj constant
+
+                expect(context).toBeDefined();
+                const entity = context!.entity;
+                expect(entity).toBeInstanceOf(Constant);
+
+                const constant = entity as Constant;
+                expect(constant.name).toBe('obj');
+                expect(constant.value).toBeDefined();
+                expect(typeof constant.value).toBe('object');
+            });
+        });
+
+        describe('JSON Constants', () => {
+            it('should parse Constants section in JSON', () => {
+                const context = getContextAt(3, 4, constantsJsonUri); // Position at "Constants"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Constants);
+            });
+
+            it('should parse simple constant in JSON', () => {
+                const context = getContextAt(4, 6, constantsJsonUri); // Position at "foo"
+
+                expect(context).toBeDefined();
+                expect(context!.section).toBe(TopLevelSection.Constants);
+                expect(context!.logicalId).toBe('foo');
+            });
+
+            it('should create Constant entity from JSON', () => {
+                const context = getContextAt(4, 6, constantsJsonUri); // foo constant
+
+                expect(context).toBeDefined();
+                const entity = context!.entity;
+                expect(entity).toBeInstanceOf(Constant);
+
+                const constant = entity as Constant;
+                expect(constant.name).toBe('foo');
+                expect(constant.value).toBe('bar');
+            });
+
+            it('should parse constant with object value in JSON', () => {
+                const context = getContextAt(6, 6, constantsJsonUri); // Position at "obj"
+
+                expect(context).toBeDefined();
+                const entity = context!.entity;
+                expect(entity).toBeInstanceOf(Constant);
+
+                const constant = entity as Constant;
+                expect(constant.name).toBe('obj');
+                expect(constant.value).toBeDefined();
+                expect(typeof constant.value).toBe('object');
             });
         });
     });

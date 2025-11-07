@@ -16,6 +16,7 @@ import { DataStoreFactoryProvider, MemoryDataStoreFactoryProvider } from '../../
 import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { DocumentSymbolRouter } from '../../src/documentSymbol/DocumentSymbolRouter';
+import { FeatureFlag } from '../../src/featureFlag/FeatureFlagI';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { LspAuthHandlers } from '../../src/protocol/LspAuthHandlers';
@@ -234,9 +235,10 @@ export function createMockManagedResourceCodeLens() {
 export function createMockTopLevelSectionCompletionProvider(
     syntaxTreeManager?: SyntaxTreeManager,
     documentManager?: DocumentManager,
+    constantsFeatureFlag?: FeatureFlag,
 ) {
-    if (syntaxTreeManager && documentManager) {
-        return new TopLevelSectionCompletionProvider(syntaxTreeManager, documentManager);
+    if (syntaxTreeManager && documentManager && constantsFeatureFlag) {
+        return new TopLevelSectionCompletionProvider(syntaxTreeManager, documentManager, constantsFeatureFlag);
     }
     return stubInterface<TopLevelSectionCompletionProvider>();
 }

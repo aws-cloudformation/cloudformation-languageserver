@@ -131,6 +131,9 @@ export class TemplateBuilder {
         });
 
         const { core, external, providers } = createMockComponents(mockTestComponents);
+
+        external.featureFlags.get.returns({ isEnabled: () => false, describe: () => 'mock' });
+
         const completionProviders = createCompletionProviders(core, external, providers);
 
         this.completionRouter = new CompletionRouter(this.contextManager, completionProviders, this.documentManager);
