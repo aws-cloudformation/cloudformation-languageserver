@@ -1859,6 +1859,81 @@ Outputs:`,
             };
             await template.executeScenario(scenario);
         });
+
+        it('yaml hover on for each', async () => {
+            const template = new TemplateBuilder(DocumentType.YAML);
+            const scenario: TemplateScenario = {
+                name: 'for each template hover',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `AWSTemplateFormatVersion: "2010-09-09"
+Description: "Template with Fn::ForEach examples"
+Transform: AWS::LanguageExtensions
+
+Parameters:
+  BucketNames:
+    Type: CommaDelimitedList
+    Default: "bucket1,bucket2,bucket3"
+    Description: "List of bucket names for ForEach"
+
+Resources:
+  Fn::ForEach::Buckets:
+    - BucketName
+    - !Ref BucketNames
+    - S3Bucket\${BucketName}:
+        Type: AWS::S3::Bucket
+        Properties:
+          BucketName: !Sub "\${BucketName}-\${AWS::AccountId}-\${AWS::Region}"
+          VersioningConfiguration:
+            Status: Enabled
+          BucketEncryption:
+            ServerSideEncryptionConfiguration:
+              - ServerSideEncryptionByDefault:
+                  SSEAlgorithm: AES256
+
+  RegularResource:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: regular-bucket`,
+                        position: { line: 0, character: 0 },
+                        description: 'Test hover on forEach function',
+                        verification: {
+                            position: { line: 11, character: 12 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(intrinsicFunctionsDocsMap.get(IntrinsicFunction.ForEach))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 0, character: 0 },
+                        description: 'Test hover on ForEach function resource',
+                        verification: {
+                            position: { line: 15, character: 16 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectStartsWith('### AWS::S3::Bucket')
+                                .expectContainsText(['creates an Amazon S3 bucket'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 0, character: 0 },
+                        description: 'Test hover on ForEach function nested Sub function',
+                        verification: {
+                            position: { line: 17, character: 24 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(intrinsicFunctionsDocsMap.get(IntrinsicFunction.Sub))
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            await template.executeScenario(scenario);
+        });
     });
 
     describe('Hover Infrastructure Tests', () => {
@@ -3793,6 +3868,90 @@ Resources:
                             position: { line: 566, character: 29 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectContent(intrinsicFunctionsDocsMap.get(IntrinsicFunction.If))
+                                .build(),
+                        },
+                    },
+                ],
+            };
+            await template.executeScenario(scenario);
+        });
+
+        it('hover on for each', async () => {
+            const template = new TemplateBuilder(DocumentType.JSON);
+            const scenario: TemplateScenario = {
+                name: 'for each template hover',
+                steps: [
+                    {
+                        action: 'type',
+                        content: `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Template with Fn::ForEach examples",
+  "Transform": "AWS::LanguageExtensions",
+  "Parameters": {
+    "BucketNames": {
+      "Type": "CommaDelimitedList",
+      "Default": "bucket1,bucket2,bucket3",
+      "Description": "List of bucket names for ForEach"
+    }
+  },
+  "Resources": {
+    "Fn::ForEach::Buckets": [
+      "BucketName",
+      { "Ref": "BucketNames" },
+      {
+        "S3Bucket\${BucketName}": {
+          "Type": "AWS::S3::Bucket",
+          "Properties": {
+            "BucketName": { "Fn::Sub": "\${BucketName}-\${AWS::AccountId}-\${AWS::Region}" },
+            "VersioningConfiguration": {
+              "Status": "Enabled"
+            },
+            "BucketEncryption": {
+              "ServerSideEncryptionConfiguration": [
+                {
+                  "ServerSideEncryptionByDefault": {
+                    "SSEAlgorithm": "AES256"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}`,
+                        position: { line: 0, character: 0 },
+                        description: 'Test hover on forEach function',
+                        verification: {
+                            position: { line: 12, character: 5 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(intrinsicFunctionsDocsMap.get(IntrinsicFunction.ForEach))
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 0, character: 0 },
+                        description: 'Test hover on ForEach function resource',
+                        verification: {
+                            position: { line: 17, character: 20 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectStartsWith('### AWS::S3::Bucket')
+                                .expectContainsText(['creates an Amazon S3 bucket'])
+                                .build(),
+                        },
+                    },
+                    {
+                        action: 'type',
+                        content: ``,
+                        position: { line: 0, character: 0 },
+                        description: 'Test hover on ForEach function nested Sub function',
+                        verification: {
+                            position: { line: 19, character: 40 },
+                            expectation: HoverExpectationBuilder.create()
+                                .expectContent(intrinsicFunctionsDocsMap.get(IntrinsicFunction.Sub))
                                 .build(),
                         },
                     },

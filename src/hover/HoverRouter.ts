@@ -1,7 +1,7 @@
 import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection, IntrinsicFunction } from '../context/ContextType';
 import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntities';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
@@ -79,11 +79,14 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
 
         if (context.isTopLevel) {
             return this.hoverProviderMap.get(HoverType.TopLevelSection)?.getInformation(context);
-        } else if (context.isIntrinsicFunc) {
+        } else if (context.isIntrinsicFunc && !this.isInsideForEachResource(context)) {
             return this.hoverProviderMap.get(HoverType.IntrinsicFunction)?.getInformation(context);
         } else if (context.isPseudoParameter) {
             return this.hoverProviderMap.get(HoverType.PseudoParameter)?.getInformation(context);
-        } else if (context.section === TopLevelSection.Resources && !context.intrinsicContext.inIntrinsic()) {
+        } else if (
+            context.section === TopLevelSection.Resources &&
+            (!context.intrinsicContext.inIntrinsic() || this.isInsideForEachResource(context))
+        ) {
             const doc = this.hoverProviderMap.get(HoverType.ResourceSection)?.getInformation(context);
             if (doc) {
                 return doc;
@@ -105,8 +108,21 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
                 return doc;
             }
         }
-
         return this.getTopLevelReference(context);
+    }
+
+    private isInsideForEachResource(context: Context): boolean {
+        const propertyPath = context.propertyPath;
+        if (propertyPath.length >= 5) {
+            if (
+                context.intrinsicContext.inIntrinsic() &&
+                context.intrinsicContext.intrinsicFunction()?.type !== IntrinsicFunction.ForEach
+            ) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     private createHoverProviders(schemaRetriever: SchemaRetriever): Map<HoverType, HoverProvider> {
@@ -150,7 +166,6 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
                 return this.getInfoForReference(relatedContext);
             }
         }
-
         return undefined;
     }
 
