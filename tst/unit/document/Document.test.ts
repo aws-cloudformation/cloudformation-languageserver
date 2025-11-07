@@ -147,20 +147,123 @@ describe('Document', () => {
             });
         });
 
-        it('should throw for invalid JSON', () => {
+        it('should return undefined for invalid JSON', () => {
             const content = '{"invalid": json}';
             const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
             const doc = new Document(textDocument);
 
-            expect(() => doc.getParsedDocumentContent()).toThrow();
+            expect(doc.getParsedDocumentContent()).toBeUndefined();
         });
 
-        it('should throw for invalid YAML', () => {
+        it('should return undefined for invalid YAML', () => {
             const content = 'key: value\n  invalid: indentation';
             const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
             const doc = new Document(textDocument);
 
-            expect(() => doc.getParsedDocumentContent()).toThrow();
+            expect(doc.getParsedDocumentContent()).toBeUndefined();
+        });
+    });
+
+    describe('CloudFormation detection', () => {
+        describe('should detect CloudFormation templates', () => {
+            it('with AWSTemplateFormatVersion', () => {
+                const content = '{"AWSTemplateFormatVersion": "2010-09-09"}';
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Template);
+            });
+
+            it('with Resources', () => {
+                const content = '{"Resources": {"Bucket": {"Type": "AWS::S3::Bucket"}}}';
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Template);
+            });
+
+            it('with Transform', () => {
+                const content = '{"Transform": "AWS::Serverless-2016-10-31"}';
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Template);
+            });
+
+            it('YAML template with Resources', () => {
+                const content = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket';
+                const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Template);
+            });
+        });
+
+        describe('should detect GitSync deployment files', () => {
+            it('with template-file-path', () => {
+                const content = '{"template-file-path": "./template.yaml"}';
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.GitSyncDeployment);
+            });
+
+            it('with templateFilePath', () => {
+                const content = 'templateFilePath: ./template.yaml';
+                const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.GitSyncDeployment);
+            });
+        });
+
+        describe('should reject non-CloudFormation files', () => {
+            it('changeset diff JSON', () => {
+                const content = `{
+                    "StackId": "arn:aws:cloudformation:us-east-1:123456789012:stack/MyStack/1a2345b6-0000-00a0-a123-00abc0abc000",
+                    "Parameters": [
+                        {
+                            "ParameterValue": "testing",
+                            "ParameterKey": "Purpose"
+                        }
+                    ],
+                    "Changes": [
+                        {
+                            "ResourceChange": {
+                                "ResourceType": "AWS::EC2::Instance",
+                                "Action": "Modify"
+                            }
+                        }
+                    ]
+                }`;
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+            });
+
+            it('package.json with CloudFormation-like keys', () => {
+                const content = '{"name": "my-package", "Parameters": {"env": "prod"}, "Outputs": {"build": "dist"}}';
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+            });
+
+            it('nested Resources key', () => {
+                const content = `{
+                    "name": "my-app",
+                    "config": {
+                        "Resources": {
+                            "memory": "512MB"
+                        }
+                    }
+                }`;
+                const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+            });
         });
     });
 });

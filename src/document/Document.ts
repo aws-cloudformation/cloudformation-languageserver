@@ -1,7 +1,7 @@
 import { TextDocument, Position, Range, DocumentUri } from 'vscode-languageserver-textdocument';
+import { TopLevelSection } from '../context/ContextType';
 import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { detectCfnFileType } from './CloudFormationDetection';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
 import { parseValidYaml } from './YamlParser';
@@ -10,9 +10,10 @@ export class Document {
     private readonly log = LoggerFactory.getLogger(Document);
     public readonly extension: string;
     public readonly documentType: DocumentType;
-    public readonly cfnFileType: CloudFormationFileType;
+    public cfnFileType: CloudFormationFileType;
     public readonly fileName: string;
     private tabSize: number;
+    private cachedParsedContent: unknown;
 
     constructor(
         private readonly textDocument: TextDocument,
@@ -28,22 +29,71 @@ export class Document {
         this.extension = extension;
         this.documentType = type;
         this.fileName = uriToPath(uri).base;
+        this.cfnFileType = CloudFormationFileType.Unknown;
 
-        try {
-            this.cfnFileType = detectCfnFileType(this.textDocument.getText(), this.documentType);
-        } catch (error) {
-            this.cfnFileType = CloudFormationFileType.Unknown;
-            this.log.error(error, `Failed to detect CloudFormation file type ${this.textDocument.uri}`);
-        }
+        this.updateCfnFileType();
         this.tabSize = fallbackTabSize;
         this.processIndentation(detectIndentation, fallbackTabSize);
     }
 
-    public getParsedDocumentContent(): unknown {
-        if (this.documentType === DocumentType.JSON) {
-            return JSON.parse(this.contents());
+    public updateCfnFileType(): void {
+        try {
+            this.cachedParsedContent = this.parseContent();
+            this.cfnFileType = this.detectCfnFileType();
+        } catch {
+            // If parsing fails, leave cfnFileType unchanged and clear cache
+            this.cachedParsedContent = undefined;
+            this.log.debug(
+                `Failed to parse document ${this.textDocument.uri}, keeping cfnFileType as ${this.cfnFileType}`,
+            );
         }
-        return parseValidYaml(this.contents());
+    }
+
+    private parseContent(): unknown {
+        const content = this.textDocument.getText();
+        if (this.documentType === DocumentType.JSON) {
+            return JSON.parse(content);
+        }
+        return parseValidYaml(content);
+    }
+
+    private detectCfnFileType(): CloudFormationFileType {
+        if (!this.cachedParsedContent || typeof this.cachedParsedContent !== 'object') {
+            return CloudFormationFileType.Unknown;
+        }
+
+        const parsed = this.cachedParsedContent as Record<string, unknown>;
+
+        // Check for GitSync deployment file
+        const gitSyncKeys = ['template-file-path', 'templateFilePath', 'templatePath'];
+        if (gitSyncKeys.some((key) => Object.prototype.hasOwnProperty.call(parsed, key))) {
+            return CloudFormationFileType.GitSyncDeployment;
+        }
+
+        // Check for CloudFormation template
+        const templateKeys = [
+            TopLevelSection.AWSTemplateFormatVersion,
+            TopLevelSection.Resources,
+            TopLevelSection.Transform,
+        ];
+        if (templateKeys.some((key) => Object.prototype.hasOwnProperty.call(parsed, key))) {
+            return CloudFormationFileType.Template;
+        }
+
+        return CloudFormationFileType.Unknown;
+    }
+
+    public getParsedDocumentContent(): unknown {
+        if (this.cachedParsedContent !== undefined) {
+            return this.cachedParsedContent;
+        }
+
+        // Fallback to parsing if cache is empty
+        try {
+            return this.parseContent();
+        } catch {
+            return undefined;
+        }
     }
 
     public getLine(lineNumber: number): string | undefined {
