@@ -138,7 +138,7 @@ func getSupportedPlatforms() ([]string, error) {
 
 func generatePlatformCSV(platform string) (map[string]string, error) {
 	goLicensesPath := os.Getenv("HOME") + "/go/bin/go-licenses"
-	cmd := exec.Command(goLicensesPath, "csv", "./...", "--ignore", "cfn-init")
+	cmd := exec.Command(goLicensesPath, "report", "./...", "--ignore", "cfn-init")
 
 	// Set environment variables
 	env := append(os.Environ(), "GOOS="+platform, "GOPROXY=direct")
