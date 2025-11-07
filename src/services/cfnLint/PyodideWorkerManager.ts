@@ -5,6 +5,7 @@ import { CloudFormationFileType } from '../../document/Document';
 import { CfnLintInitializationSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
+import { WorkerNotInitializedError } from './CfnLintErrors';
 
 interface WorkerTask {
     id: string;
@@ -189,7 +190,7 @@ export class PyodideWorkerManager {
         }
 
         if (!this.worker) {
-            throw new Error('Worker not initialized');
+            throw new WorkerNotInitializedError();
         }
 
         return await new Promise<T>((resolve, reject) => {
@@ -208,7 +209,7 @@ export class PyodideWorkerManager {
             if (this.worker) {
                 this.worker.postMessage({ id: taskId, action, payload });
             } else {
-                reject(new Error('Worker not initialized'));
+                reject(new WorkerNotInitializedError());
             }
         });
     }
