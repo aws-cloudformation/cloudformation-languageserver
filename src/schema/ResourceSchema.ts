@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call */
 
+import { Measure } from '../telemetry/TelemetryDecorator';
+
 /**
  * Configuration options for path navigation and schema resolution
  */
@@ -159,6 +161,7 @@ export class ResourceSchema {
      * @param path - JSON pointer to the property (e.g., "/properties/BucketName")
      * @returns The property definition or undefined if not found
      */
+    @Measure({ name: 'path' })
     public getByPath<T = any>(path: string): T | undefined {
         // Remove leading slash if present
         if (path.startsWith('/')) {
@@ -183,6 +186,7 @@ export class ResourceSchema {
         return undefined;
     }
 
+    @Measure({ name: 'resolveRef' })
     public resolveRef(refValue: string): PropertyType | undefined {
         if (refValue.startsWith('#')) {
             refValue = refValue.slice(1);
@@ -331,6 +335,7 @@ export class ResourceSchema {
      * @param options.excludeReadOnly - Whether to filter out read-only properties from results
      * @returns Array of all possible schema definitions that match the path
      */
+    @Measure({ name: 'resolveJsonPointer' })
     public resolveJsonPointerPath(jsonPointerPath: string, options?: PathNavigationOptions): PropertyType[] {
         const resolvedOptions: PathNavigationOptions = {
             excludeReadOnly: options?.excludeReadOnly ?? false,
