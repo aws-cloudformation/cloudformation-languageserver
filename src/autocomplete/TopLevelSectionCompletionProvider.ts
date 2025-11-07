@@ -4,7 +4,7 @@ import { TopLevelSection, TopLevelSections } from '../context/ContextType';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
-import { FeatureFlagProvider } from '../featureFlag/FeatureFlagProvider';
+import { FeatureFlag } from '../featureFlag/FeatureFlagI';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
@@ -84,7 +84,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
     constructor(
         private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly documentManager: DocumentManager,
-        private readonly featureFlags: FeatureFlagProvider,
+        private readonly constantsFeatureFlag: FeatureFlag,
     ) {}
 
     @Measure({ name: 'getCompletions' })
@@ -116,7 +116,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
     private getTopLevelSectionCompletions(): CompletionItem[] {
         return TopLevelSections.filter((section) => {
             if (section === String(TopLevelSection.Constants)) {
-                return this.featureFlags.get('Constants').isEnabled();
+                return this.constantsFeatureFlag.isEnabled();
             }
             return true;
         }).map((section) => createCompletionItem(section, CompletionItemKind.Class));
@@ -127,7 +127,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
 
         // Add snippets for top level sections
         for (const [section] of Object.entries(this.sectionSnippets)) {
-            if (section === String(TopLevelSection.Constants) && !this.featureFlags.get('Constants').isEnabled()) {
+            if (section === String(TopLevelSection.Constants) && !this.constantsFeatureFlag.isEnabled()) {
                 continue;
             }
 

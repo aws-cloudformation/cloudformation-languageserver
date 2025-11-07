@@ -12,10 +12,11 @@ import { createMockYamlSyntaxTree } from '../../utils/TestTree';
 describe('TopLevelSectionCompletionProvider', () => {
     const mockComponents = createMockComponents();
     const mockDocumentManager = createMockDocumentManager();
+    const mockConstantsFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
     const provider = new TopLevelSectionCompletionProvider(
         mockComponents.syntaxTreeManager,
         mockDocumentManager,
-        mockComponents.external.featureFlags,
+        mockConstantsFeatureFlag,
     );
     const mockSyntaxTree = createMockYamlSyntaxTree();
 
@@ -28,8 +29,6 @@ describe('TopLevelSectionCompletionProvider', () => {
         mockComponents.syntaxTreeManager.getSyntaxTree.reset();
         mockSyntaxTree.topLevelSections.reset();
         mockComponents.syntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
-
-        mockComponents.external.featureFlags.get.returns({ isEnabled: () => true, describe: () => 'mock' });
 
         vi.restoreAllMocks();
     });
@@ -377,16 +376,10 @@ describe('TopLevelSectionCompletionProvider', () => {
                     detectIndentation: false,
                 });
 
-                const testProvider = new TopLevelSectionCompletionProvider(
-                    mockComponents.syntaxTreeManager,
-                    mockDocumentManager,
-                    mockComponents.external.featureFlags,
-                );
-
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
-                const result = testProvider.getCompletions(mockContext, mockParams);
+                const result = provider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
@@ -403,16 +396,10 @@ describe('TopLevelSectionCompletionProvider', () => {
                     detectIndentation: false,
                 });
 
-                const testProvider = new TopLevelSectionCompletionProvider(
-                    mockComponents.syntaxTreeManager,
-                    mockDocumentManager,
-                    mockComponents.external.featureFlags,
-                );
-
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
-                const result = testProvider.getCompletions(mockContext, mockParams);
+                const result = provider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
@@ -431,16 +418,10 @@ describe('TopLevelSectionCompletionProvider', () => {
                     detectIndentation: false,
                 });
 
-                const testProvider = new TopLevelSectionCompletionProvider(
-                    mockComponents.syntaxTreeManager,
-                    mockDocumentManager,
-                    mockComponents.external.featureFlags,
-                );
-
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
 
-                const result = testProvider.getCompletions(mockContext, mockParams);
+                const result = provider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
@@ -459,12 +440,6 @@ describe('TopLevelSectionCompletionProvider', () => {
                     detectIndentation: false,
                 });
 
-                const testProvider = new TopLevelSectionCompletionProvider(
-                    mockComponents.syntaxTreeManager,
-                    mockDocumentManager,
-                    mockComponents.external.featureFlags,
-                );
-
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', {
                     text: '',
@@ -473,7 +448,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
                 mockDocumentManager.getLine.returns('');
 
-                const result = testProvider.getCompletions(mockContext, mockParams);
+                const result = provider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
@@ -492,12 +467,6 @@ describe('TopLevelSectionCompletionProvider', () => {
                     detectIndentation: false,
                 });
 
-                const testProvider = new TopLevelSectionCompletionProvider(
-                    mockComponents.syntaxTreeManager,
-                    mockDocumentManager,
-                    mockComponents.external.featureFlags,
-                );
-
                 mockSyntaxTree.topLevelSections.returns([]);
                 const mockContext = createTopLevelContext('Unknown', {
                     text: '',
@@ -506,7 +475,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
                 mockDocumentManager.getLine.returns('');
 
-                const result = testProvider.getCompletions(mockContext, mockParams);
+                const result = provider.getCompletions(mockContext, mockParams);
 
                 const resourcesSnippet = result!.find(
                     (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
@@ -522,18 +491,10 @@ describe('TopLevelSectionCompletionProvider', () => {
 
     describe('TopLevelSection Feature Flag Tests', () => {
         test('should include Constants when feature flag is enabled', () => {
-            mockComponents.external.featureFlags.get.returns({ isEnabled: () => true, describe: () => 'mock' });
-
-            const testProvider = new TopLevelSectionCompletionProvider(
-                mockComponents.syntaxTreeManager,
-                mockDocumentManager,
-                mockComponents.external.featureFlags,
-            );
-
             mockSyntaxTree.topLevelSections.returns([]);
             const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-            const result = testProvider.getCompletions(mockContext, mockParams);
+            const result = provider.getCompletions(mockContext, mockParams);
 
             expect(result).toBeDefined();
 
@@ -547,12 +508,17 @@ describe('TopLevelSectionCompletionProvider', () => {
         });
 
         test('should exclude Constants when feature flag is disabled', () => {
-            mockComponents.external.featureFlags.get.returns({ isEnabled: () => false, describe: () => 'mock' });
+            const disabledConstantsFeatureFlag = { isEnabled: () => false, describe: () => 'Constants feature flag' };
+            const providerWithDisabledFlag = new TopLevelSectionCompletionProvider(
+                mockComponents.syntaxTreeManager,
+                mockDocumentManager,
+                disabledConstantsFeatureFlag,
+            );
 
             mockSyntaxTree.topLevelSections.returns([]);
             const mockContext = createTopLevelContext('Unknown', { text: '' });
 
-            const result = provider.getCompletions(mockContext, mockParams);
+            const result = providerWithDisabledFlag.getCompletions(mockContext, mockParams);
 
             expect(result).toBeDefined();
 
