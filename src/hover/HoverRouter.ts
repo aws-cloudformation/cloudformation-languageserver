@@ -114,13 +114,14 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
     private isInsideForEachResource(context: Context): boolean {
         const propertyPath = context.propertyPath;
         if (propertyPath.length >= 5) {
+            // Only return true if we're actually inside a ForEach intrinsic function
             if (
                 context.intrinsicContext.inIntrinsic() &&
-                context.intrinsicContext.intrinsicFunction()?.type !== IntrinsicFunction.ForEach
+                context.intrinsicContext.intrinsicFunction()?.type === IntrinsicFunction.ForEach
             ) {
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
         return false;
     }
