@@ -13,6 +13,7 @@ import {
 } from '@opentelemetry/api';
 import { Closeable } from '../utils/Closeable';
 import { typeOf } from '../utils/TypeCheck';
+import { TelemetryContext } from './TelemetryContext';
 
 export type MetricConfig = {
     description?: string;
@@ -247,8 +248,6 @@ export class ScopedTelemetry implements Closeable {
     }
 }
 
-const AwsEmfStorageResolution = 1; // High-resolution metrics (1-second granularity) https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsemfexporter#metric-attributes
-
 function generateConfig(config?: MetricConfig) {
     const { attributes = {}, unit = '1', valueType = ValueType.DOUBLE, ...options } = config ?? {};
     return {
@@ -258,5 +257,9 @@ function generateConfig(config?: MetricConfig) {
 }
 
 function generateAttr(attributes?: Attributes): Attributes {
-    return { 'aws.emf.storage_resolution': AwsEmfStorageResolution, ...attributes };
+    return {
+        'aws.emf.storage_resolution': 1, // High-resolution metrics (1-second granularity) https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter/awsemfexporter#metric-attributes
+        ...TelemetryContext.getContext(),
+        ...attributes,
+    };
 }

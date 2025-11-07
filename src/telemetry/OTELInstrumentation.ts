@@ -100,10 +100,9 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
                 '@opentelemetry/instrumentation-tedious': { enabled: false },
                 '@opentelemetry/instrumentation-undici': { enabled: false },
                 '@opentelemetry/instrumentation-winston': { enabled: false },
+                '@opentelemetry/instrumentation-aws-sdk': { enabled: false },
 
-                '@opentelemetry/instrumentation-aws-sdk': {
-                    enabled: true,
-                },
+                // Only enable system level instrumentation
                 '@opentelemetry/instrumentation-runtime-node': {
                     enabled: true,
                     monitoringPrecision: ExportIntervalSeconds * 1000,

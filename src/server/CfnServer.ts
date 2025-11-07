@@ -49,6 +49,7 @@ import {
     describeChangeSetHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
+import { withTelemetryContext } from '../telemetry/TelemetryContext';
 import { closeSafely } from '../utils/Closeable';
 import { CfnExternal } from './CfnExternal';
 import { CfnInfraCore } from './CfnInfraCore';
@@ -88,61 +89,139 @@ export class CfnServer {
     }
 
     private setupHandlers() {
-        this.lsp.documents.onDidOpen(didOpenHandler(this.components));
-        this.lsp.documents.onDidChangeContent(didChangeHandler(this.lsp.documents, this.components));
-        this.lsp.documents.onDidClose(didCloseHandler(this.components));
-        this.lsp.documents.onDidSave(didSaveHandler(this.components));
-
-        this.lsp.handlers.onCompletion(completionHandler(this.components));
-        this.lsp.handlers.onHover(hoverHandler(this.components));
-        this.lsp.handlers.onExecuteCommand(executionHandler(this.lsp.documents, this.components));
-        this.lsp.handlers.onCodeAction(codeActionHandler(this.components));
-        this.lsp.handlers.onDefinition(definitionHandler(this.components));
-        this.lsp.handlers.onDocumentSymbol(documentSymbolHandler(this.components));
-        this.lsp.handlers.onDidChangeConfiguration(configurationHandler(this.components));
-        this.lsp.handlers.onCodeLens(codeLensHandler(this.components));
-
-        this.lsp.authHandlers.onIamCredentialsUpdate(iamCredentialsUpdateHandler(this.components));
-        this.lsp.authHandlers.onIamCredentialsDelete(iamCredentialsDeleteHandler(this.components));
-
-        this.lsp.stackHandlers.onGetParameters(getParametersHandler(this.components));
-        this.lsp.stackHandlers.onGetTemplateArtifacts(getTemplateArtifactsHandler(this.components));
-        this.lsp.stackHandlers.onCreateValidation(createValidationHandler(this.components));
-        this.lsp.stackHandlers.onGetCapabilities(getCapabilitiesHandler(this.components));
-        this.lsp.stackHandlers.onGetTemplateResources(getTemplateResourcesHandler(this.components));
-        this.lsp.stackHandlers.onCreateDeployment(createDeploymentHandler(this.components));
-        this.lsp.stackHandlers.onGetValidationStatus(getValidationStatusHandler(this.components));
-        this.lsp.stackHandlers.onGetDeploymentStatus(getDeploymentStatusHandler(this.components));
-        this.lsp.stackHandlers.onDescribeValidationStatus(describeValidationStatusHandler(this.components));
-        this.lsp.stackHandlers.onDescribeDeploymentStatus(describeDeploymentStatusHandler(this.components));
-        this.lsp.stackHandlers.onDeleteChangeSet(deleteChangeSetHandler(this.components));
-        this.lsp.stackHandlers.onGetChangeSetDeletionStatus(getChangeSetDeletionStatusHandler(this.components));
-        this.lsp.stackHandlers.onDescribeChangeSetDeletionStatus(
-            describeChangeSetDeletionStatusHandler(this.components),
+        this.lsp.documents.onDidOpen(withTelemetryContext('Document.Open', didOpenHandler(this.components)));
+        this.lsp.documents.onDidChangeContent(
+            withTelemetryContext('Document.Change', didChangeHandler(this.lsp.documents, this.components)),
         );
-        this.lsp.stackHandlers.onListStacks(listStacksHandler(this.components));
-        this.lsp.stackHandlers.onListChangeSets(listChangeSetsHandler(this.components));
-        this.lsp.stackHandlers.onListStackResources(listStackResourcesHandler(this.components));
-        this.lsp.stackHandlers.onDescribeChangeSet(describeChangeSetHandler(this.components));
-        this.lsp.stackHandlers.onGetStackTemplate(getManagedResourceStackTemplateHandler(this.components));
-        this.lsp.stackHandlers.onGetStackEvents(getStackEventsHandler(this.components));
-        this.lsp.stackHandlers.onClearStackEvents(clearStackEventsHandler(this.components));
-        this.lsp.stackHandlers.onDescribeStack(describeStackHandler(this.components));
+        this.lsp.documents.onDidClose(withTelemetryContext('Document.Close', didCloseHandler(this.components)));
+        this.lsp.documents.onDidSave(withTelemetryContext('Document.Save', didSaveHandler(this.components)));
 
-        this.lsp.cfnEnvironmentHandlers.onParseCfnEnvironmentFiles(parseCfnEnvironmentFilesHandler());
+        this.lsp.handlers.onCompletion(withTelemetryContext('Completion', completionHandler(this.components)));
+        this.lsp.handlers.onHover(withTelemetryContext('Hover', hoverHandler(this.components)));
+        this.lsp.handlers.onExecuteCommand(
+            withTelemetryContext('Execution', executionHandler(this.lsp.documents, this.components)),
+        );
+        this.lsp.handlers.onCodeAction(withTelemetryContext('Code.Action', codeActionHandler(this.components)));
+        this.lsp.handlers.onDefinition(withTelemetryContext('Definition', definitionHandler(this.components)));
+        this.lsp.handlers.onDocumentSymbol(
+            withTelemetryContext('Document.Symbol', documentSymbolHandler(this.components)),
+        );
+        this.lsp.handlers.onDidChangeConfiguration(
+            withTelemetryContext('Configuration', configurationHandler(this.components)),
+        );
+        this.lsp.handlers.onCodeLens(withTelemetryContext('Code.Lens', codeLensHandler(this.components)));
 
-        this.lsp.relatedResourcesHandlers.onGetAuthoredResourceTypes(getAuthoredResourceTypesHandler(this.components));
-        this.lsp.relatedResourcesHandlers.onGetRelatedResourceTypes(getRelatedResourceTypesHandler(this.components));
-        this.lsp.relatedResourcesHandlers.onInsertRelatedResources(insertRelatedResourcesHandler(this.components));
+        this.lsp.authHandlers.onIamCredentialsUpdate(
+            withTelemetryContext('Auth.Update', iamCredentialsUpdateHandler(this.components)),
+        );
+        this.lsp.authHandlers.onIamCredentialsDelete(
+            withTelemetryContext('Auth.Delete', iamCredentialsDeleteHandler(this.components)),
+        );
 
-        this.lsp.resourceHandlers.onListResources(listResourcesHandler(this.components));
-        this.lsp.resourceHandlers.onRefreshResourceList(refreshResourceListHandler(this.components));
-        this.lsp.resourceHandlers.onSearchResource(searchResourceHandler(this.components));
-        this.lsp.resourceHandlers.onGetResourceTypes(getResourceTypesHandler(this.components));
-        this.lsp.resourceHandlers.onResourceStateImport(importResourceStateHandler(this.components));
-        this.lsp.resourceHandlers.onStackMgmtInfo(getStackMgmtInfo(this.components));
+        this.lsp.stackHandlers.onGetParameters(
+            withTelemetryContext('Stack.Get.Params', getParametersHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onGetTemplateArtifacts(
+            withTelemetryContext('Stack.Template.Artifacts', getTemplateArtifactsHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onCreateValidation(
+            withTelemetryContext('Stack.Create.Validate', createValidationHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onGetCapabilities(
+            withTelemetryContext('Stack.Capabilities', getCapabilitiesHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onGetTemplateResources(
+            withTelemetryContext('Stack.Template.Resources', getTemplateResourcesHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onCreateDeployment(
+            withTelemetryContext('Stack.Create.Deployment', createDeploymentHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onGetValidationStatus(
+            withTelemetryContext('Stack.Validation.Status', getValidationStatusHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onGetDeploymentStatus(
+            withTelemetryContext('Stack.Deployment.Status', getDeploymentStatusHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onDescribeValidationStatus(
+            withTelemetryContext('Stack.Describe.Validation.Status', describeValidationStatusHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onDescribeDeploymentStatus(
+            withTelemetryContext('Stack.Describe.Deployment.Status', describeDeploymentStatusHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onDeleteChangeSet(
+            withTelemetryContext('Stack.Delete.ChangeSet', deleteChangeSetHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onGetChangeSetDeletionStatus(
+            withTelemetryContext(
+                'Stack.Get.ChangeSet.Deletion.Status',
+                getChangeSetDeletionStatusHandler(this.components),
+            ),
+        );
+        this.lsp.stackHandlers.onDescribeChangeSetDeletionStatus(
+            withTelemetryContext(
+                'Stack.Describe.ChangeSet.Deletion.Status',
+                describeChangeSetDeletionStatusHandler(this.components),
+            ),
+        );
+        this.lsp.stackHandlers.onListStacks(withTelemetryContext('Stack.List', listStacksHandler(this.components)));
+        this.lsp.stackHandlers.onListChangeSets(
+            withTelemetryContext('Stack.List.ChangeSets', listChangeSetsHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onListStackResources(
+            withTelemetryContext('Stack.List.Resources', listStackResourcesHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onDescribeChangeSet(
+            withTelemetryContext('Stack.Describe.ChangeSet', describeChangeSetHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onGetStackTemplate(
+            withTelemetryContext('Stack.Get.Template', getManagedResourceStackTemplateHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onGetStackEvents(
+            withTelemetryContext('Stack.Get.Events', getStackEventsHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onClearStackEvents(
+            withTelemetryContext('Stack.Clear.Events', clearStackEventsHandler(this.components)),
+        );
+        this.lsp.stackHandlers.onDescribeStack(
+            withTelemetryContext('Stack.Describe', describeStackHandler(this.components)),
+        );
 
-        this.lsp.s3Handlers.onUploadFile(uploadFileToS3Handler(this.components));
+        this.lsp.cfnEnvironmentHandlers.onParseCfnEnvironmentFiles(
+            withTelemetryContext('Cfn.Environment.Parse', parseCfnEnvironmentFilesHandler()),
+        );
+
+        this.lsp.relatedResourcesHandlers.onGetAuthoredResourceTypes(
+            withTelemetryContext('Related.Resources.Get.Authored', getAuthoredResourceTypesHandler(this.components)),
+        );
+        this.lsp.relatedResourcesHandlers.onGetRelatedResourceTypes(
+            withTelemetryContext('Related.Resources.Get.Related', getRelatedResourceTypesHandler(this.components)),
+        );
+        this.lsp.relatedResourcesHandlers.onInsertRelatedResources(
+            withTelemetryContext('Related.Resources.Insert', insertRelatedResourcesHandler(this.components)),
+        );
+
+        this.lsp.resourceHandlers.onListResources(
+            withTelemetryContext('Resource.List', listResourcesHandler(this.components)),
+        );
+        this.lsp.resourceHandlers.onRefreshResourceList(
+            withTelemetryContext('Resource.Refresh.List', refreshResourceListHandler(this.components)),
+        );
+        this.lsp.resourceHandlers.onSearchResource(
+            withTelemetryContext('Resource.Search', searchResourceHandler(this.components)),
+        );
+        this.lsp.resourceHandlers.onGetResourceTypes(
+            withTelemetryContext('Resource.Get.Types', getResourceTypesHandler(this.components)),
+        );
+        this.lsp.resourceHandlers.onResourceStateImport(
+            withTelemetryContext('Resource.State.Import', importResourceStateHandler(this.components)),
+        );
+        this.lsp.resourceHandlers.onStackMgmtInfo(
+            withTelemetryContext('Resource.Stack.Mgmt.Info', getStackMgmtInfo(this.components)),
+        );
+
+        this.lsp.s3Handlers.onUploadFile(
+            withTelemetryContext('S3.Upload.File', uploadFileToS3Handler(this.components)),
+        );
     }
 
     async close(): Promise<void> {
