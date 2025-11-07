@@ -25,16 +25,18 @@ Without telemetry, we cannot objectively evaluate if suggestions are accurate or
 ### Metrics Metadata
 Every metric includes the following metadata attributes:
 
-| Attribute | Description | Example                                                    |
-|---|---|------------------------------------------------------------|
-| `service` | Language server name and version | `aws-cloudformation-languageserver-1.2.3`                  |
-| `service.env` | Node environment and AWS environment | `production-prod`                                          |
-| `client.id` | Unique session identifier (UUID) | `1111-2222-3333-4444`                                      |
-| `client.type` | LSP client name and version | `vscode-1.85.0`                                            |
-| `machine.type` | OS type, platform, architecture, version | `Darwin-darwin-arm64-arm64-22.1.0`                         |
-| `process.type` | Process platform and architecture | `darwin-arm64`                                             |
-| `process.version` | Node.js and V8 versions | `node=22.18.0 v8=12.4.254.21-node.27 uv=1.51.0 modules=127` |
-| `OTelLib` | Operation name | `Hover`, `AutoComplete`, etc.                              |
+| Attribute | Description                                       | Example                                                     |
+|---|---------------------------------------------------|-------------------------------------------------------------|
+| `service` | Language server name and version                  | `aws-cloudformation-languageserver-1.2.3`                   |
+| `service.env` | Node environment and AWS environment              | `production-prod`                                           |
+| `client.id` | Unique session identifier (UUID)                  | `1111-2222-3333-4444`                                       |
+| `client.type` | LSP client name and version                       | `vscode-1.85.0`                                             |
+| `machine.type` | OS type, platform, architecture, version          | `Darwin-darwin-arm64-arm64-22.1.0`                          |
+| `process.type` | Process platform and architecture                 | `darwin-arm64`                                              |
+| `process.version` | Node.js and V8 versions                           | `node=22.18.0 v8=12.4.254.21-node.27 uv=1.51.0 modules=127` |
+| `OTelLib` | Operation name                                    | `Hover`, `Completion`, etc.                                 |
+| `HandlerSource` | Request handler that initiated an operation       | `Document.Open`, `Stack.List`, `Resource.Search`, etc.      |
+| `RequestId` | Random unique identifier for each request (UUID) | `5555-6666-7777-8888`                                       |
 
 ## Data Transmission
 Metrics export every 30 seconds via HTTPS with TLS 1.2+ encryption using OpenTelemetry Protocol (OTLP).
