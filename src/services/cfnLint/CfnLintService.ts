@@ -16,6 +16,7 @@ import { Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
+import { WorkerNotInitializedError } from './CfnLintErrors';
 import { PyodideWorkerManager } from './PyodideWorkerManager';
 
 export enum LintTrigger {
@@ -239,9 +240,16 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
      * Publish error diagnostics when linting fails
      *
      * @param uri The document URI
-     * @param errorMessage The error message
+     * @param error The error that occurred
      */
-    private publishErrorDiagnostics(uri: string, errorMessage: string): void {
+    private publishErrorDiagnostics(uri: string, error: unknown): void {
+        // Don't publish diagnostics for worker initialization errors, just log them
+        if (error instanceof WorkerNotInitializedError) {
+            this.log.warn('cfn-lint worker not initialized');
+            return;
+        }
+
+        const errorMessage = extractErrorMessage(error);
         this.publishDiagnostics(uri, [
             {
                 severity: 1, // Error severity
@@ -285,9 +293,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             }
         } catch (error) {
             this.status = STATUS.Uninitialized;
-            const errorMessage = extractErrorMessage(error);
             this.logError(`linting ${fileType} by string`, error);
-            this.publishErrorDiagnostics(uri, errorMessage);
+            this.publishErrorDiagnostics(uri, error);
         } finally {
             this.telemetry.histogram(
                 'lint.standaloneFile.duration',
@@ -369,9 +376,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             }
         } catch (error) {
             this.status = STATUS.Uninitialized;
-            const errorMessage = extractErrorMessage(error);
             this.logError(`linting ${fileType} by file`, error);
-            this.publishErrorDiagnostics(uri, errorMessage);
+            this.publishErrorDiagnostics(uri, error);
         } finally {
             this.telemetry.histogram(
                 'lint.workspaceFile.duration',

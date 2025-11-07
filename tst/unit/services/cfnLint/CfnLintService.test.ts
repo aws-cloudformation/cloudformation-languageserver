@@ -6,6 +6,7 @@ import { describe, expect, beforeEach, afterEach, vi, Mock, test } from 'vitest'
 import { WorkspaceFolder, DiagnosticSeverity } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CloudFormationFileType, Document } from '../../../../src/document/Document';
+import { WorkerNotInitializedError } from '../../../../src/services/cfnLint/CfnLintErrors';
 import { CfnLintService, LintTrigger, sleep } from '../../../../src/services/cfnLint/CfnLintService';
 import { PyodideWorkerManager } from '../../../../src/services/cfnLint/PyodideWorkerManager';
 import { SettingsState } from '../../../../src/settings/Settings';
@@ -501,6 +502,16 @@ describe('CfnLintService', () => {
             expect(diagnosticsArg[2][0].message).toContain('Python execution failed');
         });
 
+        test('should log but not publish diagnostic for Worker not initialized error in lint', async () => {
+            mockComponents.workspace.getWorkspaceFolder.returns(undefined);
+            mockWorkerManager.lintTemplate.rejects(new WorkerNotInitializedError());
+
+            await service.lint(mockTemplate, mockUri);
+
+            // Should not publish any diagnostics for worker initialization errors
+            expect(mockComponents.diagnosticCoordinator.publishDiagnostics.called).toBe(false);
+        });
+
         test('should handle waitForInitialization failure', async () => {
             // Create a spy on waitForInitialization to make it fail
             const waitSpy = vi
@@ -856,6 +867,17 @@ describe('CfnLintService', () => {
                 expect(diagnosticsArg[2].length).toBe(1); // diagnostics array
                 expect(diagnosticsArg[2][0].severity).toBe(1);
                 expect(diagnosticsArg[2][0].message).toBe('CFN Lint Error: Python execution failed');
+            });
+
+            test('should log but not publish diagnostic for Worker not initialized error', async () => {
+                const workerManager = (service as any).workerManager;
+                // Use sinon's rejects method to simulate worker not initialized error
+                workerManager.lintTemplate.rejects(new WorkerNotInitializedError());
+
+                await (service as any).lintStandaloneFile(mockTemplate, mockUri, CloudFormationFileType.Template);
+
+                // Should not publish any diagnostics for worker initialization errors
+                expect(mockComponents.diagnosticCoordinator.publishDiagnostics.called).toBe(false);
             });
 
             test('should throw if service is not initialized', async () => {
