@@ -297,6 +297,7 @@ export class CompletionFormatter {
         if (
             item?.kind === CompletionItemKind.EnumMember ||
             item?.kind === CompletionItemKind.Reference ||
+            item?.kind === CompletionItemKind.Constant ||
             item?.kind === CompletionItemKind.Event
         ) {
             return label;

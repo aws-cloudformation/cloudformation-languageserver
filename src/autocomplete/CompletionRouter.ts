@@ -311,6 +311,7 @@ export function createCompletionProviders(
             core.syntaxTreeManager,
             external.schemaRetriever,
             core.documentManager,
+            external.featureFlags.get('Constants'),
         ),
     );
     completionProviderMap.set('ParameterTypeValue', new ParameterTypeValueCompletionProvider());
