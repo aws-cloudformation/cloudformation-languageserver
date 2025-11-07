@@ -17,7 +17,7 @@ import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { getIndentationString } from '../utils/IndentationUtils';
-import { RESOURCE_ATTRIBUTE_TYPES} from './CompletionUtils';
+import { RESOURCE_ATTRIBUTE_TYPES } from './CompletionUtils';
 
 export type CompletionItemData = {
     type?: 'object' | 'array' | 'simple';
@@ -211,7 +211,7 @@ export class CompletionFormatter {
             }
 
             const entity = context.entity;
-            if (!entity || entity.entityType !== EntityType.Resource) {
+            if (!entity || context.getEntityType() !== EntityType.Resource) {
                 return undefined;
             }
 
