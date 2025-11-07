@@ -65,6 +65,11 @@ export class Document {
     }
 
     private detectCfnFileType(): CloudFormationFileType {
+        // If languageId is cloudformation, treat as template
+        if (this.languageId === 'cloudformation') {
+            return CloudFormationFileType.Template;
+        }
+
         if (!this.cachedParsedContent || typeof this.cachedParsedContent !== 'object') {
             return CloudFormationFileType.Unknown;
         }

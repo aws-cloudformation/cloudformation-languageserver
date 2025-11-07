@@ -166,6 +166,14 @@ describe('Document', () => {
 
     describe('CloudFormation detection', () => {
         describe('should detect CloudFormation templates', () => {
+            it('with languageId cloudformation', () => {
+                const content = '{}'; // Empty content
+                const textDocument = TextDocument.create('file:///test.json', 'cloudformation', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Template);
+            });
+
             it('with AWSTemplateFormatVersion', () => {
                 const content = '{"AWSTemplateFormatVersion": "2010-09-09"}';
                 const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
