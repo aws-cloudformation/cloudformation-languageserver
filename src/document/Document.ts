@@ -10,7 +10,7 @@ export class Document {
     private readonly log = LoggerFactory.getLogger(Document);
     public readonly extension: string;
     public readonly documentType: DocumentType;
-    public cfnFileType: CloudFormationFileType;
+    private _cfnFileType: CloudFormationFileType;
     public readonly fileName: string;
     private tabSize: number;
     private cachedParsedContent: unknown;
@@ -29,29 +29,33 @@ export class Document {
         this.extension = extension;
         this.documentType = type;
         this.fileName = uriToPath(uri).base;
-        this.cfnFileType = CloudFormationFileType.Unknown;
+        this._cfnFileType = CloudFormationFileType.Unknown;
 
         this.updateCfnFileType();
         this.tabSize = fallbackTabSize;
         this.processIndentation(detectIndentation, fallbackTabSize);
     }
 
+    public get cfnFileType(): CloudFormationFileType {
+        return this._cfnFileType;
+    }
+
     public updateCfnFileType(): void {
         const content = this.textDocument.getText();
         if (!content.trim()) {
-            this.cfnFileType = CloudFormationFileType.Unknown;
+            this._cfnFileType = CloudFormationFileType.Unknown;
             this.cachedParsedContent = undefined;
             return;
         }
 
         try {
             this.cachedParsedContent = this.parseContent();
-            this.cfnFileType = this.detectCfnFileType();
+            this._cfnFileType = this.detectCfnFileType();
         } catch {
             // If parsing fails, leave cfnFileType unchanged and clear cache
             this.cachedParsedContent = undefined;
             this.log.debug(
-                `Failed to parse document ${this.textDocument.uri}, keeping cfnFileType as ${this.cfnFileType}`,
+                `Failed to parse document ${this.textDocument.uri}, keeping cfnFileType as ${this._cfnFileType}`,
             );
         }
     }
