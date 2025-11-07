@@ -506,6 +506,7 @@ describe('StackActionWorkflowOperations', () => {
             );
 
             expect(mockDiagnosticCoordinator.publishDiagnostics.calledOnce).toBe(true);
+            expect(validationDetails[0].diagnosticId).toBeDefined();
         });
     });
 

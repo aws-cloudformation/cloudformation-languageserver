@@ -128,6 +128,7 @@ export type ValidationDetail = {
     Timestamp: DateTime;
     Severity: 'INFO' | 'ERROR';
     Message: string;
+    diagnosticId?: string;
 };
 
 export type DeploymentEvent = {

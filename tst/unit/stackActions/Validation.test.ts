@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { StackActionPhase } from '../../../src/stacks/actions/StackActionRequestType';
 import { Validation } from '../../../src/stacks/actions/Validation';
@@ -124,6 +125,79 @@ describe('Validation', () => {
             expect(validation.getPhase()).toBeUndefined();
             expect(validation.getChanges()).toBeUndefined();
             expect(validation.getCapabilities()).toBeUndefined();
+        });
+    });
+
+    describe('ValidationDetails management', () => {
+        it('should get and set validation details', () => {
+            const validationDetails = [
+                {
+                    ValidationName: 'test',
+                    LogicalId: 'TestResource',
+                    ResourcePropertyPath: '/Resources/TestResource',
+                    Timestamp: DateTime.now(),
+                    Severity: 'ERROR' as const,
+                    Message: 'Test error',
+                    diagnosticId: 'test-id-1',
+                },
+            ];
+
+            validation.setValidationDetails(validationDetails);
+            expect(validation.getValidationDetails()).toEqual(validationDetails);
+        });
+
+        it('should remove validation detail by diagnosticId', () => {
+            const validationDetails = [
+                {
+                    ValidationName: 'test1',
+                    LogicalId: 'TestResource1',
+                    ResourcePropertyPath: '/Resources/TestResource1',
+                    Timestamp: DateTime.now(),
+                    Severity: 'ERROR' as const,
+                    Message: 'Test error 1',
+                    diagnosticId: 'test-id-1',
+                },
+                {
+                    ValidationName: 'test2',
+                    LogicalId: 'TestResource2',
+                    ResourcePropertyPath: '/Resources/TestResource2',
+                    Timestamp: DateTime.now(),
+                    Severity: 'ERROR' as const,
+                    Message: 'Test error 2',
+                    diagnosticId: 'test-id-2',
+                },
+            ];
+
+            validation.setValidationDetails(validationDetails);
+            validation.removeValidationDetailByDiagnosticId('test-id-1');
+
+            const remaining = validation.getValidationDetails();
+            expect(remaining).toHaveLength(1);
+            expect(remaining?.[0].diagnosticId).toBe('test-id-2');
+        });
+
+        it('should handle removing non-existent diagnosticId', () => {
+            const validationDetails = [
+                {
+                    ValidationName: 'test',
+                    LogicalId: 'TestResource',
+                    ResourcePropertyPath: '/Resources/TestResource',
+                    Timestamp: DateTime.now(),
+                    Severity: 'ERROR' as const,
+                    Message: 'Test error',
+                    diagnosticId: 'test-id-1',
+                },
+            ];
+
+            validation.setValidationDetails(validationDetails);
+            validation.removeValidationDetailByDiagnosticId('non-existent-id');
+
+            expect(validation.getValidationDetails()).toHaveLength(1);
+        });
+
+        it('should handle removing from empty validation details', () => {
+            validation.removeValidationDetailByDiagnosticId('test-id');
+            expect(validation.getValidationDetails()).toBeUndefined();
         });
     });
 });

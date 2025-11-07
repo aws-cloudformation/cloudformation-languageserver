@@ -5,7 +5,11 @@ import { Diagnostic, DiagnosticSeverity, Range, Position } from 'vscode-language
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
-import { createMockLspDiagnostics, createMockSyntaxTreeManager } from '../../utils/MockServerComponents';
+import {
+    createMockLspDiagnostics,
+    createMockSyntaxTreeManager,
+    createMockValidationManager,
+} from '../../utils/MockServerComponents';
 
 // Mock NodeType module
 vi.mock('../../../src/context/syntaxtree/utils/NodeType', () => ({
@@ -44,7 +48,8 @@ describe('DiagnosticCoordinator', () => {
         mockLspDiagnostics.publishDiagnostics.callsFake(mockPublishDiagnostics);
 
         mockSyntaxTreeManager = createMockSyntaxTreeManager();
-        coordinator = new DiagnosticCoordinator(mockLspDiagnostics, mockSyntaxTreeManager);
+        const mockValidationManager = createMockValidationManager();
+        coordinator = new DiagnosticCoordinator(mockLspDiagnostics, mockSyntaxTreeManager, mockValidationManager);
     });
 
     afterEach(() => {
