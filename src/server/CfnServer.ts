@@ -101,7 +101,7 @@ export class CfnServer {
         this.lsp.handlers.onExecuteCommand(
             withTelemetryContext('Execution', executionHandler(this.lsp.documents, this.components)),
         );
-        this.lsp.handlers.onCodeAction(withTelemetryContext('Code.Action', codeActionHandler(this.components)));
+        this.lsp.handlers.onCodeAction(withTelemetryContext('CodeAction', codeActionHandler(this.components)));
         this.lsp.handlers.onDefinition(withTelemetryContext('Definition', definitionHandler(this.components)));
         this.lsp.handlers.onDocumentSymbol(
             withTelemetryContext('Document.Symbol', documentSymbolHandler(this.components)),
@@ -109,7 +109,7 @@ export class CfnServer {
         this.lsp.handlers.onDidChangeConfiguration(
             withTelemetryContext('Configuration', configurationHandler(this.components)),
         );
-        this.lsp.handlers.onCodeLens(withTelemetryContext('Code.Lens', codeLensHandler(this.components)));
+        this.lsp.handlers.onCodeLens(withTelemetryContext('CodeLens', codeLensHandler(this.components)));
 
         this.lsp.authHandlers.onIamCredentialsUpdate(
             withTelemetryContext('Auth.Update', iamCredentialsUpdateHandler(this.components)),
