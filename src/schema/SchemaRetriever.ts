@@ -4,7 +4,7 @@ import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from 
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
-import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsRegion, getRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
@@ -96,6 +96,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         return this.get(this.settings.region, this.settings.profile);
     }
 
+    @Measure({ name: 'getSchemas' })
     get(region: AwsRegion, profile: string): CombinedSchemas {
         // Check if combined schemas are already cached first
         const cacheKey = `${region}:${profile}`;
@@ -133,12 +134,14 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     }
 
     // Proactively rebuild combined schemas to avoid lazy loading delays
+    @Measure({ name: 'rebuildCurrentSchemas' })
     rebuildForCurrentSettings() {
         this.schemaStore.invalidateCombinedSchemas();
         this.get(this.settings.region, this.settings.profile);
     }
 
     // Surgically rebuild affected combined schemas
+    @Measure({ name: 'rebuildAffectedSchemas' })
     rebuildAffectedCombinedSchemas(updatedRegion?: string, updatedProfile?: string) {
         if (!updatedRegion && !updatedProfile) {
             // SAM update - affects all schemas
