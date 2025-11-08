@@ -218,6 +218,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
                 // Continue with validation but log the issues
             }
 
+            // Wait for rules to be loaded if they're still loading
+            await this.ensureRulesLoaded();
+
             if (this.enabledRules.length === 0) {
                 this.publishDiagnostics(uri, []);
                 return;
@@ -551,6 +554,15 @@ export class GuardService implements SettingsConfigurable, Closeable {
         }
 
         return errors;
+    }
+
+    /**
+     * Ensure rules are loaded before validation
+     */
+    private async ensureRulesLoaded(): Promise<void> {
+        if (this.enabledRules.length === 0) {
+            this.enabledRules = await this.getEnabledRulesByConfiguration();
+        }
     }
 
     /**
