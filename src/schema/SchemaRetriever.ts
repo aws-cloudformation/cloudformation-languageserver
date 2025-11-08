@@ -1,3 +1,4 @@
+import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
@@ -8,7 +9,8 @@ import { Closeable } from '../utils/Closeable';
 import { AwsRegion, getRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
 import { GetSchemaTaskManager } from './GetSchemaTaskManager';
-import { RegionalSchemasType } from './RegionalSchemas';
+import { PrivateSchemasType } from './PrivateSchemas';
+import { RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
 import { SamSchemasType, SamStoreKey } from './SamSchemas';
 import { SchemaStore } from './SchemaStore';
 
@@ -19,14 +21,24 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     private settingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
     private readonly log = LoggerFactory.getLogger(SchemaRetriever);
+    private readonly schemaTaskManager: GetSchemaTaskManager;
 
     @Telemetry()
     private readonly telemetry!: ScopedTelemetry;
 
     constructor(
-        private readonly schemaTaskManager: GetSchemaTaskManager,
         private readonly schemaStore: SchemaStore,
+        private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
+        private readonly getPrivateResources: () => Promise<DescribeTypeOutput[]>,
     ) {
+        this.schemaTaskManager = new GetSchemaTaskManager(
+            this.schemaStore,
+            this.getPublicSchemas,
+            this.getPrivateResources,
+            this.settings.profile,
+            this,
+        );
+
         this.telemetry.registerGaugeProvider('schema.public.maxAge', () => this.getPublicSchemaMaxAge(), {
             unit: 'ms',
         });
@@ -101,7 +113,13 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             this.schemaTaskManager.addTask(region);
         }
 
-        return this.schemaStore.getCombinedSchemas(region, profile);
+        // Create and cache combined schemas
+        const privateSchemas = this.schemaStore.privateSchemas.get<PrivateSchemasType>(profile);
+        const samSchemas = this.schemaStore.samSchemas.get<SamSchemasType>(SamStoreKey);
+        const combinedSchemas = CombinedSchemas.from(regionalSchemas, privateSchemas, samSchemas);
+
+        void this.schemaStore.combinedSchemas.put(cacheKey, combinedSchemas);
+        return combinedSchemas;
     }
 
     updatePrivateSchemas() {
@@ -112,6 +130,32 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     // Method to invalidate cache when any schemas are updated
     invalidateCache() {
         this.schemaStore.invalidateCombinedSchemas();
+    }
+
+    // Proactively rebuild combined schemas to avoid lazy loading delays
+    rebuildForCurrentSettings() {
+        this.schemaStore.invalidateCombinedSchemas();
+        this.get(this.settings.region, this.settings.profile);
+    }
+
+    // Surgically rebuild affected combined schemas
+    rebuildAffectedCombinedSchemas(updatedRegion?: string, updatedProfile?: string) {
+        if (!updatedRegion && !updatedProfile) {
+            // SAM update - affects all schemas
+            this.schemaStore.invalidateCombinedSchemas();
+            this.rebuildForCurrentSettings();
+            return;
+        }
+
+        const keys = this.schemaStore.combinedSchemas.keys(1000);
+        for (const key of keys) {
+            const [region, profile] = key.split(':');
+            if ((updatedRegion && region === updatedRegion) || (updatedProfile && profile === updatedProfile)) {
+                // Invalidate and rebuild this specific combined schema
+                void this.schemaStore.combinedSchemas.remove(key);
+                this.get(region as AwsRegion, profile);
+            }
+        }
     }
 
     private getRegionalSchemasFromStore(region: AwsRegion) {
