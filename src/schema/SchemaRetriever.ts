@@ -36,7 +36,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             this.getPublicSchemas,
             this.getPrivateResources,
             this.settings.profile,
-            this,
+            (region, profile) => this.rebuildAffectedCombinedSchemas(region, profile),
         );
 
         this.telemetry.registerGaugeProvider('schema.public.maxAge', () => this.getPublicSchemaMaxAge(), {

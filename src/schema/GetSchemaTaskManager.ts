@@ -29,7 +29,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
         private readonly getPrivateResources: () => Promise<DescribeTypeOutput[]>,
         private profile: string = DefaultSettings.profile.profile,
-        private readonly schemaRetriever?: { rebuildAffectedCombinedSchemas(region?: string, profile?: string): void },
+        private readonly onSchemaUpdate: (region?: string, profile?: string) => void,
     ) {
         this.privateTask = new GetPrivateSchemasTask(this.getPrivateResources, () => this.profile);
         this.samTask = new GetSamSchemaTask();
@@ -75,7 +75,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         this.privateTask
             .run(this.schemas.privateSchemas, this.log)
             .then(() => {
-                this.schemaRetriever?.rebuildAffectedCombinedSchemas(undefined, this.profile);
+                this.onSchemaUpdate(undefined, this.profile);
             })
             .catch(() => {});
     }
@@ -84,7 +84,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         this.samTask
             .run(this.schemas.samSchemas, this.log)
             .then(() => {
-                this.schemaRetriever?.rebuildAffectedCombinedSchemas(); // No params = SAM update
+                this.onSchemaUpdate(); // No params = SAM update
             })
             .catch(() => {});
     }
@@ -105,7 +105,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         if (task) {
             task.run(this.schemas.publicSchemas, this.log)
                 .then(() => {
-                    this.schemaRetriever?.rebuildAffectedCombinedSchemas(task.region);
+                    this.onSchemaUpdate(task.region);
                 })
                 .catch(() => {
                     this.tasks.push(task);

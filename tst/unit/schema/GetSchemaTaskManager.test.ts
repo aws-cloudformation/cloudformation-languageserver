@@ -11,7 +11,7 @@ describe('GetSchemaTaskManager', () => {
     let manager: GetSchemaTaskManager;
     let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
     let mockGetPrivateResources: ReturnType<typeof vi.fn>;
-    let mockSchemaRetriever: { rebuildAffectedCombinedSchemas: ReturnType<typeof vi.fn> };
+    let mockOnSchemaUpdate: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -26,16 +26,14 @@ describe('GetSchemaTaskManager', () => {
             } as DescribeTypeOutput,
         ]);
 
-        mockSchemaRetriever = {
-            rebuildAffectedCombinedSchemas: vi.fn(),
-        };
+        mockOnSchemaUpdate = vi.fn();
 
         manager = new GetSchemaTaskManager(
             mockSchemaStore,
             mockGetPublicSchemas,
             mockGetPrivateResources,
             'default',
-            mockSchemaRetriever,
+            mockOnSchemaUpdate,
         );
     });
 
@@ -172,14 +170,14 @@ describe('GetSchemaTaskManager', () => {
         manager.addTask(AwsRegion.US_EAST_1);
         await flushAllPromises();
 
-        expect(mockSchemaRetriever.rebuildAffectedCombinedSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
+        expect(mockOnSchemaUpdate).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
     });
 
     it('should call schema retriever callback after private task completion', async () => {
         manager.runPrivateTask();
         await flushAllPromises();
 
-        expect(mockSchemaRetriever.rebuildAffectedCombinedSchemas).toHaveBeenCalledWith(undefined, 'default');
+        expect(mockOnSchemaUpdate).toHaveBeenCalledWith(undefined, 'default');
     });
 
     it('should call schema retriever callback after SAM task completion', async () => {
@@ -191,6 +189,6 @@ describe('GetSchemaTaskManager', () => {
         manager.runSamTask();
         await flushAllPromises();
 
-        expect(mockSchemaRetriever.rebuildAffectedCombinedSchemas).toHaveBeenCalledWith();
+        expect(mockOnSchemaUpdate).toHaveBeenCalledWith();
     });
 });
