@@ -2610,4 +2610,50 @@ describe('ResourceSchema', () => {
             expect(explicitFalse[0].type).toBe('string');
         });
     });
+
+    describe('getAttributes', () => {
+        it('should extract attributes from readOnlyProperties', () => {
+            const schema = new ResourceSchema(
+                JSON.stringify({
+                    typeName: 'AWS::S3::Bucket',
+                    description: 'Test schema',
+                    additionalProperties: false,
+                    primaryIdentifier: ['/properties/BucketName'],
+                    readOnlyProperties: ['/properties/Arn'],
+                    properties: {
+                        Arn: { type: 'string' },
+                    },
+                }),
+            );
+
+            const attributes = schema.getAttributes();
+
+            expect(attributes).toHaveLength(1);
+            expect(attributes[0].name).toBe('Arn');
+        });
+
+        it('should filter out array item paths with asterisks', () => {
+            const schema = new ResourceSchema(
+                JSON.stringify({
+                    typeName: 'AWS::EC2::Instance',
+                    description: 'Test schema',
+                    additionalProperties: false,
+                    primaryIdentifier: ['/properties/InstanceId'],
+                    readOnlyProperties: [
+                        '/properties/Arn',
+                        '/properties/Tags/*/Key', // Array item path - should be filtered
+                    ],
+                    properties: {
+                        Arn: { type: 'string' },
+                        Tags: { type: 'array' },
+                    },
+                }),
+            );
+
+            const attributes = schema.getAttributes();
+
+            expect(attributes).toHaveLength(1);
+            expect(attributes[0].name).toBe('Arn');
+        });
+    });
 });

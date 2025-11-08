@@ -48,6 +48,7 @@ export class ResourceSchema {
     public readonly writeOnlyProperties?: string[];
     public readonly createOnlyProperties?: string[];
     public readonly deprecatedProperties?: string[];
+    private _attributes?: Array<{ name: string; description: string }>;
     public readonly conditionalCreateOnlyProperties?: string[];
     public readonly nonPublicProperties?: string[];
     public readonly nonPublicDefinitions?: string[];
@@ -1040,6 +1041,42 @@ export class ResourceSchema {
             ...(this.anyOf && { anyOf: this.anyOf as PropertyType[] }),
             ...(this.oneOf && { oneOf: this.oneOf as PropertyType[] }),
         };
+    }
+
+    public getAttributes(): Array<{ name: string; description: string }> {
+        this._attributes ??= this.computeAttributes();
+        return this._attributes;
+    }
+
+    private computeAttributes(): Array<{ name: string; description: string }> {
+        if (!this.readOnlyProperties) return [];
+
+        return this.readOnlyProperties
+            .filter((prop) => !prop.includes('/*/'))
+            .map((prop) => {
+                const match = prop.match(/^\/properties\/(.+)$/);
+                if (!match) return;
+
+                const name = match[1].replaceAll('/', '.');
+                const description = this.getAttributeDescription(prop);
+                return { name, description };
+            })
+            .filter((attr): attr is { name: string; description: string } => attr !== undefined);
+    }
+
+    private getAttributeDescription(propertyPath: string): string {
+        try {
+            const resolvedSchemas = this.resolveJsonPointerPath(propertyPath);
+            if (resolvedSchemas.length > 0 && resolvedSchemas[0].description) {
+                return resolvedSchemas[0].description;
+            }
+        } catch {
+            // Fall back to default description
+        }
+
+        const match = propertyPath.match(/^\/properties\/(.+)$/);
+        const attributeName = match ? match[1].replaceAll('/', '.') : propertyPath;
+        return `${attributeName} attribute of ${this.typeName}`;
     }
 }
 

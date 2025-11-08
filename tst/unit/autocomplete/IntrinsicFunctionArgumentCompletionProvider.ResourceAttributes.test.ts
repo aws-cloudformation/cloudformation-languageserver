@@ -23,6 +23,11 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
                 'AWS::S3::Bucket',
                 {
                     readOnlyProperties: ['/properties/Arn', '/properties/DomainName', '/properties/RegionalDomainName'],
+                    getAttributes: () => [
+                        { name: 'Arn', description: 'Arn attribute of AWS::S3::Bucket' },
+                        { name: 'DomainName', description: 'DomainName attribute of AWS::S3::Bucket' },
+                        { name: 'RegionalDomainName', description: 'RegionalDomainName attribute of AWS::S3::Bucket' },
+                    ],
                 } as ResourceSchema,
             ],
         ]);
@@ -50,6 +55,17 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
                         '/properties/PrivateDnsName',
                         '/properties/NetworkInterfaces/0/NetworkInterfaceId',
                         '/properties/SecurityGroups/0/GroupId',
+                    ],
+                    getAttributes: () => [
+                        { name: 'PrivateDnsName', description: 'PrivateDnsName attribute of AWS::EC2::Instance' },
+                        {
+                            name: 'NetworkInterfaces.0.NetworkInterfaceId',
+                            description: 'NetworkInterfaces.0.NetworkInterfaceId attribute of AWS::EC2::Instance',
+                        },
+                        {
+                            name: 'SecurityGroups.0.GroupId',
+                            description: 'SecurityGroups.0.GroupId attribute of AWS::EC2::Instance',
+                        },
                     ],
                 } as ResourceSchema,
             ],
@@ -83,6 +99,10 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
                         '/properties/Environment/*/Value',
                         '/properties/Tags/*/Key',
                         '/properties/Version',
+                    ],
+                    getAttributes: () => [
+                        { name: 'Arn', description: 'Arn attribute of AWS::Lambda::Function' },
+                        { name: 'Version', description: 'Version attribute of AWS::Lambda::Function' },
                     ],
                 } as ResourceSchema,
             ],
@@ -125,7 +145,8 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
                 'AWS::Custom::Resource',
                 {
                     readOnlyProperties: [] as unknown,
-                } as ResourceSchema,
+                    getAttributes: () => [],
+                } as unknown as ResourceSchema,
             ],
         ]);
         const mockCombinedSchemas = new CombinedSchemas();
@@ -152,6 +173,10 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
                         '/properties/Arn',
                         '/properties/Arn', // Duplicate
                         '/properties/Name',
+                    ],
+                    getAttributes: () => [
+                        { name: 'Arn', description: 'Arn attribute of AWS::Test::Resource' },
+                        { name: 'Name', description: 'Name attribute of AWS::Test::Resource' },
                     ],
                 } as ResourceSchema,
             ],

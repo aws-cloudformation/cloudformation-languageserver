@@ -85,6 +85,15 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     }
 
     get(region: AwsRegion, profile: string): CombinedSchemas {
+        // Check if combined schemas are already cached first
+        const cacheKey = `${region}:${profile}`;
+        const cachedCombined = this.schemaStore.combinedSchemas.get<CombinedSchemas>(cacheKey);
+
+        if (cachedCombined) {
+            return cachedCombined;
+        }
+
+        // Only do expensive regional check if no cached combined schemas
         const regionalSchemas = this.getRegionalSchemasFromStore(region);
         if (regionalSchemas) {
             this.availableRegions.add(region);

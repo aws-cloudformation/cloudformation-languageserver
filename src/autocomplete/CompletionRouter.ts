@@ -64,7 +64,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         const triggerChar = params.context?.triggerCharacter ?? '';
 
         // Check for intrinsic function argument completions first
-        if (context.intrinsicContext.inIntrinsic()) {
+        if (context.intrinsicContext.inIntrinsic() && !this.shouldUseIntrinsicFunctionProvider(context)) {
             const doc = this.completionProviderMap.get('IntrinsicFunctionArgument')?.getCompletions(context, params);
 
             if (doc && !(doc instanceof Promise) && doc.length > 0) {
