@@ -72,8 +72,13 @@ export class CfnInfraCore implements Configurables, Closeable {
     }
 
     async close() {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        return await closeSafely(this.dataStoreFactory, TelemetryService.instance, LoggerFactory._instance);
+        return await closeSafely(
+            this.documentManager,
+            this.dataStoreFactory,
+            TelemetryService.instance,
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            LoggerFactory._instance,
+        );
     }
 }
