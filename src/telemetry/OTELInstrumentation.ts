@@ -59,6 +59,15 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
                     },
                 },
             } satisfies ViewOptions,
+            {
+                instrumentName: '*.bytes',
+                aggregation: {
+                    type: AggregationType.EXPONENTIAL_HISTOGRAM,
+                    options: {
+                        recordMinMax: true,
+                    },
+                },
+            } satisfies ViewOptions,
         ],
         instrumentations: [
             getNodeAutoInstrumentations({

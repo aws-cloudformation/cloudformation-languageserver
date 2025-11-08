@@ -5,11 +5,13 @@ import { DefaultSettings, EditorSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { Closeable } from '../utils/Closeable';
 import { Delayer } from '../utils/Delayer';
+import { byteSize } from '../utils/String';
 import { CloudFormationFileType, Document, DocumentType } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
-export class DocumentManager implements SettingsConfigurable {
+export class DocumentManager implements SettingsConfigurable, Closeable {
     private readonly log = LoggerFactory.getLogger(DocumentManager);
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
@@ -19,6 +21,7 @@ export class DocumentManager implements SettingsConfigurable {
     private readonly documentMap = new Map<string, Document>();
 
     private settingsSubscription?: SettingsSubscription;
+    private readonly interval: NodeJS.Timeout;
 
     constructor(
         private readonly documents: TextDocuments<TextDocument>,
@@ -27,6 +30,9 @@ export class DocumentManager implements SettingsConfigurable {
         },
     ) {
         this.registerDocumentGauges();
+        this.interval = setInterval(() => {
+            this.emitDocSizeMetrics();
+        }, 30 * 1000);
     }
 
     configure(settingsManager: ISettingsSubscriber): void {
@@ -157,6 +163,12 @@ export class DocumentManager implements SettingsConfigurable {
         }
     }
 
+    private emitDocSizeMetrics() {
+        for (const doc of this.documentMap.values()) {
+            this.telemetry.histogram(`documents.size.bytes`, byteSize(doc.contents()), { unit: 'By' });
+        }
+    }
+
     private countDocumentsByCfnType(cfnType: CloudFormationFileType): number {
         return [...this.documentMap.values()].filter((doc) => doc.cfnFileType === cfnType).length;
     }
@@ -167,5 +179,9 @@ export class DocumentManager implements SettingsConfigurable {
 
     private countDocumentsByExtension(extension: string): number {
         return [...this.documentMap.values()].filter((doc) => doc.isTemplate() && doc.extension === extension).length;
+    }
+
+    close() {
+        clearInterval(this.interval);
     }
 }
