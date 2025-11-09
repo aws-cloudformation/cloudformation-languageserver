@@ -58,9 +58,9 @@ import {
     ChangeSetType,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
+import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 import { Count } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
-import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 
 export class CfnService {
     public constructor(private readonly awsClient: AwsClient) {}

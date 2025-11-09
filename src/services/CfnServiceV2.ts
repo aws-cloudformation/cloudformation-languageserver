@@ -11,12 +11,11 @@ import {
     ResourceChangeDetail,
     ChangeSetType,
 } from '@aws-sdk/client-cloudformation';
+import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { CFN_CLIENT_PATH } from '../utils/ClientUtil';
 import { DynamicModuleLoader } from '../utils/DynamicModuleLoader';
 import { CfnService } from './CfnService';
-import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
 
 export type ResourceTargetDefinitionV2 = ResourceTargetDefinition & {
     BeforeValueFrom?: string;

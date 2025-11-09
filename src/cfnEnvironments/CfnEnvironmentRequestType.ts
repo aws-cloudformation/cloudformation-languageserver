@@ -16,7 +16,7 @@ export type DeploymentConfig = {
     includeNestedStacks?: boolean;
     importExistingResources?: boolean;
     onStackFailure?: OnStackFailure;
-    deploymentMode?: DeploymentMode
+    deploymentMode?: DeploymentMode;
 };
 
 export type ParsedCfnEnvironmentFile = {

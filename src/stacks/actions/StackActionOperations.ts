@@ -43,10 +43,11 @@ function logCleanupError(error: unknown, workflowId: string, changeSetName: stri
 
 export function computeEligibleDeploymentMode(
     changeSetType: ChangeSetType,
-    deploymentMode?: DeploymentMode | undefined,
-    resourcesToImport?: ResourceToImport[] | undefined,
-    includeNestedStacks?: boolean | undefined,
-    onStackFailure?: OnStackFailure | undefined,
+    deploymentMode?: DeploymentMode,
+    importExistingResources?: boolean,
+    resourcesToImport?: ResourceToImport[],
+    includeNestedStacks?: boolean,
+    onStackFailure?: OnStackFailure,
 ): DeploymentMode | undefined {
     if (!deploymentMode) {
         return undefined;
@@ -54,7 +55,7 @@ export function computeEligibleDeploymentMode(
 
     if (deploymentMode === DeploymentMode.REVERT_DRIFT) {
         // import is not supported
-        if (resourcesToImport && resourcesToImport.length > 0) {
+        if (importExistingResources || (resourcesToImport && resourcesToImport.length > 0)) {
             return undefined;
         }
 
@@ -68,8 +69,8 @@ export function computeEligibleDeploymentMode(
             return undefined;
         }
 
-        // rollback/delete is not supported
-        if (onStackFailure === OnStackFailure.DO_NOTHING) {
+        // only ROLLBACK is supported
+        if (onStackFailure && onStackFailure !== OnStackFailure.ROLLBACK) {
             return undefined;
         }
     }
@@ -118,6 +119,7 @@ export async function processChangeSet(
     const deploymentMode = computeEligibleDeploymentMode(
         changeSetType,
         params.deploymentMode,
+        params.importExistingResources,
         params.resourcesToImport,
         params.includeNestedStacks,
         params.onStackFailure,
