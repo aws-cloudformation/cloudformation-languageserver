@@ -8,7 +8,6 @@ import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnServiceV2 } from '../../services/CfnServiceV2';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { S3Service } from '../../services/S3Service';
-import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
     waitForChangeSetValidation,
@@ -23,8 +22,6 @@ import { ValidationWorkflow } from './ValidationWorkflow';
 export const VALIDATION_V2_NAME = 'Enhanced Validation';
 
 export class ValidationWorkflowV2 extends ValidationWorkflow {
-    protected override readonly log = LoggerFactory.getLogger(ValidationWorkflowV2);
-
     constructor(
         protected cfnServiceV2: CfnServiceV2,
         documentManager: DocumentManager,
@@ -52,8 +49,6 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
 
         try {
             const result = await waitForChangeSetValidation(this.cfnServiceV2, changeSetName, stackName);
-
-            this.log.info(result);
 
             const validation = this.validationManager.get(stackName);
             if (validation) {
