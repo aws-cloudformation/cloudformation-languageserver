@@ -140,7 +140,6 @@ export function createMockGuardService() {
     mock.getPendingValidationCount.returns(0);
     mock.getQueuedValidationCount.returns(0);
     mock.getActiveValidationCount.returns(0);
-    mock.isReady.returns(true);
     return mock;
 }
 

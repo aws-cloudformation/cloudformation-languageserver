@@ -34,9 +34,7 @@ describe('GuardService', () => {
 
         // Create mock GuardEngine
         mockGuardEngine = stubInterface<GuardEngine>();
-        mockGuardEngine.initialize.resolves(undefined);
         mockGuardEngine.validateTemplate.resolves([]);
-        mockGuardEngine.isReady.returns(true);
 
         // Create mock RuleConfiguration
         mockRuleConfiguration = stubInterface<RuleConfiguration>();
@@ -151,20 +149,6 @@ describe('GuardService', () => {
                     [],
                 ),
             ).toBe(true);
-        });
-
-        it('should initialize Guard components if not ready', async () => {
-            const mockFile = stubInterface<Document>();
-            Object.defineProperty(mockFile, 'cfnFileType', {
-                value: CloudFormationFileType.Template,
-                writable: true,
-            });
-            mockComponents.documentManager.get.returns(mockFile);
-            mockGuardEngine.isReady.returns(false);
-
-            await guardService.validate('content', 'file:///template.yaml');
-
-            expect(mockGuardEngine.initialize.called).toBe(true);
         });
 
         it('should validate template and publish diagnostics for violations', async () => {
@@ -396,12 +380,6 @@ describe('GuardService', () => {
             expect(mockDelayer.getPendingCount.called).toBe(true);
             expect(count).toBe(0);
         });
-
-        it('should check if service is ready', () => {
-            const isReady = guardService.isReady();
-            expect(mockGuardEngine.isReady.called).toBe(true);
-            expect(isReady).toBe(true);
-        });
     });
 
     describe('close', () => {
@@ -422,7 +400,6 @@ describe('GuardService', () => {
 
             expect(mockUnsubscribe.called).toBe(true);
             expect(mockDelayer.cancelAll.called).toBe(true);
-            expect(mockGuardEngine.dispose.called).toBe(true);
         });
     });
 

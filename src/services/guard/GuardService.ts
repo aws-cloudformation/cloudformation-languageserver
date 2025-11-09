@@ -162,21 +162,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
     }
 
     /**
-     * Initialize the Guard service components
-     */
-    private async initialize(): Promise<void> {
-        try {
-            // Initialize Guard engine only - rules are now statically available
-            await this.guardEngine.initialize();
-            this.telemetry.count('initialized', 1);
-        } catch (error) {
-            this.log.error(`Failed to initialize Guard service: ${extractErrorMessage(error)}`);
-            this.telemetry.count('uninitialized', 1);
-            throw error;
-        }
-    }
-
-    /**
      * Validate a CloudFormation template using Guard rules
      *
      * @param content The template content as a string
@@ -205,11 +190,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         const startTime = performance.now();
         try {
-            // Ensure Guard service is initialized
-            if (!this.guardEngine.isReady()) {
-                await this.initialize();
-            }
-
             // Validate rule configuration against available packs
             const availablePacks = getAvailableRulePacks();
             const validationErrors = this.validateRuleConfiguration(availablePacks);
@@ -258,32 +238,73 @@ export class GuardService implements SettingsConfigurable, Closeable {
      * Convert Guard violations to LSP diagnostics
      */
     private convertViolationsToDiagnostics(uri: string, violations: GuardViolation[]): Diagnostic[] {
-        // GuardEngine already handles deduplication properly, no need to deduplicate again
+        // Group violations by location and message to consolidate rules with same fix
+        const violationGroups = new Map<
+            string,
+            {
+                violations: GuardViolation[];
+                ruleNames: Set<string>;
+                message: string;
+                location: { line: number; column: number; path?: string };
+                severity: DiagnosticSeverity;
+            }
+        >();
 
-        return violations.map((violation): Diagnostic => {
-            // Guard violations already have DiagnosticSeverity, no conversion needed
-            const severity = violation.severity;
+        for (const violation of violations) {
+            // Get custom message if available, otherwise use violation message
+            const customMessage = this.ruleCustomMessages.get(violation.ruleName);
+            const message = customMessage ?? violation.message;
+
+            // Create group key based on location and message
+            const groupKey = `${violation.location.line}:${violation.location.column}:${message}`;
+
+            if (!violationGroups.has(groupKey)) {
+                violationGroups.set(groupKey, {
+                    violations: [],
+                    ruleNames: new Set(),
+                    message,
+                    location: violation.location,
+                    severity: violation.severity,
+                });
+            }
+
+            const group = violationGroups.get(groupKey);
+            if (group) {
+                group.violations.push(violation);
+                group.ruleNames.add(violation.ruleName);
+            }
+        }
+
+        // Convert groups to diagnostics
+        const diagnostics: Diagnostic[] = [];
+
+        for (const group of violationGroups.values()) {
+            // Combine rule names with commas
+            const combinedRuleName = [...group.ruleNames].sort().join(', ');
 
             // Try to get precise location from CloudFormation path if available
-            const range = this.getViolationRange(uri, violation);
+            const range = this.getViolationRange(uri, group.violations[0]);
 
             const diagnostic: Diagnostic = {
-                severity,
+                severity: group.severity,
                 range,
-                message: this.ruleCustomMessages.get(violation.ruleName) ?? violation.message,
+                message: group.message,
                 source: GuardService.CFN_GUARD_SOURCE,
-                code: violation.ruleName,
+                code: combinedRuleName,
             };
 
-            if (violation.location.path || violation.context) {
+            const firstViolation = group.violations[0];
+            if (firstViolation.location.path || firstViolation.context) {
                 diagnostic.data = {
-                    path: violation.location.path,
-                    context: violation.context,
+                    path: firstViolation.location.path,
+                    context: firstViolation.context,
                 };
             }
 
-            return diagnostic;
-        });
+            diagnostics.push(diagnostic);
+        }
+
+        return diagnostics;
     }
 
     /**
@@ -576,6 +597,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
             try {
                 const customRules = await this.loadRulesFromFile(this.settings.rulesFile);
                 enabledRules.push(...customRules);
+                this.log.info(`Loaded ${customRules.length} rules from custom file: ${this.settings.rulesFile}`);
             } catch (error) {
                 this.log.error(
                     `Failed to load rules from file '${this.settings.rulesFile}': ${extractErrorMessage(error)}`,
@@ -585,6 +607,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
         } else {
             // Use rule packs if no custom rules file is specified
             const enabledPackNames = this.settings.enabledRulePacks;
+            this.log.info(`Loading rules from ${enabledPackNames.length} rule packs: ${enabledPackNames.join(', ')}`);
 
             for (const packName of enabledPackNames) {
                 try {
@@ -595,6 +618,11 @@ export class GuardService implements SettingsConfigurable, Closeable {
                             this.ruleToPacksMap.set(ruleData.name, new Set());
                         }
                         this.ruleToPacksMap.get(ruleData.name)?.add(packName);
+
+                        // Store custom message if available
+                        if (ruleData.message) {
+                            this.ruleCustomMessages.set(ruleData.name, ruleData.message);
+                        }
 
                         enabledRules.push(this.convertRuleDataToGuardRule(ruleData));
                     }
@@ -732,13 +760,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
     }
 
     /**
-     * Check if the Guard service is ready for validation
-     */
-    public isReady(): boolean {
-        return this.guardEngine.isReady();
-    }
-
-    /**
      * Shutdown the Guard service and clean up resources
      */
     close(): void {
@@ -759,9 +780,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         // Clear active validations (don't wait for them to complete)
         this.activeValidations.clear();
-
-        // Dispose Guard engine
-        this.guardEngine.dispose();
     }
 
     /**
