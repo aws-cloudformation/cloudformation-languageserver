@@ -9,11 +9,14 @@ import {
     ResourceTargetDefinition,
     Change,
     ResourceChangeDetail,
+    ChangeSetType,
 } from '@aws-sdk/client-cloudformation';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { CFN_CLIENT_PATH } from '../utils/ClientUtil';
 import { DynamicModuleLoader } from '../utils/DynamicModuleLoader';
 import { CfnService } from './CfnService';
+import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 
 export type ResourceTargetDefinitionV2 = ResourceTargetDefinition & {
     BeforeValueFrom?: string;
@@ -65,9 +68,9 @@ export class CfnServiceV2 extends CfnService {
         TemplateURL?: string;
         Parameters?: Parameter[];
         Capabilities?: Capability[];
-        ChangeSetType?: 'CREATE' | 'UPDATE' | 'IMPORT';
+        ChangeSetType?: ChangeSetType;
         ResourcesToImport?: ResourceToImport[];
-        CompareWith?: string;
+        DeploymentMode?: DeploymentMode;
     }): Promise<CreateChangeSetCommandOutput> {
         type CfnClient = typeof import('@aws-sdk/client-cloudformation') & {
             CreateChangeSetCommand: new (input: any) => any;

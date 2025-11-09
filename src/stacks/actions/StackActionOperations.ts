@@ -1,4 +1,4 @@
-import { Change, ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
+import { Change, ChangeSetType, StackStatus, OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { dump } from 'js-yaml';
 import { DateTime } from 'luxon';
@@ -24,6 +24,8 @@ import {
     StackActionState,
     CreateValidationParams,
     ValidationDetail,
+    DeploymentMode,
+    ResourceToImport,
 } from './StackActionRequestType';
 import {
     StackActionWorkflowState,
@@ -37,6 +39,42 @@ const logger = LoggerFactory.getLogger('StackActionOperations');
 
 function logCleanupError(error: unknown, workflowId: string, changeSetName: string, operation: string): void {
     logger.warn(error, `Failed to cleanup ${operation} ${workflowId} ${changeSetName}`);
+}
+
+export function computeEligibleDeploymentMode(
+    changeSetType: ChangeSetType,
+    deploymentMode?: DeploymentMode | undefined,
+    resourcesToImport?: ResourceToImport[] | undefined,
+    includeNestedStacks?: boolean | undefined,
+    onStackFailure?: OnStackFailure | undefined,
+): DeploymentMode | undefined {
+    if (!deploymentMode) {
+        return undefined;
+    }
+
+    if (deploymentMode === DeploymentMode.REVERT_DRIFT) {
+        // import is not supported
+        if (resourcesToImport && resourcesToImport.length > 0) {
+            return undefined;
+        }
+
+        // nested stacks is not supported
+        if (includeNestedStacks) {
+            return undefined;
+        }
+
+        // only UPDATE is supported
+        if (changeSetType !== ChangeSetType.UPDATE) {
+            return undefined;
+        }
+
+        // rollback/delete is not supported
+        if (onStackFailure === OnStackFailure.DO_NOTHING) {
+            return undefined;
+        }
+    }
+
+    return deploymentMode;
 }
 
 export async function processChangeSet(
@@ -77,6 +115,14 @@ export async function processChangeSet(
 
     const changeSetName = `${changeSetNamePrefix}-${params.id}-${uuidv4()}`;
 
+    const deploymentMode = computeEligibleDeploymentMode(
+        changeSetType,
+        params.deploymentMode,
+        params.resourcesToImport,
+        params.includeNestedStacks,
+        params.onStackFailure,
+    );
+
     await cfnService.createChangeSet({
         StackName: params.stackName,
         ChangeSetName: changeSetName,
@@ -86,11 +132,11 @@ export async function processChangeSet(
         Capabilities: params.capabilities,
         ChangeSetType: changeSetType,
         ResourcesToImport: params.resourcesToImport,
-        CompareWith: changeSetType === 'UPDATE' ? 'LIVE_STATE' : undefined,
         OnStackFailure: params.onStackFailure,
         IncludeNestedStacks: params.includeNestedStacks,
         Tags: params.tags,
         ImportExistingResources: params.importExistingResources,
+        DeploymentMode: deploymentMode,
     });
 
     return changeSetName;

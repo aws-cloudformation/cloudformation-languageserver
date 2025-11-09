@@ -55,10 +55,12 @@ import {
     waitUntilStackDeleteComplete,
     Tag,
     OnStackFailure,
+    ChangeSetType,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { Count } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
+import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 
 export class CfnService {
     public constructor(private readonly awsClient: AwsClient) {}
@@ -126,13 +128,13 @@ export class CfnService {
         TemplateURL?: string;
         Parameters?: Parameter[];
         Capabilities?: Capability[];
-        ChangeSetType?: 'CREATE' | 'UPDATE' | 'IMPORT';
+        ChangeSetType?: ChangeSetType;
         ResourcesToImport?: ResourceToImport[];
-        CompareWith?: string;
         OnStackFailure?: OnStackFailure;
         IncludeNestedStacks?: boolean;
         Tags?: Tag[];
         ImportExistingResources?: boolean;
+        DeploymentMode?: DeploymentMode;
     }): Promise<CreateChangeSetCommandOutput> {
         return await this.withClient((client) => client.send(new CreateChangeSetCommand(params)));
     }

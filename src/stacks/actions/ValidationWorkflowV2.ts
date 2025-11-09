@@ -53,6 +53,8 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
         try {
             const result = await waitForChangeSetValidation(this.cfnServiceV2, changeSetName, stackName);
 
+            this.log.info(result);
+
             const validation = this.validationManager.get(stackName);
             if (validation) {
                 validation.setPhase(result.phase);

@@ -1,6 +1,7 @@
 import { OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { RequestType } from 'vscode-languageserver';
 import { DocumentType } from '../document/Document';
+import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 
 export type DocumentInfo = {
     type: DocumentType;
@@ -15,6 +16,7 @@ export type DeploymentConfig = {
     includeNestedStacks?: boolean;
     importExistingResources?: boolean;
     onStackFailure?: OnStackFailure;
+    deploymentMode?: DeploymentMode
 };
 
 export type ParsedCfnEnvironmentFile = {
