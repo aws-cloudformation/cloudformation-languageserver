@@ -17,6 +17,10 @@ export type ResourceToImport = {
     ResourceIdentifier: Record<string, string>;
 };
 
+export enum DeploymentMode {
+    REVERT_DRIFT = 'REVERT_DRIFT',
+}
+
 export type CreateValidationParams = Identifiable & {
     uri: string;
     stackName: string;
@@ -28,6 +32,7 @@ export type CreateValidationParams = Identifiable & {
     includeNestedStacks?: boolean;
     tags?: Tag[];
     importExistingResources?: boolean;
+    deploymentMode?: DeploymentMode;
     s3Bucket?: string;
     s3Key?: string;
 };
