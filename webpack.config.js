@@ -19,7 +19,6 @@ const KEEP_FILES = [
     '.js',
     '.mjs',
     '.node',
-    '.wasm',
     'mappingTable.json',
     'package.json',
     'pyodide-lock.json',
@@ -65,22 +64,10 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
         }),
     );
 
-    // Copy Guard WASM assets and relationship schemas for both development and production
+    // Copy relationship schemas for both development and production
     plugins.push(
         new CopyWebpackPlugin({
             patterns: [
-                {
-                    from: 'src/services/guard/assets/guard.js',
-                    to: 'assets/guard.js',
-                },
-                {
-                    from: 'src/services/guard/assets/guard-wrapper.js',
-                    to: 'assets/guard-wrapper.js',
-                },
-                {
-                    from: 'src/services/guard/assets/guard_bg.wasm',
-                    to: 'assets/guard_bg.wasm',
-                },
                 {
                     from: 'assets',
                     to: 'assets',
