@@ -5,6 +5,6 @@ export default defineConfig({
     ...baseConfig,
     test: {
         ...baseConfig.test,
-        include: ['tst/integration/**/*.test.ts', 'tst/e2e/**/*.test.ts'],
+        include: ['tst/integration/**/*.test.ts', 'tst/e2e/**/*.test.ts', 'tst/e2e-integration/**/*.e2e.test.ts'],
     },
 });
