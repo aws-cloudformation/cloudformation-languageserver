@@ -69,10 +69,8 @@ jobs:
       ref: ${{ needs.version-and-tag.outputs.tag }}
       runs-on: ${{ matrix.os }}
 
-  bundle-and-release:
+  bundle:
     needs: [ get-configs, version-and-tag, build-and-test ]
-    permissions:
-      contents: write
     strategy:
       fail-fast: true
       matrix:
@@ -187,13 +185,29 @@ jobs:
           echo "Creating zip: ${{ env.ASSET_NAME }}"
           Compress-Archive -Path ./bundle/production/* -DestinationPath ./${{ env.ASSET_NAME }}
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
+          path: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
+          if-no-files-found: error
+
+  release:
+    needs: [ version-and-tag, bundle ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        env:
-          ASSET_NAME: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
         with:
           tag_name: ${{ needs.version-and-tag.outputs.tag }}
           prerelease: ${{ needs.version-and-tag.outputs.is-prerelease }}
-          files: ${{ env.ASSET_NAME }}
+          files: artifacts/**/*
           generate_release_notes: true
           fail_on_unmatched_files: true

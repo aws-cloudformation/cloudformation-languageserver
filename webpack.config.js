@@ -73,6 +73,10 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                     from: 'assets',
                     to: 'assets',
                 },
+                {
+                    from: 'node_modules/cfn-guard/guard_bg.wasm',
+                    to: 'guard_bg.wasm',
+                },
             ],
         }),
     );
