@@ -8,8 +8,8 @@
  * Contains all AWS Guard rules and rule pack mappings to eliminate
  * runtime file parsing and reduce bundle size.
  *
- * Source: AWS Guard Rules Registry v1.0.2
- * Generated: 2025-11-09T16:12:10.650Z
+ * Source: AWS Guard Rules Registry (main branch)
+ * Generated: 2025-11-10T17:13:56.170Z
  * URL: https://github.com/aws-cloudformation/aws-guard-rules-registry/archive/refs/heads/main.zip
  */
 
@@ -4967,7 +4967,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'S3_BUCKET_VERSIONING_ENABLED',
         'REDSHIFT_BACKUP_ENABLED',
     ],
-    'cfn-nag-equivalent': [
+    'cfn-nag': [
         'ENCRYPTED_VOLUMES',
         'IAM_ROLE_NO_FULL_ACCESS_ON_TRUST_POLICY',
         'IAM_ROLE_NO_WILDCARD_ACTIONS_ON_PERMISSIONS',
@@ -5997,7 +5997,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'SECRETSMANAGER_USING_CMK',
         'ELBV2_ACM_CERTIFICATE_REQUIRED',
     ],
-    'FedRAMP-Low': [
+    'fedramp-low': [
         'API_GW_EXECUTION_LOGGING_ENABLED',
         'EC2_INSTANCE_PROFILE_ATTACHED',
         'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
@@ -6063,7 +6063,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
         'SNS_ENCRYPTED_KMS',
     ],
-    'FedRAMP-Moderate': [
+    'fedramp-moderate': [
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
@@ -6274,7 +6274,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
         'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
     ],
-    'K-ISMS': [
+    'k-isms': [
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'EMR_KERBEROS_ENABLED',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
@@ -7044,7 +7044,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
     ],
-    'NIST800-53Rev4': [
+    'nist800-53rev4': [
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENABLED',
         'MULTI_REGION_CLOUD_TRAIL_ENABLED',
@@ -7104,7 +7104,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
     ],
-    'NIST800-53Rev5': [
+    'nist800-53rev5': [
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'API_GW_EXECUTION_LOGGING_ENABLED',
         'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
@@ -7222,7 +7222,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'REDSHIFT_BACKUP_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
     ],
-    'PCI-DSS-3-2-1': [
+    'pci-dss-3-2-1': [
         'DMS_REPLICATION_NOT_PUBLIC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'ELASTICSEARCH_IN_VPC_ONLY',
