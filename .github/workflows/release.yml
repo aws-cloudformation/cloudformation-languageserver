@@ -95,9 +95,6 @@ jobs:
           - { os: "windows-latest", arch: "x64", platform: "win32", go-arch: "amd64", node-version: "18.x" }
           - { os: "windows-latest", arch: "x64", platform: "win32", go-arch: "amd64", node-version: "20.x" }
           - { os: "windows-latest", arch: "x64", platform: "win32", go-arch: "amd64", node-version: "22.x" }
-          - { os: "windows-11-arm", arch: "arm64", platform: "win32", go-arch: "arm64", node-version: "18.x" }
-          - { os: "windows-11-arm", arch: "arm64", platform: "win32", go-arch: "arm64", node-version: "20.x" }
-          - { os: "windows-11-arm", arch: "arm64", platform: "win32", go-arch: "arm64", node-version: "22.x" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
