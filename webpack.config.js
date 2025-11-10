@@ -19,6 +19,7 @@ const KEEP_FILES = [
     '.js',
     '.mjs',
     '.node',
+    '.wasm',
     'mappingTable.json',
     'package.json',
     'pyodide-lock.json',
