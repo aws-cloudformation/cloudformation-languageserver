@@ -4,6 +4,7 @@ import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
+import { parseValidYaml } from './YamlParser';
 
 export class Document {
     private readonly log = LoggerFactory.getLogger(Document);
