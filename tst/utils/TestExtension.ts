@@ -51,8 +51,6 @@ import { MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
-import { getRemotePublicSchemas } from '../../src/schema/GetSchemaTask';
-import { GetSchemaTaskManager } from '../../src/schema/GetSchemaTaskManager';
 import { SchemaStore } from '../../src/schema/SchemaStore';
 import { CfnExternal } from '../../src/server/CfnExternal';
 import { CfnInfraCore } from '../../src/server/CfnInfraCore';
@@ -64,7 +62,6 @@ import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
 import { createMockCfnLintService, createMockGuardService, mockCfnAi } from './MockServerComponents';
-import { getTestPrivateSchemas } from './SchemaUtils';
 import { wait } from './Utils';
 
 const awsMetadata: AwsMetadata = {
@@ -124,9 +121,6 @@ export class TestExtension implements Closeable {
                     const schemaStore = new SchemaStore(dataStoreFactory);
                     this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
-                        schemaTaskManager: new GetSchemaTaskManager(schemaStore, getRemotePublicSchemas, () =>
-                            Promise.resolve(getTestPrivateSchemas()),
-                        ),
                         cfnLintService: createMockCfnLintService(),
                         guardService: createMockGuardService(),
                         featureFlags: new FeatureFlagProvider(

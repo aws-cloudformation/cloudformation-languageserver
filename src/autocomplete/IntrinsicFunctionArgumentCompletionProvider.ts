@@ -279,23 +279,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
 
     private getResourceAttributes(resourceType: string): string[] {
         const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
-        if (!schema?.readOnlyProperties || schema.readOnlyProperties.length === 0) {
-            return [];
-        }
+        if (!schema) return [];
 
-        return schema.readOnlyProperties
-            .map((propertyPath) => {
-                const match = propertyPath.match(/^\/properties\/(.+)$/);
-                return match ? match[1].replaceAll('/', '.') : undefined;
-            })
-            .filter((attr): attr is string => attr !== undefined)
-            .filter((attr) => {
-                const lastDotIndex = attr.lastIndexOf('.');
-                if (lastDotIndex === -1) return true;
-                const pathWithoutLastSegment = attr.slice(0, Math.max(0, lastDotIndex));
-                return !pathWithoutLastSegment.includes('*');
-            })
-            .filter((attr, index, array) => array.indexOf(attr) === index);
+        return schema.getAttributes().map((attr) => attr.name);
     }
 
     private getGetAttCompletions(syntaxTree: SyntaxTree, currentLogicalId?: string): CompletionItem[] {
