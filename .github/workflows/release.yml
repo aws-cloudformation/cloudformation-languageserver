@@ -58,16 +58,16 @@ jobs:
             exit 1
           fi
 
-    build-and-test:
-      needs: [ get-configs, version-and-tag ]
-      uses: ./.github/workflows/build-and-test.yml
-      strategy:
-        fail-fast: true
-        matrix:
-          os: [ ubuntu-22.04, windows-latest, macos-latest ]
-      with:
-        ref: ${{ needs.version-and-tag.outputs.tag }}
-        runs-on: ${{ matrix.os }}
+  build-and-test:
+    needs: [ get-configs, version-and-tag ]
+    uses: ./.github/workflows/build-and-test.yml
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ ubuntu-22.04, windows-latest, macos-latest ]
+    with:
+      ref: ${{ needs.version-and-tag.outputs.tag }}
+      runs-on: ${{ matrix.os }}
 
   bundle-linux:
     needs: [ get-configs, version-and-tag, build-and-test ]
