@@ -69,21 +69,99 @@ jobs:
       ref: ${{ needs.version-and-tag.outputs.tag }}
       runs-on: ${{ matrix.os }}
 
+  bundle-linux:
+    needs: [ get-configs, version-and-tag, build-and-test ]
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "18.x" }
+          - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "20.x" }
+          - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "22.x" }
+          - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "18.x" }
+          - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "20.x" }
+          - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "22.x" }
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.version-and-tag.outputs.tag }}
+          fetch-tags: true
+
+      - name: Set release asset name
+        id: set-asset-name
+        shell: bash
+        run: |
+          APP_NAME=${{ needs.get-configs.outputs.app-name }}
+          VERSION=$(node -p "require('./package.json').version")
+          NODE_VERSION=${{ matrix.node-version }}
+          NODE_MAJOR=$(echo $NODE_VERSION | cut -d. -f1)
+          
+          TAG=${{ needs.version-and-tag.outputs.tag }}
+          if [[ "$TAG" =~ -alpha$ ]]; then
+            FILE_NAME="${APP_NAME}-${VERSION}-alpha-linux-${{ matrix.arch }}-node${NODE_MAJOR}.zip"
+          elif [[ "$TAG" =~ -beta$ ]]; then
+            FILE_NAME="${APP_NAME}-${VERSION}-beta-linux-${{ matrix.arch }}-node${NODE_MAJOR}.zip"
+          else
+            FILE_NAME="${APP_NAME}-${VERSION}-linux-${{ matrix.arch }}-node${NODE_MAJOR}.zip"
+          fi
+          
+          ASSET_NAME=$(echo "$FILE_NAME" | tr '[:upper:]' '[:lower:]')
+          echo "ASSET_NAME=${ASSET_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        if: matrix.use_qemu
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build in Container
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/work -w /work \
+            --platform ${{ matrix.docker-platform }} \
+            amazonlinux:2 \
+            /bin/bash -c '
+              set -ex
+              yum install -y curl make gcc-c++ python3 tar gzip wget
+              
+              wget -q https://go.dev/dl/go${{ needs.get-configs.outputs.go-version }}.linux-${{ matrix.go-arch }}.tar.gz
+              tar -C /usr/local -xzf go${{ needs.get-configs.outputs.go-version }}.linux-${{ matrix.go-arch }}.tar.gz
+              export PATH=$PATH:/usr/local/go/bin
+              
+              curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+              export NVM_DIR="$HOME/.nvm"
+              . "$NVM_DIR/nvm.sh"
+              nvm install ${{ matrix.node-version }}
+              npm install -g npm@latest
+          
+              npm ci
+
+              TAG="${{ needs.version-and-tag.outputs.tag }}"
+              if [[ "$TAG" =~ -alpha$ ]]; then
+                npm run bundle:alpha
+              elif [[ "$TAG" =~ -beta$ ]]; then
+                npm run bundle:beta
+              else
+                npm run bundle:prod
+              fi
+          
+              GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../../bundle/production/bin/cfn-init
+              cp ./cfn-init/THIRD-PARTY-LICENSES.txt ./bundle/production/bin/
+          
+              cd ./bundle/production && zip -r ../../${{ steps.set-asset-name.outputs.ASSET_NAME }} .
+            '
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
+          path: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
+          if-no-files-found: error
+
   bundle:
     needs: [ get-configs, version-and-tag, build-and-test ]
     strategy:
       fail-fast: true
       matrix:
         include:
-          - { os: "ubuntu-22.04", arch: "x64", platform: "linux", go-arch: "amd64", node-version: "18.x" }
-          - { os: "ubuntu-22.04", arch: "x64", platform: "linux", go-arch: "amd64", node-version: "20.x" }
-          - { os: "ubuntu-22.04", arch: "x64", platform: "linux", go-arch: "amd64", node-version: "22.x" }
-          - { os: "ubuntu-22.04", arch: "arm64", platform: "linux", go-arch: "arm64", node-version: "18.x" }
-          - { os: "ubuntu-22.04", arch: "arm64", platform: "linux", go-arch: "arm64", node-version: "20.x" }
-          - { os: "ubuntu-22.04", arch: "arm64", platform: "linux", go-arch: "arm64", node-version: "22.x" }
-          - { os: "ubuntu-22.04", arch: "arm", platform: "linux", go-arch: "arm", node-version: "18.x" }
-          - { os: "ubuntu-22.04", arch: "arm", platform: "linux", go-arch: "arm", node-version: "20.x" }
-          - { os: "ubuntu-22.04", arch: "arm", platform: "linux", go-arch: "arm", node-version: "22.x" }
           - { os: "macos-latest", arch: "x64", platform: "darwin", go-arch: "amd64", node-version: "18.x" }
           - { os: "macos-latest", arch: "x64", platform: "darwin", go-arch: "amd64", node-version: "20.x" }
           - { os: "macos-latest", arch: "x64", platform: "darwin", go-arch: "amd64", node-version: "22.x" }
@@ -124,11 +202,11 @@ jobs:
         run: |
           TAG=${{ needs.version-and-tag.outputs.tag }}
           if [[ "$TAG" =~ -alpha$ ]]; then
-            npm run bundle:alpha -- --env platform=${{ matrix.platform }} --env arch=${{ matrix.arch }}
+            npm run bundle:alpha
           elif [[ "$TAG" =~ -beta$ ]]; then
-            npm run bundle:beta -- --env platform=${{ matrix.platform }} --env arch=${{ matrix.arch }}
+            npm run bundle:beta
           else
-            npm run bundle:prod -- --env platform=${{ matrix.platform }} --env arch=${{ matrix.arch }}
+            npm run bundle:prod
           fi
 
       - name: Bundle Go
@@ -193,7 +271,7 @@ jobs:
           if-no-files-found: error
 
   release:
-    needs: [ version-and-tag, bundle ]
+    needs: [ version-and-tag, bundle-linux, bundle ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -202,6 +280,9 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: artifacts
+
+      - name: List artifacts
+        run: ls -R artifacts/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2

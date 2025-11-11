@@ -54,7 +54,7 @@ function generateExternals() {
 
 const EXTERNALS = generateExternals();
 
-function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, targetArch) {
+function createPlugins(isDevelopment, outputPath, mode, env) {
     const plugins = [];
 
     plugins.push(
@@ -90,7 +90,6 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                 compiler.hooks.beforeRun.tapAsync('InstallDependencies', (compilation, callback) => {
                     try {
                         console.log('[InstallDependencies] Starting dependency installation...');
-                        console.log(`[InstallDependencies] Target: ${targetPlatform}-${targetArch}`);
 
                         const tmpPkg = {
                             ...Package,
@@ -112,10 +111,11 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
 
                         console.log('[InstallDependencies] Running npm ci --omit=dev');
                         execSync('npm ci --omit=dev', { cwd: tmpDir, stdio: 'inherit' });
+                        
+                        console.log('[InstallDependencies] Rebuilding tree-sitter-json from source...');
+                        execSync('npm rebuild tree-sitter-json --build-from-source', { cwd: tmpDir, stdio: 'inherit' });
+                        
                         const otherDeps = Object.entries(Package.nativePrebuilds)
-                            .filter(([key, _version]) => {
-                                return key.endsWith(`${targetPlatform}-${targetArch}`);
-                            })
                             .map(([key, version]) => {
                                 return `${key}@${version}`;
                             })
@@ -128,43 +128,6 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                         console.error('[InstallDependencies] Error:', error);
                         callback(error);
                     }
-                });
-
-                compiler.hooks.afterEmit.tap('CleanUnusedNativeModules', () => {
-                    console.log('[CleanUnusedNativeModules] Starting cleanup of unused native modules...');
-
-                    const nodeModulesPath = path.join(outputPath, 'node_modules');
-
-                    if (!fs.existsSync(nodeModulesPath)) {
-                        console.log('[CleanUnusedNativeModules] No node_modules found, skipping cleanup');
-                        return;
-                    }
-
-                    function cleanPlatformDirs(dir) {
-                        if (!fs.existsSync(dir)) return;
-
-                        const entries = fs.readdirSync(dir, { withFileTypes: true });
-                        for (const entry of entries) {
-                            if (!entry.isDirectory()) continue;
-
-                            const entryPath = path.join(dir, entry.name);
-                            const isPlatformDir = PLATFORMS.some((p) => entry.name.includes(`${p}-`));
-                            const shouldKeep = entry.name.includes(`${targetPlatform}-${targetArch}`);
-
-                            if (isPlatformDir && !shouldKeep) {
-                                console.log(`[CleanUnusedNativeModules] Deleted: ${entryPath}`);
-                                fs.rmSync(entryPath, { recursive: true, force: true });
-                            } else if (entry.name === 'prebuilds') {
-                                console.log(`[CleanUnusedNativeModules] Scanning prebuilds: ${entryPath}`);
-                                cleanPlatformDirs(entryPath);
-                            } else {
-                                cleanPlatformDirs(entryPath);
-                            }
-                        }
-                    }
-
-                    cleanPlatformDirs(nodeModulesPath);
-                    console.log('[CleanUnusedNativeModules] Cleanup complete');
                 });
 
                 compiler.hooks.done.tap('CleanupTemp', () => {
@@ -334,6 +297,6 @@ module.exports = (env = {}) => {
                 chunks: 'all',
             },
         },
-        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, targetPlatform, targetArch),
+        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv),
     };
 };
