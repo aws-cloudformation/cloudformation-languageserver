@@ -12,7 +12,7 @@ import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from 
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
-import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
+import { Telemetry, Measure, Count } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { handleLspError } from '../utils/Errors';
 import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
@@ -168,6 +168,12 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
             .filter((schema) => schema.handlers?.list !== undefined)
             .map((schema) => schema.typeName);
         return [...listableTypes].filter((type) => !NO_LIST_SUPPORT.has(type) && !REQUIRES_RESOURCE_MODEL.has(type));
+    }
+
+    @Count({ name: 'removeResourceType' })
+    public removeResourceType(typeName: string) {
+        this.resourceListMap.delete(typeName);
+        this.resourceStateMap.delete(typeName);
     }
 
     private storeResourceState(typeName: ResourceType, id: ResourceId, state: ResourceState) {

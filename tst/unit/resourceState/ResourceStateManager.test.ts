@@ -520,4 +520,33 @@ describe('ResourceStateManager', () => {
             expect(result).not.toContain('MyOrg::Custom::Resource');
         });
     });
+
+    describe('removeResourceType()', () => {
+        it('should remove resource type from both maps', async () => {
+            const mockOutput: GetResourceCommandOutput = {
+                TypeName: 'AWS::S3::Bucket',
+                ResourceDescription: {
+                    Identifier: 'my-bucket',
+                    Properties: '{"BucketName": "my-bucket"}',
+                },
+                $metadata: {},
+            };
+            vi.mocked(mockCcapiService.getResource).mockResolvedValue(mockOutput);
+            vi.mocked(mockCcapiService.listResources).mockResolvedValue({
+                ResourceDescriptions: [{ Identifier: 'my-bucket' }],
+            });
+
+            await manager.getResource('AWS::S3::Bucket', 'my-bucket');
+            await manager.listResources('AWS::S3::Bucket');
+
+            manager.removeResourceType('AWS::S3::Bucket');
+
+            await manager.getResource('AWS::S3::Bucket', 'my-bucket');
+            expect(mockCcapiService.getResource).toHaveBeenCalledTimes(2);
+        });
+
+        it('should handle removing non-existent resource type', () => {
+            expect(() => manager.removeResourceType('AWS::DynamoDB::Table')).not.toThrow();
+        });
+    });
 });
