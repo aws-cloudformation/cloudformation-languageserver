@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PassThrough } from 'stream';
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node';
@@ -105,6 +106,7 @@ export class TestExtension implements Closeable {
                 aws: awsMetadata,
             },
         },
+        private readonly useMocks: boolean = true,
     ) {
         this.serverConnection = new LspConnection(
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
@@ -118,22 +120,34 @@ export class TestExtension implements Closeable {
                         dataStoreFactory,
                     });
 
-                    const schemaStore = new SchemaStore(dataStoreFactory);
-                    this.external = new CfnExternal(lsp, this.core, {
-                        schemaStore,
-                        cfnLintService: createMockCfnLintService(),
-                        guardService: createMockGuardService(),
-                        featureFlags: new FeatureFlagProvider(
-                            join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
-                        ),
-                    });
+                    if (this.useMocks) {
+                        // Integration tests with mocks
+                        const schemaStore = new SchemaStore(dataStoreFactory);
+                        this.external = new CfnExternal(lsp, this.core, {
+                            schemaStore,
+                            cfnLintService: createMockCfnLintService(),
+                            guardService: createMockGuardService(),
+                            featureFlags: new FeatureFlagProvider(
+                                join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+                            ),
+                        });
 
-                    this.providers = new CfnLspProviders(this.core, this.external, {
-                        relationshipSchemaService: new RelationshipSchemaService(
-                            join(__dirname, '..', '..', 'assets', 'relationship_schemas.json'),
-                        ),
-                        cfnAI: mockCfnAi(),
-                    });
+                        this.providers = new CfnLspProviders(this.core, this.external, {
+                            relationshipSchemaService: new RelationshipSchemaService(
+                                join(__dirname, '..', '..', 'assets', 'relationship_schemas.json'),
+                            ),
+                            cfnAI: mockCfnAi(),
+                        });
+                    } else {
+                        // E2E-Integration tests without mocks
+                        this.external = new CfnExternal(lsp, this.core, {
+                            featureFlags: new FeatureFlagProvider(
+                                join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+                            ),
+                        });
+                        this.providers = new CfnLspProviders(this.core, this.external);
+                    }
+
                     this.server = new CfnServer(lsp, this.core, this.external, this.providers);
                     return LspCapabilities;
                 },
@@ -264,4 +278,26 @@ export class TestExtension implements Closeable {
     deleteIamCredentials() {
         return this.notify(IamCredentialsDeleteNotification.method, undefined);
     }
+
+    // Helper methods for convenience
+    async openYamlTemplate(content: string, filename = 'template.yaml'): Promise<string> {
+        const uri = `file:///test/${filename}`;
+        await this.openDocument({
+            textDocument: { uri, languageId: 'yaml', version: 1, text: content },
+        });
+        return uri;
+    }
+
+    async openJsonTemplate(content: string, filename = 'template.json'): Promise<string> {
+        const uri = `file:///test/${filename}`;
+        await this.openDocument({
+            textDocument: { uri, languageId: 'json', version: 1, text: content },
+        });
+        return uri;
+    }
+}
+
+export function loadTemplate(filename: string): string {
+    const templatePath = join(__dirname, '..', 'resources', 'templates', filename);
+    return readFileSync(templatePath, 'utf8');
 }

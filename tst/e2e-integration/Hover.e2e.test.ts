@@ -1,34 +1,32 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { LspClient, loadTemplate } from './LspClient';
+import { TestExtension } from '../utils/TestExtension';
+import { wait, getSimpleYamlTemplateText } from '../utils/Utils';
 
 describe('E2E-Integration: Hover', () => {
-    let client: LspClient;
+    let client: TestExtension;
 
     beforeAll(async () => {
-        client = new LspClient();
-        await client.start();
+        client = new TestExtension(undefined, false);
+        await client.ready();
     }, 30000);
 
     afterAll(async () => {
-        await client.shutdown();
+        await client.close();
     });
 
     it('should provide hover documentation for resource type', async () => {
-        const template = loadTemplate('simple.yaml');
+        const template = getSimpleYamlTemplateText();
         const uri = await client.openYamlTemplate(template);
-        await client.waitForProcessing(2000);
+        await wait(2000);
 
-        // Try hovering over the resource type value (after "Type: ")
-        const hover = await client.hover({
+        const hover: any = await client.hover({
             textDocument: { uri },
             position: { line: 3, character: 15 },
         });
 
         expect(hover).toBeDefined();
-
         expect(hover.contents).toBeDefined();
 
-        // Extract content (can be string or MarkupContent)
         let content = '';
         if (typeof hover.contents === 'string') {
             content = hover.contents;
