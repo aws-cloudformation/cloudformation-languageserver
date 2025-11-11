@@ -5,11 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  get-configs:
-    uses: ./.github/workflows/configs.yml
-
   create-beta-tag:
-    needs: [get-configs]
     runs-on: ubuntu-latest
     permissions:
       contents: write

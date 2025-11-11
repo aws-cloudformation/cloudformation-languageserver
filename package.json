@@ -147,7 +147,6 @@
     "@opentelemetry/sdk-trace-base",
     "@opentelemetry/sdk-trace-node",
     "@tree-sitter-grammars/tree-sitter-yaml",
-    "cbor-x",
     "cfn-guard",
     "lmdb",
     "pino",
@@ -157,19 +156,22 @@
     "tree-sitter-json",
     "vscode-languageserver-types"
   ],
-  "nativePrebuilds": {
-    "@lmdb/lmdb-darwin-arm64": "3.4.2",
-    "@lmdb/lmdb-darwin-x64": "3.4.2",
-    "@lmdb/lmdb-linux-arm": "3.4.2",
-    "@lmdb/lmdb-linux-arm64": "3.4.2",
-    "@lmdb/lmdb-linux-x64": "3.4.2",
-    "@lmdb/lmdb-win32-arm64": "3.4.2",
-    "@lmdb/lmdb-win32-x64": "3.4.2",
-    "@msgpackr-extract/msgpackr-extract-darwin-arm64": "3.0.3",
-    "@msgpackr-extract/msgpackr-extract-darwin-x64": "3.0.3",
-    "@msgpackr-extract/msgpackr-extract-linux-arm": "3.0.3",
-    "@msgpackr-extract/msgpackr-extract-linux-arm64": "3.0.3",
-    "@msgpackr-extract/msgpackr-extract-linux-x64": "3.0.3",
-    "@msgpackr-extract/msgpackr-extract-win32-x64": "3.0.3"
-  }
+  "nativePrebuilds": [
+    "@lmdb/lmdb-darwin-arm64",
+    "@lmdb/lmdb-darwin-x64",
+    "@lmdb/lmdb-linux-arm",
+    "@lmdb/lmdb-linux-arm64",
+    "@lmdb/lmdb-linux-x64",
+    "@lmdb/lmdb-win32-arm64",
+    "@lmdb/lmdb-win32-x64",
+    "@msgpackr-extract/msgpackr-extract-darwin-arm64",
+    "@msgpackr-extract/msgpackr-extract-darwin-x64",
+    "@msgpackr-extract/msgpackr-extract-linux-arm",
+    "@msgpackr-extract/msgpackr-extract-linux-arm64",
+    "@msgpackr-extract/msgpackr-extract-linux-x64",
+    "@msgpackr-extract/msgpackr-extract-win32-x64"
+  ],
+  "unusedDependencies": [
+    "cbor-x"
+  ]
 }
