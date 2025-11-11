@@ -49,8 +49,8 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         private readonly contextManager: ContextManager,
         private readonly completionProviderMap: Map<CompletionProviderType, CompletionProvider>,
         private readonly documentManager: DocumentManager,
-        private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
         private readonly schemaRetriever: SchemaRetriever,
+        private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
     ) {}
 
     @Track({ name: 'getCompletions', trackObjectKey: 'items' })
@@ -282,8 +282,8 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
             core.contextManager,
             createCompletionProviders(core, external, providers),
             core.documentManager,
-            createEntityFieldProviders(),
             external.schemaRetriever,
+            createEntityFieldProviders(),
         );
     }
 }

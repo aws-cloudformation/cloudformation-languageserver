@@ -205,47 +205,52 @@ export class CompletionFormatter {
         context: Context,
         propertyName: string,
     ): string | undefined {
+        let resourceSchema;
+
+        if (ResourceAttributesSet.has(propertyName)) {
+            return RESOURCE_ATTRIBUTE_TYPES[propertyName];
+        }
+
+        const entity = context.entity;
+        if (!entity || context.getEntityType() !== EntityType.Resource) {
+            return undefined;
+        }
+
+        const resourceType = (entity as Resource).Type;
+        if (!resourceType) {
+            return undefined;
+        }
+        
         try {
-            if (ResourceAttributesSet.has(propertyName)) {
-                return RESOURCE_ATTRIBUTE_TYPES[propertyName];
-            }
-
-            const entity = context.entity;
-            if (!entity || context.getEntityType() !== EntityType.Resource) {
-                return undefined;
-            }
-
-            const resourceType = (entity as Resource).Type;
-            if (!resourceType) {
-                return undefined;
-            }
-
             const combinedSchemas = schemaRetriever.getDefault();
 
-            const resourceSchema = combinedSchemas.schemas.get(resourceType);
+            resourceSchema = combinedSchemas.schemas.get(resourceType);
             if (!resourceSchema) {
                 return undefined;
             }
+        } catch (error){
+          return undefined;
+        }
 
-            const propertiesIndex = context.propertyPath.indexOf('Properties');
-            let propertyPath: string[];
+        const propertiesIndex = context.propertyPath.indexOf('Properties');
+        let propertyPath: string[];
 
-            if (propertiesIndex === -1) {
-                propertyPath = [propertyName];
+        if (propertiesIndex === -1) {
+            propertyPath = [propertyName];
+        } else {
+            const pathAfterProperties = context.propertyPath.slice(propertiesIndex + 1).map(String);
+
+            if (
+                pathAfterProperties.length > 0 &&
+                pathAfterProperties[pathAfterProperties.length - 1] === context.text
+            ) {
+                propertyPath = [...pathAfterProperties.slice(0, -1), propertyName];
+            } else if (pathAfterProperties[pathAfterProperties.length - 1] === propertyName) {
+                propertyPath = pathAfterProperties;
             } else {
-                const pathAfterProperties = context.propertyPath.slice(propertiesIndex + 1).map(String);
-
-                if (
-                    pathAfterProperties.length > 0 &&
-                    pathAfterProperties[pathAfterProperties.length - 1] === context.text
-                ) {
-                    propertyPath = [...pathAfterProperties.slice(0, -1), propertyName];
-                } else if (pathAfterProperties[pathAfterProperties.length - 1] === propertyName) {
-                    propertyPath = pathAfterProperties;
-                } else {
-                    propertyPath = [...pathAfterProperties, propertyName];
-                }
+                propertyPath = [...pathAfterProperties, propertyName];
             }
+        }
 
             // Build JSON pointer path using wildcard notation for array indices
             // CloudFormation schemas use /properties/Tags/*/Key format for array item properties
@@ -253,6 +258,8 @@ export class CompletionFormatter {
             const jsonPointerParts = ['properties', ...schemaPath];
 
             const jsonPointerPath = '/' + jsonPointerParts.join('/');
+            
+        try {
             const propertyDefinitions = resourceSchema.resolveJsonPointerPath(jsonPointerPath);
 
             if (propertyDefinitions.length === 0) {
@@ -272,7 +279,6 @@ export class CompletionFormatter {
 
             return undefined;
         } catch (error) {
-            CompletionFormatter.log.debug(error as Error, 'Failed to get property type from schema');
             return undefined;
         }
     }

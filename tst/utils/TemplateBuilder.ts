@@ -140,8 +140,8 @@ export class TemplateBuilder {
             this.contextManager,
             completionProviders,
             this.documentManager,
-            undefined,
             this.schemaRetriever,
+            undefined,
         );
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever);
         this.initialize(startingContent);
