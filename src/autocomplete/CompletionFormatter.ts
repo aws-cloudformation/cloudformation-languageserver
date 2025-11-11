@@ -220,7 +220,7 @@ export class CompletionFormatter {
         if (!resourceType) {
             return undefined;
         }
-        
+
         try {
             const combinedSchemas = schemaRetriever.getDefault();
 
@@ -228,8 +228,8 @@ export class CompletionFormatter {
             if (!resourceSchema) {
                 return undefined;
             }
-        } catch (error){
-          return undefined;
+        } catch {
+            return undefined;
         }
 
         const propertiesIndex = context.propertyPath.indexOf('Properties');
@@ -252,13 +252,13 @@ export class CompletionFormatter {
             }
         }
 
-            // Build JSON pointer path using wildcard notation for array indices
-            // CloudFormation schemas use /properties/Tags/*/Key format for array item properties
-            const schemaPath = propertyPath.map((part) => (Number.isNaN(Number(part)) ? part : '*'));
-            const jsonPointerParts = ['properties', ...schemaPath];
+        // Build JSON pointer path using wildcard notation for array indices
+        // CloudFormation schemas use /properties/Tags/*/Key format for array item properties
+        const schemaPath = propertyPath.map((part) => (Number.isNaN(Number(part)) ? part : '*'));
+        const jsonPointerParts = ['properties', ...schemaPath];
 
-            const jsonPointerPath = '/' + jsonPointerParts.join('/');
-            
+        const jsonPointerPath = '/' + jsonPointerParts.join('/');
+
         try {
             const propertyDefinitions = resourceSchema.resolveJsonPointerPath(jsonPointerPath);
 
@@ -278,7 +278,7 @@ export class CompletionFormatter {
             }
 
             return undefined;
-        } catch (error) {
+        } catch {
             return undefined;
         }
     }

@@ -121,15 +121,16 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
             return true;
         }).map((section) => {
             const shouldBeObject = TopLevelSectionsWithLogicalIdsSet.has(section);
-            
-            const options = shouldBeObject ? {
-                data: { type: 'object' }
-            } : undefined;
-            
+
+            const options = shouldBeObject
+                ? {
+                      data: { type: 'object' },
+                  }
+                : undefined;
+
             return createCompletionItem(section, CompletionItemKind.Class, options);
         });
     }
-
 
     private getTopLevelSectionSnippetCompletions(context: Context, params: CompletionParams): CompletionItem[] {
         const snippets: CompletionItem[] = [];
