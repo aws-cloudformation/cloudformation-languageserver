@@ -20,6 +20,7 @@
     "Language Server"
   ],
   "scripts": {
+    "postinstall": "cp assets/tree-sitter-json-linux-arm64.node node_modules/tree-sitter-json/prebuilds/linux-arm64/tree-sitter-json.node 2>/dev/null || true",
     "clean": "rm -rf build && rm -rf bundle && rm -rf coverage && rm -rf node_modules && rm -rf out && rm -rf jscpd",
     "build": "rm -rf out && tsc -b",
     "watch": "rm -rf out && tsc -b -w",

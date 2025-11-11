@@ -7,6 +7,7 @@
 /tmp-node-modules
 *.tsbuildinfo
 *.node
+!assets/tree-sitter-json-linux-arm64.node
 .DS_Store
 tools/*
 !tools/*.ts
