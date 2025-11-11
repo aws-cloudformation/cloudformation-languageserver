@@ -23,6 +23,9 @@ import { docPosition, Templates } from '../../utils/TemplateUtils';
 /* eslint-disable vitest/expect-expect */
 describe('CompletionRouter', () => {
     const mockComponents = createMockComponents();
+
+    mockComponents.external.featureFlags.get.returns({ isEnabled: () => false, describe: () => 'mock' });
+
     const completionRouter = CompletionRouter.create(
         mockComponents.core,
         mockComponents.external,

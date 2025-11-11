@@ -1,4 +1,4 @@
-import { Change, ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
+import { Change, ChangeSetType, StackStatus, OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { DateTime } from 'luxon';
 import { stubInterface } from 'ts-sinon';
@@ -18,12 +18,14 @@ import {
     parseValidationEvents,
     publishValidationDiagnostics,
     isStackInReview,
+    computeEligibleDeploymentMode,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateValidationParams,
     StackActionPhase,
     StackActionState,
     ValidationDetail,
+    DeploymentMode,
 } from '../../../src/stacks/actions/StackActionRequestType';
 import { StackActionWorkflowState } from '../../../src/stacks/actions/StackActionWorkflowType';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
@@ -576,6 +578,65 @@ describe('StackActionWorkflowOperations', () => {
             const result = await isStackInReview('test-stack', mockCfnService);
 
             expect(result).toBe(true);
+        });
+    });
+
+    describe('computeEligibleDeploymentMode', () => {
+        it('should return undefined when deploymentMode is not provided', () => {
+            const result = computeEligibleDeploymentMode(ChangeSetType.UPDATE, undefined);
+            expect(result).toBeUndefined();
+        });
+
+        it('should return deploymentMode when all conditions are met for REVERT_DRIFT', () => {
+            const result = computeEligibleDeploymentMode(
+                ChangeSetType.UPDATE,
+                DeploymentMode.REVERT_DRIFT,
+                false,
+                undefined,
+                false,
+                OnStackFailure.ROLLBACK,
+            );
+            expect(result).toBe(DeploymentMode.REVERT_DRIFT);
+        });
+
+        it('should return undefined when changeSetType is CREATE', () => {
+            const result = computeEligibleDeploymentMode(ChangeSetType.CREATE, DeploymentMode.REVERT_DRIFT);
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when importExistingResources is true', () => {
+            const result = computeEligibleDeploymentMode(ChangeSetType.UPDATE, DeploymentMode.REVERT_DRIFT, true);
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when resourcesToImport has items', () => {
+            const result = computeEligibleDeploymentMode(ChangeSetType.UPDATE, DeploymentMode.REVERT_DRIFT, false, [
+                { LogicalResourceId: 'test', ResourceType: 'AWS::S3::Bucket', ResourceIdentifier: {} },
+            ]);
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when includeNestedStacks is true', () => {
+            const result = computeEligibleDeploymentMode(
+                ChangeSetType.UPDATE,
+                DeploymentMode.REVERT_DRIFT,
+                false,
+                undefined,
+                true,
+            );
+            expect(result).toBeUndefined();
+        });
+
+        it('should return undefined when onStackFailure is DO_NOTHING', () => {
+            const result = computeEligibleDeploymentMode(
+                ChangeSetType.UPDATE,
+                DeploymentMode.REVERT_DRIFT,
+                false,
+                undefined,
+                false,
+                OnStackFailure.DO_NOTHING,
+            );
+            expect(result).toBeUndefined();
         });
     });
 });

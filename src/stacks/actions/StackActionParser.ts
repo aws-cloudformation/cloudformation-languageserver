@@ -11,6 +11,7 @@ import {
     CreateDeploymentParams,
     CreateValidationParams,
     DeleteChangeSetParams,
+    DeploymentMode,
     TemplateUri,
 } from './StackActionRequestType';
 
@@ -40,6 +41,8 @@ const ResourceToImportSchema = z.object({
     ResourceIdentifier: z.record(z.string(), z.string()),
 });
 
+const DeploymentModeSchema = z.enum([DeploymentMode.REVERT_DRIFT]);
+
 const CreateValidationParamsSchema = z.object({
     id: z.string().min(1),
     uri: z.string().min(1),
@@ -52,6 +55,7 @@ const CreateValidationParamsSchema = z.object({
     includeNestedStacks: z.boolean().optional(),
     tags: z.array(TagSchema).optional(),
     importExistingResources: z.boolean().optional(),
+    deploymentMode: DeploymentModeSchema.optional(),
     s3Bucket: z.string().optional(),
     s3Key: z.string().optional(),
 });

@@ -18,7 +18,7 @@ describe('FeatureFlagSupplier', () => {
 
         const supplier = new FeatureFlagSupplier(configSupplier);
 
-        expect(supplier.featureFlags.size).toBe(0);
+        expect(supplier.featureFlags.size).toBe(1);
         expect(supplier.targetedFeatureFlags.size).toBe(1);
         expect(supplier.targetedFeatureFlags.has('EnhancedDryRun')).toBe(true);
         supplier.close();

@@ -6,6 +6,7 @@ import { DynamicFeatureFlag, DynamicTargetedFeatureFlag } from './DynamicFeature
 import {
     buildLocalHost,
     buildRegional,
+    buildStatic,
     FeatureFlagBuilderType,
     FeatureFlagConfigSchema,
     FeatureFlagConfigType,
@@ -78,7 +79,9 @@ function featureConfigSupplier(key: string, configSupplier: () => unknown): Feat
     }
 }
 
-const FeatureBuilders: Record<string, FeatureFlagBuilderType> = {} as const;
+const FeatureBuilders: Record<string, FeatureFlagBuilderType> = {
+    Constants: buildStatic,
+} as const;
 const TargetedFeatureBuilders: Record<string, TargetedFeatureFlagBuilderType<unknown>> = {
     EnhancedDryRun: (name: string, config?: FeatureFlagConfigType) => {
         return new CompoundFeatureFlag(buildLocalHost(name, config), buildRegional(name, config));

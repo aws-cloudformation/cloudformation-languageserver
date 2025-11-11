@@ -200,9 +200,6 @@ function main() {
     const schemaStore = new SchemaStore(dataStoreFactory);
     const external = new CfnExternal(lsp, core, {
         schemaStore,
-        schemaTaskManager: new GetSchemaTaskManager(schemaStore, getRemotePublicSchemas, () =>
-            Promise.resolve(getTestPrivateSchemas()),
-        ),
         featureFlags: new FeatureFlagProvider(join(__dirname, '..', 'assets', 'featureFlag', 'alpha.json')),
     });
 

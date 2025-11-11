@@ -1,3 +1,4 @@
+import { OutputFormatType, ShowSummaryType, ValidateBuilder } from 'cfn-guard/guard';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
@@ -31,166 +32,45 @@ export interface GuardRule {
 }
 
 /**
- * Guard WASM module interface based on cfn-guard TypeScript bindings
- */
-interface GuardWasmModule {
-    ValidateBuilder: {
-        new (): GuardValidateBuilder;
-    };
-    OutputFormatType: {
-        SingleLineSummary: number;
-        JSON: number;
-        YAML: number;
-        Junit: number;
-        Sarif: number;
-    };
-    ShowSummaryType: {
-        All: number;
-        Pass: number;
-        Fail: number;
-        Skip: number;
-        None: number;
-    };
-}
-
-/**
- * Guard ValidateBuilder interface from WASM bindings
- */
-interface GuardValidateBuilder {
-    payload(enabled: boolean): GuardValidateBuilder;
-    structured(enabled: boolean): GuardValidateBuilder;
-    outputFormat(format: number): GuardValidateBuilder;
-    showSummary(args: number[]): GuardValidateBuilder;
-    tryBuildAndExecute(payload: string): unknown;
-}
-
-/**
- * GuardEngine handles the loading and execution of the Guard WASM module
- * for policy-as-code validation of CloudFormation templates.
+ * GuardEngine handles the execution of Guard validation using the official cfn-guard TypeScript library
  */
 export class GuardEngine {
-    private guardWasm: GuardWasmModule | undefined;
     private readonly log = LoggerFactory.getLogger(GuardEngine);
-    private initializationPromise: Promise<void> | undefined;
-    private isInitialized = false;
 
     /**
-     * Initialize the Guard WASM module
-     * This loads the WASM binary and sets up the JavaScript bindings
-     */
-    async initialize(): Promise<void> {
-        if (this.isInitialized) {
-            return;
-        }
-
-        if (this.initializationPromise) {
-            return await this.initializationPromise;
-        }
-
-        this.initializationPromise = this._initialize();
-        return await this.initializationPromise;
-    }
-
-    private async _initialize(): Promise<void> {
-        try {
-            const wasmModule = await import('./assets/guard-wrapper.js');
-            this.guardWasm = wasmModule;
-
-            this.isInitialized = true;
-        } catch (error) {
-            this.log.error(`Failed to initialize Guard WASM module: ${extractErrorMessage(error)}`);
-            throw new Error(`Guard WASM initialization failed: ${extractErrorMessage(error)}`);
-        }
-    }
-
-    /**
-     * Execute Guard validation against template content with specified rules
-     *
-     * @param content The CloudFormation template content (JSON or YAML)
-     * @param rules Array of Guard rules to validate against
-     * @param severity Default severity to use when Guard doesn't provide one
-     * @returns Array of violations found
+     * Validate CloudFormation template using Guard rules
      */
     validateTemplate(content: string, rules: GuardRule[], severity: DiagnosticSeverity): GuardViolation[] {
-        if (!this.isInitialized || !this.guardWasm) {
-            throw new Error('GuardEngine not initialized. Call initialize() first.');
-        }
-
         if (rules.length === 0) {
             return [];
         }
 
         try {
-            return this.performValidation(content, rules, severity);
+            const payload = {
+                rules: rules.map((rule) => rule.content),
+                data: [content],
+            };
+
+            const validateBuilder = new ValidateBuilder();
+            const result = validateBuilder
+                .payload(true)
+                .structured(true)
+                .showSummary([ShowSummaryType.None])
+                .outputFormat(OutputFormatType.Sarif)
+                .tryBuildAndExecute(JSON.stringify(payload)) as string;
+
+            return this.convertSarifToViolations(result, rules, severity);
         } catch (error) {
             throw new Error(`Guard validation failed: ${extractErrorMessage(error)}`);
         }
     }
 
     /**
-     * Execute Guard validation using SingleLineSummary format
+     * Convert SARIF results to GuardViolation format
      */
-    private executeGuardValidation(content: string, rules: GuardRule[]): string {
-        if (!this.isInitialized || !this.guardWasm) {
-            throw new Error('GuardEngine not initialized. Call initialize() first.');
-        }
-
-        const payload = {
-            rules: rules.map((rule) => rule.content),
-            data: [content],
-        };
-
-        const builder = new this.guardWasm.ValidateBuilder()
-            .payload(true) // Use payload mode
-            .structured(false) // Get unstructured output for single-line-summary
-            .outputFormat(this.guardWasm.OutputFormatType.SingleLineSummary) // Single line summary format
-            .showSummary([this.guardWasm.ShowSummaryType.None]); // No summary
-
-        const payloadString = JSON.stringify(payload);
-
-        const result = builder.tryBuildAndExecute(payloadString);
-
-        if (typeof result === 'string') {
-            return result;
-        } else {
-            return JSON.stringify(result, undefined, 2);
-        }
-    }
-
-    /**
-     * Perform the actual validation using SingleLineSummary format
-     */
-    private performValidation(content: string, rules: GuardRule[], severity: DiagnosticSeverity): GuardViolation[] {
-        const output = this.executeGuardValidation(content, rules);
-        const violations = this.parseSingleLineSummaryOutput(output, rules, severity);
-        return this.deduplicateViolations(violations);
-    }
-
-    /**
-     * Get raw SingleLineSummary output for debugging/inspection
-     */
-    getRawOutput(content: string, rules: GuardRule[]): string {
-        try {
-            const result = this.executeGuardValidation(content, rules);
-
-            if (typeof result === 'string') {
-                return result;
-            } else {
-                return JSON.stringify(result, undefined, 2);
-            }
-        } catch (error) {
-            this.log.error(`Error in getRawOutput: ${extractErrorMessage(error)}`);
-            throw error;
-        }
-    }
-
-    /**
-     * Parse SingleLineSummary output and convert to structured violations
-     * Groups violations by missing property and location, combining rule names
-     */
-    private parseSingleLineSummaryOutput(
+    private convertSummaryToViolations(
         output: string,
-        _rules: GuardRule[],
+        rules: GuardRule[],
         severity: DiagnosticSeverity,
     ): GuardViolation[] {
         const violations: GuardViolation[] = [];
@@ -288,16 +168,14 @@ export class GuardEngine {
                     }
 
                     const group = violationGroups.get(groupKey);
-                    if (!group) {
-                        continue;
-                    }
+                    if (group) {
+                        group.ruleNames.add(ruleName);
 
-                    group.ruleNames.add(ruleName);
-
-                    // Get rule message if available
-                    const rule = _rules.find((r) => r.name === ruleName);
-                    if (rule?.message && !group.ruleMessages.includes(rule.message)) {
-                        group.ruleMessages.push(rule.message);
+                        // Get rule message if available
+                        const rule = rules.find((r) => r.name === ruleName);
+                        if (rule?.message && !group.ruleMessages.includes(rule.message)) {
+                            group.ruleMessages.push(rule.message);
+                        }
                     }
                 }
             } else {
@@ -318,21 +196,18 @@ export class GuardEngine {
                 }
 
                 const group = violationGroups.get(groupKey);
-                if (!group) {
-                    continue;
-                }
+                if (group) {
+                    group.ruleNames.add(ruleName);
 
-                group.ruleNames.add(ruleName);
-
-                // Get rule message if available
-                const rule = _rules.find((r) => r.name === ruleName);
-                if (rule?.message && !group.ruleMessages.includes(rule.message)) {
-                    group.ruleMessages.push(rule.message);
+                    // Get rule message if available
+                    const rule = rules.find((r) => r.name === ruleName);
+                    if (rule?.message && !group.ruleMessages.includes(rule.message)) {
+                        group.ruleMessages.push(rule.message);
+                    }
                 }
             }
         }
 
-        // Convert groups to violations
         for (const [, group] of violationGroups) {
             const ruleNamesList = [...group.ruleNames].sort();
             const combinedRuleName = ruleNamesList.join(', ');
@@ -370,181 +245,93 @@ export class GuardEngine {
         return violations;
     }
 
-    /**
-     * Extract the message from Guard rule content << >> blocks
-     * This provides a consistent message for all violations of a rule
-     */
-    public static extractRuleMessage(ruleContent: string): string | undefined {
-        // Match << >> blocks and extract any message content
-        const messageBlockRegex = /<<\s*([\s\S]*?)\s*>>/;
-        const match = ruleContent.match(messageBlockRegex);
+    private convertSarifToViolations(
+        sarifResult: string,
+        rules: GuardRule[],
+        severity: DiagnosticSeverity,
+    ): GuardViolation[] {
+        const violations: GuardViolation[] = [];
 
-        if (!match) {
-            return undefined;
-        }
-
-        const messageBlock = match[1].trim();
-        return messageBlock || undefined;
-    }
-
-    /**
-     * Extract useful context from Guard violation messages
-     * Focuses on specific, actionable information like missing properties or value mismatches
-     */
-    private extractViolationContext(
-        violationMessage?: string,
-        fixMessage?: string,
-        actualValue?: string,
-        expectedValue?: string,
-        missingProperty?: string,
-        operator?: string,
-    ): string | undefined {
-        // Add missing property context
-        if (missingProperty) {
-            return `Missing property: ${missingProperty}`;
-        }
-
-        // Add comparison context if we have both values
-        if (actualValue && expectedValue) {
-            return `Expected: ${expectedValue}, Found: ${actualValue}`;
-        }
-
-        // Add operator context - generic for any operator with values
-        if (operator && actualValue && expectedValue) {
-            const operatorText = operator.toLowerCase().replaceAll('_', ' ');
-            return `Value must be ${operatorText} ${expectedValue}, found: ${actualValue}`;
-        }
-
-        // Special case for existence operators without values
-        if (operator === 'NOT EXISTS') {
-            return 'Property should not exist';
-        }
-        if (operator === 'EXISTS') {
-            return 'Property should exist';
-        }
-
-        return undefined;
-    }
-
-    /**
-     * Deduplicate violations that have the same rule name and location
-     * This handles cases where Guard reports multiple violations for the same issue
-     * When duplicates are found, we combine all contexts into a single comprehensive finding
-     */
-    private deduplicateViolations(violations: GuardViolation[]): GuardViolation[] {
-        const groupedViolations = new Map<string, GuardViolation[]>();
-
-        // Group violations by rule name and location
-        for (const violation of violations) {
-            const key = `${violation.ruleName}:${violation.location.path}:${violation.location.line}:${violation.location.column}`;
-
-            if (!groupedViolations.has(key)) {
-                groupedViolations.set(key, []);
-            }
-            groupedViolations.get(key)?.push(violation);
-        }
-
-        // Combine all violations in each group
-        const result: GuardViolation[] = [];
-        for (const violationGroup of groupedViolations.values()) {
-            if (violationGroup.length === 1) {
-                result.push(violationGroup[0]);
-            } else {
-                const combined = this.combineAllViolationMessages(violationGroup);
-                result.push(combined);
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * Combine all violation messages from multiple violations for the same rule and location
-     * Collects all unique context information into a single comprehensive message
-     */
-    private combineAllViolationMessages(violations: GuardViolation[]): GuardViolation {
-        if (violations.length === 0) {
-            throw new Error('Cannot combine empty violations array');
-        }
-
-        // Use the first violation as the base
-        const baseViolation = violations[0];
-
-        // Extract the base rule message (everything before any context)
-        const baseMessage = baseViolation.message
-            .replace(/\n+$/, '')
-            .split(' Expected:')[0]
-            .split(' Missing property:')[0]
-            .split(' Property should not exist')[0];
-
-        // Collect all unique context pieces from all violations
-        const contexts = new Set<string>();
-
-        for (const violation of violations) {
-            const context = this.extractContextFromMessage(violation.message);
-            if (context) {
-                contexts.add(context);
-            }
-        }
-
-        // Build combined message with all deduplicated contexts
-        let combinedMessage = baseMessage;
-        if (contexts.size > 0) {
-            // Sort contexts to have a consistent order
-            const sortedContexts = [...contexts].sort();
-            combinedMessage += '\n' + sortedContexts.join('\n');
-        }
-        combinedMessage += '\n';
-
-        return {
-            ...baseViolation,
-            message: combinedMessage,
-        };
-    }
-
-    /**
-     * Extract context information from a violation message
-     */
-    private extractContextFromMessage(message: string): string | undefined {
-        if (message.includes('Expected:')) {
-            const match = message.match(/(Expected: [^,\n]+, Found: [^,\n]+)/);
-            return match ? match[1] : undefined;
-        }
-        if (message.includes('Missing property:')) {
-            const match = message.match(/(Missing property: [^\n]+)/);
-            return match ? match[1].trim() : undefined;
-        }
-        if (message.includes('Property should not exist')) {
-            return 'Property should not exist';
-        }
-        if (message.includes('Check failed:')) {
-            const match = message.match(/(Check failed: [^\n]+)/);
-            return match ? match[1].trim() : undefined;
-        }
-        return undefined;
-    }
-
-    /**
-     * Check if the GuardEngine is initialized and ready for use
-     */
-    isReady(): boolean {
-        return this.isInitialized && this.guardWasm !== undefined;
-    }
-
-    /**
-     * Cleanup WASM resources and reset state
-     */
-    dispose(): void {
         try {
-            if (this.guardWasm) {
-                this.guardWasm = undefined;
-            }
+            const sarif = JSON.parse(sarifResult) as {
+                runs: Array<{
+                    results: Array<{
+                        ruleId: string;
+                        message: { text: string };
+                        locations: Array<{ physicalLocation: { region: { startLine: number; startColumn: number } } }>;
+                    }>;
+                }>;
+            };
 
-            // Reset state
-            this.isInitialized = false;
-            this.initializationPromise = undefined;
+            if (sarif.runs && sarif.runs.length > 0) {
+                const results = sarif.runs[0].results || [];
+
+                // Group violations by location and message for consolidation
+                const violationGroups = new Map<
+                    string,
+                    {
+                        line: number;
+                        column: number;
+                        message: string;
+                        ruleNames: Set<string>;
+                    }
+                >();
+
+                for (const result of results) {
+                    const line = result.locations[0]?.physicalLocation?.region?.startLine || 1;
+                    const column = result.locations[0]?.physicalLocation?.region?.startColumn || 1;
+
+                    // Get custom message if available, otherwise use SARIF message
+                    const rule = rules.find((r) => r.name === result.ruleId);
+                    const message = rule?.message ?? result.message.text;
+
+                    const groupKey = `${line}:${column}:${message}`;
+
+                    if (!violationGroups.has(groupKey)) {
+                        violationGroups.set(groupKey, {
+                            line,
+                            column,
+                            message,
+                            ruleNames: new Set(),
+                        });
+                    }
+
+                    violationGroups.get(groupKey)?.ruleNames.add(result.ruleId);
+                }
+
+                // Convert groups to violations with consolidated rule names
+                for (const [, group] of violationGroups) {
+                    const ruleNamesList = [...group.ruleNames].sort();
+                    const combinedRuleName = ruleNamesList.join(', ');
+
+                    let message = group.message;
+                    if (!message.endsWith('\n')) {
+                        message += '\n';
+                    }
+
+                    violations.push({
+                        ruleName: combinedRuleName,
+                        message,
+                        severity,
+                        location: {
+                            line: group.line,
+                            column: group.column,
+                        },
+                    });
+                }
+            }
         } catch (error) {
-            this.log.error(`Error disposing Guard WASM module: ${extractErrorMessage(error)}`);
+            this.log.error(`Failed to parse SARIF results: ${extractErrorMessage(error)}`);
         }
+
+        return violations;
+    }
+
+    /**
+     * Extract rule message (compatibility method)
+     */
+    static extractRuleMessage(ruleContent: string): string | undefined {
+        const messageMatch = ruleContent.match(/<<\s*([\s\S]*?)\s*>>/);
+        return messageMatch ? messageMatch[1].trim() : undefined;
     }
 }

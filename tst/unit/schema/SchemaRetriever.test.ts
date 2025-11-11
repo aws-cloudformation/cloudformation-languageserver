@@ -1,14 +1,13 @@
-import { StubbedInstance } from 'ts-sinon';
+import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MemoryDataStoreFactoryProvider } from '../../../src/datastore/DataStore';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
-import { GetSchemaTaskManager } from '../../../src/schema/GetSchemaTaskManager';
 import { RegionalSchemasType } from '../../../src/schema/RegionalSchemas';
 import { SchemaRetriever } from '../../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../../src/schema/SchemaStore';
 import { Settings } from '../../../src/settings/Settings';
 import { AwsRegion } from '../../../src/utils/Region';
-import { createMockSchemaTaskManager, createMockSettingsManager } from '../../utils/MockServerComponents';
+import { createMockSettingsManager } from '../../utils/MockServerComponents';
 
 describe('SchemaRetriever', () => {
     const key = AwsRegion.US_EAST_1;
@@ -33,9 +32,10 @@ describe('SchemaRetriever', () => {
         lastModifiedMs: 1625140800000, // 2021-07-01
     };
 
-    let mockTaskManager: StubbedInstance<GetSchemaTaskManager>;
     let schemaStore: SchemaStore;
     let schemaRetriever: SchemaRetriever;
+    let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
+    let mockGetPrivateResources: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -52,12 +52,21 @@ describe('SchemaRetriever', () => {
 
         const dataStoreFactory = new MemoryDataStoreFactoryProvider();
         schemaStore = new SchemaStore(dataStoreFactory);
-        mockTaskManager = createMockSchemaTaskManager();
-        schemaRetriever = new SchemaRetriever(mockTaskManager, schemaStore);
+
+        mockGetPublicSchemas = vi.fn().mockResolvedValue([]);
+        mockGetPrivateResources = vi.fn().mockResolvedValue([
+            {
+                TypeName: 'Custom::TestResource',
+                Description: 'Test private resource',
+            } as DescribeTypeOutput,
+        ]);
+
+        schemaRetriever = new SchemaRetriever(schemaStore, mockGetPublicSchemas, mockGetPrivateResources);
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        schemaRetriever.close();
     });
 
     it('should check for missing schemas on initialization', () => {
@@ -68,7 +77,7 @@ describe('SchemaRetriever', () => {
         };
         schemaRetriever.configure(mockSettingsManager as any);
 
-        expect(mockTaskManager.addTask.calledWith(AwsRegion.US_EAST_1)).toBe(true);
+        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
     });
 
     it('should get schema from database if available', async () => {
@@ -86,7 +95,7 @@ describe('SchemaRetriever', () => {
 
         expect(result).toBeInstanceOf(CombinedSchemas);
         expect(result.numSchemas).toBe(0);
-        expect(mockTaskManager.addTask.calledWith(AwsRegion.US_EAST_1)).toBe(true);
+        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
     });
 
     it('should check for stale schemas on initialization', async () => {
@@ -114,7 +123,7 @@ describe('SchemaRetriever', () => {
         };
         schemaRetriever.configure(mockSettingsManager as any);
 
-        expect(mockTaskManager.addTask.calledWith(AwsRegion.US_EAST_1)).toBe(true);
+        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
     });
 
     it('should track available regions', async () => {
@@ -135,7 +144,7 @@ describe('SchemaRetriever', () => {
 
     it('should update private schemas when called', () => {
         schemaRetriever.updatePrivateSchemas();
-        expect(mockTaskManager.runPrivateTask.called).toBe(true);
+        expect(mockGetPrivateResources).toHaveBeenCalled();
     });
 
     it('should handle settings configuration', () => {
@@ -153,5 +162,39 @@ describe('SchemaRetriever', () => {
 
         // The configure method should trigger schema updates
         expect(schemaRetriever.updatePrivateSchemas).toHaveBeenCalled();
+    });
+
+    it('should rebuild affected combined schemas', async () => {
+        // Put data in the store first
+        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
+
+        // Get a schema to create a cached entry
+        schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
+
+        // Verify it's cached
+        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
+
+        // Rebuild affected schemas
+        schemaRetriever.rebuildAffectedCombinedSchemas(AwsRegion.US_EAST_1);
+
+        // Should still have the schema (rebuilt)
+        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
+    });
+
+    it('should rebuild for current settings', async () => {
+        // Put data in the store first
+        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
+
+        // Get a schema to create a cached entry
+        schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
+
+        // Verify it's cached
+        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
+
+        // Rebuild for current settings
+        schemaRetriever.rebuildForCurrentSettings();
+
+        // Should still have the schema (rebuilt)
+        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
     });
 });

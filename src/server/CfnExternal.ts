@@ -1,7 +1,6 @@
 import { FeatureFlagProvider } from '../featureFlag/FeatureFlagProvider';
 import { LspComponents } from '../protocol/LspComponents';
 import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
-import { GetSchemaTaskManager } from '../schema/GetSchemaTaskManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { SchemaStore } from '../schema/SchemaStore';
 import { AwsClient } from '../services/AwsClient';
@@ -28,7 +27,6 @@ export class CfnExternal implements Configurables, Closeable {
     readonly s3Service: S3Service;
 
     readonly schemaStore: SchemaStore;
-    readonly schemaTaskManager: GetSchemaTaskManager;
     readonly schemaRetriever: SchemaRetriever;
 
     readonly cfnLintService: CfnLintService;
@@ -46,13 +44,11 @@ export class CfnExternal implements Configurables, Closeable {
         this.s3Service = overrides.s3Service ?? new S3Service(this.awsClient);
 
         this.schemaStore = overrides.schemaStore ?? new SchemaStore(core.dataStoreFactory);
-        this.schemaTaskManager =
-            overrides.schemaTaskManager ??
-            new GetSchemaTaskManager(this.schemaStore, getRemotePublicSchemas, () => {
-                return getRemotePrivateSchemas(core.awsCredentials, this.cfnService);
-            });
         this.schemaRetriever =
-            overrides.schemaRetriever ?? new SchemaRetriever(this.schemaTaskManager, this.schemaStore);
+            overrides.schemaRetriever ??
+            new SchemaRetriever(this.schemaStore, getRemotePublicSchemas, () =>
+                getRemotePrivateSchemas(core.awsCredentials, this.cfnService),
+            );
 
         this.cfnLintService =
             overrides.cfnLintService ??
@@ -66,14 +62,13 @@ export class CfnExternal implements Configurables, Closeable {
     }
 
     configurables(): Configurable[] {
-        return [this.schemaTaskManager, this.schemaRetriever, this.cfnLintService, this.guardService];
+        return [this.schemaRetriever, this.cfnLintService, this.guardService];
     }
 
     async close() {
         return await closeSafely(
             this.cfnLintService,
             this.guardService,
-            this.schemaTaskManager,
             this.schemaRetriever,
             this.onlineStatus,
             this.featureFlags,

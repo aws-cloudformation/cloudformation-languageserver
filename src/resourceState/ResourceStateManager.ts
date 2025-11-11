@@ -1,14 +1,20 @@
-import { GetResourceCommandOutput, ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
+import {
+    GetResourceCommandOutput,
+    PrivateTypeException,
+    ResourceNotFoundException,
+} from '@aws-sdk/client-cloudcontrol';
 import { DateTime } from 'luxon';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { CfnExternal } from '../server/CfnExternal';
 import { CcapiService } from '../services/CcapiService';
+import { S3Service } from '../services/S3Service';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
+import { handleLspError } from '../utils/Errors';
 import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
 
@@ -47,6 +53,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     constructor(
         private readonly ccapiService: CcapiService,
         private readonly schemaRetriever: SchemaRetriever,
+        private readonly s3Service: S3Service,
     ) {
         this.registerCacheGauges();
         this.initializeCounters();
@@ -139,7 +146,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
             return { found: true, resourceList: cached };
         }
 
-        // Create new cache entry if doesn't exist
+        // Create new cache entry if it doesn't exist
         if (!cached) {
             const newList: ResourceList = {
                 typeName,
@@ -156,9 +163,11 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     }
 
     public getResourceTypes(): string[] {
-        const schemas = this.schemaRetriever.getDefault().schemas;
-        const allTypes = new Set(schemas.keys());
-        return [...allTypes].filter((type) => !NO_LIST_SUPPORT.has(type) && !REQUIRES_RESOURCE_MODEL.has(type));
+        const schemas = [...this.schemaRetriever.getDefault().schemas.values()];
+        const listableTypes = schemas
+            .filter((schema) => schema.handlers?.list !== undefined)
+            .map((schema) => schema.typeName);
+        return [...listableTypes].filter((type) => !NO_LIST_SUPPORT.has(type) && !REQUIRES_RESOURCE_MODEL.has(type));
     }
 
     private storeResourceState(typeName: ResourceType, id: ResourceId, state: ResourceState) {
@@ -176,6 +185,23 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     }
 
     private async retrieveResourceList(typeName: string, nextToken?: string): Promise<ResourceList | undefined> {
+        if (typeName === 'AWS::S3::Bucket') {
+            try {
+                const response = await this.s3Service.listBuckets(this.settings.region, nextToken);
+                const now = DateTime.now();
+                return {
+                    typeName,
+                    resourceIdentifiers: response.buckets,
+                    createdTimestamp: now,
+                    lastUpdatedTimestamp: now,
+                    nextToken: response.nextToken,
+                };
+            } catch (error) {
+                log.error(error, `S3 ListBuckets failed for region ${this.settings.region}`);
+                return;
+            }
+        }
+
         try {
             const output = await this.ccapiService.listResources(typeName, { nextToken });
 
@@ -195,7 +221,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
             };
         } catch (error) {
             log.error(error, `CCAPI ListResource failed for type ${typeName}`);
-            return;
+            this.handleListExceptions(error, typeName);
         }
     }
 
@@ -258,6 +284,16 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         }
     }
 
+    private handleListExceptions(error: unknown, typeName: string) {
+        if (error instanceof PrivateTypeException) {
+            log.error(error, `Failed to list private resource`);
+            handleLspError(
+                error,
+                `Failed to list identifiers for ${typeName}. Cloud Control API hasn't received a valid response from the resource handler, due to a configuration error. This includes issues such as the resource handler returning an invalid response, or timing out.`,
+            );
+        }
+    }
+
     configure(settingsManager: ISettingsSubscriber) {
         if (this.settingsSubscription) {
             this.settingsSubscription.unsubscribe();
@@ -310,6 +346,6 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     }
 
     static create(external: CfnExternal) {
-        return new ResourceStateManager(external.ccapiService, external.schemaRetriever);
+        return new ResourceStateManager(external.ccapiService, external.schemaRetriever, external.s3Service);
     }
 }

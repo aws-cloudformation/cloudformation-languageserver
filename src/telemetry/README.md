@@ -5,36 +5,47 @@ Language servers must deliver suggestions quickly to avoid interrupting your wor
 
 Telemetry enablement is controlled by your LSP client via initialization options passed to the language server, see [Enable or Disable Telemetry](#enable-or-disable-telemetry) for details.
 The CloudFormation Language Server environment you use will determine the default telemetry collection behaviour:
-* Alpha - Telemetry is enabled by default if no initialization parameter is provided
-* Beta and Prod - Telemetry is disabled by default if no initialization parameter is provided
+* **Alpha** - Telemetry is enabled by default if no initialization parameter is provided
+* **Beta and Prod** - Telemetry is disabled by default if no initialization parameter is provided
 
 ## What We Collect
-Language servers must deliver suggestions quickly and accurately to avoid interrupting your workflow. These metrics help us:
-* Measure response time: How long an operation took to complete (hover, autocomplete, go-to, etc.)
-* Understand the quality and relevance of suggestions we provide
-* Usage metrics: Invocation counts for operations
-* Error metrics: Fault counts when operations fail
-* Response metrics: Type and size of data returned by operations
-    * Primitive data types only, actual data is not recorded
-* System Information: Operating system, LSP client version, Node.js version
-    * Does the hardware impact customer experience?
-* Detect performance degradations that impacts the authoring experience
+The language server collects anonymous telemetry:
+* **Performance Metrics** - Response time (latency) for operations
+* **Usage Metrics** - Invocation counts for operations
+* **Error Metrics** - Fault counts when operations fail, stack trace metadata: error type, file name, line number, column number
+* **Response Metrics** - Data type (_primitives only_: string, number, boolean, object, array, etc.) and size
+* **System Metrics** - CPU utilization, Memory utilization, process uptime
+* **System Information**
+    * Operating system type, platform, architecture, version
+    * LSP client name and version
+    * Node.js and V8 engine versions
+    * Process platform and architecture 
 
-Without telemetry, we cannot objectively evaluate if suggestions are accurate or if the language server is meeting the performance expectations of a real-time authoring experience.
+## Why We Collect Telemetry
+Language servers must deliver suggestions in real-time to avoid interrupting your workflow. Telemetry enables us to:
+* Measure if operations meet real-time performance expectations
+* Detect performance degradations before they impact the authoring experience
+* Understand if suggestions are accurate and relevant
+* Identify if hardware or environment impacts customer experience
+* Make data-driven decisions on feature improvements
+
+Without telemetry, we cannot objectively evaluate if the language server meets performance expectations or if suggestions help users author CloudFormation templates effectively.
 
 ### Metrics Metadata
-Every metric includes the following metadata attributes:
+Metrics includes the following metadata:
 
-| Attribute | Description | Example                                                    |
-|---|---|------------------------------------------------------------|
-| `service` | Language server name and version | `aws-cloudformation-languageserver-1.2.3`                  |
-| `service.env` | Node environment and AWS environment | `production-prod`                                          |
-| `client.id` | Unique session identifier (UUID) | `1111-2222-3333-4444`                                      |
-| `client.type` | LSP client name and version | `vscode-1.85.0`                                            |
-| `machine.type` | OS type, platform, architecture, version | `Darwin-darwin-arm64-arm64-22.1.0`                         |
-| `process.type` | Process platform and architecture | `darwin-arm64`                                             |
-| `process.version` | Node.js and V8 versions | `node=22.18.0 v8=12.4.254.21-node.27 uv=1.51.0 modules=127` |
-| `OTelLib` | Operation name | `Hover`, `AutoComplete`, etc.                              |
+| Attribute | Description                                        | Example                                                     |
+|---|----------------------------------------------------|-------------------------------------------------------------|
+| `service` | Language server name and version                   | `aws-cloudformation-languageserver-1.2.3`                   |
+| `service.env` | Node environment and AWS environment               | `production-prod`                                           |
+| `client.id` | Unique client identifier (UUID)                    | `1111-2222-3333-4444`                                       |
+| `client.type` | LSP client name and version                        | `vscode-1.85.0`                                             |
+| `machine.type` | OS type, platform, architecture, version           | `Darwin-darwin-arm64-arm64-22.1.0`                          |
+| `process.type` | Process platform and architecture                  | `darwin-arm64`                                              |
+| `process.version` | Node.js and V8 versions                            | `node=22.18.0 v8=12.4.254.21-node.27 uv=1.51.0 modules=127` |
+| `OTelLib` | Operation name                                     | `Hover`, `Completion`, etc.                                 |
+| `HandlerSource` | Request handler that initiated an operation        | `Document.Open`, `Stack.List`, `Resource.Search`, etc.      |
+| `RequestId` | Random unique identifier for each operation (UUID) | `5555-6666-7777-8888`                                       |
 
 ## Data Transmission
 Metrics export every 30 seconds via HTTPS with TLS 1.2+ encryption using OpenTelemetry Protocol (OTLP).

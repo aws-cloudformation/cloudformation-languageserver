@@ -16,6 +16,7 @@ import { DataStoreFactoryProvider, MemoryDataStoreFactoryProvider } from '../../
 import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { DocumentSymbolRouter } from '../../src/documentSymbol/DocumentSymbolRouter';
+import { FeatureFlag } from '../../src/featureFlag/FeatureFlagI';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { LspAuthHandlers } from '../../src/protocol/LspAuthHandlers';
@@ -139,7 +140,6 @@ export function createMockGuardService() {
     mock.getPendingValidationCount.returns(0);
     mock.getQueuedValidationCount.returns(0);
     mock.getActiveValidationCount.returns(0);
-    mock.isReady.returns(true);
     return mock;
 }
 
@@ -234,9 +234,10 @@ export function createMockManagedResourceCodeLens() {
 export function createMockTopLevelSectionCompletionProvider(
     syntaxTreeManager?: SyntaxTreeManager,
     documentManager?: DocumentManager,
+    constantsFeatureFlag?: FeatureFlag,
 ) {
-    if (syntaxTreeManager && documentManager) {
-        return new TopLevelSectionCompletionProvider(syntaxTreeManager, documentManager);
+    if (syntaxTreeManager && documentManager && constantsFeatureFlag) {
+        return new TopLevelSectionCompletionProvider(syntaxTreeManager, documentManager, constantsFeatureFlag);
     }
     return stubInterface<TopLevelSectionCompletionProvider>();
 }
@@ -364,7 +365,6 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         ccapiService: overrides.ccapiService ?? createMockCcapiService(),
         iacGeneratorService: overrides.iacGeneratorService ?? createMockIacGeneratorService(),
         schemaStore: overrides.schemaStore ?? createMockSchemaStore(),
-        schemaTaskManager: overrides.schemaTaskManager ?? createMockSchemaTaskManager(),
         schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
         cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
         guardService: overrides.guardService ?? createMockGuardService(),

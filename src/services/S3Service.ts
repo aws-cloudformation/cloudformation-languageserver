@@ -1,6 +1,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ListBucketsCommand } from '@aws-sdk/client-s3';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
 export class S3Service {
@@ -9,6 +10,23 @@ export class S3Service {
     protected async withClient<T>(request: (client: S3Client) => Promise<T>): Promise<T> {
         const client = this.awsClient.getS3Client();
         return await request(client);
+    }
+
+    @Measure({ name: 'listBuckets' })
+    async listBuckets(region: string, continuationToken?: string): Promise<{ buckets: string[]; nextToken?: string }> {
+        return await this.withClient(async (client) => {
+            const response = await client.send(
+                new ListBucketsCommand({
+                    BucketRegion: region,
+                    ContinuationToken: continuationToken,
+                }),
+            );
+            return {
+                buckets:
+                    response.Buckets?.map((b) => b.Name).filter((name): name is string => name !== undefined) ?? [],
+                nextToken: response.ContinuationToken,
+            };
+        });
     }
 
     async putObjectContent(content: string | Buffer, bucketName: string, key: string) {
