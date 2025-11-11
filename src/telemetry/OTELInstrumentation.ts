@@ -14,7 +14,7 @@ import { ClientInfo } from '../server/InitParams';
 import { isBeta, isAlpha, isProd, isTest } from '../utils/Environment';
 import { ExtensionId, ExtensionVersion } from '../utils/ExtensionConfig';
 
-const ExportIntervalSeconds = 30;
+const ExportIntervalSeconds = 60;
 
 export function otelSdk(clientId: string, client?: ClientInfo) {
     configureDiagnostics();
