@@ -58,21 +58,21 @@ jobs:
             exit 1
           fi
 
-  build-and-test:
-    needs: [ get-configs, version-and-tag ]
-    uses: ./.github/workflows/build-and-test.yml
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ ubuntu-22.04, windows-latest, macos-latest ]
-    with:
-      ref: ${{ needs.version-and-tag.outputs.tag }}
-      runs-on: ${{ matrix.os }}
+  #  build-and-test:
+  #    needs: [ get-configs, version-and-tag ]
+  #    uses: ./.github/workflows/build-and-test.yml
+  #    strategy:
+  #      fail-fast: true
+  #      matrix:
+  #        os: [ ubuntu-22.04, windows-latest, macos-latest ]
+  #    with:
+  #      ref: ${{ needs.version-and-tag.outputs.tag }}
+  #      runs-on: ${{ matrix.os }}
 
   bundle-linux:
-    needs: [ get-configs, version-and-tag, build-and-test ]
+    needs: [ get-configs, version-and-tag ]
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         include:
           - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "18.x" }
@@ -121,11 +121,11 @@ jobs:
             /bin/bash -c '
               set -ex
               yum install -y curl make gcc-c++ python3 tar gzip wget
-              
+          
               wget -q https://go.dev/dl/go${{ needs.get-configs.outputs.go-version }}.linux-${{ matrix.go-arch }}.tar.gz
               tar -C /usr/local -xzf go${{ needs.get-configs.outputs.go-version }}.linux-${{ matrix.go-arch }}.tar.gz
               export PATH=$PATH:/usr/local/go/bin
-              
+          
               curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
               export NVM_DIR="$HOME/.nvm"
               . "$NVM_DIR/nvm.sh"
@@ -157,7 +157,7 @@ jobs:
           if-no-files-found: error
 
   bundle:
-    needs: [ get-configs, version-and-tag, build-and-test ]
+    needs: [ get-configs, version-and-tag ]
     strategy:
       fail-fast: true
       matrix:
