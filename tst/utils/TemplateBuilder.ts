@@ -1,4 +1,4 @@
-import { CompletionParams } from 'vscode-languageserver';
+import { CompletionParams, Location, DefinitionParams } from 'vscode-languageserver';
 import { TextDocuments } from 'vscode-languageserver/node';
 import {
     TextDocumentContentChangeEvent,
@@ -10,6 +10,7 @@ import { Context } from '../../src/context/Context';
 import { ContextManager } from '../../src/context/ContextManager';
 import { SectionType, TopLevelSection } from '../../src/context/ContextType';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
+import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
 import { DocumentType } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
@@ -83,6 +84,12 @@ class HoverExpectation extends Expectation {
     endsWith?: string;
 }
 
+class GotoExpectation extends Expectation {
+    hasDefinition?: boolean;
+    targetLogicalId?: string;
+    definitionCount?: number;
+}
+
 type BuildStep = {
     action: 'initialize' | 'type' | 'replace' | 'delete';
     content?: string;
@@ -112,6 +119,7 @@ export class TemplateBuilder {
     private readonly schemaRetriever: SchemaRetriever;
     private readonly completionRouter: CompletionRouter;
     private readonly hoverRouter: HoverRouter;
+    private readonly definitionProvider: DefinitionProvider;
     private readonly uri: string;
     private version: number = 0;
 
@@ -122,6 +130,7 @@ export class TemplateBuilder {
         this.documentManager = new DocumentManager(this.textDocuments);
         this.contextManager = new ContextManager(this.syntaxTreeManager);
         this.schemaRetriever = createMockSchemaRetriever(combinedSchemas());
+        this.definitionProvider = new DefinitionProvider(this.contextManager);
 
         const mockTestComponents = createMockComponents({
             schemaRetriever: this.schemaRetriever,
@@ -248,25 +257,62 @@ export class TemplateBuilder {
     }
 
     private async executeVerification(step: BuildStep) {
-        if (step.verification?.expectation instanceof ContextExpectation) {
-            this.verifyContextAt(
-                step.verification.position,
-                step.verification.expectation,
-                step.verification.description,
-            );
-        } else if (step.verification?.expectation instanceof CompletionExpectation) {
-            await this.verifyCompletionsAt(
-                step.verification.position,
-                step.verification.expectation,
-                step.verification.description,
-                step.verification.triggerCharacter,
-            );
-        } else if (step.verification?.expectation instanceof HoverExpectation) {
-            this.verifyHoverAt(
-                step.verification.position,
-                step.verification.expectation,
-                step.verification.description,
-            );
+        try {
+            if (step.verification?.expectation instanceof ContextExpectation) {
+                this.verifyContextAt(
+                    step.verification.position,
+                    step.verification.expectation,
+                    step.verification.description,
+                );
+            } else if (step.verification?.expectation instanceof CompletionExpectation) {
+                await this.verifyCompletionsAt(
+                    step.verification.position,
+                    step.verification.expectation,
+                    step.verification.description,
+                    step.verification.triggerCharacter,
+                );
+            } else if (step.verification?.expectation instanceof HoverExpectation) {
+                this.verifyHoverAt(
+                    step.verification.position,
+                    step.verification.expectation,
+                    step.verification.description,
+                );
+            } else if (step.verification?.expectation instanceof GotoExpectation) {
+                this.verifyDefinitionsAt(
+                    step.verification.position,
+                    step.verification.expectation,
+                    step.verification.description,
+                );
+            }
+        } catch (error) {
+            // Add debugging information to the error
+            const currentContent = this.getCurrentContent();
+            const position = step.verification?.position;
+            const positionStr = position ? `${position.line}:${position.character}` : 'unknown';
+
+            // Get the line content at the error position
+            let lineContent = '';
+            if (position) {
+                const lines = currentContent.split('\n');
+                if (position.line < lines.length) {
+                    lineContent = lines[position.line];
+                }
+            }
+
+            const debugInfo = [
+                '\n\n=== DEBUG INFO ===',
+                `Position: ${positionStr}`,
+                `Line content: ${lineContent}`,
+                '\n--- Current Template State ---',
+                currentContent,
+                '--- End Template State ---\n',
+            ].join('\n');
+
+            // Append debug info to the error message
+            if (error instanceof Error) {
+                error.message += debugInfo;
+            }
+            throw error;
         }
     }
 
@@ -623,6 +669,112 @@ export class TemplateBuilder {
                 break;
         }
     }
+
+    getDefinitionsAt(position: Position): Location | Location[] | undefined {
+        const params: DefinitionParams = {
+            textDocument: { uri: this.uri },
+            position,
+        };
+        return this.definitionProvider.getDefinitions(params);
+    }
+
+    verifyDefinitionsAt(position: Position, expected: GotoExpectation, description?: string): void {
+        const definitions = this.getDefinitionsAt(position);
+        const desc = description ? ` (${description})` : '';
+
+        if (expected.hasDefinition === false) {
+            expectAt(definitions, position, `Expected no definition${desc}`).toBeUndefined();
+            return;
+        }
+
+        if (expected.targetLogicalId === '' && !definitions) {
+            return;
+        }
+
+        if (expected.hasDefinition === true && !definitions) {
+            throw new Error(`Expected definition${desc}, but got undefined`);
+        }
+
+        if (definitions) {
+            const definitionArray = Array.isArray(definitions) ? definitions : [definitions];
+
+            if (expected.definitionCount !== undefined) {
+                expectAt(definitionArray.length, position, `Definition count mismatch${desc}`).toBe(
+                    expected.definitionCount,
+                );
+            }
+
+            if (expected.targetLogicalId !== undefined) {
+                const firstDef = definitionArray[0];
+                const doc = this.textDocuments.get(firstDef.uri);
+                if (doc) {
+                    const defText = doc.getText(firstDef.range);
+
+                    const yamlMatch = defText.match(/^\s*(\w+):/);
+                    const jsonMatch = defText.match(/^\s*"(\w+)":/);
+
+                    const actualLogicalId = jsonMatch ? jsonMatch[1] : yamlMatch ? yamlMatch[1] : defText.trim();
+
+                    expectAt(actualLogicalId, position, `Target logical ID mismatch${desc}`).toBe(
+                        expected.targetLogicalId,
+                    );
+                }
+            }
+        }
+    }
+}
+
+export class CompletionExpectationBuilder {
+    private readonly expectation: CompletionExpectation = new CompletionExpectation();
+
+    static create(): CompletionExpectationBuilder {
+        return new CompletionExpectationBuilder();
+    }
+
+    expectItems(items: string[]): CompletionExpectationBuilder {
+        this.expectation.items = items;
+        return this;
+    }
+
+    expectMinItems(count: number): CompletionExpectationBuilder {
+        this.expectation.minItems = count;
+        return this;
+    }
+
+    expectMaxItems(count: number): CompletionExpectationBuilder {
+        this.expectation.maxItems = count;
+        return this;
+    }
+
+    expectContainsItems(items: string[]): CompletionExpectationBuilder {
+        this.expectation.containsItems = items;
+        return this;
+    }
+
+    expectExcludesItems(items: string[]): CompletionExpectationBuilder {
+        this.expectation.excludesItems = items;
+        return this;
+    }
+
+    expectIncomplete(isIncomplete: boolean): CompletionExpectationBuilder {
+        this.expectation.isIncomplete = isIncomplete;
+        return this;
+    }
+
+    expectItemDetails(details: CompletionExpectation['itemDetails']): CompletionExpectationBuilder {
+        this.expectation.itemDetails = details;
+        return this;
+    }
+
+    todo(comment: string): CompletionExpectationBuilder {
+        this.expectation.todo = true;
+        this.expectation.todoComment = comment;
+        return this;
+    }
+
+    build(): CompletionExpectation {
+        return this.expectation;
+    }
 }
 
 export class ContextExpectationBuilder {
@@ -862,55 +1014,36 @@ export class HoverExpectationBuilder {
     }
 }
 
-export class CompletionExpectationBuilder {
-    private readonly expectation: CompletionExpectation = new CompletionExpectation();
+export class GotoExpectationBuilder {
+    private readonly expectation: GotoExpectation = new GotoExpectation();
 
-    static create(): CompletionExpectationBuilder {
-        return new CompletionExpectationBuilder();
+    static create(): GotoExpectationBuilder {
+        return new GotoExpectationBuilder();
     }
 
-    expectItems(items: string[]): CompletionExpectationBuilder {
-        this.expectation.items = items;
+    expectDefinition(logicalId: string): GotoExpectationBuilder {
+        this.expectation.hasDefinition = true;
+        this.expectation.targetLogicalId = logicalId;
         return this;
     }
 
-    expectMinItems(count: number): CompletionExpectationBuilder {
-        this.expectation.minItems = count;
+    expectNoDefinition(): GotoExpectationBuilder {
+        this.expectation.hasDefinition = false;
         return this;
     }
 
-    expectMaxItems(count: number): CompletionExpectationBuilder {
-        this.expectation.maxItems = count;
+    expectDefinitionCount(count: number): GotoExpectationBuilder {
+        this.expectation.definitionCount = count;
         return this;
     }
 
-    expectContainsItems(items: string[]): CompletionExpectationBuilder {
-        this.expectation.containsItems = items;
-        return this;
-    }
-
-    expectExcludesItems(items: string[]): CompletionExpectationBuilder {
-        this.expectation.excludesItems = items;
-        return this;
-    }
-
-    expectIncomplete(isIncomplete: boolean): CompletionExpectationBuilder {
-        this.expectation.isIncomplete = isIncomplete;
-        return this;
-    }
-
-    expectItemDetails(details: CompletionExpectation['itemDetails']): CompletionExpectationBuilder {
-        this.expectation.itemDetails = details;
-        return this;
-    }
-
-    todo(comment: string): CompletionExpectationBuilder {
+    todo(comment: string): GotoExpectationBuilder {
         this.expectation.todo = true;
         this.expectation.todoComment = comment;
         return this;
     }
 
-    build(): CompletionExpectation {
+    build(): GotoExpectation {
         return this.expectation;
     }
 }
