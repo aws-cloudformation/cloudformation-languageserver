@@ -3,6 +3,7 @@ import { ServerRequestHandler } from 'vscode-languageserver';
 import { RequestHandler } from 'vscode-languageserver/node';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
+import { parseResourceTypeName } from '../resourceState/ResourceStateParser';
 import {
     ResourceTypesResult,
     ListResourcesParams,
@@ -22,6 +23,7 @@ import { GetStackTemplateParams, GetStackTemplateResult } from '../stacks/StackR
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { extractErrorMessage } from '../utils/Errors';
+import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('ResourceHandler');
 
@@ -36,6 +38,13 @@ export function getResourceTypesHandler(
             log.error(error, 'Error getting resource types');
             return { resourceTypes: [] };
         }
+    };
+}
+
+export function removeResourceTypeHandler(components: ServerComponents): RequestHandler<string, void, void> {
+    return (rawParams: string) => {
+        const typeName = parseWithPrettyError(parseResourceTypeName, rawParams);
+        components.resourceStateManager.removeResourceType(typeName);
     };
 }
 

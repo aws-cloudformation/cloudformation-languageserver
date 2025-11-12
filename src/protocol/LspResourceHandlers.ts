@@ -17,6 +17,7 @@ import {
     SearchResourceRequest,
     SearchResourceParams,
     SearchResourceResult,
+    RemoveResourceTypeRequest,
 } from '../resourceState/ResourceStateTypes';
 import { ResourceStackManagementResult } from '../resourceState/StackManagementInfoProvider';
 
@@ -33,6 +34,10 @@ export class LspResourceHandlers {
 
     onGetResourceTypes(handler: ServerRequestHandler<void, ResourceTypesResult, never, void>) {
         this.connection.onRequest(ResourceTypesRequest.method, handler);
+    }
+
+    onRemoveResourceType(handler: RequestHandler<string, void, void>) {
+        this.connection.onRequest(RemoveResourceTypeRequest.method, handler);
     }
 
     onResourceStateImport(handler: ServerRequestHandler<ResourceStateParams, ResourceStateResult, never, void>) {
