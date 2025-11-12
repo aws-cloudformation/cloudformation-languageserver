@@ -3,6 +3,7 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { LspDiagnostics } from '../protocol/LspDiagnostics';
+import { ValidationManager } from '../stacks/actions/ValidationManager';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 
@@ -21,6 +22,7 @@ export class DiagnosticCoordinator {
     constructor(
         private readonly lspDiagnostics: LspDiagnostics,
         private readonly syntaxTreeManager: SyntaxTreeManager,
+        private readonly validationManager: ValidationManager,
     ) {}
 
     /**
@@ -98,6 +100,7 @@ export class DiagnosticCoordinator {
         const sourceDiagnostics = collection.get(CFN_VALIDATION_SOURCE);
         if (!sourceDiagnostics) return;
 
+        this.validationManager.getLastValidationByUri(uri)?.removeValidationDetailByDiagnosticId(diagnosticId);
         const filteredDiagnostics = sourceDiagnostics.filter((d) => d.data !== diagnosticId);
         collection.set(CFN_VALIDATION_SOURCE, filteredDiagnostics);
 

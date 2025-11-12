@@ -198,9 +198,6 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
     }
 
     protected async handleCleanup(params: CreateValidationParams, existingWorkflow: StackActionWorkflowState) {
-        // Cleanup validation object to prevent memory leaks
-        this.validationManager.remove(params.stackName);
-
         if (!params.keepChangeSet) {
             try {
                 if (await isStackInReview(params.stackName, this.cfnService)) {
@@ -214,13 +211,13 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
         }
     }
 
-    static create(core: CfnInfraCore, external: CfnExternal): ValidationWorkflow {
+    static create(core: CfnInfraCore, external: CfnExternal, validationManager: ValidationManager): ValidationWorkflow {
         return new ValidationWorkflow(
             external.cfnService,
             core.documentManager,
             core.diagnosticCoordinator,
             core.syntaxTreeManager,
-            new ValidationManager(),
+            validationManager,
             external.s3Service,
         );
     }

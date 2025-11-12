@@ -71,7 +71,18 @@ describe('ValidationWorkflowV2', () => {
         } as any;
         mockFileContextManager = {} as FileContextManager;
 
-        mockValidationManager = { add: vi.fn(), get: vi.fn(), remove: vi.fn() } as any;
+        mockValidationManager = {
+            add: vi.fn(),
+            get: vi.fn().mockReturnValue({
+                setPhase: vi.fn(),
+                setChanges: vi.fn(),
+                setValidationDetails: vi.fn(),
+            }),
+            remove: vi.fn(),
+            getLastValidationByUri: vi.fn(),
+            setChanges: vi.fn(),
+            clear: vi.fn(),
+        } as any;
 
         mockFeatureFlag = {
             isEnabled: vi.fn(),
@@ -198,6 +209,10 @@ describe('ValidationWorkflowV2', () => {
 
             expect(parseValidationEvents).toHaveBeenCalledWith(mockDescribeEventsResponse, VALIDATION_V2_NAME);
 
+            // Verify setValidationDetails was called
+            const mockValidation = mockValidationManager.get('test-stack');
+            expect(mockValidation?.setValidationDetails).toHaveBeenCalledWith(mockParseValidationEventsResponse);
+
             expect(publishValidationDiagnostics).toHaveBeenCalledWith(
                 params.uri,
                 mockParseValidationEventsResponse,
@@ -257,7 +272,7 @@ describe('ValidationWorkflowV2', () => {
             await waitForWorkflowCompletion('test-id');
 
             expect(mockValidationManager.add).toHaveBeenCalled();
-            expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
+            expect(mockValidationManager.remove).not.toHaveBeenCalled();
 
             const workflow = (validationWorkflowV2 as any).workflows.get('test-id');
             expect(workflow.failureReason).toBe('Template validation failed');
@@ -277,7 +292,7 @@ describe('ValidationWorkflowV2', () => {
 
             expect(isStackInReview).toHaveBeenCalled();
 
-            expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
+            expect(mockValidationManager.remove).not.toHaveBeenCalled();
             expect(cleanupReviewStack).toHaveBeenCalled();
 
             const workflow = (validationWorkflowV2 as any).workflows.get('test-id');
@@ -302,7 +317,7 @@ describe('ValidationWorkflowV2', () => {
             await validationWorkflowV2.start(params);
             await waitForWorkflowCompletion('test-id');
 
-            expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
+            expect(mockValidationManager.remove).not.toHaveBeenCalled();
 
             const workflow = (validationWorkflowV2 as any).workflows.get('test-id');
             expect(workflow.failureReason).toBe('Describe Events failed');

@@ -91,6 +91,7 @@ export async function processChangeSet(
     }
     let templateBody = document.contents();
     let templateS3Url: string | undefined;
+    let expectedETag: string | undefined;
     try {
         if (params.s3Bucket) {
             const s3KeyPrefix = params.s3Key ? params.s3Key.slice(0, params.s3Key.lastIndexOf('/')) : undefined;
@@ -107,7 +108,8 @@ export async function processChangeSet(
         }
 
         if (params.s3Bucket && params.s3Key) {
-            await s3Service.putObjectContent(templateBody, params.s3Bucket, params.s3Key);
+            const putResult = await s3Service.putObjectContent(templateBody, params.s3Bucket, params.s3Key);
+            expectedETag = putResult.ETag;
             templateS3Url = `https://s3.amazonaws.com/${params.s3Bucket}/${params.s3Key}`;
         }
     } catch (error) {
@@ -124,6 +126,17 @@ export async function processChangeSet(
         params.includeNestedStacks,
         params.onStackFailure,
     );
+
+    // Verify S3 object ETag before creating change set
+    if (templateS3Url && expectedETag && params.s3Bucket && params.s3Key) {
+        const headResult = await s3Service.getHeadObject(params.s3Bucket, params.s3Key);
+        if (headResult.ETag !== expectedETag) {
+            throw new ResponseError(
+                ErrorCodes.InvalidParams,
+                `S3 object ETag mismatch. Expected: ${expectedETag}, Got: ${headResult.ETag}`,
+            );
+        }
+    }
 
     await cfnService.createChangeSet({
         StackName: params.stackName,
@@ -374,13 +387,15 @@ export async function publishValidationDiagnostics(
         }
 
         if (range) {
+            const diagnosticId = uuidv4();
             diagnostics.push({
                 severity: event.Severity === 'ERROR' ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
                 range: range,
                 message: event.Message,
                 source: CFN_VALIDATION_SOURCE,
-                data: uuidv4(),
+                data: diagnosticId,
             });
+            event.diagnosticId = diagnosticId;
         }
     }
 

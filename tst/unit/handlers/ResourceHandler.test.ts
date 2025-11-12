@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CancellationToken } from 'vscode-languageserver-protocol';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
-import { getManagedResourceStackTemplateHandler } from '../../../src/handlers/ResourceHandler';
+import {
+    getManagedResourceStackTemplateHandler,
+    removeResourceTypeHandler,
+} from '../../../src/handlers/ResourceHandler';
 import { GetStackTemplateParams } from '../../../src/stacks/StackRequestType';
 import { createMockComponents } from '../../utils/MockServerComponents';
 
@@ -119,5 +122,37 @@ describe('ResourceHandler - getManagedResourceStackTemplateHandler', () => {
         };
 
         await expect(handler(params, CancellationToken.None)).rejects.toThrow('AWS API Error');
+    });
+});
+
+describe('ResourceHandler - removeResourceTypeHandler', () => {
+    let mockComponents: ReturnType<typeof createMockComponents>;
+    let handler: any;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockComponents = createMockComponents();
+        handler = removeResourceTypeHandler(mockComponents);
+    });
+
+    it('should call resourceStateManager.removeResourceType with typeName', () => {
+        handler('AWS::S3::Bucket');
+
+        expect(mockComponents.resourceStateManager.removeResourceType.calledOnceWith('AWS::S3::Bucket')).toBe(true);
+    });
+
+    it('should handle multiple calls', () => {
+        handler('AWS::S3::Bucket');
+        handler('AWS::Lambda::Function');
+
+        expect(mockComponents.resourceStateManager.removeResourceType.callCount).toBe(2);
+        expect(mockComponents.resourceStateManager.removeResourceType.calledWith('AWS::S3::Bucket')).toBe(true);
+        expect(mockComponents.resourceStateManager.removeResourceType.calledWith('AWS::Lambda::Function')).toBe(true);
+    });
+
+    it('should throw error for invalid input', () => {
+        expect(() => handler('')).toThrow(TypeError);
+        expect(() => handler(null as any)).toThrow();
+        expect(() => handler(undefined as any)).toThrow();
     });
 });
