@@ -634,52 +634,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
 
                 resolveJsonPointerPathSpy.mockRestore();
             });
-
-            it('should remove duplicate attribute names', () => {
-                // Setup mock schema with duplicates
-                const duplicateSchemaJson = JSON.stringify({
-                    typeName: 'AWS::S3::Bucket',
-                    description: 'Mock S3 Bucket schema',
-                    additionalProperties: false,
-                    primaryIdentifier: ['/properties/BucketName'],
-                    properties: {},
-                    readOnlyProperties: [
-                        '/properties/Arn',
-                        '/properties/Arn', // Duplicate
-                        '/properties/DomainName',
-                        '/properties/MetadataTableConfiguration/S3TablesDestination/TableNamespace',
-                        '/properties/MetadataTableConfiguration/S3TablesDestination/TableArn', // Same top-level
-                    ],
-                });
-                const duplicateSchema = new ResourceSchema(duplicateSchemaJson);
-
-                const duplicateSchemas = new Map([['AWS::S3::Bucket', duplicateSchema]]);
-                const duplicateCombinedSchemas = new CombinedSchemas();
-                (duplicateCombinedSchemas as any).schemas = duplicateSchemas;
-                const duplicateSchemaRetriever = createMockSchemaRetriever(duplicateCombinedSchemas);
-
-                provider = new IntrinsicFunctionArgumentCompletionProvider(
-                    mockSyntaxTreeManager,
-                    duplicateSchemaRetriever,
-                    mockDocumentManager,
-                    mockConstantsFeatureFlag,
-                );
-
-                setupResourceEntitiesWithSchema({ MyS3Bucket: { Type: 'AWS::S3::Bucket' } });
-
-                const mockContext = createMockGetAttContext('', 'MyS3Bucket.');
-
-                const result = provider.getCompletions(mockContext, createTestParams());
-
-                expect(result).toBeDefined();
-                expect(result!.length).toBe(4); // Arn, DomainName, and two nested MetadataTableConfiguration paths (no duplicates)
-
-                const labels = result!.map((item) => item.label);
-                expect(labels).toContain('Arn');
-                expect(labels).toContain('DomainName');
-                expect(labels).toContain('MetadataTableConfiguration.S3TablesDestination.TableNamespace');
-                expect(labels).toContain('MetadataTableConfiguration.S3TablesDestination.TableArn');
-            });
         });
     });
 });

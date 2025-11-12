@@ -3,7 +3,7 @@
   "Transform": "AWS::LanguageExtensions",
   "Constants": {
     "foo": "bar",
-    "sub": "${Const::foo}-abc-${AWS::AccountId}",
+    "sub": "${foo}-abc-${AWS::AccountId}",
     "obj": {
       "TestObject": {
         "A": "b"
@@ -15,21 +15,21 @@
       "Type": "AWS::S3::Bucket",
       "Metadata": {
         "Test": {
-          "Fn::Sub": "${Const::sub}-xyz"
+          "Fn::Sub": "${sub}-xyz"
         },
         "TestObj": {
-          "Ref": "Const::obj"
+          "Ref": "obj"
         }
       },
       "Properties": {
         "BucketName": {
-          "Fn::Sub": "${Const::foo}"
+          "Fn::Sub": "${foo}"
         },
         "Tags": [
           {
             "Key": "Environment",
             "Value": {
-              "Ref": "Const::foo"
+              "Ref": "foo"
             }
           }
         ]

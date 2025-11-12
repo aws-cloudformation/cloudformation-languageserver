@@ -47,7 +47,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Constants', () => {
         constantsMap.set('foo', fooContext);
 
         // String constant with interpolation
-        const subConstant = new Constant('sub', '${Const::foo}-abc-${AWS::AccountId}');
+        const subConstant = new Constant('sub', '${foo}-abc-${AWS::AccountId}');
         const subContext = createMockContext(TopLevelSection.Constants, 'sub', { text: '' });
         Object.defineProperty(subContext, 'entity', { value: subConstant, writable: false });
         constantsMap.set('sub', subContext);
@@ -92,12 +92,12 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Constants', () => {
                 const result = provider.getCompletions(context, createTestParams());
 
                 expect(result).toBeDefined();
-                const constantItems = result!.filter((item) => item.label.startsWith('Const::'));
+                const constantItems = result!.filter((item) => item.kind === CompletionItemKind.Constant);
 
                 expect(constantItems.length).toBe(3);
-                expect(constantItems.find((item) => item.label === 'Const::foo')).toBeDefined();
-                expect(constantItems.find((item) => item.label === 'Const::sub')).toBeDefined();
-                expect(constantItems.find((item) => item.label === 'Const::obj')).toBeDefined();
+                expect(constantItems.find((item) => item.label === 'foo')).toBeDefined();
+                expect(constantItems.find((item) => item.label === 'sub')).toBeDefined();
+                expect(constantItems.find((item) => item.label === 'obj')).toBeDefined();
             });
 
             it('should show Constants with correct CompletionItemKind', () => {
@@ -114,7 +114,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Constants', () => {
 
                 const result = provider.getCompletions(context, createTestParams());
 
-                const constantItems = result!.filter((item) => item.label.startsWith('Const::'));
+                const constantItems = result!.filter((item) => item.kind === CompletionItemKind.Constant);
                 for (const item of constantItems) {
                     expect(item.kind).toBe(CompletionItemKind.Constant);
                     expect(item.detail).toBe('Constant');
@@ -138,13 +138,13 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Constants', () => {
                 const result = provider.getCompletions(context, createTestParams());
 
                 expect(result).toBeDefined();
-                const constantItems = result!.filter((item) => item.label.startsWith('Const::'));
+                const constantItems = result!.filter((item) => item.kind === CompletionItemKind.Constant);
 
                 // Should only have string constants (foo and sub), not obj
                 expect(constantItems.length).toBe(2);
-                expect(constantItems.find((item) => item.label === 'Const::foo')).toBeDefined();
-                expect(constantItems.find((item) => item.label === 'Const::sub')).toBeDefined();
-                expect(constantItems.find((item) => item.label === 'Const::obj')).toBeUndefined();
+                expect(constantItems.find((item) => item.label === 'foo')).toBeDefined();
+                expect(constantItems.find((item) => item.label === 'sub')).toBeDefined();
+                expect(constantItems.find((item) => item.label === 'obj')).toBeUndefined();
             });
 
             it('should show string Constants with value preview in documentation', () => {
@@ -161,7 +161,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Constants', () => {
 
                 const result = provider.getCompletions(context, createTestParams());
 
-                const fooItem = result!.find((item) => item.label === 'Const::foo');
+                const fooItem = result!.find((item) => item.label === 'foo');
                 expect(fooItem).toBeDefined();
                 expect(fooItem!.documentation).toContain('Value: bar');
             });
@@ -199,7 +199,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Constants', () => {
                 const result = provider.getCompletions(context, createTestParams());
 
                 expect(result).toBeDefined();
-                const constantItems = result!.filter((item) => item.label.startsWith('Const::'));
+                const constantItems = result!.filter((item) => item.kind === CompletionItemKind.Constant);
 
                 expect(constantItems.length).toBe(0);
             });
@@ -221,7 +221,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Constants', () => {
                 const result = provider.getCompletions(context, createTestParams());
 
                 expect(result).toBeDefined();
-                const constantItems = result!.filter((item) => item.label.startsWith('Const::'));
+                const constantItems = result!.filter((item) => item.kind === CompletionItemKind.Constant);
 
                 expect(constantItems.length).toBe(0);
             });

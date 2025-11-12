@@ -277,10 +277,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                       : String(constant.value);
 
             completionItems.push(
-                createCompletionItem(`Const::${constantName}`, CompletionItemKind.Constant, {
+                createCompletionItem(constantName, CompletionItemKind.Constant, {
                     detail: `Constant`,
                     documentation: `Value: ${valuePreview}`,
-                    insertText: `Const::${constantName}`,
                 }),
             );
         }
