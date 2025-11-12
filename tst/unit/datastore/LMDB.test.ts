@@ -1,27 +1,20 @@
 import fs from 'fs';
-import path from 'path';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import path, { join } from 'path';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DataStore } from '../../../src/datastore/DataStore';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
-
-const tstDir = 'tmp-tst';
-vi.mock('../../../src/utils/ArtifactsDir', () => ({
-    pathToArtifact: vi.fn().mockImplementation((dir) => {
-        return path.join(process.cwd(), tstDir, dir ?? '');
-    }),
-}));
 
 describe('LMDB', () => {
     let lmdbFactory: LMDBStoreFactory;
     let lmdbStore: DataStore;
-    const testDir = path.join(process.cwd(), tstDir);
+    const testDir = join(path.join(process.cwd(), 'tmp-tst'), 'lmdb');
 
     beforeEach(() => {
         if (!fs.existsSync(testDir)) {
             fs.mkdirSync(testDir, { recursive: true });
         }
 
-        lmdbFactory = new LMDBStoreFactory();
+        lmdbFactory = new LMDBStoreFactory(testDir);
         lmdbStore = lmdbFactory.getOrCreate('test-store');
     });
 
@@ -205,7 +198,7 @@ describe('LMDB', () => {
             await lmdbFactory.close();
 
             // Create new instance that should load from the same files
-            const newFactory = new LMDBStoreFactory();
+            const newFactory = new LMDBStoreFactory(testDir);
             const newStore = newFactory.getOrCreate('test-store');
             const result = newStore.get<typeof value>(key);
 
