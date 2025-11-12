@@ -71,12 +71,15 @@ jobs:
 
   bundle-linux:
     needs: [ get-configs, version-and-tag, build-and-test ]
+    continue-on-error: true
     strategy:
       fail-fast: true
       matrix:
         include:
-          - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "22" }
-          - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "22" }
+          - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "22", image: "amazonlinux:2023" }
+          - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "22", image: "amazonlinux:2023" }
+          - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "16", image: "amazonlinux:2" }
+          - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "16", image: "amazonlinux:2" }
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v5
@@ -113,7 +116,7 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/work -w /work \
             --platform ${{ matrix.docker-platform }} \
-            amazonlinux:2 \
+            ${{ matrix.image }} \
             /bin/bash -c '
               set -ex
               yum install -y make gcc-c++ python3 tar gzip wget tree
