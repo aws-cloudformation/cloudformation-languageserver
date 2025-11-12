@@ -1,3 +1,4 @@
+import path from 'path';
 import { parentPort } from 'worker_threads';
 import { loadPyodide, type PyodideInterface } from 'pyodide';
 import { PublishDiagnosticsParams } from 'vscode-languageserver';
@@ -118,6 +119,12 @@ async function initializePyodide(): Promise<InitializeResult> {
         await pyodide.loadPackage('ssl');
         await pyodide.loadPackage('pyyaml');
 
+        // Load additional packages that cfn-lint needs
+        await pyodide.loadPackage('regex');
+        await pyodide.loadPackage('rpds-py');
+        await pyodide.loadPackage('pydantic');
+        await pyodide.loadPackage('pydantic-core');
+
         // Replace CSafeLoader with SafeLoader to avoid Pyodide parsing issues
         await pyodide.runPythonAsync(`
        import yaml
@@ -125,10 +132,62 @@ async function initializePyodide(): Promise<InitializeResult> {
            yaml.CSafeLoader = yaml.SafeLoader
      `);
 
-        // Install cfn-lint
+        // Mount assets directory to access local wheels
+        const assetsPath = path.join(__dirname, 'assets');
+        try {
+            pyodide.FS.mkdirTree('/assets');
+            pyodide.mountNodeFS('/assets', assetsPath);
+        } catch {
+            // Failed to mount assets directory
+        }
+
+        // Install cfn-lint with local wheel fallback
         await pyodide.runPythonAsync(`
       import micropip
-      await micropip.install('cfn-lint')
+      import os
+      from pathlib import Path
+      
+      cfn_lint_installed = False
+      
+      # Debug: Check current working directory and available paths
+      print(f'Current working directory: {os.getcwd()}')
+      print(f'Directory contents: {os.listdir(".")}')
+      
+      # Try to install latest from PyPI first
+      try:
+          await micropip.install('cfn-lint')
+          cfn_lint_installed = True
+          print('Installed cfn-lint from PyPI')
+      except Exception as e:
+          print(f'Failed to install cfn-lint from PyPI: {e}')
+      
+      # Fallback to local wheels if online installation failed
+      if not cfn_lint_installed:
+          wheels_dir = Path('/assets/wheels')
+          print(f'Checking for wheels in: {wheels_dir}')
+          
+          if wheels_dir.exists():
+              wheel_files = list(wheels_dir.glob('*.whl'))
+              print(f'Found {len(wheel_files)} wheel files')
+              
+              if wheel_files:
+                  try:
+                      # Install all wheels using emfs:// URLs with no-deps to avoid online dependency resolution
+                      for wheel_file in wheel_files:
+                          wheel_url = f'emfs:{wheel_file}'
+                          print(f'Installing: {wheel_file.name}')
+                          await micropip.install(wheel_url, deps=False)
+                      cfn_lint_installed = True
+                      print(f'Installed cfn-lint and dependencies from local wheels ({len(wheel_files)} packages)')
+                  except Exception as e:
+                      print(f'Failed to install from local wheels: {e}')
+              else:
+                  print('No wheel files found in wheels directory')
+          else:
+              print(f'Wheels directory not found: {wheels_dir}')
+          
+          if not cfn_lint_installed:
+              raise Exception('Failed to install cfn-lint from both PyPI and local wheels')
     `);
 
         // Setup Python functions for linting
