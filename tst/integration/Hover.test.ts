@@ -2,11 +2,11 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TestExtension } from '../utils/TestExtension';
 import { wait, getSimpleYamlTemplateText } from '../utils/Utils';
 
-describe('E2E-Integration: Hover', () => {
+describe('Integration Test: Hover', () => {
     let client: TestExtension;
 
     beforeAll(async () => {
-        client = new TestExtension(undefined, false);
+        client = new TestExtension();
         await client.ready();
     }, 30000);
 

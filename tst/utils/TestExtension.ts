@@ -1,5 +1,4 @@
 import { randomBytes } from 'crypto';
-import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PassThrough } from 'stream';
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node';
@@ -62,7 +61,6 @@ import { RelationshipSchemaService } from '../../src/services/RelationshipSchema
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
-import { createMockCfnLintService, createMockGuardService, mockCfnAi } from './MockServerComponents';
 import { wait } from './Utils';
 
 const awsMetadata: AwsMetadata = {
@@ -106,7 +104,6 @@ export class TestExtension implements Closeable {
                 aws: awsMetadata,
             },
         },
-        private readonly useMocks: boolean = true,
     ) {
         this.serverConnection = new LspConnection(
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
@@ -120,34 +117,19 @@ export class TestExtension implements Closeable {
                         dataStoreFactory,
                     });
 
-                    if (this.useMocks) {
-                        // Integration tests with mocks
-                        const schemaStore = new SchemaStore(dataStoreFactory);
-                        this.external = new CfnExternal(lsp, this.core, {
-                            schemaStore,
-                            cfnLintService: createMockCfnLintService(),
-                            guardService: createMockGuardService(),
-                            featureFlags: new FeatureFlagProvider(
-                                join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
-                            ),
-                        });
+                    const schemaStore = new SchemaStore(dataStoreFactory);
+                    this.external = new CfnExternal(lsp, this.core, {
+                        schemaStore,
+                        featureFlags: new FeatureFlagProvider(
+                            join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+                        ),
+                    });
 
-                        this.providers = new CfnLspProviders(this.core, this.external, {
-                            relationshipSchemaService: new RelationshipSchemaService(
-                                join(__dirname, '..', '..', 'assets', 'relationship_schemas.json'),
-                            ),
-                            cfnAI: mockCfnAi(),
-                        });
-                    } else {
-                        // E2E-Integration tests without mocks
-                        this.external = new CfnExternal(lsp, this.core, {
-                            featureFlags: new FeatureFlagProvider(
-                                join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
-                            ),
-                        });
-                        this.providers = new CfnLspProviders(this.core, this.external);
-                    }
-
+                    this.providers = new CfnLspProviders(this.core, this.external, {
+                        relationshipSchemaService: new RelationshipSchemaService(
+                            join(__dirname, '..', '..', 'assets', 'relationship_schemas.json'),
+                        ),
+                    });
                     this.server = new CfnServer(lsp, this.core, this.external, this.providers);
                     return LspCapabilities;
                 },
@@ -295,9 +277,4 @@ export class TestExtension implements Closeable {
         });
         return uri;
     }
-}
-
-export function loadTemplate(filename: string): string {
-    const templatePath = join(__dirname, '..', 'resources', 'templates', filename);
-    return readFileSync(templatePath, 'utf8');
 }
