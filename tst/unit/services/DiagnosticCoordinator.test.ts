@@ -5,6 +5,7 @@ import { Diagnostic, DiagnosticSeverity, Range, Position } from 'vscode-language
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
+import { Delayer } from '../../../src/utils/Delayer';
 import {
     createMockLspDiagnostics,
     createMockSyntaxTreeManager,
@@ -17,6 +18,13 @@ vi.mock('../../../src/context/syntaxtree/utils/NodeType', () => ({
         isPairNode: vi.fn().mockReturnValue(true),
     },
 }));
+
+// Mock delayer that executes immediately for tests
+class MockDelayer<T> extends Delayer<T> {
+    override async delay(key: string, executor: () => Promise<T>): Promise<T> {
+        return await executor();
+    }
+}
 
 describe('DiagnosticCoordinator', () => {
     let coordinator: DiagnosticCoordinator;
@@ -49,7 +57,15 @@ describe('DiagnosticCoordinator', () => {
 
         mockSyntaxTreeManager = createMockSyntaxTreeManager();
         const mockValidationManager = createMockValidationManager();
-        coordinator = new DiagnosticCoordinator(mockLspDiagnostics, mockSyntaxTreeManager, mockValidationManager);
+
+        // Use mock delayer that executes immediately
+        const mockDelayer = new MockDelayer<void>();
+        coordinator = new DiagnosticCoordinator(
+            mockLspDiagnostics,
+            mockSyntaxTreeManager,
+            mockValidationManager,
+            mockDelayer,
+        );
     });
 
     afterEach(() => {
@@ -577,6 +593,80 @@ describe('DiagnosticCoordinator', () => {
 
             expect(mockSyntaxTree.getNodeByPath.calledWith([''])).toBe(true);
             expect(result).toBeUndefined();
+        });
+    });
+
+    describe('delayer functionality', () => {
+        it('should use delayer for debouncing diagnostic publishing', async () => {
+            // Create a real delayer with fake timers to test debouncing
+            vi.useFakeTimers();
+
+            const realDelayer = new Delayer<void>(200);
+            const coordinatorWithRealDelayer = new DiagnosticCoordinator(
+                { publishDiagnostics: mockPublishDiagnostics } as any,
+                mockSyntaxTreeManager,
+                {} as any,
+                realDelayer,
+            );
+
+            const diagnostics = [createDiagnostic(0, 0, 'Test Error')];
+
+            // Publish diagnostics
+            const promise = coordinatorWithRealDelayer.publishDiagnostics('cfn-lint', testUri, diagnostics);
+
+            // Should not publish immediately
+            expect(mockPublishDiagnostics).not.toHaveBeenCalled();
+
+            // Advance timers by 200ms
+            vi.advanceTimersByTime(200);
+            await promise;
+
+            // Should publish after delay
+            expect(mockPublishDiagnostics).toHaveBeenCalledWith({
+                uri: testUri,
+                diagnostics,
+            });
+
+            vi.useRealTimers();
+        });
+
+        it('should debounce rapid calls with real delayer', async () => {
+            vi.useFakeTimers();
+
+            const realDelayer = new Delayer<void>(200);
+            const coordinatorWithRealDelayer = new DiagnosticCoordinator(
+                { publishDiagnostics: mockPublishDiagnostics } as any,
+                mockSyntaxTreeManager,
+                {} as any,
+                realDelayer,
+            );
+
+            // Rapid calls
+            void coordinatorWithRealDelayer.publishDiagnostics('cfn-lint', testUri, [
+                createDiagnostic(0, 0, 'Error 1'),
+            ]);
+            void coordinatorWithRealDelayer.publishDiagnostics('cfn-lint', testUri, [
+                createDiagnostic(0, 0, 'Error 2'),
+            ]);
+            const promise = coordinatorWithRealDelayer.publishDiagnostics('cfn-lint', testUri, [
+                createDiagnostic(0, 0, 'Error 3'),
+            ]);
+
+            // Should not publish immediately
+            expect(mockPublishDiagnostics).not.toHaveBeenCalled();
+
+            // Advance timers
+            vi.advanceTimersByTime(200);
+            await promise;
+
+            // Should only publish once with latest diagnostics
+            expect(mockPublishDiagnostics).toHaveBeenCalledTimes(1);
+            expect(mockPublishDiagnostics).toHaveBeenCalledWith({
+                uri: testUri,
+                diagnostics: [expect.objectContaining({ message: 'Error 3' })],
+            });
+
+            vi.useRealTimers();
         });
     });
 });
