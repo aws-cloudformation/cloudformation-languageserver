@@ -20,7 +20,6 @@ export const LogLevel: Record<LevelWithSilent, number> = {
 } as const;
 
 export class LoggerFactory implements Closeable {
-    private static readonly LogsDirectory = pathToArtifact('logs');
     private static readonly MaxFileSize = 50 * 1024 * 1024; // 50MB
 
     private static readonly _instance: LoggerFactory = new LoggerFactory();
@@ -30,7 +29,10 @@ export class LoggerFactory implements Closeable {
     private readonly loggers = new Map<string, Logger>();
     private readonly interval: NodeJS.Timeout;
 
-    private constructor(level?: LevelWithSilent) {
+    private constructor(
+        private readonly logsDirectory: string = pathToArtifact('logs'),
+        level?: LevelWithSilent,
+    ) {
         this.logLevel = level ?? TelemetrySettings.logLevel;
 
         this.baseLogger = pino({
@@ -51,7 +53,7 @@ export class LoggerFactory implements Closeable {
                         target: 'pino/file',
                         options: {
                             destination: join(
-                                LoggerFactory.LogsDirectory,
+                                logsDirectory,
                                 `${ExtensionId}-${DateTime.utc().toFormat('yyyy-MM-dd')}.log`,
                             ),
                             mkdir: true,
@@ -72,13 +74,13 @@ export class LoggerFactory implements Closeable {
 
     private async cleanOldLogs() {
         try {
-            const files = await readdir(LoggerFactory.LogsDirectory);
+            const files = await readdir(this.logsDirectory);
             const oneWeekAgo = DateTime.utc().minus({ weeks: 1 });
 
             for (const file of files) {
                 if (!file.endsWith('.log')) continue;
 
-                const filePath = join(LoggerFactory.LogsDirectory, file);
+                const filePath = join(this.logsDirectory, file);
                 const stats = await stat(filePath);
 
                 if (DateTime.fromJSDate(stats.mtime) < oneWeekAgo) {
@@ -94,12 +96,12 @@ export class LoggerFactory implements Closeable {
 
     private async trimLogs() {
         try {
-            const files = await readdir(LoggerFactory.LogsDirectory);
+            const files = await readdir(this.logsDirectory);
 
             for (const file of files) {
                 if (!file.endsWith('.log')) continue;
 
-                const filePath = join(LoggerFactory.LogsDirectory, file);
+                const filePath = join(this.logsDirectory, file);
                 const stats = await stat(filePath);
 
                 if (stats.size > LoggerFactory.MaxFileSize) {

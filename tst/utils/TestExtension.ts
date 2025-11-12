@@ -61,7 +61,6 @@ import { RelationshipSchemaService } from '../../src/services/RelationshipSchema
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
-import { createMockCfnLintService, createMockGuardService, mockCfnAi } from './MockServerComponents';
 import { wait } from './Utils';
 
 const awsMetadata: AwsMetadata = {
@@ -121,8 +120,6 @@ export class TestExtension implements Closeable {
                     const schemaStore = new SchemaStore(dataStoreFactory);
                     this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
-                        cfnLintService: createMockCfnLintService(),
-                        guardService: createMockGuardService(),
                         featureFlags: new FeatureFlagProvider(
                             join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
                         ),
@@ -132,7 +129,6 @@ export class TestExtension implements Closeable {
                         relationshipSchemaService: new RelationshipSchemaService(
                             join(__dirname, '..', '..', 'assets', 'relationship_schemas.json'),
                         ),
-                        cfnAI: mockCfnAi(),
                     });
                     this.server = new CfnServer(lsp, this.core, this.external, this.providers);
                     return LspCapabilities;
@@ -263,5 +259,22 @@ export class TestExtension implements Closeable {
 
     deleteIamCredentials() {
         return this.notify(IamCredentialsDeleteNotification.method, undefined);
+    }
+
+    // Helper methods for convenience
+    async openYamlTemplate(content: string, filename = 'template.yaml'): Promise<string> {
+        const uri = `file:///test/${filename}`;
+        await this.openDocument({
+            textDocument: { uri, languageId: 'yaml', version: 1, text: content },
+        });
+        return uri;
+    }
+
+    async openJsonTemplate(content: string, filename = 'template.json'): Promise<string> {
+        const uri = `file:///test/${filename}`;
+        await this.openDocument({
+            textDocument: { uri, languageId: 'json', version: 1, text: content },
+        });
+        return uri;
     }
 }
