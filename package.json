@@ -35,6 +35,7 @@
     "test:go": "GOPROXY=direct go test -C cfn-init ./...",
     "bundle": "rm -rf out && webpack --env mode=development && npm run build:go:dev",
     "bundle:alpha": "rm -rf out && webpack --env mode=production --env env=alpha",
+    "download-wheels": "tsx tools/download-wheels.ts",
     "bundle:beta": "rm -rf out && webpack --env mode=production --env env=beta",
     "bundle:prod": "rm -rf out && webpack --env mode=production --env env=prod",
     "benchmark": "NODE_ENV=test AWS_ENV=alpha node --max-old-space-size=16384 --expose-gc -r ts-node/register tools/benchmark.ts",
