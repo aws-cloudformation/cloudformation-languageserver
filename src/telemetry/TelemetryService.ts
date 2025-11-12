@@ -152,8 +152,6 @@ export class TelemetryService implements Closeable {
 
     private registerErrorHandlers(telemetry: ScopedTelemetry): void {
         process.on('unhandledRejection', (reason, _promise) => {
-            this.logger.error(reason, 'Unhandled promise rejection');
-
             const location = reason instanceof Error ? extractLocationFromStack(reason.stack) : {};
             telemetry.count('process.promise.unhandled', 1, {
                 attributes: {
@@ -166,8 +164,6 @@ export class TelemetryService implements Closeable {
         });
 
         process.on('uncaughtException', (error, origin) => {
-            this.logger.error(error, `Uncaught exception ${origin}`);
-
             telemetry.count('process.exception.uncaught', 1, {
                 attributes: {
                     'error.type': error.name,
