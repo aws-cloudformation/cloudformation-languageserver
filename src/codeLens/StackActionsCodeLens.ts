@@ -5,12 +5,10 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { Document } from '../document/Document';
 
 const STACK_ACTION_TITLES = {
-    VALIDATE_DEPLOYMENT: 'Validate Deployment',
-    DEPLOY: 'Deploy Template',
+    DEPLOY: 'Validate and Deploy',
 } as const;
 
 const STACK_ACTION_COMMANDS = {
-    VALIDATE_DEPLOYMENT: 'aws.cloudformation.api.validateDeployment',
     DEPLOY: 'aws.cloudformation.api.deployTemplate',
 } as const;
 
@@ -49,14 +47,6 @@ export function getStackActionsCodeLenses(
     const range = Range.create(Position.create(codeLensLine, 0), Position.create(codeLensLine, 0));
 
     return [
-        {
-            range,
-            command: {
-                title: STACK_ACTION_TITLES.VALIDATE_DEPLOYMENT,
-                command: STACK_ACTION_COMMANDS.VALIDATE_DEPLOYMENT,
-                arguments: [uri],
-            },
-        },
         {
             range,
             command: {

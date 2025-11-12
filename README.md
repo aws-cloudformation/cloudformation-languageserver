@@ -49,8 +49,7 @@ The server implements the Language Server Protocol (LSP) to enable code editors 
 - **Artifact Export** - Export and upload template artifacts to S3 for deployment
 
 ### Code Lens Actions
-- **Validate Deployment** - Validate template deployment from the editor
-- **Deploy Template** - Deploy templates with a single click
+- **Validate and Deploy** - Deploy templates with a single click
 - **Open Stack Template** - Open managed stack templates for resources
 
 ### Advanced Capabilities
