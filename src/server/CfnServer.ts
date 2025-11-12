@@ -50,6 +50,7 @@ import {
     describeChangeSetHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { withTelemetryContext } from '../telemetry/TelemetryContext';
 import { closeSafely } from '../utils/Closeable';
 import { CfnExternal } from './CfnExternal';
@@ -57,6 +58,7 @@ import { CfnInfraCore } from './CfnInfraCore';
 import { CfnLspProviders } from './CfnLspProviders';
 import { ServerComponents } from './ServerComponents';
 
+const log = LoggerFactory.getLogger('CfnServer');
 export class CfnServer {
     private readonly components: ServerComponents;
 
@@ -66,12 +68,14 @@ export class CfnServer {
         private readonly external = new CfnExternal(lsp, core),
         private readonly providers = new CfnLspProviders(core, external),
     ) {
+        log.info('Initializing...');
         this.components = {
             ...core,
             ...external,
             ...providers,
         };
 
+        log.info('Seting up handlers...');
         this.setupHandlers();
     }
 
