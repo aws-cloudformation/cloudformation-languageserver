@@ -24,6 +24,10 @@ Resources:
     Properties:
       Code: ./src/lambda
       Runtime: nodejs18.x
+      Handler: index.handler
+      FunctionName: MyTestFunction
+      Timeout: 30
+      MemorySize: 256
 `;
 
     const SERVERLESS_TEMPLATE = `
@@ -33,6 +37,10 @@ Resources:
     Properties:
       CodeUri: ./code
       Runtime: python3.9
+      Handler: app.lambda_handler
+      Description: Test serverless function
+      Timeout: 60
+      MemorySize: 512
 `;
 
     const S3_URL_TEMPLATE = `
@@ -42,6 +50,9 @@ Resources:
     Properties:
       Code: s3://existing-bucket/code.zip
       Runtime: nodejs18.x
+      Handler: index.handler
+      FunctionName: ExistingFunction
+      Timeout: 45
 `;
 
     beforeEach(() => {
@@ -143,6 +154,10 @@ Resources:
                 S3ObjectVersion: 'v123',
             });
             expect(resources.MyFunction.Properties.Runtime).toBe('nodejs18.x');
+            expect(resources.MyFunction.Properties.Handler).toBe('index.handler');
+            expect(resources.MyFunction.Properties.FunctionName).toBe('MyTestFunction');
+            expect(resources.MyFunction.Properties.Timeout).toBe(30);
+            expect(resources.MyFunction.Properties.MemorySize).toBe(256);
         });
 
         it('should update Serverless function CodeUri to S3 URL', async () => {
@@ -158,6 +173,10 @@ Resources:
             const resources = (result as any).Resources;
             expect(resources.MyFunction.Properties.CodeUri).toMatch(/^s3:\/\/my-bucket\/artifact\/cfn-123-\d+$/);
             expect(resources.MyFunction.Properties.Runtime).toBe('python3.9');
+            expect(resources.MyFunction.Properties.Handler).toBe('app.lambda_handler');
+            expect(resources.MyFunction.Properties.Description).toBe('Test serverless function');
+            expect(resources.MyFunction.Properties.Timeout).toBe(60);
+            expect(resources.MyFunction.Properties.MemorySize).toBe(512);
         });
 
         it('should not modify existing S3 URLs', async () => {
@@ -172,6 +191,10 @@ Resources:
 
             const resources = (result as any).Resources;
             expect(resources.MyFunction.Properties.Code).toBe('s3://existing-bucket/code.zip');
+            expect(resources.MyFunction.Properties.Runtime).toBe('nodejs18.x');
+            expect(resources.MyFunction.Properties.Handler).toBe('index.handler');
+            expect(resources.MyFunction.Properties.FunctionName).toBe('ExistingFunction');
+            expect(resources.MyFunction.Properties.Timeout).toBe(45);
             expect(mockS3Service.putObject).not.toHaveBeenCalled();
         });
     });

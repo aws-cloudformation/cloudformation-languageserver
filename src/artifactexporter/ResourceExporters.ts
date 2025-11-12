@@ -203,25 +203,25 @@ export abstract class ResourceWithS3UrlDict extends Resource {
     }
 }
 
-export class ServerlessFunctionResource extends Resource {
+class ServerlessFunctionResource extends Resource {
     public override resourceType = 'AWS::Serverless::Function';
     public override propertyName = 'CodeUri';
     protected override forceZip = true;
 }
 
-export class ServerlessApiResource extends Resource {
+class ServerlessApiResource extends Resource {
     public override resourceType = 'AWS::Serverless::Api';
     public override propertyName = 'DefinitionUri';
     protected override packageNullProperty = false;
 }
 
-export class GraphQLSchemaResource extends Resource {
+class GraphQLSchemaResource extends Resource {
     public override resourceType = 'AWS::AppSync::GraphQLSchema';
     public override propertyName = 'DefinitionS3Location';
     protected override packageNullProperty = false;
 }
 
-export class LambdaFunctionResource extends ResourceWithS3UrlDict {
+class LambdaFunctionResource extends ResourceWithS3UrlDict {
     public override resourceType = 'AWS::Lambda::Function';
     public override propertyName = 'Code';
     protected override bucketNameProperty = 'S3Bucket';
@@ -230,7 +230,7 @@ export class LambdaFunctionResource extends ResourceWithS3UrlDict {
     protected override forceZip = true;
 }
 
-export class ApiGatewayRestApiResource extends ResourceWithS3UrlDict {
+class ApiGatewayRestApiResource extends ResourceWithS3UrlDict {
     public override resourceType = 'AWS::ApiGateway::RestApi';
     public override propertyName = 'BodyS3Location';
     protected override packageNullProperty = false;
@@ -239,7 +239,7 @@ export class ApiGatewayRestApiResource extends ResourceWithS3UrlDict {
     protected override versionProperty = 'Version';
 }
 
-export class CloudFormationStackResource extends Resource {
+class CloudFormationStackResource extends Resource {
     public override resourceType = 'AWS::CloudFormation::Stack';
     public override propertyName = 'TemplateURL';
 
