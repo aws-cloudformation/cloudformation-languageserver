@@ -122,7 +122,8 @@ describe('StackActionWorkflowOperations', () => {
                 Id: 'changeset-123',
             });
 
-            mockS3Service.putObjectContent = vi.fn().mockResolvedValue({});
+            mockS3Service.putObjectContent = vi.fn().mockResolvedValue({ ETag: '"test-etag"' });
+            mockS3Service.getHeadObject = vi.fn().mockResolvedValue({ ETag: '"test-etag"' });
 
             const result = await processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE', mockS3Service);
 
@@ -132,6 +133,7 @@ describe('StackActionWorkflowOperations', () => {
                 'test-bucket',
                 'template.yaml',
             );
+            expect(mockS3Service.getHeadObject).toHaveBeenCalledWith('test-bucket', 'template.yaml');
             expect(mockCfnService.createChangeSet).toHaveBeenCalledWith({
                 StackName: 'test-stack',
                 ChangeSetName: expect.stringContaining(ExtensionName.replaceAll(' ', '-')),
@@ -142,6 +144,31 @@ describe('StackActionWorkflowOperations', () => {
                 ChangeSetType: 'CREATE',
                 ResourcesToImport: undefined,
             });
+        });
+
+        it('should throw error when S3 ETag mismatch occurs', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+                s3Bucket: 'test-bucket',
+                s3Key: 'template.yaml',
+            };
+
+            const mockDocument = {
+                contents: () => 'template content',
+                documentType: 'YAML',
+            };
+            (mockDocumentManager.get as any).mockReturnValue(mockDocument);
+
+            mockS3Service.putObjectContent = vi.fn().mockResolvedValue({ ETag: '"original-etag"' });
+            mockS3Service.getHeadObject = vi.fn().mockResolvedValue({ ETag: '"different-etag"' });
+
+            await expect(
+                processChangeSet(mockCfnService, mockDocumentManager, params, 'CREATE', mockS3Service),
+            ).rejects.toThrow(ResponseError);
+
+            expect(mockS3Service.getHeadObject).toHaveBeenCalledWith('test-bucket', 'template.yaml');
         });
 
         it('should throw error when document not found', async () => {
