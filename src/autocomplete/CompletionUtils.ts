@@ -16,6 +16,18 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ExtensionName } from '../utils/ExtensionConfig';
 import { ExtendedCompletionItem } from './CompletionFormatter';
 
+// Resource attributes are not given a data.type upon completionItem creation and
+// no schema for resource attributes. This is used for formatting completion items.
+export const RESOURCE_ATTRIBUTE_TYPES: Record<string, string> = {
+    DependsOn: 'string', // string | string[] - array of resource logical IDs
+    Condition: 'string', // Reference to a condition name
+    Metadata: 'object', // Arbitrary JSON/YAML object
+    CreationPolicy: 'object', // Configuration object with specific properties
+    DeletionPolicy: 'string', // Enum: "Delete" | "Retain" | "Snapshot"
+    UpdatePolicy: 'object', // Configuration object with update policies
+    UpdateReplacePolicy: 'string', // Enum: "Delete" | "Retain" | "Snapshot"
+};
+
 /**
  * Creates a replacement range from a context's start and end positions.
  * This is used for text edits in completion items.

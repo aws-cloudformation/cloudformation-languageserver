@@ -136,7 +136,13 @@ export class TemplateBuilder {
 
         const completionProviders = createCompletionProviders(core, external, providers);
 
-        this.completionRouter = new CompletionRouter(this.contextManager, completionProviders, this.documentManager);
+        this.completionRouter = new CompletionRouter(
+            this.contextManager,
+            completionProviders,
+            this.documentManager,
+            this.schemaRetriever,
+            undefined,
+        );
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever);
         this.initialize(startingContent);
     }

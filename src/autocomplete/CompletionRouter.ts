@@ -12,6 +12,7 @@ import { Entity, Output, Parameter } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
+import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnLspProviders } from '../server/CfnLspProviders';
@@ -48,6 +49,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         private readonly contextManager: ContextManager,
         private readonly completionProviderMap: Map<CompletionProviderType, CompletionProvider>,
         private readonly documentManager: DocumentManager,
+        private readonly schemaRetriever: SchemaRetriever,
         private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
     ) {}
 
@@ -89,6 +91,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
 
         const completions = provider?.getCompletions(context, params) ?? [];
         const editorSettings = this.documentManager.getEditorSettingsForDocument(params.textDocument.uri);
+        const lineContent = this.documentManager.getLine(params.textDocument.uri, context.startPosition.row);
 
         if (completions instanceof Promise) {
             return await completions.then((result) => {
@@ -99,6 +102,8 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                     },
                     context,
                     editorSettings,
+                    lineContent,
+                    this.schemaRetriever,
                 );
             });
         } else if (completions) {
@@ -107,7 +112,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                 items: completions.slice(0, this.completionSettings.maxCompletions),
             };
 
-            return this.formatter.format(completionList, context, editorSettings);
+            return this.formatter.format(completionList, context, editorSettings, lineContent, this.schemaRetriever);
         }
         return;
     }
@@ -272,10 +277,13 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
     }
 
     static create(core: CfnInfraCore, external: CfnExternal, providers: CfnLspProviders) {
+        CompletionFormatter.getInstance();
         return new CompletionRouter(
             core.contextManager,
             createCompletionProviders(core, external, providers),
             core.documentManager,
+            external.schemaRetriever,
+            createEntityFieldProviders(),
         );
     }
 }
