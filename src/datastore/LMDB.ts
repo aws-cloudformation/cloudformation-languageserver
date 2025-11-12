@@ -51,21 +51,22 @@ export class LMDBStore implements DataStore {
 export class LMDBStoreFactory implements DataStoreFactory {
     @Telemetry({ scope: 'LMDB.Global' }) private readonly telemetry!: ScopedTelemetry;
 
-    private readonly rootDir = pathToArtifact('lmdb');
-    private readonly storePath = join(this.rootDir, Version);
+    private readonly storePath: string;
     private readonly timeout: NodeJS.Timeout;
-
-    private readonly env: RootDatabase = open({
-        path: this.storePath,
-        maxDbs: 10, // 10 max databases
-        mapSize: 100 * 1024 * 1024, // 100MB max size
-        encoding: Encoding,
-        encryptionKey: encryptionStrategy(Version),
-    });
+    private readonly env: RootDatabase;
 
     private readonly stores = new Map<string, LMDBStore>();
 
-    constructor() {
+    constructor(private readonly rootDir: string = pathToArtifact('lmdb')) {
+        this.storePath = join(rootDir, Version);
+        this.env = open({
+            path: this.storePath,
+            maxDbs: 10, // 10 max databases
+            mapSize: 100 * 1024 * 1024, // 100MB max size
+            encoding: Encoding,
+            encryptionKey: encryptionStrategy(Version),
+        });
+
         this.registerLMDBGauges();
 
         this.timeout = setTimeout(
