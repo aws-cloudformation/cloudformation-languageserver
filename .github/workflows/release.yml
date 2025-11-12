@@ -113,7 +113,7 @@ jobs:
         run: |
           docker run --rm -v ${{ github.workspace }}:/work -w /work \
             --platform ${{ matrix.docker-platform }} \
-            amazonlinux:2023 \
+            amazonlinux:2 \
             /bin/bash -c '
               set -ex
               yum install -y make gcc-c++ python3 tar gzip wget tree
