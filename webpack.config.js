@@ -10,9 +10,11 @@ const path = require('path');
 const BUNDLE_NAME = 'cfn-lsp-server-standalone';
 const Package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const PackageLock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
+const ExternalsDeps = Package.externalDependencies;
+const NativePrebuilds = Package.nativePrebuilds;
+const UnusedDeps = Package.unusedDependencies;
 
 const COPY_FILES = ['LICENSE', 'NOTICE', 'THIRD-PARTY-LICENSES.txt', 'README.md'];
-const PLATFORMS = ['linux', 'win32', 'darwin'];
 const KEEP_FILES = [
     '.cjs',
     '.gyp',
@@ -28,7 +30,7 @@ const KEEP_FILES = [
 const IGNORE_PATHS = ['/bin/', '/test/', '/benchmarks/', '/examples/'];
 
 function generateExternals() {
-    const externals = Package.externalDependencies;
+    const externals = [...ExternalsDeps, ...UnusedDeps];
     const collected = new Set(externals);
     const queue = [...externals];
 
@@ -46,7 +48,7 @@ function generateExternals() {
         }
     }
 
-    for (const dep of Object.keys(Package.nativePrebuilds)) {
+    for (const dep of NativePrebuilds) {
         collected.add(dep);
     }
     return Array.from(collected).sort();
@@ -54,7 +56,7 @@ function generateExternals() {
 
 const EXTERNALS = generateExternals();
 
-function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, targetArch) {
+function createPlugins(isDevelopment, outputPath, mode, env) {
     const plugins = [];
 
     plugins.push(
@@ -65,25 +67,17 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
         }),
     );
 
-    // Copy Guard WASM assets and relationship schemas for both development and production
+    // Copy relationship schemas for both development and production
     plugins.push(
         new CopyWebpackPlugin({
             patterns: [
                 {
-                    from: 'src/services/guard/assets/guard.js',
-                    to: 'assets/guard.js',
-                },
-                {
-                    from: 'src/services/guard/assets/guard-wrapper.js',
-                    to: 'assets/guard-wrapper.js',
-                },
-                {
-                    from: 'src/services/guard/assets/guard_bg.wasm',
-                    to: 'assets/guard_bg.wasm',
-                },
-                {
                     from: 'assets',
                     to: 'assets',
+                },
+                {
+                    from: 'node_modules/cfn-guard/guard_bg.wasm',
+                    to: 'guard_bg.wasm',
                 },
             ],
         }),
@@ -98,7 +92,6 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
                 compiler.hooks.beforeRun.tapAsync('InstallDependencies', (compilation, callback) => {
                     try {
                         console.log('[InstallDependencies] Starting dependency installation...');
-                        console.log(`[InstallDependencies] Target: ${targetPlatform}-${targetArch}`);
 
                         const tmpPkg = {
                             ...Package,
@@ -120,59 +113,25 @@ function createPlugins(isDevelopment, outputPath, mode, env, targetPlatform, tar
 
                         console.log('[InstallDependencies] Running npm ci --omit=dev');
                         execSync('npm ci --omit=dev', { cwd: tmpDir, stdio: 'inherit' });
-                        const otherDeps = Object.entries(Package.nativePrebuilds)
-                            .filter(([key, _version]) => {
-                                return key.endsWith(`${targetPlatform}-${targetArch}`);
-                            })
-                            .map(([key, version]) => {
-                                return `${key}@${version}`;
-                            })
-                            .join(' ');
 
-                        console.log(`[InstallDependencies] Installing native prebuilds: ${JSON.stringify(otherDeps)}`);
-                        execSync(`npm install --save-exact --force ${otherDeps}`, { cwd: tmpDir, stdio: 'inherit' });
+                        const externals = ExternalsDeps.map((dep) => {
+                            if (dep === 'cfn-guard') {
+                                return `${dep}@${PackageLock.packages[`node_modules/${dep}`].resolved}`;
+                            }
+                            return `${dep}@${PackageLock.packages[`node_modules/${dep}`].version}`;
+                        });
+                        console.log(
+                            `[InstallDependencies] Installing externals: ${JSON.stringify(externals, null, 2)}`,
+                        );
+                        execSync(`npm install --save-exact ${externals.join(' ')}`, {
+                            cwd: tmpDir,
+                            stdio: 'inherit',
+                        });
                         callback();
                     } catch (error) {
                         console.error('[InstallDependencies] Error:', error);
                         callback(error);
                     }
-                });
-
-                compiler.hooks.afterEmit.tap('CleanUnusedNativeModules', () => {
-                    console.log('[CleanUnusedNativeModules] Starting cleanup of unused native modules...');
-
-                    const nodeModulesPath = path.join(outputPath, 'node_modules');
-
-                    if (!fs.existsSync(nodeModulesPath)) {
-                        console.log('[CleanUnusedNativeModules] No node_modules found, skipping cleanup');
-                        return;
-                    }
-
-                    function cleanPlatformDirs(dir) {
-                        if (!fs.existsSync(dir)) return;
-
-                        const entries = fs.readdirSync(dir, { withFileTypes: true });
-                        for (const entry of entries) {
-                            if (!entry.isDirectory()) continue;
-
-                            const entryPath = path.join(dir, entry.name);
-                            const isPlatformDir = PLATFORMS.some((p) => entry.name.includes(`${p}-`));
-                            const shouldKeep = entry.name.includes(`${targetPlatform}-${targetArch}`);
-
-                            if (isPlatformDir && !shouldKeep) {
-                                console.log(`[CleanUnusedNativeModules] Deleted: ${entryPath}`);
-                                fs.rmSync(entryPath, { recursive: true, force: true });
-                            } else if (entry.name === 'prebuilds') {
-                                console.log(`[CleanUnusedNativeModules] Scanning prebuilds: ${entryPath}`);
-                                cleanPlatformDirs(entryPath);
-                            } else {
-                                cleanPlatformDirs(entryPath);
-                            }
-                        }
-                    }
-
-                    cleanPlatformDirs(nodeModulesPath);
-                    console.log('[CleanUnusedNativeModules] Cleanup complete');
                 });
 
                 compiler.hooks.done.tap('CleanupTemp', () => {
@@ -287,8 +246,6 @@ const baseConfig = {
 module.exports = (env = {}) => {
     const mode = env.mode;
     let awsEnv = env.env;
-    const targetPlatform = env.platform || process.platform;
-    const targetArch = env.arch || process.arch;
 
     // Validate mode
     const validModes = ['development', 'production'];
@@ -314,8 +271,8 @@ module.exports = (env = {}) => {
     console.info(`Building server with mode: ${mode}`);
     console.info(`NODE_ENV: ${mode}`);
     console.info(`AWS_ENV: ${awsEnv}`);
-    console.info(`Platform: ${targetPlatform}`);
-    console.info(`Arch: ${targetArch}`);
+    console.info(`Platform: ${process.platform} Arch: ${process.arch}`);
+    console.info(`Node.js ${process.version} Versions: ${JSON.stringify(process.versions, null, 2)}`);
     console.info(`Output path: ${outputPath}`);
 
     return {
@@ -342,6 +299,6 @@ module.exports = (env = {}) => {
                 chunks: 'all',
             },
         },
-        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, targetPlatform, targetArch),
+        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv),
     };
 };

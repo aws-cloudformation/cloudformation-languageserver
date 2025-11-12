@@ -99,6 +99,8 @@ export const RefreshResourceListRequest = new RequestType<RefreshResourcesParams
     'aws/cfn/resources/refresh',
 );
 
+export const RemoveResourceTypeRequest = new RequestType<string, void, void>('aws/cfn/resources/list/remove');
+
 export const DeletionPolicyOnImport = 'Retain';
 
 export interface ResourceTemplateFormat {

@@ -11,6 +11,7 @@ describe('GetSchemaTaskManager', () => {
     let manager: GetSchemaTaskManager;
     let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
     let mockGetPrivateResources: ReturnType<typeof vi.fn>;
+    let mockOnSchemaUpdate: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -25,7 +26,15 @@ describe('GetSchemaTaskManager', () => {
             } as DescribeTypeOutput,
         ]);
 
-        manager = new GetSchemaTaskManager(mockSchemaStore, mockGetPublicSchemas, mockGetPrivateResources);
+        mockOnSchemaUpdate = vi.fn();
+
+        manager = new GetSchemaTaskManager(
+            mockSchemaStore,
+            mockGetPublicSchemas,
+            mockGetPrivateResources,
+            'default',
+            mockOnSchemaUpdate,
+        );
     });
 
     afterEach(() => {
@@ -153,5 +162,33 @@ describe('GetSchemaTaskManager', () => {
 
         // Should have saved to private store
         expect(mockSchemaStore.privateSchemas.keys(10).length).toBeGreaterThan(0);
+    });
+
+    it('should call schema retriever callback after successful task completion', async () => {
+        mockGetPublicSchemas.mockResolvedValue([{ name: 'test.json', content: '{}', createdMs: Date.now() }]);
+
+        manager.addTask(AwsRegion.US_EAST_1);
+        await flushAllPromises();
+
+        expect(mockOnSchemaUpdate).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
+    });
+
+    it('should call schema retriever callback after private task completion', async () => {
+        manager.runPrivateTask();
+        await flushAllPromises();
+
+        expect(mockOnSchemaUpdate).toHaveBeenCalledWith(undefined, 'default');
+    });
+
+    it('should call schema retriever callback after SAM task completion', async () => {
+        // Mock the SAM task to resolve immediately
+        vi.spyOn(manager as any, 'samTask', 'get').mockReturnValue({
+            run: vi.fn().mockResolvedValue(undefined),
+        });
+
+        manager.runSamTask();
+        await flushAllPromises();
+
+        expect(mockOnSchemaUpdate).toHaveBeenCalledWith();
     });
 });

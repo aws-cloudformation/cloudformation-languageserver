@@ -17,12 +17,10 @@ import axios from 'axios';
 import * as yauzl from 'yauzl';
 
 // Configuration with environment variable support
-const DEFAULT_VERSION = '1.0.2';
-const DEFAULT_BASE_URL = 'https://github.com/aws-cloudformation/aws-guard-rules-registry/releases/download';
+const DEFAULT_BASE_URL = 'https://github.com/aws-cloudformation/aws-guard-rules-registry/archive/refs/heads';
 
-const VERSION = process.env.GUARD_RULES_VERSION ?? DEFAULT_VERSION;
 const BASE_URL = process.env.GUARD_RULES_BASE_URL ?? DEFAULT_BASE_URL;
-const RULES_ZIP_URL = `${BASE_URL}/${VERSION}/ruleset-build-v${VERSION}.zip`;
+const RULES_ZIP_URL = `${BASE_URL}/main.zip`;
 
 const TEMP_DIR = path.join(__dirname, '.temp');
 const OUTPUT_FILE = path.join(__dirname, '..', 'src', 'services', 'guard', 'GeneratedGuardRules.ts');
@@ -192,7 +190,7 @@ function extractViolationMessage(content: string): string | undefined {
     const fixMatch = messageBlock.match(/Fix:\s*([^\n]+)/);
 
     if (fixMatch) {
-        return `${fixMatch[1].trim()}\n`;
+        return fixMatch[1].trim();
     }
 
     return undefined;
@@ -243,23 +241,30 @@ function parseGuardRulesFile(content: string): ParsedGuardRule[] {
         if (!name) continue;
 
         const guardContent: string[] = [];
+        let inRuleContent = false;
 
         for (const line of lines) {
             const trimmed = line.trim();
 
-            // Skip all comment lines (lines starting with #)
-            if (trimmed.startsWith('#')) {
-                continue;
+            // Start capturing when we hit the first 'let' or 'rule' statement
+            if (trimmed.startsWith('let ') || trimmed.startsWith('rule ')) {
+                inRuleContent = true;
             }
 
-            // Include ALL non-comment lines exactly as they are
-            guardContent.push(line);
+            // Once we're in rule content, capture everything (including empty lines)
+            if (inRuleContent) {
+                // Skip cfn_nag metadata lines
+                if (trimmed.includes('Metadata.cfn_nag.rules_to_suppress')) {
+                    continue;
+                }
+                guardContent.push(line);
+            }
         }
 
         let cleanContent = guardContent.join('\n').trim();
 
-        // Skip if no actual Guard content found
-        if (!cleanContent?.includes('rule ')) {
+        // Skip if no actual Guard content found (must have either 'rule' or 'let' statements)
+        if (!cleanContent?.includes('rule ') && !cleanContent?.includes('let ')) {
             continue;
         }
 
@@ -284,36 +289,9 @@ function parseGuardRulesFile(content: string): ParsedGuardRule[] {
 }
 
 /**
- * Parse individual rule pack file to extract rule names
- */
-function parseRulePackFile(content: string, packName: string): RulePack {
-    const rules: string[] = [];
-
-    // Similar parsing but just extract rule names
-    const ruleBlocks = content.split(/(?=^rule\s+)/m).filter((block) => block.trim());
-
-    for (const block of ruleBlocks) {
-        const firstLine = block.split('\n')[0]?.trim();
-        if (!firstLine?.startsWith('rule ')) continue;
-
-        const nameMatch = firstLine.match(/^rule\s+([A-Z_][A-Z0-9_]*)/);
-        if (nameMatch) {
-            rules.push(nameMatch[1]);
-        }
-    }
-
-    return { name: packName, rules };
-}
-
-/**
  * Generate TypeScript file with all rules and pack mappings
  */
-function generateTypeScriptFile(
-    allRules: ParsedGuardRule[],
-    rulePacks: RulePack[],
-    version: string,
-    sourceUrl: string,
-): string {
+function generateTypeScriptFile(allRules: ParsedGuardRule[], rulePacks: RulePack[], sourceUrl: string): string {
     const rulesObject = allRules
         .map((rule) => {
             // Use template literals for better readability - escape backticks, ${}, and backslashes in content
@@ -353,7 +331,7 @@ function generateTypeScriptFile(
  * Contains all AWS Guard rules and rule pack mappings to eliminate
  * runtime file parsing and reduce bundle size.
  *
- * Source: AWS Guard Rules Registry v${VERSION}
+ * Source: AWS Guard Rules Registry (main branch)
  * Generated: ${generationDate}
  * URL: ${RULES_ZIP_URL}
  */
@@ -400,12 +378,8 @@ export function getAvailableRulePacks(): string[] {
 async function main() {
     console.log('🚀 Starting Guard Rules generation...');
     console.log(`📋 Configuration:`);
-    console.log(`   Version: ${VERSION}`);
     console.log(`   URL: ${RULES_ZIP_URL}`);
 
-    if (process.env.GUARD_RULES_VERSION) {
-        console.log(`   ℹ️  Using custom version from GUARD_RULES_VERSION environment variable`);
-    }
     if (process.env.GUARD_RULES_BASE_URL) {
         console.log(`   ℹ️  Using custom base URL from GUARD_RULES_BASE_URL environment variable`);
     }
@@ -429,39 +403,69 @@ async function main() {
         fs.mkdirSync(extractDir, { recursive: true });
         await extractZip(zipPath, extractDir);
 
-        // Find and parse rule pack files (excluding all-rules file)
+        // Find and parse rule pack files from source
         console.log('📋 Parsing rule packs...');
-        const outputDir = path.join(extractDir, 'output');
-        const files = fs.readdirSync(outputDir);
+        const sourceDir = path.join(extractDir, `aws-guard-rules-registry-main`);
+        const rulesDir = path.join(sourceDir, 'rules');
+        const mappingsDir = path.join(sourceDir, 'mappings');
 
         const allRulesMap = new Map<string, ParsedGuardRule>();
         const rulePacks: RulePack[] = [];
 
-        for (const file of files) {
-            if (file.endsWith('.guard') && file !== 'guard-rules-registry-all-rules.guard') {
-                const packName = file.replace('.guard', '');
-                const packPath = path.join(outputDir, file);
-                const packContent = fs.readFileSync(packPath, 'utf8');
+        // Parse individual rule files recursively
+        function findGuardFiles(dir: string): string[] {
+            const files: string[] = [];
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
 
-                // Parse rules from this pack file
-                const packRules = parseGuardRulesFile(packContent);
-                const ruleNames: string[] = [];
-
-                for (const rule of packRules) {
-                    ruleNames.push(rule.name);
-
-                    // Add to global rules map if not already present
-                    // This ensures we get the rule with the correct Guard Rule Set information
-                    if (!allRulesMap.has(rule.name)) {
-                        allRulesMap.set(rule.name, rule);
-                    }
+            for (const entry of entries) {
+                const fullPath = path.join(dir, entry.name);
+                if (entry.isDirectory()) {
+                    files.push(...findGuardFiles(fullPath));
+                } else if (entry.name.endsWith('.guard')) {
+                    files.push(fullPath);
                 }
+            }
+            return files;
+        }
 
-                if (ruleNames.length > 0) {
-                    // Sort rule names within each pack for consistency
-                    ruleNames.sort();
-                    rulePacks.push({ name: packName, rules: ruleNames });
-                    console.log(`  - ${packName}: ${ruleNames.length} rules`);
+        const ruleFiles = findGuardFiles(rulesDir);
+
+        for (const rulePath of ruleFiles) {
+            const ruleContent = fs.readFileSync(rulePath, 'utf8');
+            const rules = parseGuardRulesFile(ruleContent);
+
+            for (const rule of rules) {
+                allRulesMap.set(rule.name, rule);
+            }
+        }
+
+        // Read individual rule set mapping files
+        const mappingFiles = fs
+            .readdirSync(mappingsDir)
+            .filter((f) => f.startsWith('rule_set_') && f.endsWith('.json'));
+
+        for (const file of mappingFiles) {
+            const packName = file.replace('rule_set_', '').replace('.json', '').replace(/_/g, '-');
+            const mappingPath = path.join(mappingsDir, file);
+            const mapping = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
+
+            if (mapping.mappings && Array.isArray(mapping.mappings) && mapping.mappings.length > 0) {
+                // Extract rule names from guardFilePath, but only include rules that actually exist in our parsed rules
+                const rules = mapping.mappings
+                    .map((m: { guardFilePath: string }) => {
+                        const filePath: string = m.guardFilePath;
+                        // Extract rule name from file path like "rules/aws/amazon_s3/s3_bucket_ssl_requests_only.guard"
+                        const fileName = filePath.split('/').pop();
+                        if (fileName?.endsWith('.guard')) {
+                            // Convert filename to rule name: s3_bucket_ssl_requests_only.guard -> S3_BUCKET_SSL_REQUESTS_ONLY
+                            return fileName.replace('.guard', '').toUpperCase();
+                        }
+                        return null;
+                    })
+                    .filter((rule: string | null): rule is string => rule !== null && allRulesMap.has(rule)); // Only include rules that actually exist
+
+                if (rules.length > 0) {
+                    rulePacks.push({ name: packName, rules });
                 }
             }
         }
@@ -475,7 +479,7 @@ async function main() {
 
         // Generate TypeScript file
         console.log('⚡ Generating TypeScript file...');
-        const tsContent = generateTypeScriptFile(allRules, rulePacks, VERSION, RULES_ZIP_URL);
+        const tsContent = generateTypeScriptFile(allRules, rulePacks, RULES_ZIP_URL);
 
         // Ensure output directory exists
         const outputFileDir = path.dirname(OUTPUT_FILE);

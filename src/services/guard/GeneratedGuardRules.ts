@@ -8,9 +8,9 @@
  * Contains all AWS Guard rules and rule pack mappings to eliminate
  * runtime file parsing and reduce bundle size.
  *
- * Source: AWS Guard Rules Registry v1.0.2
- * Generated: 2025-10-21T14:43:55.631Z
- * URL: https://github.com/aws-cloudformation/aws-guard-rules-registry/releases/download/1.0.2/ruleset-build-v1.0.2.zip
+ * Source: AWS Guard Rules Registry (main branch)
+ * Generated: 2025-11-10T17:13:56.170Z
+ * URL: https://github.com/aws-cloudformation/aws-guard-rules-registry/archive/refs/heads/main.zip
  */
 
 export interface GuardRuleData {
@@ -21,6 +21,99 @@ export interface GuardRuleData {
 }
 
 export const ALL_RULES: Record<string, GuardRuleData> = {
+    ALB_HTTP_DROP_INVALID_HEADER_ENABLED: {
+        name: 'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        content: `let alb_http_drop_invalid_header_enabled_resources = Resources.*[ Type == 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+  Properties.Type == "application"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ALB_HTTP_DROP_INVALID_HEADER_ENABLED"
+]
+
+rule ALB_HTTP_DROP_INVALID_HEADER_ENABLED when %alb_http_drop_invalid_header_enabled_resources !empty {
+    %alb_http_drop_invalid_header_enabled_resources.Properties {
+        LoadBalancerAttributes exists
+        LoadBalancerAttributes is_list
+        LoadBalancerAttributes not empty
+        
+        some LoadBalancerAttributes[*] {
+            Key == "routing.http.drop_invalid_header_fields.enabled"
+            Value == true OR
+            Value == "true"
+            
+        }	
+    }
+}`,
+        description: 'Guard rule: ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        message: 'Set the \'LoadBalancerAttribute\' \'routing.http.drop_invalid_header_fields.enabled\' to \'true\'',
+    },
+    AMAZON_MQ_BROKER_ENCRYPTION_OPTIONS_RULE: {
+        name: 'AMAZON_MQ_BROKER_ENCRYPTION_OPTIONS_RULE',
+        content: `let amazon_mq_broker_encryption_options_rule = Resources.*[ Type == 'AWS::AmazonMQ::Broker'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "AMAZON_MQ_BROKER_ENCRYPTION_OPTIONS_RULE"
+]
+
+rule AMAZON_MQ_BROKER_ENCRYPTION_OPTIONS_RULE when %amazon_mq_broker_encryption_options_rule !empty {
+  %amazon_mq_broker_encryption_options_rule.Properties.EncryptionOptions exists
+  
+}`,
+        description: 'Guard rule: AMAZON_MQ_BROKER_ENCRYPTION_OPTIONS_RULE',
+        message: 'Specify EncryptionOptions in AmazonMQ Broker.',
+    },
+    AMAZON_MQ_BROKER_USERS_NO_PLAINTEXT_PASSWORD: {
+        name: 'AMAZON_MQ_BROKER_USERS_NO_PLAINTEXT_PASSWORD',
+        content: `let amazon_mq_broker_users_no_plaintext_password = Resources.*[ Type == 'AWS::AmazonMQ::Broker'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "AMAZON_MQ_BROKER_USERS_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::AmazonMQ::Broker Refs for Password?
+let amazon_mq_broker_users_password_refs = %amazon_mq_broker_users_no_plaintext_password.Properties.Users[*].Password.'!Ref'
+
+# Rule 1: when Amazon MQ Broker Users password no plaintext password have Ref to Parameter for Password
+rule  AMAZON_MQ_BROKER_USERS_USES_SECURE_PARAMETER when
+  %amazon_mq_broker_users_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %amazon_mq_broker_users_password_refs not empty
+  let parameter_refs = Parameters.%amazon_mq_broker_users_password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when Amazon MQ Broker Users password no plaintext password and above rule did not pass
+rule  AMAZON_MQ_BROKER_USERS_USES_SECURE_SERVICE when
+  %amazon_mq_broker_users_no_plaintext_password not empty
+  !AMAZON_MQ_BROKER_USERS_USES_SECURE_PARAMETER
+{
+  let violations = %amazon_mq_broker_users_no_plaintext_password[
+    Properties.Users !exists
+    OR
+    Properties.Users[*].Password !exists
+    OR
+    some Properties.Users[*].Password not in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  ]
+
+  %violations empty
+  
+}
+
+# One rule to rule them all...
+rule AMAZON_MQ_BROKER_USERS_NO_PLAINTEXT_PASSWORD when
+  %amazon_mq_broker_users_no_plaintext_password not empty
+{
+   AMAZON_MQ_BROKER_USERS_USES_SECURE_PARAMETER
+  OR
+   AMAZON_MQ_BROKER_USERS_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: AMAZON_MQ_BROKER_USERS_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
+    },
     API_GW_CACHE_ENABLED_AND_ENCRYPTED: {
         name: 'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         content: `let api_gw_cache_enabled_encrypted = Resources.*[ Type == 'AWS::ApiGateway::Stage'
@@ -36,7 +129,35 @@ rule API_GW_CACHE_ENABLED_AND_ENCRYPTED when %api_gw_cache_enabled_encrypted !em
   }
 }`,
         description: 'Guard rule: API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        message: 'API GW Stage Method property CacheDataEncrypted and CachingEnabled set to true\n',
+        message: 'API GW Stage Method property CacheDataEncrypted and CachingEnabled set to true',
+    },
+    API_GW_DOMAIN_DENY_NON_TLS_TRAFFIC: {
+        name: 'API_GW_DOMAIN_DENY_NON_TLS_TRAFFIC',
+        content: `let aws_apigw_domain_resources_tls_traffic = Resources.*[ Type == 'AWS::ApiGateway::DomainName'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "API_GW_DOMAIN_DENY_NON_TLS_TRAFFIC"
+]
+
+rule API_GW_DOMAIN_DENY_NON_TLS_TRAFFIC when %aws_apigw_domain_resources_tls_traffic !empty {
+	%aws_apigw_domain_resources_tls_traffic.Properties.SecurityPolicy == "TLS_1_2"
+  
+}`,
+        description: 'Guard rule: API_GW_DOMAIN_DENY_NON_TLS_TRAFFIC',
+        message: 'Set the SecurityPolicy property parameter to "TLS_1_2".',
+    },
+    API_GW_ENDPOINT_TYPE_CHECK: {
+        name: 'API_GW_ENDPOINT_TYPE_CHECK',
+        content: `let api_gw_resources_type_check = Resources.*[ Type == 'AWS::ApiGateway::DomainName'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "API_GW_ENDPOINT_TYPE_CHECK"
+]
+
+rule API_GW_ENDPOINT_TYPE_CHECK when %api_gw_resources_type_check !empty {
+  some %api_gw_resources_type_check.Properties.EndpointConfiguration.Types IN ["REGIONAL", "PRIVATE", "EDGE"]
+  
+}`,
+        description: 'Guard rule: API_GW_ENDPOINT_TYPE_CHECK',
+        message: 'Set EndpointConfiguration Type to "REGIONAL", "PRIVATE", and/or "EDGE"',
     },
     API_GW_EXECUTION_LOGGING_ENABLED: {
         name: 'API_GW_EXECUTION_LOGGING_ENABLED',
@@ -53,7 +174,289 @@ rule API_GW_EXECUTION_LOGGING_ENABLED when %api_gw_execution_logging_enabled !em
   }
 }`,
         description: 'Guard rule: API_GW_EXECUTION_LOGGING_ENABLED',
-        message: 'API GW Stage Method Setting logging level must be set to "ERROR" or "INFO"\n',
+        message: 'API GW Stage Method Setting logging level must be set to "ERROR" or "INFO"',
+    },
+    API_GW_METHOD_AUTHORIZATION_TYPE_RULE: {
+        name: 'API_GW_METHOD_AUTHORIZATION_TYPE_RULE',
+        content: `let api_gw_method_authorization_type_rule = Resources.*[ Type == 'AWS::ApiGateway::Method'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "API_GW_METHOD_AUTHORIZATION_TYPE_RULE"
+]
+
+rule API_GW_METHOD_AUTHORIZATION_TYPE_RULE when %api_gw_method_authorization_type_rule !empty {
+  let violations = %api_gw_method_authorization_type_rule[
+    Type == 'AWS::ApiGateway::Method'
+    Properties.HttpMethod != /(?i)options/
+    Properties.AuthorizationType !exists
+    OR
+    Properties.AuthorizationType == /(?i)none/
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: API_GW_METHOD_AUTHORIZATION_TYPE_RULE',
+        message: 'change value of AuthorizationType for API Gateway Method Resources.',
+    },
+    API_GW_STAGE_ACCESS_LOGGING_RULE: {
+        name: 'API_GW_STAGE_ACCESS_LOGGING_RULE',
+        content: `let api_gw_stage_access_logging_rule = Resources.*[ Type == 'AWS::ApiGateway::Stage'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "API_GW_STAGE_ACCESS_LOGGING_RULE"
+]
+
+rule API_GW_STAGE_ACCESS_LOGGING_RULE when %api_gw_stage_access_logging_rule !empty {
+
+  %api_gw_stage_access_logging_rule.Properties.AccessLogSetting exists
+  
+}`,
+        description: 'Guard rule: API_GW_STAGE_ACCESS_LOGGING_RULE',
+        message: 'change value of AuthorizationType for API Gateway Method Resources.',
+    },
+    API_GWV2_ACCESS_LOGS_ENABLED: {
+        name: 'API_GWV2_ACCESS_LOGS_ENABLED',
+        content: `let api_gwv2_access_logs_enabled = Resources.*[ Type == "AWS::ApiGatewayV2::Stage"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "API_GWV2_ACCESS_LOGS_ENABLED"
+]
+
+rule API_GWV2_ACCESS_LOGS_ENABLED when %api_gwv2_access_logs_enabled !empty {
+    %api_gwv2_access_logs_enabled.Properties {
+        AccessLogSettings exists
+        AccessLogSettings is_struct
+
+        AccessLogSettings {
+            DestinationArn exists
+            DestinationArn is_string or 
+            DestinationArn is_struct
+            
+
+            Format exists
+            Format is_string or 
+            Format is_struct
+            
+        }
+  }
+}`,
+        description: 'Guard rule: API_GWV2_ACCESS_LOGS_ENABLED',
+        message: 'In AccessLogSettings, set DestinationArn to the ARN of an Amazon CloudWatch log group and Format to a single line log format configuration.',
+    },
+    AURORA_MYSQL_BACKTRACKING_ENABLED: {
+        name: 'AURORA_MYSQL_BACKTRACKING_ENABLED',
+        content: `let aws_rds_clusters_aurora_mysql_backtracking_enabled = Resources.*[ Type == 'AWS::RDS::DBCluster'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "AURORA_MYSQL_BACKTRACKING_ENABLED"
+]
+
+rule AURORA_MYSQL_BACKTRACKING_ENABLED when %aws_rds_clusters_aurora_mysql_backtracking_enabled !empty {
+    # only eval aurora-mysql engine types
+    when %aws_rds_clusters_aurora_mysql_backtracking_enabled.Properties.Engine == 'aurora-mysql' {
+      %aws_rds_clusters_aurora_mysql_backtracking_enabled.Properties.BacktrackWindow EXISTS
+      %aws_rds_clusters_aurora_mysql_backtracking_enabled.Properties.BacktrackWindow >= 1
+      
+    }
+}`,
+        description: 'Guard rule: AURORA_MYSQL_BACKTRACKING_ENABLED',
+        message: 'Set BacktrackWindow parameter value to greater than 0.',
+    },
+    AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED: {
+        name: 'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        content: `let autoscaling_group_elb_healthcheck_required_resources = Resources.*[ Type == "AWS::AutoScaling::AutoScalingGroup"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED"
+]
+
+rule AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED when %autoscaling_group_elb_healthcheck_required_resources !empty {
+    %autoscaling_group_elb_healthcheck_required_resources[
+        # Scenario c)
+        Properties {
+            LoadBalancerNames exists
+            LoadBalancerNames is_list
+            LoadBalancerNames not empty
+        } or
+        Properties {
+            TargetGroupARNs exists
+            TargetGroupARNs is_list
+            TargetGroupARNs not empty
+        }
+     ] {
+        Properties {
+            # Scenario d)
+            HealthCheckType exists
+            # Scenarios e) and f)
+            HealthCheckType == "ELB"
+            
+        }
+    }
+}`,
+        description: 'Guard rule: AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        message: 'Set \'HealthCheckType\' to \'ELB\'',
+    },
+    AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED: {
+        name: 'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        content: `let autoscaling_launch_config_public_ip_disabled = Resources.*[ Type == "AWS::AutoScaling::LaunchConfiguration"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED"
+]
+
+rule AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED when %autoscaling_launch_config_public_ip_disabled !empty {
+    %autoscaling_launch_config_public_ip_disabled.Properties {
+        AssociatePublicIpAddress exists
+        AssociatePublicIpAddress == false
+        
+    }
+}`,
+        description: 'Guard rule: AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        message: 'Explicitly set the AssociatePublicIpAddress attribute to false.',
+    },
+    BATCH_JOB_CONTAINER_PROPERTIES_PRIVILEGED_RULE: {
+        name: 'BATCH_JOB_CONTAINER_PROPERTIES_PRIVILEGED_RULE',
+        content: `let batch_job_container_properties_privileged_rule = Resources.*[ Type == 'AWS::Batch::JobDefinition'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "BATCH_JOB_CONTAINER_PROPERTIES_PRIVILEGED_RULE"
+]
+
+rule BATCH_JOB_CONTAINER_PROPERTIES_PRIVILEGED_RULE when %batch_job_container_properties_privileged_rule !empty {
+  let violations = %batch_job_container_properties_privileged_rule[
+    Type == 'AWS::Batch::JobDefinition'
+    Properties.ContainerProperties exists
+    Properties.ContainerProperties.Privileged == true
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: BATCH_JOB_CONTAINER_PROPERTIES_PRIVILEGED_RULE',
+        message: 'set privileged to false or remove privileged field to make it false by default.',
+    },
+    CFN_AUTHENTICATION_RULE: {
+        name: 'CFN_AUTHENTICATION_RULE',
+        content: `let cfn_authentication_rule = Resources.Metadata
+let skip_cfn_authentication = %cfn_authentication_rule[
+      "AWS::CloudFormation::Authentication" exists
+      Metadata.guard.SuppressedRules not exists or
+      Metadata.guard.SuppressedRules.* != "CFN_AUTHENTICATION_RULE"
+]
+
+rule CFN_AUTHENTICATION_RULE when
+    %cfn_authentication_rule !empty
+    %skip_cfn_authentication !empty
+ {
+  let violation = %cfn_authentication_rule[
+    "AWS::CloudFormation::Authentication".*.accessKeyId exists
+    OR
+    "AWS::CloudFormation::Authentication".*.password exists
+    OR
+    "AWS::CloudFormation::Authentication".*.secretKey exists
+  ]
+
+  %violation empty
+  
+}`,
+        description: 'Guard rule: CFN_AUTHENTICATION_RULE',
+        message: 'Remove sensitive credentials.',
+    },
+    CFN_NO_EXPLICIT_RESOURCE_NAMES: {
+        name: 'CFN_NO_EXPLICIT_RESOURCE_NAMES',
+        content: `let applicable_types = [
+  "AWS::ApiGateway::ApiKey",
+  "AWS::CloudWatch::Alarm",
+  "AWS::CodeDeploy::DeploymentConfig",
+  "AWS::CodeDeploy::DeploymentGroup",
+  "AWS::DynamoDB::Table",
+  "AWS::EC2::SecurityGroup",
+  "AWS::ECR::Repository",
+  "AWS::ElasticLoadBalancingV2::LoadBalancer",
+  "AWS::Elasticsearch::Domain",
+  "AWS::IAM::Group",
+  "AWS::IAM::ManagedPolicy",
+  "AWS::IAM::Role",
+  "AWS::Kinesis::Stream",
+  "AWS::RDS::DBInstance"
+]
+
+# Select applicable resources less suppressed resources
+let cloudformation_no_static_name_resources = Resources.*[Type in %applicable_types
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CFN_NO_EXPLICIT_RESOURCE_NAMES"
+]
+
+rule CFN_NO_EXPLICIT_RESOURCE_NAMES
+  when %cloudformation_no_static_name_resources !empty {
+    AWS::ApiGateway::ApiKey {
+      Properties{
+        Name empty
+      }
+    }
+    AWS::CloudWatch::Alarm {
+      Properties{
+        AlarmName empty
+      }
+    }
+    AWS::CodeDeploy::DeploymentConfig {
+      Properties{
+        DeploymentConfigName empty
+      }
+    }
+    AWS::CodeDeploy::DeploymentGroup {
+      Properties{
+        DeploymentGroupName empty
+      }
+    }
+    AWS::DynamoDB::Table {
+      Properties{
+        TableName empty
+      }
+    }
+    AWS::EC2::SecurityGroup {
+      Properties{
+        GroupName empty
+      }
+    }
+    AWS::ECR::Repository {
+      Properties{
+        RepositoryName empty
+      }
+    }
+    AWS::ElasticLoadBalancingV2::LoadBalancer {
+      Properties{
+        Name empty
+      }
+    }
+    AWS::Elasticsearch::Domain {
+      Properties{
+        DomainName empty
+      }
+    }
+    AWS::IAM::Group {
+      Properties{
+        GroupName empty
+      }
+    }
+    AWS::IAM::ManagedPolicy {
+      Properties{
+        ManagedPolicyName empty
+      }
+    }
+    AWS::IAM::Role {
+      Properties{
+        RoleName empty
+      }
+    }
+    AWS::Kinesis::Stream {
+      Properties{
+        Name empty
+      }
+    }
+    AWS::RDS::DBInstance {
+      Properties{
+        DBInstanceIdentifier empty
+      }
+    }
+    %cloudformation_no_static_name_resources not empty
+    
+}`,
+        description: 'Guard rule: CFN_NO_EXPLICIT_RESOURCE_NAMES',
+        message: 'Remove static name from the resource',
     },
     CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED: {
         name: 'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
@@ -67,7 +470,22 @@ rule CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED when %cloudtrail_trails_cw_logs_enable
   
 }`,
         description: 'Guard rule: CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        message: 'Set the CloudWatchLogsLogGroupArn parameter to enable exporting to CloudWatch Logs.\n',
+        message: 'Set the CloudWatchLogsLogGroupArn parameter to enable exporting to CloudWatch Logs.',
+    },
+    CLOUD_TRAIL_ENABLED: {
+        name: 'CLOUD_TRAIL_ENABLED',
+        content: `let cloudtrail_trails_enabled = Resources.*[ Type == 'AWS::CloudTrail::Trail'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUD_TRAIL_ENABLED"
+]
+
+rule CLOUD_TRAIL_ENABLED when %cloudtrail_trails_enabled !empty {
+  %cloudtrail_trails_enabled.Properties.IsLogging EXISTS
+  %cloudtrail_trails_enabled.Properties.IsLogging == true
+  
+}`,
+        description: 'Guard rule: CLOUD_TRAIL_ENABLED',
+        message: 'Set the IsLogging parameter to true.',
     },
     CLOUD_TRAIL_ENCRYPTION_ENABLED: {
         name: 'CLOUD_TRAIL_ENCRYPTION_ENABLED',
@@ -82,7 +500,7 @@ rule CLOUD_TRAIL_ENCRYPTION_ENABLED when %cloudtrail_trails_encryption !empty {
   
 }`,
         description: 'Guard rule: CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        message: 'Set the KMSKeyId parameter to enable encryption. The value can be an alias name prefixed by "alias/", a fully specified ARN to an alias, a fully specified ARN to a key, or a globally unique identifier.\n',
+        message: 'Set the KMSKeyId parameter to enable encryption. The value can be an alias name prefixed by "alias/", a fully specified ARN to an alias, a fully specified ARN to a key, or a globally unique identifier.',
     },
     CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED: {
         name: 'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
@@ -97,7 +515,221 @@ rule CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED when %cloudtrail_trails_log_validat
   
 }`,
         description: 'Guard rule: CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        message: 'Set the EnableLogFileValidation parameter to true.\n',
+        message: 'Set the EnableLogFileValidation parameter to true.',
+    },
+    CLOUDFRONT_ACCESSLOGS_ENABLED: {
+        name: 'CLOUDFRONT_ACCESSLOGS_ENABLED',
+        content: `let cloudfront_accesslogs_enabled_resources = Resources.*[ Type == 'AWS::CloudFront::Distribution'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUDFRONT_ACCESSLOGS_ENABLED"
+]
+
+rule CLOUDFRONT_ACCESSLOGS_ENABLED when %cloudfront_accesslogs_enabled_resources !empty {
+  %cloudfront_accesslogs_enabled_resources.Properties.DistributionConfig.Logging exists
+  
+}`,
+        description: 'Guard rule: CLOUDFRONT_ACCESSLOGS_ENABLED',
+        message: 'Set the CloudFront Distribution DistributionConfig.Logging.Bucket property to an S3 bucket you own that has been configured to receive CloudFront standard logs.',
+    },
+    CLOUDFRONT_CUSTOM_SSL_CERTIFICATE: {
+        name: 'CLOUDFRONT_CUSTOM_SSL_CERTIFICATE',
+        content: `let cloudfront_custom_ssl_certificate_resources = Resources.*[ Type == 'AWS::CloudFront::Distribution'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUDFRONT_CUSTOM_SSL_CERTIFICATE"
+]
+
+rule CLOUDFRONT_CUSTOM_SSL_CERTIFICATE when %cloudfront_custom_ssl_certificate_resources !empty {
+  %cloudfront_custom_ssl_certificate_resources.Properties.DistributionConfig {
+    # Scenario c)
+    ViewerCertificate exists
+    # Scenario d)
+    ViewerCertificate.CloudFrontDefaultCertificate not exists or
+    ViewerCertificate.CloudFrontDefaultCertificate == false
+    # Scenario e)
+    ViewerCertificate.AcmCertificateArn exists or
+    ViewerCertificate.IamCertificateId exists
+    
+  }
+}`,
+        description: 'Guard rule: CLOUDFRONT_CUSTOM_SSL_CERTIFICATE',
+        message: 'Set the AcmCertificateArn or IamCertificateId properties in the CloudFront Distribution DistributionConfig.ViewerCertificate configuration.',
+    },
+    CLOUDFRONT_DEFAULT_ROOT_OBJECT_CONFIGURED: {
+        name: 'CLOUDFRONT_DEFAULT_ROOT_OBJECT_CONFIGURED',
+        content: `let cloudfront_default_root_object_configured_resources = Resources.*[ Type == 'AWS::CloudFront::Distribution'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUDFRONT_DEFAULT_ROOT_OBJECT_CONFIGURED"
+]
+
+rule CLOUDFRONT_DEFAULT_ROOT_OBJECT_CONFIGURED when %cloudfront_default_root_object_configured_resources !empty {
+  # Scenario c)
+  %cloudfront_default_root_object_configured_resources.Properties.DistributionConfig.DefaultRootObject exists
+  # Scenarios d) and e)
+  %cloudfront_default_root_object_configured_resources.Properties.DistributionConfig.DefaultRootObject != ""
+  
+}`,
+        description: 'Guard rule: CLOUDFRONT_DEFAULT_ROOT_OBJECT_CONFIGURED',
+        message: 'Set the CloudFront Distribution DistributionConfig.DefaultRootObject property to the object that you want CloudFront to request from your origin for requests to the root URL of your distribution.',
+    },
+    CLOUDFRONT_MINIMUM_PROTOCOL_VERSION_RULE: {
+        name: 'CLOUDFRONT_MINIMUM_PROTOCOL_VERSION_RULE',
+        content: `let cloudfront_minimum_protocol_version_rule = Resources.*[ Type == 'AWS::CloudFront::Distribution'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUDFRONT_MINIMUM_PROTOCOL_VERSION_RULE"
+]
+
+rule CLOUDFRONT_MINIMUM_PROTOCOL_VERSION_RULE when %cloudfront_minimum_protocol_version_rule !empty {
+  let violations = %cloudfront_minimum_protocol_version_rule[
+    Properties.DistributionConfig.ViewerCertificate !exists
+    OR
+    Properties.DistributionConfig {
+       ViewerCertificate.MinimumProtocolVersion !exists
+       OR
+       ViewerCertificate {
+        MinimumProtocolVersion is_string
+        MinimumProtocolVersion != /(?i)TLSv1.2/
+       }
+    }
+    OR
+    Properties.DistributionConfig.ViewerCertificate {
+       CloudFrontDefaultCertificate exists
+       CloudFrontDefaultCertificate == true
+    }
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: CLOUDFRONT_MINIMUM_PROTOCOL_VERSION_RULE',
+        message: 'Specify viewerCertificate and use TLS 1.2',
+    },
+    CLOUDFRONT_ORIGIN_ACCESS_IDENTITY_ENABLED: {
+        name: 'CLOUDFRONT_ORIGIN_ACCESS_IDENTITY_ENABLED',
+        content: `let cloudfront_origin_access_identity_enabled_resources = Resources.*[ Type == 'AWS::CloudFront::Distribution'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUDFRONT_ORIGIN_ACCESS_IDENTITY_ENABLED"
+]
+
+rule CLOUDFRONT_ORIGIN_ACCESS_IDENTITY_ENABLED when %cloudfront_origin_access_identity_enabled_resources !empty {
+  let doc = this  
+  %cloudfront_origin_access_identity_enabled_resources.Properties.DistributionConfig {
+    S3Origin not exists
+
+    when Origins exists
+         Origins is_list
+         Origins not empty {
+
+      Origins [
+        DomainName == /(.*)\\.s3(-external-\\d|[-\\.][a-z]*-[a-z]*-[0-9])?\\.amazonaws\\.com(\\.cn)?$/ or
+        DomainName {
+          'Fn::GetAtt' {
+              this is_list
+              this[1] == "DomainName" or
+              this[1] == "RegionalDomainName"
+              
+              let resource_logical_name = this[0]
+              let referenced_resource = %doc.Resources[ keys == %resource_logical_name ]            
+              
+              %referenced_resource not empty
+              %referenced_resource {
+                  Type == "AWS::S3::Bucket"    
+              }
+          }
+        }
+      ] {
+        S3OriginConfig.OriginAccessIdentity exists
+        S3OriginConfig.OriginAccessIdentity != ""
+        
+        S3OriginConfig.OriginAccessIdentity is_string or 
+        S3OriginConfig.OriginAccessIdentity is_struct
+        
+      }
+    }
+  } 
+}`,
+        description: 'Guard rule: CLOUDFRONT_ORIGIN_ACCESS_IDENTITY_ENABLED',
+        message: 'Set the S3OriginConfig.OriginAccessIdentity property for CloudFront Distribution Origins backed by S3.',
+    },
+    CLOUDFRONT_ORIGIN_FAILOVER_ENABLED: {
+        name: 'CLOUDFRONT_ORIGIN_FAILOVER_ENABLED',
+        content: `let cloudfront_origin_failover_enabled_resources = Resources.*[ Type == 'AWS::CloudFront::Distribution'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUDFRONT_ORIGIN_FAILOVER_ENABLED"
+]
+
+rule CLOUDFRONT_ORIGIN_FAILOVER_ENABLED when %cloudfront_origin_failover_enabled_resources !empty {
+  %cloudfront_origin_failover_enabled_resources.Properties.DistributionConfig {
+    # Scenario c)
+    OriginGroups exists
+    # Scenario d)
+    OriginGroups.Quantity >= 1
+    OriginGroups.Items.* {
+        # Scenarios e) and f)
+        Members.Quantity == 2
+        
+    }
+
+  }
+}`,
+        description: 'Guard rule: CLOUDFRONT_ORIGIN_FAILOVER_ENABLED',
+        message: 'Set the SslSupportMethod to \'sni-only\' in the CloudFront Distribution DistributionConfig.ViewerCertificate configuration.',
+    },
+    CLOUDFRONT_SNI_ENABLED: {
+        name: 'CLOUDFRONT_SNI_ENABLED',
+        content: `let cloudfront_sni_enabled_resources = Resources.*[ Type == 'AWS::CloudFront::Distribution'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUDFRONT_SNI_ENABLED"
+]
+
+rule CLOUDFRONT_SNI_ENABLED when %cloudfront_sni_enabled_resources !empty {
+  %cloudfront_sni_enabled_resources.Properties.DistributionConfig {
+    # Scenario c)
+    ViewerCertificate exists
+    # Scenario d)
+    ViewerCertificate.CloudFrontDefaultCertificate not exists or
+    ViewerCertificate.CloudFrontDefaultCertificate == false
+    # Scenarios e) and f)
+    ViewerCertificate.SslSupportMethod exists
+    ViewerCertificate.SslSupportMethod not in ['vip']
+    ViewerCertificate.SslSupportMethod == 'sni-only'
+    
+  }
+}`,
+        description: 'Guard rule: CLOUDFRONT_SNI_ENABLED',
+        message: 'Set the SslSupportMethod to \'sni-only\' in the CloudFront Distribution DistributionConfig.ViewerCertificate configuration.',
+    },
+    CLOUDFRONT_VIEWER_POLICY_HTTPS: {
+        name: 'CLOUDFRONT_VIEWER_POLICY_HTTPS',
+        content: `let cloudfront_viewer_policy_https_resources = Resources.*[ Type == 'AWS::CloudFront::Distribution'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CLOUDFRONT_VIEWER_POLICY_HTTPS"
+]
+
+rule CLOUDFRONT_VIEWER_POLICY_HTTPS when %cloudfront_viewer_policy_https_resources !empty {
+  %cloudfront_viewer_policy_https_resources.Properties.DistributionConfig {
+
+    when DefaultCacheBehavior exists {
+        # Scenario c)
+        DefaultCacheBehavior.ViewerProtocolPolicy != "allow-all"
+        DefaultCacheBehavior.ViewerProtocolPolicy in ["redirect-to-https", "https-only"]
+        # Scenario e)
+    }
+
+    when CacheBehaviors exists
+         CacheBehaviors not empty {
+      CacheBehaviors.*{
+          # Scenario d)
+          ViewerProtocolPolicy != "allow-all"
+          # Scenario f)
+          ViewerProtocolPolicy in ["redirect-to-https", "https-only"]
+          
+      }
+    }
+
+  }
+}`,
+        description: 'Guard rule: CLOUDFRONT_VIEWER_POLICY_HTTPS',
+        message: 'Set the ViewerProtocolPolicy in DefaultCacheBehavior or CacheBehaviors to one of "redirect-to-https" or "https-only".',
     },
     CLOUDTRAIL_S3_DATAEVENTS_ENABLED: {
         name: 'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
@@ -112,7 +744,7 @@ rule CLOUDTRAIL_S3_DATAEVENTS_ENABLED when %cloudtrail_trails_dataevents !empty 
   
 }`,
         description: 'Guard rule: CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        message: 'Set the EventSelectors parameter to enable encryption. The value can be an alias name prefixed by "alias/", a fully specified ARN to an alias, a fully specified ARN to a key, or a globally unique identifier.\n',
+        message: 'Set the EventSelectors parameter to enable encryption. The value can be an alias name prefixed by "alias/", a fully specified ARN to an alias, a fully specified ARN to a key, or a globally unique identifier.',
     },
     CLOUDWATCH_ALARM_ACTION_CHECK: {
         name: 'CLOUDWATCH_ALARM_ACTION_CHECK',
@@ -129,7 +761,7 @@ rule CLOUDWATCH_ALARM_ACTION_CHECK when %cloudwatch_alarm_action_check !empty {
   
 }`,
         description: 'Guard rule: CLOUDWATCH_ALARM_ACTION_CHECK',
-        message: 'Set one Alarm Action, one Insufficient Data Actions action, or one OK Action on the CloudWatch Alarm resource.\n',
+        message: 'Set one Alarm Action, one Insufficient Data Actions action, or one OK Action on the CloudWatch Alarm resource.',
     },
     CLOUDWATCH_LOG_GROUP_ENCRYPTED: {
         name: 'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
@@ -143,7 +775,164 @@ rule CLOUDWATCH_LOG_GROUP_ENCRYPTED when %cloudwatch_logs !empty {
   
 }`,
         description: 'Guard rule: CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        message: 'Set the KmsKeyId parameter to a ARN.\n',
+        message: 'Set the KmsKeyId parameter to a ARN.',
+    },
+    CMK_BACKING_KEY_ROTATION_ENABLED: {
+        name: 'CMK_BACKING_KEY_ROTATION_ENABLED',
+        content: `let cmk_backing_key_rotation_enabled = Resources.*[ Type == "AWS::KMS::Key"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CMK_BACKING_KEY_ROTATION_ENABLED"
+]
+
+
+rule CMK_BACKING_KEY_ROTATION_ENABLED when %cmk_backing_key_rotation_enabled !empty {
+     %cmk_backing_key_rotation_enabled.Properties.EnableKeyRotation == true
+      
+}`,
+        description: 'Guard rule: CMK_BACKING_KEY_ROTATION_ENABLED',
+        message: 'Set the EnableKeyRotation property to true.',
+    },
+    CODEBUILD_ENCRYPTION_KEY_RULE: {
+        name: 'CODEBUILD_ENCRYPTION_KEY_RULE',
+        content: `let codebuild_encryption_key_rule = Resources.*[ Type == 'AWS::CodeBuild::Project'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CODEBUILD_ENCRYPTION_KEY_RULE"
+]
+
+rule CODEBUILD_ENCRYPTION_KEY_RULE when %codebuild_encryption_key_rule !empty {
+  %codebuild_encryption_key_rule.Type == 'AWS::CodeBuild::Project'
+  %codebuild_encryption_key_rule.Properties.EncryptionKey exists
+  
+}`,
+        description: 'Guard rule: CODEBUILD_ENCRYPTION_KEY_RULE',
+        message: 'Specify encryption key value',
+    },
+    CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK: {
+        name: 'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        content: `let codebuild_project_envvar_awscred_check = Resources.*[ Type == "AWS::CodeBuild::Project"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK"
+]
+let disallowed_names = ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"]
+
+rule CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK when %codebuild_project_envvar_awscred_check !empty {
+	%codebuild_project_envvar_awscred_check.Properties {
+		Environment !exists OR
+		Environment {
+			EnvironmentVariables !exists OR
+			EnvironmentVariables [
+				Type == "PLAINTEXT"
+			] { 
+				Name NOT IN %disallowed_names
+					
+			}
+		}
+	}
+}`,
+        description: 'Guard rule: CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        message: 'Remove environment variables that contain credentials in PLAINTEXT ("AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY")',
+    },
+    CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK: {
+        name: 'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        content: `let codebuild_project_source_repo_url_check = Resources.*[Type == "AWS::CodeBuild::Project"
+	Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK"
+]
+
+let CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK_GITHUB_PATTERN = /^(http(s)?)(:\\/\\/github\\.com\\/)([^\\/]+)\\/([\\w\\.-]+)(\\.git)?$/
+let CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK_BITBUCKET_PATTERN = /^https?:\\/\\/bitbucket\\.org/
+
+rule CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK when %codebuild_project_source_repo_url_check !empty {
+	%codebuild_project_source_repo_url_check[
+        Properties.Source.Type == "GITHUB" 
+	] {
+		Properties {
+			Source.Location exists
+			Source.Location == %CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK_GITHUB_PATTERN
+					
+		}
+	}
+	%codebuild_project_source_repo_url_check[
+        Properties.Source.Type == "BITBUCKET" 
+	] {
+		Properties {
+			Source.Location exists
+			Source.Location == %CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK_BITBUCKET_PATTERN
+					
+		}
+	}
+
+	%codebuild_project_source_repo_url_check[
+        Properties.SecondarySources exists
+        Properties.SecondarySources is_list
+        Properties.SecondarySources not empty
+	] {
+		Properties { 
+			SecondarySources[
+				Type == "GITHUB"
+			] {
+				Location exists
+				Location == %CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK_GITHUB_PATTERN
+						
+			}
+
+			SecondarySources[
+				Type == "BITBUCKET"
+			] {
+				Location exists
+				Location == %CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK_BITBUCKET_PATTERN
+						
+			}
+		}
+	}
+}`,
+        description: 'Guard rule: CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        message: 'Remove credentials from source locations',
+    },
+    COGNITO_ALLOW_UNAUTHENTICATED_IDENTITIES_RULE: {
+        name: 'COGNITO_ALLOW_UNAUTHENTICATED_IDENTITIES_RULE',
+        content: `let cognito_allow_unauthenticated_identities_rule = Resources.*[ Type == 'AWS::Cognito::IdentityPool'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "COGNITO_ALLOW_UNAUTHENTICATED_IDENTITIES_RULE"
+]
+
+rule COGNITO_ALLOW_UNAUTHENTICATED_IDENTITIES_RULE when %cognito_allow_unauthenticated_identities_rule !empty {
+  let violations = %cognito_allow_unauthenticated_identities_rule[
+    Type == 'AWS::Cognito::IdentityPool'
+    Properties.AllowUnauthenticatedIdentities == /(?i)true/
+    OR
+    Properties.AllowUnauthenticatedIdentities == true
+    OR
+    Properties.AllowUnauthenticatedIdentities == True
+    OR
+    Properties.AllowUnauthenticatedIdentities == TRUE
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: COGNITO_ALLOW_UNAUTHENTICATED_IDENTITIES_RULE',
+        message: 'set AllowUnauthenticatedIdentities to false in Cognito Identity Pool Resources.',
+    },
+    COGNITO_USER_POOL_MFA_CONFIGURATION_RULE: {
+        name: 'COGNITO_USER_POOL_MFA_CONFIGURATION_RULE',
+        content: `let cognito_user_pool_mfa_configuration_rule = Resources.*[ Type == 'AWS::Cognito::UserPool'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "COGNITO_USER_POOL_MFA_CONFIGURATION_RULE"
+]
+
+rule COGNITO_USER_POOL_MFA_CONFIGURATION_RULE when %cognito_user_pool_mfa_configuration_rule !empty {
+  let violation = %cognito_user_pool_mfa_configuration_rule[
+    Type == 'AWS::Cognito::UserPool'
+    Properties.MfaConfiguration exists
+    Properties.MfaConfiguration == 'OFF'
+  ]
+
+  %violation empty
+  
+}`,
+        description: 'Guard rule: COGNITO_USER_POOL_MFA_CONFIGURATION_RULE',
+        message: 'Change mfa configuration to ON or OPTIONAL.',
     },
     CW_LOGGROUP_RETENTION_PERIOD_CHECK: {
         name: 'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
@@ -157,7 +946,21 @@ rule CW_LOGGROUP_RETENTION_PERIOD_CHECK when %cloudwatch_logs_retention_period !
   
 }`,
         description: 'Guard rule: CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        message: 'Set the RetentionInDays parameter to a value of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, or 3653.\n',
+        message: 'Set the RetentionInDays parameter to a value of 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, or 3653.',
+    },
+    DAX_ENCRYPTION_ENABLED: {
+        name: 'DAX_ENCRYPTION_ENABLED',
+        content: `let dax_clusters_encryption = Resources.*[ Type == "AWS::DAX::Cluster"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "DAX_ENCRYPTION_ENABLED"
+]
+
+rule DAX_ENCRYPTION_ENABLED when %dax_clusters_encryption !empty {
+	%dax_clusters_encryption.Properties.SSESpecification.SSEEnabled == true
+	
+}`,
+        description: 'Guard rule: DAX_ENCRYPTION_ENABLED',
+        message: 'In SSESpecification, set the SSEEnabled property to true',
     },
     DB_INSTANCE_BACKUP_ENABLED: {
         name: 'DB_INSTANCE_BACKUP_ENABLED',
@@ -168,12 +971,92 @@ rule CW_LOGGROUP_RETENTION_PERIOD_CHECK when %cloudwatch_logs_retention_period !
 
 
 rule DB_INSTANCE_BACKUP_ENABLED when %aws_rds_instances_db_instance_backup_enabled !empty {
-  %aws_rds_instances_db_instance_backup_enabled.Properties.BackupRetentionPeriod EXISTS
-  %aws_rds_instances_db_instance_backup_enabled.Properties.BackupRetentionPeriod >= 1
+  let violations = %aws_rds_instances_db_instance_backup_enabled[
+    Properties.BackupRetentionPeriod !EXISTS
+    or
+    Properties.BackupRetentionPeriod < 1
+  ]
+  %violations empty
   
 }`,
         description: 'Guard rule: DB_INSTANCE_BACKUP_ENABLED',
-        message: 'Set the BackupRetentionPeriod to values of 1 to 35 to enable backups.\n',
+        message: 'Set the BackupRetentionPeriod to values of 1 to 35 to enable backups.',
+    },
+    DLM_LIFECYCLE_POLICY_CROSS_REGION_ENCRYPTION_RULE: {
+        name: 'DLM_LIFECYCLE_POLICY_CROSS_REGION_ENCRYPTION_RULE',
+        content: `let dlm_lifecycle_policy_cross_region_encryption_rule = Resources.*[ Type == 'AWS::DLM::LifecyclePolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "DLM_LIFECYCLE_POLICY_CROSS_REGION_ENCRYPTION_RULE"
+]
+
+rule DLM_LIFECYCLE_POLICY_CROSS_REGION_ENCRYPTION_RULE when %dlm_lifecycle_policy_cross_region_encryption_rule !empty {
+   let violations = %dlm_lifecycle_policy_cross_region_encryption_rule[
+    Type == 'AWS::DLM::LifecyclePolicy'
+    Properties.PolicyDetails exists
+    Properties.PolicyDetails.Actions exists
+    Properties.PolicyDetails.Actions[*].CrossRegionCopy exists
+    some Properties.PolicyDetails.Actions[*].CrossRegionCopy[*] {
+        EncryptionConfiguration.Encrypted !exists
+        OR
+        EncryptionConfiguration.Encrypted == false
+        OR
+        EncryptionConfiguration.Encrypted == 'false'
+    }
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: DLM_LIFECYCLE_POLICY_CROSS_REGION_ENCRYPTION_RULE',
+        message: 'Enable CrossRegion Encryption for DLM LifeCycle Policy resources.',
+    },
+    DMS_NO_PLAINTEXT_PASSWORD: {
+        name: 'DMS_NO_PLAINTEXT_PASSWORD',
+        content: `let dms_no_plaintext_password = Resources.*[ Type == 'AWS::DMS::Endpoint'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "DMS_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::DMS::Endpoint Refs for Password?
+let password_refs = %dms_no_plaintext_password.Properties.Password.'!Ref'
+
+# Rule 1: when dms no plaintext password have Ref to Parameter for Password
+rule DMS_USES_SECURE_PARAMETER when
+  %dms_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %password_refs not empty
+  let parameter_refs = Parameters.%password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when dms no plaintext password and above rule did not pass
+rule DMS_USES_SECURE_SERVICE when
+  %dms_no_plaintext_password not empty
+  not DMS_USES_SECURE_PARAMETER
+{
+  %dms_no_plaintext_password.Properties.Password !exists
+  OR
+  %dms_no_plaintext_password.Properties.Password in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  
+}
+
+# One rule to rule them all...
+rule DMS_NO_PLAINTEXT_PASSWORD when
+  %dms_no_plaintext_password not empty
+{
+  DMS_USES_SECURE_PARAMETER
+  OR
+  DMS_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: DMS_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
     },
     DMS_REPLICATION_NOT_PUBLIC: {
         name: 'DMS_REPLICATION_NOT_PUBLIC',
@@ -188,19 +1071,59 @@ rule DMS_REPLICATION_NOT_PUBLIC when %dms_replication_instances !empty {
   
 }`,
         description: 'Guard rule: DMS_REPLICATION_NOT_PUBLIC',
-        message: 'Set the DMS Replication Instance property PubliclyAccessible parameter to true.\n',
+        message: 'Set the DMS Replication Instance property PubliclyAccessible parameter to false.',
+    },
+    DYNAMODB_BILLING_MODE_RULE: {
+        name: 'DYNAMODB_BILLING_MODE_RULE',
+        content: `let dynamodb_billing_mode_rule = Resources.*[ Type == 'AWS::DynamoDB::Table'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "DYNAMODB_BILLING_MODE_RULE"
+]
+
+rule DYNAMODB_BILLING_MODE_RULE when %dynamodb_billing_mode_rule !empty {
+  let violations = %dynamodb_billing_mode_rule[
+    Properties.BillingMode !exists
+    OR
+    Properties {
+        BillingMode != 'PAY_PER_REQUEST'
+        BillingMode != 'PROVISIONED'
+    }
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: DYNAMODB_BILLING_MODE_RULE',
+        message: 'Specify billingMode as PAY_PER_REQUEST or PROVISIONED.',
     },
     DYNAMODB_PITR_ENABLED: {
         name: 'DYNAMODB_PITR_ENABLED',
-        content: `let aws_dynamodb_table_resources = Resources.*[ Type == 'AWS::DynamoDB::Table' ]
+        content: `let dynamodb_pitr_enabled = Resources.*[ Type == "AWS::DynamoDB::Table" 
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "DYNAMODB_PITR_ENABLED"
+]
 
-
-rule DYNAMODB_PITR_ENABLED when %aws_dynamodb_table_resources !empty {
-    %aws_dynamodb_table_resources.Properties.PointInTimeRecoverySpecification.PointInTimeRecoveryEnabled == true
-  
+rule DYNAMODB_PITR_ENABLED when %dynamodb_pitr_enabled !empty {
+    %dynamodb_pitr_enabled.Properties.PointInTimeRecoverySpecification.PointInTimeRecoveryEnabled == true
+    
 }`,
         description: 'Guard rule: DYNAMODB_PITR_ENABLED',
-        message: 'Set the dynamodb table property PointInTimeRecoverySpecification.PointInTimeRecoveryEnabled to true.\n',
+        message: 'Set the dynamodb table property PointInTimeRecoverySpecification.PointInTimeRecoveryEnabled to true.',
+    },
+    DYNAMODB_TABLE_ENCRYPTED_KMS: {
+        name: 'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        content: `let dynamodb_table_must_be_encrypted = Resources.*[ Type == 'AWS::DynamoDB::Table' 
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "DYNAMODB_TABLE_MUST_BE_ENCRYPTED"
+]
+
+rule DYNAMODB_TABLE_MUST_BE_ENCRYPTED when %dynamodb_table_must_be_encrypted !empty {
+    %dynamodb_table_must_be_encrypted.Properties.SSESpecification EXISTS
+    %dynamodb_table_must_be_encrypted.Properties.SSESpecification.SSEEnabled == true
+      
+}`,
+        description: 'Guard rule: DYNAMODB_TABLE_ENCRYPTED_KMS',
+        message: 'In SSESpecification, set SSEEnabled to true',
     },
     EBS_OPTIMIZED_INSTANCE: {
         name: 'EBS_OPTIMIZED_INSTANCE',
@@ -214,21 +1137,22 @@ rule EBS_OPTIMIZED_INSTANCE when %ec2_ebs_optimized_instances !empty {
     
 }`,
         description: 'Guard rule: EBS_OPTIMIZED_INSTANCE',
-        message: 'set the EbsOptimized property to true\n',
+        message: 'set the EbsOptimized property to true',
     },
-    EC2_EBS_ENCRYPTION_BY_DEFAULT: {
-        name: 'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        content: `let ec2_ebs_volumes_encrypted_by_default = Resources.*[ Type == 'AWS::EC2::Volume' 
+    EBS_VOLUME_ENCRYPTION_KEY_RULE: {
+        name: 'EBS_VOLUME_ENCRYPTION_KEY_RULE',
+        content: `let ebs_volume_encryption_key_rule = Resources.*[ Type == 'AWS::EC2::Volume'
   Metadata.guard.SuppressedRules not exists or
-  Metadata.guard.SuppressedRules.* != "EC2_EBS_ENCRYPTION_BY_DEFAULT"
+  Metadata.guard.SuppressedRules.* != "EBS_VOLUME_ENCRYPTION_KEY_RULE"
 ]
 
-rule EC2_EBS_ENCRYPTION_BY_DEFAULT when %ec2_ebs_volumes_encrypted_by_default !empty {
-    %ec2_ebs_volumes_encrypted_by_default.Properties.Encrypted == true 
-		
+rule EBS_VOLUME_ENCRYPTION_KEY_RULE when %ebs_volume_encryption_key_rule !empty {
+  %ebs_volume_encryption_key_rule.Type == 'AWS::EC2::Volume'
+  %ebs_volume_encryption_key_rule.Properties.KmsKeyId exists
+  
 }`,
-        description: 'Guard rule: EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        message: 'Set Encrypted property to true\n',
+        description: 'Guard rule: EBS_VOLUME_ENCRYPTION_KEY_RULE',
+        message: 'Specify KmsKeyId value',
     },
     EC2_INSTANCE_DETAILED_MONITORING_ENABLED: {
         name: 'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
@@ -242,7 +1166,7 @@ rule EC2_INSTANCE_DETAILED_MONITORING_ENABLED when %ec2_instances_detailed_monit
     
 }`,
         description: 'Guard rule: EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        message: 'set the Monitoring property to true\n',
+        message: 'set the Monitoring property to true',
     },
     EC2_INSTANCE_NO_PUBLIC_IP: {
         name: 'EC2_INSTANCE_NO_PUBLIC_IP',
@@ -260,7 +1184,7 @@ rule EC2_INSTANCE_NO_PUBLIC_IP when %ec2_instances_no_public_ip !empty {
 	}
 }`,
         description: 'Guard rule: EC2_INSTANCE_NO_PUBLIC_IP',
-        message: 'remove the AssociatePublicIpAddress property from NetworkInterfaces list or set it to false\n',
+        message: 'remove the AssociatePublicIpAddress property from NetworkInterfaces list or set it to false',
     },
     EC2_INSTANCE_PROFILE_ATTACHED: {
         name: 'EC2_INSTANCE_PROFILE_ATTACHED',
@@ -274,7 +1198,7 @@ rule EC2_INSTANCE_PROFILE_ATTACHED when %ec2_instances_profile_attached !empty {
   
 }`,
         description: 'Guard rule: EC2_INSTANCE_PROFILE_ATTACHED',
-        message: 'Associate the EC2 Instance property IamInstanceProfile with an IAM Instance Profile.\n',
+        message: 'Associate the EC2 Instance property IamInstanceProfile with an IAM Instance Profile.',
     },
     EC2_INSTANCES_IN_VPC: {
         name: 'EC2_INSTANCES_IN_VPC',
@@ -288,7 +1212,235 @@ rule EC2_INSTANCES_IN_VPC when %ec2_instances_in_vpc !empty {
   
 }`,
         description: 'Guard rule: EC2_INSTANCES_IN_VPC',
-        message: 'set the SubnetId property to a subnet ID\n',
+        message: 'set the SubnetId property to a subnet ID',
+    },
+    EC2_NETWORK_ACL_ENTRY_INEFFECTIVE_DENY_RULE: {
+        name: 'EC2_NETWORK_ACL_ENTRY_INEFFECTIVE_DENY_RULE',
+        content: `let ec2_network_acl_entry_ineffective_deny_rule = Resources.*[ Type == 'AWS::EC2::NetworkAclEntry'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EC2_NETWORK_ACL_ENTRY_INEFFECTIVE_DENY_RULE"
+]
+
+rule EC2_NETWORK_ACL_ENTRY_INEFFECTIVE_DENY_RULE when %ec2_network_acl_entry_ineffective_deny_rule !empty {
+  let violations = %ec2_network_acl_entry_ineffective_deny_rule[
+    Type == 'AWS::EC2::NetworkAclEntry'
+    Properties.RuleAction == 'deny'
+    Properties {
+        CidrBlock exists
+        CidrBlock != '0.0.0.0/0'
+    }
+    OR
+    Properties {
+        Ipv6CidrBlock exists
+        Ipv6CidrBlock != '::/0'
+        Ipv6CidrBlock != ':/0'
+    }
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: EC2_NETWORK_ACL_ENTRY_INEFFECTIVE_DENY_RULE',
+        message: 'Cover all CIDR ranges for deny RuleAction.',
+    },
+    EC2_NETWORK_ACL_PORT_RANGE_RULE: {
+        name: 'EC2_NETWORK_ACL_PORT_RANGE_RULE',
+        content: `let ec2_network_acl_port_range_rule = Resources.*[ Type == 'AWS::EC2::NetworkAclEntry'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EC2_NETWORK_ACL_PORT_RANGE_RULE"
+]
+
+rule EC2_NETWORK_ACL_PORT_RANGE_RULE when %ec2_network_acl_port_range_rule !empty {
+  let violations = %ec2_network_acl_port_range_rule[
+    Type == 'AWS::EC2::NetworkAclEntry'
+    Properties {
+        Protocol == 6
+        OR
+        Protocol == 17
+    }
+    Properties.PortRange !exists
+    OR
+    Properties.PortRange.From !exists
+    OR
+    Properties.PortRange.To !exists
+    OR
+    Properties {
+        PortRange.From == 0
+        PortRange.To == 65535
+    }
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: EC2_NETWORK_ACL_PORT_RANGE_RULE',
+        message: 'Specify a range of ports for TCP/UDP for EC2 NetworkACLEntry resources.',
+    },
+    EC2_NETWORK_ACL_PROTOCOL_RULE: {
+        name: 'EC2_NETWORK_ACL_PROTOCOL_RULE',
+        content: `let ec2_network_acl_protocol_rule = Resources.*[ Type == 'AWS::EC2::NetworkAclEntry'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EC2_NETWORK_ACL_PROTOCOL_RULE"
+]
+
+rule EC2_NETWORK_ACL_PROTOCOL_RULE when %ec2_network_acl_protocol_rule !empty {
+
+  let violations = %ec2_network_acl_protocol_rule[
+    Type == 'AWS::EC2::NetworkAclEntry'
+    Properties.RuleAction == 'allow'
+    Properties {
+        Protocol != 1
+        Protocol != 6
+        Protocol != 17
+        Protocol != 58
+    }
+    OR
+    Properties {
+        Protocol == 58
+        Ipv6CidrBlock !exists
+        OR
+        Icmp !exists
+        OR
+        Icmp.Code !exists
+        OR
+        Icmp.Type !exists
+    }
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: EC2_NETWORK_ACL_PROTOCOL_RULE',
+        message: 'Use protocol port number 6 (for TCP), 17 (for UDP), 1 (for ICMP), or 58 (for ICMPv6, which must include an IPv6 CIDR block, ICMP type, and code).',
+    },
+    EC2_SECURITY_GROUP_EGRESS_OPEN_TO_WORLD_RULE: {
+        name: 'EC2_SECURITY_GROUP_EGRESS_OPEN_TO_WORLD_RULE',
+        content: `let ec2_security_group_ingress_open_to_world_rule_sg_egress_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EC2_SECURITY_GROUP_EGRESS_OPEN_TO_WORLD_RULE"
+]
+
+let ec2_security_group_egress_open_to_world_rule_sge_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupEgress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EC2_SECURITY_GROUP_EGRESS_OPEN_TO_WORLD_RULE"
+]
+
+rule EC2_SECURITY_GROUP_EGRESS_OPEN_TO_WORLD_RULE when %ec2_security_group_egress_open_to_world_rule_sge_resources !empty OR %ec2_security_group_ingress_open_to_world_rule_sg_egress_resources !empty {
+  let violations_sg = %ec2_security_group_ingress_open_to_world_rule_sg_egress_resources[
+    Type == 'AWS::EC2::SecurityGroup'
+    Properties.SecurityGroupEgress exists
+    some Properties.SecurityGroupEgress[*].CidrIp == '0.0.0.0/0'
+    OR
+    some Properties.SecurityGroupEgress[*].CidrIpv6 == '::/0'
+  ]
+
+  let violations_sge = %ec2_security_group_egress_open_to_world_rule_sge_resources[
+    Type == 'AWS::EC2::SecurityGroupEgress'
+    Properties.CidrIp == '0.0.0.0/0'
+    OR
+    Properties.CidrIpv6 == '::/0'
+  ]
+
+  %violations_sg empty
+  %violations_sge empty
+  
+}`,
+        description: 'Guard rule: EC2_SECURITY_GROUP_EGRESS_OPEN_TO_WORLD_RULE',
+        message: 'Use single port instead of range of ports for egress rules',
+    },
+    EC2_SECURITY_GROUP_INGRESS_OPEN_TO_WORLD_RULE: {
+        name: 'EC2_SECURITY_GROUP_INGRESS_OPEN_TO_WORLD_RULE',
+        content: `let ec2_security_group_ingress_open_to_world_rule_sg_ingress_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EC2_SECURITY_GROUP_INGRESS_OPEN_TO_WORLD_RULE"
+]
+
+let ec2_security_group_ingress_open_to_world_rule_sgi_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupIngress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EC2_SECURITY_GROUP_INGRESS_OPEN_TO_WORLD_RULE"
+]
+
+rule EC2_SECURITY_GROUP_INGRESS_OPEN_TO_WORLD_RULE when %ec2_security_group_ingress_open_to_world_rule_sgi_resources !empty OR %ec2_security_group_ingress_open_to_world_rule_sg_ingress_resources !empty {
+  let violations_sg = %ec2_security_group_ingress_open_to_world_rule_sg_ingress_resources[
+    Type == 'AWS::EC2::SecurityGroup'
+    Properties.SecurityGroupIngress exists
+    some Properties.SecurityGroupIngress[*].CidrIp == '0.0.0.0/0'
+    OR
+    some Properties.SecurityGroupIngress[*].CidrIpv6 == '::/0'
+  ]
+
+  let violations_sgi = %ec2_security_group_ingress_open_to_world_rule_sgi_resources[
+    Type == 'AWS::EC2::SecurityGroupIngress'
+    Properties.CidrIp == '0.0.0.0/0'
+    OR
+    Properties.CidrIpv6 == '::/0'
+  ]
+
+  %violations_sg empty
+  %violations_sgi empty
+  
+}`,
+        description: 'Guard rule: EC2_SECURITY_GROUP_INGRESS_OPEN_TO_WORLD_RULE',
+        message: 'Use single port instead of range of ports for ingress rules',
+    },
+    ECR_REPO_SCAN_ON_PUSH: {
+        name: 'ECR_REPO_SCAN_ON_PUSH',
+        content: `let ecr_repo_scan_on_push_rule = Resources.*[ Type == 'AWS::ECR::Repository'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ECR_REPO_SCAN_ON_PUSH"
+]
+
+rule ECR_REPO_SCAN_ON_PUSH when %ecr_repo_scan_on_push_rule !empty {
+  let violations = %ecr_repo_scan_on_push_rule[
+    Properties.ImageScanningConfiguration !exists
+    OR
+    Properties.ImageScanningConfiguration.ScanOnPush == 'False'
+    OR
+    Properties.ImageScanningConfiguration.ScanOnPush == false
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: ECR_REPO_SCAN_ON_PUSH',
+        message: 'Set ScanOnPush in ImageScanningConfiguration to true',
+    },
+    ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK: {
+        name: 'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        content: `let ecs_task_definition_user_for_host_mode_check_resources = Resources.*[ Type == "AWS::ECS::TaskDefinition"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK"
+]
+
+rule ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK when %ecs_task_definition_user_for_host_mode_check_resources !empty {
+    %ecs_task_definition_user_for_host_mode_check_resources[
+        Properties {
+            ContainerDefinitions exists
+            ContainerDefinitions is_list
+            ContainerDefinitions not empty
+
+            NetworkMode exists
+            NetworkMode is_string
+            NetworkMode == "host" 
+        }
+     ] {      
+        Properties.ContainerDefinitions[*] {
+            when User exists
+                 User in [ 0 , "0" , "root" , /^0:.*$/ , /^root:.*$/ ] {
+                    Privileged exists
+                    Privileged == true
+                    
+            }
+            when User not exists {
+                Privileged exists
+                Privileged == true
+                        
+            }            
+        }       
+    }
+}`,
+        description: 'Guard rule: ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        message: 'In \'ContainerDefinitions\', where \'User\' has been set to a root user value, expliclty opt-in to privileged mode by setting \'Privileged\' to \'true\'',
     },
     EFS_ENCRYPTED_CHECK: {
         name: 'EFS_ENCRYPTED_CHECK',
@@ -302,7 +1454,7 @@ rule EFS_ENCRYPTED_CHECK when %efs_file_systems_encrypted_check !empty {
   
 }`,
         description: 'Guard rule: EFS_ENCRYPTED_CHECK',
-        message: 'Set the EFS Filesystem property Encrypted parameter to true.\n',
+        message: 'Set the EFS Filesystem property Encrypted parameter to true.',
     },
     EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN: {
         name: 'EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
@@ -316,67 +1468,615 @@ rule EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN when %efs_file_systems_protected_by_
   
 }`,
         description: 'Guard rule: EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
-        message: 'Set the EFS Filesystem property BackupPolicy.Status parameter to ENABLED.\n',
+        message: 'Set the EFS Filesystem property BackupPolicy.Status parameter to ENABLED.',
+    },
+    EKS_CLUSTER_ENCRYPTION_RULE: {
+        name: 'EKS_CLUSTER_ENCRYPTION_RULE',
+        content: `let eks_cluster_encryption_rule = Resources.*[ Type == 'AWS::EKS::Cluster'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EKS_CLUSTER_ENCRYPTION_RULE"
+]
+
+rule EKS_CLUSTER_ENCRYPTION_RULE when %eks_cluster_encryption_rule !empty {
+  let violations = %eks_cluster_encryption_rule[
+    Type == 'AWS::EKS::Cluster'
+    Properties.EncryptionConfig !exists
+    OR
+    some Properties.EncryptionConfig[*].Provider !exists
+    OR
+    some Properties.EncryptionConfig[*].Provider.KeyArn !exists
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: EKS_CLUSTER_ENCRYPTION_RULE',
+        message: 'specify KeyArn to enable Encryption.',
+    },
+    EKS_ENDPOINT_NO_PUBLIC_ACCESS: {
+        name: 'EKS_ENDPOINT_NO_PUBLIC_ACCESS',
+        content: `let amazon_eks_clusters_endpoint_no_public_access = Resources.*[ Type == 'AWS::EKS::Cluster'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EKS_ENDPOINT_NO_PUBLIC_ACCESS"
+]
+
+rule EKS_ENDPOINT_NO_PUBLIC_ACCESS when %amazon_eks_clusters_endpoint_no_public_access !empty {
+    # ensure the optional parameter is specified in the template
+    %amazon_eks_clusters_endpoint_no_public_access.Properties.ResourcesVpcConfig.EndpointPublicAccess EXISTS
+    # ensure the parameter is set to false
+    %amazon_eks_clusters_endpoint_no_public_access.Properties.ResourcesVpcConfig.EndpointPublicAccess == false
+    
+}`,
+        description: 'Guard rule: EKS_ENDPOINT_NO_PUBLIC_ACCESS',
+        message: 'Set the boolean parameter ResourcesVpcConfig.EndpointPublicAccess to false',
+    },
+    ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_AT_REST: {
+        name: 'ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_AT_REST',
+        content: `let elasticache_replication_group_encryption_at_rest = Resources.*[ Type == 'AWS::ElastiCache::ReplicationGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_AT_REST"
+]
+
+rule ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_AT_REST when %elasticache_replication_group_encryption_at_rest !empty {
+    %elasticache_replication_group_encryption_at_rest.Properties.AtRestEncryptionEnabled == true
+		
+}`,
+        description: 'Guard rule: ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_AT_REST',
+        message: 'Set AtRestEncryptionEnabled property to true',
+    },
+    ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_IN_TRANSIT: {
+        name: 'ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_IN_TRANSIT',
+        content: `let elasticache_replication_group_transit_encryption = Resources.*[ Type == 'AWS::ElastiCache::ReplicationGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_AT_REST"
+  Properties.Engine == "redis"
+  Properties.EngineVersion not in [ /^2\\..*/, /^3\\.1\\..*/, /^3\\.2\\.5$/ ] # v3.2.6 or 4.x+
+]
+
+rule ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_IN_TRANSIT when %elasticache_replication_group_transit_encryption !empty {
+    %elasticache_replication_group_transit_encryption.Properties.TransitEncryptionEnabled == true
+		
+}`,
+        description: 'Guard rule: ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_IN_TRANSIT',
+        message: 'Set TransitEncryptionEnabled property to true',
+    },
+    ELASTICSEARCH_APPLICATION_LOGGING_ENABLED: {
+        name: 'ELASTICSEARCH_APPLICATION_LOGGING_ENABLED',
+        content: `let elasticsearch_audit_logging_enabled = Resources.*[ Type == "AWS::Elasticsearch::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_APPLICATION_LOGGING_ENABLED"
+]
+
+rule ELASTICSEARCH_APPLICATION_LOGGING_ENABLED when %elasticsearch_audit_logging_enabled !empty {
+    %elasticsearch_audit_logging_enabled.Properties { 
+        LogPublishingOptions exists
+        LogPublishingOptions is_struct
+
+        LogPublishingOptions {
+            ES_APPLICATION_LOGS exists
+            ES_APPLICATION_LOGS is_struct
+
+            ES_APPLICATION_LOGS {
+                Enabled exists
+                Enabled == true
+                    
+                CloudWatchLogsLogGroupArn exists
+                CloudWatchLogsLogGroupArn is_string or
+                CloudWatchLogsLogGroupArn is_struct
+                    
+            }
+        }
+    }
+}`,
+        description: 'Guard rule: ELASTICSEARCH_APPLICATION_LOGGING_ENABLED',
+        message: 'In LogPublishingOptions.ES_APPLICATION_LOGS, set Enabled to true and CloudWatchLogsLogGroupArn to the ARN of a Amazon CloudWatch Logs log group.',
+    },
+    ELASTICSEARCH_AUDIT_LOGGING_ENABLED: {
+        name: 'ELASTICSEARCH_AUDIT_LOGGING_ENABLED',
+        content: `let elasticsearch_audit_logging_enabled = Resources.*[ Type == "AWS::Elasticsearch::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_AUDIT_LOGGING_ENABLED"
+]
+
+rule ELASTICSEARCH_AUDIT_LOGGING_ENABLED when %elasticsearch_audit_logging_enabled !empty {
+    %elasticsearch_audit_logging_enabled.Properties { 
+        LogPublishingOptions exists
+        LogPublishingOptions is_struct
+
+        LogPublishingOptions {
+            AUDIT_LOGS exists
+            AUDIT_LOGS is_struct
+
+            AUDIT_LOGS {
+                Enabled exists
+                Enabled == true
+                    
+                CloudWatchLogsLogGroupArn exists
+                CloudWatchLogsLogGroupArn is_string or
+                CloudWatchLogsLogGroupArn is_struct
+                    
+            }
+        }
+    }
+}`,
+        description: 'Guard rule: ELASTICSEARCH_AUDIT_LOGGING_ENABLED',
+        message: 'In LogPublishingOptions.AUDIT_LOGS, set Enabled to true and CloudWatchLogsLogGroupArn to the ARN of a Amazon CloudWatch Logs log group.',
+    },
+    ELASTICSEARCH_DATA_NODE_FAULT_TOLERANCE: {
+        name: 'ELASTICSEARCH_DATA_NODE_FAULT_TOLERANCE',
+        content: `let elasticsearch_data_node_fault_tolerance = Resources.*[ Type == "AWS::Elasticsearch::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_DATA_NODE_FAULT_TOLERANCE"
+]
+
+rule ELASTICSEARCH_DATA_NODE_FAULT_TOLERANCE when %elasticsearch_data_node_fault_tolerance !empty {
+    %elasticsearch_data_node_fault_tolerance.Properties { 
+        ElasticsearchClusterConfig exists
+        ElasticsearchClusterConfig is_struct
+
+        ElasticsearchClusterConfig {
+            ZoneAwarenessEnabled exists
+            ZoneAwarenessEnabled == true
+                
+            InstanceCount exists
+            InstanceCount >= 3
+                
+        }
+    }
+}`,
+        description: 'Guard rule: ELASTICSEARCH_DATA_NODE_FAULT_TOLERANCE',
+        message: 'In ElasticsearchClusterConfig, set ZoneAwarenessEnabled to true and InstanceCount to an integer value greater than 3.',
     },
     ELASTICSEARCH_ENCRYPTED_AT_REST: {
         name: 'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        content: `let elasticsearch_domains_encrypted = Resources.*[ Type == 'AWS::Elasticsearch::Domain'
+        content: `let elasticsearch_domains_encrypted = Resources.*[ Type == "AWS::Elasticsearch::Domain"
   Metadata.guard.SuppressedRules not exists or
   Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_ENCRYPTED_AT_REST"
 ]
 
 rule ELASTICSEARCH_ENCRYPTED_AT_REST when %elasticsearch_domains_encrypted !empty {
-  %elasticsearch_domains_encrypted.Properties.EncryptionAtRestOptions.Enabled == true
-  
+    %elasticsearch_domains_encrypted.Properties.EncryptionAtRestOptions.Enabled == true
+        
 }`,
         description: 'Guard rule: ELASTICSEARCH_ENCRYPTED_AT_REST',
-        message: 'Set the EncryptionAtRestOptions.Enabled parameter to true.\n',
+        message: 'Set the EncryptionAtRestOptions.Enabled parameter to true.',
+    },
+    ELASTICSEARCH_HTTPS_REQUIRED: {
+        name: 'ELASTICSEARCH_HTTPS_REQUIRED',
+        content: `let elasticsearch_https_required = Resources.*[ Type == "AWS::Elasticsearch::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_HTTPS_REQUIRED"
+]
+
+rule ELASTICSEARCH_HTTPS_REQUIRED when %elasticsearch_https_required !empty {
+    %elasticsearch_https_required.Properties { 
+        DomainEndpointOptions exists
+        DomainEndpointOptions is_struct
+
+        DomainEndpointOptions {
+            EnforceHTTPS exists
+            EnforceHTTPS == true
+                
+            TLSSecurityPolicy exists
+            TLSSecurityPolicy in [ "Policy-Min-TLS-1-2-2019-07" ]
+                
+        }
+    }
+}`,
+        description: 'Guard rule: ELASTICSEARCH_HTTPS_REQUIRED',
+        message: 'In DomainEndpointOptions, set EnforceHTTPS to true and TLSSecurityPolicy to \'Policy-Min-TLS-1-2-2019-07\'',
     },
     ELASTICSEARCH_IN_VPC_ONLY: {
         name: 'ELASTICSEARCH_IN_VPC_ONLY',
-        content: `let elasticsearch_domains_vpc_required = Resources.*[ Type == 'AWS::Elasticsearch::Domain'
+        content: `let elasticsearch_domains_vpc_required = Resources.*[ Type == "AWS::Elasticsearch::Domain"
   Metadata.guard.SuppressedRules not exists or
   Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_IN_VPC_ONLY"
 ]
 
 rule ELASTICSEARCH_IN_VPC_ONLY when %elasticsearch_domains_vpc_required !empty {
-  %elasticsearch_domains_vpc_required.Properties.VPCOptions EXISTS
-  
+    %elasticsearch_domains_vpc_required.Properties.VPCOptions EXISTS
+        
 }`,
         description: 'Guard rule: ELASTICSEARCH_IN_VPC_ONLY',
-        message: 'Provide VPCOptions object to enable opensearch to function in a VPC.\n',
+        message: 'Provide VPCOptions object to enable opensearch to function in a VPC.',
     },
     ELASTICSEARCH_LOGS_TO_CLOUDWATCH: {
         name: 'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        content: `let elasticsearch_domains_logs_cloudwatch = Resources.*[ Type == 'AWS::Elasticsearch::Domain'
+        content: `let elasticsearch_domains_logs_cloudwatch = Resources.*[ Type == "AWS::Elasticsearch::Domain"
   Metadata.guard.SuppressedRules not exists or
   Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_LOGS_TO_CLOUDWATCH"
 ]
 
 rule ELASTICSEARCH_LOGS_TO_CLOUDWATCH when %elasticsearch_domains_logs_cloudwatch !empty {
 
-  %elasticsearch_domains_logs_cloudwatch.Properties.LogPublishingOptions EXISTS
-  %elasticsearch_domains_logs_cloudwatch.Properties.LogPublishingOptions.ES_APPLICATION_LOGS.Enabled == true OR
-  %elasticsearch_domains_logs_cloudwatch.Properties.LogPublishingOptions.SEARCH_SLOW_LOGS.Enabled == true OR
-  %elasticsearch_domains_logs_cloudwatch.Properties.LogPublishingOptions.INDEX_SLOW_LOGS.Enabled == true
-  
+    %elasticsearch_domains_logs_cloudwatch.Properties.LogPublishingOptions EXISTS
+    %elasticsearch_domains_logs_cloudwatch.Properties.LogPublishingOptions.ES_APPLICATION_LOGS.Enabled == true OR
+    %elasticsearch_domains_logs_cloudwatch.Properties.LogPublishingOptions.SEARCH_SLOW_LOGS.Enabled == true OR
+    %elasticsearch_domains_logs_cloudwatch.Properties.LogPublishingOptions.INDEX_SLOW_LOGS.Enabled == true
+        
 }`,
         description: 'Guard rule: ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        message: 'Set a LogPublishingOptions object to have the property "Enabled" parameter set to true for keys "ES_APPLICATION_LOGS", "SEARCH_SLOW_LOGS", or "INDEX_SLOW_LOGS".\n',
+        message: 'Set a LogPublishingOptions object to have the property "Enabled" parameter set to true for keys "ES_APPLICATION_LOGS", "SEARCH_SLOW_LOGS", or "INDEX_SLOW_LOGS".',
     },
     ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK: {
         name: 'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        content: `let elasticsearch_domains_node2node_encrpytion = Resources.*[ Type == 'AWS::Elasticsearch::Domain'
+        content: `let elasticsearch_node_to_node_encryption_check = Resources.*[ Type == "AWS::Elasticsearch::Domain"
   Metadata.guard.SuppressedRules not exists or
   Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK"
 ]
 
-rule ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK when %elasticsearch_domains_node2node_encrpytion !empty {
-  %elasticsearch_domains_node2node_encrpytion.Properties.NodeToNodeEncryptionOptions.Enabled == true
-  
+rule ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK when %elasticsearch_node_to_node_encryption_check !empty {
+    %elasticsearch_node_to_node_encryption_check.Properties.NodeToNodeEncryptionOptions.Enabled == true
+        
 }`,
         description: 'Guard rule: ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        message: 'Set the NodeToNodeEncryptionOptions.Enabled parameter to true.\n',
+        message: 'Set the NodeToNodeEncryptionOptions.Enabled parameter to true.',
+    },
+    ELASTICSEARCH_PRIMARY_NODE_FAULT_TOLERANCE: {
+        name: 'ELASTICSEARCH_PRIMARY_NODE_FAULT_TOLERANCE',
+        content: `let elasticsearch_primary_node_fault_tolerance = Resources.*[ Type == "AWS::Elasticsearch::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELASTICSEARCH_PRIMARY_NODE_FAULT_TOLERANCE"
+]
+
+rule ELASTICSEARCH_PRIMARY_NODE_FAULT_TOLERANCE when %elasticsearch_primary_node_fault_tolerance !empty {
+    %elasticsearch_primary_node_fault_tolerance.Properties { 
+        ElasticsearchClusterConfig exists
+        ElasticsearchClusterConfig is_struct
+
+        ElasticsearchClusterConfig {
+            DedicatedMasterEnabled exists
+            DedicatedMasterEnabled == true
+                
+            DedicatedMasterCount not exists or
+            DedicatedMasterCount >= 3
+                
+        }
+    }
+}`,
+        description: 'Guard rule: ELASTICSEARCH_PRIMARY_NODE_FAULT_TOLERANCE',
+        message: 'In ElasticsearchClusterConfig, set DedicatedMasterEnabled to true and DedicatedMasterCount to an integer value greater than 3.',
+    },
+    ELB_ACM_CERTIFICATE_REQUIRED: {
+        name: 'ELB_ACM_CERTIFICATE_REQUIRED',
+        content: `let elb_acm_certificate_required_resources = Resources.*[ Type == 'AWS::ElasticLoadBalancing::LoadBalancer'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELB_ACM_CERTIFICATE_REQUIRED"
+]
+
+rule ELB_ACM_CERTIFICATE_REQUIRED when %elb_acm_certificate_required_resources !empty {
+    let doc = this
+    %elb_acm_certificate_required_resources.Properties {
+        Listeners[
+            # Scenario c)
+            Protocol in ['HTTPS', 'SSL']
+        ] {
+            # Scenarios d) and e)
+            SSLCertificateId exists
+            SSLCertificateId == /arn:aws[a-z0-9\\-]*:acm:[a-z0-9\\-]+:\\d{12}:certificate\\/[\\w\\-]{1,64}/ or 
+            SSLCertificateId {
+                Ref {
+                    let resource_logical_name = this
+                    let referenced_resource = %doc.Resources[ keys == %resource_logical_name ]
+                    %referenced_resource not empty
+                    %referenced_resource {
+                        Type == "AWS::CertificateManager::Certificate"
+                            
+                    }
+                }
+            }
+        }
+    }
+}`,
+        description: 'Guard rule: ELB_ACM_CERTIFICATE_REQUIRED',
+        message: 'Set the Classic Load Balancer Listeners.*.SSLCertificateId property to the ARN of an ACM Certificate.',
+    },
+    ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED: {
+        name: 'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        content: `let elb_cross_zone_load_balancing_resources = Resources.*[ Type == 'AWS::ElasticLoadBalancing::LoadBalancer'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED"
+]
+
+rule ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED when %elb_cross_zone_load_balancing_resources !empty {
+    %elb_cross_zone_load_balancing_resources.Properties {
+        CrossZone exists
+        CrossZone == true
+        
+    }
+}`,
+        description: 'Guard rule: ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        message: 'Set the Classic Load Balancer CrossZone property to the true.',
+    },
+    ELB_DELETION_PROTECTION_ENABLED: {
+        name: 'ELB_DELETION_PROTECTION_ENABLED',
+        content: `let elb_deletion_protection_enabled_resources = Resources.*[ Type == 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELB_DELETION_PROTECTION_ENABLED"
+]
+
+rule ELB_DELETION_PROTECTION_ENABLED when %elb_deletion_protection_enabled_resources !empty {
+    %elb_deletion_protection_enabled_resources.Properties {
+        LoadBalancerAttributes exists
+        LoadBalancerAttributes is_list
+        LoadBalancerAttributes not empty
+        
+        some LoadBalancerAttributes[*] {
+            Key == "deletion_protection.enabled"
+            Value == true OR
+            Value == "true"
+            
+        }
+    }
+}`,
+        description: 'Guard rule: ELB_DELETION_PROTECTION_ENABLED',
+        message: 'Set the \'LoadBalancerAttribute\' \'deletion_protection.enabled\' to \'true\'',
+    },
+    ELB_LOGGING_ENABLED: {
+        name: 'ELB_LOGGING_ENABLED',
+        content: `let elb_logging_enabled_resources = Resources.*[ Type == 'AWS::ElasticLoadBalancing::LoadBalancer'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELB_LOGGING_ENABLED"
+]
+
+rule ELB_LOGGING_ENABLED when %elb_logging_enabled_resources !empty {
+    %elb_logging_enabled_resources.Properties {
+        AccessLoggingPolicy exists
+        AccessLoggingPolicy {
+            Enabled == true
+            
+        }
+    }
+}`,
+        description: 'Guard rule: ELB_LOGGING_ENABLED',
+        message: 'Set the Classic Load Balancer \'AccessLoggingPolicy.Enabled\' property to true and \'S3BucketName\' to an S3 bucket you own that has been configured to receive ELB logs.',
+    },
+    ELB_PREDEFINED_SECURITY_POLICY_SSL_CHECK: {
+        name: 'ELB_PREDEFINED_SECURITY_POLICY_SSL_CHECK',
+        content: `let elb_predefined_security_policy_ssl_check = Resources.*[ Type == 'AWS::ElasticLoadBalancing::LoadBalancer'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELB_PREDEFINED_SECURITY_POLICY_SSL_CHECK"
+]
+
+rule ELB_PREDEFINED_SECURITY_POLICY_SSL_CHECK when %elb_predefined_security_policy_ssl_check !empty {
+    %elb_predefined_security_policy_ssl_check.Properties {
+        let elb = this
+
+        Listeners[ Protocol in ["HTTPS", "SSL"] ] {
+            %elb.Policies exists
+            %elb.Policies is_list
+            %elb.Policies not empty
+
+            let secure_policies = %elb.Policies[
+                PolicyType == "SSLNegotiationPolicyType"
+                some Attributes[*] {
+                    Name == "Reference-Security-Policy"
+                    Value in [ "ELBSecurityPolicy-TLS-1-2-2017-01" ]
+                }
+            ].PolicyName
+
+            %secure_policies not empty
+
+            PolicyNames exists
+            PolicyNames is_list
+            PolicyNames not empty
+            some PolicyNames.* in %secure_policies
+                
+        }
+    }
+}`,
+        description: 'Guard rule: ELB_PREDEFINED_SECURITY_POLICY_SSL_CHECK',
+        message: 'Configure Classic Load Balancer HTTPS/SSL listeners to use the predefined security policy \'ELBSecurityPolicy-TLS-1-2-2017-01\'',
+    },
+    ELB_TLS_HTTPS_LISTENERS_ONLY: {
+        name: 'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        content: `let elb_tls_https_listeners_only_resources = Resources.*[ Type == 'AWS::ElasticLoadBalancing::LoadBalancer'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELB_TLS_HTTPS_LISTENERS_ONLY"
+]
+
+rule ELB_TLS_HTTPS_LISTENERS_ONLY when %elb_tls_https_listeners_only_resources !empty {
+    %elb_tls_https_listeners_only_resources.Properties {
+        Listeners.* {
+           # Scenarios c) and d)
+           Protocol in ['HTTPS', 'SSL']
+            
+        }
+    }
+}`,
+        description: 'Guard rule: ELB_TLS_HTTPS_LISTENERS_ONLY',
+        message: 'Set a Classic Load Balancer Listeners.*.Protocol to \'HTTPS\' or \'SSL\'.',
+    },
+    ELBV2_ACCESS_LOGGING_RULE: {
+        name: 'ELBV2_ACCESS_LOGGING_RULE',
+        content: `let elbv2_access_logging_rule = Resources.*[ Type == 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELBV2_ACCESS_LOGGING_RULE"
+]
+
+rule ELBV2_ACCESS_LOGGING_RULE when %elbv2_access_logging_rule !empty {
+  let violations = %elbv2_access_logging_rule[
+    Type == 'AWS::ElasticLoadBalancingV2::LoadBalancer'
+    Properties.LoadBalancerAttributes !exists
+    OR
+    Properties.LoadBalancerAttributes[*].key != 'access_logs.s3.enabled'
+    OR
+    some Properties.LoadBalancerAttributes[*] {
+      key == 'access_logs.s3.enabled'
+      value !exists
+      OR
+      value == 'false'
+      OR
+      value == 'False'
+      OR
+      value == 'FALSE'
+    }
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: ELBV2_ACCESS_LOGGING_RULE',
+        message: 'Specify loadBalancerAttributes and make sure access logging is enabled.',
+    },
+    ELBV2_ACM_CERTIFICATE_REQUIRED: {
+        name: 'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        content: `let elbv2_acm_certificate_required_resources = Resources.*[ Type == 'AWS::ElasticLoadBalancingV2::Listener'
+  # Scenario c)
+  Properties.Protocol == 'HTTPS' or
+  Properties.Protocol == 'TLS'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELBV2_ACM_CERTIFICATE_REQUIRED"
+]
+
+rule ELBV2_ACM_CERTIFICATE_REQUIRED when %elbv2_acm_certificate_required_resources !empty {
+    let doc = this 
+    %elbv2_acm_certificate_required_resources.Properties {
+        # Scenarios d) and e)
+        Certificates exists
+        Certificates is_list
+        Certificates not empty
+
+        Certificates[*] {
+            CertificateArn exists
+            CertificateArn == /arn:aws[a-z0-9\\-]*:acm:[a-z0-9\\-]+:\\d{12}:certificate\\/[\\w\\-]{1,64}/ or 
+            CertificateArn {
+                Ref {
+                    let resource_logical_name = this
+                    let referenced_resource = %doc.Resources[ keys == %resource_logical_name ]
+                    %referenced_resource not empty
+                    %referenced_resource {
+                        Type == "AWS::CertificateManager::Certificate"
+                        
+                    }
+                }
+            }
+        }
+    }
+}`,
+        description: 'Guard rule: ELBV2_ACM_CERTIFICATE_REQUIRED',
+        message: 'Set the ELBV2 Certificates.*.CertificateArn property to the ARN of an ACM Certificate.',
+    },
+    ELBV2_LISTENER_PROTOCOL_RULE: {
+        name: 'ELBV2_LISTENER_PROTOCOL_RULE',
+        content: `let elbv2_listener_protocol_rule = Resources.*[ Type == 'AWS::ElasticLoadBalancingV2::Listener'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELBV2_LISTENER_PROTOCOL_RULE"
+]
+
+rule ELBV2_LISTENER_PROTOCOL_RULE when %elbv2_listener_protocol_rule !empty {
+  let violations = %elbv2_listener_protocol_rule[
+    Type == 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties.Protocol exists
+    Properties.Protocol == 'HTTP'
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: ELBV2_LISTENER_PROTOCOL_RULE',
+        message: 'use HTTPS protocol for Elastic Load Balancer V2 Listener.',
+    },
+    ELBV2_LISTENER_SSL_POLICY_RULE: {
+        name: 'ELBV2_LISTENER_SSL_POLICY_RULE',
+        content: `let elbv2_listener_ssl_policy_rule = Resources.*[ Type == 'AWS::ElasticLoadBalancingV2::Listener'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "ELBV2_LISTENER_SSL_POLICY_RULE"
+]
+
+rule ELBV2_LISTENER_SSL_POLICY_RULE when %elbv2_listener_ssl_policy_rule !empty {
+  let violations = %elbv2_listener_ssl_policy_rule[
+    Type == 'AWS::ElasticLoadBalancingV2::Listener'
+    Properties.SslPolicy !exists
+    OR
+    Properties.SslPolicy == /(?i)ELBSecurityPolicy-2016-08/
+    OR
+    Properties.SslPolicy == /(?i)ELBSecurityPolicy-TLS-1-0-2015-04/
+    OR
+    Properties.SslPolicy == /(?i)ELBSecurityPolicy-TLS-1-1-2017-01/
+    OR
+    Properties.SslPolicy == /(?i)ELBSecurityPolicy-FS-2018-06/
+    OR
+    Properties.SslPolicy == /(?i)ELBSecurityPolicy-FS-1-1-2019-08/
+    OR
+    Properties.SslPolicy == /(?i)ELBSecurityPolicy-2015/
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: ELBV2_LISTENER_SSL_POLICY_RULE',
+        message: 'Enable SslPolicy and use TLS 1.2.',
+    },
+    EMR_KERBEROS_ENABLED: {
+        name: 'EMR_KERBEROS_ENABLED',
+        content: `let emr_kerberos_enabled = Resources.*[ Type == "AWS::EMR::Cluster"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EMR_KERBEROS_ENABLED"
+]
+
+rule EMR_KERBEROS_ENABLED when %emr_kerberos_enabled !empty {
+	%emr_kerberos_enabled.Properties.KerberosAttributes exists
+	
+}`,
+        description: 'Guard rule: EMR_KERBEROS_ENABLED',
+        message: 'Set the KerberosAttributes property',
+    },
+    EMR_SECURITY_CONFIG_ENABLED_AND_CONFIGURED_RULE: {
+        name: 'EMR_SECURITY_CONFIG_ENABLED_AND_CONFIGURED_RULE',
+        content: `let emr_security_config_enabled_and_configured_rule = Resources.*[ Type == 'AWS::EMR::SecurityConfiguration'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "EMR_SECURITY_CONFIG_ENABLED_AND_CONFIGURED_RULE"
+]
+
+rule EMR_SECURITY_CONFIG_ENABLED_AND_CONFIGURED_RULE when %emr_security_config_enabled_and_configured_rule !empty {
+  let violations = %emr_security_config_enabled_and_configured_rule[
+    Type == 'AWS::EMR::SecurityConfiguration'
+    Properties.SecurityConfiguration.EncryptionConfiguration !exists
+    OR
+    Properties.SecurityConfiguration.EncryptionConfiguration {
+        EnableAtRestEncryption !exists
+        OR
+        EnableAtRestEncryption == false
+        OR
+        EnableAtRestEncryption == 'false'
+        OR
+        EnableInTransitEncryption !exists
+        OR
+        EnableInTransitEncryption == false
+        OR
+        EnableInTransitEncryption == 'false'
+    }
+    OR
+    Properties.SecurityConfiguration.EncryptionConfiguration {
+        AtRestEncryptionConfiguration !exists
+        OR
+        AtRestEncryptionConfiguration {
+            LocalDiskEncryptionConfiguration !exists
+            OR
+            LocalDiskEncryptionConfiguration.EncryptionKeyProviderType !exists
+            S3EncryptionConfiguration !exists
+            OR
+            S3EncryptionConfiguration.EncryptionMode !exists
+        }
+    }
+    OR
+    Properties.SecurityConfiguration.EncryptionConfiguration {
+        InTransitEncryptionConfiguration !exists
+        OR
+        InTransitEncryptionConfiguration {
+            TLSCertificateConfiguration !exists
+            OR
+            TLSCertificateConfiguration.CertificateProviderType !exists
+        }
+    }
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: EMR_SECURITY_CONFIG_ENABLED_AND_CONFIGURED_RULE',
+        message: 'Define and configure EncryptionConfiguration in all EMR SecurityConfiguration resources.',
     },
     ENCRYPTED_VOLUMES: {
         name: 'ENCRYPTED_VOLUMES',
@@ -386,12 +2086,112 @@ rule ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK when %elasticsearch_domains_nod
 ]
 
 rule ENCRYPTED_VOLUMES when %ebs_volumes_encrypted !empty {
-  %ebs_volumes_encrypted.Properties.KmsKeyId !empty
-	OR %ebs_volumes_encrypted.Properties.Encrypted == true
+  let violations = %ebs_volumes_encrypted[
+    Properties.KmsKeyId empty
+    Properties.Encrypted !exists
+    or Properties.Encrypted != true
+  ]
+  %violations empty
   
 }`,
         description: 'Guard rule: ENCRYPTED_VOLUMES',
-        message: 'either set the KmsKeyId property to a key ID, key alias, key ARN, or alias ARN\n',
+        message: 'Set the KmsKeyId property to a key ID, key alias, key ARN, or alias ARN',
+    },
+    FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN: {
+        name: 'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        content: `let fsx_resources_protected_by_backup_plan = Resources.*[ Type == "AWS::FSx::FileSystem"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN"
+]
+
+rule FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN when %fsx_resources_protected_by_backup_plan !empty {
+	%fsx_resources_protected_by_backup_plan.Properties {
+		when FileSystemType == "LUSTRE" {
+			LustreConfiguration exists
+			
+
+			LustreConfiguration {
+				when DeploymentType exists
+						DeploymentType IN [ "PERSISTENT_1", "PERSISTENT_2" ] {
+
+					AutomaticBackupRetentionDays exists
+					
+					AutomaticBackupRetentionDays > 0
+					
+
+				}
+			}
+		}
+
+		when FileSystemType == "ONTAP" {
+			OntapConfiguration {
+				AutomaticBackupRetentionDays exists
+				
+				AutomaticBackupRetentionDays > 0
+				
+			}
+		}
+
+		when FileSystemType == "OPENZFS" {
+			OpenZFSConfiguration {
+				AutomaticBackupRetentionDays exists
+				
+				AutomaticBackupRetentionDays > 0
+				
+			}
+		}
+
+		when FileSystemType == "WINDOWS" {
+			WindowsConfiguration {
+				AutomaticBackupRetentionDays exists
+				
+				AutomaticBackupRetentionDays > 0
+				
+			}
+		}
+	}
+}`,
+        description: 'Guard rule: FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        message: 'Set the LustreConfiguration',
+    },
+    GAMELIFT_FLEET_INBOUND_PORT_RANGE_RULE: {
+        name: 'GAMELIFT_FLEET_INBOUND_PORT_RANGE_RULE',
+        content: `let gamelift_fleet_inbound_port_range_rule = Resources.*[ Type == 'AWS::GameLift::Fleet'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "GAMELIFT_FLEET_INBOUND_PORT_RANGE_RULE"
+]
+
+rule GAMELIFT_FLEET_INBOUND_PORT_RANGE_RULE when %gamelift_fleet_inbound_port_range_rule !empty {
+    %gamelift_fleet_inbound_port_range_rule.Properties.EC2InboundPermissions !exists
+    OR
+    %gamelift_fleet_inbound_port_range_rule.Properties.EC2InboundPermissions[*] {
+        FromPort == ToPort
+        
+    }
+}`,
+        description: 'Guard rule: GAMELIFT_FLEET_INBOUND_PORT_RANGE_RULE',
+        message: 'Specify a single port instead of range of ports',
+    },
+    IAM_MANAGEDPOLICY_NO_STATEMENTS_WITH_FULL_ACCESS: {
+        name: 'IAM_MANAGEDPOLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        content: `let aws_iam_managed_policies = Resources.*[ Type == 'AWS::IAM::ManagedPolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_MANAGEDPOLICY_NO_STATEMENTS_WITH_FULL_ACCESS" 
+]
+
+rule IAM_MANAGEDPOLICY_NO_STATEMENTS_WITH_FULL_ACCESS when %aws_iam_managed_policies !empty {
+  let violations = %aws_iam_managed_policies[
+    Type == 'AWS::IAM::ManagedPolicy'
+    some Properties.PolicyDocument.Statement[*] {
+      some Action[*] in ["*", /^[a-zA-Z0-9]*:\\*$/]
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_MANAGEDPOLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        message: 'Remove policy statements that match {"Effect": "Allow", "Action": "<service-name>:*" ... } or {"Effect": "Allow", "Action": "*" ... }',
     },
     IAM_NO_INLINE_POLICY_CHECK: {
         name: 'IAM_NO_INLINE_POLICY_CHECK',
@@ -408,7 +2208,32 @@ rule IAM_NO_INLINE_POLICY_CHECK when %aws_iam_entities_no_inline_policy !empty {
   
 }`,
         description: 'Guard rule: IAM_NO_INLINE_POLICY_CHECK',
-        message: 'Remove the Policies list property from any IAM Users, Roles, or Groups.\n',
+        message: 'Remove the Policies list property from any IAM Users, Roles, or Groups.',
+    },
+    IAM_NO_POLICY_ON_USER: {
+        name: 'IAM_NO_POLICY_ON_USER',
+        content: `let applicable_types = [
+  "AWS::IAM::Policy",
+  "AWS::IAM::ManagedPolicy"
+]
+
+let iam_no_policy_on_user = Resources.*[ Type in %applicable_types
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_NO_POLICY_ON_USER"
+]
+
+rule IAM_NO_POLICY_ON_USER when %iam_no_policy_on_user !empty {
+  let violations = %iam_no_policy_on_user[
+    Type == 'AWS::IAM::Policy'
+    or
+    Type == 'AWS::IAM::ManagedPolicy'
+    Properties.Users !empty
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_NO_POLICY_ON_USER',
+        message: 'Associate the IAM Policy/ManagedPolicy with a Group and make the IAM User a member of the group.',
     },
     IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS: {
         name: 'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
@@ -423,36 +2248,392 @@ rule IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS when %aws_iam_policies_no_statem
     some Properties.PolicyDocument.Statement[*] {
       some Action[*] == "*"
       Effect == "Allow"
-      Resource == "*"
+      some Resource in ["*"]
     }
   ]
   %violations empty
 	
 }`,
         description: 'Guard rule: IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        message: 'Remove policy statements that match {"Effect": "Allow", "Action": "*", "Resource": "*"}\n',
+        message: 'Remove policy statements that match {"Effect": "Allow", "Action": "*", "Resource": "*"}',
     },
     IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS: {
         name: 'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        content: `let aws_iam_managed_policies_no_statements_with_full_access = Resources.*[ Type == 'AWS::IAM::ManagedPolicy'
+        content: `let aws_iam_policies = Resources.*[ Type == 'AWS::IAM::Policy'
   Metadata.guard.SuppressedRules not exists or
   Metadata.guard.SuppressedRules.* != "IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS" 
 ]
 
-rule IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS when %aws_iam_managed_policies_no_statements_with_full_access !empty {
-  let violations = Resources.*[
-    Type == 'AWS::IAM::ManagedPolicy' 
+rule IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS when %aws_iam_policies !empty {
+  let violations = %aws_iam_policies[
+    Type == 'AWS::IAM::Policy'
     some Properties.PolicyDocument.Statement[*] {
       some Action[*] in ["*", /^[a-zA-Z0-9]*:\\*$/]
       Effect == "Allow"
-      Resource == "*"
     }
   ]
   %violations empty
   
 }`,
         description: 'Guard rule: IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        message: 'Remove policy statements that match {"Effect": "Allow", "Action": "<service-name>:*" ... } or {"Effect": "Allow", "Action": "*" ... }\n',
+        message: 'Remove policy statements that match {"Effect": "Allow", "Action": "<service-name>:*" ... } or {"Effect": "Allow", "Action": "*" ... }',
+    },
+    IAM_POLICY_NO_WILDCARD_RESOURCE_ON_PASSROLE: {
+        name: 'IAM_POLICY_NO_WILDCARD_RESOURCE_ON_PASSROLE',
+        content: `let iam_policy_no_wildcard_resource_on_passrole = Resources.*[ Type in [ /AWS::IAM::Policy/, /AWS::IAM::ManagedPolicy/ ]
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_POLICY_NO_WILDCARD_RESOURCE_ON_PASSROLE"
+]
+
+rule IAM_POLICY_NO_WILDCARD_RESOURCE_ON_PASSROLE when %iam_policy_no_wildcard_resource_on_passrole !empty {
+  let violations = %iam_policy_no_wildcard_resource_on_passrole[
+    some Properties.PolicyDocument.Statement[*] {
+      some Action[*] == 'iam:PassRole'
+      Resource == "*"
+      Effect == "Allow"
+      Condition not exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_POLICY_NO_WILDCARD_RESOURCE_ON_PASSROLE',
+        message: 'Limit the scope of the Resource for iam:PassRole as much as possible',
+    },
+    IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE: {
+        name: 'IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE',
+        content: `let applicable_types = [
+  "AWS::IAM::Role",
+  "AWS::IAM::Policy",
+  "AWS::IAM::ManagedPolicy"
+]
+
+let iam_policydocument_no_wildcard_resource = Resources.*[ Type in %applicable_types
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE"
+]
+
+rule IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE when %iam_policydocument_no_wildcard_resource not empty {
+  let violations = %iam_policydocument_no_wildcard_resource[
+    some Properties.Policies[*].PolicyDocument.Statement[*] {
+      some Resource[*] == "*"
+      Effect == "Allow"
+    }
+    or
+    some Properties.PolicyDocument.Statement[*] {
+      some Resource[*] == "*"
+      Effect == "Allow"
+    }
+    or
+    some Properties.PolicyDocument.Statement[*] {
+      some Resource[*] == "*"
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE',
+        message: 'Limit resource as specifically as possible within your use case.',
+    },
+    IAM_ROLE_ADMINISTRATOR_ACCESS_POLICY_RULE: {
+        name: 'IAM_ROLE_ADMINISTRATOR_ACCESS_POLICY_RULE',
+        content: `let iam_role_administrator_access_policy_rule = Resources.*[ Type == 'AWS::IAM::Role'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_ADMINISTRATOR_ACCESS_POLICY_RULE"
+]
+
+rule IAM_ROLE_ADMINISTRATOR_ACCESS_POLICY_RULE when %iam_role_administrator_access_policy_rule !empty {
+  let violations = %iam_role_administrator_access_policy_rule[
+    Type == 'AWS::IAM::Role'
+    Properties.ManagedPolicyArns exists
+    some Properties.ManagedPolicyArns[*] == 'arn:aws:iam::aws:policy/AdministratorAccess'
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_ADMINISTRATOR_ACCESS_POLICY_RULE',
+        message: 'Remove AdministratorAccess policy access from ManagedPolicyArns in IAM Roles.',
+    },
+    IAM_ROLE_ELEVATED_MANAGED_POLICY_RULE: {
+        name: 'IAM_ROLE_ELEVATED_MANAGED_POLICY_RULE',
+        content: `let iam_role_elevated_managed_policy_rule = Resources.*[ Type == 'AWS::IAM::Role'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_ELEVATED_MANAGED_POLICY_RULE"
+]
+
+rule IAM_ROLE_ELEVATED_MANAGED_POLICY_RULE when %iam_role_elevated_managed_policy_rule !empty {
+  let violations = %iam_role_elevated_managed_policy_rule[
+    Type == 'AWS::IAM::Role'
+    Properties.ManagedPolicyArns exists
+    some Properties.ManagedPolicyArns[*] == 'arn:aws:iam::aws:policy/PowerUserAccess'
+    OR
+    some Properties.ManagedPolicyArns[*] == 'arn:aws:iam::aws:policy/IAMFullAccess'
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_ELEVATED_MANAGED_POLICY_RULE',
+        message: 'Remove Elevated Managed policy access from ManagedPolicyArns in IAM Roles.',
+    },
+    IAM_ROLE_NO_ALLOW_PLUS_NOT_ACTION_ON_TRUST_POLICY: {
+        name: 'IAM_ROLE_NO_ALLOW_PLUS_NOT_ACTION_ON_TRUST_POLICY',
+        content: `let iam_role_no_allow_plus_not_action_on_trust_policy = Resources.*[ Type == 'AWS::IAM::Role'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_NO_ALLOW_PLUS_NOT_ACTION_ON_TRUST_POLICY"
+]
+
+rule IAM_ROLE_NO_ALLOW_PLUS_NOT_ACTION_ON_TRUST_POLICY when %iam_role_no_allow_plus_not_action_on_trust_policy !empty {
+  let violations = %iam_role_no_allow_plus_not_action_on_trust_policy[
+    Type == 'AWS::IAM::Role'
+    some Properties.AssumeRolePolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotAction exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_NO_ALLOW_PLUS_NOT_ACTION_ON_TRUST_POLICY',
+        message: 'Remove IAM Roles on trust permissions that match {"Effect": "Allow", "NotAction": ... }',
+    },
+    IAM_ROLE_NO_ALLOW_PLUS_NOT_PRINCIPAL: {
+        name: 'IAM_ROLE_NO_ALLOW_PLUS_NOT_PRINCIPAL',
+        content: `let aws_iam_role_resources = Resources.*[ Type == 'AWS::IAM::Role'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_NO_ALLOW_PLUS_NOT_PRINCIPAL"
+]
+
+rule IAM_ROLE_NO_ALLOW_PLUS_NOT_PRINCIPAL when %aws_iam_role_resources !empty {
+  let violations = %aws_iam_role_resources[
+    Type == 'AWS::IAM::Role'
+    some Properties.AssumeRolePolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotPrincipal exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_NO_ALLOW_PLUS_NOT_PRINCIPAL',
+        message: 'Remove policy statements that match {"Effect": "Allow", "NotPrincipal": ... }',
+    },
+    IAM_ROLE_NO_FULL_ACCESS_ON_TRUST_POLICY: {
+        name: 'IAM_ROLE_NO_FULL_ACCESS_ON_TRUST_POLICY',
+        content: `let aws_iam_role_no_full_acess_on_trust_policy = Resources.*[ Type == 'AWS::IAM::Role'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_NO_FULL_ACCESS_ON_TRUST_POLICY" 
+]
+
+rule IAM_ROLE_NO_FULL_ACCESS_ON_TRUST_POLICY when %aws_iam_role_no_full_acess_on_trust_policy !empty {
+  let violations = %aws_iam_role_no_full_acess_on_trust_policy[
+    some Properties.AssumeRolePolicyDocument.Statement[*] {
+      some Action[*] in ["*", /^[a-zA-Z0-9]*:\\*$/]
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_NO_FULL_ACCESS_ON_TRUST_POLICY',
+        message: 'Remove AssumeRole policy statements that match {"Effect": "Allow", "Action": "<service-name>:*" ... } or {"Effect": "Allow", "Action": "*" ... }',
+    },
+    IAM_ROLE_NO_WILDCARD_ACTIONS_ON_PERMISSIONS: {
+        name: 'IAM_ROLE_NO_WILDCARD_ACTIONS_ON_PERMISSIONS',
+        content: `let aws_iam_role_no_wildcard_actions_on_permissions = Resources.*[ Type == 'AWS::IAM::Role'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_NO_WILDCARD_ACTIONS_ON_PERMISSIONS" 
+]
+
+rule IAM_ROLE_NO_WILDCARD_ACTIONS_ON_PERMISSIONS when %aws_iam_role_no_wildcard_actions_on_permissions !empty {
+  let violations = %aws_iam_role_no_wildcard_actions_on_permissions[
+    some Properties.PolicyDocument.Statement[*] {
+      some Action[*] in ["*", /^[a-zA-Z0-9]*:\\*$/]
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_NO_WILDCARD_ACTIONS_ON_PERMISSIONS',
+        message: 'Remove policy statements that match {"Effect": "Allow", "Action": "<service-name>:*" ... } or {"Effect": "Allow", "Action": "*" ... }',
+    },
+    IAM_ROLE_NO_WILDCARD_RESOURCE_ON_PASSROLE: {
+        name: 'IAM_ROLE_NO_WILDCARD_RESOURCE_ON_PASSROLE',
+        content: `let iam_role_no_wildcard_resource_on_passrole = Resources.*[ Type == /AWS::IAM::Role/
+  Properties.Policies exists
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_NO_WILDCARD_RESOURCE_ON_PASSROLE"
+]
+
+rule IAM_ROLE_NO_WILDCARD_RESOURCE_ON_PASSROLE when %iam_role_no_wildcard_resource_on_passrole !empty {
+  let violations = %iam_role_no_wildcard_resource_on_passrole[
+    some Properties.Policies[*].PolicyDocument.Statement[*] {
+      some Action[*] == 'iam:PassRole'
+      Resource == "*"
+      Effect == "Allow"
+      Condition not exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_NO_WILDCARD_RESOURCE_ON_PASSROLE',
+        message: 'Limit the scope of the Resource for iam:PassRole as much as possible',
+    },
+    IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_ACTION: {
+        name: 'IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        content: `let applicable_types = [
+  "AWS::IAM::Role",
+  "AWS::IAM::Policy",
+  "AWS::IAM::ManagedPolicy"
+]
+
+let iam_role_or_policy_no_allow_plus_not_action = Resources.*[ Type in %applicable_types
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_ACTION"
+]
+
+rule IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_ACTION when %iam_role_or_policy_no_allow_plus_not_action !empty {
+  let violations = %iam_role_or_policy_no_allow_plus_not_action[
+    Type == 'AWS::IAM::Role'
+    or
+    Type == 'AWS::IAM::Policy'
+    or
+    Type == 'AWS::IAM::ManagedPolicy'
+    some Properties.PolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotAction exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        message: 'Remove roles or policy statements that match {"Effect": "Allow", "NotAction": ... }',
+    },
+    IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_RESOURCE: {
+        name: 'IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_RESOURCE',
+        content: `let applicable_types = [
+  "AWS::IAM::Role",
+  "AWS::IAM::Policy",
+  "AWS::IAM::ManagedPolicy"
+]
+
+let iam_role_or_policy_no_allow_plus_not_resource = Resources.*[ Type in %applicable_types
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_RESOURCE"
+]
+
+rule IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_RESOURCE when %iam_role_or_policy_no_allow_plus_not_resource !empty {
+  let violations = %iam_role_or_policy_no_allow_plus_not_resource[
+    Type == 'AWS::IAM::Role'
+    or
+    Type == 'AWS::IAM::Policy'
+    or
+    Type == 'AWS::IAM::ManagedPolicy'
+    some Properties.PolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotResource exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_RESOURCE',
+        message: 'Remove roles or policy statements that match {"Effect": "Allow", "NotResource": ... }',
+    },
+    IAM_USER_LOGIN_PROFILE_NO_PLAINTEXT_PASSWORD: {
+        name: 'IAM_USER_LOGIN_PROFILE_NO_PLAINTEXT_PASSWORD',
+        content: `let iam_user_login_profile_no_plaintext_password = Resources.*[ Type == 'AWS::IAM::User'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_USER_LOGIN_PROFILE_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::IAM::User Refs for Password?
+let iam_user_login_profile_password_refs = %iam_user_login_profile_no_plaintext_password.Properties.LoginProfile.Password.'!Ref'
+
+# Rule 1: when IAM User Login Profile password no plaintext password have Ref to Parameter for Password
+rule IAM_USER_LOGIN_PROFILE_USES_SECURE_PARAMETER when
+  %iam_user_login_profile_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %iam_user_login_profile_password_refs not empty
+  let parameter_refs = Parameters.%iam_user_login_profile_password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when IAM User Login Profile password no plaintext password and above rule did not pass
+rule IAM_USER_LOGIN_PROFILE_USES_SECURE_SERVICE when
+  %iam_user_login_profile_no_plaintext_password not empty
+  !IAM_USER_LOGIN_PROFILE_USES_SECURE_PARAMETER
+{
+  let violations = %iam_user_login_profile_no_plaintext_password[
+    Properties.LoginProfile exists
+    Properties.LoginProfile.Password !exists
+    OR
+    Properties.LoginProfile.Password not in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  ]
+
+  %violations empty
+  
+}
+
+# One rule to rule them all...
+rule IAM_USER_LOGIN_PROFILE_NO_PLAINTEXT_PASSWORD when
+  %iam_user_login_profile_no_plaintext_password not empty
+{
+  IAM_USER_LOGIN_PROFILE_USES_SECURE_PARAMETER
+  OR
+  IAM_USER_LOGIN_PROFILE_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: IAM_USER_LOGIN_PROFILE_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
+    },
+    IAM_USER_LOGIN_PROFILE_PASSWORD_RESET_RULE: {
+        name: 'IAM_USER_LOGIN_PROFILE_PASSWORD_RESET_RULE',
+        content: `let iam_user_login_profile_password_reset_rule = Resources.*[ Type == 'AWS::IAM::User'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_USER_LOGIN_PROFILE_PASSWORD_RESET_RULE"
+]
+
+rule IAM_USER_LOGIN_PROFILE_PASSWORD_RESET_RULE when %iam_user_login_profile_password_reset_rule !empty {
+  let violations = %iam_user_login_profile_password_reset_rule[
+    Type == 'AWS::IAM::User'
+    Properties.LoginProfile !exists
+    OR
+    Properties.LoginProfile.PasswordResetRequired !exists
+    OR
+    Properties.LoginProfile.PasswordResetRequired == 'false'
+    OR
+    Properties.LoginProfile.PasswordResetRequired == false
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IAM_USER_LOGIN_PROFILE_PASSWORD_RESET_RULE',
+        message: 'Create IAM User LoginProfile and make sure that PasswordResetRequired is set to true.',
+    },
+    IAM_USER_MISSING_GROUP_RULE: {
+        name: 'IAM_USER_MISSING_GROUP_RULE',
+        content: `let iam_user_missing_group_rule = Resources.*[ Type == 'AWS::IAM::User'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IAM_USER_MISSING_GROUP_RULE"
+]
+
+rule IAM_USER_MISSING_GROUP_RULE when %iam_user_missing_group_rule !empty {
+  %iam_user_missing_group_rule.Type == 'AWS::IAM::User'
+  %iam_user_missing_group_rule.Properties.Groups exists
+  
+}`,
+        description: 'Guard rule: IAM_USER_MISSING_GROUP_RULE',
+        message: 'Assign IAM user to a group.',
     },
     IAM_USER_NO_POLICIES_CHECK: {
         name: 'IAM_USER_NO_POLICIES_CHECK',
@@ -466,7 +2647,7 @@ rule IAM_USER_NO_POLICIES_CHECK when %aws_iam_users_no_policies !empty {
   
 }`,
         description: 'Guard rule: IAM_USER_NO_POLICIES_CHECK',
-        message: 'Remove the Policies list property from any IAM Users.\n',
+        message: 'Remove the Policies list property from any IAM Users.',
     },
     INCOMING_SSH_DISABLED: {
         name: 'INCOMING_SSH_DISABLED',
@@ -486,7 +2667,239 @@ rule INCOMING_SSH_DISABLED when %aws_security_groups_restricted_ssh !empty {
   
 }`,
         description: 'Guard rule: INCOMING_SSH_DISABLED',
-        message: 'set SecurityGroupIngress.CidrIp property to a more restrictive CIDR than 0.0.0.0/0\n',
+        message: 'set SecurityGroupIngress.CidrIp property to a more restrictive CIDR than 0.0.0.0/0',
+    },
+    IOT_POLICY_WILDCARD_ACTION_RULE: {
+        name: 'IOT_POLICY_WILDCARD_ACTION_RULE',
+        content: `let iot_policy_wildcard_action_rule = Resources.*[ Type == 'AWS::IoT::Policy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IOT_POLICY_WILDCARD_ACTION_RULE"
+]
+
+rule IOT_POLICY_WILDCARD_ACTION_RULE when %iot_policy_wildcard_action_rule !empty {
+  let violations = %iot_policy_wildcard_action_rule[
+    some Properties.PolicyDocument.Statement[*] {
+      some Action[*] in ["*", /^[a-zA-Z0-9]*:\\*$/]
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IOT_POLICY_WILDCARD_ACTION_RULE',
+        message: 'Specify explicit actions in the IoT Policy.',
+    },
+    IOT_POLICY_WILDCARD_RESOURCE_RULE: {
+        name: 'IOT_POLICY_WILDCARD_RESOURCE_RULE',
+        content: `let iot_policy_wildcard_resource_rule = Resources.*[ Type == 'AWS::IoT::Policy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "IOT_POLICY_WILDCARD_RESOURCE_RULE"
+]
+
+rule IOT_POLICY_WILDCARD_RESOURCE_RULE when %iot_policy_wildcard_resource_rule !empty {
+  let violations = %iot_policy_wildcard_resource_rule[
+    some Properties.PolicyDocument.Statement[*] {
+      some Resource[*] == "*"
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: IOT_POLICY_WILDCARD_RESOURCE_RULE',
+        message: 'Specify explicit resources in the IoT Policy.',
+    },
+    KENDRA_INDEX_ENCRYPTION_KMS_KEY_ID_RULE: {
+        name: 'KENDRA_INDEX_ENCRYPTION_KMS_KEY_ID_RULE',
+        content: `let kendra_index_encryption_kms_key_id_rule = Resources.*[ Type == 'AWS::Kendra::Index'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "KENDRA_INDEX_ENCRYPTION_KMS_KEY_ID_RULE"
+]
+
+rule KENDRA_INDEX_ENCRYPTION_KMS_KEY_ID_RULE when %kendra_index_encryption_kms_key_id_rule !empty {
+  let violations = %kendra_index_encryption_kms_key_id_rule[
+    Type == 'AWS::Kendra::Index'
+    Properties.ServerSideEncryptionConfiguration !exists
+    OR
+    Properties.ServerSideEncryptionConfiguration.KmsKeyId !exists
+  ]
+
+  %violations empty
+  
+}`,
+        description: 'Guard rule: KENDRA_INDEX_ENCRYPTION_KMS_KEY_ID_RULE',
+        message: 'Specify ServerSideEncryptionConfiguration and KmsKeyId for ServerSideEncryptionConfiguration.',
+    },
+    KINESIS_FIREHOSE_DELIVERY_STREAM_ENCRYPTION_RULE: {
+        name: 'KINESIS_FIREHOSE_DELIVERY_STREAM_ENCRYPTION_RULE',
+        content: `let kinesis_Firehose_delivery_stream_encryption_rule = Resources.*[ Type == 'AWS::KinesisFirehose::DeliveryStream'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "KINESIS_FIREHOSE_DELIVERY_STREAM_ENCRYPTION_RULE"
+]
+
+rule KINESIS_FIREHOSE_DELIVERY_STREAM_ENCRYPTION_RULE when %kinesis_Firehose_delivery_stream_encryption_rule !empty {
+  let violations = %kinesis_Firehose_delivery_stream_encryption_rule[
+    Properties.DeliveryStreamType !exists
+    OR
+    Properties.DeliveryStreamType != 'KinesisStreamAsSource'
+    Properties.DeliveryStreamEncryptionConfigurationInput !exists
+    OR
+    Properties.DeliveryStreamEncryptionConfigurationInput.KeyType !exists
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: KINESIS_FIREHOSE_DELIVERY_STREAM_ENCRYPTION_RULE',
+        message: 'Specify SSE for all Kinesis Firehose DeliveryStream resources.',
+    },
+    KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD: {
+        name: 'KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD',
+        content: `let kinesis_firehose_redshift_destination_configuration_no_plaintext_password = Resources.*[ Type == 'AWS::KinesisFirehose::DeliveryStream'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::KinesisFirehose::DeliveryStream Refs for Password?
+let kinesis_firehose_redshift_destination_configuration_password_refs = %kinesis_firehose_redshift_destination_configuration_no_plaintext_password.Properties.RedshiftDestinationConfiguration.Password.'!Ref'
+
+# Rule 1: when Kinesis Firehose Redshift Destination Configuration password no plaintext password have Ref to Parameter for Password
+rule KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_USES_SECURE_PARAMETER when
+  %kinesis_firehose_redshift_destination_configuration_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %kinesis_firehose_redshift_destination_configuration_password_refs not empty
+  let parameter_refs = Parameters.%kinesis_firehose_redshift_destination_configuration_password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when Kinesis Firehose Redshift Destination Configuration password no plaintext password and above rule did not pass
+rule KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_USES_SECURE_SERVICE when
+  %kinesis_firehose_redshift_destination_configuration_no_plaintext_password not empty
+  !KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_USES_SECURE_PARAMETER
+{
+  let violations = %kinesis_firehose_redshift_destination_configuration_no_plaintext_password[
+    Properties.RedshiftDestinationConfiguration exists
+    Properties.RedshiftDestinationConfiguration.Password !exists
+    OR
+    Properties.RedshiftDestinationConfiguration.Password not in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  ]
+
+  %violations empty
+  
+}
+
+# One rule to rule them all...
+rule KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD when
+  %kinesis_firehose_redshift_destination_configuration_no_plaintext_password not empty
+{
+  KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_USES_SECURE_PARAMETER
+  OR
+  KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
+    },
+    KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD: {
+        name: 'KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD',
+        content: `let kinesis_firehose_splunk_destination_configuration_no_plaintext_password = Resources.*[ Type == 'AWS::KinesisFirehose::DeliveryStream'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::KinesisFirehose::DeliveryStream Refs for Password?
+let kinesis_firehose_splunk_destination_configuration_password_refs = %kinesis_firehose_splunk_destination_configuration_no_plaintext_password.Properties.SplunkDestinationConfiguration.HECToken.'!Ref'
+
+# Rule 1: when Kinesis Firehose Splunk Destination Configuration password no plaintext password have Ref to Parameter for Password
+rule KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_USES_SECURE_PARAMETER when
+  %kinesis_firehose_splunk_destination_configuration_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %kinesis_firehose_splunk_destination_configuration_password_refs not empty
+  let parameter_refs = Parameters.%kinesis_firehose_splunk_destination_configuration_password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when Kinesis Firehose Splunk Destination Configuration password no plaintext password and above rule did not pass
+rule KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_USES_SECURE_SERVICE when
+  %kinesis_firehose_splunk_destination_configuration_no_plaintext_password not empty
+  !KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_USES_SECURE_PARAMETER
+{
+  let violations = %kinesis_firehose_splunk_destination_configuration_no_plaintext_password[
+    Properties.SplunkDestinationConfiguration exists
+    Properties.SplunkDestinationConfiguration.HECToken !exists
+    OR
+    Properties.SplunkDestinationConfiguration.HECToken not in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  ]
+
+  %violations empty
+  
+}
+
+# One rule to rule them all...
+rule KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD when
+  %kinesis_firehose_splunk_destination_configuration_no_plaintext_password not empty
+{
+  KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_USES_SECURE_PARAMETER
+  OR
+  KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
+    },
+    KINESIS_STREAM_ENCRYPTION_RULE: {
+        name: 'KINESIS_STREAM_ENCRYPTION_RULE',
+        content: `let kinesis_stream_encryption_rule = Resources.*[ Type == 'AWS::Kinesis::Stream'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "KINESIS_STREAM_ENCRYPTION_RULE"
+]
+
+rule KINESIS_STREAM_ENCRYPTION_RULE when %kinesis_stream_encryption_rule !empty {
+  let violations = %kinesis_stream_encryption_rule[
+    Type == 'AWS::Kinesis::Stream'
+    Properties.StreamEncryption !exists
+    OR
+    Properties.StreamEncryption.EncryptionType !exists
+    OR
+    Properties.StreamEncryption.EncryptionType != 'KMS'
+    OR
+    Properties.StreamEncryption.KeyId !exists
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: KINESIS_STREAM_ENCRYPTION_RULE',
+        message: 'Specify streamEncryption in which KeyId should be specified and EncryptionType should be \'KMS\'.',
+    },
+    KMS_NO_WILDCARD_PRINCIPAL: {
+        name: 'KMS_NO_WILDCARD_PRINCIPAL',
+        content: `let kms_no_wildcard_principal = Resources.*[ Type == "AWS::KMS::Key"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "KMS_NO_WILDCARD_PRINCIPAL"
+]
+
+rule KMS_NO_WILDCARD_PRINCIPAL when %kms_no_wildcard_principal !empty {
+  let violations = %kms_no_wildcard_principal[
+    some Properties.KeyPolicy.Statement[*] {
+      Principal == '*'
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: KMS_NO_WILDCARD_PRINCIPAL',
+        message: 'Set the EnableKeyRotation property to true.',
     },
     LAMBDA_CONCURRENCY_CHECK: {
         name: 'LAMBDA_CONCURRENCY_CHECK',
@@ -500,7 +2913,7 @@ rule LAMBDA_CONCURRENCY_CHECK when %aws_lambda_functions_concurrency !empty {
   
 }`,
         description: 'Guard rule: LAMBDA_CONCURRENCY_CHECK',
-        message: 'Set the ReservedConcurrentExecutions property to an integer greater than or equal to 0\n',
+        message: 'Set the ReservedConcurrentExecutions property to an integer greater than or equal to 0',
     },
     LAMBDA_DLQ_CHECK: {
         name: 'LAMBDA_DLQ_CHECK',
@@ -514,7 +2927,7 @@ rule LAMBDA_DLQ_CHECK when %aws_lambda_functions_dlq !empty {
   
 }`,
         description: 'Guard rule: LAMBDA_DLQ_CHECK',
-        message: 'Set the DeadLetterConfig.TargetAr Property to the Amazon Resource Name (ARN) of an Amazon SQS queue or Amazon SNS topic\n',
+        message: 'Set the DeadLetterConfig.TargetAr Property to the Amazon Resource Name (ARN) of an Amazon SQS queue or Amazon SNS topic',
     },
     LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED: {
         name: 'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
@@ -527,14 +2940,16 @@ rule LAMBDA_DLQ_CHECK when %aws_lambda_functions_dlq !empty {
 
 rule LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED when %aws_lambda_permissions_public_access_prohibited !empty {
 
+  # Lambda permission policy where principal is an account id
   %aws_lambda_permissions_public_access_prohibited {
     Type == 'AWS::Lambda::Permission'
     Properties {
-      Principal in [ /^\\d{12}$/, "AWS::AccountId" ]
+      Principal in [ /^\\d{12}$/, {"Ref":"AWS::AccountId"} ]
       OR Principal > 0
     }
   }
 
+  # Lambda permission policy where principal is a service (not s3)
   OR %aws_lambda_permissions_public_access_prohibited {
     Type == 'AWS::Lambda::Permission'
     Properties {
@@ -546,6 +2961,7 @@ rule LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED when %aws_lambda_permissions_publi
     }
   }
 
+  # Lambda permission policy where principal is s3 service
   OR %aws_lambda_permissions_public_access_prohibited {
     Type == 'AWS::Lambda::Permission'
     Properties {
@@ -556,18 +2972,19 @@ rule LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED when %aws_lambda_permissions_publi
     }
   }
 
+  # Lambda layer version permission policies
   OR %aws_lambda_permissions_public_access_prohibited {
     Type == 'AWS::Lambda::LayerVersionPermission'
     Properties {
       OrganizationId !empty
-      OR Principal in [ /^\\d{12}$/, "AWS::AccountId" ]
+      OR Principal in [ /^\\d{12}$/, {"Ref":"AWS::AccountId"} ]
       OR Principal > 0
       
     }
   }
 }`,
         description: 'Guard rule: LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        message: 'Limit permission policies by setting the Principal property to an account ID,\n',
+        message: 'Limit permission policies by setting the Principal property to an account ID,',
     },
     LAMBDA_INSIDE_VPC: {
         name: 'LAMBDA_INSIDE_VPC',
@@ -582,7 +2999,112 @@ rule  LAMBDA_INSIDE_VPC when %aws_lambda_functions_inside_vpc !empty {
   
 }`,
         description: 'Guard rule: LAMBDA_INSIDE_VPC',
-        message: 'set the VpcConfig.SecurityGroupIds and VpcConfig.SubnetIds parameters with a list of security groups and subnets.\n',
+        message: 'set the VpcConfig.SecurityGroupIds and VpcConfig.SubnetIds parameters with a list of security groups and subnets.',
+    },
+    LAMBDA_NO_WILDCARD_PRINCIPALS: {
+        name: 'LAMBDA_NO_WILDCARD_PRINCIPALS',
+        content: `let applicable_types = [
+  "AWS::Lambda::Permission",
+  "AWS::Lambda::LayerVersionPermission"
+]
+
+let lambda_no_wildcard_principal = Resources.*[ Type in %applicable_types
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "LAMBDA_NO_WILDCARD_PRINCIPALS"
+]
+
+rule LAMBDA_NO_WILDCARD_PRINCIPALS when %lambda_no_wildcard_principal !empty {
+  let violations = %lambda_no_wildcard_principal[
+    Properties.Principal == '*'
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: LAMBDA_NO_WILDCARD_PRINCIPALS',
+        message: 'Specify principal or a list of principals.',
+    },
+    LAMBDA_PERMISSION_INVOKE_FUNCTION_ACTION: {
+        name: 'LAMBDA_PERMISSION_INVOKE_FUNCTION_ACTION',
+        content: `let applicable_types = [
+  "AWS::Lambda::Permission"
+]
+
+let lambda_permission_invoke_function_action = Resources.*[ Type in %applicable_types
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "LAMBDA_PERMISSION_INVOKE_FUNCTION_ACTION"
+]
+
+rule LAMBDA_PERMISSION_INVOKE_FUNCTION_ACTION when %lambda_permission_invoke_function_action !empty {
+  let violations = %lambda_permission_invoke_function_action[
+    some Properties.Action != 'lambda:InvokeFunction'
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: LAMBDA_PERMISSION_INVOKE_FUNCTION_ACTION',
+        message: 'Remove Actions beside \'lambda:InvokeFunction\'.',
+    },
+    MICROSOFT_AD_NO_PLAINTEXT_PASSWORD: {
+        name: 'MICROSOFT_AD_NO_PLAINTEXT_PASSWORD',
+        content: `let microsoft_ad_no_plaintext_password = Resources.*[ Type == 'AWS::DirectoryService::MicrosoftAD'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "MICROSOFT_AD_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::DirectoryService::MicrosoftAD Refs for Password?
+let microsoft_ad_password_refs = %microsoft_ad_no_plaintext_password.Properties.Password.'!Ref'
+
+# Rule 1: when Microsoft AD password no plaintext password have Ref to Parameter for Password
+rule MICROSOFT_AD_PASSWORD_USES_SECURE_PARAMETER when
+  %microsoft_ad_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %microsoft_ad_password_refs not empty
+  let parameter_refs = Parameters.%microsoft_ad_password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when Microsoft AD password no plaintext password and above rule did not pass
+rule MICROSOFT_AD_PASSWORD_USES_SECURE_SERVICE when
+  %microsoft_ad_no_plaintext_password not empty
+  !MICROSOFT_AD_PASSWORD_USES_SECURE_PARAMETER
+{
+  %microsoft_ad_no_plaintext_password.Properties.Password exists
+  %microsoft_ad_no_plaintext_password.Properties.Password in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  
+}
+
+# One rule to rule them all...
+rule MICROSOFT_AD_NO_PLAINTEXT_PASSWORD when
+  %microsoft_ad_no_plaintext_password not empty
+{
+  MICROSOFT_AD_PASSWORD_USES_SECURE_PARAMETER
+  OR
+  MICROSOFT_AD_PASSWORD_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: MICROSOFT_AD_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
+    },
+    MULTI_REGION_CLOUD_TRAIL_ENABLED: {
+        name: 'MULTI_REGION_CLOUD_TRAIL_ENABLED',
+        content: `let cloudtrail_trails_multiregion = Resources.*[ Type == 'AWS::CloudTrail::Trail'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "MULTI_REGION_CLOUD_TRAIL_ENABLED"
+]
+
+rule MULTI_REGION_CLOUD_TRAIL_ENABLED when %cloudtrail_trails_multiregion !empty {
+  %cloudtrail_trails_multiregion.Properties.IsMultiRegionTrail EXISTS
+  %cloudtrail_trails_multiregion.Properties.IsMultiRegionTrail == true
+  
+}`,
+        description: 'Guard rule: MULTI_REGION_CLOUD_TRAIL_ENABLED',
+        message: 'Set the IsMultiRegionTrail parameter to true.',
     },
     NO_UNRESTRICTED_ROUTE_TO_IGW: {
         name: 'NO_UNRESTRICTED_ROUTE_TO_IGW',
@@ -601,7 +3123,183 @@ rule NO_UNRESTRICTED_ROUTE_TO_IGW when %routes_no_unrestricted_to_igw !empty {
 	}
 }`,
         description: 'Guard rule: NO_UNRESTRICTED_ROUTE_TO_IGW',
-        message: 'Remove routes to an IGW (with the GatewayId property defined) or modify the DestinationCidrBlock property to a more restricted CIDR block\n',
+        message: 'Remove routes to an IGW (with the GatewayId property defined) or modify the DestinationCidrBlock property to a more restricted CIDR block',
+    },
+    OPENSEARCH_ACCESS_CONTROL_ENABLED: {
+        name: 'OPENSEARCH_ACCESS_CONTROL_ENABLED',
+        content: `let opensearch_access_control_enabled = Resources.*[ Type == "AWS::OpenSearchService::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "OPENSEARCH_ACCESS_CONTROL_ENABLED"
+]
+
+rule OPENSEARCH_ACCESS_CONTROL_ENABLED when %opensearch_access_control_enabled !empty {
+    %opensearch_access_control_enabled.Properties { 
+        AdvancedSecurityOptions exists
+        AdvancedSecurityOptions is_struct
+
+        AdvancedSecurityOptions {
+            Enabled exists
+            Enabled == true
+                
+        }
+    }
+}`,
+        description: 'Guard rule: OPENSEARCH_ACCESS_CONTROL_ENABLED',
+        message: 'In AdvancedSecurityOptions, set the Enabled property to true',
+    },
+    OPENSEARCH_APPLICATION_LOGGING_ENABLED: {
+        name: 'OPENSEARCH_APPLICATION_LOGGING_ENABLED',
+        content: `let opensearch_application_logging_enabled = Resources.*[ Type == "AWS::OpenSearchService::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "OPENSEARCH_APPLICATION_LOGGING_ENABLED"
+]
+
+rule OPENSEARCH_APPLICATION_LOGGING_ENABLED when %opensearch_application_logging_enabled !empty {
+    %opensearch_application_logging_enabled.Properties { 
+        LogPublishingOptions exists
+        LogPublishingOptions is_struct
+
+        LogPublishingOptions {
+            ES_APPLICATION_LOGS exists
+            ES_APPLICATION_LOGS is_struct
+
+            ES_APPLICATION_LOGS {
+                Enabled exists
+                Enabled == true
+                    
+                CloudWatchLogsLogGroupArn exists
+                CloudWatchLogsLogGroupArn is_string or
+                CloudWatchLogsLogGroupArn is_struct
+                    
+            }
+        }
+    }
+}`,
+        description: 'Guard rule: OPENSEARCH_APPLICATION_LOGGING_ENABLED',
+        message: 'In LogPublishingOptions.ES_APPLICATION_LOGS, set Enabled to true and CloudWatchLogsLogGroupArn to the ARN of a Amazon CloudWatch Logs log group.',
+    },
+    OPENSEARCH_AUDIT_LOGGING_ENABLED: {
+        name: 'OPENSEARCH_AUDIT_LOGGING_ENABLED',
+        content: `let opensearch_audit_logging_enabled = Resources.*[ Type == "AWS::OpenSearchService::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "OPENSEARCH_AUDIT_LOGGING_ENABLED"
+]
+
+rule OPENSEARCH_AUDIT_LOGGING_ENABLED when %opensearch_audit_logging_enabled !empty {
+    %opensearch_audit_logging_enabled.Properties { 
+        LogPublishingOptions exists
+        LogPublishingOptions is_struct
+
+        LogPublishingOptions {
+            AUDIT_LOGS exists
+            AUDIT_LOGS is_struct
+
+            AUDIT_LOGS {
+                Enabled exists
+                Enabled == true
+                    
+                CloudWatchLogsLogGroupArn exists
+                CloudWatchLogsLogGroupArn is_string or
+                CloudWatchLogsLogGroupArn is_struct
+                    
+            }
+        }
+    }
+}`,
+        description: 'Guard rule: OPENSEARCH_AUDIT_LOGGING_ENABLED',
+        message: 'In LogPublishingOptions.AUDIT_LOGS, set Enabled to true and CloudWatchLogsLogGroupArn to the ARN of a Amazon CloudWatch Logs log group.',
+    },
+    OPENSEARCH_DATA_NODE_FAULT_TOLERANCE: {
+        name: 'OPENSEARCH_DATA_NODE_FAULT_TOLERANCE',
+        content: `let opensearch_data_node_fault_tolerance = Resources.*[ Type == "AWS::OpenSearchService::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "OPENSEARCH_DATA_NODE_FAULT_TOLERANCE"
+]
+
+rule OPENSEARCH_DATA_NODE_FAULT_TOLERANCE when %opensearch_data_node_fault_tolerance !empty {
+    %opensearch_data_node_fault_tolerance.Properties { 
+        ClusterConfig exists
+        ClusterConfig is_struct
+
+        ClusterConfig {
+            ZoneAwarenessEnabled exists
+            ZoneAwarenessEnabled == true
+                
+            InstanceCount exists
+            InstanceCount >= 3
+                
+        }
+    }
+}`,
+        description: 'Guard rule: OPENSEARCH_DATA_NODE_FAULT_TOLERANCE',
+        message: 'In ClusterConfig, set ZoneAwarenessEnabled to true and InstanceCount to an integer value greater than 3.',
+    },
+    OPENSEARCH_ENCRYPTED_AT_REST: {
+        name: 'OPENSEARCH_ENCRYPTED_AT_REST',
+        content: `let elasticsearch_domains_encrypted = Resources.*[ Type == "AWS::OpenSearchService::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "OPENSEARCH_ENCRYPTED_AT_REST"
+]
+
+rule OPENSEARCH_ENCRYPTED_AT_REST when %elasticsearch_domains_encrypted !empty {
+    %elasticsearch_domains_encrypted.Properties.EncryptionAtRestOptions.Enabled == true
+        
+}`,
+        description: 'Guard rule: OPENSEARCH_ENCRYPTED_AT_REST',
+        message: 'Set EncryptionAtRestOptions.Enabled to true.',
+    },
+    OPENSEARCH_HTTPS_REQUIRED: {
+        name: 'OPENSEARCH_HTTPS_REQUIRED',
+        content: `let opensearch_https_required = Resources.*[ Type == "AWS::OpenSearchService::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "OPENSEARCH_HTTPS_REQUIRED"
+]
+
+rule OPENSEARCH_HTTPS_REQUIRED when %opensearch_https_required !empty {
+    %opensearch_https_required.Properties { 
+        DomainEndpointOptions exists
+        DomainEndpointOptions is_struct
+
+        DomainEndpointOptions {
+            EnforceHTTPS exists
+            EnforceHTTPS == true
+                
+            TLSSecurityPolicy exists
+            TLSSecurityPolicy in [ "Policy-Min-TLS-1-2-2019-07" ]
+                
+        }
+    }
+}`,
+        description: 'Guard rule: OPENSEARCH_HTTPS_REQUIRED',
+        message: 'In DomainEndpointOptions, set EnforceHTTPS to true and TLSSecurityPolicy to \'Policy-Min-TLS-1-2-2019-07\'',
+    },
+    OPENSEARCH_IN_VPC_ONLY: {
+        name: 'OPENSEARCH_IN_VPC_ONLY',
+        content: `let opensearch_in_vpc_only = Resources.*[ Type == "AWS::OpenSearchService::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "OPENSEARCH_IN_VPC_ONLY"
+]
+
+rule OPENSEARCH_IN_VPC_ONLY when %opensearch_in_vpc_only !empty {
+    %opensearch_in_vpc_only.Properties.VPCOptions exists
+        
+}`,
+        description: 'Guard rule: OPENSEARCH_IN_VPC_ONLY',
+        message: 'Provide VPCOptions object to enable opensearch to function in a VPC.',
+    },
+    OPENSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK: {
+        name: 'OPENSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        content: `let opensearch_node_to_node_encryption_check = Resources.*[ Type == "AWS::OpenSearchService::Domain"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "OPENSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK"
+]
+
+rule OPENSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK when %opensearch_node_to_node_encryption_check !empty {
+    %opensearch_node_to_node_encryption_check.Properties.NodeToNodeEncryptionOptions.Enabled == true
+        
+}`,
+        description: 'Guard rule: OPENSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        message: 'Set the NodeToNodeEncryptionOptions.Enabled parameter to true.',
     },
     RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED: {
         name: 'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
@@ -617,7 +3315,55 @@ rule RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED when %aws_rds_instances_minor_v
   
 }`,
         description: 'Guard rule: RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        message: 'Set the AutoMinorVersionUpgrade parameter to true.\n',
+        message: 'Set the AutoMinorVersionUpgrade parameter to true.',
+    },
+    RDS_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD: {
+        name: 'RDS_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        content: `let rds_cluster_master_user_password_no_plaintext_password = Resources.*[ Type == 'AWS::RDS::DBCluster'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "RDS_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::RDS::DBCluster Refs for Password?
+let rds_cluster_master_user_password_refs = %rds_cluster_master_user_password_no_plaintext_password.Properties.MasterUserPassword.'!Ref'
+
+# Rule 1: when rds cluster master user password no plaintext password have Ref to Parameter for Password
+rule RDS_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER when
+  %rds_cluster_master_user_password_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %rds_cluster_master_user_password_refs not empty
+  let parameter_refs = Parameters.%rds_cluster_master_user_password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when rds cluster master user password no plaintext password and above rule did not pass
+rule RDS_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_SERVICE when
+  %rds_cluster_master_user_password_no_plaintext_password not empty
+  !RDS_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER
+{
+  %rds_cluster_master_user_password_no_plaintext_password.Properties.MasterUserPassword !exists
+  OR
+  %rds_cluster_master_user_password_no_plaintext_password.Properties.MasterUserPassword in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  
+}
+
+# One rule to rule them all...
+rule RDS_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD when
+  %rds_cluster_master_user_password_no_plaintext_password not empty
+{
+  RDS_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER
+  OR
+  RDS_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: RDS_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
     },
     RDS_ENHANCED_MONITORING_ENABLED: {
         name: 'RDS_ENHANCED_MONITORING_ENABLED',
@@ -633,7 +3379,7 @@ rule RDS_ENHANCED_MONITORING_ENABLED when %aws_rds_instances_enhanced_monitoring
   
 }`,
         description: 'Guard rule: RDS_ENHANCED_MONITORING_ENABLED',
-        message: 'Specify a value of 1, 5, 10, 15, 30, or 60 for the parameter on the property MonitoringInterval.\n',
+        message: 'Specify a value of 1, 5, 10, 15, 30, or 60 for the parameter on the property MonitoringInterval.',
     },
     RDS_INSTANCE_DELETION_PROTECTION_ENABLED: {
         name: 'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
@@ -648,7 +3394,7 @@ rule RDS_INSTANCE_DELETION_PROTECTION_ENABLED when %aws_rds_instances_deletion_p
   
 }`,
         description: 'Guard rule: RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        message: 'Set the parameter for DeletionProtection to true.\n',
+        message: 'Set the parameter for DeletionProtection to true.',
     },
     RDS_INSTANCE_LOGGING_ENABLED: {
         name: 'RDS_INSTANCE_LOGGING_ENABLED',
@@ -663,7 +3409,7 @@ rule RDS_INSTANCE_LOGGING_ENABLED when %aws_rds_instances_logging_enabled !empty
   
 }`,
         description: 'Guard rule: RDS_INSTANCE_LOGGING_ENABLED',
-        message: 'Provide EnableCloudWatchLogsExports object to start exporting cloudwatch logs.\n',
+        message: 'Provide EnableCloudWatchLogsExports object to start exporting cloudwatch logs.',
     },
     RDS_INSTANCE_PUBLIC_ACCESS_CHECK: {
         name: 'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
@@ -673,11 +3419,108 @@ rule RDS_INSTANCE_LOGGING_ENABLED when %aws_rds_instances_logging_enabled !empty
 ]
 
 rule RDS_INSTANCE_PUBLIC_ACCESS_CHECK when %aws_rds_instances_not_public !empty {
+  # ALL RDS instances must have PubliclyAccessible set to false
   %aws_rds_instances_not_public.Properties.PubliclyAccessible == false
   
 }`,
         description: 'Guard rule: RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        message: 'Set the PubliclyAccessible to false.\n',
+        message: 'The default depends on the VPC configuration, so it is recommended to eplicitly set PubliclyAccessible to false.',
+    },
+    RDS_MASTER_USER_NAME_NO_PLAINTEXT_PASSWORD: {
+        name: 'RDS_MASTER_USER_NAME_NO_PLAINTEXT_PASSWORD',
+        content: `let rds_master_user_name_no_plaintext_password = Resources.*[ Type == 'AWS::RDS::DBInstance'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "RDS_MASTER_USER_NAME_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::RDS::DBInstance Refs for Password?
+let rds_master_user_name_refs = %rds_master_user_name_no_plaintext_password.Properties.MasterUsername.'!Ref'
+
+# Rule 1: when rds master user name no plaintext password have Ref to Parameter for Password
+rule RDS_MASTER_USER_NAME_USES_SECURE_PARAMETER when
+  %rds_master_user_name_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %rds_master_user_name_refs not empty
+  let parameter_refs = Parameters.%rds_master_user_name_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when rds master user name no plaintext password and above rule did not pass
+rule RDS_MASTER_USER_NAME_USES_SECURE_SERVICE when
+  %rds_master_user_name_no_plaintext_password not empty
+  !RDS_MASTER_USER_NAME_USES_SECURE_PARAMETER
+{
+  %rds_master_user_name_no_plaintext_password.Properties.MasterUsername !exists
+  OR
+  %rds_master_user_name_no_plaintext_password.Properties.MasterUsername in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  
+}
+
+# One rule to rule them all...
+rule RDS_MASTER_USER_NAME_NO_PLAINTEXT_PASSWORD when
+  %rds_master_user_name_no_plaintext_password not empty
+{
+  RDS_MASTER_USER_NAME_USES_SECURE_PARAMETER
+  OR
+  RDS_MASTER_USER_NAME_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: RDS_MASTER_USER_NAME_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
+    },
+    RDS_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD: {
+        name: 'RDS_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        content: `let rds_master_user_password_no_plaintext_password = Resources.*[ Type == 'AWS::RDS::DBInstance'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "RDS_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::RDS::DBInstance Refs for Password?
+let rds_master_user_password_refs = %rds_master_user_password_no_plaintext_password.Properties.MasterUserPassword.'!Ref'
+
+# Rule 1: when rds master user password no plaintext password have Ref to Parameter for Password
+rule RDS_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER when
+  %rds_master_user_password_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %rds_master_user_password_refs not empty
+  let parameter_refs = Parameters.%rds_master_user_password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when rds master user password no plaintext password and above rule did not pass
+rule RDS_MASTER_USER_PASSWORD_USES_SECURE_SERVICE when
+  %rds_master_user_password_no_plaintext_password not empty
+  !RDS_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER
+{
+  %rds_master_user_password_no_plaintext_password.Properties.MasterUserPassword !exists
+  OR
+  %rds_master_user_password_no_plaintext_password.Properties.MasterUserPassword in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  
+}
+
+# One rule to rule them all...
+rule RDS_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD when
+  %rds_master_user_password_no_plaintext_password not empty
+{
+  RDS_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER
+  OR
+  RDS_MASTER_USER_PASSWORD_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: RDS_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
     },
     RDS_MULTI_AZ_SUPPORT: {
         name: 'RDS_MULTI_AZ_SUPPORT',
@@ -692,39 +3535,27 @@ rule RDS_MULTI_AZ_SUPPORT when %aws_rds_instances_multi_az_support !empty {
   
 }`,
         description: 'Guard rule: RDS_MULTI_AZ_SUPPORT',
-        message: 'Set the MultiAZ parameter to true.\n',
-    },
-    RDS_SNAPSHOT_ENCRYPTED: {
-        name: 'RDS_SNAPSHOT_ENCRYPTED',
-        content: `let aws_rds_instances_snapshot_encrypted = Resources.*[ Type == 'AWS::RDS::DBInstance'
-  Metadata.guard.SuppressedRules not exists or
-  Metadata.guard.SuppressedRules.* != "RDS_SNAPSHOT_ENCRYPTED"
-]
-
-
-rule RDS_SNAPSHOT_ENCRYPTED when %aws_rds_instances_snapshot_encrypted !empty {
-  %aws_rds_instances_snapshot_encrypted.Properties.StorageEncrypted EXISTS
-  %aws_rds_instances_snapshot_encrypted.Properties.StorageEncrypted == true
-  
-}`,
-        description: 'Guard rule: RDS_SNAPSHOT_ENCRYPTED',
-        message: 'Set the StorageEncrypted parameter to true so by default all snapshots are encrypted.\n',
+        message: 'Set the MultiAZ parameter to true.',
     },
     RDS_STORAGE_ENCRYPTED: {
         name: 'RDS_STORAGE_ENCRYPTED',
-        content: `let aws_rds_instances_storage_encrypted = Resources.*[ Type == 'AWS::RDS::DBInstance'
+        content: `let aws_rds_instances_storage_encrypted = Resources.*[ Type in [ /AWS::RDS::DBInstance/, /AWS::RDS::DBCluster/ ]
   Metadata.guard.SuppressedRules not exists or
   Metadata.guard.SuppressedRules.* != "RDS_STORAGE_ENCRYPTED"
 ]
 
 
 rule RDS_STORAGE_ENCRYPTED when %aws_rds_instances_storage_encrypted !empty {
-  %aws_rds_instances_storage_encrypted.Properties.StorageEncrypted EXISTS
-  %aws_rds_instances_storage_encrypted.Properties.StorageEncrypted == true
+  let violations = %aws_rds_instances_storage_encrypted[
+    Properties.StorageEncrypted !EXISTS
+    or
+    Properties.StorageEncrypted != true
+  ]
+  %violations empty
   
 }`,
         description: 'Guard rule: RDS_STORAGE_ENCRYPTED',
-        message: 'Set the StorageEncrypted parameter to true.\n',
+        message: 'Set the StorageEncrypted parameter to true.',
     },
     REDSHIFT_BACKUP_ENABLED: {
         name: 'REDSHIFT_BACKUP_ENABLED',
@@ -739,7 +3570,7 @@ rule REDSHIFT_BACKUP_ENABLED when %redhshift_backup_enabled_clusters !empty {
     
 }`,
         description: 'Guard rule: REDSHIFT_BACKUP_ENABLED',
-        message: 'Either remove the AutomatedSnapshotRetentionPeriod property (default retention period is 1 day)\n',
+        message: 'Either remove the AutomatedSnapshotRetentionPeriod property (default retention period is 1 day)',
     },
     REDSHIFT_CLUSTER_CONFIGURATION_CHECK: {
         name: 'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
@@ -754,7 +3585,7 @@ rule REDSHIFT_CLUSTER_CONFIGURATION_CHECK when %redhshift_clusters_configuration
     
 }`,
         description: 'Guard rule: REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        message: 'Set the Encrypted property to true\n',
+        message: 'Set the Encrypted property to true',
     },
     REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK: {
         name: 'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
@@ -776,7 +3607,55 @@ rule REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK when %redhshift_clusters_mainten
     
 }`,
         description: 'Guard rule: REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        message: 'set the PreferredMaintenanceWindow property, remove the AllowVersionUpgrade property (default true) or set it to true, and remove the AutomatedSnapshotRetentionPeriod property (default 1 day) or set it to greated than 0.\n',
+        message: 'set the PreferredMaintenanceWindow property, remove the AllowVersionUpgrade property (default true) or set it to true, and remove the AutomatedSnapshotRetentionPeriod property (default 1 day) or set it to greated than 0.',
+    },
+    REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD: {
+        name: 'REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        content: `let redshift_cluster_master_user_password_no_plaintext_password = Resources.*[ Type == 'AWS::Redshift::Cluster'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD"
+]
+
+# Get any AWS::Redshift::Cluster Refs for Password?
+let redshift_cluster_master_user_password_refs = %redshift_cluster_master_user_password_no_plaintext_password.Properties.MasterUserPassword.'!Ref'
+
+# Rule 1: when redshift cluster master user password no plaintext password have Ref to Parameter for Password
+rule REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER when
+  %redshift_cluster_master_user_password_no_plaintext_password not empty
+{
+  Parameters exists
+  Parameters not empty
+  %redshift_cluster_master_user_password_refs not empty
+  let parameter_refs = Parameters.%redshift_cluster_master_user_password_refs
+  when %parameter_refs !empty {
+    %parameter_refs.Type == 'String'
+    %parameter_refs.NoEcho exists
+    %parameter_refs.NoEcho == true
+    %parameter_refs.Default !exists
+  }
+}
+
+# Rule 2: when redshift cluster master user password no plaintext password and above rule did not pass
+rule REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_SERVICE when
+  %redshift_cluster_master_user_password_no_plaintext_password not empty
+  !REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER
+{
+  %redshift_cluster_master_user_password_no_plaintext_password.Properties.MasterUserPassword !exists
+  OR
+  %redshift_cluster_master_user_password_no_plaintext_password.Properties.MasterUserPassword in [ /{{resolve\\:secretsmanager\\:.*}}/, /{{resolve\\:ssm-secure\\:.*}}/ ]
+  
+}
+
+# One rule to rule them all...
+rule REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD when
+  %redshift_cluster_master_user_password_no_plaintext_password not empty
+{
+  REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_PARAMETER
+  OR
+  REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_USES_SECURE_SERVICE
+}`,
+        description: 'Guard rule: REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        message: 'Replace plaintext value with a secure one.',
     },
     REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK: {
         name: 'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
@@ -793,7 +3672,7 @@ rule REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK when %aws_redshift_clusters_resources_
   
 }`,
         description: 'Guard rule: REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        message: 'Set the Redshift property PubliclyAccessible parameter to false.\n',
+        message: 'Set the Redshift property PubliclyAccessible parameter to false.',
     },
     REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED: {
         name: 'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
@@ -808,7 +3687,7 @@ rule REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED when %redhshift_enhanced_vpc_routing_
     
 }`,
         description: 'Guard rule: REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        message: 'set the EnhancedVpcRouting property to true\n',
+        message: 'set the EnhancedVpcRouting property to true',
     },
     RESTRICTED_INCOMING_TRAFFIC: {
         name: 'RESTRICTED_INCOMING_TRAFFIC',
@@ -821,7 +3700,7 @@ rule REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED when %redhshift_enhanced_vpc_routing_
 ]
 
 rule RESTRICTED_INCOMING_TRAFFIC when %aws_security_groups_restricted_incoming_traffic !empty {
-	let violations = Resources.*[
+	let violations = %aws_security_groups_restricted_incoming_traffic[
 		Type == 'AWS::EC2::SecurityGroup'
 		some Properties.SecurityGroupIngress[*] {
 			FromPort in [ 20, 21, 3389, 3306, 4333 ]
@@ -832,7 +3711,7 @@ rule RESTRICTED_INCOMING_TRAFFIC when %aws_security_groups_restricted_incoming_t
 	
 }`,
         description: 'Guard rule: RESTRICTED_INCOMING_TRAFFIC',
-        message: 'change the FromPort and ToPort properties in the SecurityGroupIngress list\n',
+        message: 'change the FromPort and ToPort properties in the SecurityGroupIngress list',
     },
     S3_BUCKET_DEFAULT_LOCK_ENABLED: {
         name: 'S3_BUCKET_DEFAULT_LOCK_ENABLED',
@@ -847,7 +3726,7 @@ rule S3_BUCKET_DEFAULT_LOCK_ENABLED when %s3_buckets_default_lock_enabled !empty
   
 }`,
         description: 'Guard rule: S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        message: 'Set the S3 property ObjectLockEnabled parameter to true.\n',
+        message: 'Set the S3 property ObjectLockEnabled parameter to true.',
     },
     S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED: {
         name: 'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
@@ -865,7 +3744,7 @@ rule S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED when %s3_buckets_level_public_acce
   
 }`,
         description: 'Guard rule: S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
+        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.',
     },
     S3_BUCKET_LOGGING_ENABLED: {
         name: 'S3_BUCKET_LOGGING_ENABLED',
@@ -879,7 +3758,99 @@ rule S3_BUCKET_LOGGING_ENABLED when %s3_buckets_bucket_logging_enabled  !empty {
   
 }`,
         description: 'Guard rule: S3_BUCKET_LOGGING_ENABLED',
-        message: 'Set the S3 Bucket property LoggingConfiguration to start logging into S3 bucket.\n',
+        message: 'Set the S3 Bucket property LoggingConfiguration to start logging into S3 bucket.',
+    },
+    S3_BUCKET_NO_PUBLIC_RW_ACL: {
+        name: 'S3_BUCKET_NO_PUBLIC_RW_ACL',
+        content: `let s3_bucket_public_rw_acl = Resources.*[ Type == 'AWS::S3::Bucket'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "S3_BUCKET_NO_PUBLIC_RW_ACL"
+]
+
+rule S3_BUCKET_NO_PUBLIC_RW_ACL when %s3_bucket_public_rw_acl !empty {
+  %s3_bucket_public_rw_acl.Properties.AccessControl != 'PublicReadWrite'
+  
+}`,
+        description: 'Guard rule: S3_BUCKET_NO_PUBLIC_RW_ACL',
+        message: 'Allow ReadWrite access only to authorized, authenticated users.',
+    },
+    S3_BUCKET_POLICY_NO_ALLOW_PLUS_NOT_ACTION: {
+        name: 'S3_BUCKET_POLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        content: `let s3_bucket_policy_no_allow_plus_not_action = Resources.*[ Type == 'AWS::S3::BucketPolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "S3_BUCKET_POLICY_NO_ALLOW_PLUS_NOT_ACTION"
+]
+
+rule S3_BUCKET_POLICY_NO_ALLOW_PLUS_NOT_ACTION when %s3_bucket_policy_no_allow_plus_not_action !empty {
+  let violations = %s3_bucket_policy_no_allow_plus_not_action[
+    Type == 'AWS::S3::BucketPolicy'
+    some Properties.PolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotAction exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: S3_BUCKET_POLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        message: 'Remove S3 Bucket Policies that match {"Effect": "Allow", "NotAction": ... }',
+    },
+    S3_BUCKET_POLICY_NO_WILDCARD_ACTION: {
+        name: 'S3_BUCKET_POLICY_NO_WILDCARD_ACTION',
+        content: `let s3_bucket_policy_no_wildcard_action = Resources.*[ Type == 'AWS::S3::BucketPolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "S3_BUCKET_POLICY_NO_WILDCARD_ACTION"
+]
+
+rule S3_BUCKET_POLICY_NO_WILDCARD_ACTION when %s3_bucket_policy_no_wildcard_action !empty {
+  let violations = %s3_bucket_policy_no_wildcard_action[
+    some Properties.PolicyDocument.Statement[*] {
+      some Action[*] in ["*", /^[a-zA-Z0-9]*:\\*$/]
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: S3_BUCKET_POLICY_NO_WILDCARD_ACTION',
+        message: 'Specify explicit actions in the S3 BucketPolicy',
+    },
+    S3_BUCKET_POLICY_NO_WILDCARD_PRINCIPAL: {
+        name: 'S3_BUCKET_POLICY_NO_WILDCARD_PRINCIPAL',
+        content: `let s3_bucket_policy_no_wildcard_principal = Resources.*[ Type == 'AWS::S3::BucketPolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "S3_BUCKET_POLICY_NO_WILDCARD_PRINCIPAL"
+]
+
+rule S3_BUCKET_POLICY_NO_WILDCARD_PRINCIPAL when %s3_bucket_policy_no_wildcard_principal !empty {
+  let violations = %s3_bucket_policy_no_wildcard_principal[
+    some Properties.PolicyDocument.Statement[*] {
+      Principal == "*"
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: S3_BUCKET_POLICY_NO_WILDCARD_PRINCIPAL',
+        message: 'Specify explicit principals in the S3 BucketPolicy',
+    },
+    S3_BUCKET_PUBLIC_READ_ACL: {
+        name: 'S3_BUCKET_PUBLIC_READ_ACL',
+        content: `let s3_bucket_public_read_acl = Resources.*[ Type == 'AWS::S3::Bucket'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "S3_BUCKET_PUBLIC_READ_ACL"
+]
+
+rule S3_BUCKET_PUBLIC_READ_ACL when %s3_bucket_public_read_acl !empty {
+  let violations = %s3_bucket_public_read_acl[
+    Properties.AccessControl == 'PublicRead'
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: S3_BUCKET_PUBLIC_READ_ACL',
+        message: 'Allow Read access only to authorized, authenticated users.',
     },
     S3_BUCKET_PUBLIC_READ_PROHIBITED: {
         name: 'S3_BUCKET_PUBLIC_READ_PROHIBITED',
@@ -897,7 +3868,7 @@ rule S3_BUCKET_PUBLIC_READ_PROHIBITED when %s3_bucket_public_read_prohibited !em
   
 }`,
         description: 'Guard rule: S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
+        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.',
     },
     S3_BUCKET_PUBLIC_WRITE_PROHIBITED: {
         name: 'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
@@ -915,7 +3886,7 @@ rule S3_BUCKET_PUBLIC_WRITE_PROHIBITED when %s3_buckets_public_write_prohibited 
   
 }`,
         description: 'Guard rule: S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.\n',
+        message: 'Set S3 Bucket PublicAccessBlockConfiguration properties for BlockPublicAcls, BlockPublicPolicy, IgnorePublicAcls, RestrictPublicBuckets parameters to true.',
     },
     S3_BUCKET_REPLICATION_ENABLED: {
         name: 'S3_BUCKET_REPLICATION_ENABLED',
@@ -927,9 +3898,10 @@ rule S3_BUCKET_PUBLIC_WRITE_PROHIBITED when %s3_buckets_public_write_prohibited 
 rule S3_BUCKET_REPLICATION_ENABLED when %s3_buckets_replication_enabled !empty {
   %s3_buckets_replication_enabled.Properties.ReplicationConfiguration exists
   
+    ## TODO regex to identify cross-region
 }`,
         description: 'Guard rule: S3_BUCKET_REPLICATION_ENABLED',
-        message: 'Set S3 Bucket ReplicationConfiguration to another S3 Bucket.\n',
+        message: 'Set S3 Bucket ReplicationConfiguration to another S3 Bucket.',
     },
     S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED: {
         name: 'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
@@ -944,7 +3916,7 @@ rule S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED when %s3_buckets_server_side_encry
   
 }`,
         description: 'Guard rule: S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        message: 'Set the S3 Bucket property BucketEncryption.ServerSideEncryptionConfiguration.ServerSideEncryptionByDefault.SSEAlgorithm to either "aws:kms" or "AES256"\n',
+        message: 'Set the S3 Bucket property BucketEncryption.ServerSideEncryptionConfiguration.ServerSideEncryptionByDefault.SSEAlgorithm to either "aws:kms" or "AES256"',
     },
     S3_BUCKET_SSL_REQUESTS_ONLY: {
         name: 'S3_BUCKET_SSL_REQUESTS_ONLY',
@@ -953,12 +3925,24 @@ rule S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED when %s3_buckets_server_side_encry
   Metadata.guard.SuppressedRules.* != "S3_BUCKET_SSL_REQUESTS_ONLY"
 ]
 
+# Select secure S3 Bucket Policy resources from incoming template
+let ssl_secure_bucket_policies = %s3_buckets_policies_ssl_requests_only[
+  Properties.PolicyDocument {
+    some Statement[*] {
+      Effect == 'Deny'
+      Condition {
+        Bool.'aws:SecureTransport' == false
+      }
+    }
+  }
+]
+
 rule S3_BUCKET_SSL_REQUESTS_ONLY when %s3_buckets_policies_ssl_requests_only !empty {
-  some %s3_buckets_policies_ssl_requests_only.Properties.PolicyDocument.Statement.* == {"Action":"s3:*","Effect":"Deny","Principal":"*","Resource":"*","Condition":{"Bool":{"aws:SecureTransport":false}}}
+  %ssl_secure_bucket_policies !empty
   
 }`,
         description: 'Guard rule: S3_BUCKET_SSL_REQUESTS_ONLY',
-        message: 'Set a bucket policy statement to \'"Action":"s3:*","Effect":"Deny","Principal":"*","Resource":"*","Condition":{"Bool":{"aws:SecureTransport":false}}\' .\n',
+        message: 'Set a bucket policy statement to \'"Action":"s3:*","Effect":"Deny","Principal":"*","Resource":"*","Condition":{"Bool":{"aws:SecureTransport":false}}\' .',
     },
     S3_BUCKET_VERSIONING_ENABLED: {
         name: 'S3_BUCKET_VERSIONING_ENABLED',
@@ -973,7 +3957,27 @@ rule S3_BUCKET_VERSIONING_ENABLED when %s3_buckets_versioning_enabled !empty {
   
 }`,
         description: 'Guard rule: S3_BUCKET_VERSIONING_ENABLED',
-        message: 'Set the S3 Bucket property VersioningConfiguration.Status to \'Enabled\' .\n',
+        message: 'Set the S3 Bucket property VersioningConfiguration.Status to \'Enabled\' .',
+    },
+    S3_BUCKETPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL: {
+        name: 'S3_BUCKETPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        content: `let aws_s3_bucketpolicy_resources = Resources.*[ Type == 'AWS::S3::BucketPolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "S3_BUCKETPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL" 
+]
+
+rule S3_BUCKETPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL when %aws_s3_bucketpolicy_resources !empty {
+  let violations = %aws_s3_bucketpolicy_resources[
+    some Properties.PolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotPrincipal exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: S3_BUCKETPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        message: 'Remove policy statements that match {"Effect": "Allow", "NotPrincipal": ... }',
     },
     S3_DEFAULT_ENCRYPTION_KMS: {
         name: 'S3_DEFAULT_ENCRYPTION_KMS',
@@ -988,7 +3992,523 @@ rule S3_DEFAULT_ENCRYPTION_KMS when %s3_buckets_s3_default_encryption !empty {
   
 }`,
         description: 'Guard rule: S3_DEFAULT_ENCRYPTION_KMS',
-        message: 'Set the S3 Bucket property BucketEncryption.ServerSideEncryptionConfiguration.ServerSideEncryptionByDefault.SSEAlgorithm to either "aws:kms" or "AES256"\n',
+        message: 'Set the S3 Bucket property BucketEncryption.ServerSideEncryptionConfiguration.ServerSideEncryptionByDefault.SSEAlgorithm to either "aws:kms" or "AES256"',
+    },
+    SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED: {
+        name: 'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        content: `let sagemaker_endpoint_configuration_kms_key_configured = Resources.*[ Type == "AWS::SageMaker::EndpointConfig"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED"
+]
+
+rule SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED when %sagemaker_endpoint_configuration_kms_key_configured !empty {
+	%sagemaker_endpoint_configuration_kms_key_configured.Properties.KmsKeyId exists
+	
+}`,
+        description: 'Guard rule: SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        message: 'Set the KmsKeyId property',
+    },
+    SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED: {
+        name: 'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        content: `let sagemaker_notebook_instance_kms_key_configured = Resources.*[ Type == "AWS::SageMaker::NotebookInstance"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED"
+]
+
+rule SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED when %sagemaker_notebook_instance_kms_key_configured !empty {
+	%sagemaker_notebook_instance_kms_key_configured.Properties.KmsKeyId exists
+	
+}`,
+        description: 'Guard rule: SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        message: 'Set the KmsKeyId property',
+    },
+    SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS: {
+        name: 'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        content: `let sagemaker_notebookinstances_directaccess = Resources.*[ Type == "AWS::SageMaker::NotebookInstance"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS"
+]
+
+rule SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS when %sagemaker_notebookinstances_directaccess !empty {
+	%sagemaker_notebookinstances_directaccess.Properties.DirectInternetAccess exists
+	%sagemaker_notebookinstances_directaccess.Properties.DirectInternetAccess == "Disabled"
+	
+}`,
+        description: 'Guard rule: SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        message: 'Set the property DirectInternetAccess to "Disabled" and provide a value for SubnetId property',
+    },
+    SECRETSMANAGER_ROTATION_ENABLED_CHECK: {
+        name: 'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        content: `let aws_secretsmanager_secret_rotate = Resources.*[ Type == "AWS::SecretsManager::Secret"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECRETSMANAGER_ROTATION_ENABLED_CHECK"
+]
+
+let aws_secretsmanager_rotation_schedule_rotate = Resources.*[ Type == "AWS::SecretsManager::RotationSchedule" ]
+
+rule SECRETSMANAGER_ROTATION_ENABLED_CHECK when %aws_secretsmanager_secret_rotate !empty {
+	%aws_secretsmanager_rotation_schedule_rotate !empty
+	let secret_names = %aws_secretsmanager_rotation_schedule_rotate.Properties.SecretId.Ref
+	let referenced_secrets = Resources[keys in %secret_names]
+	%aws_secretsmanager_secret_rotate in %referenced_secrets
+	
+}`,
+        description: 'Guard rule: SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        message: 'Reference the Secret Manager Secret resource ID in a AWS::SecretsManager::RotationSchedule resource',
+    },
+    SECRETSMANAGER_USING_CMK: {
+        name: 'SECRETSMANAGER_USING_CMK',
+        content: `let aws_secretsmanager_secret_cmk = Resources.*[ Type == "AWS::SecretsManager::Secret"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECRETSMANAGER_USING_CMK"
+]
+
+
+
+rule SECRETSMANAGER_USING_CMK when %aws_secretsmanager_secret_cmk !empty {
+  %aws_secretsmanager_secret_cmk.Properties.KmsKeyId exists
+  %aws_secretsmanager_secret_cmk.Properties.KmsKeyId not in ["alias/aws/secretsmanager"]
+  
+}`,
+        description: 'Guard rule: SECRETSMANAGER_USING_CMK',
+        message: 'Set the KmsKeyId property',
+    },
+    SECURITY_GROUP_DESCRIPTION_RULE: {
+        name: 'SECURITY_GROUP_DESCRIPTION_RULE',
+        content: `let security_group_description_rule_sg_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_DESCRIPTION_RULE"
+]
+
+let security_group_description_rule_sge_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupEgress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_DESCRIPTION_RULE"
+]
+
+let security_group_description_rule_sgi_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupIngress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_DESCRIPTION_RULE"
+]
+
+rule SECURITY_GROUP_DESCRIPTION_RULE when %security_group_description_rule_sg_resources !empty OR %security_group_description_rule_sge_resources !empty OR %security_group_description_rule_sgi_resources !empty {
+  let violations_sg = %security_group_description_rule_sg_resources[
+    Type == 'AWS::EC2::SecurityGroup'
+    Properties {
+        SecurityGroupEgress exists
+        some SecurityGroupEgress[*].Description !exists
+    }
+    OR
+    Properties {
+        SecurityGroupIngress exists
+        some SecurityGroupIngress[*].Description !exists
+    }
+  ]
+
+  let violation_sge = %security_group_description_rule_sge_resources[
+    Type == 'AWS::EC2::SecurityGroupEgress'
+    Properties.Description !exists
+  ]
+
+  let violation_sgi = %security_group_description_rule_sgi_resources[
+    Type == 'AWS::EC2::SecurityGroupIngress'
+    Properties.Description !exists
+  ]
+
+  %violations_sg empty
+  %violation_sge empty
+  %violation_sgi empty
+
+  
+}`,
+        description: 'Guard rule: SECURITY_GROUP_DESCRIPTION_RULE',
+        message: 'Specify the description for Security Group and Security Group Egress and Security Group Ingress resources.',
+    },
+    SECURITY_GROUP_EGRESS_ALL_PROTOCOLS_RULE: {
+        name: 'SECURITY_GROUP_EGRESS_ALL_PROTOCOLS_RULE',
+        content: `let security_group_egress_all_protocols_rule_sg_egress_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_EGRESS_ALL_PROTOCOLS_RULE"
+]
+
+let security_group_egress_all_protocols_rule_sge_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupEgress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_EGRESS_ALL_PROTOCOLS_RULE"
+]
+
+rule SECURITY_GROUP_EGRESS_ALL_PROTOCOLS_RULE when %security_group_egress_all_protocols_rule_sge_resources !empty OR %security_group_egress_all_protocols_rule_sg_egress_resources !empty {
+   let violations_sg = %security_group_egress_all_protocols_rule_sg_egress_resources[
+     Type == 'AWS::EC2::SecurityGroup'
+     Properties.SecurityGroupEgress exists
+     some Properties.SecurityGroupEgress[*] {
+        IpProtocol == '-1'
+        OR
+        IpProtocol == -1
+        CidrIp !exists
+        OR
+        CidrIp != '127.0.0.1/32'
+        CidrIpv6 !exists
+        OR
+        CidrIpv6 != '::1/128'
+        CidrIpv6 !exists
+        OR
+        CidrIpv6 != ':1/128'
+     }
+   ]
+
+   let violations_sge = %security_group_egress_all_protocols_rule_sge_resources[
+     Type == 'AWS::EC2::SecurityGroupEgress'
+     Properties.IpProtocol == '-1'
+     OR
+     Properties.IpProtocol == -1
+     Properties.CidrIp !exists
+     OR
+     Properties.CidrIp != '127.0.0.1/32'
+     Properties.CidrIpv6 !exists
+     OR
+     Properties.CidrIpv6 != '::1/128'
+     Properties.CidrIpv6 !exists
+     OR
+     Properties.CidrIpv6 != ':1/128'
+  ]
+
+  %violations_sg empty
+  %violations_sge empty
+  
+}`,
+        description: 'Guard rule: SECURITY_GROUP_EGRESS_ALL_PROTOCOLS_RULE',
+        message: 'Update IpProtocol value of -1 as tcp, udp, icmp, or icmpv6 or something else.',
+    },
+    SECURITY_GROUP_EGRESS_PORT_RANGE_RULE: {
+        name: 'SECURITY_GROUP_EGRESS_PORT_RANGE_RULE',
+        content: `let security_group_egress_port_range_rule_sg_egress_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_EGRESS_PORT_RANGE_RULE"
+]
+
+let security_group_egress_port_range_rule_sge_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupEgress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_EGRESS_PORT_RANGE_RULE"
+]
+
+rule SECURITY_GROUP_EGRESS_PORT_RANGE_RULE when %security_group_egress_port_range_rule_sge_resources !empty OR %security_group_egress_port_range_rule_sg_egress_resources !empty {
+  let violations_sg = %security_group_egress_port_range_rule_sg_egress_resources[
+    Type == 'AWS::EC2::SecurityGroup'
+    Properties.SecurityGroupEgress exists
+    some Properties.SecurityGroupEgress[*] {
+        FromPort exists
+        ToPort exists
+        FromPort not in ToPort
+    }
+  ]
+
+  let violations_sge = %security_group_egress_port_range_rule_sge_resources[
+    Type == 'AWS::EC2::SecurityGroupEgress'
+    Properties.FromPort exists
+    Properties.ToPort exists
+    Properties.FromPort not in Properties.ToPort
+  ]
+
+  %violations_sg empty
+  %violations_sge empty
+  
+}`,
+        description: 'Guard rule: SECURITY_GROUP_EGRESS_PORT_RANGE_RULE',
+        message: 'Use single port instead of range of ports for egress rules',
+    },
+    SECURITY_GROUP_INGRESS_ALL_PROTOCOLS_RULE: {
+        name: 'SECURITY_GROUP_INGRESS_ALL_PROTOCOLS_RULE',
+        content: `let security_group_ingress_all_protocols_rule_sg_ingress_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_INGRESS_ALL_PROTOCOLS_RULE"
+]
+
+let security_group_ingress_all_protocols_rule_sgi_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupIngress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_INGRESS_ALL_PROTOCOLS_RULE"
+]
+
+rule SECURITY_GROUP_INGRESS_ALL_PROTOCOLS_RULE when %security_group_ingress_all_protocols_rule_sgi_resources !empty OR %security_group_ingress_all_protocols_rule_sg_ingress_resources !empty {
+   let violations_sg = %security_group_ingress_all_protocols_rule_sg_ingress_resources[
+     Type == 'AWS::EC2::SecurityGroup'
+     Properties.SecurityGroupIngress exists
+     some Properties.SecurityGroupIngress[*].IpProtocol == '-1'
+     OR
+     some Properties.SecurityGroupIngress[*].IpProtocol == -1
+   ]
+
+   let violations_sgi = %security_group_ingress_all_protocols_rule_sgi_resources[
+     Type == 'AWS::EC2::SecurityGroupIngress'
+     Properties.IpProtocol == '-1'
+     OR
+     Properties.IpProtocol == -1
+  ]
+
+  %violations_sg empty
+  %violations_sgi empty
+  
+}`,
+        description: 'Guard rule: SECURITY_GROUP_INGRESS_ALL_PROTOCOLS_RULE',
+        message: 'Update IpProtocol value of -1 as tcp, udp, icmp, or icmpv6 or something else.',
+    },
+    SECURITY_GROUP_INGRESS_CIDR_NON_32_RULE: {
+        name: 'SECURITY_GROUP_INGRESS_CIDR_NON_32_RULE',
+        content: `let security_group_ingress_cidr_non_32_rule_sg_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_INGRESS_CIDR_NON_32_RULE"
+]
+
+let security_group_ingress_cidr_non_32_rule_sgi_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupIngress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_INGRESS_CIDR_NON_32_RULE"
+]
+
+rule SECURITY_GROUP_INGRESS_CIDR_NON_32_RULE when %security_group_ingress_cidr_non_32_rule_sgi_resources !empty OR %security_group_ingress_cidr_non_32_rule_sg_resources !empty {
+   let violations_sg = %security_group_ingress_cidr_non_32_rule_sg_resources[
+     Type == 'AWS::EC2::SecurityGroup'
+     Properties.SecurityGroupIngress exists
+     some Properties.SecurityGroupIngress[*].CidrIp != /\\/32/
+     OR
+     some Properties.SecurityGroupIngress[*].CidrIpv6 != /\\/128/
+   ]
+
+   let violations_sgi = %security_group_ingress_cidr_non_32_rule_sgi_resources[
+     Type == 'AWS::EC2::SecurityGroupIngress'
+     Properties.CidrIp != /\\/32/
+     OR
+     Properties.CidrIpv6 != /\\/128/
+  ]
+
+  %violations_sg empty
+  %violations_sgi empty
+  
+}`,
+        description: 'Guard rule: SECURITY_GROUP_INGRESS_CIDR_NON_32_RULE',
+        message: 'Use /32 for ipv4 cidr and /128 for ipv6 cidr',
+    },
+    SECURITY_GROUP_INGRESS_PORT_RANGE_RULE: {
+        name: 'SECURITY_GROUP_INGRESS_PORT_RANGE_RULE',
+        content: `let security_group_ingress_port_range_rule_sg_ingress_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_INGRESS_PORT_RANGE_RULE"
+]
+
+let security_group_ingress_port_range_rule_sgi_resources = Resources.*[ Type == 'AWS::EC2::SecurityGroupIngress'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_INGRESS_PORT_RANGE_RULE"
+]
+
+rule SECURITY_GROUP_INGRESS_PORT_RANGE_RULE when %security_group_ingress_port_range_rule_sgi_resources !empty OR %security_group_ingress_port_range_rule_sg_ingress_resources !empty {
+  let violations_sg = %security_group_ingress_port_range_rule_sg_ingress_resources[
+    Type == 'AWS::EC2::SecurityGroup'
+    Properties.SecurityGroupIngress exists
+    some Properties.SecurityGroupIngress[*] {
+        FromPort exists
+        ToPort exists
+        FromPort not in ToPort
+    }
+  ]
+
+  let violations_sgi = %security_group_ingress_port_range_rule_sgi_resources[
+    Type == 'AWS::EC2::SecurityGroupIngress'
+    Properties.FromPort exists
+    Properties.ToPort exists
+    Properties.FromPort not in Properties.ToPort
+  ]
+
+  %violations_sg empty
+  %violations_sgi empty
+  
+}`,
+        description: 'Guard rule: SECURITY_GROUP_INGRESS_PORT_RANGE_RULE',
+        message: 'Use single port instead of range of ports for ingress rules',
+    },
+    SECURITY_GROUP_MISSING_EGRESS_RULE: {
+        name: 'SECURITY_GROUP_MISSING_EGRESS_RULE',
+        content: `let security_group_missing_egress_rule = Resources.*[ Type == 'AWS::EC2::SecurityGroup'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SECURITY_GROUP_MISSING_EGRESS_RULE"
+]
+
+rule SECURITY_GROUP_MISSING_EGRESS_RULE when %security_group_missing_egress_rule !empty {
+  %security_group_missing_egress_rule.Type == 'AWS::EC2::SecurityGroup'
+  %security_group_missing_egress_rule.Properties.SecurityGroupEgress exists
+  
+}`,
+        description: 'Guard rule: SECURITY_GROUP_MISSING_EGRESS_RULE',
+        message: 'Specify Egresses for all security group resources exists',
+    },
+    SNS_ENCRYPTED_KMS: {
+        name: 'SNS_ENCRYPTED_KMS',
+        content: `let sns_encrypted_kms = Resources.*[ Type == "AWS::SNS::Topic"
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SNS_ENCRYPTED_KMS"
+]
+
+
+rule SNS_ENCRYPTED_KMS when %sns_encrypted_kms !empty {
+  %sns_encrypted_kms.Properties.KmsMasterKeyId exists
+	
+}`,
+        description: 'Guard rule: SNS_ENCRYPTED_KMS',
+        message: 'Set the KmsMasterKeyId property',
+    },
+    SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOT_ACTION: {
+        name: 'SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        content: `let sns_topicpolicy_no_allow_plus_not_action = Resources.*[ Type == 'AWS::SNS::TopicPolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOT_ACTION"
+]
+
+rule SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOT_ACTION when %sns_topicpolicy_no_allow_plus_not_action !empty {
+  let violations = %sns_topicpolicy_no_allow_plus_not_action[
+    Type == 'AWS::SNS::TopicPolicy'
+    some Properties.PolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotAction exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        message: 'Remove SNS Topic Policies that match {"Effect": "Allow", "NotAction": ... }',
+    },
+    SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL: {
+        name: 'SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        content: `let aws_sqs_queuepolicy_resources = Resources.*[ Type == 'AWS::SNS::TopicPolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL" 
+]
+
+rule SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL when %aws_sqs_queuepolicy_resources !empty {
+  let violations = %aws_sqs_queuepolicy_resources[
+    some Properties.PolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotPrincipal exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        message: 'Remove policy statements that match {"Effect": "Allow", "NotPrincipal": ... }',
+    },
+    SNS_TOPICPOLICY_NO_WILDCARD_PRINCIPAL: {
+        name: 'SNS_TOPICPOLICY_NO_WILDCARD_PRINCIPAL',
+        content: `let sns_topicpolicy_no_wildcard_principal = Resources.*[ Type == 'AWS::SNS::TopicPolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SNS_TOPICPOLICY_NO_WILDCARD_PRINCIPAL"
+]
+
+rule SNS_TOPICPOLICY_NO_WILDCARD_PRINCIPAL when %sns_topicpolicy_no_wildcard_principal !empty {
+  let violations = %sns_topicpolicy_no_wildcard_principal[
+    some Properties.PolicyDocument.Statement[*] {
+      Principal == "*" OR Principal.AWS == "*" OR Principal == "arn:aws:iam::*"
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: SNS_TOPICPOLICY_NO_WILDCARD_PRINCIPAL',
+        message: 'Specify explicit principals in the SNS TopicPolicy',
+    },
+    SQS_QUEUE_KMS_MASTER_KEY_ID_RULE: {
+        name: 'SQS_QUEUE_KMS_MASTER_KEY_ID_RULE',
+        content: `let sqs_queue_kms_master_key_id_rule = Resources.*[ Type == 'AWS::SQS::Queue'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SQS_QUEUE_KMS_MASTER_KEY_ID_RULE"
+]
+
+rule SQS_QUEUE_KMS_MASTER_KEY_ID_RULE when %sqs_queue_kms_master_key_id_rule !empty {
+  %sqs_queue_kms_master_key_id_rule.Type == 'AWS::SQS::Queue'
+  %sqs_queue_kms_master_key_id_rule.Properties.KmsMasterKeyId exists
+  
+}`,
+        description: 'Guard rule: SQS_QUEUE_KMS_MASTER_KEY_ID_RULE',
+        message: 'Specify KmsMasterKeyId value',
+    },
+    SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOT_ACTION: {
+        name: 'SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        content: `let sqs_queuepolicy_no_allow_plus_not_action = Resources.*[ Type == 'AWS::SQS::QueuePolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOT_ACTION"
+]
+
+rule SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOT_ACTION when %sqs_queuepolicy_no_allow_plus_not_action !empty {
+  let violations = %sqs_queuepolicy_no_allow_plus_not_action[
+    Type == 'AWS::SQS::QueuePolicy'
+    some Properties.PolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotAction exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        message: 'Remove SQS Queue Policies that match {"Effect": "Allow", "NotAction": ... }',
+    },
+    SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL: {
+        name: 'SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        content: `let aws_sqs_queuepolicy_resources = Resources.*[ Type == 'AWS::SQS::QueuePolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL" 
+]
+
+rule SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL when %aws_sqs_queuepolicy_resources !empty {
+  let violations = %aws_sqs_queuepolicy_resources[
+    Type == 'AWS::SQS::QueuePolicy' 
+    some Properties.PolicyDocument.Statement[*] {
+      Effect == "Allow"
+      NotPrincipal exists
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        message: 'Remove policy statements that match {"Effect": "Allow", "NotPrincipal": ... }',
+    },
+    SQS_QUEUEPOLICY_NO_WILDCARD_ACTION: {
+        name: 'SQS_QUEUEPOLICY_NO_WILDCARD_ACTION',
+        content: `let sqs_queuepolicy_no_wildcard_action = Resources.*[ Type == 'AWS::SQS::QueuePolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SQS_QUEUEPOLICY_NO_WILDCARD_ACTION"
+]
+
+rule SQS_QUEUEPOLICY_NO_WILDCARD_ACTION when %sqs_queuepolicy_no_wildcard_action !empty {
+  let violations = %sqs_queuepolicy_no_wildcard_action[
+    some Properties.PolicyDocument.Statement[*] {
+      some Action[*] in ["*", /^[a-zA-Z0-9]*:\\*$/]
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: SQS_QUEUEPOLICY_NO_WILDCARD_ACTION',
+        message: 'Specify explicit Action(s) in the SQS QueuePolicy',
+    },
+    SQS_QUEUEPOLICY_NO_WILDCARD_PRINCIPAL: {
+        name: 'SQS_QUEUEPOLICY_NO_WILDCARD_PRINCIPAL',
+        content: `let sqs_queuepolicy_no_wildcard_principal = Resources.*[ Type == 'AWS::SQS::QueuePolicy'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "SQS_QUEUEPOLICY_NO_WILDCARD_PRINCIPAL"
+]
+
+rule SQS_QUEUEPOLICY_NO_WILDCARD_PRINCIPAL when %sqs_queuepolicy_no_wildcard_principal !empty {
+  let violations = %sqs_queuepolicy_no_wildcard_principal[
+    some Properties.PolicyDocument.Statement[*] {
+      Principal == "*" OR Principal.AWS == "*" OR Principal == "arn:aws:iam::*"
+      Effect == "Allow"
+    }
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: SQS_QUEUEPOLICY_NO_WILDCARD_PRINCIPAL',
+        message: 'Specify explicit principals in the SQS QueuePolicy',
     },
     SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED: {
         name: 'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
@@ -1003,608 +4523,871 @@ rule SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED when %ec2_subnets_auto_assign_public_
   
 }`,
         description: 'Guard rule: SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
-        message: 'remove the MapPublicIpOnLaucnh property or set it to false\n',
+        message: 'remove the MapPublicIpOnLaucnh property or set it to false',
+    },
+    WAF_WEB_ACL_DEFAULT_ACTION_RULE: {
+        name: 'WAF_WEB_ACL_DEFAULT_ACTION_RULE',
+        content: `let waf_web_acl_default_action_rule = Resources.*[ Type == 'AWS::WAF::WebACL'
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "WAF_WEB_ACL_DEFAULT_ACTION_RULE"
+]
+
+rule WAF_WEB_ACL_DEFAULT_ACTION_RULE when %waf_web_acl_default_action_rule !empty {
+  let violation = %waf_web_acl_default_action_rule[
+    Type == 'AWS::WAF::WebACL'
+    Properties.DefaultAction.Type == 'ALLOW'
+  ]
+
+  %violation empty
+  
+}`,
+        description: 'Guard rule: WAF_WEB_ACL_DEFAULT_ACTION_RULE',
+        message: 'Change Default Action on WAF ACL resources.',
+    },
+    WORKSPACE_ENCRYPTION_ENABLED: {
+        name: 'WORKSPACE_ENCRYPTION_ENABLED',
+        content: `let workspace_encryption_enabled = Resources.*[ Type in [ /AWS::WorkSpaces::Workspace/ ]
+  Metadata.guard.SuppressedRules not exists or
+  Metadata.guard.SuppressedRules.* != "WORKSPACE_ENCRYPTION_ENABLED"
+]
+
+
+rule WORKSPACE_ENCRYPTION_ENABLED when %workspace_encryption_enabled !empty {
+  let violations = %workspace_encryption_enabled[
+    Properties.UserVolumeEncryptionEnabled !EXISTS
+    or
+    Properties.UserVolumeEncryptionEnabled != true
+  ]
+  %violations empty
+  
+}`,
+        description: 'Guard rule: WORKSPACE_ENCRYPTION_ENABLED',
+        message: 'Set UserVolumeEncryptionEnabled to true and set the VolumeEncryptionKey to your KMS key',
     }
 };
 
 export const RULE_PACKS: Record<string, string[]> = {
     'ABS-CCIGv2-Material': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'LAMBDA_CONCURRENCY_CHECK',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'EMR_KERBEROS_ENABLED',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
         'S3_BUCKET_REPLICATION_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
     ],
     'ABS-CCIGv2-Standard': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'EMR_KERBEROS_ENABLED',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'LAMBDA_CONCURRENCY_CHECK',
     ],
     'acsc-essential-8': [
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'REDSHIFT_BACKUP_ENABLED',
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_LOGGING_ENABLED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'LAMBDA_INSIDE_VPC',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'DYNAMODB_PITR_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
     ],
     'acsc-ism': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'ELB_LOGGING_ENABLED',
         'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'EFS_ENCRYPTED_CHECK',
+        'ENCRYPTED_VOLUMES',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'ELB_PREDEFINED_SECURITY_POLICY_SSL_CHECK',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
         'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'S3_BUCKET_LOGGING_ENABLED',
+        'RDS_STORAGE_ENCRYPTED',
+        'SNS_ENCRYPTED_KMS',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
     ],
     'apra-cpg-234': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'LAMBDA_DLQ_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
     ],
     'bnm-rmit': [
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
         'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'SECRETSMANAGER_USING_CMK',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_MULTI_AZ_SUPPORT',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'LAMBDA_DLQ_CHECK',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+    ],
+    'cfn-nag': [
+        'ENCRYPTED_VOLUMES',
+        'IAM_ROLE_NO_FULL_ACCESS_ON_TRUST_POLICY',
+        'IAM_ROLE_NO_WILDCARD_ACTIONS_ON_PERMISSIONS',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'IAM_MANAGEDPOLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'IAM_ROLE_NO_ALLOW_PLUS_NOT_PRINCIPAL',
+        'SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        'SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        'S3_BUCKETPOLICY_NO_ALLOW_PLUS_NOTPRINCIPAL',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'IAM_NO_POLICY_ON_USER',
+        'S3_BUCKET_POLICY_NO_WILDCARD_ACTION',
+        'S3_BUCKET_POLICY_NO_WILDCARD_PRINCIPAL',
+        'SNS_TOPICPOLICY_NO_WILDCARD_PRINCIPAL',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'SQS_QUEUEPOLICY_NO_WILDCARD_ACTION',
+        'SQS_QUEUEPOLICY_NO_WILDCARD_PRINCIPAL',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'RDS_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        'RDS_MASTER_USER_NAME_NO_PLAINTEXT_PASSWORD',
+        'ELASTICACHE_REPLICATION_GROUP_ENCRYPTION_AT_REST',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'WORKSPACE_ENCRYPTION_ENABLED',
+        'EFS_ENCRYPTED_CHECK',
+        'RDS_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        'REDSHIFT_CLUSTER_MASTER_USER_PASSWORD_NO_PLAINTEXT_PASSWORD',
+        'MICROSOFT_AD_NO_PLAINTEXT_PASSWORD',
+        'DMS_NO_PLAINTEXT_PASSWORD',
+        'IAM_ROLE_NO_WILDCARD_RESOURCE_ON_PASSROLE',
+        'IAM_POLICY_NO_WILDCARD_RESOURCE_ON_PASSROLE',
+        'IAM_USER_LOGIN_PROFILE_NO_PLAINTEXT_PASSWORD',
+        'AMAZON_MQ_BROKER_USERS_NO_PLAINTEXT_PASSWORD',
+        'KINESIS_FIREHOSE_REDSHIFT_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD',
+        'KINESIS_FIREHOSE_SPLUNK_DESTINATION_CONFIGURATION_NO_PLAINTEXT_PASSWORD',
+        'KMS_NO_WILDCARD_PRINCIPAL',
+        'COGNITO_USER_POOL_MFA_CONFIGURATION_RULE',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'WAF_WEB_ACL_DEFAULT_ACTION_RULE',
+        'SECURITY_GROUP_MISSING_EGRESS_RULE',
+        'IAM_USER_MISSING_GROUP_RULE',
+        'CFN_AUTHENTICATION_RULE',
+        'EC2_SECURITY_GROUP_INGRESS_OPEN_TO_WORLD_RULE',
+        'EC2_SECURITY_GROUP_EGRESS_OPEN_TO_WORLD_RULE',
+        'SECURITY_GROUP_INGRESS_CIDR_NON_32_RULE',
+        'CLOUDFRONT_ACCESSLOGS_ENABLED',
+        'IAM_POLICYDOCUMENT_NO_WILDCARD_RESOURCE',
+        'IAM_ROLE_NO_ALLOW_PLUS_NOT_ACTION_ON_TRUST_POLICY',
+        'IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        'SQS_QUEUEPOLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        'SNS_TOPICPOLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        'S3_BUCKET_POLICY_NO_ALLOW_PLUS_NOT_ACTION',
+        'IAM_ROLE_OR_POLICY_NO_ALLOW_PLUS_NOT_RESOURCE',
+        'LAMBDA_PERMISSION_INVOKE_FUNCTION_ACTION',
+        'ELB_LOGGING_ENABLED',
+        'SECURITY_GROUP_INGRESS_PORT_RANGE_RULE',
+        'CFN_NO_EXPLICIT_RESOURCE_NAMES',
+        'SECURITY_GROUP_EGRESS_PORT_RANGE_RULE',
+        'S3_BUCKET_PUBLIC_READ_ACL',
+        'CODEBUILD_ENCRYPTION_KEY_RULE',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'BATCH_JOB_CONTAINER_PROPERTIES_PRIVILEGED_RULE',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'SECURITY_GROUP_DESCRIPTION_RULE',
+        'EBS_VOLUME_ENCRYPTION_KEY_RULE',
+        'IOT_POLICY_WILDCARD_ACTION_RULE',
+        'IOT_POLICY_WILDCARD_RESOURCE_RULE',
+        'SECURITY_GROUP_EGRESS_ALL_PROTOCOLS_RULE',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SECURITY_GROUP_INGRESS_ALL_PROTOCOLS_RULE',
+        'IAM_ROLE_ADMINISTRATOR_ACCESS_POLICY_RULE',
+        'IAM_ROLE_ELEVATED_MANAGED_POLICY_RULE',
+        'API_GWV2_ACCESS_LOGS_ENABLED',
+        'SNS_ENCRYPTED_KMS',
+        'SQS_QUEUE_KMS_MASTER_KEY_ID_RULE',
+        'KINESIS_STREAM_ENCRYPTION_RULE',
+        'IAM_USER_LOGIN_PROFILE_PASSWORD_RESET_RULE',
+        'ELBV2_ACCESS_LOGGING_RULE',
+        'AMAZON_MQ_BROKER_ENCRYPTION_OPTIONS_RULE',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ELBV2_LISTENER_SSL_POLICY_RULE',
+        'ELBV2_LISTENER_PROTOCOL_RULE',
+        'COGNITO_ALLOW_UNAUTHENTICATED_IDENTITIES_RULE',
+        'API_GW_METHOD_AUTHORIZATION_TYPE_RULE',
+        'EMR_SECURITY_CONFIG_ENABLED_AND_CONFIGURED_RULE',
+        'API_GW_DOMAIN_DENY_NON_TLS_TRAFFIC',
+        'EMR_KERBEROS_ENABLED',
+        'GAMELIFT_FLEET_INBOUND_PORT_RANGE_RULE',
+        'EC2_NETWORK_ACL_PROTOCOL_RULE',
+        'EC2_NETWORK_ACL_PORT_RANGE_RULE',
+        'API_GW_STAGE_ACCESS_LOGGING_RULE',
+        'CLOUDFRONT_MINIMUM_PROTOCOL_VERSION_RULE',
+        'EC2_NETWORK_ACL_ENTRY_INEFFECTIVE_DENY_RULE',
+        'DYNAMODB_BILLING_MODE_RULE',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'SECRETSMANAGER_USING_CMK',
+        'DYNAMODB_PITR_ENABLED',
+        'KENDRA_INDEX_ENCRYPTION_KMS_KEY_ID_RULE',
+        'DLM_LIFECYCLE_POLICY_CROSS_REGION_ENCRYPTION_RULE',
+        'EKS_CLUSTER_ENCRYPTION_RULE',
+        'DAX_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'KINESIS_FIREHOSE_DELIVERY_STREAM_ENCRYPTION_RULE',
+        'LAMBDA_INSIDE_VPC',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
     ],
     'cis-aws-benchmark-level-1': [
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'ENCRYPTED_VOLUMES',
+        'IAM_USER_NO_POLICIES_CHECK',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'RESTRICTED_INCOMING_TRAFFIC',
+        'S3_BUCKET_VERSIONING_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
     ],
     'cis-aws-benchmark-level-2': [
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'ENCRYPTED_VOLUMES',
+        'IAM_USER_NO_POLICIES_CHECK',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
         'S3_BUCKET_VERSIONING_ENABLED',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
     ],
     'cis-critical-security-controls-v8-ig1': [
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
         'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
         'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'EBS_OPTIMIZED_INSTANCE',
+        'DYNAMODB_PITR_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'RDS_STORAGE_ENCRYPTED',
     ],
     'cis-critical-security-controls-v8-ig2': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
         'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ENCRYPTED_VOLUMES',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'ENCRYPTED_VOLUMES',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SNS_ENCRYPTED_KMS',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'DYNAMODB_PITR_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
     ],
     'cis-critical-security-controls-v8-ig3': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
         'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ENCRYPTED_VOLUMES',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'LAMBDA_CONCURRENCY_CHECK',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'ENCRYPTED_VOLUMES',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SNS_ENCRYPTED_KMS',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'DYNAMODB_PITR_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
     ],
     'cis-top-20': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'DB_INSTANCE_BACKUP_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ENCRYPTED_VOLUMES',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
         'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
     ],
     'cisa-ce': [
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
         'DB_INSTANCE_BACKUP_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
         'DYNAMODB_PITR_ENABLED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'ENCRYPTED_VOLUMES',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
         'RDS_ENHANCED_MONITORING_ENABLED',
         'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
         'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
         'REDSHIFT_BACKUP_ENABLED',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
@@ -1614,1426 +5397,1768 @@ export const RULE_PACKS: Record<string, string[]> = {
         'S3_BUCKET_SSL_REQUESTS_ONLY',
         'S3_BUCKET_VERSIONING_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'SNS_ENCRYPTED_KMS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
     ],
     'cmmc-level-1': [
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'EC2_INSTANCE_PROFILE_ATTACHED',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
     ],
     'cmmc-level-2': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_DLQ_CHECK',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'LAMBDA_DLQ_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
     ],
     'cmmc-level-3': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_DLQ_CHECK',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'LAMBDA_DLQ_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'EBS_OPTIMIZED_INSTANCE',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
     ],
     'cmmc-level-4': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_DLQ_CHECK',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'LAMBDA_DLQ_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'EBS_OPTIMIZED_INSTANCE',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
     ],
     'cmmc-level-5': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_DLQ_CHECK',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
-    ],
-    'enisa-cybersecurity-guide-for-smes': [
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'LAMBDA_DLQ_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+    ],
+    'enisa-cybersecurity-guide-for-smes': [
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
         'ENCRYPTED_VOLUMES',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SNS_ENCRYPTED_KMS',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
     ],
     'ens-high': [
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'SNS_ENCRYPTED_KMS',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'INCOMING_SSH_DISABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
     ],
     'ens-low': [
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'SNS_ENCRYPTED_KMS',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'INCOMING_SSH_DISABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
     ],
     'ens-medium': [
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'SNS_ENCRYPTED_KMS',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'INCOMING_SSH_DISABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
     ],
     'FDA-21CFR-Part-11': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'RDS_STORAGE_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
         'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
         'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
         'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'EFS_ENCRYPTED_CHECK',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'SNS_ENCRYPTED_KMS',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'SECRETSMANAGER_USING_CMK',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
     ],
-    'FedRAMP-Low': [
+    'fedramp-low': [
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'MULTI_REGION_CLOUD_TRAIL_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUD_TRAIL_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'S3_BUCKET_VERSIONING_ENABLED',
         'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'LAMBDA_DLQ_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
         'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'ELB_DELETION_PROTECTION_ENABLED',
         'EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'REDSHIFT_BACKUP_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'RDS_MULTI_AZ_SUPPORT',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+    ],
+    'fedramp-moderate': [
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'MULTI_REGION_CLOUD_TRAIL_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUD_TRAIL_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
-    ],
-    'FedRAMP-Moderate': [
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'EC2_INSTANCES_IN_VPC',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'ELB_LOGGING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'LAMBDA_DLQ_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
         'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'REDSHIFT_BACKUP_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'RDS_MULTI_AZ_SUPPORT',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'EFS_ENCRYPTED_CHECK',
-        'EFS_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
         'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
     ],
     'ffiec': [
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
         'S3_BUCKET_REPLICATION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'EC2_INSTANCES_IN_VPC',
+        'EMR_KERBEROS_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'RDS_STORAGE_ENCRYPTED',
+        'ENCRYPTED_VOLUMES',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'S3_DEFAULT_ENCRYPTION_KMS',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'LAMBDA_DLQ_CHECK',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
     ],
     'hipaa-security': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'SECRETSMANAGER_USING_CMK',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'ELB_LOGGING_ENABLED',
         'LAMBDA_CONCURRENCY_CHECK',
         'LAMBDA_DLQ_CHECK',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
         'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
-    ],
-    'K-ISMS': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+    ],
+    'k-isms': [
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'EMR_KERBEROS_ENABLED',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
+        'SECRETSMANAGER_USING_CMK',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'ELB_PREDEFINED_SECURITY_POLICY_SSL_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
     ],
     'mas-notice-655': [
+        'IAM_USER_NO_POLICIES_CHECK',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
     ],
     'mas-trmg': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'SNS_ENCRYPTED_KMS',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
     ],
     'nbc-trmg': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
+        'ELB_LOGGING_ENABLED',
         'LAMBDA_DLQ_CHECK',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'RDS_STORAGE_ENCRYPTED',
+        'EFS_ENCRYPTED_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'SECRETSMANAGER_USING_CMK',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'LAMBDA_CONCURRENCY_CHECK',
     ],
     'ncsc': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_DLQ_CHECK',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
         'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
         'S3_BUCKET_VERSIONING_ENABLED',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'LAMBDA_DLQ_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCES_IN_VPC',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
     ],
     'ncsc-cafv3': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'EMR_KERBEROS_ENABLED',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'SECRETSMANAGER_USING_CMK',
+        'REDSHIFT_BACKUP_ENABLED',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'RDS_MULTI_AZ_SUPPORT',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'LAMBDA_DLQ_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
     ],
     'nerc': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'ENCRYPTED_VOLUMES',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
         'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
     ],
     'nist-1800-25': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
         'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ENCRYPTED_VOLUMES',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'ENCRYPTED_VOLUMES',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SNS_ENCRYPTED_KMS',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'DYNAMODB_PITR_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'LAMBDA_DLQ_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
     ],
     'nist-800-171': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ENCRYPTED_VOLUMES',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'REDSHIFT_BACKUP_ENABLED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'RDS_STORAGE_ENCRYPTED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
     ],
     'nist-800-172': [
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_ENHANCED_MONITORING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
     ],
     'nist-800-181': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
         'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
         'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_INSIDE_VPC',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'LAMBDA_CONCURRENCY_CHECK',
+        'LAMBDA_DLQ_CHECK',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
     ],
     'nist-csf': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'API_GW_EXECUTION_LOGGING_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
         'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'ELB_LOGGING_ENABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'DYNAMODB_PITR_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'EMR_KERBEROS_ENABLED',
         'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'ENCRYPTED_VOLUMES',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SNS_ENCRYPTED_KMS',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
     ],
     'nist-privacy-framework': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
         'API_GW_EXECUTION_LOGGING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
         'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
+        'ELB_LOGGING_ENABLED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
         'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
-    ],
-    'NIST800-53Rev4': [
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ENCRYPTED_VOLUMES',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SNS_ENCRYPTED_KMS',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'FSX_RESOURCES_PROTECTED_BY_BACKUP_PLAN',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+    ],
+    'nist800-53rev4': [
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUD_TRAIL_ENABLED',
+        'MULTI_REGION_CLOUD_TRAIL_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'EMR_KERBEROS_ENABLED',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'LAMBDA_INSIDE_VPC',
+        'EC2_INSTANCES_IN_VPC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'IAM_NO_INLINE_POLICY_CHECK',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-    ],
-    'NIST800-53Rev5': [
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+    ],
+    'nist800-53rev5': [
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CLOUD_TRAIL_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
         'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
         'DB_INSTANCE_BACKUP_ENABLED',
         'DMS_REPLICATION_NOT_PUBLIC',
         'DYNAMODB_PITR_ENABLED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
         'EC2_INSTANCE_NO_PUBLIC_IP',
         'EC2_INSTANCE_PROFILE_ATTACHED',
+        'EC2_INSTANCES_IN_VPC',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
         'ELASTICSEARCH_IN_VPC_ONLY',
         'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
         'ENCRYPTED_VOLUMES',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
         'LAMBDA_CONCURRENCY_CHECK',
         'LAMBDA_DLQ_CHECK',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
+        'MULTI_REGION_CLOUD_TRAIL_ENABLED',
         'NO_UNRESTRICTED_ROUTE_TO_IGW',
         'RDS_ENHANCED_MONITORING_ENABLED',
         'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
         'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
         'REDSHIFT_BACKUP_ENABLED',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
         'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
         'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
@@ -3043,307 +7168,383 @@ export const RULE_PACKS: Record<string, string[]> = {
         'S3_BUCKET_SSL_REQUESTS_ONLY',
         'S3_BUCKET_VERSIONING_ENABLED',
         'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'SECRETSMANAGER_USING_CMK',
+        'SNS_ENCRYPTED_KMS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
     ],
     'nzism': [
-        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'EFS_ENCRYPTED_CHECK',
+        'ENCRYPTED_VOLUMES',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
         'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
         'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'EC2_INSTANCES_IN_VPC',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'SECRETSMANAGER_USING_CMK',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+    ],
+    'pci-dss-3-2-1': [
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
-    ],
-    'PCI-DSS-3-2-1': [
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
         'ENCRYPTED_VOLUMES',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
+        'MULTI_REGION_CLOUD_TRAIL_ENABLED',
         'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
         'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'ELB_PREDEFINED_SECURITY_POLICY_SSL_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'RDS_STORAGE_ENCRYPTED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SECRETSMANAGER_USING_CMK',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'EMR_KERBEROS_ENABLED',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'SNS_ENCRYPTED_KMS',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'S3_BUCKET_VERSIONING_ENABLED',
     ],
     'rbi-bcsf-ucb': [
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'CMK_BACKING_KEY_ROTATION_ENABLED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
         'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
         'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
-    ],
-    'rbi-md-itf': [
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
         'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
         'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
         'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'IAM_NO_INLINE_POLICY_CHECK',
+        'EC2_INSTANCES_IN_VPC',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
         'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+    ],
+    'rbi-md-itf': [
+        'EMR_KERBEROS_ENABLED',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
         'LAMBDA_CONCURRENCY_CHECK',
         'LAMBDA_DLQ_CHECK',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
     ],
     'us-nydfs': [
         'API_GW_CACHE_ENABLED_AND_ENCRYPTED',
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DB_INSTANCE_BACKUP_ENABLED',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'DYNAMODB_PITR_ENABLED',
-        'EBS_OPTIMIZED_INSTANCE',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
         'EFS_ENCRYPTED_CHECK',
         'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
         'ENCRYPTED_VOLUMES',
-        'IAM_NO_INLINE_POLICY_CHECK',
-        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
-        'IAM_USER_NO_POLICIES_CHECK',
-        'INCOMING_SSH_DISABLED',
-        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
-        'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
-        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_MULTI_AZ_SUPPORT',
-        'RDS_SNAPSHOT_ENCRYPTED',
         'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_BACKUP_ENABLED',
         'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'RESTRICTED_INCOMING_TRAFFIC',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
-        'S3_BUCKET_LOGGING_ENABLED',
-        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
-        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
         'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
         'S3_DEFAULT_ENCRYPTION_KMS',
-        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
-    ],
-    'wa-Reliability-Pillar': [
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'EMR_KERBEROS_ENABLED',
+        'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
+        'IAM_USER_NO_POLICIES_CHECK',
+        'IAM_NO_INLINE_POLICY_CHECK',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
+        'LAMBDA_INSIDE_VPC',
+        'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
+        'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
+        'S3_BUCKET_PUBLIC_READ_PROHIBITED',
+        'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
         'DB_INSTANCE_BACKUP_ENABLED',
+        'REDSHIFT_BACKUP_ENABLED',
         'DYNAMODB_PITR_ENABLED',
         'EBS_OPTIMIZED_INSTANCE',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'LAMBDA_CONCURRENCY_CHECK',
-        'LAMBDA_DLQ_CHECK',
-        'LAMBDA_INSIDE_VPC',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_ENHANCED_MONITORING_ENABLED',
-        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
-        'RDS_MULTI_AZ_SUPPORT',
-        'REDSHIFT_BACKUP_ENABLED',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
-        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_REPLICATION_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
+        'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'CODEBUILD_PROJECT_SOURCE_REPO_URL_CHECK',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'SECRETSMANAGER_USING_CMK',
+    ],
+    'wa-Reliability-Pillar': [
+        'LAMBDA_CONCURRENCY_CHECK',
+        'LAMBDA_DLQ_CHECK',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
+        'LAMBDA_INSIDE_VPC',
+        'AUTOSCALING_GROUP_ELB_HEALTHCHECK_REQUIRED',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'EC2_INSTANCE_DETAILED_MONITORING_ENABLED',
+        'RDS_ENHANCED_MONITORING_ENABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'DB_INSTANCE_BACKUP_ENABLED',
+        'DYNAMODB_PITR_ENABLED',
+        'S3_BUCKET_REPLICATION_ENABLED',
+        'EBS_OPTIMIZED_INSTANCE',
+        'REDSHIFT_BACKUP_ENABLED',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'ELB_CROSS_ZONE_LOAD_BALANCING_ENABLED',
+        'RDS_MULTI_AZ_SUPPORT',
+        'ELB_DELETION_PROTECTION_ENABLED',
+        'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
+        'S3_BUCKET_DEFAULT_LOCK_ENABLED',
     ],
     'wa-Security-Pillar': [
-        'API_GW_EXECUTION_LOGGING_ENABLED',
-        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
-        'CLOUDWATCH_ALARM_ACTION_CHECK',
-        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
-        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
-        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
-        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
-        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
-        'DMS_REPLICATION_NOT_PUBLIC',
-        'EC2_EBS_ENCRYPTION_BY_DEFAULT',
-        'EC2_INSTANCES_IN_VPC',
-        'EC2_INSTANCE_NO_PUBLIC_IP',
-        'EC2_INSTANCE_PROFILE_ATTACHED',
-        'EFS_ENCRYPTED_CHECK',
-        'ELASTICSEARCH_ENCRYPTED_AT_REST',
-        'ELASTICSEARCH_IN_VPC_ONLY',
-        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
-        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
-        'ENCRYPTED_VOLUMES',
+        'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
+        'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
         'IAM_NO_INLINE_POLICY_CHECK',
         'IAM_POLICY_NO_STATEMENTS_WITH_ADMIN_ACCESS',
         'IAM_POLICY_NO_STATEMENTS_WITH_FULL_ACCESS',
-        'INCOMING_SSH_DISABLED',
+        'SECRETSMANAGER_ROTATION_ENABLED_CHECK',
+        'SECRETSMANAGER_USING_CMK',
+        'EC2_INSTANCE_PROFILE_ATTACHED',
+        'EMR_KERBEROS_ENABLED',
+        'DMS_REPLICATION_NOT_PUBLIC',
+        'EC2_INSTANCE_NO_PUBLIC_IP',
+        'ELASTICSEARCH_IN_VPC_ONLY',
+        'EC2_INSTANCES_IN_VPC',
         'LAMBDA_FUNCTION_PUBLIC_ACCESS_PROHIBITED',
         'LAMBDA_INSIDE_VPC',
-        'NO_UNRESTRICTED_ROUTE_TO_IGW',
-        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
-        'RDS_INSTANCE_LOGGING_ENABLED',
         'RDS_INSTANCE_PUBLIC_ACCESS_CHECK',
-        'RDS_SNAPSHOT_ENCRYPTED',
-        'RDS_STORAGE_ENCRYPTED',
-        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
-        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
         'REDSHIFT_CLUSTER_PUBLIC_ACCESS_CHECK',
-        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
-        'RESTRICTED_INCOMING_TRAFFIC',
         'S3_BUCKET_LEVEL_PUBLIC_ACCESS_PROHIBITED',
-        'S3_BUCKET_LOGGING_ENABLED',
         'S3_BUCKET_PUBLIC_READ_PROHIBITED',
         'S3_BUCKET_PUBLIC_WRITE_PROHIBITED',
-        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
-        'S3_BUCKET_SSL_REQUESTS_ONLY',
-        'S3_BUCKET_VERSIONING_ENABLED',
-        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_NOTEBOOK_NO_DIRECT_INTERNET_ACCESS',
         'SUBNET_AUTO_ASSIGN_PUBLIC_IP_DISABLED',
+        'AUTOSCALING_LAUNCH_CONFIG_PUBLIC_IP_DISABLED',
+        'API_GW_EXECUTION_LOGGING_ENABLED',
+        'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
+        'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
+        'CW_LOGGROUP_RETENTION_PERIOD_CHECK',
+        'ELASTICSEARCH_LOGS_TO_CLOUDWATCH',
+        'ELB_LOGGING_ENABLED',
+        'S3_BUCKET_LOGGING_ENABLED',
+        'REDSHIFT_CLUSTER_CONFIGURATION_CHECK',
+        'CLOUDWATCH_ALARM_ACTION_CHECK',
+        'REDSHIFT_ENHANCED_VPC_ROUTING_ENABLED',
+        'NO_UNRESTRICTED_ROUTE_TO_IGW',
+        'RDS_AUTOMATIC_MINOR_VERSION_UPGRADE_ENABLED',
+        'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
+        'REDSHIFT_CLUSTER_MAINTENANCESETTINGS_CHECK',
+        'CLOUD_TRAIL_ENCRYPTION_ENABLED',
+        'CLOUDWATCH_LOG_GROUP_ENCRYPTED',
+        'DYNAMODB_TABLE_ENCRYPTED_KMS',
+        'EFS_ENCRYPTED_CHECK',
+        'ELASTICSEARCH_ENCRYPTED_AT_REST',
+        'ENCRYPTED_VOLUMES',
+        'RDS_STORAGE_ENCRYPTED',
+        'S3_BUCKET_SERVER_SIDE_ENCRYPTION_ENABLED',
+        'S3_DEFAULT_ENCRYPTION_KMS',
+        'SAGEMAKER_ENDPOINT_CONFIGURATION_KMS_KEY_CONFIGURED',
+        'SAGEMAKER_NOTEBOOK_INSTANCE_KMS_KEY_CONFIGURED',
+        'SNS_ENCRYPTED_KMS',
+        'S3_BUCKET_VERSIONING_ENABLED',
+        'ELBV2_ACM_CERTIFICATE_REQUIRED',
+        'ELB_ACM_CERTIFICATE_REQUIRED',
+        'ALB_HTTP_DROP_INVALID_HEADER_ENABLED',
+        'ELASTICSEARCH_NODE_TO_NODE_ENCRYPTION_CHECK',
+        'ELB_TLS_HTTPS_LISTENERS_ONLY',
+        'S3_BUCKET_SSL_REQUESTS_ONLY',
     ]
 };
 

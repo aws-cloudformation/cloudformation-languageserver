@@ -5,11 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  get-configs:
-    uses: ./.github/workflows/configs.yml
-
-  promote-main-to-beta:
-    needs: [get-configs]
+  create-beta-tag:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,18 +18,12 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ needs.get-configs.outputs.node-version }}
-          cache: 'npm'
-
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Bump Version and Tag
+      - name: Tag
         id: version-and-tag
         run: |
           PKG_VERSION=$(jq -r .version package.json)
@@ -46,9 +36,9 @@ jobs:
           echo "tag=$FULL_TAG" >> $GITHUB_OUTPUT
 
   call-release:
-    needs: [promote-main-to-beta]
+    needs: [create-beta-tag]
     uses: ./.github/workflows/release.yml
     permissions:
       contents: write
     with:
-      tag: ${{ needs.promote-main-to-beta.outputs.tag }}
+      tag: ${{ needs.create-beta-tag.outputs.tag }}

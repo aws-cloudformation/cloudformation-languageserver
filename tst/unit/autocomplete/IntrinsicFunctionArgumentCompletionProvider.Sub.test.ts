@@ -47,6 +47,10 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Sub Function', () => {
             'AWS::S3::Bucket',
             {
                 readOnlyProperties: ['/properties/Arn', '/properties/DomainName'],
+                getAttributes: () => [
+                    { name: 'Arn', description: 'Arn attribute of AWS::S3::Bucket' },
+                    { name: 'DomainName', description: 'DomainName attribute of AWS::S3::Bucket' },
+                ],
             } as ResourceSchema,
         ],
     ]);

@@ -1,11 +1,17 @@
-import { GetResourceCommandOutput, ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
+import {
+    GetResourceCommandOutput,
+    PrivateTypeException,
+    ResourceNotFoundException,
+} from '@aws-sdk/client-cloudcontrol';
 import { DateTime } from 'luxon';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ResponseError } from 'vscode-languageserver';
 import { ResourceStateManager } from '../../../src/resourceState/ResourceStateManager';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { CcapiService } from '../../../src/services/CcapiService';
 import { S3Service } from '../../../src/services/S3Service';
 import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
+import { combinedSchemas } from '../../utils/SchemaUtils';
 
 describe('ResourceStateManager', () => {
     const mockCcapiService = {
@@ -174,6 +180,19 @@ describe('ResourceStateManager', () => {
             const result = await manager.listResources('AWS::S3::Bucket');
 
             expect(result).toBeUndefined();
+        });
+
+        it('should handle private resource exceptions', async () => {
+            const error = new PrivateTypeException({
+                message: 'Private type error',
+                $metadata: {},
+            });
+            vi.mocked(mockCcapiService.listResources).mockRejectedValue(error);
+
+            await expect(manager.listResources('MyOrg::Custom::Resource')).rejects.toThrow(ResponseError);
+            await expect(manager.listResources('MyOrg::Custom::Resource')).rejects.toThrow(
+                "Failed to list identifiers for MyOrg::Custom::Resource. Cloud Control API hasn't received a valid response from the resource handler, due to a configuration error. This includes issues such as the resource handler returning an invalid response, or timing out.",
+            );
         });
     });
 
@@ -427,9 +446,9 @@ describe('ResourceStateManager', () => {
         it('should filter out resource types without list support', () => {
             const mockSchemas: CombinedSchemas = {
                 schemas: new Map([
-                    ['AWS::S3::Bucket', {}],
-                    ['AWS::IAM::Role', {}],
-                    ['AWS::IAM::RolePolicy', {}],
+                    ['AWS::S3::Bucket', { typeName: 'AWS::S3::Bucket', handlers: { list: {} } }],
+                    ['AWS::IAM::Role', { typeName: 'AWS::IAM::Role', handlers: { list: {} } }],
+                    ['AWS::IAM::RolePolicy', { typeName: 'AWS::IAM::RolePolicy', handlers: { list: {} } }],
                 ]),
             } as CombinedSchemas;
             const managerWithSchemas = new ResourceStateManager(
@@ -448,9 +467,9 @@ describe('ResourceStateManager', () => {
         it('should filter out resource types requiring resource model properties', () => {
             const mockSchemas: CombinedSchemas = {
                 schemas: new Map([
-                    ['AWS::S3::Bucket', {}],
-                    ['AWS::EKS::Cluster', {}],
-                    ['AWS::EKS::AddOn', {}],
+                    ['AWS::S3::Bucket', { typeName: 'AWS::S3::Bucket', handlers: { list: {} } }],
+                    ['AWS::EKS::Cluster', { typeName: 'AWS::EKS::Cluster', handlers: { list: {} } }],
+                    ['AWS::EKS::AddOn', { typeName: 'AWS::EKS::AddOn', handlers: { list: {} } }],
                 ]),
             } as CombinedSchemas;
             const managerWithSchemas = new ResourceStateManager(
@@ -464,6 +483,70 @@ describe('ResourceStateManager', () => {
             expect(result).toContain('AWS::S3::Bucket');
             expect(result).toContain('AWS::EKS::Cluster');
             expect(result).not.toContain('AWS::EKS::AddOn');
+        });
+
+        it('should return all supported public types', () => {
+            const testSchemas = combinedSchemas();
+            const resourceManagerWithRealSchemas = new ResourceStateManager(
+                mockCcapiService,
+                createMockSchemaRetriever(testSchemas),
+                mockS3Service,
+            );
+
+            const result = resourceManagerWithRealSchemas.getResourceTypes();
+
+            expect(result).toContain('AWS::S3::Bucket');
+            expect(result).toContain('AWS::IAM::Role');
+            expect(result).toContain('AWS::Lambda::Function');
+            expect(result.every((type) => type.startsWith('AWS::'))).toBe(true);
+        });
+
+        it('should not return private resource types with no list handler permissions', () => {
+            const mockSchemas: CombinedSchemas = {
+                schemas: new Map([
+                    ['AWS::S3::Bucket', { typeName: 'AWS::S3::Bucket', handlers: { list: {} } }],
+                    ['MyOrg::Custom::Resource', { typeName: 'MyOrg::Custom::Resource' }],
+                ]),
+            } as CombinedSchemas;
+            const managerWithSchemas = new ResourceStateManager(
+                mockCcapiService,
+                createMockSchemaRetriever(mockSchemas),
+                mockS3Service,
+            );
+
+            const result = managerWithSchemas.getResourceTypes();
+
+            expect(result).toContain('AWS::S3::Bucket');
+            expect(result).not.toContain('MyOrg::Custom::Resource');
+        });
+    });
+
+    describe('removeResourceType()', () => {
+        it('should remove resource type from both maps', async () => {
+            const mockOutput: GetResourceCommandOutput = {
+                TypeName: 'AWS::S3::Bucket',
+                ResourceDescription: {
+                    Identifier: 'my-bucket',
+                    Properties: '{"BucketName": "my-bucket"}',
+                },
+                $metadata: {},
+            };
+            vi.mocked(mockCcapiService.getResource).mockResolvedValue(mockOutput);
+            vi.mocked(mockCcapiService.listResources).mockResolvedValue({
+                ResourceDescriptions: [{ Identifier: 'my-bucket' }],
+            });
+
+            await manager.getResource('AWS::S3::Bucket', 'my-bucket');
+            await manager.listResources('AWS::S3::Bucket');
+
+            manager.removeResourceType('AWS::S3::Bucket');
+
+            await manager.getResource('AWS::S3::Bucket', 'my-bucket');
+            expect(mockCcapiService.getResource).toHaveBeenCalledTimes(2);
+        });
+
+        it('should handle removing non-existent resource type', () => {
+            expect(() => manager.removeResourceType('AWS::DynamoDB::Table')).not.toThrow();
         });
     });
 });
