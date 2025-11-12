@@ -42,7 +42,14 @@ describe('ValidationWorkflow', () => {
             mockDocumentManager,
             mockDiagnosticCoordinator,
             mockSyntaxTreeManager,
-            { add: vi.fn(), get: vi.fn(), remove: vi.fn() } as any, // ValidationManager
+            {
+                add: vi.fn(),
+                get: vi.fn(),
+                remove: vi.fn(),
+                getLastValidationByUri: vi.fn(),
+                setChanges: vi.fn(),
+                clear: vi.fn(),
+            } as any,
             mockS3Service,
         );
         vi.clearAllMocks();
@@ -550,7 +557,7 @@ describe('ValidationWorkflow', () => {
             await waitForWorkflowCompletion('test-id');
 
             expect(mockValidationManager.add).toHaveBeenCalled();
-            expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
+            expect(mockValidationManager.remove).not.toHaveBeenCalled();
 
             const workflow = (validationWorkflow as any).workflows.get('test-id');
             expect(workflow.validationDetails).toBeDefined();
@@ -572,7 +579,7 @@ describe('ValidationWorkflow', () => {
             await validationWorkflow.start(params);
             await waitForWorkflowCompletion('test-id');
 
-            expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
+            expect(mockValidationManager.remove).not.toHaveBeenCalled();
             expect(cleanupReviewStack).toHaveBeenCalled();
 
             const workflow = (validationWorkflow as any).workflows.get('test-id');

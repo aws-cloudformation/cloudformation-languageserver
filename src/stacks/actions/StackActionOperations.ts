@@ -387,13 +387,15 @@ export async function publishValidationDiagnostics(
         }
 
         if (range) {
+            const diagnosticId = uuidv4();
             diagnostics.push({
                 severity: event.Severity === 'ERROR' ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
                 range: range,
                 message: event.Message,
                 source: CFN_VALIDATION_SOURCE,
-                data: uuidv4(),
+                data: diagnosticId,
             });
+            event.diagnosticId = diagnosticId;
         }
     }
 

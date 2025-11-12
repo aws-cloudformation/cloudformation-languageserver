@@ -65,8 +65,8 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.validationWorkflowService =
             overrides.validationWorkflowService ??
             (localCfnClientExists()
-                ? ValidationWorkflowV2.create(core, external)
-                : ValidationWorkflow.create(core, external));
+                ? ValidationWorkflowV2.create(core, external, core.validationManager)
+                : ValidationWorkflow.create(core, external, core.validationManager));
         this.deploymentWorkflowService =
             overrides.deploymentWorkflowService ?? DeploymentWorkflow.create(core, external);
         this.changeSetDeletionWorkflowService =
