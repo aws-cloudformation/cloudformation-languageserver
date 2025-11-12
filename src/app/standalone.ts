@@ -66,3 +66,11 @@ const lsp = new LspConnection(createConnection(ProposedFeatures.all), {
     onExit,
 });
 lsp.listen();
+
+process.on('unhandledRejection', (reason, _promise) => {
+    getLogger().error(reason, 'Unhandled promise rejection');
+});
+
+process.on('uncaughtException', (error, origin) => {
+    getLogger().error(error, `Uncaught exception ${origin}`);
+});
