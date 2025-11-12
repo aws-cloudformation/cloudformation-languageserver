@@ -58,6 +58,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private readonly stores = new Map<string, LMDBStore>();
 
     constructor(private readonly rootDir: string = pathToArtifact('lmdb')) {
+        log.info(`Initializing LMDB at ${rootDir} and version ${Version}`);
         this.storePath = join(rootDir, Version);
         this.env = open({
             path: this.storePath,
@@ -67,6 +68,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             encryptionKey: encryptionStrategy(Version),
         });
 
+        log.info('Setup LMDB guages');
         this.registerLMDBGauges();
 
         this.timeout = setTimeout(
