@@ -24,6 +24,7 @@ import {
     refreshResourceListHandler,
     searchResourceHandler,
     getStackMgmtInfo,
+    removeResourceTypeHandler,
 } from '../handlers/ResourceHandler';
 import { uploadFileToS3Handler } from '../handlers/S3Handler';
 import {
@@ -211,6 +212,9 @@ export class CfnServer {
         );
         this.lsp.resourceHandlers.onGetResourceTypes(
             withTelemetryContext('Resource.Get.Types', getResourceTypesHandler(this.components)),
+        );
+        this.lsp.resourceHandlers.onRemoveResourceType(
+            withTelemetryContext('Resource.Remove.Type', removeResourceTypeHandler(this.components)),
         );
         this.lsp.resourceHandlers.onResourceStateImport(
             withTelemetryContext('Resource.State.Import', importResourceStateHandler(this.components)),

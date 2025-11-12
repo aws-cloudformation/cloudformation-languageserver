@@ -5,7 +5,11 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentUri } from 'vscode-languageserver-textdocument/lib/esm/main';
 import { didCloseHandler } from '../../src/handlers/DocumentHandler';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
-import { createMockComponents, createMockSyntaxTreeManager } from '../utils/MockServerComponents';
+import {
+    createMockComponents,
+    createMockSyntaxTreeManager,
+    createMockValidationManager,
+} from '../utils/MockServerComponents';
 
 function mockDocumentEvent(uri: DocumentUri, content: string): TextDocumentChangeEvent<TextDocument> {
     return {
@@ -29,7 +33,8 @@ describe('DocumentHandler Integration with DiagnosticCoordinator', () => {
             publishDiagnostics: vi.fn().mockResolvedValue(undefined),
         };
         const mockSyntaxTreeManager = createMockSyntaxTreeManager();
-        realCoordinator = new DiagnosticCoordinator(mockLspDiagnostics, mockSyntaxTreeManager);
+        const mockValidationManager = createMockValidationManager();
+        realCoordinator = new DiagnosticCoordinator(mockLspDiagnostics, mockSyntaxTreeManager, mockValidationManager);
 
         // Create mock services with the real coordinator
         mockServices = createMockComponents({

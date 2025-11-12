@@ -51,11 +51,13 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
             const result = await waitForChangeSetValidation(this.cfnServiceV2, changeSetName, stackName);
 
             const validation = this.validationManager.get(stackName);
-            if (validation) {
-                validation.setPhase(result.phase);
-                if (result.changes) {
-                    validation.setChanges(result.changes);
-                }
+            if (!validation) {
+                throw new Error(`No validation found for stack: ${stackName}`);
+            }
+
+            validation.setPhase(result.phase);
+            if (result.changes) {
+                validation.setChanges(result.changes);
             }
 
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
@@ -82,6 +84,7 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
                     validationDetails: validationDetails,
                 });
 
+                validation.setValidationDetails(validationDetails);
                 await publishValidationDiagnostics(
                     uri,
                     validationDetails,
@@ -107,13 +110,17 @@ export class ValidationWorkflowV2 extends ValidationWorkflow {
         }
     }
 
-    static override create(core: CfnInfraCore, external: CfnExternal): ValidationWorkflowV2 {
+    static override create(
+        core: CfnInfraCore,
+        external: CfnExternal,
+        validationManager: ValidationManager,
+    ): ValidationWorkflowV2 {
         return new ValidationWorkflowV2(
             new CfnServiceV2(external.awsClient),
             core.documentManager,
             core.diagnosticCoordinator,
             core.syntaxTreeManager,
-            new ValidationManager(),
+            validationManager,
             core.fileContextManager,
             external.featureFlags.getTargeted<string>('EnhancedDryRun'),
             core.awsCredentials,

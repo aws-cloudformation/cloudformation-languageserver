@@ -27,10 +27,15 @@ describe('ValidationManager', () => {
         expect(retrieved).toBeUndefined();
     });
 
-    it('should remove validation', () => {
+    it('should remove validation and URI mapping', () => {
         manager.add(validation);
+        expect(manager.get('test-stack')).toBe(validation);
+        expect(manager.getLastValidationByUri('test.yaml')).toBe(validation);
+
         manager.remove('test-stack');
+
         expect(manager.get('test-stack')).toBeUndefined();
+        expect(manager.getLastValidationByUri('test.yaml')).toBeUndefined();
     });
 
     it('should replace existing validation for same stack', () => {
@@ -40,5 +45,40 @@ describe('ValidationManager', () => {
         manager.add(validation2);
 
         expect(manager.get('test-stack')).toBe(validation2);
+    });
+
+    describe('getLastValidationByUri', () => {
+        it('should return validation by URI', () => {
+            const validation = new Validation('file:///test.yaml', 'test-stack', 'test-changeset');
+            manager.add(validation);
+
+            expect(manager.getLastValidationByUri('file:///test.yaml')).toBe(validation);
+        });
+
+        it('should return undefined for non-existent URI', () => {
+            expect(manager.getLastValidationByUri('file:///nonexistent.yaml')).toBeUndefined();
+        });
+
+        it('should update URI mapping when validation is removed', () => {
+            const validation = new Validation('file:///test.yaml', 'test-stack', 'test-changeset');
+            manager.add(validation);
+
+            expect(manager.getLastValidationByUri('file:///test.yaml')).toBe(validation);
+
+            manager.remove('test-stack');
+
+            expect(manager.getLastValidationByUri('file:///test.yaml')).toBeUndefined();
+        });
+
+        it('should clear URI mappings when manager is cleared', () => {
+            const validation = new Validation('file:///test.yaml', 'test-stack', 'test-changeset');
+            manager.add(validation);
+
+            expect(manager.getLastValidationByUri('file:///test.yaml')).toBe(validation);
+
+            manager.clear();
+
+            expect(manager.getLastValidationByUri('file:///test.yaml')).toBeUndefined();
+        });
     });
 });

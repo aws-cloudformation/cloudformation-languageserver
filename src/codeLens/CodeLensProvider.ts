@@ -6,7 +6,7 @@ import { getStackActionsCodeLenses } from './StackActionsCodeLens';
 
 export class CodeLensProvider {
     constructor(
-        syntaxTreeManager: SyntaxTreeManager,
+        private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly documentManager: DocumentManager,
         private readonly managedResource: ManagedResourceCodeLens = new ManagedResourceCodeLens(syntaxTreeManager),
     ) {}
@@ -18,6 +18,9 @@ export class CodeLensProvider {
             return;
         }
 
-        return [...getStackActionsCodeLenses(uri), ...this.managedResource.getCodeLenses(uri, doc)];
+        return [
+            ...getStackActionsCodeLenses(uri, doc, this.syntaxTreeManager),
+            ...this.managedResource.getCodeLenses(uri, doc),
+        ];
     }
 }

@@ -8,6 +8,7 @@ import { DocumentMetadata } from '../document/DocumentProtocol';
 import { LspComponents } from '../protocol/LspComponents';
 import { DiagnosticCoordinator } from '../services/DiagnosticCoordinator';
 import { SettingsManager } from '../settings/SettingsManager';
+import { ValidationManager } from '../stacks/actions/ValidationManager';
 import { ClientMessage } from '../telemetry/ClientMessage';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
@@ -31,6 +32,7 @@ export class CfnInfraCore implements Configurables, Closeable {
     readonly fileContextManager: FileContextManager;
 
     readonly awsCredentials: AwsCredentials;
+    readonly validationManager: ValidationManager;
     readonly diagnosticCoordinator: DiagnosticCoordinator;
     readonly cloudformationEndpoint?: string;
 
@@ -62,9 +64,11 @@ export class CfnInfraCore implements Configurables, Closeable {
                 initializeParams.initializationOptions?.aws?.encryption?.key,
             );
 
+        this.validationManager = overrides.validationManager ?? new ValidationManager();
+
         this.diagnosticCoordinator =
             overrides.diagnosticCoordinator ??
-            new DiagnosticCoordinator(lspComponents.diagnostics, this.syntaxTreeManager);
+            new DiagnosticCoordinator(lspComponents.diagnostics, this.syntaxTreeManager, this.validationManager);
     }
 
     configurables(): Configurable[] {

@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { S3Client, PutObjectCommand, ListBucketsCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, ListBucketsCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
@@ -36,6 +36,17 @@ export class S3Service {
                     Bucket: bucketName,
                     Key: key,
                     Body: content,
+                }),
+            );
+        });
+    }
+
+    async getHeadObject(bucketName: string, key: string) {
+        return await this.withClient(async (client) => {
+            return await client.send(
+                new HeadObjectCommand({
+                    Bucket: bucketName,
+                    Key: key,
                 }),
             );
         });

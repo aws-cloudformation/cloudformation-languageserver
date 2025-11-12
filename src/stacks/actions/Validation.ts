@@ -1,5 +1,5 @@
 import { Parameter, Capability } from '@aws-sdk/client-cloudformation';
-import { StackActionPhase, StackChange } from './StackActionRequestType';
+import { StackActionPhase, StackChange, ValidationDetail } from './StackActionRequestType';
 
 export class Validation {
     private readonly uri: string;
@@ -11,6 +11,7 @@ export class Validation {
     private readonly s3Key?: string;
     private phase: StackActionPhase | undefined;
     private changes: StackChange[] | undefined;
+    private validationDetails: ValidationDetail[] | undefined;
 
     constructor(
         uri: string,
@@ -76,5 +77,19 @@ export class Validation {
 
     getS3Key(): string | undefined {
         return this.s3Key;
+    }
+
+    getValidationDetails(): ValidationDetail[] | undefined {
+        return this.validationDetails;
+    }
+
+    setValidationDetails(validationDetails: ValidationDetail[]) {
+        this.validationDetails = validationDetails;
+    }
+
+    removeValidationDetailByDiagnosticId(diagnosticId: string): void {
+        if (this.validationDetails) {
+            this.validationDetails = this.validationDetails.filter((vd) => vd.diagnosticId !== diagnosticId);
+        }
     }
 }
