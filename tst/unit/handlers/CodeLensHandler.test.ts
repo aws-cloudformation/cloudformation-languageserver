@@ -78,10 +78,9 @@ describe('CodeLensHandler', () => {
 
         const result = await handler(params, CancellationToken.None);
 
-        expect(result).toHaveLength(3);
-        expect(result[0].command?.title).toBe('Validate Deployment');
-        expect(result[1].command?.title).toBe('Deploy Template');
-        expect(result[2].command?.title).toBe('Open Stack Template');
+        expect(result).toHaveLength(2);
+        expect(result[0].command?.title).toBe('Validate and Deploy');
+        expect(result[1].command?.title).toBe('Open Stack Template');
     });
 
     it('should not return stack actions for empty files', async () => {
@@ -161,8 +160,7 @@ describe('CodeLensHandler', () => {
 
         const result = await handler(params, CancellationToken.None);
 
-        expect(result).toHaveLength(2);
+        expect(result).toHaveLength(1);
         expect(result[0].command?.arguments).toEqual(['file:///test.yaml']);
-        expect(result[1].command?.arguments).toEqual(['file:///test.yaml']);
     });
 });
