@@ -1,34 +1,12 @@
-import { readFileSync } from 'fs';
 import { resolve, dirname, isAbsolute } from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-import { load } from 'js-yaml';
-import { TopLevelSection, IntrinsicFunction } from '../context/ContextType';
-import { Document, DocumentType } from '../document/Document';
-import { detectDocumentType } from '../document/DocumentUtils';
+import { fileURLToPath } from 'url';
+import { TopLevelSection } from '../context/ContextType';
+import { normalizeIntrinsicFunctionAndCondition } from '../context/semantic/Intrinsics';
+import { DocumentType } from '../document/Document';
+import { parseDocumentContent } from '../document/DocumentUtils';
 import { S3Service } from '../services/S3Service';
 import { Artifact } from '../stacks/actions/StackActionRequestType';
 import { isS3Url, RESOURCE_EXPORTER_MAP } from './ResourceExporters';
-
-const INTRINSIC_FUNCTION_MAP = new Map<string, string>([
-    ['!Ref', IntrinsicFunction.Ref],
-    ['!GetAtt', IntrinsicFunction.GetAtt],
-    ['!Join', IntrinsicFunction.Join],
-    ['!Sub', IntrinsicFunction.Sub],
-    ['!Base64', IntrinsicFunction.Base64],
-    ['!GetAZs', IntrinsicFunction.GetAZs],
-    ['!ImportValue', IntrinsicFunction.ImportValue],
-    ['!Select', IntrinsicFunction.Select],
-    ['!Split', IntrinsicFunction.Split],
-    ['!FindInMap', IntrinsicFunction.FindInMap],
-    ['!Equals', IntrinsicFunction.Equals],
-    ['!If', IntrinsicFunction.If],
-    ['!Not', IntrinsicFunction.Not],
-    ['!And', IntrinsicFunction.And],
-    ['!Or', IntrinsicFunction.Or],
-    ['!Cidr', IntrinsicFunction.Cidr],
-    ['!Transform', IntrinsicFunction.Transform],
-    ['!Condition', 'Condition'],
-]);
 
 export type ArtifactWithProperty = {
     resourceType: string;
@@ -39,30 +17,14 @@ export type ArtifactWithProperty = {
 
 export class ArtifactExporter {
     private readonly templateDict: unknown;
-    private readonly templateUri: string;
-    private readonly templateType: DocumentType;
 
     constructor(
         private readonly s3Service: S3Service,
-        private readonly document?: Document,
-        private readonly templateAbsPath?: string,
+        private readonly templateType: DocumentType,
+        private readonly templateUri: string,
+        templateContent: string,
     ) {
-        if (this.document) {
-            this.templateDict = this.document.getParsedDocumentContent();
-            this.templateUri = this.document.uri;
-            this.templateType = this.document.documentType;
-        } else if (this.templateAbsPath) {
-            const content = readFileSync(this.templateAbsPath, 'utf8');
-            this.templateUri = pathToFileURL(this.templateAbsPath).href;
-            this.templateType = detectDocumentType(this.templateUri, content).type;
-            if (this.templateType === DocumentType.YAML) {
-                this.templateDict = load(content);
-            } else {
-                this.templateDict = JSON.parse(content);
-            }
-        } else {
-            throw new Error('Either document or absolutePath must be provided');
-        }
+        this.templateDict = parseDocumentContent(templateUri, templateContent);
     }
 
     private getResourceMapWithArtifact(): Record<string, ArtifactWithProperty[]> {
@@ -148,7 +110,7 @@ export class ArtifactExporter {
         const objDict = obj as Record<string, unknown>;
 
         for (const [key, value] of Object.entries(objDict)) {
-            const newKey = INTRINSIC_FUNCTION_MAP.get(key) ?? key;
+            const newKey = normalizeIntrinsicFunctionAndCondition(key);
             result[newKey] = this.convertIntrinsicFunctionKeys(value);
         }
 

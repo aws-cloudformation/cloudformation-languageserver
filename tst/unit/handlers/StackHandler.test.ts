@@ -164,7 +164,11 @@ describe('StackActionHandler', () => {
     describe('getTemplateArtifactsHandler', () => {
         it('should return artifacts when document is available', () => {
             const templateUri: TemplateUri = 'test://template.yaml';
-            const mockDocument = { uri: templateUri } as unknown as Document;
+            const mockDocument = {
+                uri: templateUri,
+                documentType: 'yaml',
+                contents: vi.fn().mockReturnValue('Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
+            } as unknown as Document;
             const mockArtifacts = [
                 { resourceType: 'AWS::Lambda::Function', filePath: './src/handler.js' },
                 { resourceType: 'AWS::S3::Bucket', filePath: './assets/data.json' },
