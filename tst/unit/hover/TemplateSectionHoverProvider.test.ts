@@ -6,9 +6,11 @@ import { createTopLevelContext as topLevelContext } from '../../utils/MockContex
 
 describe('TemplateSectionHoverProvider', () => {
     let hoverProvider: TemplateSectionHoverProvider;
+    const mockFeatureFlagEnabled = { isEnabled: () => true, describe: () => 'Constants feature flag' };
+    const mockFeatureFlagDisabled = { isEnabled: () => false, describe: () => 'Constants feature flag' };
 
     beforeEach(() => {
-        hoverProvider = new TemplateSectionHoverProvider();
+        hoverProvider = new TemplateSectionHoverProvider(mockFeatureFlagEnabled);
     });
 
     function createTopLevelContext(section: string) {
@@ -93,6 +95,26 @@ describe('TemplateSectionHoverProvider', () => {
         const result = hoverProvider.getInformation(mockContext);
 
         expect(result).toBe(templateSectionDocsMap.get(TopLevelSection.Description));
+    });
+
+    it('should return documentation for Constants section when feature flag is enabled', () => {
+        const provider = new TemplateSectionHoverProvider(mockFeatureFlagEnabled);
+        const mockContext = createTopLevelContext(TopLevelSection.Constants);
+
+        const result = provider.getInformation(mockContext);
+
+        expect(result).toBe(templateSectionDocsMap.get(TopLevelSection.Constants));
+        expect(result).toBeDefined();
+        expect(result).toContain('Constants');
+    });
+
+    it('should return undefined for Constants section when feature flag is disabled', () => {
+        const provider = new TemplateSectionHoverProvider(mockFeatureFlagDisabled);
+        const mockContext = createTopLevelContext(TopLevelSection.Constants);
+
+        const result = provider.getInformation(mockContext);
+
+        expect(result).toBeUndefined();
     });
 
     it('should return undefined for Unknown section', () => {
