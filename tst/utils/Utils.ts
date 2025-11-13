@@ -31,13 +31,20 @@ export function getComprehensiveJsonTemplate(): string {
 }
 
 export function getForEachYamlTemplate(): string {
-  return Templates.foreach_template.yaml.contents;
+    return Templates.foreach.yaml.contents;
 }
 
 export function getForEachJsonTemplate(): string {
-  return Templates.foreach_template.json.contents;
+    return Templates.foreach.json.contents;
 }
 
+export function getBrokenYamlTemplate(): string {
+    return Templates.broken.yaml.contents;
+}
+
+export function getBrokenJsonTemplate(): string {
+    return Templates.broken.json.contents;
+}
 
 export class WaitFor {
     constructor(
