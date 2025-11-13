@@ -136,7 +136,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
 
     private createHoverProviders(schemaRetriever: SchemaRetriever): Map<HoverType, HoverProvider> {
         const hoverProviderMap = new Map<HoverType, HoverProvider>();
-        hoverProviderMap.set(HoverType.TopLevelSection, new TemplateSectionHoverProvider());
+        hoverProviderMap.set(HoverType.TopLevelSection, new TemplateSectionHoverProvider(this.constantsFeatureFlag));
         hoverProviderMap.set(HoverType.ResourceSection, new ResourceSectionHoverProvider(schemaRetriever));
         hoverProviderMap.set(HoverType.Parameter, new ParameterHoverProvider());
         hoverProviderMap.set(HoverType.ParameterAttribute, new ParameterAttributeHoverProvider());

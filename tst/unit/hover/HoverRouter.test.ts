@@ -31,6 +31,7 @@ describe('HoverRouter', () => {
     let hoverRouter: HoverRouter;
     let mockContextManager: StubbedInstance<ContextManager>;
     const params = docPosition('file:///test.yaml', 0, 0);
+    const mockFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
 
     beforeEach(() => {
         // Reset mocks
@@ -58,7 +59,11 @@ describe('HoverRouter', () => {
         }));
 
         const mockComponents = createMockComponents();
-        hoverRouter = new HoverRouter(mockComponents.core.contextManager, mockComponents.external.schemaRetriever);
+        hoverRouter = new HoverRouter(
+            mockComponents.core.contextManager,
+            mockComponents.external.schemaRetriever,
+            mockFeatureFlag,
+        );
         mockContextManager = mockComponents.contextManager;
     });
 
@@ -104,6 +109,7 @@ describe('HoverRouter', () => {
             routerWithMockedProvider = new HoverRouter(
                 mockComponents.core.contextManager,
                 mockComponents.external.schemaRetriever,
+                mockFeatureFlag,
             );
             mockContextManager = mockComponents.contextManager;
         });
@@ -116,6 +122,7 @@ describe('HoverRouter', () => {
             const routerWithResourceDoc = new HoverRouter(
                 mockComponents.core.contextManager,
                 mockComponents.external.schemaRetriever,
+                mockFeatureFlag,
             );
             const mockContextManagerWithDoc = mockComponents.contextManager;
 
@@ -182,6 +189,7 @@ describe('HoverRouter', () => {
             const routerWithResourceDoc = new HoverRouter(
                 mockComponents.core.contextManager,
                 mockComponents.external.schemaRetriever,
+                mockFeatureFlag,
             );
             const mockContextManagerWithDoc = mockComponents.contextManager;
 
