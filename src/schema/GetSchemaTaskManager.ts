@@ -7,6 +7,7 @@ import { AwsRegion } from '../utils/Region';
 import { GetSamSchemaTask } from './GetSamSchemaTask';
 import { GetPrivateSchemasTask, GetPublicSchemaTask } from './GetSchemaTask';
 import { SchemaFileType } from './RegionalSchemas';
+import { SamSchema } from './SamSchemaTransformer';
 import { SchemaStore } from './SchemaStore';
 
 const TenSeconds = 10 * 1000;
@@ -27,12 +28,13 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
     constructor(
         private readonly schemas: SchemaStore,
         private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
-        private readonly getPrivateResources: () => Promise<DescribeTypeOutput[]>,
+        getPrivateResources: () => Promise<DescribeTypeOutput[]>,
+        getSamSchemas: () => Promise<SamSchema>,
         private profile: string = DefaultSettings.profile.profile,
         private readonly onSchemaUpdate: (region?: string, profile?: string) => void,
     ) {
-        this.privateTask = new GetPrivateSchemasTask(this.getPrivateResources, () => this.profile);
-        this.samTask = new GetSamSchemaTask();
+        this.privateTask = new GetPrivateSchemasTask(getPrivateResources, () => this.profile);
+        this.samTask = new GetSamSchemaTask(getSamSchemas);
 
         this.timeout = setTimeout(() => {
             // Wait before trying to call CFN APIs so that credentials have time to update

@@ -1,6 +1,6 @@
 import { FeatureFlagProvider } from '../featureFlag/FeatureFlagProvider';
 import { LspComponents } from '../protocol/LspComponents';
-import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
+import { getRemotePrivateSchemas, getRemotePublicSchemas, getRemoteSamSchemas } from '../schema/GetSchemaTask';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { SchemaStore } from '../schema/SchemaStore';
 import { AwsClient } from '../services/AwsClient';
@@ -46,8 +46,11 @@ export class CfnExternal implements Configurables, Closeable {
         this.schemaStore = overrides.schemaStore ?? new SchemaStore(core.dataStoreFactory);
         this.schemaRetriever =
             overrides.schemaRetriever ??
-            new SchemaRetriever(this.schemaStore, getRemotePublicSchemas, () =>
-                getRemotePrivateSchemas(core.awsCredentials, this.cfnService),
+            new SchemaRetriever(
+                this.schemaStore,
+                getRemotePublicSchemas,
+                () => getRemotePrivateSchemas(core.awsCredentials, this.cfnService),
+                getRemoteSamSchemas,
             );
 
         this.cfnLintService =

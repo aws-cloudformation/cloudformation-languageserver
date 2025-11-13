@@ -6,7 +6,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { pathToArtifact } from '../utils/ArtifactsDir';
-import { DataStore, DataStoreFactory } from './DataStore';
+import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 import { encryptionStrategy } from './lmdb/Utils';
 
 const log = LoggerFactory.getLogger('LMDB');
@@ -15,23 +15,27 @@ export class LMDBStore implements DataStore {
     private readonly telemetry: ScopedTelemetry;
 
     constructor(
-        private readonly name: string,
+        public readonly name: StoreName,
         private readonly store: Database<unknown, string>,
     ) {
         this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
+        log.info(`LMDB store ${name} initialized`);
     }
 
     get<T>(key: string): T | undefined {
+        log.info(`Get ${key}`);
         return this.store.get(key) as T | undefined;
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
+        log.info(`Put ${key}`);
         return this.telemetry.measureAsync('put', () => {
             return this.store.put(key, value);
         });
     }
 
     remove(key: string): Promise<boolean> {
+        log.info(`Remove ${key}`);
         return this.store.remove(key);
     }
 
@@ -55,20 +59,30 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private readonly timeout: NodeJS.Timeout;
     private readonly env: RootDatabase;
 
-    private readonly stores = new Map<string, LMDBStore>();
+    private readonly stores = new Map<StoreName, LMDBStore>();
 
-    constructor(private readonly rootDir: string = pathToArtifact('lmdb')) {
-        log.info(`Initializing LMDB at ${rootDir} and version ${Version}`);
+    constructor(
+        private readonly rootDir: string = pathToArtifact('lmdb'),
+        storeNames: StoreName[] = [StoreName.public_schemas, StoreName.sam_schemas],
+    ) {
+        log.info(`Initializing LMDB ${Version} at ${rootDir}`);
         this.storePath = join(rootDir, Version);
+
         this.env = open({
             path: this.storePath,
-            maxDbs: 10, // 10 max databases
+            maxDbs: 10,
             mapSize: 100 * 1024 * 1024, // 100MB max size
             encoding: Encoding,
             encryptionKey: encryptionStrategy(Version),
         });
 
-        log.info('Setup LMDB guages');
+        for (const store of storeNames) {
+            const database = this.env.openDB<unknown, string>({
+                name: store,
+                encoding: Encoding,
+            });
+            this.stores.set(store, new LMDBStore(store, database));
+        }
         this.registerLMDBGauges();
 
         this.timeout = setTimeout(
@@ -77,26 +91,15 @@ export class LMDBStoreFactory implements DataStoreFactory {
             },
             2 * 60 * 1000,
         );
+
+        log.info('LMDB initialized...');
     }
 
-    getOrCreate(store: string): DataStore {
-        let val = this.stores.get(store);
+    get(store: StoreName): DataStore {
+        const val = this.stores.get(store);
         if (val === undefined) {
-            let database;
-            this.env.transactionSync(() => {
-                database = this.env.openDB<unknown, string>({
-                    name: store,
-                    encoding: Encoding,
-                });
-            });
-
-            if (database === undefined) {
-                throw new Error(`Failed to open LMDB store ${store}`);
-            }
-            val = new LMDBStore(store, database);
-            this.stores.set(store, val);
+            throw new Error(`Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`);
         }
-
         return val;
     }
 

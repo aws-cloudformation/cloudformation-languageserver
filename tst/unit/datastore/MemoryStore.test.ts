@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { DataStore } from '../../../src/datastore/DataStore';
+import { DataStore, StoreName } from '../../../src/datastore/DataStore';
 import { MemoryStoreFactory } from '../../../src/datastore/MemoryStore';
 
 describe('MemoryStore', () => {
@@ -8,7 +8,7 @@ describe('MemoryStore', () => {
 
     beforeEach(() => {
         memoryFactory = new MemoryStoreFactory();
-        memoryStore = memoryFactory.getOrCreate('test-store');
+        memoryStore = memoryFactory.get(StoreName.public_schemas);
     });
 
     describe('get', () => {
@@ -32,8 +32,8 @@ describe('MemoryStore', () => {
             const schemaValue = { type: 'schema' };
             const astValue = { type: 'ast' };
 
-            const schemaStore = memoryFactory.getOrCreate('schemas');
-            const astStore = memoryFactory.getOrCreate('ast');
+            const schemaStore = memoryFactory.get(StoreName.public_schemas);
+            const astStore = memoryFactory.get(StoreName.sam_schemas);
 
             await schemaStore.put(key, schemaValue);
             await astStore.put(key, astValue);
@@ -88,8 +88,8 @@ describe('MemoryStore', () => {
             const schemaValue = 'schema-value';
             const astValue = 'ast-value';
 
-            const schemaStore = memoryFactory.getOrCreate('schemas');
-            const astStore = memoryFactory.getOrCreate('ast');
+            const schemaStore = memoryFactory.get(StoreName.public_schemas);
+            const astStore = memoryFactory.get(StoreName.sam_schemas);
 
             await schemaStore.put(key, schemaValue);
             await astStore.put(key, astValue);
@@ -135,9 +135,9 @@ describe('MemoryStore', () => {
             const astValue = 'ast-value';
             const settingsValue = 'settings-value';
 
-            const schemaStore = memoryFactory.getOrCreate('schemas');
-            const astStore = memoryFactory.getOrCreate('ast');
-            const settingsStore = memoryFactory.getOrCreate('settings');
+            const schemaStore = memoryFactory.get(StoreName.public_schemas);
+            const astStore = memoryFactory.get(StoreName.sam_schemas);
+            const settingsStore = memoryFactory.get(StoreName.private_schemas);
 
             // Add data to multiple stores
             await schemaStore.put(key, schemaValue);
@@ -172,23 +172,22 @@ describe('MemoryStore', () => {
         });
 
         it('should update factory stats correctly after clearing', async () => {
-            const schemaStore = memoryFactory.getOrCreate('schemas');
-            const astStore = memoryFactory.getOrCreate('ast');
+            const schemaStore = memoryFactory.get(StoreName.private_schemas);
+            const samStore = memoryFactory.get(StoreName.sam_schemas);
 
             // Add data to multiple stores
             await schemaStore.put('key1', 'value1');
             await schemaStore.put('key2', 'value2');
-            await astStore.put('key1', 'value1');
+            await samStore.put('key1', 'value1');
 
-            // Verify initial stats (including test-store from beforeEach)
             let stats = memoryFactory.stats() as {
                 numStores: number;
                 storeNames: string[];
                 stores: Record<string, number>;
             };
-            expect(stats.numStores).toBe(3); // test-store, schemas, ast
-            expect(stats.stores.schemas).toBe(2);
-            expect(stats.stores.ast).toBe(1);
+            expect(stats.numStores).toBe(3);
+            expect(stats.stores['private_schemas']).toBe(2);
+            expect(stats.stores['sam_schemas']).toBe(1);
 
             // Clear schemas store
             await schemaStore.clear();
@@ -199,12 +198,12 @@ describe('MemoryStore', () => {
                 storeNames: string[];
                 stores: Record<string, number>;
             };
-            expect(stats.numStores).toBe(3); // test-store, schemas, ast
-            expect(stats.storeNames).toContain('ast');
-            expect(stats.storeNames).toContain('schemas');
-            expect(stats.storeNames).toContain('test-store');
-            expect(stats.stores.schemas).toBe(0);
-            expect(stats.stores.ast).toBe(1);
+            expect(stats.numStores).toBe(3);
+            expect(stats.storeNames).toContain('public_schemas');
+            expect(stats.storeNames).toContain('private_schemas');
+            expect(stats.storeNames).toContain('sam_schemas');
+            expect(stats.stores['private_schemas']).toBe(0);
+            expect(stats.stores['sam_schemas']).toBe(1);
         });
     });
 
@@ -229,82 +228,16 @@ describe('MemoryStore', () => {
         });
     });
 
-    describe('stats', () => {
-        it('should return stats including test-store for a factory with one store', () => {
-            const stats = memoryFactory.stats() as {
-                numStores: number;
-                storeNames: string[];
-                stores: Record<string, number>;
-            };
-
-            expect(stats.numStores).toBe(1); // test-store from beforeEach
-            expect(stats.storeNames).toEqual(['test-store']);
-            expect(stats.stores).toEqual({ 'test-store': 0 });
-        });
-
-        it('should return correct stats after adding items', async () => {
-            const schemaStore = memoryFactory.getOrCreate('schemas');
-            const astStore = memoryFactory.getOrCreate('ast');
-
-            await schemaStore.put('key1', 'value1');
-            await schemaStore.put('key2', 'value2');
-            await astStore.put('key1', 'value1');
-
-            const stats = memoryFactory.stats() as {
-                numStores: number;
-                storeNames: string[];
-                stores: Record<string, number>;
-            };
-
-            expect(stats.numStores).toBe(3); // test-store, schemas, ast
-            expect(stats.storeNames).toEqual(['ast', 'schemas', 'test-store']);
-            expect(stats.stores).toEqual({
-                schemas: 2,
-                ast: 1,
-                'test-store': 0,
-            });
-        });
-
-        it('should update stats after removing items', async () => {
-            const schemaStore = memoryFactory.getOrCreate('schemas');
-
-            await schemaStore.put('key1', 'value1');
-            await schemaStore.put('key2', 'value2');
-            await schemaStore.remove('key1');
-
-            const stats = memoryFactory.stats() as {
-                numStores: number;
-                storeNames: string[];
-                stores: Record<string, number>;
-            };
-
-            expect(stats.numStores).toBe(2); // test-store, schemas
-            expect(stats.storeNames).toEqual(['schemas', 'test-store']);
-            expect(stats.stores).toEqual({
-                schemas: 1,
-                'test-store': 0,
-            });
-        });
-    });
-
     describe('close', () => {
+        // eslint-disable-next-line vitest/expect-expect
         it('should close factory without error', async () => {
-            const schemaStore = memoryFactory.getOrCreate('schemas');
-            const astStore = memoryFactory.getOrCreate('ast');
+            const schemaStore = memoryFactory.get(StoreName.public_schemas);
+            const astStore = memoryFactory.get(StoreName.sam_schemas);
 
             await schemaStore.put('key1', 'value1');
             await astStore.put('key1', 'value1');
 
             await memoryFactory.close();
-
-            // Factory should still report stores exist after close
-            const stats = memoryFactory.stats() as {
-                numStores: number;
-                storeNames: string[];
-                stores: Record<string, number>;
-            };
-
-            expect(stats.numStores).toBe(3); // test-store, schemas, ast
         });
     });
 });

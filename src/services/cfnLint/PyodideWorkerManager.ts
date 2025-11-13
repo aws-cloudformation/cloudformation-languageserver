@@ -4,6 +4,7 @@ import { PublishDiagnosticsParams } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
 import { CfnLintInitializationSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { extractErrorMessage } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { WorkerNotInitializedError } from './CfnLintErrors';
 
@@ -126,7 +127,7 @@ export class PyodideWorkerManager {
                 });
             } catch (error) {
                 this.worker = undefined;
-                reject(error instanceof Error ? error : new Error(String(error)));
+                reject(error instanceof Error ? error : new Error(extractErrorMessage(error)));
             }
         });
     }

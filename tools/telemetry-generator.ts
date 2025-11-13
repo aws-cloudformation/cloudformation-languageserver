@@ -44,11 +44,8 @@ import {
     createMockLspCommunication,
     createMockAuthHandlers,
 } from '../tst/utils/MockServerComponents';
-import { getTestPrivateSchemas } from '../tst/utils/SchemaUtils';
 import { MemoryDataStoreFactoryProvider } from '../src/datastore/DataStore';
 import { SchemaStore } from '../src/schema/SchemaStore';
-import { GetSchemaTaskManager } from '../src/schema/GetSchemaTaskManager';
-import { getRemotePublicSchemas } from '../src/schema/GetSchemaTask';
 import { completionHandler } from '../src/handlers/CompletionHandler';
 import { hoverHandler } from '../src/handlers/HoverHandler';
 import { definitionHandler } from '../src/handlers/DefinitionHandler';

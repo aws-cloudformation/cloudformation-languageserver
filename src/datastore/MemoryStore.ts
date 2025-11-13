@@ -1,7 +1,7 @@
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { TelemetryService } from '../telemetry/TelemetryService';
-import { DataStore, DataStoreFactory } from './DataStore';
+import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 
 export class MemoryStore implements DataStore {
     private readonly store = new Map<string, unknown>();
@@ -47,13 +47,13 @@ export class MemoryStore implements DataStore {
 export class MemoryStoreFactory implements DataStoreFactory {
     @Telemetry({ scope: 'MemoryStore.Global' }) private readonly telemetry!: ScopedTelemetry;
 
-    private readonly stores = new Map<string, MemoryStore>();
+    private readonly stores = new Map<StoreName, MemoryStore>();
 
     constructor() {
         this.registerMemoryStoreGauges();
     }
 
-    getOrCreate(store: string): DataStore {
+    get(store: StoreName): DataStore {
         let val = this.stores.get(store);
         if (val === undefined) {
             val = new MemoryStore(store);

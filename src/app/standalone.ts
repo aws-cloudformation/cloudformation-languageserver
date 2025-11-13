@@ -46,8 +46,8 @@ async function onInitialize(params: ExtendedInitializeParams) {
 }
 
 function onInitialized(params: InitializedParams) {
-    getLogger().info(`${ExtensionName} initialized`);
     (server as any).initialized(params);
+    getLogger().info(`${ExtensionName} initialized`);
 }
 
 function onShutdown() {

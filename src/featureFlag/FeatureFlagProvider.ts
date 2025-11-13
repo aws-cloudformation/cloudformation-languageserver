@@ -59,7 +59,7 @@ export class FeatureFlagProvider implements Closeable {
     @Measure({ name: 'getFromOnline' })
     private async getFromOnline(env: string): Promise<unknown> {
         return await downloadJson(
-            `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/head/main/assets/featureFlag/${env.toLowerCase()}.json`,
+            `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/heads/main/assets/featureFlag/${env.toLowerCase()}.json`,
         );
     }
 

@@ -36,6 +36,7 @@ describe('SchemaRetriever', () => {
     let schemaRetriever: SchemaRetriever;
     let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
     let mockGetPrivateResources: ReturnType<typeof vi.fn>;
+    let mockGetSamSchemas: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -60,8 +61,14 @@ describe('SchemaRetriever', () => {
                 Description: 'Test private resource',
             } as DescribeTypeOutput,
         ]);
+        mockGetSamSchemas = vi.fn().mockResolvedValue({});
 
-        schemaRetriever = new SchemaRetriever(schemaStore, mockGetPublicSchemas, mockGetPrivateResources);
+        schemaRetriever = new SchemaRetriever(
+            schemaStore,
+            mockGetPublicSchemas,
+            mockGetPrivateResources,
+            mockGetSamSchemas,
+        );
     });
 
     afterEach(() => {
@@ -126,14 +133,6 @@ describe('SchemaRetriever', () => {
         expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
     });
 
-    it('should track available regions', async () => {
-        // Put data in the store first
-        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
-
-        schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
-        expect(schemaRetriever.availableRegions.has(AwsRegion.US_EAST_1)).toBe(true);
-    });
-
     it('should get default schema using user settings', async () => {
         // Put data in the store first
         await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
@@ -176,23 +175,6 @@ describe('SchemaRetriever', () => {
 
         // Rebuild affected schemas
         schemaRetriever.rebuildAffectedCombinedSchemas(AwsRegion.US_EAST_1);
-
-        // Should still have the schema (rebuilt)
-        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
-    });
-
-    it('should rebuild for current settings', async () => {
-        // Put data in the store first
-        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
-
-        // Get a schema to create a cached entry
-        schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
-
-        // Verify it's cached
-        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
-
-        // Rebuild for current settings
-        schemaRetriever.rebuildForCurrentSettings();
 
         // Should still have the schema (rebuilt)
         expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);

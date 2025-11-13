@@ -1,3 +1,4 @@
+import { arch, platform } from 'os';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { iamCredentialsDeleteHandler, iamCredentialsUpdateHandler } from '../handlers/AuthHandler';
 import { parseCfnEnvironmentFilesHandler } from '../handlers/CfnEnvironmentHandler';
@@ -68,14 +69,15 @@ export class CfnServer {
         private readonly external = new CfnExternal(lsp, core),
         private readonly providers = new CfnLspProviders(core, external),
     ) {
-        log.info('Initializing...');
+        log.info(
+            `Setting up LSP handlers... ${process.version} os=${platform()}-${arch()} process=${process.platform}-${process.arch}`,
+        );
         this.components = {
             ...core,
             ...external,
             ...providers,
         };
 
-        log.info('Seting up handlers...');
         this.setupHandlers();
     }
 
