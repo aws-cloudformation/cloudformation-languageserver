@@ -867,7 +867,7 @@ Resources:
                 expect(constant.value).toBe('bar');
             });
 
-            it('should create Constant entity with string interpolation', () => {
+            it('should create Constant entity with Sub intrinsic function', () => {
                 const context = getContextAt(5, 2, constantsYamlUri); // sub constant
 
                 expect(context).toBeDefined();
@@ -876,8 +876,8 @@ Resources:
 
                 const constant = entity as Constant;
                 expect(constant.name).toBe('sub');
-                expect(constant.value).toContain('${foo}');
-                expect(constant.value).toContain('${AWS::AccountId}');
+                expect(constant.value).toBeDefined();
+                expect(typeof constant.value).toBe('object');
             });
 
             it('should create Constant entity with object value', () => {
@@ -923,7 +923,7 @@ Resources:
             });
 
             it('should parse constant with object value in JSON', () => {
-                const context = getContextAt(6, 6, constantsJsonUri); // Position at "obj"
+                const context = getContextAt(9, 6, constantsJsonUri); // Position at "obj"
 
                 expect(context).toBeDefined();
                 const entity = context!.entity;

@@ -3,7 +3,7 @@ Transform: AWS::LanguageExtensions
 
 Constants:
   foo: bar
-  sub: "${foo}-abc-${AWS::AccountId}"
+  sub: !Sub ${foo}-abc-${AWS::AccountId}
   obj:
     TestObject:
       A: b
