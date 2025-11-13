@@ -11,3 +11,7 @@ export function normalizeIntrinsicFunction(text: string): string {
     }
     return text;
 }
+
+export function normalizeIntrinsicFunctionAndCondition(text: string): string {
+    return text === '!Condition' ? 'Condition' : normalizeIntrinsicFunction(text);
+}
