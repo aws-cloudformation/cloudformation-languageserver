@@ -642,12 +642,15 @@ describe('DiagnosticCoordinator', () => {
             );
 
             // Rapid calls
-            void coordinatorWithRealDelayer.publishDiagnostics('cfn-lint', testUri, [
-                createDiagnostic(0, 0, 'Error 1'),
-            ]);
-            void coordinatorWithRealDelayer.publishDiagnostics('cfn-lint', testUri, [
-                createDiagnostic(0, 0, 'Error 2'),
-            ]);
+            // These promises will be rejected when cancelled - catch them
+            coordinatorWithRealDelayer
+                .publishDiagnostics('cfn-lint', testUri, [createDiagnostic(0, 0, 'Error 1')])
+                .catch(() => {}); // Ignore cancellation errors
+
+            coordinatorWithRealDelayer
+                .publishDiagnostics('cfn-lint', testUri, [createDiagnostic(0, 0, 'Error 2')])
+                .catch(() => {}); // Ignore cancellation errors
+
             const promise = coordinatorWithRealDelayer.publishDiagnostics('cfn-lint', testUri, [
                 createDiagnostic(0, 0, 'Error 3'),
             ]);
@@ -657,7 +660,7 @@ describe('DiagnosticCoordinator', () => {
 
             // Advance timers
             vi.advanceTimersByTime(200);
-            await promise;
+            await promise.catch(() => {}); // Handle potential cancellation
 
             // Should only publish once with latest diagnostics
             expect(mockPublishDiagnostics).toHaveBeenCalledTimes(1);
