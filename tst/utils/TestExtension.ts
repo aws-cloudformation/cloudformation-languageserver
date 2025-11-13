@@ -104,6 +104,7 @@ export class TestExtension implements Closeable {
                 aws: awsMetadata,
             },
         },
+        private readonly providerOverrides: Partial<CfnLspProviders> = {},
     ) {
         this.serverConnection = new LspConnection(
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
@@ -129,6 +130,7 @@ export class TestExtension implements Closeable {
                         relationshipSchemaService: new RelationshipSchemaService(
                             join(__dirname, '..', '..', 'assets', 'relationship_schemas.json'),
                         ),
+                        ...this.providerOverrides,
                     });
                     this.server = new CfnServer(lsp, this.core, this.external, this.providers);
                     return LspCapabilities;

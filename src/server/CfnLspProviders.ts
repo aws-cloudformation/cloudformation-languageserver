@@ -87,7 +87,8 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.codeActionService = overrides.codeActionService ?? CodeActionService.create(core);
         this.documentSymbolRouter = overrides.documentSymbolRouter ?? new DocumentSymbolRouter(core.syntaxTreeManager);
         this.codeLensProvider =
-            overrides.codeLensProvider ?? new CodeLensProvider(core.syntaxTreeManager, core.documentManager);
+            overrides.codeLensProvider ??
+            new CodeLensProvider(core.syntaxTreeManager, core.documentManager, external.schemaRetriever);
 
         this.cfnAI =
             overrides.cfnAI ?? new CfnAI(core.documentManager, external.awsClient, this.relationshipSchemaService);

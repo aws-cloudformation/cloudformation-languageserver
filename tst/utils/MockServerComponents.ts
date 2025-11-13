@@ -5,7 +5,6 @@ import { CfnAI } from '../../src/ai/CfnAI';
 import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { CompletionRouter } from '../../src/autocomplete/CompletionRouter';
 import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
-import { ResourceStateCompletionProvider } from '../../src/autocomplete/ResourceStateCompletionProvider';
 import { TopLevelSectionCompletionProvider } from '../../src/autocomplete/TopLevelSectionCompletionProvider';
 import { CodeLensProvider } from '../../src/codeLens/CodeLensProvider';
 import { ManagedResourceCodeLens } from '../../src/codeLens/ManagedResourceCodeLens';
@@ -251,17 +250,6 @@ export function createMockResourceEntityCompletionProvider(
         return new ResourceEntityCompletionProvider(schemaRetriever, documentManager);
     }
     return stubInterface<ResourceEntityCompletionProvider>();
-}
-
-export function createMockResourceStateCompletionProvider(
-    resourceStateManager?: ResourceStateManager,
-    documentManager?: DocumentManager,
-    schemaRetriever?: SchemaRetriever,
-) {
-    if (resourceStateManager && documentManager && schemaRetriever) {
-        return new ResourceStateCompletionProvider(resourceStateManager, documentManager, schemaRetriever);
-    }
-    return stubInterface<ResourceStateCompletionProvider>();
 }
 
 export function createMockValidationWorkflowService() {

@@ -10,6 +10,7 @@ import {
     createMockDocumentManager,
     createMockManagedResourceCodeLens,
     createMockSyntaxTreeManager,
+    createMockSchemaRetriever,
 } from '../../utils/MockServerComponents';
 
 vi.mock('../../../src/context/SectionContextBuilder', () => ({
@@ -20,7 +21,8 @@ describe('CodeLensHandler', () => {
     const managedCodeLens = createMockManagedResourceCodeLens();
     const docManager = createMockDocumentManager();
     const syntaxTreeManager = createMockSyntaxTreeManager();
-    const codeLensProvider = new CodeLensProvider(syntaxTreeManager, docManager, managedCodeLens);
+    const schemaRetriever = createMockSchemaRetriever();
+    const codeLensProvider = new CodeLensProvider(syntaxTreeManager, docManager, schemaRetriever, managedCodeLens);
 
     let handler: any;
     let mockGetEntityMap: any;

@@ -32,6 +32,7 @@ export interface ResourceStateParams {
     resourceSelections?: ResourceSelection[];
     purpose: ResourceStatePurpose;
     parentResourceType?: string;
+    targetLogicalId?: string; // When set, overwrites this existing resource instead of creating new one
 }
 
 export interface ResourceStateResult {

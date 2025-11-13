@@ -1,5 +1,6 @@
 import { CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit } from 'vscode-languageserver';
 import { stringify as yamlStringify } from 'yaml';
+import { Context } from '../context/Context';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
@@ -16,6 +17,7 @@ import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
+import { handleLspError } from '../utils/Errors';
 import { getIndentationString } from '../utils/IndentationUtils';
 import { ResourceStateManager } from './ResourceStateManager';
 import {
@@ -53,7 +55,7 @@ export class ResourceStateImporter {
 
     @Measure({ name: 'importResourceState' })
     public async importResourceState(params: ResourceStateParams): Promise<ResourceStateResult> {
-        const { resourceSelections, textDocument, purpose, parentResourceType } = params;
+        const { resourceSelections, textDocument, purpose, parentResourceType, targetLogicalId } = params;
 
         this.telemetry.count(`purpose.${purpose.toLowerCase()}`, 1);
 
@@ -71,6 +73,18 @@ export class ResourceStateImporter {
             return this.getFailureResponse('Import failed. Syntax tree not found');
         }
 
+        // Handle CodeLens invocation - overwrite existing resource
+        if (targetLogicalId) {
+            return await this.overwriteExistingResource(
+                resourceSelections,
+                syntaxTree,
+                document,
+                purpose,
+                targetLogicalId,
+            );
+        }
+
+        // Handle explorer invocation - create new resource
         const { fetchedResourceStates, importResult } = await this.getResourceStates(
             resourceSelections,
             syntaxTree,
@@ -147,6 +161,140 @@ export class ResourceStateImporter {
         if (managedLogicalIds.length > 0) {
             return `Cannot import resources that are already managed by a stack. Remove these resources from their current stack (set DeletionPolicy to Retain before removing). Managed resources: ${managedLogicalIds.join(', ')}`;
         }
+    }
+
+    private async overwriteExistingResource(
+        resourceSelections: ResourceSelection[],
+        syntaxTree: SyntaxTree,
+        document: Document,
+        purpose: ResourceStatePurpose,
+        targetLogicalId: string,
+    ): Promise<ResourceStateResult> {
+        const importResult: ResourceStateResult = {
+            completionItem: undefined,
+            failedImports: {},
+            successfulImports: {},
+        };
+
+        const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
+        const targetResource = resourcesMap?.get(targetLogicalId);
+        if (!targetResource) {
+            return handleLspError(new Error('Resource not found'), `Resource ${targetLogicalId} not found in template`);
+        }
+
+        const resourceSelection = resourceSelections[0];
+        const resourceType = resourceSelection.resourceType;
+        const resourceIdentifier = resourceSelection.resourceIdentifiers[0];
+
+        log.debug(
+            `overwriteExistingResource - resourceType: ${resourceType}, identifier: ${resourceIdentifier}, logicalId: ${targetLogicalId}`,
+        );
+
+        const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
+        if (!schema) {
+            return handleLspError(new Error('Schema not found'), `Schema not found for resource type ${resourceType}`);
+        }
+
+        let resourceState;
+        try {
+            resourceState = await this.resourceStateManager.getResource(resourceType, resourceIdentifier);
+        } catch (error) {
+            return handleLspError(
+                error,
+                `Failed to fetch resource state for ${resourceType} with identifier ${resourceIdentifier}`,
+            );
+        }
+
+        if (!resourceState) {
+            return handleLspError(
+                new Error('Resource not found'),
+                `Resource ${resourceIdentifier} of type ${resourceType} not found in AWS account`,
+            );
+        }
+
+        this.getOrCreate(importResult.successfulImports, resourceType, []).push(resourceIdentifier);
+
+        const resourceBody = {
+            Type: resourceType,
+            DeletionPolicy: purpose === ResourceStatePurpose.IMPORT ? DeletionPolicyOnImport : undefined,
+            Properties: this.applyTransformations(resourceState.properties, schema, purpose, targetLogicalId),
+            Metadata: await this.createMetadata(resourceIdentifier, purpose),
+        };
+
+        const baseIndent = this.getResourceIndentation(targetResource, document);
+        const editorSettings = this.documentManager.getEditorSettingsForDocument(document.uri);
+        const indentedText = this.formatResourceForReplacement(
+            targetLogicalId,
+            resourceBody,
+            document.documentType,
+            baseIndent,
+            editorSettings,
+        );
+
+        const range = Range.create(
+            Position.create(targetResource.startPosition.row, targetResource.startPosition.column),
+            Position.create(targetResource.endPosition.row + 1, 0),
+        );
+
+        const completionItem: CompletionItem = {
+            label: purpose === ResourceStatePurpose.IMPORT ? 'Import Resource State' : 'Clone Resource',
+            kind: CompletionItemKind.Snippet,
+            insertText: indentedText,
+            insertTextFormat: InsertTextFormat.Snippet,
+            textEdit: TextEdit.replace(range, indentedText),
+        };
+
+        return {
+            ...importResult,
+            completionItem,
+        };
+    }
+
+    private formatResourceForReplacement(
+        logicalId: string,
+        resourceBody: Record<string, unknown>,
+        documentType: DocumentType,
+        baseIndent: string,
+        editorSettings: { tabSize: number; insertSpaces: boolean; detectIndentation: boolean },
+    ): string {
+        if (documentType === DocumentType.YAML) {
+            const yamlBody = this.yamlStringifyPreservingSnippets(resourceBody);
+            const bodyLines = yamlBody.trim().split('\n');
+            const indentStr = getIndentationString(editorSettings, documentType);
+
+            // Don't add base indent - VS Code auto-indents based on range position
+            const lines = [
+                `${logicalId}:`,
+                ...bodyLines.map((line) => (line.length > 0 ? `${indentStr}${line}` : line)),
+            ];
+            return lines.join('\n') + '\n\n';
+        }
+
+        // JSON
+        const indentSize = editorSettings.insertSpaces ? editorSettings.tabSize : 1;
+        const resourceObj = { [logicalId]: resourceBody };
+        const jsonStr = this.stringifyPreservingSnippets(resourceObj, indentSize);
+        const indentStr = getIndentationString(editorSettings, documentType);
+
+        // Remove outer braces and one level of indentation
+        const lines = jsonStr.split('\n').slice(1, -1);
+        return (
+            lines
+                .map((line) => {
+                    if (line.length === 0) return line;
+                    // Remove one level of indentation if present
+                    const dedented = line.startsWith(indentStr) ? line.slice(indentStr.length) : line;
+                    return dedented;
+                })
+                .join('\n') + '\n\n'
+        );
+    }
+
+    private getResourceIndentation(targetResource: Context, document: Document): string {
+        const startLine = targetResource.startPosition.row;
+        const lineText = document.getText().split('\n')[startLine];
+        const match = lineText?.match(/^(\s*)/);
+        return match ? match[1] : '';
     }
 
     private async getResourceStates(

@@ -1,33 +1,28 @@
-import { CompletionItem, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
+import { CompletionItem, CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { ResourceAttributesSet } from '../context/ContextType';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnLspProviders } from '../server/CfnLspProviders';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { CompletionProvider } from './CompletionProvider';
 import { ResourceEntityCompletionProvider } from './ResourceEntityCompletionProvider';
 import { ResourcePropertyCompletionProvider } from './ResourcePropertyCompletionProvider';
-import { ResourceStateCompletionProvider } from './ResourceStateCompletionProvider';
 import { ResourceTypeCompletionProvider } from './ResourceTypeCompletionProvider';
 
 enum ResourceCompletionType {
     Entity = 'Entity',
     Type = 'Type',
     Property = 'Property',
-    State = 'State',
 }
 
 export class ResourceSectionCompletionProvider implements CompletionProvider {
-    private readonly log = LoggerFactory.getLogger(ResourceSectionCompletionProvider);
-
     constructor(
         core: CfnInfraCore,
         external: CfnExternal,
-        providers: CfnLspProviders,
-        private readonly resourceProviders = createResourceCompletionProviders(core, external, providers),
+        _providers: CfnLspProviders,
+        private readonly resourceProviders = createResourceCompletionProviders(core, external),
     ) {}
 
     @Measure({ name: 'getCompletions' })
@@ -48,30 +43,9 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
             ResourceAttributesSet.has(context.entitySection as string) ||
             this.isInPropertiesSection(context)
         ) {
-            const schemaPropertyCompletions = this.resourceProviders
+            return this.resourceProviders
                 .get(ResourceCompletionType.Property)
                 ?.getCompletions(context, params) as CompletionItem[];
-
-            if (params.context?.triggerKind === CompletionTriggerKind.Invoked && this.isInPropertiesSection(context)) {
-                const resource = context.getResourceEntity();
-
-                if (resource?.Type) {
-                    const stateCompletionPromise = this.resourceProviders
-                        .get(ResourceCompletionType.State)
-                        ?.getCompletions(context, params) as Promise<CompletionItem[]>;
-
-                    return stateCompletionPromise
-                        .then((stateCompletion) => {
-                            return [...stateCompletion, ...schemaPropertyCompletions];
-                        })
-                        .catch((error) => {
-                            this.log.warn(error, 'Received error from resource state autocomplete');
-                            // Fallback to just property completions if state completions fail
-                            return schemaPropertyCompletions;
-                        });
-                }
-            }
-            return schemaPropertyCompletions;
         }
         return [];
     }
@@ -96,7 +70,6 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
 export function createResourceCompletionProviders(
     core: CfnInfraCore,
     external: CfnExternal,
-    providers: CfnLspProviders,
 ): Map<ResourceCompletionType, CompletionProvider> {
     const resourceProviderMap = new Map<ResourceCompletionType, CompletionProvider>();
     resourceProviderMap.set(
@@ -107,14 +80,6 @@ export function createResourceCompletionProviders(
     resourceProviderMap.set(
         ResourceCompletionType.Property,
         new ResourcePropertyCompletionProvider(external.schemaRetriever),
-    );
-    resourceProviderMap.set(
-        ResourceCompletionType.State,
-        new ResourceStateCompletionProvider(
-            providers.resourceStateManager,
-            core.documentManager,
-            external.schemaRetriever,
-        ),
     );
     return resourceProviderMap;
 }
