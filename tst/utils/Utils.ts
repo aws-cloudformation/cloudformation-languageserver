@@ -22,6 +22,23 @@ export function getJsonTemplate(): string {
     return Templates.sample.json.contents;
 }
 
+export function getComprehensiveYamlTemplate(): string {
+    return Templates.comprehensive.yaml.contents;
+}
+
+export function getComprehensiveJsonTemplate(): string {
+    return Templates.comprehensive.json.contents;
+}
+
+export function getForEachYamlTemplate(): string {
+  return Templates.foreach_template.yaml.contents;
+}
+
+export function getForEachJsonTemplate(): string {
+  return Templates.foreach_template.json.contents;
+}
+
+
 export class WaitFor {
     constructor(
         private readonly maxWaitMs: number = 25,
