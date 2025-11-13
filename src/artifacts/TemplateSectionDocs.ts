@@ -206,5 +206,21 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-description-structure.html)',
         ].join('\n'),
     );
+    // TODO: Update with official AWS documentation when available
+    templateSectionDocsMap.set(
+        TopLevelSection.Constants,
+        [
+            '**Constants**',
+            '\n',
+            '---',
+            'The optional `Constants` section allows you to define reusable values that can be referenced throughout your template. Constants can be strings or objects and are referenced directly by their name in intrinsic functions like `Ref` and `Sub`.',
+            '\n',
+            'Constants are useful for defining values that are used multiple times in your template, making your templates more maintainable and reducing duplication.',
+            '\n',
+            '**Note:** This feature requires the `AWS::LanguageExtensions` transform.',
+            '\n',
+            '[Source Documentation](https://docs.aws.amazon.com/)',
+        ].join('\n'),
+    );
     return templateSectionDocsMap;
 }

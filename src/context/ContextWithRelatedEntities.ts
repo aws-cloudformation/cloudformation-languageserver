@@ -72,6 +72,7 @@ export class ContextWithRelatedEntities extends Context {
                 TopLevelSection.Mappings,
                 TopLevelSection.Conditions,
                 TopLevelSection.Resources,
+                TopLevelSection.Constants,
             ]);
 
             const logicalIds = referencedLogicalIds(
