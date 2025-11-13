@@ -3,8 +3,10 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { LspDiagnostics } from '../protocol/LspDiagnostics';
+import { ValidationManager } from '../stacks/actions/ValidationManager';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Delayer } from '../utils/Delayer';
 
 type SourceToDiagnostics = Map<string, Diagnostic[]>;
 
@@ -17,11 +19,16 @@ type SourceToDiagnostics = Map<string, Diagnostic[]>;
 export class DiagnosticCoordinator {
     private readonly urisToDiagnostics = new Map<string, SourceToDiagnostics>();
     private readonly log = LoggerFactory.getLogger(DiagnosticCoordinator);
+    private readonly delayer: Delayer<void>;
 
     constructor(
         private readonly lspDiagnostics: LspDiagnostics,
         private readonly syntaxTreeManager: SyntaxTreeManager,
-    ) {}
+        private readonly validationManager: ValidationManager,
+        delayer?: Delayer<void>,
+    ) {
+        this.delayer = delayer ?? new Delayer<void>(200);
+    }
 
     /**
      * Publish diagnostics from a specific source for a document.
@@ -44,20 +51,33 @@ export class DiagnosticCoordinator {
             // Update diagnostics for this source
             collection.set(source, [...diagnostics]);
 
-            // Merge all diagnostics from all sources
-            const mergedDiagnostics = this.mergeDiagnostics(collection);
-
-            // Publish merged diagnostics to LSP client
-            const params: PublishDiagnosticsParams = {
-                uri,
-                diagnostics: mergedDiagnostics,
-            };
-
-            await this.lspDiagnostics.publishDiagnostics(params);
+            // Debounce the actual LSP publishing to avoid spam on keystrokes
+            await this.delayer.delay(uri, () => this.publishToLsp(uri));
         } catch (error) {
             this.log.error(error, `Failed to publish diagnostics for source ${source}, URI ${uri}`);
             throw error;
         }
+    }
+
+    /**
+     * Internal method to publish merged diagnostics to LSP client
+     */
+    private async publishToLsp(uri: string): Promise<void> {
+        const collection = this.urisToDiagnostics.get(uri);
+        if (!collection) {
+            return;
+        }
+
+        // Merge all diagnostics from all sources
+        const mergedDiagnostics = this.mergeDiagnostics(collection);
+
+        // Publish merged diagnostics to LSP client
+        const params: PublishDiagnosticsParams = {
+            uri,
+            diagnostics: mergedDiagnostics,
+        };
+
+        await this.lspDiagnostics.publishDiagnostics(params);
     }
 
     /**
@@ -98,6 +118,7 @@ export class DiagnosticCoordinator {
         const sourceDiagnostics = collection.get(CFN_VALIDATION_SOURCE);
         if (!sourceDiagnostics) return;
 
+        this.validationManager.getLastValidationByUri(uri)?.removeValidationDetailByDiagnosticId(diagnosticId);
         const filteredDiagnostics = sourceDiagnostics.filter((d) => d.data !== diagnosticId);
         collection.set(CFN_VALIDATION_SOURCE, filteredDiagnostics);
 

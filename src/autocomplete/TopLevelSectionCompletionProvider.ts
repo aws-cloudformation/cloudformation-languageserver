@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, InsertTextFormat } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { TopLevelSection, TopLevelSections } from '../context/ContextType';
+import { TopLevelSection, TopLevelSections, TopLevelSectionsWithLogicalIdsSet } from '../context/ContextType';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
@@ -119,7 +119,17 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
                 return this.constantsFeatureFlag.isEnabled();
             }
             return true;
-        }).map((section) => createCompletionItem(section, CompletionItemKind.Class));
+        }).map((section) => {
+            const shouldBeObject = TopLevelSectionsWithLogicalIdsSet.has(section);
+
+            const options = shouldBeObject
+                ? {
+                      data: { type: 'object' },
+                  }
+                : undefined;
+
+            return createCompletionItem(section, CompletionItemKind.Class, options);
+        });
     }
 
     private getTopLevelSectionSnippetCompletions(context: Context, params: CompletionParams): CompletionItem[] {

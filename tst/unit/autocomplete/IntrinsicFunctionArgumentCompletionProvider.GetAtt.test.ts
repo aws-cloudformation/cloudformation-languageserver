@@ -40,6 +40,7 @@ const createMockIntrinsicContext = (functionType: IntrinsicFunction, args: unkno
 describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => {
     let provider: IntrinsicFunctionArgumentCompletionProvider;
     const mockSyntaxTreeManager = createMockSyntaxTreeManager();
+    const mockConstantsFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
 
     // Create a proper CombinedSchemas mock with S3 Bucket schema
     const mockSchemaJson = JSON.stringify({
@@ -78,6 +79,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
     });
 
@@ -492,6 +494,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
                     mockSyntaxTreeManager,
                     emptySchemaRetriever,
                     mockDocumentManager,
+                    mockConstantsFeatureFlag,
                 );
 
                 const mockContext = createMockGetAttContext('', 'MyS3Bucket.');
@@ -524,6 +527,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
                     mockSyntaxTreeManager,
                     emptySchemaRetriever,
                     mockDocumentManager,
+                    mockConstantsFeatureFlag,
                 );
 
                 const mockContext = createMockGetAttContext('', 'MyS3Bucket.');
@@ -597,6 +601,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
                     mockSyntaxTreeManager,
                     mockSchemaRetrieverWithRds,
                     mockDocumentManager,
+                    mockConstantsFeatureFlag,
                 );
 
                 setupResourceEntitiesWithSchema({ DatabaseInstance: { Type: 'AWS::RDS::DBInstance' } });

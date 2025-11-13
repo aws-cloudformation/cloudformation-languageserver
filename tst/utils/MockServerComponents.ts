@@ -60,6 +60,7 @@ import { DefaultSettings, Settings } from '../../src/settings/Settings';
 import { SettingsManager } from '../../src/settings/SettingsManager';
 import { ChangeSetDeletionWorkflow } from '../../src/stacks/actions/ChangeSetDeletionWorkflow';
 import { DeploymentWorkflow } from '../../src/stacks/actions/DeploymentWorkflow';
+import { ValidationManager } from '../../src/stacks/actions/ValidationManager';
 import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow';
 import { StackEventManager } from '../../src/stacks/StackEventManager';
 import { StackManager } from '../../src/stacks/StackManager';
@@ -267,6 +268,10 @@ export function createMockValidationWorkflowService() {
     return stubInterface<ValidationWorkflow>();
 }
 
+export function createMockValidationManager() {
+    return stubInterface<ValidationManager>();
+}
+
 export function createMockDeploymentWorkflowService() {
     return stubInterface<DeploymentWorkflow>();
 }
@@ -354,6 +359,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         fileContextManager: overrides.fileContextManager ?? createMockFileContextManager(),
         contextManager: overrides.contextManager ?? createMockContextManager(),
         awsCredentials: overrides.awsCredentials ?? createMockAwsCredentials(),
+        validationManager: overrides.validationManager ?? stubInterface<ValidationManager>(),
         diagnosticCoordinator: overrides.diagnosticCoordinator ?? createMockDiagnosticCoordinator(),
         close: () => Promise.resolve(),
         configurables: () => [],

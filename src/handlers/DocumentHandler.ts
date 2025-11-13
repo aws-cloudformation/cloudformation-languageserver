@@ -10,6 +10,7 @@ import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
 import { LintTrigger } from '../services/cfnLint/CfnLintService';
 import { ValidationTrigger } from '../services/guard/GuardService';
+import { publishValidationDiagnostics } from '../stacks/actions/StackActionOperations';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 
 const log = LoggerFactory.getLogger('DocumentHandler');
@@ -122,6 +123,19 @@ export function didChangeHandler(
                     log.error(reason, `Error in Guard didChange processing for ${documentUri}`);
                 }
             });
+
+        // Republish validation diagnostics if available
+        const validationDetails = components.validationManager
+            .getLastValidationByUri(documentUri)
+            ?.getValidationDetails();
+        if (validationDetails) {
+            void publishValidationDiagnostics(
+                documentUri,
+                validationDetails,
+                components.syntaxTreeManager,
+                components.diagnosticCoordinator,
+            );
+        }
 
         components.documentManager.sendDocumentMetadata();
     };

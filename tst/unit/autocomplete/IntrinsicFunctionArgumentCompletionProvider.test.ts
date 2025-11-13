@@ -53,6 +53,7 @@ const createMockIntrinsicContextNoFunction = () => ({
 describe('IntrinsicFunctionArgumentCompletionProvider - Core Functionality', () => {
     let provider: IntrinsicFunctionArgumentCompletionProvider;
     const mockSyntaxTreeManager = createMockSyntaxTreeManager();
+    const mockConstantsFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
 
     // Create a proper CombinedSchemas mock
     const mockSchemas = new Map([
@@ -71,10 +72,12 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Core Functionality', () 
 
     beforeEach(() => {
         vi.clearAllMocks();
+
         provider = new IntrinsicFunctionArgumentCompletionProvider(
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
     });
 

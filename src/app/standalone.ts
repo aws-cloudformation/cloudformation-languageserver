@@ -38,9 +38,9 @@ async function onInitialize(params: ExtendedInitializeParams) {
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
     const { CfnInfraCore } = await import('../server/CfnInfraCore');
-    const { CfnServer } = await import('../server/CfnServer');
-
     const core = new CfnInfraCore(lsp.components, params);
+
+    const { CfnServer } = await import('../server/CfnServer');
     server = new CfnServer(lsp.components, core);
     return LspCapabilities;
 }
@@ -66,3 +66,11 @@ const lsp = new LspConnection(createConnection(ProposedFeatures.all), {
     onExit,
 });
 lsp.listen();
+
+process.on('unhandledRejection', (reason, _promise) => {
+    getLogger().error(reason, 'Unhandled promise rejection');
+});
+
+process.on('uncaughtException', (error, origin) => {
+    getLogger().error(error, `Uncaught exception ${origin}`);
+});

@@ -39,6 +39,7 @@ const createMockIntrinsicContext = (functionType: IntrinsicFunction, args: unkno
 describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () => {
     let provider: IntrinsicFunctionArgumentCompletionProvider;
     const mockSyntaxTreeManager = createMockSyntaxTreeManager();
+    const mockConstantsFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
 
     const mockSchemas = new Map([
         [
@@ -78,6 +79,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
     });
 

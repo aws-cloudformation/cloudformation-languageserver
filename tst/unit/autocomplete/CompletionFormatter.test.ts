@@ -1,10 +1,13 @@
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CompletionItemKind, CompletionList } from 'vscode-languageserver';
 import { CompletionFormatter } from '../../../src/autocomplete/CompletionFormatter';
 import { ResourceAttribute, TopLevelSection } from '../../../src/context/ContextType';
 import { DocumentType } from '../../../src/document/Document';
+import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
+import { ResourceSchema } from '../../../src/schema/ResourceSchema';
+import { SchemaRetriever } from '../../../src/schema/SchemaRetriever';
 import { DefaultSettings } from '../../../src/settings/Settings';
-import { createTopLevelContext } from '../../utils/MockContext';
+import { createResourceContext, createTopLevelContext } from '../../utils/MockContext';
 
 describe('CompletionFormatAdapter', () => {
     let formatter: CompletionFormatter;
@@ -47,20 +50,22 @@ describe('CompletionFormatAdapter', () => {
         });
 
         test('should adapt completions for JSON document type', () => {
-            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.JSON });
+            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.JSON, nodeType: 'string' });
 
             const result = formatter.format(mockCompletions, mockContext, defaultEditorSettings);
 
             expect(result).toBeDefined();
             expect(result.items).toHaveLength(2);
-            expect(result.items[0].insertText).toBe('Resources');
-            expect(result.items[1].insertText).toBe('AWS::EC2::Instance');
+            // JSON uses textEdit instead of insertText
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].insertText).toBeUndefined();
+            expect(result.items[1].textEdit).toBeDefined();
         });
     });
 
     describe('individual item adaptation', () => {
         test('should adapt item for JSON document type', () => {
-            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.JSON });
+            const mockContext = createTopLevelContext('Unknown', { type: DocumentType.JSON, nodeType: 'string' });
             const completions: CompletionList = {
                 isIncomplete: false,
                 items: [{ label: 'Resources', kind: CompletionItemKind.Property }],
@@ -68,7 +73,9 @@ describe('CompletionFormatAdapter', () => {
 
             const result = formatter.format(completions, mockContext, defaultEditorSettings);
 
-            expect(result.items[0].insertText).toBe('Resources');
+            // JSON uses textEdit instead of insertText
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].insertText).toBeUndefined();
         });
 
         test('should adapt item for YAML document type', () => {
@@ -286,6 +293,388 @@ describe('CompletionFormatAdapter', () => {
             expect(result.items[0].insertText).toBe('IsProduction');
             expect(result.items[1].insertText).toBe('CreateNATGateway');
             expect(result.items[2].insertText).toBe('ShouldCreateCache');
+        });
+    });
+
+    describe('JSON formatting with schema-based type lookup', () => {
+        let mockSchemaRetriever: SchemaRetriever;
+        let mockCombinedSchemas: CombinedSchemas;
+        let mockResourceSchema: ResourceSchema;
+
+        beforeEach(() => {
+            mockResourceSchema = {
+                resolveJsonPointerPath: vi.fn((path: string) => {
+                    // Simulate schema lookup for different properties
+                    switch (path) {
+                        case '/properties/BucketName': {
+                            return [{ type: 'string' }];
+                        }
+                        case '/properties/Tags': {
+                            return [{ type: 'array' }];
+                        }
+                        case '/properties/BucketEncryption': {
+                            return [{ type: 'object' }];
+                        }
+                        case '/properties/VersioningConfiguration': {
+                            return [{ type: 'object' }];
+                        }
+                        case '/properties/PublicAccessBlockConfiguration': {
+                            return [{ type: 'object' }];
+                        }
+                        // No default
+                    }
+                    return [];
+                }),
+            } as unknown as ResourceSchema;
+
+            mockCombinedSchemas = {
+                schemas: new Map([['AWS::S3::Bucket', mockResourceSchema]]),
+            } as CombinedSchemas;
+
+            mockSchemaRetriever = {
+                getDefault: vi.fn(() => mockCombinedSchemas),
+            } as unknown as SchemaRetriever;
+        });
+
+        test('should format object properties with braces in JSON', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'BucketEncryption',
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'BucketEncryption'],
+                data: { Type: 'AWS::S3::Bucket' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'BucketEncryption',
+                        kind: CompletionItemKind.Property,
+                        data: { type: 'simple' },
+                    },
+                ],
+            };
+
+            const lineContent = '        "BucketEncryption"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].textEdit?.newText).toContain('"BucketEncryption": {');
+            expect(result.items[0].textEdit?.newText).toContain('}');
+        });
+
+        test('should format array properties with brackets in JSON', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'Tags',
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'Tags'],
+                data: { Type: 'AWS::S3::Bucket' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'Tags',
+                        kind: CompletionItemKind.Property,
+                        data: { type: 'simple' },
+                    },
+                ],
+            };
+
+            const lineContent = '        "Tags"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].textEdit?.newText).toContain('"Tags": [');
+            expect(result.items[0].textEdit?.newText).toContain(']');
+        });
+
+        test('should format string properties with quotes in JSON', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'BucketName',
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'BucketName'],
+                data: { Type: 'AWS::S3::Bucket' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'BucketName',
+                        kind: CompletionItemKind.Property,
+                        data: { type: 'simple' },
+                    },
+                ],
+            };
+
+            const lineContent = '        "BucketName"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].textEdit?.newText).toContain('"BucketName": "$0"');
+        });
+
+        test('should use explicit data.type when provided', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'Properties',
+                propertyPath: ['Resources', 'MyBucket', 'Properties'],
+                data: { Type: 'AWS::S3::Bucket' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'Properties',
+                        kind: CompletionItemKind.Property,
+                        data: { type: 'object' },
+                    },
+                ],
+            };
+
+            const lineContent = '      "Properties"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].textEdit?.newText).toContain('"Properties": {');
+            // Should not call schema lookup since explicit type is provided
+            expect(mockResourceSchema.resolveJsonPointerPath).not.toHaveBeenCalled();
+        });
+
+        test('should handle resource attributes with predefined types', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'Metadata',
+                propertyPath: ['Resources', 'MyBucket', 'Metadata'],
+                data: { Type: 'AWS::S3::Bucket' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'Metadata',
+                        kind: CompletionItemKind.Property,
+                    },
+                ],
+            };
+
+            const lineContent = '      "Metadata"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].textEdit?.newText).toContain('"Metadata": {');
+            expect(result.items[0].textEdit?.newText).toContain('}');
+        });
+
+        test('should handle DependsOn as string type', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'DependsOn',
+                propertyPath: ['Resources', 'MyBucket'],
+                data: { Type: 'AWS::S3::Bucket' },
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'DependsOn',
+                        kind: CompletionItemKind.Property,
+                    },
+                ],
+            };
+
+            const lineContent = '      "DependsOn"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            // DependsOn is a string type, so should not format as object
+            expect(result.items[0].textEdit?.newText).toContain('"DependsOn":');
+            expect(result.items[0].textEdit?.newText).not.toContain('{');
+        });
+
+        test('should not format when lineContent is missing', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'BucketEncryption',
+                propertyPath: ['Resources', 'MyBucket', 'Properties'],
+                data: { Type: 'AWS::S3::Bucket' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'BucketEncryption',
+                        kind: CompletionItemKind.Property,
+                    },
+                ],
+            };
+
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                undefined,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            // Without lineContent, shouldFormat is false, so it just adds the basic format with indentation
+            expect(result.items[0].textEdit?.newText).toContain('"BucketEncryption":');
+        });
+
+        test('should handle missing schema gracefully', () => {
+            const mockContext = createResourceContext('MyResource', {
+                type: DocumentType.JSON,
+                text: 'SomeProperty',
+                propertyPath: ['Resources', 'MyResource', 'Properties'],
+                data: { Type: 'AWS::Unknown::Resource' },
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'SomeProperty',
+                        kind: CompletionItemKind.Property,
+                    },
+                ],
+            };
+
+            const lineContent = '        "SomeProperty"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            // Should not crash and should return basic formatting
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].textEdit?.newText).toContain('"SomeProperty":');
+        });
+
+        test('should handle array type in schema', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'Tags',
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'Tags'],
+                data: { Type: 'AWS::S3::Bucket' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'Tags',
+                        kind: CompletionItemKind.Property,
+                    },
+                ],
+            };
+
+            const lineContent = '        "Tags"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            const newText = result.items[0].textEdit?.newText ?? '';
+            expect(newText).toContain('"Tags": [');
+            expect(newText).toContain(']');
+        });
+
+        test('should preserve indentation in formatted output', () => {
+            // Create a mock context with custom startPosition
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'BucketEncryption',
+                propertyPath: ['Resources', 'MyBucket', 'Properties'],
+                data: { Type: 'AWS::S3::Bucket' },
+            });
+
+            // Override the startPosition using Object.defineProperty to bypass readonly
+            Object.defineProperty(mockContext, 'startPosition', {
+                value: { row: 5, column: 8 },
+                writable: false,
+                configurable: true,
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'BucketEncryption',
+                        kind: CompletionItemKind.Property,
+                    },
+                ],
+            };
+
+            const lineContent = '        "BucketEncryption"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            const newText = result.items[0].textEdit?.newText ?? '';
+            // Should maintain the 8-space indentation
+            expect(newText).toMatch(/^ {8}"/);
         });
     });
 });

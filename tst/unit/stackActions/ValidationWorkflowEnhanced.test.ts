@@ -151,7 +151,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
             'test-changeset',
         );
 
-        expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack');
+        expect(mockValidationManager.remove).not.toHaveBeenCalled();
     });
 
     describe('Public API Integration Tests', () => {
@@ -225,7 +225,7 @@ describe('ValidationWorkflow Enhanced Features', () => {
             await new Promise((resolve) => setTimeout(resolve, 10));
 
             // Verify validation manager was called appropriately
-            expect(mockValidationManager.remove).toHaveBeenCalledWith('test-stack-fail');
+            expect(mockValidationManager.remove).not.toHaveBeenCalled();
         });
     });
 });

@@ -3,11 +3,12 @@ import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
 import { Context } from '../context/Context';
 import { IntrinsicFunction, PseudoParameter, PseudoParametersSet, TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
-import { Mapping, Parameter, Resource } from '../context/semantic/Entity';
+import { Constant, Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../document/DocumentManager';
+import { FeatureFlag } from '../featureFlag/FeatureFlagI';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
@@ -54,6 +55,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly schemaRetriever: SchemaRetriever,
         private readonly documentManager: DocumentManager,
+        private readonly constantsFeatureFlag: FeatureFlag,
     ) {}
 
     @Measure({ name: 'getCompletions' })
@@ -104,14 +106,19 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             syntaxTree,
         );
 
-        if (!parametersAndResourcesCompletions || parametersAndResourcesCompletions.length === 0) {
+        const constantsCompletions = this.getConstantsCompletions(syntaxTree);
+
+        const allCompletions = [
+            ...this.pseudoParameterCompletionItems,
+            ...(parametersAndResourcesCompletions ?? []),
+            ...constantsCompletions,
+        ];
+
+        if (allCompletions.length === this.pseudoParameterCompletionItems.length) {
             return this.applyFuzzySearch(this.pseudoParameterCompletionItems, context.text);
         }
 
-        return this.applyFuzzySearch(
-            [...this.pseudoParameterCompletionItems, ...parametersAndResourcesCompletions],
-            context.text,
-        );
+        return this.applyFuzzySearch(allCompletions, context.text);
     }
 
     private handleSubArguments(
@@ -125,6 +132,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             syntaxTree,
         );
         const getAttCompletions = this.getGetAttCompletions(syntaxTree, context.logicalId);
+        const constantsCompletions = this.getConstantsCompletions(syntaxTree, true);
 
         const baseItems = [...this.pseudoParameterCompletionItems];
         if (parametersAndResourcesCompletions && parametersAndResourcesCompletions.length > 0) {
@@ -132,6 +140,9 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
         if (getAttCompletions.length > 0) {
             baseItems.push(...getAttCompletions);
+        }
+        if (constantsCompletions.length > 0) {
+            baseItems.push(...constantsCompletions);
         }
 
         // Handle ${} parameter substitution context detection
@@ -244,6 +255,49 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         return completionItems;
+    }
+
+    private getConstantsAsCompletionItems(
+        constantsMap: ReadonlyMap<string, Context>,
+        stringOnly: boolean = false,
+    ): CompletionItem[] {
+        const completionItems: CompletionItem[] = [];
+        for (const [constantName, context] of constantsMap) {
+            const constant = context.entity as Constant;
+
+            if (stringOnly && typeof constant.value !== 'string') {
+                continue;
+            }
+
+            const valuePreview =
+                typeof constant.value === 'string'
+                    ? constant.value
+                    : typeof constant.value === 'object'
+                      ? '[Object]'
+                      : String(constant.value);
+
+            completionItems.push(
+                createCompletionItem(constantName, CompletionItemKind.Constant, {
+                    detail: `Constant`,
+                    documentation: `Value: ${valuePreview}`,
+                }),
+            );
+        }
+
+        return completionItems;
+    }
+
+    private getConstantsCompletions(syntaxTree: SyntaxTree, stringOnly: boolean = false): CompletionItem[] {
+        if (!this.constantsFeatureFlag.isEnabled()) {
+            return [];
+        }
+
+        const constantsMap = getEntityMap(syntaxTree, TopLevelSection.Constants);
+        if (!constantsMap || constantsMap.size === 0) {
+            return [];
+        }
+
+        return this.getConstantsAsCompletionItems(constantsMap, stringOnly);
     }
 
     private shouldIncludeResourceCompletions(context: Context): boolean {

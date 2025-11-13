@@ -12,6 +12,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
     let provider: IntrinsicFunctionArgumentCompletionProvider;
     const mockSyntaxTreeManager = createMockSyntaxTreeManager();
     const mockDocumentManager = createMockDocumentManager();
+    const mockConstantsFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -39,6 +40,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
 
         const attributes = (provider as any).getResourceAttributes('AWS::S3::Bucket');
@@ -78,6 +80,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
 
         const attributes = (provider as any).getResourceAttributes('AWS::EC2::Instance');
@@ -115,6 +118,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
 
         const attributes = (provider as any).getResourceAttributes('AWS::Lambda::Function');
@@ -132,6 +136,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
 
         const attributes = (provider as any).getResourceAttributes('AWS::Unknown::Resource');
@@ -157,6 +162,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
 
         const attributes = (provider as any).getResourceAttributes('AWS::Custom::Resource');
@@ -189,6 +195,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - getResourceAttributes', 
             mockSyntaxTreeManager,
             mockSchemaRetriever,
             mockDocumentManager,
+            mockConstantsFeatureFlag,
         );
 
         const attributes = (provider as any).getResourceAttributes('AWS::Test::Resource');
