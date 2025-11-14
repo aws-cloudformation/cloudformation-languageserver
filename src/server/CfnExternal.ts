@@ -14,6 +14,7 @@ import { OnlineStatus } from '../services/OnlineStatus';
 import { S3Service } from '../services/S3Service';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
+import { OnlineFeatureGuard } from '../utils/OnlineFeatureGuard';
 import { CfnInfraCore } from './CfnInfraCore';
 
 /**
@@ -35,6 +36,7 @@ export class CfnExternal implements Configurables, Closeable {
 
     readonly onlineStatus: OnlineStatus;
     readonly featureFlags: FeatureFlagProvider;
+    readonly onlineFeatureGuard: OnlineFeatureGuard;
 
     constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Partial<CfnExternal> = {}) {
         this.awsClient = overrides.awsClient ?? new AwsClient(core.awsCredentials, core.cloudformationEndpoint);
@@ -63,6 +65,9 @@ export class CfnExternal implements Configurables, Closeable {
 
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus(core.clientMessage);
         this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider(getFromGitHub);
+        this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider();
+        this.onlineFeatureGuard =
+            overrides.onlineFeatureGuard ?? new OnlineFeatureGuard(this.onlineStatus, core.awsCredentials);
     }
 
     configurables(): Configurable[] {
