@@ -172,8 +172,13 @@ export class GuardService implements SettingsConfigurable, Closeable {
     async validate(content: string, uri: string, _forceUseContent?: boolean): Promise<void> {
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
-        if (!fileType || fileType === CloudFormationFileType.Unknown) {
-            this.telemetry.count(`validate.file.${CloudFormationFileType.Unknown}`, 1);
+        if (
+            !fileType ||
+            fileType === CloudFormationFileType.Other ||
+            fileType === CloudFormationFileType.Unknown ||
+            fileType === CloudFormationFileType.Empty
+        ) {
+            this.telemetry.count(`validate.file.${fileType}`, 1);
             // Not a CloudFormation file, publish empty diagnostics to clear any previous issues
             this.publishDiagnostics(uri, []);
             return;
