@@ -6,11 +6,10 @@ import { CfnService } from '../services/CfnService';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { AwsRegion } from '../utils/Region';
-import { downloadFile, downloadJson } from '../utils/RemoteDownload';
+import { downloadFile } from '../utils/RemoteDownload';
 import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
 import { cfnResourceSchemaLink, unZipFile } from './RemoteSchemaHelper';
-import { SamSchema } from './SamSchemaTransformer';
 
 export abstract class GetSchemaTask {
     protected abstract runImpl(dataStore: DataStore, logger?: Logger): Promise<void>;
@@ -101,20 +100,17 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
     }
 }
 
-export function getRemotePublicSchemas(region: AwsRegion) {
+export function getRemotePublicSchemas(region: AwsRegion): Promise<SchemaFileType[]> {
     return unZipFile(downloadFile(cfnResourceSchemaLink(region)));
 }
 
-export function getRemotePrivateSchemas(awsCredentials: AwsCredentials, cfnService: CfnService) {
+export function getRemotePrivateSchemas(
+    awsCredentials: AwsCredentials,
+    cfnService: CfnService,
+): Promise<DescribeTypeOutput[]> {
     if (awsCredentials.credentialsAvailable()) {
         return cfnService.getAllPrivateResourceSchemas();
     }
 
     return Promise.resolve([]);
-}
-
-export function getRemoteSamSchemas(): Promise<SamSchema> {
-    const SAM_SCHEMA_URL =
-        'https://raw.githubusercontent.com/aws/serverless-application-model/refs/heads/develop/samtranslator/schema/schema.json';
-    return downloadJson<SamSchema>(SAM_SCHEMA_URL);
 }

@@ -876,7 +876,7 @@ Resources:
 
                 const constant = entity as Constant;
                 expect(constant.name).toBe('sub');
-                expect(constant.value).toContain('${Const::foo}');
+                expect(constant.value).toContain('${foo}');
                 expect(constant.value).toContain('${AWS::AccountId}');
             });
 

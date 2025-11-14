@@ -11,7 +11,7 @@ import { CombinedSchemas } from './CombinedSchemas';
 import { GetSchemaTaskManager } from './GetSchemaTaskManager';
 import { RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
 import { SamSchemasType, SamStoreKey } from './SamSchemas';
-import { SamSchema } from './SamSchemaTransformer';
+import { CloudFormationResourceSchema } from './SamSchemaTransformer';
 import { SchemaStore } from './SchemaStore';
 
 const StaleDaysThreshold = 7;
@@ -28,14 +28,14 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     constructor(
         private readonly schemaStore: SchemaStore,
         private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
-        private readonly getPrivateResources: () => Promise<DescribeTypeOutput[]>,
-        private readonly getSamSchemas: () => Promise<SamSchema>,
+        getPrivateResources: () => Promise<DescribeTypeOutput[]>,
+        getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
     ) {
         this.schemaTaskManager = new GetSchemaTaskManager(
             this.schemaStore,
             this.getPublicSchemas,
-            this.getPrivateResources,
-            this.getSamSchemas,
+            getPrivateResources,
+            getSamSchemas,
             this.settings.profile,
             (region, profile) => this.rebuildAffectedCombinedSchemas(region, profile),
         );

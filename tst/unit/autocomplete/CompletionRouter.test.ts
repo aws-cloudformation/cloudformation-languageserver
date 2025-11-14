@@ -24,7 +24,7 @@ import { docPosition, Templates } from '../../utils/TemplateUtils';
 describe('CompletionRouter', () => {
     const mockComponents = createMockComponents();
 
-    mockComponents.external.featureFlags.get.returns({ isEnabled: () => false, describe: () => 'mock' });
+    mockComponents.external.featureFlags.get.returns({ isEnabled: () => true, describe: () => 'mock feature flags' });
 
     const completionRouter = CompletionRouter.create(
         mockComponents.core,
@@ -103,7 +103,40 @@ describe('CompletionRouter', () => {
         const regularSections = result!.items.filter((item) => item.kind === CompletionItemKind.Class);
 
         // Check that we have the expected number of regular sections
-        expect(regularSections.length).toBe(10); // Should suggest all template sections for missing document
+        expect(regularSections.length).toBe(11); // Should suggest all template sections for missing document
+    });
+
+    test('should return less top-level sections when feature flag is disabled', async () => {
+        const mockComponentsWithDisabledFlag = createMockComponents();
+        mockComponentsWithDisabledFlag.external.featureFlags.get.returns({
+            isEnabled: () => false,
+            describe: () => 'Constants feature flag',
+        });
+
+        const completionRouterWithDisabledFlag = CompletionRouter.create(
+            mockComponentsWithDisabledFlag.core,
+            mockComponentsWithDisabledFlag.external,
+            mockComponentsWithDisabledFlag.providers,
+        );
+
+        const mockContext = createTopLevelContext('Unknown', { text: '' });
+
+        mockComponentsWithDisabledFlag.contextManager.getContext.returns(mockContext);
+
+        const result = await completionRouterWithDisabledFlag.getCompletions(mockParams);
+
+        expect(result).toBeDefined();
+        expect(result?.isIncomplete).toBe(false);
+
+        // Filter to get only regular sections (not snippets)
+        const regularSections = result!.items.filter((item) => item.kind === CompletionItemKind.Class);
+
+        // Check that we have 10 sections (without Constants)
+        expect(regularSections.length).toBe(10);
+
+        // Verify Constants is not in the results
+        const constantsItem = regularSections.find((item) => item.label === 'Constants');
+        expect(constantsItem).toBeUndefined();
     });
 
     test('should return resource section provider given context entity type of Resource', () => {
@@ -200,6 +233,10 @@ describe('CompletionRouter', () => {
             resourceStateManager: mockResourceStateManager,
             schemaRetriever: mockComponents.schemaRetriever,
             settingsManager: mockSettingsManager,
+        });
+        mockTestComponents.external.featureFlags.get.returns({
+            isEnabled: () => true,
+            describe: () => 'mock feature flags',
         });
         const completionProviderMap = createCompletionProviders(
             mockTestComponents.core,

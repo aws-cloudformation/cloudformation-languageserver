@@ -1,6 +1,7 @@
 import { extname, parse } from 'path';
 import { Edit, Point } from 'tree-sitter';
 import { DocumentType } from './Document';
+import { parseValidYaml } from './YamlParser';
 
 export function getIndexFromPoint(content: string, point: Point): number {
     const contentInLines = content.split('\n');
@@ -90,4 +91,12 @@ export function detectDocumentType(uri: string, content: string): { extension: s
 
 export function uriToPath(uri: string) {
     return parse(uri);
+}
+
+export function parseDocumentContent(uri: string, content: string): unknown {
+    const documentType = detectDocumentType(uri, content).type;
+    if (documentType === DocumentType.JSON) {
+        return JSON.parse(content);
+    }
+    return parseValidYaml(content);
 }

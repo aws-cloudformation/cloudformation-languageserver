@@ -3,20 +3,20 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { GetSchemaTask } from './GetSchemaTask';
 import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';
-import { SamSchemaTransformer, SamSchema } from './SamSchemaTransformer';
+import { CloudFormationResourceSchema, SamSchema, SamSchemaTransformer } from './SamSchemaTransformer';
+import { downloadJson } from '../utils/RemoteDownload';
 
 const logger = LoggerFactory.getLogger('GetSamSchemaTask');
 
 export class GetSamSchemaTask extends GetSchemaTask {
-    constructor(private readonly getSamSchemas: () => Promise<SamSchema>) {
+    constructor(private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>) {
         super();
     }
 
     @Measure({ name: 'getSchemas' })
     override async runImpl(dataStore: DataStore): Promise<void> {
         try {
-            const samSchema = await this.getSamSchemas();
-            const resourceSchemas = SamSchemaTransformer.transformSamSchema(samSchema);
+            const resourceSchemas = await this.getSamSchemas();
 
             // Convert to SamSchemasType format
             const schemas = [...resourceSchemas.entries()].map(([resourceType, schema]) => ({
@@ -40,4 +40,12 @@ export class GetSamSchemaTask extends GetSchemaTask {
             throw error;
         }
     }
+}
+
+export async function getSamSchemas(): Promise<Map<string, CloudFormationResourceSchema>> {
+    const SAM_SCHEMA_URL =
+        'https://raw.githubusercontent.com/aws/serverless-application-model/refs/heads/develop/samtranslator/schema/schema.json';
+
+    const samSchema = await downloadJson<SamSchema>(SAM_SCHEMA_URL);
+    return SamSchemaTransformer.transformSamSchema(samSchema);
 }

@@ -1,6 +1,7 @@
-import { FeatureFlagProvider } from '../featureFlag/FeatureFlagProvider';
+import { FeatureFlagProvider, getFromGitHub } from '../featureFlag/FeatureFlagProvider';
 import { LspComponents } from '../protocol/LspComponents';
-import { getRemotePrivateSchemas, getRemotePublicSchemas, getRemoteSamSchemas } from '../schema/GetSchemaTask';
+import { getSamSchemas } from '../schema/GetSamSchemaTask';
+import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { SchemaStore } from '../schema/SchemaStore';
 import { AwsClient } from '../services/AwsClient';
@@ -50,7 +51,7 @@ export class CfnExternal implements Configurables, Closeable {
                 this.schemaStore,
                 getRemotePublicSchemas,
                 () => getRemotePrivateSchemas(core.awsCredentials, this.cfnService),
-                getRemoteSamSchemas,
+                getSamSchemas,
             );
 
         this.cfnLintService =
@@ -61,7 +62,7 @@ export class CfnExternal implements Configurables, Closeable {
             new GuardService(core.documentManager, core.diagnosticCoordinator, core.syntaxTreeManager);
 
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus(core.clientMessage);
-        this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider();
+        this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider(getFromGitHub);
     }
 
     configurables(): Configurable[] {

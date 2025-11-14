@@ -13,6 +13,7 @@ describe('GetSchemaTaskManager', () => {
     let mockGetPrivateResources: ReturnType<typeof vi.fn>;
     let mockGetSamSchemas: ReturnType<typeof vi.fn>;
     let mockOnSchemaUpdate: ReturnType<typeof vi.fn>;
+    let mockGetSamSchema: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -26,6 +27,7 @@ describe('GetSchemaTaskManager', () => {
                 Description: 'Test private resource',
             } as DescribeTypeOutput,
         ]);
+        mockGetSamSchema = vi.fn();
 
         mockGetSamSchemas = vi.fn().mockResolvedValue({});
         mockOnSchemaUpdate = vi.fn();
@@ -34,7 +36,7 @@ describe('GetSchemaTaskManager', () => {
             mockSchemaStore,
             mockGetPublicSchemas,
             mockGetPrivateResources,
-            mockGetSamSchemas,
+            mockGetSamSchema,
             'default',
             mockOnSchemaUpdate,
         );

@@ -68,7 +68,7 @@ describe('StackActionsCodeLens', () => {
         expect(result).toEqual([]);
     });
 
-    it('should return two code lenses for valid CFN template with Resources', () => {
+    it('should return one code lens for valid CFN template with Resources', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
@@ -78,13 +78,10 @@ describe('StackActionsCodeLens', () => {
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
 
-        expect(result).toHaveLength(2);
-        expect(result[0].command?.title).toBe('Validate Deployment');
-        expect(result[0].command?.command).toBe('aws.cloudformation.api.validateDeployment');
+        expect(result).toHaveLength(1);
+        expect(result[0].command?.title).toBe('Validate and Deploy');
+        expect(result[0].command?.command).toBe('aws.cloudformation.api.deployTemplate');
         expect(result[0].command?.arguments).toEqual(['file:///test.yaml']);
-        expect(result[1].command?.title).toBe('Deploy Template');
-        expect(result[1].command?.command).toBe('aws.cloudformation.api.deployTemplate');
-        expect(result[1].command?.arguments).toEqual(['file:///test.yaml']);
     });
 
     it('should place code lens on line 0 for simple template', () => {
@@ -165,7 +162,7 @@ describe('StackActionsCodeLens', () => {
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
 
-        expect(result).toHaveLength(2);
+        expect(result).toHaveLength(1);
         expect(result[0].range.start.line).toBe(0);
     });
 
@@ -184,7 +181,7 @@ describe('StackActionsCodeLens', () => {
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
 
-        expect(result).toHaveLength(2);
+        expect(result).toHaveLength(1);
     });
 
     it('should handle JSON template', () => {
@@ -197,7 +194,7 @@ describe('StackActionsCodeLens', () => {
 
         const result = getStackActionsCodeLenses('file:///test.json', document, mockSyntaxTreeManager);
 
-        expect(result).toHaveLength(2);
+        expect(result).toHaveLength(1);
     });
 
     it('should handle template with multiple resources', () => {
@@ -221,7 +218,7 @@ describe('StackActionsCodeLens', () => {
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
 
-        expect(result).toHaveLength(2);
+        expect(result).toHaveLength(1);
     });
 
     it('should handle whitespace-only lines correctly', () => {

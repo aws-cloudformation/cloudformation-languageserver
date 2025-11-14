@@ -1,4 +1,3 @@
-import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MemoryDataStoreFactoryProvider } from '../../../src/datastore/DataStore';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
@@ -8,6 +7,7 @@ import { SchemaStore } from '../../../src/schema/SchemaStore';
 import { Settings } from '../../../src/settings/Settings';
 import { AwsRegion } from '../../../src/utils/Region';
 import { createMockSettingsManager } from '../../utils/MockServerComponents';
+import { getTestPrivateSchemas, samFileType } from '../../utils/SchemaUtils';
 
 describe('SchemaRetriever', () => {
     const key = AwsRegion.US_EAST_1;
@@ -36,7 +36,7 @@ describe('SchemaRetriever', () => {
     let schemaRetriever: SchemaRetriever;
     let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
     let mockGetPrivateResources: ReturnType<typeof vi.fn>;
-    let mockGetSamSchemas: ReturnType<typeof vi.fn>;
+    let mockGetSam: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -55,20 +55,10 @@ describe('SchemaRetriever', () => {
         schemaStore = new SchemaStore(dataStoreFactory);
 
         mockGetPublicSchemas = vi.fn().mockResolvedValue([]);
-        mockGetPrivateResources = vi.fn().mockResolvedValue([
-            {
-                TypeName: 'Custom::TestResource',
-                Description: 'Test private resource',
-            } as DescribeTypeOutput,
-        ]);
-        mockGetSamSchemas = vi.fn().mockResolvedValue({});
+        mockGetPrivateResources = vi.fn().mockResolvedValue(getTestPrivateSchemas());
+        mockGetSam = vi.fn().mockResolvedValue(samFileType());
 
-        schemaRetriever = new SchemaRetriever(
-            schemaStore,
-            mockGetPublicSchemas,
-            mockGetPrivateResources,
-            mockGetSamSchemas,
-        );
+        schemaRetriever = new SchemaRetriever(schemaStore, mockGetPublicSchemas, mockGetPrivateResources, mockGetSam);
     });
 
     afterEach(() => {

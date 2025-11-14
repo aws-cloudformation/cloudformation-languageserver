@@ -1,8 +1,9 @@
+import { SchemaFileType } from './RegionalSchemas';
 import { ResourceSchema } from './ResourceSchema';
 
 export type SamSchemasType = {
     version: string;
-    schemas: { name: string; content: string; createdMs: number }[];
+    schemas: SchemaFileType[];
     firstCreatedMs: number;
     lastModifiedMs: number;
 };

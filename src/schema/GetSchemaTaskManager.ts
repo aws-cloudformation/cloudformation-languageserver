@@ -7,7 +7,7 @@ import { AwsRegion } from '../utils/Region';
 import { GetSamSchemaTask } from './GetSamSchemaTask';
 import { GetPrivateSchemasTask, GetPublicSchemaTask } from './GetSchemaTask';
 import { SchemaFileType } from './RegionalSchemas';
-import { SamSchema } from './SamSchemaTransformer';
+import { CloudFormationResourceSchema } from './SamSchemaTransformer';
 import { SchemaStore } from './SchemaStore';
 
 const TenSeconds = 10 * 1000;
@@ -29,7 +29,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         private readonly schemas: SchemaStore,
         private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
         getPrivateResources: () => Promise<DescribeTypeOutput[]>,
-        getSamSchemas: () => Promise<SamSchema>,
+        getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
         private profile: string = DefaultSettings.profile.profile,
         private readonly onSchemaUpdate: (region?: string, profile?: string) => void,
     ) {

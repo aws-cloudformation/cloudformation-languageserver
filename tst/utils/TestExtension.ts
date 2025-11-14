@@ -1,4 +1,5 @@
 import { randomBytes } from 'crypto';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PassThrough } from 'stream';
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node';
@@ -51,6 +52,7 @@ import { MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
+import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../src/schema/SchemaStore';
 import { CfnExternal } from '../../src/server/CfnExternal';
 import { CfnInfraCore } from '../../src/server/CfnInfraCore';
@@ -61,6 +63,7 @@ import { RelationshipSchemaService } from '../../src/services/RelationshipSchema
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
+import { getTestPrivateSchemas, samFileType, SamSchemaFiles, schemaFileType, Schemas } from './SchemaUtils';
 import { wait } from './Utils';
 
 const awsMetadata: AwsMetadata = {
@@ -118,11 +121,24 @@ export class TestExtension implements Closeable {
                     });
 
                     const schemaStore = new SchemaStore(dataStoreFactory);
+                    const schemaRetriever = new SchemaRetriever(
+                        schemaStore,
+                        (_region) => {
+                            return Promise.resolve(schemaFileType(Object.values(Schemas)));
+                        },
+                        () => Promise.resolve(getTestPrivateSchemas()),
+                        () => {
+                            return Promise.resolve(samFileType(Object.values(SamSchemaFiles)));
+                        },
+                    );
+
+                    const ffFile = join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json');
                     this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
-                        featureFlags: new FeatureFlagProvider(
-                            join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
-                        ),
+                        schemaRetriever,
+                        featureFlags: new FeatureFlagProvider((_env) => {
+                            return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
+                        }, ffFile),
                     });
 
                     this.providers = new CfnLspProviders(this.core, this.external, {
