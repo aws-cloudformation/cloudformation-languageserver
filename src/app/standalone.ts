@@ -1,3 +1,4 @@
+import { arch, platform } from 'os';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
@@ -33,6 +34,11 @@ async function onInitialize(params: ExtendedInitializeParams) {
         },
         `${ExtensionName} initializing...`,
     );
+    getLogger().info({
+        Machine: `${platform()}-${arch()}`,
+        Process: `${process.platform}-${process.arch}`,
+        Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
+    });
     LoggerFactory.initialize(AwsMetadata);
     TelemetryService.initialize(ClientInfo, AwsMetadata);
 

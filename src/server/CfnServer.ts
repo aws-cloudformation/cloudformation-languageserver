@@ -58,6 +58,7 @@ import { CfnInfraCore } from './CfnInfraCore';
 import { CfnLspProviders } from './CfnLspProviders';
 import { ServerComponents } from './ServerComponents';
 
+const log = LoggerFactory.getLogger('CfnServer');
 export class CfnServer {
     private readonly components: ServerComponents;
 
@@ -67,7 +68,7 @@ export class CfnServer {
         private readonly external = new CfnExternal(lsp, core),
         private readonly providers = new CfnLspProviders(core, external),
     ) {
-        LoggerFactory.getLogger('CfnServer').info(`Setting up LSP handlers...`);
+        log.info(`Setting up LSP handlers...`);
         this.components = {
             ...core,
             ...external,
