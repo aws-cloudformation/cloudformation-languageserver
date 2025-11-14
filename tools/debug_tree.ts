@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { extname, resolve, dirname, join } from 'path';
+import { extname, resolve, join } from 'path';
 import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
 import { ContextManager } from '../src/context/ContextManager';
 import { SyntaxTree } from '../src/context/syntaxtree/SyntaxTree';
@@ -175,7 +175,7 @@ class DebugTreeTool {
         return results;
     }
 
-    private traverseTree(syntaxTree: SyntaxTree, results: DebugResults, options: DebugOptions): void {
+    private traverseTree(syntaxTree: SyntaxTree, results: DebugResults, _options: DebugOptions): void {
         const rootNode = (syntaxTree as any).tree.rootNode;
         results.syntaxTree.rootNodeType = rootNode.type;
         results.syntaxTree.hasErrors = rootNode.hasError;
@@ -317,7 +317,7 @@ class DebugTreeTool {
 
         console.log(`🎯 Testing ${uniquePositions.length} strategic positions...`);
 
-        for (const { line: lineIndex, column, reason } of uniquePositions) {
+        for (const { line: lineIndex, column } of uniquePositions) {
             if (lineIndex >= lines.length || column >= lines[lineIndex].length) continue;
 
             const contextInfo: ContextInfo = {
@@ -355,7 +355,7 @@ class DebugTreeTool {
         console.log(`✅ Created ${results.summary.contextCount} contexts from ${uniquePositions.length} positions`);
     }
 
-    private generateSummary(results: DebugResults): void {
+    private generateSummary(_results: DebugResults): void {
         // Summary is already being built during traversal
         console.log('\n📊 Analysis complete.');
     }
@@ -385,7 +385,7 @@ class DebugTreeTool {
         console.log(`🎯 Context results written to: ${contextOutputPath}`);
     }
 
-    private generateTreeVisualizationMarkdown(results: DebugResults, options: DebugOptions): string {
+    private generateTreeVisualizationMarkdown(results: DebugResults, _options: DebugOptions): string {
         let markdown = `# Syntax Tree Visualization\n\n`;
         markdown += `**File:** ${results.fileInfo.path}\n`;
         markdown += `**File Type:** ${results.fileInfo.cloudFormationFileType}\n`;
@@ -475,7 +475,7 @@ class DebugTreeTool {
         return result;
     }
 
-    private generateNodeMarkdown(results: DebugResults, options: DebugOptions): string {
+    private generateNodeMarkdown(results: DebugResults, _options: DebugOptions): string {
         let markdown = `# Syntax Tree Node Analysis\n\n`;
         markdown += `**File:** ${results.fileInfo.path}\n`;
         markdown += `**File Type:** ${results.fileInfo.cloudFormationFileType}\n`;
@@ -505,7 +505,7 @@ class DebugTreeTool {
         return markdown;
     }
 
-    private generateContextMarkdown(results: DebugResults, options: DebugOptions): string {
+    private generateContextMarkdown(results: DebugResults, _options: DebugOptions): string {
         let markdown = `# Context Analysis\n\n`;
         markdown += `**File:** ${results.fileInfo.path}\n`;
         markdown += `**Total Contexts:** ${results.summary.contextCount}\n`;

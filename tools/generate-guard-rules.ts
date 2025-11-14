@@ -291,7 +291,7 @@ function parseGuardRulesFile(content: string): ParsedGuardRule[] {
 /**
  * Generate TypeScript file with all rules and pack mappings
  */
-function generateTypeScriptFile(allRules: ParsedGuardRule[], rulePacks: RulePack[], sourceUrl: string): string {
+function generateTypeScriptFile(allRules: ParsedGuardRule[], rulePacks: RulePack[], _sourceUrl: string): string {
     const rulesObject = allRules
         .map((rule) => {
             // Use template literals for better readability - escape backticks, ${}, and backslashes in content

@@ -131,33 +131,29 @@ export class LMDBStoreFactory implements DataStoreFactory {
         let totalMb = 0;
         const globalStat = stats(this.env);
         this.telemetry.registerGaugeProvider('version', () => VersionNumber);
-        this.telemetry.registerGaugeProvider('global.size', () => globalStat.totalSizeMB, { unit: 'MB' });
-        this.telemetry.registerGaugeProvider('global.max.size', () => globalStat.maxSizeMB, {
-            unit: 'MB',
+        this.telemetry.registerGaugeProvider('global.size', () => globalStat.totalSize, { unit: 'By' });
+        this.telemetry.registerGaugeProvider('global.max.size', () => globalStat.maxSize, {
+            unit: 'By',
         });
         this.telemetry.registerGaugeProvider('global.entries', () => globalStat.entries);
-        totalMb += globalStat.totalSizeMB;
+        totalMb += globalStat.totalSize;
 
         for (const [name, store] of this.stores.entries()) {
             const stat = store.stats();
-            totalMb += stat.totalSizeMB;
+            totalMb += stat.totalSize;
 
-            this.telemetry.registerGaugeProvider(`store.${name}.size`, () => stat.totalSizeMB, {
-                unit: 'MB',
+            this.telemetry.registerGaugeProvider(`store.${name}.size`, () => stat.totalSize, {
+                unit: 'By',
             });
             this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => stat.entries, {
-                unit: 'MB',
+                unit: 'By',
             });
         }
 
-        this.telemetry.registerGaugeProvider('global.usage', () => totalMb / TotalMaxDbSize, {
+        this.telemetry.registerGaugeProvider('global.usage', () => (100 * totalMb) / TotalMaxDbSize, {
             unit: '%',
         });
     }
-}
-
-function bytesToMB(bytes: number) {
-    return Number((bytes / (1024 * 1024)).toFixed(4));
 }
 
 const VersionNumber = 2;
@@ -173,8 +169,8 @@ function stats(store: RootDatabase | Database): StoreStatsType {
     const overflowPages = stats['overflowPages'];
 
     return {
-        totalSizeMB: bytesToMB((branchPages + leafPages + overflowPages) * pageSize),
-        maxSizeMB: bytesToMB(stats['mapSize']),
+        totalSize: (branchPages + leafPages + overflowPages) * pageSize,
+        maxSize: stats['mapSize'],
         entries: stats['entryCount'],
         maxReaders: stats['maxReaders'],
         numReaders: stats['numReaders'],
@@ -185,8 +181,8 @@ function stats(store: RootDatabase | Database): StoreStatsType {
 }
 
 type StoreStatsType = {
-    totalSizeMB: number;
-    maxSizeMB: number;
+    totalSize: number;
+    maxSize: number;
     entries: number;
     maxReaders: number; // The configured maximum number of concurrent reader slots
     numReaders: number; // The number of reader slots currently in use

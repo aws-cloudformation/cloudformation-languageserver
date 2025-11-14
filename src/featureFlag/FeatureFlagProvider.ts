@@ -1,9 +1,10 @@
-import { readFileSync, writeFileSync } from 'fs';
+import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
+import { readFileIfExists } from '../utils/File';
 import { downloadJson } from '../utils/RemoteDownload';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 import { FeatureFlagSupplier, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey } from './FeatureFlagSupplier';
@@ -20,7 +21,7 @@ export class FeatureFlagProvider implements Closeable {
         private readonly getLatestFeatureFlags: (env: string) => Promise<unknown>,
         private readonly localFile = join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`),
     ) {
-        this.config = JSON.parse(readFileSync(localFile, 'utf8'));
+        this.config = JSON.parse(readFileIfExists(localFile, 'utf8'));
 
         this.supplier = new FeatureFlagSupplier(() => {
             return this.config;
