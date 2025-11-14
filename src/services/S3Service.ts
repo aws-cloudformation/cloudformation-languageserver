@@ -1,7 +1,7 @@
+import { readFileSync } from 'fs'; // eslint-disable-line no-restricted-syntax -- Needs to be fixed
 import { fileURLToPath } from 'url';
 import { S3Client, PutObjectCommand, ListBucketsCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { Measure } from '../telemetry/TelemetryDecorator';
-import { readBufferIfExists } from '../utils/File';
 import { AwsClient } from './AwsClient';
 
 export class S3Service {
@@ -59,7 +59,7 @@ export class S3Service {
 
         const filePath = localFilePath.startsWith('file://') ? fileURLToPath(localFilePath) : localFilePath;
 
-        const body = readBufferIfExists(filePath);
+        const body = readFileSync(filePath);
 
         return await this.putObjectContent(body, bucket, key);
     }

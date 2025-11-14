@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
-import { readdir, stat, unlink, writeFile } from 'fs/promises';
+// eslint-disable-next-line no-restricted-syntax -- circular dependency
+import { readdir, stat, unlink, writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import { DateTime } from 'luxon';
 import pino, { LevelWithSilent, Logger } from 'pino';
@@ -7,7 +8,6 @@ import { AwsMetadata } from '../server/InitParams';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { Closeable } from '../utils/Closeable';
 import { ExtensionId, ExtensionName } from '../utils/ExtensionConfig';
-import { readFileIfExistsAsync } from '../utils/File';
 import { TelemetrySettings } from './TelemetryConfig';
 
 export const LogLevel: Record<LevelWithSilent, number> = {
@@ -106,7 +106,7 @@ export class LoggerFactory implements Closeable {
                 const stats = await stat(filePath);
 
                 if (stats.size > LoggerFactory.MaxFileSize) {
-                    const content = await readFileIfExistsAsync(filePath, 'utf8');
+                    const content = await readFile(filePath, 'utf8');
                     const lines = content.split('\n');
                     const trimmed = lines.slice(-Math.floor(lines.length / 2)).join('\n');
                     await writeFile(filePath, trimmed);

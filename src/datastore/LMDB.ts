@@ -128,7 +128,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private registerLMDBGauges(): void {
-        let totalMb = 0;
+        let totalBytes = 0;
         const globalStat = stats(this.env);
         this.telemetry.registerGaugeProvider('version', () => VersionNumber);
         this.telemetry.registerGaugeProvider('global.size', () => globalStat.totalSize, { unit: 'By' });
@@ -136,11 +136,11 @@ export class LMDBStoreFactory implements DataStoreFactory {
             unit: 'By',
         });
         this.telemetry.registerGaugeProvider('global.entries', () => globalStat.entries);
-        totalMb += globalStat.totalSize;
+        totalBytes += globalStat.totalSize;
 
         for (const [name, store] of this.stores.entries()) {
             const stat = store.stats();
-            totalMb += stat.totalSize;
+            totalBytes += stat.totalSize;
 
             this.telemetry.registerGaugeProvider(`store.${name}.size`, () => stat.totalSize, {
                 unit: 'By',
@@ -150,7 +150,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             });
         }
 
-        this.telemetry.registerGaugeProvider('global.usage', () => (100 * totalMb) / TotalMaxDbSize, {
+        this.telemetry.registerGaugeProvider('global.usage', () => (100 * totalBytes) / TotalMaxDbSize, {
             unit: '%',
         });
     }
