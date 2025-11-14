@@ -100,11 +100,14 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
     }
 }
 
-export function getRemotePublicSchemas(region: AwsRegion) {
+export function getRemotePublicSchemas(region: AwsRegion): Promise<SchemaFileType[]> {
     return unZipFile(downloadFile(cfnResourceSchemaLink(region)));
 }
 
-export function getRemotePrivateSchemas(awsCredentials: AwsCredentials, cfnService: CfnService) {
+export function getRemotePrivateSchemas(
+    awsCredentials: AwsCredentials,
+    cfnService: CfnService,
+): Promise<DescribeTypeOutput[]> {
     if (awsCredentials.credentialsAvailable()) {
         return cfnService.getAllPrivateResourceSchemas();
     }

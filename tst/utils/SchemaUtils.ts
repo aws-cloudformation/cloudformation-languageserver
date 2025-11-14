@@ -2,8 +2,11 @@ import { readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { CombinedSchemas } from '../../src/schema/CombinedSchemas';
+import { PrivateSchemas } from '../../src/schema/PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from '../../src/schema/RegionalSchemas';
 import { ResourceSchema } from '../../src/schema/ResourceSchema';
+import { SamSchemas } from '../../src/schema/SamSchemas';
+import { CloudFormationResourceSchema } from '../../src/schema/SamSchemaTransformer';
 
 export const Schemas = {
     S3Bucket: {
@@ -132,6 +135,9 @@ export const Schemas = {
             return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-synthetics-canary.json'), 'utf8');
         },
     },
+};
+
+export const SamSchemaFiles = {
     ServerlessFunction: {
         fileName: 'file://aws-serverless-function.json',
         get contents() {
@@ -163,9 +169,26 @@ export function regionalSchemas(
 
 export function combinedSchemas(
     publicSchemas: (typeof Schemas.S3Bucket)[] = Object.values(Schemas),
+    samSchemas: (typeof SamSchemaFiles.ServerlessFunction)[] = Object.values(SamSchemaFiles),
     region: string = 'us-east-1',
 ): CombinedSchemas {
-    return new CombinedSchemas(regionalSchemas(publicSchemas, region));
+    const now = Date.now();
+    return new CombinedSchemas(
+        regionalSchemas(publicSchemas, region),
+        PrivateSchemas.from({
+            version: PrivateSchemas.V1,
+            identifier: 'test',
+            schemas: getTestPrivateSchemas(),
+            firstCreatedMs: now,
+            lastModifiedMs: now,
+        }),
+        SamSchemas.from({
+            version: SamSchemas.V1,
+            schemas: schemaFileType(samSchemas),
+            firstCreatedMs: now,
+            lastModifiedMs: now,
+        }),
+    );
 }
 
 export function combineSchema(schema: ResourceSchema, newName: string, changes: any): typeof Schemas.S3Bucket {
@@ -187,6 +210,19 @@ export function schemaFileType(schemas: (typeof Schemas.S3Bucket)[] = Object.val
             createdMs: Date.now(),
         };
     });
+}
+
+export function samFileType(
+    schemas: (typeof SamSchemaFiles.ServerlessFunction)[] = Object.values(SamSchemaFiles),
+): Map<string, CloudFormationResourceSchema> {
+    const map = new Map<string, CloudFormationResourceSchema>();
+
+    for (const schema of schemas) {
+        const sam = JSON.parse(schema.contents) as CloudFormationResourceSchema;
+        map.set(sam.typeName, sam);
+    }
+
+    return map;
 }
 
 export function getTestPrivateSchemas(): DescribeTypeOutput[] {
