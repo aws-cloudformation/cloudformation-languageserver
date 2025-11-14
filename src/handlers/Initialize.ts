@@ -22,6 +22,7 @@ export function initializedHandler(workspace: LspWorkspace, components: ServerCo
                         logger.error(error, `Failed to mount folder ${folder.name}`);
                     }
                 }
+                return;
             })
             .catch((error: unknown) => {
                 logger.error(error, `Failed to initialize server`);

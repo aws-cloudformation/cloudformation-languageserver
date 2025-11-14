@@ -47,3 +47,9 @@ export function extractLocationFromStack(stack?: string): {
         'error.column': column,
     };
 }
+
+export class RequestCancelledError extends Error {
+    constructor(key: string) {
+        super(`Request cancelled for key: ${key}`);
+    }
+}

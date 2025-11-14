@@ -77,7 +77,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         this.privateTask
             .run(this.schemas.privateSchemas, this.log)
             .then(() => {
-                this.onSchemaUpdate(undefined, this.profile);
+                return this.onSchemaUpdate(undefined, this.profile);
             })
             .catch(() => {});
     }
@@ -86,7 +86,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
         this.samTask
             .run(this.schemas.samSchemas, this.log)
             .then(() => {
-                this.onSchemaUpdate(); // No params = SAM update
+                return this.onSchemaUpdate(); // No params = SAM update
             })
             .catch(() => {});
     }
@@ -105,9 +105,10 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
     private run() {
         const task = this.tasks.shift();
         if (task) {
-            task.run(this.schemas.publicSchemas, this.log)
+            void task
+                .run(this.schemas.publicSchemas, this.log)
                 .then(() => {
-                    this.onSchemaUpdate(task.region);
+                    return this.onSchemaUpdate(task.region);
                 })
                 .catch(() => {
                     this.tasks.push(task);

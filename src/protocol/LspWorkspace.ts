@@ -51,6 +51,7 @@ export class LspWorkspace {
 
                         this.workspaceFolderChangeHandler(this.getAllWorkspaceFolders());
                     });
+                    return;
                 })
                 .catch((err) =>
                     this.connection.console.error(
@@ -65,7 +66,7 @@ export class LspWorkspace {
             this.connection.client
                 .register(DidChangeConfigurationNotification.type)
                 .then(() => {
-                    this.connection.console.info(`Registered for configuration changes`);
+                    return this.connection.console.info(`Registered for configuration changes`);
                 })
                 .catch((err) =>
                     this.connection.console.error(

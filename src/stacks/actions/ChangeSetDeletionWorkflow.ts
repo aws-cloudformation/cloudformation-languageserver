@@ -143,9 +143,6 @@ export class ChangeSetDeletionWorkflow
                     IncludePropertyValues: false,
                     ChangeSetName: params.changeSetName,
                 })
-                .then(() => {
-                    // ChangeSet still exists, continue polling
-                })
                 .catch((error) => {
                     const extractedError = extractErrorMessage(error);
 

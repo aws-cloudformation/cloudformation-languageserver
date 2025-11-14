@@ -11,7 +11,7 @@ import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
-import { extractErrorMessage } from '../../utils/Errors';
+import { extractErrorMessage, RequestCancelledError } from '../../utils/Errors';
 import { readFileIfExistsAsync } from '../../utils/File';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
@@ -87,6 +87,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
         this.getEnabledRulesByConfiguration()
             .then((rules) => {
                 this.enabledRules = rules;
+                return;
             })
             .catch((error) => {
                 this.log.error(`Failed to load initial rules: ${extractErrorMessage(error)}`);
@@ -109,6 +110,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
         this.getEnabledRulesByConfiguration()
             .then((rules) => {
                 this.enabledRules = rules;
+                return;
             })
             .catch((error) => {
                 this.log.error(`Failed to load rules during configuration: ${extractErrorMessage(error)}`);
@@ -142,6 +144,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
             this.getEnabledRulesByConfiguration()
                 .then((rules) => {
                     this.enabledRules = rules;
+                    return;
                 })
                 .catch((error) => {
                     this.log.error(`Failed to preload rules after settings change: ${extractErrorMessage(error)}`);
@@ -377,9 +380,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
                 await this.delayer.delay(uri, () => this.validate(content, uri, forceUseContent));
             }
         } catch (error) {
-            const errorMessage = extractErrorMessage(error);
-            // Check if this is a cancellation error - these are normal during rapid typing
-            if (errorMessage.includes('Request cancelled') || errorMessage.includes('cancelled')) {
+            if (error instanceof RequestCancelledError) {
                 return;
             }
             // For other errors, re-throw to be handled by caller

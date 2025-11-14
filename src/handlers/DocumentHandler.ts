@@ -12,6 +12,7 @@ import { LintTrigger } from '../services/cfnLint/CfnLintService';
 import { ValidationTrigger } from '../services/guard/GuardService';
 import { publishValidationDiagnostics } from '../stacks/actions/StackActionOperations';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { RequestCancelledError } from '../utils/Errors';
 
 const log = LoggerFactory.getLogger('DocumentHandler');
 
@@ -36,7 +37,7 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
 
         components.cfnLintService.lintDelayed(content, uri, LintTrigger.OnOpen).catch((reason) => {
             // Handle cancellation gracefully - user might have closed/changed the document
-            if (reason instanceof Error && reason.message.includes('Request cancelled')) {
+            if (reason instanceof RequestCancelledError) {
                 // Do nothing
             } else {
                 log.error(reason, `Linting error for ${uri}`);
@@ -46,7 +47,7 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
         // Trigger Guard validation
         components.guardService.validateDelayed(content, uri, ValidationTrigger.OnOpen).catch((reason) => {
             // Handle cancellation gracefully - user might have closed/changed the document
-            if (reason instanceof Error && reason.message.includes('Request cancelled')) {
+            if (reason instanceof RequestCancelledError) {
                 // Do nothing
             } else {
                 log.error(reason, `Guard validation error for ${uri}`);
@@ -105,7 +106,7 @@ export function didChangeHandler(
         // Trigger cfn-lint validation
         components.cfnLintService.lintDelayed(content, documentUri, LintTrigger.OnChange, true).catch((reason) => {
             // Handle both getTextDocument and linting errors
-            if (reason instanceof Error && reason.message.includes('Request cancelled')) {
+            if (reason instanceof RequestCancelledError) {
                 // Do nothing
             } else {
                 log.error(reason, `Error in didChange processing for ${documentUri}`);
@@ -117,7 +118,7 @@ export function didChangeHandler(
             .validateDelayed(content, documentUri, ValidationTrigger.OnChange, true)
             .catch((reason) => {
                 // Handle both getTextDocument and validation errors
-                if (reason instanceof Error && reason.message.includes('Request cancelled')) {
+                if (reason instanceof RequestCancelledError) {
                     // Do nothing
                 } else {
                     log.error(reason, `Error in Guard didChange processing for ${documentUri}`);
@@ -172,7 +173,7 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
 
         // Trigger cfn-lint validation
         components.cfnLintService.lintDelayed(documentContent, documentUri, LintTrigger.OnSave).catch((reason) => {
-            if (reason instanceof Error && reason.message.includes('Request cancelled')) {
+            if (reason instanceof RequestCancelledError) {
                 // Do nothing
             } else {
                 log.error(reason, `Linting error for ${documentUri}`);
@@ -183,7 +184,7 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
         components.guardService
             .validateDelayed(documentContent, documentUri, ValidationTrigger.OnSave)
             .catch((reason) => {
-                if (reason instanceof Error && reason.message.includes('Request cancelled')) {
+                if (reason instanceof RequestCancelledError) {
                     // Do nothing
                 } else {
                     log.error(reason, `Guard validation error for ${documentUri}`);

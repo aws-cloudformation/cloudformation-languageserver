@@ -10,6 +10,7 @@ import { Delayer } from '../utils/Delayer';
 import { byteSize } from '../utils/String';
 import { CloudFormationFileType, Document, DocumentType } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
+import { RequestCancelledError } from '../utils/Errors';
 
 export class DocumentManager implements SettingsConfigurable, Closeable {
     private readonly log = LoggerFactory.getLogger(DocumentManager);
@@ -103,7 +104,7 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
                 delay,
             )
             .catch((error) => {
-                if (error instanceof Error && error.message.includes('Request cancelled')) {
+                if (error instanceof RequestCancelledError) {
                     return;
                 }
                 this.log.error(error, 'Failed to send document metadata');

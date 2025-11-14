@@ -1,3 +1,5 @@
+import { RequestCancelledError } from './Errors';
+
 interface DelayedRequest<T> {
     executor: () => Promise<T>;
     resolve: (result: T) => void;
@@ -40,7 +42,7 @@ export class Delayer<T> {
             if (runningRequest) {
                 // There's already a request running for this key
                 // Queue this new request to execute after the current one completes
-                runningRequest
+                void runningRequest
                     .catch(() => {
                         // Ignore errors from the previous request
                         // We only care that it completed
@@ -110,9 +112,10 @@ export class Delayer<T> {
         this.runningRequests.set(key, executionPromise);
 
         // Handle the result
-        executionPromise
+        void executionPromise
             .then((result) => {
                 resolve(result);
+                return;
             })
             .catch((error) => {
                 const errorObj = error instanceof Error ? error : new Error(String(error));
@@ -142,7 +145,7 @@ export class Delayer<T> {
 
         if (request) {
             this.pendingRequests.delete(key);
-            request.reject(new Error(`Request cancelled for key: ${key}`));
+            request.reject(new RequestCancelledError(key));
         }
 
         // Note: We don't cancel running requests as they can't be safely cancelled

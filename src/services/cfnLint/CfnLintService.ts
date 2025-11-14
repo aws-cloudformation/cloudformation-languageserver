@@ -554,7 +554,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             this.delayer
                 .delay(uri, () => this.lint(request.content, uri, request.forceUseContent))
                 .then(() => {
-                    request.resolve();
+                    return request.resolve();
                 })
                 .catch((reason: unknown) => {
                     this.logError(`processing queued request for ${uri}`, reason);

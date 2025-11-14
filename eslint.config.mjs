@@ -111,9 +111,6 @@ export default tseslint.config([
 
             'security/detect-object-injection': 'off',
             'security/detect-non-literal-fs-filename': 'off',
-
-            'promise/always-return': 'off',
-            'promise/catch-or-return': 'off',
         },
     },
     {
