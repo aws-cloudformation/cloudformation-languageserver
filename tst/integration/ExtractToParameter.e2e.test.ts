@@ -55,7 +55,7 @@ describe('Extract to Parameter - End-to-End CodeAction Workflow Tests', () => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
                 expect(document?.contents()).toBe(template);
-            });
+            }, 1000);
 
             // Step 3: Request CodeActions for string literal
             const range: Range = {
@@ -139,7 +139,7 @@ describe('Extract to Parameter - End-to-End CodeAction Workflow Tests', () => {
                 expect(content).toBeDefined();
                 expect(content).toContain('"Parameters"');
                 expect(content).toContain('"Ref"');
-            });
+            }, 1000);
 
             // Give the syntax tree time to update
             await new Promise((resolve) => setTimeout(resolve, 100));
@@ -223,7 +223,7 @@ describe('Extract to Parameter - End-to-End CodeAction Workflow Tests', () => {
                 expect(Object.keys(parsed.Parameters).length).toBe(2);
                 expect(parsed.Resources.MyBucket.Properties.BucketName).toHaveProperty('Ref');
                 expect(parsed.Resources.MyQueue.Properties.QueueName).toHaveProperty('Ref');
-            });
+            }, 1000);
         });
 
         it('should handle complete workflow for YAML template extraction', async () => {
@@ -253,7 +253,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             // Position on numeric literal 5
             const range: Range = {
@@ -323,7 +323,7 @@ Resources:
                     expect(content).toBeDefined();
                     expect(content).toContain('Parameters:');
                     expect(content).toContain('!Ref');
-                });
+                }, 1000);
 
                 // Find the position of "my-yaml-bucket" in the updated document
                 const document = extension.components.documentManager.get(uri);
@@ -425,7 +425,7 @@ Resources:
                     // Both values should be replaced with !Ref
                     expect(finalContent).toContain('MaxCount: !Ref');
                     expect(finalContent).toContain('BucketName: !Ref');
-                });
+                }, 1000);
             }
         });
     });
@@ -461,7 +461,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             // Test 1: Cursor on literal value - should offer extraction
             const literalRange: Range = {
@@ -548,7 +548,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             // Test Ref function
             const refRange: Range = {
@@ -621,7 +621,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             const range: Range = {
                 start: { line: 6, character: 25 },
@@ -705,7 +705,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             const range: Range = {
                 start: { line: 6, character: 25 },
@@ -771,7 +771,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             const range: Range = {
                 start: { line: 8, character: 18 },
@@ -833,7 +833,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             const range: Range = {
                 start: { line: 6, character: 25 },
@@ -893,7 +893,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             const range: Range = {
                 start: { line: 6, character: 28 },
@@ -942,7 +942,7 @@ Type: AWS::S3::Bucket`;
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             const range: Range = {
                 start: { line: 5, character: 18 },
@@ -990,7 +990,7 @@ Type: AWS::S3::Bucket`;
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             const range: Range = {
                 start: { line: 4, character: 21 },
@@ -1044,7 +1044,7 @@ Type: AWS::S3::Bucket`;
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             // Test 1: Empty range
             const emptyRange: Range = {
@@ -1154,7 +1154,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             // Verify DocumentManager is working
             const document = extension.components.documentManager.get(uri);
@@ -1239,7 +1239,7 @@ Resources:
             await WaitFor.waitFor(() => {
                 const document = extension.components.documentManager.get(uri);
                 expect(document).toBeDefined();
-            });
+            }, 1000);
 
             // Test extraction from deeply nested structure
             const range: Range = {

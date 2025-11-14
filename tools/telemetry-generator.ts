@@ -44,11 +44,8 @@ import {
     createMockLspCommunication,
     createMockAuthHandlers,
 } from '../tst/utils/MockServerComponents';
-import { getTestPrivateSchemas } from '../tst/utils/SchemaUtils';
 import { MemoryDataStoreFactoryProvider } from '../src/datastore/DataStore';
 import { SchemaStore } from '../src/schema/SchemaStore';
-import { GetSchemaTaskManager } from '../src/schema/GetSchemaTaskManager';
-import { getRemotePublicSchemas } from '../src/schema/GetSchemaTask';
 import { completionHandler } from '../src/handlers/CompletionHandler';
 import { hoverHandler } from '../src/handlers/HoverHandler';
 import { definitionHandler } from '../src/handlers/DefinitionHandler';
@@ -67,7 +64,6 @@ import { LspResourceHandlers } from '../src/protocol/LspResourceHandlers';
 import { LspRelatedResourcesHandlers } from '../src/protocol/LspRelatedResourcesHandlers';
 import { LspS3Handlers } from '../src/protocol/LspS3Handlers';
 import { ExtendedInitializeParams } from '../src/server/InitParams';
-import { FeatureFlagProvider } from '../src/featureFlag/FeatureFlagProvider';
 import { RelationshipSchemaService } from '../src/services/RelationshipSchemaService';
 import { LspCfnEnvironmentHandlers } from '../src/protocol/LspCfnEnvironmentHandlers';
 
@@ -200,7 +196,6 @@ function main() {
     const schemaStore = new SchemaStore(dataStoreFactory);
     const external = new CfnExternal(lsp, core, {
         schemaStore,
-        featureFlags: new FeatureFlagProvider(join(__dirname, '..', 'assets', 'featureFlag', 'alpha.json')),
     });
 
     const providers = new CfnLspProviders(core, external, {

@@ -16,7 +16,10 @@ export class FeatureFlagProvider implements Closeable {
 
     private readonly timeout: NodeJS.Timeout;
 
-    constructor(private readonly localFile = join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`)) {
+    constructor(
+        private readonly getLatestFeatureFlags: (env: string) => Promise<unknown>,
+        private readonly localFile = join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`),
+    ) {
         this.config = JSON.parse(readFileSync(localFile, 'utf8'));
 
         this.supplier = new FeatureFlagSupplier(() => {
@@ -49,18 +52,16 @@ export class FeatureFlagProvider implements Closeable {
     }
 
     private async refresh() {
-        const newConfig = await this.getFromOnline(AwsEnv);
+        const newConfig = await this.getFeatureFlags(AwsEnv);
         this.config = newConfig;
         writeFileSync(this.localFile, JSON.stringify(newConfig, undefined, 2));
 
         this.log();
     }
 
-    @Measure({ name: 'getFromOnline' })
-    private async getFromOnline(env: string): Promise<unknown> {
-        return await downloadJson(
-            `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/head/main/assets/featureFlag/${env.toLowerCase()}.json`,
-        );
+    @Measure({ name: 'getFeatureFlags' })
+    private async getFeatureFlags(env: string): Promise<unknown> {
+        return await this.getLatestFeatureFlags(env);
     }
 
     private log() {
@@ -78,4 +79,10 @@ export class FeatureFlagProvider implements Closeable {
         this.supplier.close();
         clearInterval(this.timeout);
     }
+}
+
+export function getFromGitHub(env: string): Promise<unknown> {
+    return downloadJson(
+        `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/heads/main/assets/featureFlag/${env.toLowerCase()}.json`,
+    );
 }

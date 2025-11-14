@@ -11,7 +11,7 @@ export interface SamSchema {
     };
 }
 
-interface CloudFormationResourceSchema {
+export type CloudFormationResourceSchema = {
     typeName: string;
     description: string;
     documentationUrl?: string;
@@ -24,7 +24,7 @@ interface CloudFormationResourceSchema {
     createOnlyProperties?: string[];
     primaryIdentifier?: string[];
     attributes?: Record<string, unknown>;
-}
+};
 
 export const SamSchemaTransformer = {
     transformSamSchema(samSchema: SamSchema): Map<string, CloudFormationResourceSchema> {
