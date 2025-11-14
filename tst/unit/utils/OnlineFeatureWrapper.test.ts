@@ -12,7 +12,7 @@ describe('withOnlineGuard', () => {
         const result = await wrapped('params', 'token');
 
         expect(guard.check).toHaveBeenCalledWith({ requiresInternet: true, requiresAuth: true });
-        expect(handler).toHaveBeenCalledWith('params', 'token', undefined, undefined);
+        expect(handler).toHaveBeenCalledWith('params', 'token');
         expect(result).toBe('result');
     });
 

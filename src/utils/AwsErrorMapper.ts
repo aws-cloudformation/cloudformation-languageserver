@@ -2,13 +2,13 @@ import { ErrorCodes, ResponseError } from 'vscode-languageserver';
 import { extractErrorMessage } from './Errors';
 import { createOnlineFeatureError, OnlineFeatureErrorCode } from './OnlineFeatureError';
 
-interface AwsError {
+type AwsError = {
     name?: string;
     $metadata?: {
         httpStatusCode?: number;
     };
     message?: string;
-}
+};
 
 const CREDENTIAL_ERROR_NAMES = new Set([
     'CredentialsProviderError',
