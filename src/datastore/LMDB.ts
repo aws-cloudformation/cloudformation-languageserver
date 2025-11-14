@@ -129,14 +129,14 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
     private registerLMDBGauges(): void {
         let totalBytes = 0;
-        const globalStat = stats(this.env);
+        const envStat = stats(this.env);
         this.telemetry.registerGaugeProvider('version', () => VersionNumber);
-        this.telemetry.registerGaugeProvider('global.size', () => globalStat.totalSize, { unit: 'By' });
-        this.telemetry.registerGaugeProvider('global.max.size', () => globalStat.maxSize, {
+        this.telemetry.registerGaugeProvider('env.size', () => envStat.totalSize, { unit: 'By' });
+        this.telemetry.registerGaugeProvider('env.max.size', () => envStat.maxSize, {
             unit: 'By',
         });
-        this.telemetry.registerGaugeProvider('global.entries', () => globalStat.entries);
-        totalBytes += globalStat.totalSize;
+        this.telemetry.registerGaugeProvider('env.entries', () => envStat.entries);
+        totalBytes += envStat.totalSize;
 
         for (const [name, store] of this.stores.entries()) {
             const stat = store.stats();
@@ -150,8 +150,11 @@ export class LMDBStoreFactory implements DataStoreFactory {
             });
         }
 
-        this.telemetry.registerGaugeProvider('global.usage', () => (100 * totalBytes) / TotalMaxDbSize, {
+        this.telemetry.registerGaugeProvider('total.usage', () => (100 * totalBytes) / TotalMaxDbSize, {
             unit: '%',
+        });
+        this.telemetry.registerGaugeProvider('total.size', () => totalBytes, {
+            unit: 'By',
         });
     }
 }
