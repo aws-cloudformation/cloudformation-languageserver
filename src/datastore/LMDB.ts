@@ -71,7 +71,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
         this.env = open({
             path: this.storePath,
             maxDbs: 10,
-            mapSize: 100 * 1024 * 1024, // 100MB max size
+            mapSize: 250 * 1024 * 1024, // 250MB max size
+            remapChunks: true,
+            pageSize: 8192,
             encoding: Encoding,
             encryptionKey: encryptionStrategy(Version),
         });
@@ -142,14 +144,24 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private registerLMDBGauges(): void {
+        const globalStat = stats(this.env);
         this.telemetry.registerGaugeProvider('version', () => VersionNumber);
-        this.telemetry.registerGaugeProvider('global.size_mb', () => stats(this.env).totalSizeMB, { unit: 'MB' });
-        this.telemetry.registerGaugeProvider('global.max_size_mb', () => stats(this.env).maxSizeMB, {
+        this.telemetry.registerGaugeProvider('global.size', () => globalStat.totalSizeMB, { unit: 'MB' });
+        this.telemetry.registerGaugeProvider('global.max.size', () => globalStat.maxSizeMB, {
             unit: 'MB',
         });
-        this.telemetry.registerGaugeProvider('global.entries', () => stats(this.env).entries);
-        this.telemetry.registerGaugeProvider('global.readers', () => stats(this.env).numReaders);
-        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size);
+        this.telemetry.registerGaugeProvider('global.entries', () => globalStat.entries);
+
+        for (const [name, store] of this.stores.entries()) {
+            const stat = store.stats();
+            this.telemetry.registerGaugeProvider(`store.${name}.size`, () => stat.totalSizeMB, {
+                unit: 'MB',
+            });
+
+            this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => stat.entries, {
+                unit: 'MB',
+            });
+        }
     }
 }
 
