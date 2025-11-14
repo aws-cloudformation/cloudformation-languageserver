@@ -395,6 +395,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
         this.diagnosticCoordinator
             .publishDiagnostics(GuardService.CFN_GUARD_SOURCE, uri, diagnostics)
             .catch((reason) => {
+                if (reason instanceof RequestCancelledError) {
+                    return;
+                }
                 this.log.error(`Error publishing Guard diagnostics: ${extractErrorMessage(reason)}`);
             });
     }

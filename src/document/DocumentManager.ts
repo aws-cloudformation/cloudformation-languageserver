@@ -7,10 +7,10 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { Delayer } from '../utils/Delayer';
+import { RequestCancelledError } from '../utils/Errors';
 import { byteSize } from '../utils/String';
 import { CloudFormationFileType, Document, DocumentType } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
-import { RequestCancelledError } from '../utils/Errors';
 
 export class DocumentManager implements SettingsConfigurable, Closeable {
     private readonly log = LoggerFactory.getLogger(DocumentManager);

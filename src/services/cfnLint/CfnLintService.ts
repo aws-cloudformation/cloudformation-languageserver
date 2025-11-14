@@ -13,7 +13,7 @@ import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
-import { extractErrorMessage } from '../../utils/Errors';
+import { extractErrorMessage, RequestCancelledError } from '../../utils/Errors';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
 import { WorkerNotInitializedError } from './CfnLintErrors';
@@ -59,6 +59,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
     private logError(operation: string, error: unknown): void {
+        if (error instanceof RequestCancelledError) {
+            return;
+        }
         this.log.error(error, `Error ${operation}`);
     }
 
