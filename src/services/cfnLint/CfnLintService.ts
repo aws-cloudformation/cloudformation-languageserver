@@ -143,7 +143,6 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             this.status = STATUS.Initialized;
             this.telemetry.count('initialized', 1);
         } catch (error) {
-            this.log.error(error, 'Error initializing');
             this.status = STATUS.Uninitialized;
             this.telemetry.count('uninitialized', 1);
             throw new Error(`Failed to initialize Pyodide worker: ${extractErrorMessage(error)}`);

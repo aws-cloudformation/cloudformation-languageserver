@@ -28,7 +28,7 @@ export class CombinedSchemas {
         const samSchema = samSchemas === undefined ? undefined : SamSchemas.from(samSchemas);
 
         CombinedSchemas.log.info(
-            `Schemas from ${regionalSchemas?.schemas.length} public schemas, ${privateSchema?.schemas.size} private schemas and ${samSchema?.schemas.size} sam schemas`,
+            `Combined schemas from public=${regionalSchemas?.schemas.length}, private=${privateSchema?.schemas.size}, SAM=${samSchema?.schemas.size}`,
         );
         return new CombinedSchemas(regionalSchema, privateSchema, samSchema);
     }

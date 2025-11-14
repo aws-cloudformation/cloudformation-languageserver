@@ -1,12 +1,10 @@
+import { Logger } from 'pino';
 import { DataStore } from '../datastore/DataStore';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
+import { downloadJson } from '../utils/RemoteDownload';
 import { GetSchemaTask } from './GetSchemaTask';
 import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';
 import { CloudFormationResourceSchema, SamSchema, SamSchemaTransformer } from './SamSchemaTransformer';
-import { downloadJson } from '../utils/RemoteDownload';
-
-const logger = LoggerFactory.getLogger('GetSamSchemaTask');
 
 export class GetSamSchemaTask extends GetSchemaTask {
     constructor(private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>) {
@@ -14,7 +12,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
     }
 
     @Measure({ name: 'getSchemas' })
-    override async runImpl(dataStore: DataStore): Promise<void> {
+    protected override async runImpl(dataStore: DataStore, logger: Logger): Promise<void> {
         try {
             const resourceSchemas = await this.getSamSchemas();
 

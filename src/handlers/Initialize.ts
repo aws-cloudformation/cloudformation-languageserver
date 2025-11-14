@@ -23,7 +23,7 @@ export function initializedHandler(workspace: LspWorkspace, components: ServerCo
                     }
                 }
             })
-            .catch((error) => {
+            .catch((error: unknown) => {
                 logger.error(error, `Failed to initialize server`);
             });
     };

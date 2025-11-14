@@ -12,9 +12,9 @@ import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from './Regional
 import { cfnResourceSchemaLink, unZipFile } from './RemoteSchemaHelper';
 
 export abstract class GetSchemaTask {
-    protected abstract runImpl(dataStore: DataStore, logger?: Logger): Promise<void>;
+    protected abstract runImpl(dataStore: DataStore, logger: Logger): Promise<void>;
 
-    async run(dataStore: DataStore, logger?: Logger) {
+    async run(dataStore: DataStore, logger: Logger) {
         await this.runImpl(dataStore, logger);
     }
 }
@@ -35,9 +35,9 @@ export class GetPublicSchemaTask extends GetSchemaTask {
     }
 
     @Measure({ name: 'getSchemas' })
-    override async runImpl(dataStore: DataStore, logger?: Logger) {
+    protected override async runImpl(dataStore: DataStore, logger: Logger) {
         if (this.attempts >= GetPublicSchemaTask.MaxAttempts) {
-            logger?.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
+            logger.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
             return;
         }
 
@@ -53,7 +53,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         };
 
         await dataStore.put<RegionalSchemasType>(this.region, value);
-        logger?.info(`${schemas.length} resource schemas retrieved for ${this.region}`);
+        logger.info(`${schemas.length} public schemas retrieved for ${this.region}`);
     }
 }
 
@@ -68,7 +68,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
     }
 
     @Measure({ name: 'getSchemas' })
-    override async runImpl(dataStore: DataStore, logger?: Logger) {
+    protected override async runImpl(dataStore: DataStore, logger: Logger) {
         try {
             const profile = this.getProfile();
             if (this.processedProfiles.has(profile)) {
@@ -89,12 +89,12 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
 
             this.processedProfiles.add(profile);
             if (schemas.length > 0) {
-                void logger?.info(`${schemas.length} private registry schemas retrieved for profile: ${profile}`);
+                void logger.info(`${schemas.length} private schemas retrieved for profile: ${profile}`);
             } else {
-                logger?.info(`No private registry schemas found for profile: ${profile}`);
+                logger.info(`No private schemas found for profile: ${profile}`);
             }
         } catch (error) {
-            logger?.error(error, `Failed to get private schemas`);
+            logger.error(error, `Failed to get private schemas`);
             throw error;
         }
     }
