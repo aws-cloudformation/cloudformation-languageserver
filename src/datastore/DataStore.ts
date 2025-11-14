@@ -7,6 +7,13 @@ export enum Persistence {
     local = 'local',
 }
 
+export enum StoreName {
+    public_schemas = 'public_schemas',
+    sam_schemas = 'sam_schemas',
+    private_schemas = 'private_schemas',
+    combined_schemas = 'combined_schemas',
+}
+
 export interface DataStore {
     get<T>(key: string): T | undefined;
 
@@ -22,26 +29,24 @@ export interface DataStore {
 }
 
 export interface DataStoreFactory extends Closeable {
-    getOrCreate(store: string): DataStore;
+    get(store: StoreName): DataStore;
 
     storeNames(): ReadonlyArray<string>;
-
-    stats(): unknown;
 }
 
 export interface DataStoreFactoryProvider extends Closeable {
-    get(store: string, persistence: Persistence): DataStore;
+    get(store: StoreName, persistence: Persistence): DataStore;
 }
 
 export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider {
     private readonly memoryStoreFactory = new MemoryStoreFactory();
 
-    get(store: string, _persistence: Persistence): DataStore {
+    get(store: StoreName, _persistence: Persistence): DataStore {
         return this.getMemoryStore(store);
     }
 
-    getMemoryStore(store: string): DataStore {
-        return this.memoryStoreFactory.getOrCreate(store);
+    getMemoryStore(store: StoreName): DataStore {
+        return this.memoryStoreFactory.get(store);
     }
 
     close(): Promise<void> {
@@ -50,14 +55,19 @@ export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider 
 }
 
 export class MultiDataStoreFactoryProvider implements DataStoreFactoryProvider {
-    private readonly memoryStoreFactory = new MemoryStoreFactory();
-    private readonly lmdbStoreFactory = new LMDBStoreFactory();
+    private readonly memoryStoreFactory: MemoryStoreFactory;
+    private readonly lmdbStoreFactory: LMDBStoreFactory;
 
-    get(store: string, persistence: Persistence): DataStore {
+    constructor(lmdbStore?: LMDBStoreFactory, memStore?: MemoryStoreFactory) {
+        this.lmdbStoreFactory = lmdbStore ?? new LMDBStoreFactory();
+        this.memoryStoreFactory = memStore ?? new MemoryStoreFactory();
+    }
+
+    get(store: StoreName, persistence: Persistence): DataStore {
         if (persistence === Persistence.memory) {
-            return this.memoryStoreFactory.getOrCreate(store);
+            return this.memoryStoreFactory.get(store);
         }
-        return this.lmdbStoreFactory.getOrCreate(store);
+        return this.lmdbStoreFactory.get(store);
     }
 
     close(): Promise<void> {

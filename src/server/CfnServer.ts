@@ -68,14 +68,13 @@ export class CfnServer {
         private readonly external = new CfnExternal(lsp, core),
         private readonly providers = new CfnLspProviders(core, external),
     ) {
-        log.info('Initializing...');
+        log.info(`Setting up LSP handlers...`);
         this.components = {
             ...core,
             ...external,
             ...providers,
         };
 
-        log.info('Seting up handlers...');
         this.setupHandlers();
     }
 

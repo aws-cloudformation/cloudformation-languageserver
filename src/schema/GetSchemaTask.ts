@@ -35,7 +35,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
     }
 
     @Measure({ name: 'getSchemas' })
-    override async runImpl(dataStore: DataStore, logger?: Logger) {
+    protected override async runImpl(dataStore: DataStore, logger?: Logger) {
         if (this.attempts >= GetPublicSchemaTask.MaxAttempts) {
             logger?.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
             return;
@@ -53,7 +53,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         };
 
         await dataStore.put<RegionalSchemasType>(this.region, value);
-        logger?.info(`${schemas.length} resource schemas retrieved for ${this.region}`);
+        logger?.info(`${schemas.length} public schemas retrieved for ${this.region}`);
     }
 }
 
@@ -68,7 +68,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
     }
 
     @Measure({ name: 'getSchemas' })
-    override async runImpl(dataStore: DataStore, logger?: Logger) {
+    protected override async runImpl(dataStore: DataStore, logger?: Logger) {
         try {
             const profile = this.getProfile();
             if (this.processedProfiles.has(profile)) {
@@ -88,11 +88,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
             await dataStore.put<PrivateSchemasType>(profile, value);
 
             this.processedProfiles.add(profile);
-            if (schemas.length > 0) {
-                void logger?.info(`${schemas.length} private registry schemas retrieved for profile: ${profile}`);
-            } else {
-                logger?.info(`No private registry schemas found for profile: ${profile}`);
-            }
+            logger?.info(`${schemas.length} private schemas retrieved for profile: ${profile}`);
         } catch (error) {
             logger?.error(error, `Failed to get private schemas`);
             throw error;

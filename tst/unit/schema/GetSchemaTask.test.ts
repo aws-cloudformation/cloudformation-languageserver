@@ -51,9 +51,7 @@ describe('GetSchemaTask', () => {
             );
 
             expect(
-                mockLogger.info.calledWith(
-                    `${mockSchemas.length} resource schemas retrieved for ${AwsRegion.US_EAST_1}`,
-                ),
+                mockLogger.info.calledWith(`${mockSchemas.length} public schemas retrieved for ${AwsRegion.US_EAST_1}`),
             ).toBe(true);
 
             dateNowSpy.mockRestore();
