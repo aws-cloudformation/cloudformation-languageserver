@@ -6,7 +6,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { pathToArtifact } from '../utils/ArtifactsDir';
-import { DataStore, DataStoreFactory } from './DataStore';
+import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 import { encryptionStrategy } from './lmdb/Utils';
 
 const log = LoggerFactory.getLogger('LMDB');
@@ -15,7 +15,7 @@ export class LMDBStore implements DataStore {
     private readonly telemetry: ScopedTelemetry;
 
     constructor(
-        private readonly name: string,
+        public readonly name: StoreName,
         private readonly store: Database<unknown, string>,
     ) {
         this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
@@ -55,20 +55,31 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private readonly timeout: NodeJS.Timeout;
     private readonly env: RootDatabase;
 
-    private readonly stores = new Map<string, LMDBStore>();
+    private readonly stores = new Map<StoreName, LMDBStore>();
 
-    constructor(private readonly rootDir: string = pathToArtifact('lmdb')) {
-        log.info(`Initializing LMDB at ${rootDir} and version ${Version}`);
+    constructor(
+        private readonly rootDir: string = pathToArtifact('lmdb'),
+        storeNames: StoreName[] = [StoreName.public_schemas, StoreName.sam_schemas],
+    ) {
         this.storePath = join(rootDir, Version);
+
         this.env = open({
             path: this.storePath,
-            maxDbs: 10, // 10 max databases
-            mapSize: 100 * 1024 * 1024, // 100MB max size
+            maxDbs: 10,
+            mapSize: TotalMaxDbSize,
+            remapChunks: true,
+            pageSize: 8192,
             encoding: Encoding,
             encryptionKey: encryptionStrategy(Version),
         });
 
-        log.info('Setup LMDB guages');
+        for (const store of storeNames) {
+            const database = this.env.openDB<unknown, string>({
+                name: store,
+                encoding: Encoding,
+            });
+            this.stores.set(store, new LMDBStore(store, database));
+        }
         this.registerLMDBGauges();
 
         this.timeout = setTimeout(
@@ -77,42 +88,20 @@ export class LMDBStoreFactory implements DataStoreFactory {
             },
             2 * 60 * 1000,
         );
+
+        log.info(`Initialized LMDB ${Version} at ${rootDir}`);
     }
 
-    getOrCreate(store: string): DataStore {
-        let val = this.stores.get(store);
+    get(store: StoreName): DataStore {
+        const val = this.stores.get(store);
         if (val === undefined) {
-            let database;
-            this.env.transactionSync(() => {
-                database = this.env.openDB<unknown, string>({
-                    name: store,
-                    encoding: Encoding,
-                });
-            });
-
-            if (database === undefined) {
-                throw new Error(`Failed to open LMDB store ${store}`);
-            }
-            val = new LMDBStore(store, database);
-            this.stores.set(store, val);
+            throw new Error(`Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`);
         }
-
         return val;
     }
 
     storeNames(): ReadonlyArray<string> {
         return [...this.stores.keys()];
-    }
-
-    stats(): Record<string, StoreStatsType> {
-        const result: Record<string, StoreStatsType> = {};
-        result['global'] = stats(this.env);
-
-        for (const [key, value] of this.stores.entries()) {
-            result[key] = value.stats();
-        }
-
-        return result;
     }
 
     async close(): Promise<void> {
@@ -139,14 +128,31 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private registerLMDBGauges(): void {
+        let totalMb = 0;
+        const globalStat = stats(this.env);
         this.telemetry.registerGaugeProvider('version', () => VersionNumber);
-        this.telemetry.registerGaugeProvider('global.size_mb', () => stats(this.env).totalSizeMB, { unit: 'MB' });
-        this.telemetry.registerGaugeProvider('global.max_size_mb', () => stats(this.env).maxSizeMB, {
+        this.telemetry.registerGaugeProvider('global.size', () => globalStat.totalSizeMB, { unit: 'MB' });
+        this.telemetry.registerGaugeProvider('global.max.size', () => globalStat.maxSizeMB, {
             unit: 'MB',
         });
-        this.telemetry.registerGaugeProvider('global.entries', () => stats(this.env).entries);
-        this.telemetry.registerGaugeProvider('global.readers', () => stats(this.env).numReaders);
-        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size);
+        this.telemetry.registerGaugeProvider('global.entries', () => globalStat.entries);
+        totalMb += globalStat.totalSizeMB;
+
+        for (const [name, store] of this.stores.entries()) {
+            const stat = store.stats();
+            totalMb += stat.totalSizeMB;
+
+            this.telemetry.registerGaugeProvider(`store.${name}.size`, () => stat.totalSizeMB, {
+                unit: 'MB',
+            });
+            this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => stat.entries, {
+                unit: 'MB',
+            });
+        }
+
+        this.telemetry.registerGaugeProvider('global.usage', () => totalMb / TotalMaxDbSize, {
+            unit: '%',
+        });
     }
 }
 
@@ -157,6 +163,7 @@ function bytesToMB(bytes: number) {
 const VersionNumber = 2;
 const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
+const TotalMaxDbSize = 250 * 1024 * 1024; // 250MB max size
 
 function stats(store: RootDatabase | Database): StoreStatsType {
     const stats = store.getStats() as Record<string, number>;
