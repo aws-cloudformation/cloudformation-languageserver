@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
-import { readdir, stat, unlink, readFile, writeFile } from 'fs/promises';
+// eslint-disable-next-line no-restricted-syntax -- circular dependency
+import { readdir, stat, unlink, writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import { DateTime } from 'luxon';
 import pino, { LevelWithSilent, Logger } from 'pino';

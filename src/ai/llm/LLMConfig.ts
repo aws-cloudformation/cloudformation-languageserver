@@ -1,8 +1,9 @@
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { homedir } from 'os';
 import { join } from 'path';
 import { DeepReadonly } from 'ts-essentials';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { readFileIfExists } from '../../utils/File';
 import { parseWithPrettyError } from '../../utils/ZodErrorWrapper';
 import { LLMConfigType, parseLLMConfig } from './LLMTypes';
 
@@ -21,7 +22,7 @@ export class LLMConfig {
         }
 
         try {
-            const config: unknown = JSON.parse(readFileSync(LLMConfig.ConfigFile, 'utf8'));
+            const config: unknown = JSON.parse(readFileIfExists(LLMConfig.ConfigFile, 'utf8'));
             const llmConfig = parseWithPrettyError(parseLLMConfig, config);
             logger.info({ provider: llmConfig.provider, model: llmConfig.model }, 'LLM configuration');
             return llmConfig;

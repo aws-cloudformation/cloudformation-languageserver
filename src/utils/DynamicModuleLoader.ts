@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync } from 'fs';
 import { createRequire } from 'module';
 import { join, resolve } from 'path';
+import { readFileIfExists } from './File';
 
 /* eslint-disable unicorn/no-static-only-class, security/detect-non-literal-require */
 export class DynamicModuleLoader {
@@ -13,7 +14,10 @@ export class DynamicModuleLoader {
 
         let targetPath = resolvedPath;
         if (existsSync(join(resolvedPath, 'package.json'))) {
-            const pkg = JSON.parse(readFileSync(join(resolvedPath, 'package.json'), 'utf8')) as Record<string, unknown>;
+            const pkg = JSON.parse(readFileIfExists(join(resolvedPath, 'package.json'), 'utf8')) as Record<
+                string,
+                unknown
+            >;
             targetPath = join(resolvedPath, pkg['main'] as string);
         }
 

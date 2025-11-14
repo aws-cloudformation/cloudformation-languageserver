@@ -66,6 +66,7 @@ import { LspS3Handlers } from '../src/protocol/LspS3Handlers';
 import { ExtendedInitializeParams } from '../src/server/InitParams';
 import { RelationshipSchemaService } from '../src/services/RelationshipSchemaService';
 import { LspCfnEnvironmentHandlers } from '../src/protocol/LspCfnEnvironmentHandlers';
+import { FeatureFlagProvider, getFromGitHub } from '../src/featureFlag/FeatureFlagProvider';
 
 const argv = yargs(hideBin(process.argv))
     .option('templates', {
@@ -196,6 +197,10 @@ function main() {
     const schemaStore = new SchemaStore(dataStoreFactory);
     const external = new CfnExternal(lsp, core, {
         schemaStore,
+        featureFlags: new FeatureFlagProvider(
+            getFromGitHub,
+            join(__dirname, '..', 'assets', 'featureFlag', 'alpha.json'),
+        ),
     });
 
     const providers = new CfnLspProviders(core, external, {

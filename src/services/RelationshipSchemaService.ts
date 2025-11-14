@@ -1,6 +1,6 @@
-import { readFileSync } from 'fs';
 import { join } from 'path';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { readFileIfExists } from '../utils/File';
 
 const logger = LoggerFactory.getLogger('RelationshipSchemaService');
 
@@ -32,7 +32,7 @@ export class RelationshipSchemaService {
 
     private loadAllSchemas(): void {
         try {
-            const schemaContent = readFileSync(this.schemaFilePath, 'utf8');
+            const schemaContent = readFileIfExists(this.schemaFilePath, 'utf8');
             const allSchemas = JSON.parse(schemaContent) as RelationshipSchemaData;
 
             for (const [resourceTypeKey, relationships] of Object.entries(allSchemas)) {

@@ -160,6 +160,14 @@ export default tseslint.config([
                     message:
                         'Usage of raw ResourceAttribute strings is restricted in src code. Use ResourceAttribute enum instead',
                 },
+                {
+                    selector: "ImportSpecifier[imported.name='readFileSync']",
+                    message: 'Use methods in File.ts',
+                },
+                {
+                    selector: "ImportSpecifier[imported.name='readFile']",
+                    message: 'Use methods in File.ts',
+                },
             ],
         },
     },
@@ -212,7 +220,6 @@ export default tseslint.config([
             '@typescript-eslint/no-unsafe-call': 'off',
             '@typescript-eslint/no-non-null-assertion': 'off',
             '@typescript-eslint/no-unsafe-argument': 'off',
-            '@typescript-eslint/no-unused-vars': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
             '@typescript-eslint/no-unused-expressions': 'off',
             '@typescript-eslint/ban-ts-comment': 'off',
