@@ -8,6 +8,7 @@ import { TelemetryService } from '../telemetry/TelemetryService';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 import { encryptionStrategy } from './lmdb/Utils';
+import { toString } from '../utils/String';
 
 const log = LoggerFactory.getLogger('LMDB');
 
@@ -145,9 +146,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             this.telemetry.registerGaugeProvider(`store.${name}.size`, () => stat.totalSize, {
                 unit: 'By',
             });
-            this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => stat.entries, {
-                unit: 'By',
-            });
+            this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => stat.entries);
         }
 
         this.telemetry.registerGaugeProvider('total.usage', () => (100 * totalBytes) / TotalMaxDbSize, {
