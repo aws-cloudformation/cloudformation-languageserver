@@ -43,7 +43,7 @@ export class Document {
     public updateCfnFileType(): void {
         const content = this.textDocument.getText();
         if (!content.trim()) {
-            this._cfnFileType = CloudFormationFileType.Unknown;
+            this._cfnFileType = CloudFormationFileType.Empty;
             this.cachedParsedContent = undefined;
             return;
         }
@@ -74,8 +74,12 @@ export class Document {
             return CloudFormationFileType.Template;
         }
 
+        if (typeof this.cachedParsedContent === 'string' && this.documentType === DocumentType.YAML) {
+            return CloudFormationFileType.Empty;
+        }
+
         if (!this.cachedParsedContent || typeof this.cachedParsedContent !== 'object') {
-            return CloudFormationFileType.Unknown;
+            return CloudFormationFileType.Other;
         }
 
         const parsed = this.cachedParsedContent as Record<string, unknown>;
@@ -96,7 +100,7 @@ export class Document {
             return CloudFormationFileType.Template;
         }
 
-        return CloudFormationFileType.Unknown;
+        return CloudFormationFileType.Other;
     }
 
     public getParsedDocumentContent(): unknown {
@@ -202,5 +206,7 @@ export enum DocumentType {
 export enum CloudFormationFileType {
     Template = 'template',
     GitSyncDeployment = 'gitsync-deployment',
-    Unknown = 'unknown',
+    Unknown = 'unknown', // Unanalyzed files
+    Other = 'other', // For files we know aren't CloudFormation
+    Empty = 'empty', // For nearly empty files that we can't determine yet
 }

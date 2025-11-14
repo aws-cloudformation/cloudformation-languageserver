@@ -11,7 +11,7 @@ import { ContextManager } from '../../src/context/ContextManager';
 import { SectionType, TopLevelSection } from '../../src/context/ContextType';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
-import { DocumentType } from '../../src/document/Document';
+import { DocumentType, Document } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
@@ -188,6 +188,10 @@ export class TemplateBuilder {
     initialize(content: string = ''): void {
         this.version = 1;
 
+        // Clear any existing state
+        this.syntaxTreeManager.deleteSyntaxTree(this.uri);
+        (this.textDocuments as any)._syncedDocuments.delete(this.uri);
+
         // Create a TextDocument and add it to the TextDocuments collection
         const textDocument = TextDocument.create(this.uri, 'yaml', this.version, content);
 
@@ -195,14 +199,9 @@ export class TemplateBuilder {
         // This simulates what happens when LSP receives a didOpen notification
         (this.textDocuments as any)._syncedDocuments.set(this.uri, textDocument);
 
-        // Create syntax tree if content is provided (simulating didOpenHandler behavior)
-        if (content) {
-            try {
-                this.syntaxTreeManager.add(this.uri, content);
-            } catch {
-                // Ignore syntax tree creation errors in tests
-            }
-        }
+        // Create syntax tree using proper document detection (like real LSP)
+        const document = new Document(textDocument);
+        this.syntaxTreeManager.addWithTypes(this.uri, document.contents(), document.documentType, document.cfnFileType);
     }
 
     typeAt(position: Position, text: string): void {
