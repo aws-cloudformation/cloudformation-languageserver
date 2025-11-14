@@ -22,7 +22,7 @@ import { ServerComponents } from '../server/ServerComponents';
 import { GetStackTemplateParams, GetStackTemplateResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
-import { withOnlineFeatures } from '../utils/OnlineFeatureWrapper';
+import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('ResourceHandler');
@@ -52,7 +52,7 @@ export function listResourcesHandler(
     components: ServerComponents,
 ): RequestHandler<ListResourcesParams, ListResourcesResult, void> {
     return async (params: ListResourcesParams): Promise<ListResourcesResult> => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+        try {
             const resourceRequests = params.resources;
             if (!resourceRequests || resourceRequests.length === 0) {
                 return { resources: [] };
@@ -75,7 +75,10 @@ export function listResourcesHandler(
             }
 
             return { resources };
-        });
+        } catch (error) {
+            log.error(error, 'Error listing resources');
+            return { resources: [] };
+        }
     };
 }
 
@@ -83,9 +86,7 @@ export function importResourceStateHandler(
     components: ServerComponents,
 ): ServerRequestHandler<ResourceStateParams, ResourceStateResult, never, void> {
     return async (params: ResourceStateParams): Promise<ResourceStateResult> => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
-            return await components.resourceStateImporter.importResourceState(params);
-        });
+        return await components.resourceStateImporter.importResourceState(params);
     };
 }
 
@@ -93,14 +94,17 @@ export function refreshResourceListHandler(
     components: ServerComponents,
 ): ServerRequestHandler<RefreshResourcesParams, RefreshResourcesResult, never, void> {
     return async (params: RefreshResourcesParams): Promise<RefreshResourcesResult> => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+        try {
             const timeout = new Promise<never>((resolve, reject) =>
                 setTimeout(() => reject(new Error('Resource list refresh timed out')), 30_000),
             );
 
             const resourceTypes = params.resources.map((r) => r.resourceType);
             return await Promise.race([components.resourceStateManager.refreshResourceList(resourceTypes), timeout]);
-        });
+        } catch (error) {
+            log.error(error, 'Failed to refresh resource list');
+            throw new Error(`Failed to refresh resource list: ${extractErrorMessage(error)}`);
+        }
     };
 }
 
@@ -108,7 +112,7 @@ export function searchResourceHandler(
     components: ServerComponents,
 ): ServerRequestHandler<SearchResourceParams, SearchResourceResult, never, void> {
     return async (params: SearchResourceParams): Promise<SearchResourceResult> => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+        try {
             const result = await components.resourceStateManager.searchResourceByIdentifier(
                 params.resourceType,
                 params.identifier,
@@ -123,7 +127,10 @@ export function searchResourceHandler(
                       }
                     : undefined,
             };
-        });
+        } catch (error) {
+            log.error(error, 'Failed to search resource');
+            return { found: false };
+        }
     };
 }
 
@@ -131,9 +138,7 @@ export function getStackMgmtInfo(
     components: ServerComponents,
 ): ServerRequestHandler<ResourceIdentifier, ResourceStackManagementResult, never, void> {
     return async (id) => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
-            return await components.stackManagementInfoProvider.getResourceManagementState(id);
-        });
+        return await components.stackManagementInfoProvider.getResourceManagementState(id);
     };
 }
 
@@ -144,7 +149,7 @@ export function getManagedResourceStackTemplateHandler(
 
     return async (params, _token) => {
         return await telemetry.measureAsync('getManagedResourceStackTemplate', async () => {
-            return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+            try {
                 const template = await components.cfnService.getTemplate({ StackName: params.stackName });
                 if (!template) {
                     return;
@@ -189,7 +194,16 @@ export function getManagedResourceStackTemplateHandler(
                     templateBody: template,
                     lineNumber,
                 };
-            });
+            } catch (error) {
+                log.error({
+                    Handler: 'GetManagedResourceStackTemplateHandler',
+                    StackName: params.stackName,
+                    ErrorMessage: error instanceof Error ? error.message : String(error),
+                    ErrorStack: error instanceof Error ? error.stack : undefined,
+                    Error: error,
+                });
+                throw error;
+            }
         });
     };
 }

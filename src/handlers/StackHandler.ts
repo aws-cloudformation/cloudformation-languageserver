@@ -49,10 +49,12 @@ import {
     DescribeChangeSetParams,
     DescribeChangeSetResult,
 } from '../stacks/StackRequestType';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { handleLspError } from '../utils/Errors';
-import { withOnlineFeatures } from '../utils/OnlineFeatureWrapper';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
+
+const log = LoggerFactory.getLogger('StackHandler');
 
 export function getParametersHandler(
     components: ServerComponents,
@@ -112,10 +114,12 @@ export function createValidationHandler(
 ): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('createValidation', async () => {
-            return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+            try {
                 const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
                 return await components.validationWorkflowService.start(params);
-            });
+            } catch (error) {
+                handleLspError(error, 'Failed to start validation workflow');
+            }
         });
     };
 }
@@ -125,10 +129,12 @@ export function createDeploymentHandler(
 ): RequestHandler<CreateDeploymentParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('createDeployment', async () => {
-            return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+            try {
                 const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
                 return await components.deploymentWorkflowService.start(params);
-            });
+            } catch (error) {
+                handleLspError(error, 'Failed to start deployment workflow');
+            }
         });
     };
 }
@@ -190,10 +196,12 @@ export function deleteChangeSetHandler(
 ): RequestHandler<DeleteChangeSetParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('deleteChangeSet', async () => {
-            return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+            try {
                 const params = parseWithPrettyError(parseDeleteChangeSetParams, rawParams);
                 return await components.changeSetDeletionWorkflowService.start(params);
-            });
+            } catch (error) {
+                handleLspError(error, 'Failed to start change set deletion workflow');
+            }
         });
     };
 }
@@ -229,7 +237,7 @@ export function getCapabilitiesHandler(
 ): RequestHandler<TemplateUri, GetCapabilitiesResult, void> {
     return async (rawParams) => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('getCapabilities', async () => {
-            return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+            try {
                 const params = parseWithPrettyError(parseTemplateUriParams, rawParams);
                 const document = components.documentManager.get(params);
                 if (!document) {
@@ -240,8 +248,11 @@ export function getCapabilitiesHandler(
                 }
 
                 const capabilities = await analyzeCapabilities(document, components.cfnService);
+
                 return { capabilities };
-            });
+            } catch (error) {
+                handleLspError(error, 'Failed to analyze template capabilities');
+            }
         });
     };
 }
@@ -315,7 +326,7 @@ export function listStacksHandler(
 ): RequestHandler<ListStacksParams, ListStacksResult, void> {
     return async (params: ListStacksParams): Promise<ListStacksResult> => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('listStacks', async () => {
-            return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+            try {
                 if (params.statusToInclude?.length && params.statusToExclude?.length) {
                     throw new Error('Cannot specify both statusToInclude and statusToExclude');
                 }
@@ -324,7 +335,10 @@ export function listStacksHandler(
                     params.statusToExclude,
                     params.loadMore,
                 );
-            });
+            } catch (error) {
+                log.error(error, 'Error listing stacks');
+                return { stacks: [], nextToken: undefined };
+            }
         });
     };
 }
@@ -334,7 +348,7 @@ export function listChangeSetsHandler(
 ): RequestHandler<ListChangeSetParams, ListChangeSetResult, void> {
     return async (params: ListChangeSetParams): Promise<ListChangeSetResult> => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('listChangeSets', async () => {
-            return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+            try {
                 const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
                 return {
                     changeSets: result.changeSets.map((cs) => ({
@@ -345,7 +359,9 @@ export function listChangeSetsHandler(
                     })),
                     nextToken: result.nextToken,
                 };
-            });
+            } catch {
+                return { changeSets: [] };
+            }
         });
     };
 }
@@ -354,7 +370,7 @@ export function listStackResourcesHandler(
     components: ServerComponents,
 ): RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void> {
     return async (rawParams): Promise<ListStackResourcesResult> => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+        try {
             const params = parseWithPrettyError(parseListStackResourcesParams, rawParams);
             const response = await components.cfnService.listStackResources({
                 StackName: params.stackName,
@@ -364,7 +380,10 @@ export function listStackResourcesHandler(
                 resources: response.StackResourceSummaries ?? [],
                 nextToken: response.NextToken,
             };
-        });
+        } catch (error) {
+            log.error(error, 'Error listing stack resources');
+            return { resources: [] };
+        }
     };
 }
 
@@ -372,24 +391,22 @@ export function describeChangeSetHandler(
     components: ServerComponents,
 ): RequestHandler<DescribeChangeSetParams, DescribeChangeSetResult, void> {
     return async (rawParams: DescribeChangeSetParams): Promise<DescribeChangeSetResult> => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
-            const params = parseWithPrettyError(parseDescribeChangeSetParams, rawParams);
+        const params = parseWithPrettyError(parseDescribeChangeSetParams, rawParams);
 
-            const result = await components.cfnService.describeChangeSet({
-                ChangeSetName: params.changeSetName,
-                IncludePropertyValues: true,
-                StackName: params.stackName,
-            });
-
-            return {
-                changeSetName: params.changeSetName,
-                stackName: params.stackName,
-                status: result.Status ?? '',
-                creationTime: result.CreationTime?.toISOString(),
-                description: result.Description,
-                changes: mapChangesToStackChanges(result.Changes),
-            };
+        const result = await components.cfnService.describeChangeSet({
+            ChangeSetName: params.changeSetName,
+            IncludePropertyValues: true,
+            StackName: params.stackName,
         });
+
+        return {
+            changeSetName: params.changeSetName,
+            stackName: params.stackName,
+            status: result.Status ?? '',
+            creationTime: result.CreationTime?.toISOString(),
+            description: result.Description,
+            changes: mapChangesToStackChanges(result.Changes),
+        };
     };
 }
 
@@ -397,14 +414,16 @@ export function getStackEventsHandler(
     components: ServerComponents,
 ): RequestHandler<GetStackEventsParams, GetStackEventsResult, void> {
     return async (rawParams): Promise<GetStackEventsResult> => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+        try {
             const params = parseWithPrettyError(parseGetStackEventsParams, rawParams);
             if (params.refresh) {
                 const result = await components.stackEventManager.refresh(params.stackName);
                 return { events: result.events, nextToken: undefined, gapDetected: result.gapDetected };
             }
             return await components.stackEventManager.fetchEvents(params.stackName, params.nextToken);
-        });
+        } catch (error) {
+            handleLspError(error, 'Failed to get stack events');
+        }
     };
 }
 
@@ -425,11 +444,13 @@ export function describeStackHandler(
     components: ServerComponents,
 ): RequestHandler<DescribeStackParams, DescribeStackResult, void> {
     return async (rawParams): Promise<DescribeStackResult> => {
-        return await withOnlineFeatures(components.onlineFeatureGuard, async () => {
+        try {
             const params = parseWithPrettyError(parseDescribeStackParams, rawParams);
             const response = await components.cfnService.describeStacks({ StackName: params.stackName });
             const stack = response.Stacks?.[0];
             return { stack };
-        });
+        } catch (error) {
+            handleLspError(error, 'Failed to describe stack');
+        }
     };
 }

@@ -65,7 +65,6 @@ export class CfnExternal implements Configurables, Closeable {
 
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus(core.clientMessage);
         this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider(getFromGitHub);
-        this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider();
         this.onlineFeatureGuard =
             overrides.onlineFeatureGuard ?? new OnlineFeatureGuard(this.onlineStatus, core.awsCredentials);
     }

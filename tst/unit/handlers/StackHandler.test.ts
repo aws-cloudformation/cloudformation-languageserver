@@ -441,9 +441,6 @@ describe('StackActionHandler', () => {
                 stackManager: {
                     listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
                 },
-                onlineFeatureGuard: {
-                    check: vi.fn(),
-                },
             } as any;
 
             const handler = listStacksHandler(mockComponents);
@@ -457,14 +454,12 @@ describe('StackActionHandler', () => {
                 stackManager: {
                     listStacks: vi.fn().mockRejectedValue(new Error('API Error')),
                 },
-                onlineFeatureGuard: {
-                    check: vi.fn(),
-                },
             } as any;
 
             const handler = listStacksHandler(mockComponents);
+            const result = (await handler(mockParams, mockToken)) as ListStacksResult;
 
-            await expect(handler(mockParams, mockToken)).rejects.toThrow();
+            expect(result.stacks).toEqual([]);
         });
 
         it('should pass statusToInclude to stackManager', async () => {
@@ -472,9 +467,6 @@ describe('StackActionHandler', () => {
             const mockComponents = {
                 stackManager: {
                     listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
-                },
-                onlineFeatureGuard: {
-                    check: vi.fn(),
                 },
             } as any;
 
@@ -498,9 +490,6 @@ describe('StackActionHandler', () => {
                 stackManager: {
                     listStacks: vi.fn().mockResolvedValue({ stacks: mockStacks, nextToken: undefined }),
                 },
-                onlineFeatureGuard: {
-                    check: vi.fn(),
-                },
             } as any;
 
             const paramsWithExclude: ListStacksParams = {
@@ -522,9 +511,6 @@ describe('StackActionHandler', () => {
                 stackManager: {
                     listStacks: vi.fn(),
                 },
-                onlineFeatureGuard: {
-                    check: vi.fn(),
-                },
             } as any;
 
             const paramsWithBoth: ListStacksParams = {
@@ -533,8 +519,9 @@ describe('StackActionHandler', () => {
             };
 
             const handler = listStacksHandler(mockComponents);
+            const result = (await handler(paramsWithBoth, mockToken)) as ListStacksResult;
 
-            await expect(handler(paramsWithBoth, mockToken)).rejects.toThrow();
+            expect(result.stacks).toEqual([]);
             expect(mockComponents.stackManager.listStacks).not.toHaveBeenCalled();
         });
     });
@@ -574,8 +561,9 @@ describe('StackActionHandler', () => {
 
             const handler = listStackResourcesHandler(mockComponents);
             const params = { stackName: 'test-stack' };
+            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
 
-            await expect(handler(params, {} as any)).rejects.toThrow();
+            expect(result.resources).toEqual([]);
         });
 
         it('should handle undefined StackResourceSummaries', async () => {

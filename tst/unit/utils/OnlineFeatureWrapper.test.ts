@@ -1,66 +1,69 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ResponseError } from 'vscode-languageserver';
 import { OnlineFeatureErrorCode } from '../../../src/utils/OnlineFeatureError';
-import { withOnlineFeatures } from '../../../src/utils/OnlineFeatureWrapper';
+import { withOnlineGuard } from '../../../src/utils/OnlineFeatureWrapper';
 
-describe('withOnlineFeatures', () => {
-    it('should execute operation when prerequisites are met', async () => {
+describe('withOnlineGuard', () => {
+    it('should check prerequisites before calling handler', async () => {
         const guard = { check: vi.fn() };
-        const operation = vi.fn().mockResolvedValue('success');
+        const handler = vi.fn().mockResolvedValue('result');
 
-        const result = await withOnlineFeatures(guard as any, operation);
+        const wrapped = withOnlineGuard(guard as any, handler as any);
+        const result = await wrapped('params', 'token');
 
         expect(guard.check).toHaveBeenCalledWith({ requiresInternet: true, requiresAuth: true });
-        expect(operation).toHaveBeenCalled();
-        expect(result).toBe('success');
-    });
-
-    it('should use default prerequisites', async () => {
-        const guard = { check: vi.fn() };
-        const operation = vi.fn().mockResolvedValue('success');
-
-        await withOnlineFeatures(guard as any, operation);
-
-        expect(guard.check).toHaveBeenCalledWith({ requiresInternet: true, requiresAuth: true });
+        expect(handler).toHaveBeenCalledWith('params', 'token', undefined, undefined);
+        expect(result).toBe('result');
     });
 
     it('should allow overriding prerequisites', async () => {
         const guard = { check: vi.fn() };
-        const operation = vi.fn().mockResolvedValue('success');
+        const handler = vi.fn().mockResolvedValue('result');
 
-        await withOnlineFeatures(guard as any, operation, { requiresAuth: false });
+        const wrapped = withOnlineGuard(guard as any, handler as any, { requiresAuth: false });
+        await wrapped('params', 'token');
 
         expect(guard.check).toHaveBeenCalledWith({ requiresInternet: true, requiresAuth: false });
     });
 
-    it('should throw when prerequisites check fails', async () => {
+    it('should throw when guard check fails', async () => {
         const error = new ResponseError(OnlineFeatureErrorCode.NoInternet, 'No internet');
         const guard = {
             check: vi.fn().mockImplementation(() => {
                 throw error;
             }),
         };
-        const operation = vi.fn();
+        const handler = vi.fn();
 
-        await expect(withOnlineFeatures(guard as any, operation)).rejects.toEqual(error);
-        expect(operation).not.toHaveBeenCalled();
+        const wrapped = withOnlineGuard(guard as any, handler as any);
+
+        await expect(wrapped('params', 'token')).rejects.toThrow(error);
+        expect(handler).not.toHaveBeenCalled();
     });
 
     it('should map AWS errors to LSP errors', async () => {
         const guard = { check: vi.fn() };
-        const awsError = { name: 'ExpiredToken', message: 'Token expired' };
-        const operation = vi.fn().mockRejectedValue(awsError);
+        const awsError = {
+            name: 'ExpiredTokenException',
+            message: 'Token expired',
+        };
+        const handler = vi.fn().mockRejectedValue(awsError);
 
-        await expect(withOnlineFeatures(guard as any, operation)).rejects.toMatchObject({
+        const wrapped = withOnlineGuard(guard as any, handler as any);
+
+        await expect(wrapped('params', 'token')).rejects.toMatchObject({
             code: OnlineFeatureErrorCode.ExpiredCredentials,
+            message: 'AWS credentials are invalid or expired. Please re-authenticate.',
         });
     });
 
-    it('should pass through ResponseError', async () => {
+    it('should pass all handler parameters through', async () => {
         const guard = { check: vi.fn() };
-        const error = new ResponseError(-32000, 'Custom error');
-        const operation = vi.fn().mockRejectedValue(error);
+        const handler = vi.fn().mockResolvedValue('result');
 
-        await expect(withOnlineFeatures(guard as any, operation)).rejects.toBe(error);
+        const wrapped = withOnlineGuard(guard as any, handler as any);
+        await wrapped('params', 'token', 'workDone', 'resultProgress');
+
+        expect(handler).toHaveBeenCalledWith('params', 'token', 'workDone', 'resultProgress');
     });
 });

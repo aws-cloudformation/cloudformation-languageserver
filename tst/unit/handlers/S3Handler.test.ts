@@ -47,7 +47,7 @@ describe('S3Handler', () => {
             const handler = uploadFileToS3Handler(mockComponents);
 
             await expect(handler(params, mockToken)).rejects.toThrow(ResponseError);
-            await expect(handler(params, mockToken)).rejects.toThrow('AWS service error: S3 upload failed');
+            await expect(handler(params, mockToken)).rejects.toThrow('Failed to upload file to S3');
         });
 
         it('should handle validation errors', async () => {

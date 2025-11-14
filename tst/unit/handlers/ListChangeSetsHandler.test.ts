@@ -13,14 +13,12 @@ describe('listChangeSetsHandler', () => {
 
         const mockComponents = {
             cfnService: mockCfnService,
-            onlineFeatureGuard: {
-                check: vi.fn(),
-            },
         } as unknown as ServerComponents;
 
         const handler = listChangeSetsHandler(mockComponents);
+        const result = await handler({ stackName: 'test-stack' }, mockToken);
 
-        await expect(handler({ stackName: 'test-stack' }, mockToken)).rejects.toThrow();
+        expect(result).toEqual({ changeSets: [] });
     });
 
     it('should transform change sets correctly with pagination', async () => {
@@ -42,9 +40,6 @@ describe('listChangeSetsHandler', () => {
 
         const mockComponents = {
             cfnService: mockCfnService,
-            onlineFeatureGuard: {
-                check: vi.fn(),
-            },
         } as unknown as ServerComponents;
 
         const handler = listChangeSetsHandler(mockComponents);
