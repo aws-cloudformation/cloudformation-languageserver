@@ -12,7 +12,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
     }
 
     @Measure({ name: 'getSchemas' })
-    protected override async runImpl(dataStore: DataStore, logger: Logger): Promise<void> {
+    protected override async runImpl(dataStore: DataStore, logger?: Logger): Promise<void> {
         try {
             const resourceSchemas = await this.getSamSchemas();
 
@@ -32,9 +32,9 @@ export class GetSamSchemaTask extends GetSchemaTask {
 
             await dataStore.put(SamStoreKey, samSchemasData);
 
-            logger.info(`${resourceSchemas.size} SAM schemas downloaded and stored`);
+            logger?.info(`${resourceSchemas.size} SAM schemas downloaded and stored`);
         } catch (error) {
-            logger.error(error, 'Failed to download SAM schema');
+            logger?.error(error, 'Failed to download SAM schema');
             throw error;
         }
     }

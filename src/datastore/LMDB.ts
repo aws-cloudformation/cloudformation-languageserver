@@ -19,23 +19,19 @@ export class LMDBStore implements DataStore {
         private readonly store: Database<unknown, string>,
     ) {
         this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
-        log.info(`LMDB store ${name} initialized`);
     }
 
     get<T>(key: string): T | undefined {
-        log.info(`Get ${key}`);
         return this.store.get(key) as T | undefined;
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
-        log.info(`Put ${key}`);
         return this.telemetry.measureAsync('put', () => {
             return this.store.put(key, value);
         });
     }
 
     remove(key: string): Promise<boolean> {
-        log.info(`Remove ${key}`);
         return this.store.remove(key);
     }
 
@@ -65,7 +61,6 @@ export class LMDBStoreFactory implements DataStoreFactory {
         private readonly rootDir: string = pathToArtifact('lmdb'),
         storeNames: StoreName[] = [StoreName.public_schemas, StoreName.sam_schemas],
     ) {
-        log.info(`Initializing LMDB ${Version} at ${rootDir}`);
         this.storePath = join(rootDir, Version);
 
         this.env = open({
@@ -94,7 +89,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             2 * 60 * 1000,
         );
 
-        log.info('LMDB initialized...');
+        log.info(`Initialized LMDB ${Version} at ${rootDir}`);
     }
 
     get(store: StoreName): DataStore {
@@ -107,17 +102,6 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
     storeNames(): ReadonlyArray<string> {
         return [...this.stores.keys()];
-    }
-
-    stats(): Record<string, StoreStatsType> {
-        const result: Record<string, StoreStatsType> = {};
-        result['global'] = stats(this.env);
-
-        for (const [key, value] of this.stores.entries()) {
-            result[key] = value.stats();
-        }
-
-        return result;
     }
 
     async close(): Promise<void> {

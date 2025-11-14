@@ -67,21 +67,6 @@ export class MemoryStoreFactory implements DataStoreFactory {
         return [...this.stores.keys()];
     }
 
-    stats(): unknown {
-        const keys = [];
-        const stores: Record<string, number> = {};
-        for (const [key, value] of this.stores.entries()) {
-            keys.push(key);
-            stores[key] = value.keys().length;
-        }
-
-        return {
-            numStores: keys.length,
-            storeNames: keys.sort(),
-            stores,
-        };
-    }
-
     close(): Promise<void> {
         return Promise.resolve();
     }

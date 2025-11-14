@@ -170,41 +170,6 @@ describe('MemoryStore', () => {
             expect(memoryStore.get<string>('key1')).toBeUndefined();
             expect(memoryStore.get<string>('key2')).toBeUndefined();
         });
-
-        it('should update factory stats correctly after clearing', async () => {
-            const schemaStore = memoryFactory.get(StoreName.private_schemas);
-            const samStore = memoryFactory.get(StoreName.sam_schemas);
-
-            // Add data to multiple stores
-            await schemaStore.put('key1', 'value1');
-            await schemaStore.put('key2', 'value2');
-            await samStore.put('key1', 'value1');
-
-            let stats = memoryFactory.stats() as {
-                numStores: number;
-                storeNames: string[];
-                stores: Record<string, number>;
-            };
-            expect(stats.numStores).toBe(3);
-            expect(stats.stores['private_schemas']).toBe(2);
-            expect(stats.stores['sam_schemas']).toBe(1);
-
-            // Clear schemas store
-            await schemaStore.clear();
-
-            // Verify updated stats - cleared store still exists but with 0 entries
-            stats = memoryFactory.stats() as {
-                numStores: number;
-                storeNames: string[];
-                stores: Record<string, number>;
-            };
-            expect(stats.numStores).toBe(3);
-            expect(stats.storeNames).toContain('public_schemas');
-            expect(stats.storeNames).toContain('private_schemas');
-            expect(stats.storeNames).toContain('sam_schemas');
-            expect(stats.stores['private_schemas']).toBe(0);
-            expect(stats.stores['sam_schemas']).toBe(1);
-        });
     });
 
     describe('keys', () => {

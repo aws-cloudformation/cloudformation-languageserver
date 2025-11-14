@@ -32,8 +32,6 @@ export interface DataStoreFactory extends Closeable {
     get(store: StoreName): DataStore;
 
     storeNames(): ReadonlyArray<string>;
-
-    stats(): unknown;
 }
 
 export interface DataStoreFactoryProvider extends Closeable {
