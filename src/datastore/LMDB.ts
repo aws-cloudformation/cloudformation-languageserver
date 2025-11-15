@@ -8,7 +8,6 @@ import { TelemetryService } from '../telemetry/TelemetryService';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 import { encryptionStrategy } from './lmdb/Utils';
-import { toString } from '../utils/String';
 
 const log = LoggerFactory.getLogger('LMDB');
 
