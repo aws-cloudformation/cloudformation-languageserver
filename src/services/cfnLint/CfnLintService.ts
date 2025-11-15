@@ -12,7 +12,7 @@ import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
-import { Delayer } from '../../utils/Delayer';
+import { CancellationError, Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
@@ -632,12 +632,20 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         }
 
         // Service is ready, process based on trigger type
-        if (trigger === LintTrigger.OnSave) {
-            // For save operations: execute immediately (0ms delay)
-            await this.delayer.delay(uri, () => this.lint(content, uri, forceUseContent), 0);
-        } else {
-            // For other triggers: use normal delayed execution
-            await this.delayer.delay(uri, () => this.lint(content, uri, forceUseContent));
+        try {
+            if (trigger === LintTrigger.OnSave) {
+                // For save operations: execute immediately (0ms delay)
+                await this.delayer.delay(uri, () => this.lint(content, uri, forceUseContent), 0);
+            } else {
+                // For other triggers: use normal delayed execution
+                await this.delayer.delay(uri, () => this.lint(content, uri, forceUseContent));
+            }
+        } catch (error) {
+            // Suppress cancellation errors as they are expected behavior
+            if (error instanceof CancellationError) {
+                return;
+            }
+            throw error;
         }
     }
 
