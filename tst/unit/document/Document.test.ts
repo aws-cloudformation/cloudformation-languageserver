@@ -247,7 +247,7 @@ describe('Document', () => {
                 const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
                 const doc = new Document(textDocument);
 
-                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Other);
             });
 
             it('package.json with CloudFormation-like keys', () => {
@@ -255,7 +255,7 @@ describe('Document', () => {
                 const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
                 const doc = new Document(textDocument);
 
-                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Other);
             });
 
             it('nested Resources key', () => {
@@ -270,25 +270,33 @@ describe('Document', () => {
                 const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
                 const doc = new Document(textDocument);
 
-                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Other);
             });
         });
 
         describe('should handle empty content', () => {
-            it('empty file should be Unknown', () => {
+            it('empty file should be Empy', () => {
                 const content = '';
                 const textDocument = TextDocument.create('file:///test.json', 'json', 1, content);
                 const doc = new Document(textDocument);
 
-                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Empty);
             });
 
-            it('whitespace-only file should be Unknown', () => {
+            it('whitespace-only file should be Empy', () => {
                 const content = '   \n\n  \t  ';
                 const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
                 const doc = new Document(textDocument);
 
-                expect(doc.cfnFileType).toBe(CloudFormationFileType.Unknown);
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Empty);
+            });
+
+            it('string only should be Empty', () => {
+                const content = '\nRe\n';
+                const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+                const doc = new Document(textDocument);
+
+                expect(doc.cfnFileType).toBe(CloudFormationFileType.Empty);
             });
         });
 

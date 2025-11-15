@@ -26,13 +26,13 @@ describe('DocumentManager', () => {
             expect(documentManager.isTemplate(uri)).toBe(true);
         });
 
-        it('should return Unknown for non-CloudFormation files', () => {
+        it('should return Other for non-CloudFormation files', () => {
             const uri = 'file:///config.yaml';
             const content = 'name: my-app\nversion: 1.0.0';
             const textDocument = TextDocument.create(uri, 'yaml', 1, content);
             mockDocuments.get.returns(textDocument);
 
-            expect(documentManager.get(uri)?.cfnFileType).toBe(CloudFormationFileType.Unknown);
+            expect(documentManager.get(uri)?.cfnFileType).toBe(CloudFormationFileType.Other);
             expect(documentManager.isTemplate(uri)).toBe(false);
         });
 
