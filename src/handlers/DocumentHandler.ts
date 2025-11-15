@@ -12,6 +12,7 @@ import { LintTrigger } from '../services/cfnLint/CfnLintService';
 import { ValidationTrigger } from '../services/guard/GuardService';
 import { publishValidationDiagnostics } from '../stacks/actions/StackActionOperations';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { CancellationError } from '../utils/Delayer';
 
 const log = LoggerFactory.getLogger('DocumentHandler');
 
@@ -36,8 +37,8 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
 
         components.cfnLintService.lintDelayed(content, uri, LintTrigger.OnOpen).catch((reason) => {
             // Handle cancellation gracefully - user might have closed/changed the document
-            if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                // Do nothing
+            if (reason instanceof CancellationError) {
+                // Do nothing - cancellation is expected behavior
             } else {
                 log.error(reason, `Linting error for ${uri}`);
             }
@@ -105,8 +106,8 @@ export function didChangeHandler(
         // Trigger cfn-lint validation
         components.cfnLintService.lintDelayed(content, documentUri, LintTrigger.OnChange, true).catch((reason) => {
             // Handle both getTextDocument and linting errors
-            if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                // Do nothing
+            if (reason instanceof CancellationError) {
+                // Do nothing - cancellation is expected behavior
             } else {
                 log.error(reason, `Error in didChange processing for ${documentUri}`);
             }
@@ -172,8 +173,8 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
 
         // Trigger cfn-lint validation
         components.cfnLintService.lintDelayed(documentContent, documentUri, LintTrigger.OnSave).catch((reason) => {
-            if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                // Do nothing
+            if (reason instanceof CancellationError) {
+                // Do nothing - cancellation is expected behavior
             } else {
                 log.error(reason, `Linting error for ${documentUri}`);
             }
