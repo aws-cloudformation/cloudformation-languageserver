@@ -28,7 +28,7 @@
     "test:integration": "NODE_ENV=test vitest run --config vitest.integration.config.ts",
     "test:unit": "NODE_ENV=test vitest run --config vitest.unit.config.ts",
     "test:leaks": "NODE_ENV=test vitest run --pool=forks --logHeapUsage",
-    "lint": "eslint --max-warnings 0 .",
+    "lint": "eslint --cache --cache-location node_modules/.cache/eslint --max-warnings 0 .",
     "lint:fix": "npm run lint -- --fix",
     "build:go:dev": "GOPROXY=direct go build -C cfn-init/cmd -v -o ../../bundle/development/bin/cfn-init",
     "build:go:prod": "GOPROXY=direct go build -C cfn-init/cmd -v -o ../../bundle/production/bin/cfn-init",
@@ -42,7 +42,8 @@
     "generate-metrics": "NODE_ENV=development AWS_ENV=alpha node --max-old-space-size=16384 -r ts-node/register tools/telemetry-generator.ts",
     "debug-tree": "node -r ts-node/register tools/debug_tree.ts",
     "generate:guard-rules": "node -r ts-node/register tools/generate-guard-rules.ts",
-    "check:duplicates": "jscpd"
+    "check:duplicates": "jscpd",
+    "prepare": "husky"
   },
   "dependencies": {
     "@aws-sdk/client-cloudcontrol": "3.873.0",
@@ -115,6 +116,7 @@
     "eslint-plugin-promise": "7.2.1",
     "eslint-plugin-security": "3.0.1",
     "eslint-plugin-unicorn": "60.0.0",
+    "husky": "9.1.7",
     "jscpd": "4.0.5",
     "minimatch": "10.0.3",
     "node-loader": "2.1.0",
