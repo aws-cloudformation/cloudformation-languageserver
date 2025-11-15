@@ -148,7 +148,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => stat.entries);
         }
 
-        this.telemetry.registerGaugeProvider('total.usage', () => (100 * totalBytes) / TotalMaxDbSize, {
+        this.telemetry.registerGaugeProvider('total.usage', () => 100 * (totalBytes / TotalMaxDbSize), {
             unit: '%',
         });
         this.telemetry.registerGaugeProvider('total.size', () => totalBytes, {
