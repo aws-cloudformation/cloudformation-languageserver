@@ -52,33 +52,28 @@ export function listResourcesHandler(
     components: ServerComponents,
 ): RequestHandler<ListResourcesParams, ListResourcesResult, void> {
     return async (params: ListResourcesParams): Promise<ListResourcesResult> => {
-        try {
-            const resourceRequests = params.resources;
-            if (!resourceRequests || resourceRequests.length === 0) {
-                return { resources: [] };
-            }
-
-            const resources: ResourceSummary[] = [];
-
-            for (const request of resourceRequests) {
-                const resourceList = await components.resourceStateManager.listResources(
-                    request.resourceType,
-                    request.nextToken,
-                );
-                if (resourceList) {
-                    resources.push({
-                        typeName: resourceList.typeName,
-                        resourceIdentifiers: resourceList.resourceIdentifiers,
-                        nextToken: resourceList.nextToken,
-                    });
-                }
-            }
-
-            return { resources };
-        } catch (error) {
-            log.error(error, 'Error listing resources');
+        const resourceRequests = params.resources;
+        if (!resourceRequests || resourceRequests.length === 0) {
             return { resources: [] };
         }
+
+        const resources: ResourceSummary[] = [];
+
+        for (const request of resourceRequests) {
+            const resourceList = await components.resourceStateManager.listResources(
+                request.resourceType,
+                request.nextToken,
+            );
+            if (resourceList) {
+                resources.push({
+                    typeName: resourceList.typeName,
+                    resourceIdentifiers: resourceList.resourceIdentifiers,
+                    nextToken: resourceList.nextToken,
+                });
+            }
+        }
+
+        return { resources };
     };
 }
 
@@ -112,25 +107,20 @@ export function searchResourceHandler(
     components: ServerComponents,
 ): ServerRequestHandler<SearchResourceParams, SearchResourceResult, never, void> {
     return async (params: SearchResourceParams): Promise<SearchResourceResult> => {
-        try {
-            const result = await components.resourceStateManager.searchResourceByIdentifier(
-                params.resourceType,
-                params.identifier,
-            );
-            return {
-                found: result.found,
-                resource: result.resourceList
-                    ? {
-                          typeName: result.resourceList.typeName,
-                          resourceIdentifiers: result.resourceList.resourceIdentifiers,
-                          nextToken: result.resourceList.nextToken,
-                      }
-                    : undefined,
-            };
-        } catch (error) {
-            log.error(error, 'Failed to search resource');
-            return { found: false };
-        }
+        const result = await components.resourceStateManager.searchResourceByIdentifier(
+            params.resourceType,
+            params.identifier,
+        );
+        return {
+            found: result.found,
+            resource: result.resourceList
+                ? {
+                      typeName: result.resourceList.typeName,
+                      resourceIdentifiers: result.resourceList.resourceIdentifiers,
+                      nextToken: result.resourceList.nextToken,
+                  }
+                : undefined,
+        };
     };
 }
 

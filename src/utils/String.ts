@@ -22,14 +22,6 @@ export function removeQuotes(str: string): string {
     return str.replace(/^['"]|['"]$/g, '');
 }
 
-export function removeTrailingComma(str: string): string {
-    return str.endsWith(',') ? str.slice(0, -1) : str;
-}
-
-export function startsWithAny(str: string, prefixes: string[]): boolean {
-    return prefixes.some((prefix) => str.startsWith(prefix));
-}
-
 export function isStringABoolean(value: string): boolean {
     return ['true', 'false'].includes(value.trim().toLowerCase());
 }
