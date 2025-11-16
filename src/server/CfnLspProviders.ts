@@ -80,7 +80,9 @@ export class CfnLspProviders implements Configurables, Closeable {
             new RelatedResourcesSnippetProvider(core.documentManager, core.syntaxTreeManager, external.schemaRetriever);
         this.s3Service = overrides.s3Service ?? new S3Service(external.awsClient);
 
-        this.hoverRouter = overrides.hoverRouter ?? new HoverRouter(core.contextManager, external.schemaRetriever);
+        this.hoverRouter =
+            overrides.hoverRouter ??
+            new HoverRouter(core.contextManager, external.schemaRetriever, external.featureFlags.get('Constants'));
         this.completionRouter = overrides.completionRouter ?? CompletionRouter.create(core, external, this);
 
         this.definitionProvider = overrides.definitionProvider ?? new DefinitionProvider(core.contextManager);

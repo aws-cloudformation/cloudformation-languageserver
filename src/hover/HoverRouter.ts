@@ -4,6 +4,7 @@ import { ContextManager } from '../context/ContextManager';
 import { TopLevelSection, IntrinsicFunction } from '../context/ContextType';
 import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntities';
 import { EntityType } from '../context/semantic/SemanticTypes';
+import { FeatureFlag } from '../featureFlag/FeatureFlagI';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { DefaultSettings, HoverSettings } from '../settings/Settings';
@@ -11,6 +12,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Track } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { ConditionHoverProvider } from './ConditionHoverProvider';
+import { ConstantHoverProvider } from './ConstantHoverProvider';
 import { HoverProvider } from './HoverProvider';
 import { IntrinsicFunctionArgumentHoverProvider } from './IntrinsicFunctionArgumentHoverProvider';
 import { IntrinsicFunctionHoverProvider } from './IntrinsicFunctionHoverProvider';
@@ -31,6 +33,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
     constructor(
         private readonly contextManager: ContextManager,
         schemaRetriever: SchemaRetriever,
+        private readonly constantsFeatureFlag: FeatureFlag,
     ) {
         this.hoverProviderMap = this.createHoverProviders(schemaRetriever);
     }
@@ -102,6 +105,11 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
             if (doc) {
                 return doc;
             }
+        } else if (context.section === TopLevelSection.Constants && this.constantsFeatureFlag.isEnabled()) {
+            const doc = this.hoverProviderMap.get(HoverType.Constant)?.getInformation(context);
+            if (doc) {
+                return doc;
+            }
         } else if (context.section === TopLevelSection.Outputs && this.isOutputAttribute(context)) {
             const doc = this.hoverProviderMap.get(HoverType.OutputSectionField)?.getInformation(context);
             if (doc) {
@@ -128,7 +136,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
 
     private createHoverProviders(schemaRetriever: SchemaRetriever): Map<HoverType, HoverProvider> {
         const hoverProviderMap = new Map<HoverType, HoverProvider>();
-        hoverProviderMap.set(HoverType.TopLevelSection, new TemplateSectionHoverProvider());
+        hoverProviderMap.set(HoverType.TopLevelSection, new TemplateSectionHoverProvider(this.constantsFeatureFlag));
         hoverProviderMap.set(HoverType.ResourceSection, new ResourceSectionHoverProvider(schemaRetriever));
         hoverProviderMap.set(HoverType.Parameter, new ParameterHoverProvider());
         hoverProviderMap.set(HoverType.ParameterAttribute, new ParameterAttributeHoverProvider());
@@ -136,6 +144,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
         hoverProviderMap.set(HoverType.PseudoParameter, new PseudoParameterHoverProvider());
         hoverProviderMap.set(HoverType.Condition, new ConditionHoverProvider());
         hoverProviderMap.set(HoverType.Mapping, new MappingHoverProvider());
+        hoverProviderMap.set(HoverType.Constant, new ConstantHoverProvider());
         hoverProviderMap.set(HoverType.IntrinsicFunction, new IntrinsicFunctionHoverProvider());
         hoverProviderMap.set(
             HoverType.IntrinsicFunctionArgument,
@@ -184,6 +193,12 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
             case EntityType.Resource: {
                 return this.hoverProviderMap.get(HoverType.ResourceSection)?.getInformation(context);
             }
+            case EntityType.Constant: {
+                if (this.constantsFeatureFlag.isEnabled()) {
+                    return this.hoverProviderMap.get(HoverType.Constant)?.getInformation(context);
+                }
+                return undefined;
+            }
         }
 
         return undefined;
@@ -201,4 +216,5 @@ enum HoverType {
     PseudoParameter,
     Condition,
     Mapping,
+    Constant,
 }

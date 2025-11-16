@@ -3,7 +3,7 @@ import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttri
 import { IntrinsicFunction, TopLevelSection } from '../../../src/context/ContextType';
 import { IntrinsicFunctionArgumentHoverProvider } from '../../../src/hover/IntrinsicFunctionArgumentHoverProvider';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
-import { createResourceContext, createParameterContext } from '../../utils/MockContext';
+import { createResourceContext, createParameterContext, createConstantContext } from '../../utils/MockContext';
 import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
 
 describe('IntrinsicFunctionArgumentHoverProvider', () => {
@@ -155,6 +155,80 @@ describe('IntrinsicFunctionArgumentHoverProvider', () => {
             const result = provider.getInformation(mockContext);
 
             expect(result).toBeUndefined();
+        });
+
+        it('should return hover information for Ref to a string constant', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
+
+            // Create related entities map with a target constant
+            const relatedEntities = new Map();
+            const constantsMap = new Map();
+            const targetConstant = createConstantContext('foo', {
+                text: 'foo',
+                data: 'bar',
+            });
+            constantsMap.set('foo', targetConstant);
+            relatedEntities.set(TopLevelSection.Constants, constantsMap);
+
+            // Create context for the Ref argument
+            const mockContext = createResourceContext(
+                'MyBucket',
+                {
+                    text: 'foo', // This is the argument to !Ref
+                    data: { Type: 'AWS::S3::Bucket' },
+                },
+                relatedEntities,
+            );
+
+            // Mock the intrinsicContext for a Ref function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.Ref,
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeDefined();
+            expect(result).toContain('(constant) foo: string');
+            expect(result).toContain('**Value:** bar');
+        });
+
+        it('should return hover information for Ref to an object constant', () => {
+            const provider = new IntrinsicFunctionArgumentHoverProvider(mockSchemaRetriever);
+
+            // Create related entities map with a target constant
+            const relatedEntities = new Map();
+            const constantsMap = new Map();
+            const targetConstant = createConstantContext('obj', {
+                text: 'obj',
+                data: { TestObject: { A: 'b' } },
+            });
+            constantsMap.set('obj', targetConstant);
+            relatedEntities.set(TopLevelSection.Constants, constantsMap);
+
+            // Create context for the Ref argument
+            const mockContext = createResourceContext(
+                'MyBucket',
+                {
+                    text: 'obj', // This is the argument to !Ref
+                    data: { Type: 'AWS::S3::Bucket' },
+                },
+                relatedEntities,
+            );
+
+            // Mock the intrinsicContext for a Ref function
+            mockContext.intrinsicContext.inIntrinsic = () => true;
+            mockContext.intrinsicContext.intrinsicFunction = () =>
+                ({
+                    type: IntrinsicFunction.Ref,
+                }) as any;
+
+            const result = provider.getInformation(mockContext);
+
+            expect(result).toBeDefined();
+            expect(result).toContain('(constant) obj: object');
+            expect(result).toContain('**Value:** [Object]');
         });
     });
 

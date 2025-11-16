@@ -143,7 +143,8 @@ export class TemplateBuilder {
             this.schemaRetriever,
             undefined,
         );
-        this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever);
+        const mockFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
+        this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever, mockFeatureFlag);
         this.initialize(startingContent);
     }
 
