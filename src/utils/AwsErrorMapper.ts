@@ -4,6 +4,7 @@ import { createOnlineFeatureError, OnlineFeatureErrorCode } from './OnlineFeatur
 
 type AwsError = {
     name?: string;
+    code?: string;
     $metadata?: {
         httpStatusCode?: number;
     };
@@ -37,7 +38,10 @@ function isAwsError(error: unknown): error is AwsError {
 }
 
 function isCredentialError(error: AwsError): boolean {
-    if (error.name && CREDENTIAL_ERROR_NAMES.has(error.name)) {
+    if (
+        (error.name && CREDENTIAL_ERROR_NAMES.has(error.name)) ||
+        (error.code && CREDENTIAL_ERROR_NAMES.has(error.code))
+    ) {
         return true;
     }
 
@@ -46,7 +50,10 @@ function isCredentialError(error: AwsError): boolean {
 }
 
 function isNetworkError(error: AwsError): boolean {
-    return error.name !== undefined && NETWORK_ERROR_NAMES.has(error.name);
+    return (
+        (error.name !== undefined && NETWORK_ERROR_NAMES.has(error.name)) ||
+        (error.code !== undefined && NETWORK_ERROR_NAMES.has(error.code))
+    );
 }
 
 function isRetryableAwsError(error: AwsError): boolean {

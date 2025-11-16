@@ -78,7 +78,6 @@ export type RefreshResourcesParams = {
 
 export type RefreshResourcesResult = {
     resources: ResourceSummary[];
-    refreshFailed: boolean;
 };
 
 export type SearchResourceParams = {
