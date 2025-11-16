@@ -11,6 +11,7 @@ import { ResourceSectionHoverProvider } from '../../../src/hover/ResourceSection
 import { TemplateSectionHoverProvider } from '../../../src/hover/TemplateSectionHoverProvider';
 import {
     createConditionContext,
+    createConstantContext,
     createMappingContext,
     createParameterContext,
     createResourceContext,
@@ -30,6 +31,7 @@ describe('HoverRouter', () => {
     let hoverRouter: HoverRouter;
     let mockContextManager: StubbedInstance<ContextManager>;
     const params = docPosition('file:///test.yaml', 0, 0);
+    const mockFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
 
     beforeEach(() => {
         // Reset mocks
@@ -57,7 +59,11 @@ describe('HoverRouter', () => {
         }));
 
         const mockComponents = createMockComponents();
-        hoverRouter = new HoverRouter(mockComponents.core.contextManager, mockComponents.external.schemaRetriever);
+        hoverRouter = new HoverRouter(
+            mockComponents.core.contextManager,
+            mockComponents.external.schemaRetriever,
+            mockFeatureFlag,
+        );
         mockContextManager = mockComponents.contextManager;
     });
 
@@ -103,6 +109,7 @@ describe('HoverRouter', () => {
             routerWithMockedProvider = new HoverRouter(
                 mockComponents.core.contextManager,
                 mockComponents.external.schemaRetriever,
+                mockFeatureFlag,
             );
             mockContextManager = mockComponents.contextManager;
         });
@@ -115,6 +122,7 @@ describe('HoverRouter', () => {
             const routerWithResourceDoc = new HoverRouter(
                 mockComponents.core.contextManager,
                 mockComponents.external.schemaRetriever,
+                mockFeatureFlag,
             );
             const mockContextManagerWithDoc = mockComponents.contextManager;
 
@@ -181,6 +189,7 @@ describe('HoverRouter', () => {
             const routerWithResourceDoc = new HoverRouter(
                 mockComponents.core.contextManager,
                 mockComponents.external.schemaRetriever,
+                mockFeatureFlag,
             );
             const mockContextManagerWithDoc = mockComponents.contextManager;
 
@@ -263,6 +272,55 @@ describe('HoverRouter', () => {
             expect(mockContextManager.getContextAndRelatedEntities.calledWith(params)).toBe(true);
             // The parameter provider should be called and return 'Parameter'
             expect(result).toBe('Parameter');
+        });
+    });
+
+    describe('Constants section hover', () => {
+        it('should return constant hover when feature flag is enabled', () => {
+            const mockContext = createConstantContext('foo', {
+                text: 'foo',
+                data: 'bar',
+            });
+
+            mockContextManager.getContextAndRelatedEntities.returns(mockContext);
+
+            // Create router with feature flag enabled
+            const mockComponents = createMockComponents();
+            const mockFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
+            const routerWithFlag = new HoverRouter(
+                mockComponents.core.contextManager,
+                mockComponents.external.schemaRetriever,
+                mockFeatureFlag,
+            );
+            mockComponents.contextManager.getContextAndRelatedEntities.returns(mockContext);
+
+            const result = routerWithFlag.getHoverDoc(params);
+
+            expect(result).toBeDefined();
+            expect(result).toContain('(constant) foo: string');
+        });
+
+        it('should return undefined for constant hover when feature flag is disabled', () => {
+            const mockContext = createConstantContext('foo', {
+                text: 'foo',
+                data: 'bar',
+            });
+
+            mockContextManager.getContextAndRelatedEntities.returns(mockContext);
+
+            // Create router with feature flag disabled
+            const mockComponents = createMockComponents();
+            const mockFeatureFlag = { isEnabled: () => false, describe: () => 'Constants feature flag' };
+            const routerWithFlag = new HoverRouter(
+                mockComponents.core.contextManager,
+                mockComponents.external.schemaRetriever,
+                mockFeatureFlag,
+            );
+            mockComponents.contextManager.getContextAndRelatedEntities.returns(mockContext);
+
+            const result = routerWithFlag.getHoverDoc(params);
+
+            expect(result).toBeUndefined();
         });
     });
 });
