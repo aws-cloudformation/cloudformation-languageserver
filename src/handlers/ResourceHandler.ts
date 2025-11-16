@@ -22,7 +22,6 @@ import { ServerComponents } from '../server/ServerComponents';
 import { GetStackTemplateParams, GetStackTemplateResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
-import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('ResourceHandler');
@@ -98,7 +97,7 @@ export function refreshResourceListHandler(
             return await Promise.race([components.resourceStateManager.refreshResourceList(resourceTypes), timeout]);
         } catch (error) {
             log.error(error, 'Failed to refresh resource list');
-            throw new Error(`Failed to refresh resource list: ${extractErrorMessage(error)}`);
+            throw error;
         }
     };
 }
