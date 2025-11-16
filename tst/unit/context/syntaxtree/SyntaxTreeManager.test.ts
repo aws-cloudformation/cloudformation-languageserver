@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi, Mocked, MockedClass } 
 import { JsonSyntaxTree } from '../../../../src/context/syntaxtree/JsonSyntaxTree';
 import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { YamlSyntaxTree } from '../../../../src/context/syntaxtree/YamlSyntaxTree';
-import { DocumentType } from '../../../../src/document/Document';
+import { DocumentType, CloudFormationFileType } from '../../../../src/document/Document';
 import { point } from '../../../utils/TemplateUtils';
 
 vi.mock('../../../../src/context/syntaxtree/JsonSyntaxTree');
@@ -182,6 +182,28 @@ describe('SyntaxTreeManager', () => {
 
             expect(MockedJsonSyntaxTree).toHaveBeenCalled();
             expect(MockedYamlSyntaxTree).toHaveBeenCalled();
+        });
+    });
+
+    describe('addWithTypes', () => {
+        it('should create syntax tree for empty files', () => {
+            const uri = 'file:///empty.yaml';
+            const content = '';
+
+            syntaxTreeManager.addWithTypes(uri, content, DocumentType.YAML, CloudFormationFileType.Empty);
+
+            expect(MockedYamlSyntaxTree).toHaveBeenCalledWith(content);
+            expect(syntaxTreeManager.getSyntaxTree(uri)).toBe(mockYamlTree);
+        });
+
+        it('should not create syntax tree for other file types', () => {
+            const uri = 'file:///other.yaml';
+            const content = 'name: my-app\nversion: 1.0.0';
+
+            syntaxTreeManager.addWithTypes(uri, content, DocumentType.YAML, CloudFormationFileType.Other);
+
+            expect(MockedYamlSyntaxTree).not.toHaveBeenCalled();
+            expect(syntaxTreeManager.getSyntaxTree(uri)).toBeUndefined();
         });
     });
 });

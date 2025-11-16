@@ -23,7 +23,7 @@ export class SyntaxTreeManager {
     }
 
     public addWithTypes(uri: string, content: string, type: DocumentType, cfnFileType: CloudFormationFileType) {
-        if (cfnFileType !== CloudFormationFileType.Template) {
+        if (cfnFileType !== CloudFormationFileType.Template && cfnFileType !== CloudFormationFileType.Empty) {
             return;
         }
 

@@ -27,7 +27,7 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
 
         const content = document.contents();
 
-        if (document.isTemplate()) {
+        if (document.isTemplate() || document.cfnFileType === CloudFormationFileType.Empty) {
             try {
                 components.syntaxTreeManager.addWithTypes(uri, content, document.documentType, document.cfnFileType);
             } catch (error) {
