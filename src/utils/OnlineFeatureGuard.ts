@@ -13,13 +13,16 @@ export class OnlineFeatureGuard {
         private readonly awsCredentials: AwsCredentials,
     ) {}
 
-    check(prerequisites: OnlinePrerequisites): void {
-        if (prerequisites.requiresInternet && !this.onlineStatus.isOnline) {
-            throw createOnlineFeatureError(
-                OnlineFeatureErrorCode.NoInternet,
-                'Internet connection required for this operation. Please check your network connection.',
-                { retryable: true, requiresReauth: false },
-            );
+    async check(prerequisites: OnlinePrerequisites): Promise<void> {
+        if (prerequisites.requiresInternet) {
+            const isOnline = await this.onlineStatus.checkNow();
+            if (!isOnline) {
+                throw createOnlineFeatureError(
+                    OnlineFeatureErrorCode.NoInternet,
+                    'Internet connection required for this operation. Please check your network connection.',
+                    { retryable: true, requiresReauth: false },
+                );
+            }
         }
 
         if (prerequisites.requiresAuth && !this.awsCredentials.credentialsAvailable()) {

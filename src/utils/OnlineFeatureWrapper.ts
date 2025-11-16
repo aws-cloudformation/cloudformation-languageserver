@@ -19,7 +19,7 @@ export function withOnlineGuard<T extends Handler>(
     prerequisites: Partial<OnlinePrerequisites> = {},
 ): T {
     return (async (...args: any[]) => {
-        guard.check({ ...DEFAULT_PREREQUISITES, ...prerequisites });
+        await guard.check({ ...DEFAULT_PREREQUISITES, ...prerequisites });
         try {
             return await handler(...args);
         } catch (error) {
