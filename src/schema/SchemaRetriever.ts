@@ -45,6 +45,8 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         });
 
         this.telemetry.registerGaugeProvider('schema.sam.maxAge', () => this.getSamSchemaAge(), { unit: 'ms' });
+
+        this.getRegionalSchemasIfMissing([this.settings.region]);
     }
 
     configure(settingsManager: ISettingsSubscriber): void {
@@ -53,44 +55,29 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             this.settingsSubscription.unsubscribe();
         }
 
-        // Set initial settings
-        const newSettings = settingsManager.getCurrentSettings().profile;
-        this.onSettingsChanged(newSettings);
-
-        // Initialize schemas with current region
-        this.getRegionalSchemasIfMissing([this.settings.region]);
-        this.getRegionalSchemasIfStale();
-        this.getSamSchemasIfMissingOrStale();
-
         // Subscribe to profile settings changes
-        this.settingsSubscription = settingsManager.subscribe('profile', (newProfileSettings) => {
-            this.onSettingsChanged(newProfileSettings);
+        this.settingsSubscription = settingsManager.subscribe('profile', (newSettings) => {
+            const regionChanged = this.settings.region !== newSettings.region;
+            const profileChanged = this.settings.profile !== newSettings.profile;
+
+            if (regionChanged || profileChanged) {
+                // Update private schemas when profile changes
+                if (profileChanged) {
+                    this.schemaTaskManager.runPrivateTask();
+                }
+
+                // Ensure we have schemas for the new region
+                if (regionChanged) {
+                    this.getRegionalSchemasIfMissing([newSettings.region]);
+                }
+            }
+            this.settings = newSettings;
         });
     }
 
-    private onSettingsChanged(newSettings: ProfileSettings): void {
-        const regionChanged = this.settings.region !== newSettings.region;
-        const profileChanged = this.settings.profile !== newSettings.profile;
-
-        if (regionChanged || profileChanged) {
-            // Update private schemas when profile changes
-            if (profileChanged) {
-                this.updatePrivateSchemas();
-            }
-
-            // Ensure we have schemas for the new region
-            if (regionChanged) {
-                this.getRegionalSchemasIfMissing([newSettings.region]);
-            }
-        }
-        this.settings = newSettings;
-    }
-
-    close(): void {
-        if (this.settingsSubscription) {
-            this.settingsSubscription.unsubscribe();
-            this.settingsSubscription = undefined;
-        }
+    initialize() {
+        this.getRegionalSchemasIfStale();
+        this.getSamSchemasIfMissingOrStale();
     }
 
     getDefault(): CombinedSchemas {
@@ -112,11 +99,6 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         }
 
         return this.schemaStore.put(region, profile, regionalSchemas);
-    }
-
-    updatePrivateSchemas() {
-        this.schemaStore.invalidateCombinedSchemas();
-        this.schemaTaskManager.runPrivateTask();
     }
 
     // Surgically rebuild affected combined schemas
@@ -144,8 +126,8 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         return this.schemaStore.publicSchemas.get<RegionalSchemasType>(region);
     }
 
-    private getRegionalSchemasIfMissing(preloadedRegions: ReadonlyArray<AwsRegion>) {
-        for (const region of preloadedRegions) {
+    private getRegionalSchemasIfMissing(regions: ReadonlyArray<AwsRegion>) {
+        for (const region of regions) {
             const existingValue = this.getRegionalSchemasFromStore(region);
 
             if (existingValue === undefined) {
@@ -210,5 +192,12 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             return 0;
         }
         return DateTime.now().diff(DateTime.fromMillis(existingValue.lastModifiedMs)).milliseconds;
+    }
+
+    close(): void {
+        if (this.settingsSubscription) {
+            this.settingsSubscription.unsubscribe();
+            this.settingsSubscription = undefined;
+        }
     }
 }

@@ -24,8 +24,6 @@ export interface DataStore {
     clear(): Promise<void>;
 
     keys(limit: number): ReadonlyArray<string>;
-
-    stats(): unknown;
 }
 
 export interface DataStoreFactory extends Closeable {

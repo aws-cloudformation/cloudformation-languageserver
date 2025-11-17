@@ -1,15 +1,11 @@
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
-import { TelemetryService } from '../telemetry/TelemetryService';
 import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 
 export class MemoryStore implements DataStore {
     private readonly store = new Map<string, unknown>();
-    private readonly telemetry: ScopedTelemetry;
 
-    constructor(private readonly name: string) {
-        this.telemetry = TelemetryService.instance.get(`MemoryStore.${name}`);
-    }
+    constructor(private readonly name: string) {}
 
     get<T>(key: string): T | undefined {
         const val = this.store.get(key);
@@ -18,10 +14,8 @@ export class MemoryStore implements DataStore {
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
-        return this.telemetry.measureAsync('put', () => {
-            this.store.set(key, value);
-            return Promise.resolve(true);
-        });
+        this.store.set(key, value);
+        return Promise.resolve(true);
     }
 
     remove(key: string): Promise<boolean> {
@@ -33,14 +27,8 @@ export class MemoryStore implements DataStore {
         return Promise.resolve();
     }
 
-    keys(limit: number = Number.POSITIVE_INFINITY): ReadonlyArray<string> {
+    keys(limit: number): ReadonlyArray<string> {
         return [...this.store.keys()].slice(0, limit);
-    }
-
-    stats(): unknown {
-        return {
-            numKeys: [...this.store.keys()].length,
-        };
     }
 }
 
@@ -48,10 +36,6 @@ export class MemoryStoreFactory implements DataStoreFactory {
     @Telemetry({ scope: 'MemoryStore.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly stores = new Map<StoreName, MemoryStore>();
-
-    constructor() {
-        this.registerMemoryStoreGauges();
-    }
 
     get(store: StoreName): DataStore {
         let val = this.stores.get(store);
@@ -73,16 +57,12 @@ export class MemoryStoreFactory implements DataStoreFactory {
 
     private registerMemoryStoreGauges(): void {
         this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size);
-        this.telemetry.registerGaugeProvider(
-            'global.entries',
-            () => {
-                let total = 0;
-                for (const store of this.stores.values()) {
-                    total += store.keys().length;
-                }
-                return total;
-            },
-            { unit: '1' },
-        );
+        this.telemetry.registerGaugeProvider('global.entries', () => {
+            let total = 0;
+            for (const store of this.stores.values()) {
+                total += store.keys(1000).length;
+            }
+            return total;
+        });
     }
 }
