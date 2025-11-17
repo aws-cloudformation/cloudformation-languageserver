@@ -1,0 +1,5 @@
+Resources:
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      DefinitionUri: ./artifact/api-definition.yaml

@@ -1,0 +1,9 @@
+Resources:
+  MyFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./src
+  MyApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      DefinitionUri: ./api.yaml
