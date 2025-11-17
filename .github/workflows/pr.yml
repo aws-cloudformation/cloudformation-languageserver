@@ -11,7 +11,11 @@ jobs:
 
   pr-build-test-nodejs:
     needs: [ get-configs ]
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ ubuntu-22.04, windows-latest, macos-latest ]
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
       pull-requests: write
@@ -31,6 +35,7 @@ jobs:
         run: npm run build
 
       - name: Code Quality
+        if: runner.os != 'Windows'
         run: npm run lint && npm run check:duplicates
 
       - name: Test
@@ -38,7 +43,11 @@ jobs:
 
   pr-build-test-go:
     needs: [ get-configs ]
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ ubuntu-22.04, macos-latest ]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
 
