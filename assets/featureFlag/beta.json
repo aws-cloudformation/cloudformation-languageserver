@@ -3,7 +3,7 @@
   "description": "Feature flags for beta environment",
   "features": {
     "Constants": {
-      "enabled": true
+      "enabled": false
     },
     "EnhancedDryRun": {
       "enabled": true,
