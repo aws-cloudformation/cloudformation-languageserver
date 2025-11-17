@@ -10,10 +10,10 @@ import { Context } from '../../src/context/Context';
 import { ContextManager } from '../../src/context/ContextManager';
 import { SectionType, TopLevelSection } from '../../src/context/ContextType';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
+import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
 import { DocumentType } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
-import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
@@ -647,7 +647,7 @@ export class TemplateBuilder {
         };
         return this.definitionProvider.getDefinitions(params);
     }
-    
+
     verifyDefinitionsAt(position: Position, expected: GotoExpectation, description?: string): void {
         const definitions = this.getDefinitionsAt(position);
         const desc = description ? ` (${description})` : '';
@@ -1008,8 +1008,8 @@ export class GotoExpectationBuilder {
     }
 
     expectDefinitionPosition(position: Position): GotoExpectationBuilder {
-      this.expectation.targetPosition = position;
-      return this;
+        this.expectation.targetPosition = position;
+        return this;
     }
 
     todo(comment: string): GotoExpectationBuilder {

@@ -67,10 +67,10 @@ Conditions:
                         description: 'Click on EnvironmentName in !Ref',
                         verification: {
                             position: { line: 43, character: 34 },
-                            expectation: GotoExpectationBuilder.create().
-                            expectDefinition('EnvironmentName')
-                            .expectDefinitionPosition({ line: 4, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('EnvironmentName')
+                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -91,8 +91,8 @@ Metadata:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsNotProduction')
                                 .todo('Goto failing in !And')
-                                .expectDefinitionPosition({ line: 44, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 44, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -104,8 +104,8 @@ Metadata:
                             position: { line: 55, character: 21 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('VpcCidr')
-                                .expectDefinitionPosition({ line: 8, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 8, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -127,8 +127,8 @@ Resources:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
                                 .todo('No logic for goto in formatted string')
-                                .expectDefinitionPosition({ line: 4, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -141,9 +141,9 @@ Resources:
                         verification: {
                             position: { line: 66, character: 28 },
                             expectation: GotoExpectationBuilder.create()
-                            .expectDefinition('EnvironmentName')
-                            .expectDefinitionPosition({ line: 4, character: 2})
-                            .build(),
+                                .expectDefinition('EnvironmentName')
+                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -156,9 +156,9 @@ Resources:
                         verification: {
                             position: { line: 68, character: 28 },
                             expectation: GotoExpectationBuilder.create()
-                            .expectDefinition('environmentname')
-                            .expectDefinitionPosition({ line: 23, character: 2})
-                            .build(),
+                                .expectDefinition('environmentname')
+                                .expectDefinitionPosition({ line: 23, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -173,9 +173,9 @@ Resources:
                         verification: {
                             position: { line: 72, character: 17 },
                             expectation: GotoExpectationBuilder.create()
-                            .expectDefinition('VPC')
-                            .expectDefinitionPosition({ line: 58, character: 2})
-                            .build(),
+                                .expectDefinition('VPC')
+                                .expectDefinitionPosition({ line: 58, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -187,9 +187,10 @@ Resources:
                         description: 'Click on VPC in !Ref',
                         verification: {
                             position: { line: 74, character: 19 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('VPC')
-                            .expectDefinitionPosition({ line: 58, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('VPC')
+                                .expectDefinitionPosition({ line: 58, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -200,8 +201,10 @@ Resources:
                         description: 'Click on SubnetCidrs in !Ref',
                         verification: {
                             position: { line: 75, character: 37 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('SubnetCidrs').expectDefinitionPosition({ line: 12, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('SubnetCidrs')
+                                .expectDefinitionPosition({ line: 12, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -212,8 +215,10 @@ Resources:
                         description: 'Click on AvailabilityZones in !Ref',
                         verification: {
                             position: { line: 76, character: 48 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('AvailabilityZones').expectDefinitionPosition({ line: 20, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('AvailabilityZones')
+                                .expectDefinitionPosition({ line: 20, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -250,8 +255,8 @@ Resources:
                             position: { line: 93, character: 46 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('BastionSecurityGroup')
-                                .expectDefinitionPosition({ line: 98, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 98, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -268,8 +273,10 @@ Resources:
                         description: 'Click on AvailabilityZones in !Ref',
                         verification: {
                             position: { line: 108, character: 33 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('RegionMap').expectDefinitionPosition({ line: 28, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('RegionMap')
+                                .expectDefinitionPosition({ line: 28, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -282,8 +289,10 @@ Resources:
                         description: 'Click on WebSecurityGroup in !Ref',
                         verification: {
                             position: { line: 111, character: 26 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('WebSecurityGroup').expectDefinitionPosition({ line: 85, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('WebSecurityGroup')
+                                .expectDefinitionPosition({ line: 85, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -296,8 +305,8 @@ Resources:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('AMI')
                                 .todo('No go to logic for second level keys')
-                                .expectDefinitionPosition({ line: 30, character: 6})
-                            .build(),
+                                .expectDefinitionPosition({ line: 30, character: 6 })
+                                .build(),
                         },
                     },
                     {
@@ -310,8 +319,8 @@ Resources:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('InstanceType')
                                 .todo('No go to logic for second level keys')
-                                .expectDefinitionPosition({ line: 31, character: 6})
-                            .build(),
+                                .expectDefinitionPosition({ line: 31, character: 6 })
+                                .build(),
                         },
                     },
                     {
@@ -335,8 +344,10 @@ Resources:
                         description: 'Click on InstanceCount in CreationPolicy Ref',
                         verification: {
                             position: { line: 124, character: 30 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('InstanceCount').expectDefinitionPosition({ line: 16, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('InstanceCount')
+                                .expectDefinitionPosition({ line: 16, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -422,8 +433,10 @@ Resources:
                         description: 'Click on LambdaRole in long-form GetAtt syntax',
                         verification: {
                             position: { line: 152, character: 17 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('LambdaRole').expectDefinitionPosition({ line: 166, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('LambdaRole')
+                                .expectDefinitionPosition({ line: 166, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -435,8 +448,8 @@ Resources:
                             position: { line: 164, character: 24 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsProductionOrStaging')
-                                .expectDefinitionPosition({ line: 45, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 45, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -446,8 +459,7 @@ Resources:
                         description: 'Click on SelfReferencingResource CF will reject',
                         verification: {
                             position: { line: 201, character: 38 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('')
-                            .build(),
+                            expectation: GotoExpectationBuilder.create().expectDefinition('').build(),
                         },
                     },
                     {
@@ -466,8 +478,10 @@ Resources:
                         description: 'Click on VpcCidr long form ref in nested stack',
                         verification: {
                             position: { line: 210, character: 18 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('VpcCidr').expectDefinitionPosition({ line: 8, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('VpcCidr')
+                                .expectDefinitionPosition({ line: 8, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -480,8 +494,8 @@ Resources:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
                                 .todo('No logic for goto in formatted string')
-                                .expectDefinitionPosition({ line: 4, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -491,8 +505,10 @@ Resources:
                         description: 'Click on IsProduction in Condition',
                         verification: {
                             position: { line: 191, character: 20 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('IsProduction').expectDefinitionPosition({ line: 43, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('IsProduction')
+                                .expectDefinitionPosition({ line: 43, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -514,8 +530,10 @@ Outputs:
                         description: 'Click on Address in !GetAtt attribute',
                         verification: {
                             position: { line: 222, character: 42 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('Database').expectDefinitionPosition({ line: 127, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('Database')
+                                .expectDefinitionPosition({ line: 127, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -528,8 +546,8 @@ Outputs:
                             position: { line: 223, character: 24 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsProductionOrStaging')
-                                .expectDefinitionPosition({ line: 45, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 45, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -557,8 +575,8 @@ Outputs:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('VpcId')
                                 .todo('No goto for sub formatted strings')
-                                .expectDefinitionPosition({ line: 4, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -568,8 +586,10 @@ Outputs:
                         description: 'Click on IsProduction in Condition',
                         verification: {
                             position: { line: 235, character: 15 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('IsProduction').expectDefinitionPosition({ line: 43, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('IsProduction')
+                                .expectDefinitionPosition({ line: 43, character: 2 })
+                                .build(),
                         },
                     },
                 ],
@@ -677,8 +697,10 @@ Outputs:
                         description: 'Click on EnvironmentName in Ref',
                         verification: {
                             position: { line: 51, character: 27 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('EnvironmentName').expectDefinitionPosition({ line: 4, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('EnvironmentName')
+                                .expectDefinitionPosition({ line: 4, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -688,8 +710,10 @@ Outputs:
                         description: 'Click on IsProduction in Condition',
                         verification: {
                             position: { line: 57, character: 30 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('IsProduction').expectDefinitionPosition({ line: 49, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('IsProduction')
+                                .expectDefinitionPosition({ line: 49, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -699,8 +723,10 @@ Outputs:
                         description: 'Click on IsProduction in Conditiion nested in Or',
                         verification: {
                             position: { line: 62, character: 30 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('IsProduction').expectDefinitionPosition({ line: 49, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('IsProduction')
+                                .expectDefinitionPosition({ line: 49, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -710,8 +736,10 @@ Outputs:
                         description: 'Click on IsNotProduction in Conditiion nested in And Not',
                         verification: {
                             position: { line: 76, character: 35 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('IsNotProduction').expectDefinitionPosition({ line: 55, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('IsNotProduction')
+                                .expectDefinitionPosition({ line: 55, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -727,8 +755,10 @@ Outputs:
                         description: 'Click on VpcCidr in Metadata Ref',
                         verification: {
                             position: { line: 85, character: 30 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('VpcCidr').expectDefinitionPosition({ line: 8, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('VpcCidr')
+                                .expectDefinitionPosition({ line: 8, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -763,8 +793,8 @@ Outputs:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
                                 .todo('No logic for goto in formatted string')
-                                .expectDefinitionPosition({ line: 4, character: 2})
-                            .build(),
+                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -774,8 +804,10 @@ Outputs:
                         description: 'Click on environmentname to test case sensitivity',
                         verification: {
                             position: { line: 104, character: 37 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('environmentname').expectDefinitionPosition({ line: 23, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('environmentname')
+                                .expectDefinitionPosition({ line: 23, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -824,8 +856,10 @@ Outputs:
                         description: 'Click on VPC in Depends on',
                         verification: {
                             position: { line: 111, character: 22 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('VPC').expectDefinitionPosition({ line: 89, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('VPC')
+                                .expectDefinitionPosition({ line: 89, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -835,8 +869,10 @@ Outputs:
                         description: 'Click on SubnetCidrs in !Ref',
                         verification: {
                             position: { line: 118, character: 27 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('SubnetCidrs').expectDefinitionPosition({ line: 12, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('SubnetCidrs')
+                                .expectDefinitionPosition({ line: 12, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -846,8 +882,10 @@ Outputs:
                         description: 'Click on AvailabilityZones in !Ref deeply nested in Tags array',
                         verification: {
                             position: { line: 138, character: 40 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('AvailabilityZones').expectDefinitionPosition({ line: 20, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('AvailabilityZones')
+                                .expectDefinitionPosition({ line: 20, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -885,8 +923,8 @@ Outputs:
                             position: { line: 157, character: 54 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('BastionSecurityGroup')
-                                .expectDefinitionPosition({ line: 168, character: 5})
-                            .build(),
+                                .expectDefinitionPosition({ line: 168, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -905,8 +943,10 @@ Outputs:
                         description: 'Click on RegionMap in FindInMap',
                         verification: {
                             position: { line: 179, character: 47 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('RegionMap').expectDefinitionPosition({ line: 29, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('RegionMap')
+                                .expectDefinitionPosition({ line: 29, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -918,8 +958,10 @@ Outputs:
                         description: 'Click on WebSecurityGroup in !Ref',
                         verification: {
                             position: { line: 181, character: 47 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('WebSecurityGroup').expectDefinitionPosition({ line: 148, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('WebSecurityGroup')
+                                .expectDefinitionPosition({ line: 148, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -987,8 +1029,8 @@ Outputs:
                             position: { line: 223, character: 30 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('DatabaseSecurityGroup')
-                                .expectDefinitionPosition({ line: 227, character: 5})
-                            .build(),
+                                .expectDefinitionPosition({ line: 227, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -1060,8 +1102,10 @@ Outputs:
                         description: 'Click on LambdaRole in !GetAtt',
                         verification: {
                             position: { line: 248, character: 19 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('LambdaRole').expectDefinitionPosition({ line: 271, character: 4})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('LambdaRole')
+                                .expectDefinitionPosition({ line: 271, character: 4 })
+                                .build(),
                         },
                     },
                     {
@@ -1074,7 +1118,7 @@ Outputs:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('Database')
                                 .todo('Goto on GetAtt attributes not supported in JSON')
-                            .build(),
+                                .build(),
                         },
                     },
                     {
@@ -1103,8 +1147,10 @@ Outputs:
                         description: 'Click on Database in !Ref',
                         verification: {
                             position: { line: 310, character: 35 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('Database').expectDefinitionPosition({ line: 204, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('Database')
+                                .expectDefinitionPosition({ line: 204, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -1114,8 +1160,10 @@ Outputs:
                         description: 'Click on SNSTopic in Ref',
                         verification: {
                             position: { line: 313, character: 40 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('SNSTopic').expectDefinitionPosition({ line: 316, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('SNSTopic')
+                                .expectDefinitionPosition({ line: 316, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -1128,7 +1176,7 @@ Outputs:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
                                 .todo('No logic for goto in formatted string')
-                            .build(),
+                                .build(),
                         },
                     },
                     {
@@ -1138,8 +1186,10 @@ Outputs:
                         description: 'Click on IsProduction in Condition',
                         verification: {
                             position: { line: 305, character: 25 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('IsProduction').expectDefinitionPosition({ line: 49, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('IsProduction')
+                                .expectDefinitionPosition({ line: 49, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -1155,8 +1205,7 @@ Outputs:
                         description: 'Click on SelfReferencingResource Cf will not allow',
                         verification: {
                             position: { line: 325, character: 45 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('')
-                            .build(),
+                            expectation: GotoExpectationBuilder.create().expectDefinition('').build(),
                         },
                     },
                     {
@@ -1176,8 +1225,10 @@ Outputs:
                         description: 'Click on EnvironmentName in nested stack',
                         verification: {
                             position: { line: 333, character: 38 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('EnvironmentName').expectDefinitionPosition({ line: 4, character: 2})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('EnvironmentName')
+                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .build(),
                         },
                     },
                     {
@@ -1202,8 +1253,10 @@ Outputs:
                         description: 'Click on VPC in Output value',
                         verification: {
                             position: { line: 341, character: 27 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('VPC').expectDefinitionPosition({ line: 89, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('VPC')
+                                .expectDefinitionPosition({ line: 89, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -1215,8 +1268,8 @@ Outputs:
                             position: { line: 350, character: 26 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsProductionOrStaging')
-                                .expectDefinitionPosition({ line: 60, character: 5})
-                            .build(),
+                                .expectDefinitionPosition({ line: 60, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -1252,7 +1305,7 @@ Outputs:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('VpcId')
                                 .todo('No handling for refs in formatted Sub strings')
-                            .build(),
+                                .build(),
                         },
                     },
                     {
@@ -1262,8 +1315,10 @@ Outputs:
                         description: 'Click on IsProduction in If block',
                         verification: {
                             position: { line: 370, character: 16 },
-                            expectation: GotoExpectationBuilder.create().expectDefinition('IsProduction').expectDefinitionPosition({ line: 49, character: 5})
-                            .build(),
+                            expectation: GotoExpectationBuilder.create()
+                                .expectDefinition('IsProduction')
+                                .expectDefinitionPosition({ line: 49, character: 5 })
+                                .build(),
                         },
                     },
                     {
@@ -1276,7 +1331,7 @@ Outputs:
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('InstanceCount')
                                 .todo('No handling for refs in formatted Sub strings')
-                            .build(),
+                                .build(),
                         },
                     },
                 ],
