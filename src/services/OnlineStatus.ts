@@ -19,15 +19,6 @@ export class OnlineStatus implements Closeable {
         );
     }
 
-    public async checkNow(): Promise<boolean> {
-        try {
-            await lookup('google.com');
-            return true;
-        } catch {
-            return false;
-        }
-    }
-
     private async hasInternet() {
         try {
             await lookup('google.com');
