@@ -50,9 +50,10 @@ export const SamSchemaTransformer = {
                 string,
                 unknown
             >;
+            let propertiesRefKey: string | undefined;
             if (propertiesSchema?.$ref) {
-                const refKey = (propertiesSchema.$ref as string).replace('#/definitions/', '');
-                propertiesSchema = samSchema.definitions[refKey] as Record<string, unknown>;
+                propertiesRefKey = (propertiesSchema.$ref as string).replace('#/definitions/', '');
+                propertiesSchema = samSchema.definitions[propertiesRefKey] as Record<string, unknown>;
             }
 
             const cfnSchema: CloudFormationResourceSchema = {
@@ -63,7 +64,7 @@ export const SamSchemaTransformer = {
                     (propertiesSchema?.properties as Record<string, unknown>) ?? {},
                     samSchema.definitions,
                 ),
-                definitions: samSchema.definitions,
+                definitions: this.extractReferencedDefinitions(definition, samSchema.definitions, defKey),
                 additionalProperties: false,
                 required: (propertiesSchema?.required as string[]) ?? [],
                 attributes: {}, // Empty to avoid GetAtt issues
@@ -77,6 +78,47 @@ export const SamSchemaTransformer = {
         }
 
         return resourceSchemas;
+    },
+
+    extractReferencedDefinitions(
+        schema: Record<string, unknown> | undefined,
+        allDefinitions: Record<string, unknown>,
+        rootDefinitionKey?: string,
+    ): Record<string, unknown> {
+        const referenced = new Set<string>();
+        const result: Record<string, unknown> = {};
+
+        // Include the root definition if provided
+        if (rootDefinitionKey && allDefinitions[rootDefinitionKey]) {
+            referenced.add(rootDefinitionKey);
+            result[rootDefinitionKey] = allDefinitions[rootDefinitionKey];
+        }
+
+        const collectRefs = (obj: unknown): void => {
+            if (typeof obj === 'object' && obj !== null) {
+                if (Array.isArray(obj)) {
+                    for (const item of obj) {
+                        collectRefs(item);
+                    }
+                } else {
+                    const record = obj as Record<string, unknown>;
+                    if (record.$ref && typeof record.$ref === 'string') {
+                        const refKey = record.$ref.replace('#/definitions/', '');
+                        if (!referenced.has(refKey) && allDefinitions[refKey]) {
+                            referenced.add(refKey);
+                            result[refKey] = allDefinitions[refKey];
+                            collectRefs(allDefinitions[refKey]);
+                        }
+                    }
+                    for (const value of Object.values(record)) {
+                        collectRefs(value);
+                    }
+                }
+            }
+        };
+
+        collectRefs(schema);
+        return result;
     },
 
     resolvePropertyTypes(

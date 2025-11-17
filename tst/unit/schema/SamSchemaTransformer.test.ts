@@ -74,12 +74,32 @@ describe('SamSchemaTransformer', () => {
         const result = SamSchemaTransformer.transformSamSchema(mockSamSchema);
         const functionSchema = result.get('AWS::Serverless::Function')!;
 
-        // Verify all definitions are included
+        // Verify only referenced definitions are included (full reference chain)
         expect(functionSchema.definitions).toBeDefined();
-        expect(functionSchema.definitions).toEqual(mockSamSchema.definitions);
+
+        const expectedDefinitions = {
+            aws_serverless_functionResource: {
+                properties: {
+                    Type: { enum: ['AWS::Serverless::Function'] },
+                    Properties: { $ref: '#/definitions/FunctionProperties' },
+                },
+            },
+            FunctionProperties: {
+                properties: {
+                    Runtime: { type: 'string' },
+                    CodeUri: { $ref: '#/definitions/CodeUriType' },
+                },
+            },
+            CodeUriType: {
+                type: 'string',
+            },
+        };
+
+        expect(functionSchema.definitions).toEqual(expectedDefinitions);
 
         // This ensures $refs like { $ref: '#/definitions/CodeUriType' } will work
         expect(functionSchema.definitions!.CodeUriType).toEqual({ type: 'string' });
-        expect(functionSchema.definitions!.SomeOtherDefinition).toEqual({ type: 'object' });
+        // SomeOtherDefinition should not be included as it's not referenced
+        expect(functionSchema.definitions!.SomeOtherDefinition).toBeUndefined();
     });
 });
