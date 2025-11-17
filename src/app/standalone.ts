@@ -19,6 +19,7 @@ function getLogger() {
 async function onInitialize(params: ExtendedInitializeParams) {
     const ClientInfo = params.clientInfo;
     const AwsMetadata = params.initializationOptions?.['aws'];
+    LoggerFactory.initialize(AwsMetadata?.logLevel);
 
     getLogger().info(
         {
@@ -39,7 +40,6 @@ async function onInitialize(params: ExtendedInitializeParams) {
         Process: `${process.platform}-${process.arch}`,
         Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
     });
-    LoggerFactory.initialize(AwsMetadata);
     TelemetryService.initialize(ClientInfo, AwsMetadata);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first

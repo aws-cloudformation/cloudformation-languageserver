@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PassThrough } from 'stream';
+import { v4 } from 'uuid';
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node';
 import {
     InitializeRequest,
@@ -48,7 +49,8 @@ import {
 import { createConnection } from 'vscode-languageserver/node';
 import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '../../src/auth/AuthProtocol';
 import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';
-import { MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
+import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
+import { LMDBStoreFactory } from '../../src/datastore/LMDB';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
@@ -60,7 +62,6 @@ import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
 import { AwsMetadata, ExtendedInitializeParams } from '../../src/server/InitParams';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
-import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
 import { getTestPrivateSchemas, samFileType, SamSchemaFiles, schemaFileType, Schemas } from './SchemaUtils';
@@ -113,9 +114,9 @@ export class TestExtension implements Closeable {
             {
                 onInitialize: (params) => {
                     const lsp = this.serverConnection.components;
-                    LoggerFactory.initialize(awsMetadata);
 
-                    const dataStoreFactory = new MemoryDataStoreFactoryProvider();
+                    const lmdbStore = new LMDBStoreFactory(join(process.cwd(), 'node_modules', '.cache', v4()));
+                    const dataStoreFactory = new MultiDataStoreFactoryProvider(lmdbStore);
                     this.core = new CfnInfraCore(lsp, params, {
                         dataStoreFactory,
                     });

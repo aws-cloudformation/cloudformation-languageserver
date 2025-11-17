@@ -23,7 +23,10 @@ const initParams: ExtendedInitializeParams = {
     },
 };
 
-LoggerFactory.initialize(initParams?.initializationOptions?.aws);
+LoggerFactory.initialize(
+    join(process.cwd(), 'node_modules', '.cache', 'logs', id),
+    initParams?.initializationOptions?.aws?.logLevel,
+);
 TelemetryService.initialize(
     initParams?.initializationOptions?.aws?.clientInfo?.extension,
     initParams?.initializationOptions?.aws,
@@ -44,7 +47,7 @@ import {
     createMockLspCommunication,
     createMockAuthHandlers,
 } from '../tst/utils/MockServerComponents';
-import { MemoryDataStoreFactoryProvider } from '../src/datastore/DataStore';
+import { MultiDataStoreFactoryProvider } from '../src/datastore/DataStore';
 import { SchemaStore } from '../src/schema/SchemaStore';
 import { completionHandler } from '../src/handlers/CompletionHandler';
 import { hoverHandler } from '../src/handlers/HoverHandler';
@@ -67,6 +70,7 @@ import { ExtendedInitializeParams } from '../src/server/InitParams';
 import { RelationshipSchemaService } from '../src/services/RelationshipSchemaService';
 import { LspCfnEnvironmentHandlers } from '../src/protocol/LspCfnEnvironmentHandlers';
 import { FeatureFlagProvider, getFromGitHub } from '../src/featureFlag/FeatureFlagProvider';
+import { LMDBStoreFactory } from '../src/datastore/LMDB';
 
 const argv = yargs(hideBin(process.argv))
     .option('templates', {
@@ -188,7 +192,8 @@ function main() {
         stubInterface<LspS3Handlers>(),
     );
 
-    const dataStoreFactory = new MemoryDataStoreFactoryProvider();
+    const lmdbStore = new LMDBStoreFactory(join(process.cwd(), 'node_modules', '.cache', id));
+    const dataStoreFactory = new MultiDataStoreFactoryProvider(lmdbStore);
     const core = new CfnInfraCore(lsp, initParams, {
         dataStoreFactory,
         documentManager: new DocumentManager(textDocuments),

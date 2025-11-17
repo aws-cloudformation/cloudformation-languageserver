@@ -202,7 +202,7 @@ export default tseslint.config([
         },
     },
     {
-        files: ['tst/e2e/**'],
+        files: ['tst/integration/**'],
         rules: {
             'vitest/expect-expect': 'off',
         },
