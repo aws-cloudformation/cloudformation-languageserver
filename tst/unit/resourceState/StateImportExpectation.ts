@@ -207,7 +207,8 @@ ${formatPropertiesForYaml(properties)}
     Metadata:
       PrimaryIdentifier: ${identifier}
       ManagedByStack: "true"
-      StackName: test-stack`);
+      StackName: test-stack
+`);
         } else {
             return PlaceholderReplacer.replaceWithTabStops(`
 Resources:
@@ -219,7 +220,8 @@ ${formatPropertiesForYaml(properties)}
     Metadata:
       PrimaryIdentifier: ${identifier}
       ManagedByStack: "true"
-      StackName: test-stack`);
+      StackName: test-stack
+`);
         }
     }
 }
@@ -282,7 +284,8 @@ export function getCloneExpectation(scenario: TestScenario, resourceType: string
     Properties:
 ${formatPropertiesForYaml(cloneProperties)}
     Metadata:
-      PrimaryIdentifier: <CLONE>${identifier}`);
+      PrimaryIdentifier: <CLONE>${identifier}
+`);
         } else {
             return PlaceholderReplacer.replaceWithTabStops(`
 Resources:
@@ -291,7 +294,8 @@ Resources:
     Properties:
 ${formatPropertiesForYaml(cloneProperties)}
     Metadata:
-      PrimaryIdentifier: <CLONE>${identifier}`);
+      PrimaryIdentifier: <CLONE>${identifier}
+`);
         }
     }
 }
