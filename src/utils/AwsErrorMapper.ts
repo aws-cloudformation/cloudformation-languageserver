@@ -19,7 +19,6 @@ const CREDENTIAL_ERROR_NAMES = new Set([
     'UnrecognizedClientException',
     'ExpiredToken',
     'ExpiredTokenException',
-    'AccessDeniedException',
 ]);
 
 const NETWORK_ERROR_NAMES = new Set([
@@ -46,7 +45,7 @@ function isCredentialError(error: AwsError): boolean {
     }
 
     const statusCode = error.$metadata?.httpStatusCode;
-    return statusCode === 401 || statusCode === 403;
+    return statusCode === 401;
 }
 
 function isNetworkError(error: AwsError): boolean {
