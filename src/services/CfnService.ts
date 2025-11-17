@@ -18,6 +18,8 @@ import {
     DeleteStackCommandOutput,
     DetectStackDriftCommand,
     DetectStackDriftCommandOutput,
+    DescribeEventsCommand,
+    DescribeEventsCommandOutput,
     DescribeStackEventsCommand,
     DescribeStackEventsCommandOutput,
     DescribeStackResourcesCommand,
@@ -190,6 +192,42 @@ export class CfnService {
                     NextToken: options?.nextToken,
                 }),
             );
+        });
+    }
+
+    @Count({ name: 'describeEvents' })
+    public async describeEvents(
+        params: {
+            ChangeSetName: string;
+            StackName: string
+        }
+    ): Promise<DescribeEventsCommandOutput> {
+        return await this.withClient(async (client) => {
+            let nextToken: string | undefined;
+            let result: DescribeEventsCommandOutput | undefined;
+            const operationEvents: DescribeEventsCommandOutput['OperationEvents'] = [];
+
+            do {
+                const response = (await client.send(
+                    new DescribeEventsCommand({
+                        ...params,
+                        NextToken: nextToken,
+                    }),
+                )) as unknown as DescribeEventsCommandOutput;
+
+                if (result) {
+                    operationEvents.push(...(response.OperationEvents ?? []));
+                } else {
+                    result = response;
+                    operationEvents.push(...(result.OperationEvents ?? []));
+                }
+
+                nextToken = response.NextToken;
+            } while (nextToken);
+
+            result.OperationEvents = operationEvents;
+            result.NextToken = undefined;
+            return result;
         });
     }
 

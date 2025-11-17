@@ -88,6 +88,21 @@ export const MOCK_RESPONSES = {
         ],
     },
 
+    DESCRIBE_EVENTS: {
+        OperationEvents: [
+            {
+                EventId: 'event-1',
+                EventType: 'VALIDATION_ERROR',
+                Timestamp: '2023-01-01T00:00:00Z',
+                LogicalResourceId: 'TestResource',
+                ValidationPath: '/Resources/TestResource/Properties/BucketName',
+                ValidationFailureMode: 'FAIL',
+                ValidationName: 'TestValidation',
+                ValidationStatusReason: 'Test error',
+            },
+        ],
+    },
+
     DESCRIBE_STACK_RESOURCES: {
         StackResources: [
             {

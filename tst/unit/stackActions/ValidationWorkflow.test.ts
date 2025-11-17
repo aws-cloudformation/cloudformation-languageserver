@@ -1,3 +1,4 @@
+import { DateTime } from 'luxon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../../src/document/DocumentManager';
@@ -11,13 +12,17 @@ import {
     cleanupReviewStack,
     deleteChangeSet,
     isStackInReview,
+    parseValidationEvents,
+    publishValidationDiagnostics,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateValidationParams,
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
-import { DRY_RUN_VALIDATION_NAME, ValidationWorkflow } from '../../../src/stacks/actions/ValidationWorkflow';
+import { DRY_RUN_VALIDATION_NAME, ValidationWorkflow, VALIDATION_NAME } from '../../../src/stacks/actions/ValidationWorkflow';
+import { TargetedFeatureFlag } from '../../../src/featureFlag/FeatureFlagI';
+import { AwsCredentials } from '../../../src/auth/AwsCredentials';
 
 vi.mock('../../../src/stacks/actions/StackActionOperations');
 
@@ -28,15 +33,20 @@ describe('ValidationWorkflow', () => {
     let mockDiagnosticCoordinator: DiagnosticCoordinator;
     let mockSyntaxTreeManager: SyntaxTreeManager;
     let mockS3Service: S3Service;
+    let mockFeatureFlag: TargetedFeatureFlag<string>;
+    let mockAwsCredentials: AwsCredentials;
 
     beforeEach(() => {
         mockCfnService = {
             describeStacks: vi.fn(),
+            describeEvents: vi.fn(),
         } as any;
         mockDocumentManager = {} as DocumentManager;
         mockDiagnosticCoordinator = {} as DiagnosticCoordinator;
         mockSyntaxTreeManager = {} as SyntaxTreeManager;
         mockS3Service = {} as S3Service;
+        mockFeatureFlag = {} as TargetedFeatureFlag<string>;
+        mockAwsCredentials = {} as AwsCredentials;
         validationWorkflow = new ValidationWorkflow(
             mockCfnService,
             mockDocumentManager,
@@ -51,6 +61,8 @@ describe('ValidationWorkflow', () => {
                 clear: vi.fn(),
             } as any,
             mockS3Service,
+            mockFeatureFlag,
+            mockAwsCredentials,
         );
         vi.clearAllMocks();
     });
@@ -275,7 +287,15 @@ describe('ValidationWorkflow', () => {
         let mockValidationManager: any;
 
         beforeEach(() => {
-            mockValidationManager = { add: vi.fn(), get: vi.fn(), remove: vi.fn() };
+            mockValidationManager = {
+                add: vi.fn(),
+                get: vi.fn().mockReturnValue({
+                    setPhase: vi.fn(),
+                    setChanges: vi.fn(),
+                    setValidationDetails: vi.fn(),
+                }),
+                remove: vi.fn()
+            };
             validationWorkflow = new ValidationWorkflow(
                 mockCfnService,
                 mockDocumentManager,
@@ -283,6 +303,8 @@ describe('ValidationWorkflow', () => {
                 mockSyntaxTreeManager,
                 mockValidationManager,
                 mockS3Service,
+                mockFeatureFlag,
+                mockAwsCredentials,
             );
         });
 
@@ -369,7 +391,15 @@ describe('ValidationWorkflow', () => {
         let mockValidationManager: any;
 
         beforeEach(() => {
-            mockValidationManager = { add: vi.fn(), get: vi.fn(), remove: vi.fn() };
+            mockValidationManager = {
+                add: vi.fn(),
+                get: vi.fn().mockReturnValue({
+                    setPhase: vi.fn(),
+                    setChanges: vi.fn(),
+                    setValidationDetails: vi.fn(),
+                }),
+                remove: vi.fn()
+            };
 
             // Default to CREATE changeSetType (stack doesn't exist)
             mockCfnService.describeStacks = vi.fn().mockRejectedValue(new Error('Stack does not exist'));
@@ -394,6 +424,12 @@ describe('ValidationWorkflow', () => {
                 return updated;
             });
 
+            mockCfnService.describeEvents = vi.fn().mockResolvedValue({
+                OperationEvents: [],
+            });
+
+            (parseValidationEvents as any).mockReturnValue(Promise<void>);
+
             validationWorkflow = new ValidationWorkflow(
                 mockCfnService,
                 mockDocumentManager,
@@ -401,6 +437,8 @@ describe('ValidationWorkflow', () => {
                 mockSyntaxTreeManager,
                 mockValidationManager,
                 mockS3Service,
+                mockFeatureFlag,
+                mockAwsCredentials,
             );
         });
 
@@ -585,6 +623,130 @@ describe('ValidationWorkflow', () => {
             const workflow = (validationWorkflow as any).workflows.get('test-id');
             expect(workflow.failureReason).toBeDefined();
             expect(workflow.failureReason).toBe('Validation service error');
+        });
+
+        it('should handle successful validation workflow with events and diagnostics publishing', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+            };
+
+            const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
+                changes: mockChanges,
+            });
+
+            const mockDescribeEventsResponse = {
+                OperationEvents: [
+                    {
+                        EventId: 'event-1',
+                        EventType: 'VALIDATION_ERROR',
+                        Timestamp: '2023-01-01T00:00:00Z',
+                        LogicalResourceId: 'TestResource',
+                        ValidationPath: '/Resources/TestResource/Properties/BucketName',
+                        ValidationFailureMode: 'FAIL',
+                        ValidationName: 'TestValidation',
+                        ValidationStatusReason: 'Test error',
+                    },
+                ],
+            };
+
+            mockCfnService.describeEvents = vi.fn().mockResolvedValueOnce(mockDescribeEventsResponse);
+
+            const mockParseValidationEventsResponse = [
+                {
+                    ValidationName: VALIDATION_NAME,
+                    LogicalId: 'TestResource',
+                    ResourcePropertPath: '/Resources/TestResource/Properties/BucketName',
+                    Timestamp: DateTime.fromISO('2023-01-01T00:00:00Z'),
+                    Severity: 'ERROR',
+                    Message: 'TestValidation: Test error',
+                },
+            ];
+
+            (parseValidationEvents as any).mockReturnValueOnce(mockParseValidationEventsResponse);
+
+            const result = await validationWorkflow.start(params);
+            await waitForWorkflowCompletion('test-id');
+
+            expect(result.changeSetName).toBe('changeset-123');
+            expect(mockValidationManager.add).toHaveBeenCalled();
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
+            expect(mockCfnService.describeEvents).toHaveBeenCalledWith({
+                ChangeSetName: 'changeset-123',
+                StackName: 'test-stack',
+            });
+
+            const workflow = (validationWorkflow as any).workflows.get('test-id');
+            expect(workflow.changes).toEqual(mockChanges);
+
+            expect(parseValidationEvents).toHaveBeenCalledWith(mockDescribeEventsResponse, VALIDATION_NAME);
+
+            const mockValidation = mockValidationManager.get('test-stack');
+            expect(mockValidation?.setValidationDetails).toHaveBeenCalledWith(mockParseValidationEventsResponse);
+
+            expect(publishValidationDiagnostics).toHaveBeenCalledWith(
+                params.uri,
+                mockParseValidationEventsResponse,
+                mockSyntaxTreeManager,
+                mockDiagnosticCoordinator,
+            );
+        });
+
+        it('should skip enhanced validation workflow when region is not supported', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+            };
+
+            const mockChanges = [{ resourceChange: { action: 'Add', logicalResourceId: 'TestResource' } }];
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
+                changes: mockChanges,
+            });
+
+            const result = await validationWorkflow.start(params);
+            await waitForWorkflowCompletion('test-id');
+
+            expect(result.changeSetName).toBe('changeset-123');
+            expect(mockValidationManager.add).toHaveBeenCalled();
+            expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
+
+            const workflow = (validationWorkflow as any).workflows.get('test-id');
+            expect(workflow.changes).toEqual(mockChanges);
+
+            expect(mockCfnService.describeEvents).not.toBeCalled();
+            expect(parseValidationEvents).not.toBeCalled();
+            expect(publishValidationDiagnostics).not.toBeCalled();
+        });
+
+        it('should handle Describe Events failure', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+            };
+
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_COMPLETE,
+                state: StackActionState.SUCCESSFUL,
+                changes: [],
+            });
+
+            mockCfnService.describeEvents = vi.fn().mockRejectedValueOnce(new Error('Describe Events failed'));
+
+            await validationWorkflow.start(params);
+            await waitForWorkflowCompletion('test-id');
+
+            expect(mockValidationManager.remove).not.toHaveBeenCalled();
+
+            const workflow = (validationWorkflow as any).workflows.get('test-id');
+            expect(workflow.failureReason).toBe('Describe Events failed');
         });
     });
 });

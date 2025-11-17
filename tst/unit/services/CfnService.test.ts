@@ -8,6 +8,7 @@ import {
     DeleteChangeSetCommand,
     DeleteStackCommand,
     DetectStackDriftCommand,
+    DescribeEventsCommand,
     DescribeStackEventsCommand,
     DescribeStackResourcesCommand,
     DescribeStackResourceCommand,
@@ -337,6 +338,76 @@ describe('CfnService', () => {
 
             await expect(
                 service.detectStackDrift({
+                    StackName: TEST_CONSTANTS.STACK_NAME,
+                }),
+            ).rejects.toThrow(error);
+        });
+    });
+
+    describe('describeEvents()', () => {
+        it('should successfully call describeEvents and return response', async () => {
+            cloudFormationMock.on(DescribeEventsCommand).resolves(MOCK_RESPONSES.DESCRIBE_EVENTS);
+
+            const result = await service.describeEvents({
+                ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
+                StackName: TEST_CONSTANTS.STACK_NAME,
+            });
+
+            expect(result).toEqual(MOCK_RESPONSES.DESCRIBE_EVENTS);
+        });
+
+        it('should fetch all pages when paginated', async () => {
+            const page1 = {
+                ...MOCK_RESPONSES.DESCRIBE_EVENTS,
+                OperationEvents: [
+                    {
+                        EventId: 'event-1',
+                        EventType: 'VALIDATION_ERROR',
+                        Timestamp: '2023-01-01T00:00:00Z',
+                        LogicalResourceId: 'Resource1',
+                    },
+                    {
+                        EventId: 'event-2',
+                        EventType: 'VALIDATION_ERROR',
+                        Timestamp: '2023-01-01T00:01:00Z',
+                        LogicalResourceId: 'Resource2',
+                    },
+                ],
+                NextToken: 'token1',
+            };
+            const page2 = {
+                ...MOCK_RESPONSES.DESCRIBE_EVENTS,
+                OperationEvents: [
+                    {
+                        EventId: 'event-3',
+                        EventType: 'VALIDATION_ERROR',
+                        Timestamp: '2023-01-01T00:02:00Z',
+                        LogicalResourceId: 'Resource3',
+                    },
+                ],
+                NextToken: undefined,
+            };
+
+            cloudFormationMock.on(DescribeEventsCommand).resolvesOnce(page1).resolvesOnce(page2);
+
+            const result = await service.describeEvents({
+                ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
+                StackName: TEST_CONSTANTS.STACK_NAME,
+            });
+
+            expect(result.OperationEvents).toHaveLength(3);
+            expect(result.OperationEvents?.[0].EventId).toBe('event-1');
+            expect(result.OperationEvents?.[2].EventId).toBe('event-3');
+            expect(result.NextToken).toBeUndefined();
+        });
+
+        it('should throw CloudFormationServiceException when API call fails', async () => {
+            const error = createCloudFormationServiceError();
+            cloudFormationMock.on(DescribeEventsCommand).rejects(error);
+
+            await expect(
+                service.describeEvents({
+                    ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
             ).rejects.toThrow(error);

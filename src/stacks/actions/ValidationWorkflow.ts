@@ -1,5 +1,4 @@
 import { ChangeSetType } from '@aws-sdk/client-cloudformation';
-import { DateTime } from 'luxon';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
 import { Identifiable } from '../../protocol/LspTypes';
@@ -16,6 +15,8 @@ import {
     processChangeSet,
     waitForChangeSetValidation,
     processWorkflowUpdates,
+    parseValidationEvents,
+    publishValidationDiagnostics,
     isStackInReview,
 } from './StackActionOperations';
 import {
@@ -29,9 +30,12 @@ import {
 import { StackActionWorkflow, StackActionWorkflowState } from './StackActionWorkflowType';
 import { Validation } from './Validation';
 import { ValidationManager } from './ValidationManager';
+import { TargetedFeatureFlag } from '../../featureFlag/FeatureFlagI';
+import { AwsCredentials } from '../../auth/AwsCredentials';
 
 export const CFN_VALIDATION_SOURCE = 'CFN Dry-Run';
 export const DRY_RUN_VALIDATION_NAME = 'Change Set Dry-Run';
+export const VALIDATION_NAME = 'Enhanced Validation';
 
 export class ValidationWorkflow implements StackActionWorkflow<CreateValidationParams, DescribeValidationStatusResult> {
     protected readonly workflows = new Map<string, StackActionWorkflowState>();
@@ -44,6 +48,8 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
         protected readonly syntaxTreeManager: SyntaxTreeManager,
         protected readonly validationManager: ValidationManager,
         protected readonly s3Service: S3Service,
+        protected featureFlag: TargetedFeatureFlag<string>,
+        protected awsCredentials: AwsCredentials,
     ) {}
 
     async start(params: CreateValidationParams): Promise<CreateStackActionResult> {
@@ -129,6 +135,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
     }
 
     protected async runValidationAsync(params: CreateValidationParams, changeSetName: string): Promise<void> {
+        const uri = params.uri;
         const workflowId = params.id;
         const stackName = params.stackName;
 
@@ -142,11 +149,13 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             const result = await waitForChangeSetValidation(this.cfnService, changeSetName, stackName);
 
             const validation = this.validationManager.get(stackName);
-            if (validation) {
-                validation.setPhase(result.phase);
-                if (result.changes) {
-                    validation.setChanges(result.changes);
-                }
+            if (!validation) {
+                throw new Error(`No validation found for stack: ${stackName}`);
+            }
+
+            validation.setPhase(result.phase);
+            if (result.changes) {
+                validation.setChanges(result.changes);
             }
 
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
@@ -157,27 +166,29 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
 
             if (result.state === StackActionState.FAILED) {
                 existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
-                    validationDetails: [
-                        {
-                            ValidationName: DRY_RUN_VALIDATION_NAME,
-                            Timestamp: DateTime.now(),
-                            Severity: 'ERROR',
-                            Message: `Validation failed with reason: ${result.failureReason}`,
-                        },
-                    ],
                     failureReason: result.failureReason,
                 });
-            } else {
-                existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
-                    validationDetails: [
-                        {
-                            ValidationName: DRY_RUN_VALIDATION_NAME,
-                            Timestamp: DateTime.now(),
-                            Severity: 'INFO',
-                            Message: 'Validation succeeded',
-                        },
-                    ],
+            }
+
+            if (this.featureFlag.isEnabled(this.awsCredentials.getIAM().region)) {
+                const describeEventsResponse = await this.cfnService.describeEvents({
+                    ChangeSetName: changeSetName,
+                    StackName: stackName,
                 });
+
+                const validationDetails = parseValidationEvents(describeEventsResponse, VALIDATION_NAME);
+
+                existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
+                    validationDetails: validationDetails,
+                });
+
+                validation.setValidationDetails(validationDetails);
+                await publishValidationDiagnostics(
+                    uri,
+                    validationDetails,
+                    this.syntaxTreeManager,
+                    this.diagnosticCoordinator,
+                );
             }
         } catch (error) {
             this.log.error(error, `Validation workflow threw exception ${workflowId}`);
@@ -187,7 +198,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
                 validation.setPhase(StackActionPhase.VALIDATION_FAILED);
             }
 
-            processWorkflowUpdates(this.workflows, existingWorkflow, {
+            existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: StackActionPhase.VALIDATION_FAILED,
                 state: StackActionState.FAILED,
                 failureReason: extractErrorMessage(error),
@@ -219,6 +230,8 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             core.syntaxTreeManager,
             validationManager,
             external.s3Service,
+            external.featureFlags.getTargeted<string>('EnhancedDryRun'),
+            core.awsCredentials,
         );
     }
 }

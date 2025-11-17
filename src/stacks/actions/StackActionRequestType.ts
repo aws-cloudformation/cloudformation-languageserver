@@ -5,11 +5,11 @@ import {
     DetailedStatus,
     OnStackFailure,
     Tag,
+    ResourceChangeDetail,
 } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
 import { Identifiable } from '../../protocol/LspTypes';
-import { ResourceChangeDetailV2 } from '../../services/CfnServiceV2';
 
 export type ResourceToImport = {
     ResourceType: string;
@@ -90,7 +90,7 @@ export type StackChange = {
         beforeContext?: string;
         afterContext?: string;
         resourceDriftStatus?: string;
-        details?: ResourceChangeDetailV2[];
+        details?: ResourceChangeDetail[];
     };
 };
 
