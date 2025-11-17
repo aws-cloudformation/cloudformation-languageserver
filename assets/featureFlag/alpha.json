@@ -3,7 +3,7 @@
   "description": "Feature flags for alpha environment",
   "features": {
     "Constants": {
-      "enabled": false
+      "enabled": true
     },
     "EnhancedDryRun": {
       "enabled": true,
