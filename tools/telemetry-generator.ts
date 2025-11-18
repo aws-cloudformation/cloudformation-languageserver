@@ -1,5 +1,9 @@
 #!/usr/bin/env node
 import { v4 } from 'uuid';
+import { readdirSync } from 'fs';
+import { join, extname, resolve } from 'path';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 import { LoggerFactory } from '../src/telemetry/LoggerFactory';
 import { TelemetryService } from '../src/telemetry/TelemetryService';
 
@@ -23,16 +27,13 @@ const initParams: ExtendedInitializeParams = {
     },
 };
 
-LoggerFactory.initialize(initParams?.initializationOptions?.aws);
+const rootDir = join(process.cwd(), 'node_modules', '.cache', 'telemetry-generator', id);
+LoggerFactory.initialize('warn', rootDir);
 TelemetryService.initialize(
     initParams?.initializationOptions?.aws?.clientInfo?.extension,
     initParams?.initializationOptions?.aws,
 );
 
-import { readdirSync } from 'fs';
-import { join, extname, resolve } from 'path';
-import yargs from 'yargs';
-import { hideBin } from 'yargs/helpers';
 import { generatePositions, TestPosition, discoverTemplateFiles } from './utils';
 import { DocumentManager } from '../src/document/DocumentManager';
 import { TextDocuments } from 'vscode-languageserver/node';
@@ -44,7 +45,7 @@ import {
     createMockLspCommunication,
     createMockAuthHandlers,
 } from '../tst/utils/MockServerComponents';
-import { MemoryDataStoreFactoryProvider } from '../src/datastore/DataStore';
+import { MultiDataStoreFactoryProvider } from '../src/datastore/DataStore';
 import { SchemaStore } from '../src/schema/SchemaStore';
 import { completionHandler } from '../src/handlers/CompletionHandler';
 import { hoverHandler } from '../src/handlers/HoverHandler';
@@ -188,7 +189,7 @@ function main() {
         stubInterface<LspS3Handlers>(),
     );
 
-    const dataStoreFactory = new MemoryDataStoreFactoryProvider();
+    const dataStoreFactory = new MultiDataStoreFactoryProvider(rootDir);
     const core = new CfnInfraCore(lsp, initParams, {
         dataStoreFactory,
         documentManager: new DocumentManager(textDocuments),

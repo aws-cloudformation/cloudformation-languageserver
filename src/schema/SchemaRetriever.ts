@@ -109,6 +109,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         const regionalSchemas = this.getRegionalSchemasFromStore(region);
         if (!regionalSchemas) {
             this.schemaTaskManager.addTask(region);
+            return CombinedSchemas.from();
         }
 
         return this.schemaStore.put(region, profile, regionalSchemas);

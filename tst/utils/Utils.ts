@@ -45,6 +45,7 @@ export class WaitFor {
                     throw error;
                 }
             }
+            await flushAllPromises();
             await new Promise((resolve) => setTimeout(resolve, this.delayIntervalMs));
         }
         throw lastError!;
