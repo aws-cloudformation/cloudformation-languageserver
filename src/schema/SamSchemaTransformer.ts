@@ -140,6 +140,18 @@ export const SamSchemaTransformer = {
             property = { ...property, description: property.markdownDescription };
         }
 
+        // Convert SAM's non-standard additionalProperties usage to CloudFormation-compliant patternProperties
+        if (property.additionalProperties && typeof property.additionalProperties === 'object') {
+            const additionalProps = property.additionalProperties as Record<string, unknown>;
+            property = {
+                ...property,
+                additionalProperties: false,
+                patternProperties: {
+                    '.*': additionalProps,
+                },
+            };
+        }
+
         // If property already has a type, keep it
         if (property.type) {
             return property;
