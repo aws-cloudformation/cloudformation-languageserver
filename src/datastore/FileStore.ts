@@ -14,6 +14,7 @@ export class FileStoreFactory implements DataStoreFactory {
 
     private readonly stores = new Map<StoreName, EncryptedFileStore>();
     private readonly fileDbDir: string;
+    private readonly metricsInterval: NodeJS.Timeout;
 
     constructor(rootDir: string) {
         this.log = LoggerFactory.getLogger('FileStore.Global');
@@ -23,8 +24,10 @@ export class FileStoreFactory implements DataStoreFactory {
             mkdirSync(this.fileDbDir, { recursive: true });
         }
 
-        this.registerFileStoreGauges();
-        this.log.info('Initialized');
+        this.metricsInterval = setInterval(() => {
+            this.emitMetrics();
+        }, 60 * 1000);
+        this.log.info(`Initialized FileStore v${Version}`);
     }
 
     get(store: StoreName): DataStore {
@@ -41,19 +44,28 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 
     close(): Promise<void> {
+        clearInterval(this.metricsInterval);
         return Promise.resolve();
     }
 
-    private registerFileStoreGauges(): void {
-        this.telemetry.registerGaugeProvider('version', () => Version);
-        this.telemetry.registerGaugeProvider('env.entries', () => this.stores.size);
+    private emitMetrics(): void {
+        this.telemetry.histogram('version', Version);
+        this.telemetry.histogram('env.entries', this.stores.size);
 
+        let totalBytes = 0;
         for (const [name, store] of this.stores.entries()) {
-            this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => store.stats().entries);
-            this.telemetry.registerGaugeProvider(`store.${name}.size`, () => store.stats().totalSize, {
+            const stats = store.stats();
+
+            totalBytes += stats.totalSize;
+            this.telemetry.histogram(`store.${name}.entries`, stats.entries);
+            this.telemetry.histogram(`store.${name}.size.bytes`, stats.totalSize, {
                 unit: 'By',
             });
         }
+
+        this.telemetry.histogram('total.size.bytes', totalBytes, {
+            unit: 'By',
+        });
     }
 }
 

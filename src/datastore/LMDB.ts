@@ -1,7 +1,6 @@
 import { readdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { open, RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
-import { Logger } from 'pino';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
@@ -9,24 +8,23 @@ import { isWindows } from '../utils/Environment';
 import { toString } from '../utils/String';
 import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 import { LMDBStore } from './lmdb/LMDBStore';
-import { LockedLMDBStore } from './lmdb/LockedLMDBStore';
 import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
 
 export class LMDBStoreFactory implements DataStoreFactory {
-    private readonly log: Logger;
+    private readonly log = LoggerFactory.getLogger('LMDB.Global');
     @Telemetry({ scope: 'LMDB.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly lmdbDir: string;
     private readonly timeout: NodeJS.Timeout;
+    private readonly metricsInterval: NodeJS.Timeout;
     private readonly env: RootDatabase;
 
     private readonly stores = new Map<StoreName, LMDBStore>();
 
     constructor(rootDir: string, storeNames: StoreName[] = [StoreName.public_schemas, StoreName.sam_schemas]) {
-        this.log = LoggerFactory.getLogger('LMDB.Global');
-
         this.lmdbDir = join(rootDir, 'lmdb');
+
         const config: RootDatabaseOptionsWithPath = {
             path: join(this.lmdbDir, Version),
             maxDbs: 10,
@@ -40,6 +38,28 @@ export class LMDBStoreFactory implements DataStoreFactory {
             config.overlappingSync = false;
         }
 
+        this.env = open(config);
+
+        for (const store of storeNames) {
+            const database = this.env.openDB<unknown, string>({
+                name: store,
+                encoding: Encoding,
+            });
+
+            this.stores.set(store, new LMDBStore(store, database));
+        }
+
+        this.metricsInterval = setInterval(() => {
+            this.emitMetrics();
+        }, 60 * 1000);
+
+        this.timeout = setTimeout(
+            () => {
+                this.cleanupOldVersions();
+            },
+            2 * 60 * 1000,
+        );
+
         this.log.info(
             {
                 path: config.path,
@@ -49,35 +69,8 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 noSubdir: config.noSubdir,
                 overlappingSync: config.overlappingSync,
             },
-            `Initializing LMDB v${VersionNumber} with stores: ${toString(storeNames)}`,
+            `Initialized LMDB v${VersionNumber} with stores: ${toString(storeNames)}`,
         );
-
-        this.env = open(config);
-
-        for (const store of storeNames) {
-            const database = this.env.openDB<unknown, string>({
-                name: store,
-                encoding: Encoding,
-            });
-
-            let lmdbStore: LMDBStore;
-            if (isWindows) {
-                lmdbStore = new LockedLMDBStore(store, database);
-            } else {
-                lmdbStore = new LMDBStore(store, database);
-            }
-            this.stores.set(store, lmdbStore);
-        }
-        this.registerLMDBGauges();
-
-        this.timeout = setTimeout(
-            () => {
-                this.cleanupOldVersions();
-            },
-            2 * 60 * 1000,
-        );
-
-        this.log.info('Initialized');
     }
 
     get(store: StoreName): DataStore {
@@ -95,6 +88,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     async close(): Promise<void> {
         // Clear the stores map but don't close individual stores
         // LMDB will close them when we close the environment
+        clearInterval(this.metricsInterval);
         clearTimeout(this.timeout);
         this.stores.clear();
         await this.env.close();
@@ -115,31 +109,31 @@ export class LMDBStoreFactory implements DataStoreFactory {
         }
     }
 
-    private registerLMDBGauges(): void {
+    private emitMetrics(): void {
         let totalBytes = 0;
         const envStat = stats(this.env);
-        this.telemetry.registerGaugeProvider('version', () => VersionNumber);
-        this.telemetry.registerGaugeProvider('env.size', () => envStat.totalSize, { unit: 'By' });
-        this.telemetry.registerGaugeProvider('env.max.size', () => envStat.maxSize, {
+        this.telemetry.histogram('version', VersionNumber);
+        this.telemetry.histogram('env.size.bytes', envStat.totalSize, { unit: 'By' });
+        this.telemetry.histogram('env.max.size.bytes', envStat.maxSize, {
             unit: 'By',
         });
-        this.telemetry.registerGaugeProvider('env.entries', () => envStat.entries);
+        this.telemetry.histogram('env.entries', envStat.entries);
         totalBytes += envStat.totalSize;
 
         for (const [name, store] of this.stores.entries()) {
             const stat = store.stats();
             totalBytes += stat.totalSize;
 
-            this.telemetry.registerGaugeProvider(`store.${name}.size`, () => stat.totalSize, {
+            this.telemetry.histogram(`store.${name}.size.bytes`, stat.totalSize, {
                 unit: 'By',
             });
-            this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => stat.entries);
+            this.telemetry.histogram(`store.${name}.entries`, stat.entries);
         }
 
-        this.telemetry.registerGaugeProvider('total.usage', () => 100 * (totalBytes / TotalMaxDbSize), {
+        this.telemetry.histogram('total.usage', 100 * (totalBytes / TotalMaxDbSize), {
             unit: '%',
         });
-        this.telemetry.registerGaugeProvider('total.size', () => totalBytes, {
+        this.telemetry.histogram('total.size.bytes', totalBytes, {
             unit: 'By',
         });
     }

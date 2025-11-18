@@ -15,11 +15,12 @@ export class LMDBStore implements DataStore {
         private readonly log: Logger = LoggerFactory.getLogger(`LMDB.${name}`),
     ) {
         this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
-        this.log.info('Initialized');
     }
 
     get<T>(key: string): T | undefined {
-        return this.store.get(key) as T | undefined;
+        return this.telemetry.countExecution('get', () => {
+            return this.store.get(key) as T | undefined;
+        });
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
@@ -29,15 +30,21 @@ export class LMDBStore implements DataStore {
     }
 
     remove(key: string): Promise<boolean> {
-        return this.store.remove(key);
+        return this.telemetry.countExecutionAsync('remove', () => {
+            return this.store.remove(key);
+        });
     }
 
     clear(): Promise<void> {
-        return this.store.clearAsync();
+        return this.telemetry.countExecutionAsync('clear', () => {
+            return this.store.clearAsync();
+        });
     }
 
     keys(limit: number): ReadonlyArray<string> {
-        return this.store.getKeys({ limit }).asArray;
+        return this.telemetry.countExecution('keys', () => {
+            return this.store.getKeys({ limit }).asArray;
+        });
     }
 
     stats(): StoreStatsType {

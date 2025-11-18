@@ -24,22 +24,24 @@ export class EncryptedFileStore implements DataStore {
     ) {
         this.log = LoggerFactory.getLogger(`FileStore.${name}`);
         this.file = join(fileDbDir, `${name}.enc`);
+
         this.telemetry = TelemetryService.instance.get(`FileStore.${name}`);
-        this.log.info('Initialized');
     }
 
     get<T>(key: string): T | undefined {
-        if (this.content) {
-            return this.content[key] as T;
-        }
+        return this.telemetry.countExecution('get', () => {
+            if (this.content) {
+                return this.content[key] as T | undefined;
+            }
 
-        if (!existsSync(this.file)) {
-            return undefined;
-        }
+            if (!existsSync(this.file)) {
+                return;
+            }
 
-        const decrypted = decrypt(this.KEY, readFileSync(this.file));
-        this.content = JSON.parse(decrypted) as Record<string, unknown>;
-        return this.content[key] as T;
+            const decrypted = decrypt(this.KEY, readFileSync(this.file));
+            this.content = JSON.parse(decrypted) as Record<string, unknown>;
+            return this.content[key] as T | undefined;
+        });
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
@@ -61,37 +63,44 @@ export class EncryptedFileStore implements DataStore {
     }
 
     remove(key: string): Promise<boolean> {
-        return this.lock.runExclusive(async () => {
-            if (!this.content) {
-                this.get(key);
-            }
+        return this.lock.runExclusive(() => {
+            return this.telemetry.measureAsync('remove', async () => {
+                if (!this.content) {
+                    this.get(key);
+                }
 
-            if (!this.content || !(key in this.content)) {
-                return false;
-            }
+                if (!this.content || !(key in this.content)) {
+                    return false;
+                }
 
-            delete this.content[key];
-            const encrypted = encrypt(this.KEY, JSON.stringify(this.content));
-            await writeFile(this.file, encrypted);
-            return true;
+                delete this.content[key];
+                const encrypted = encrypt(this.KEY, JSON.stringify(this.content));
+                await writeFile(this.file, encrypted);
+                return true;
+            });
         });
     }
 
     clear(): Promise<void> {
         return this.lock.runExclusive(() => {
-            if (existsSync(this.file)) {
-                unlinkSync(this.file);
-            }
-            this.content = undefined;
+            return this.telemetry.countExecutionAsync('clear', () => {
+                if (existsSync(this.file)) {
+                    unlinkSync(this.file);
+                }
+                this.content = undefined;
+                return Promise.resolve();
+            });
         });
     }
 
     keys(limit: number): ReadonlyArray<string> {
-        if (!this.content) {
-            this.get('ANY_KEY');
-        }
+        return this.telemetry.countExecution('keys', () => {
+            if (!this.content) {
+                this.get('ANY_KEY');
+            }
 
-        return Object.keys(this.content ?? {}).slice(0, limit);
+            return Object.keys(this.content ?? {}).slice(0, limit);
+        });
     }
 
     stats(): FileStoreStats {
