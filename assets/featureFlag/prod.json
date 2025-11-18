@@ -6,9 +6,7 @@
       "enabled": false
     },
     "EnhancedDryRun": {
-      "enabled": false,
-      "fleetPercentage": 100,
-      "allowlistedRegions": []
+      "enabled": true
     }
   }
 }
