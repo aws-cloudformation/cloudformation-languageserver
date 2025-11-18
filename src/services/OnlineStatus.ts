@@ -1,12 +1,9 @@
 import { lookup } from 'node:dns/promises';
 import { MessageType } from 'vscode-languageserver-protocol';
 import { ClientMessage } from '../telemetry/ClientMessage';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Closeable } from '../utils/Closeable';
 
 export class OnlineStatus implements Closeable {
-    private static readonly log = LoggerFactory.getLogger(OnlineStatus);
-
     private _isOnline: boolean = false;
     private notifiedOnce: boolean = false;
     private readonly timeout: NodeJS.Timeout;
@@ -20,10 +17,6 @@ export class OnlineStatus implements Closeable {
             },
             2 * 60 * 1000,
         );
-    }
-
-    get isOnline() {
-        return this._isOnline;
     }
 
     private async hasInternet() {

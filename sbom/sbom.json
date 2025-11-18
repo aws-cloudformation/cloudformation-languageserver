@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "@aws/cloudformation-languageserver@0.0.5",
-  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-0.0.5-10917d5e-8766-4203-8433-0b4cdad240a9",
+  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-0.0.5-20c6d2ff-852b-42ee-ae45-8990f987420e",
   "creationInfo": {
-    "created": "2025-11-07T17:17:43.925Z",
+    "created": "2025-11-18T08:08:30.548Z",
     "creators": [
       "Tool: npm/cli-10.9.2"
     ]
@@ -6500,6 +6500,30 @@
       ]
     },
     {
+      "name": "async-mutex",
+      "SPDXID": "SPDXRef-Package-async-mutex-0.5.0",
+      "versionInfo": "0.5.0",
+      "packageFileName": "node_modules/async-mutex",
+      "description": "A mutex for guarding async workflows",
+      "downloadLocation": "https://registry.npmjs.org/async-mutex/-/async-mutex-0.5.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/DirtyHairy/async-mutex#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/async-mutex@0.5.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "d40f78075f23909dc362adbce2884fc685db7d30391ec43bfcc7f80c485cc8bc77073dbb461e7d89271b07a10f88ff81fa3a2e7ba602c5c31749b142d6d64ac0"
+        }
+      ]
+    },
+    {
       "name": "asynckit",
       "SPDXID": "SPDXRef-Package-asynckit-0.4.0",
       "versionInfo": "0.4.0",
@@ -6808,6 +6832,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "1a6cba161625098eee3849595126f1a365020c7f28c0493df7a8246eba6c806b6b24b33727b8c6c65f4873b430c23e22bce13901665644c79c0dd17b86a1a314"
+        }
+      ]
+    },
+    {
+      "name": "cfn-guard",
+      "SPDXID": "SPDXRef-Package-cfn-guard-3.1.1",
+      "versionInfo": "3.1.1",
+      "packageFileName": "node_modules/cfn-guard",
+      "description": "AWS CloudFormation Guard is an open-source general-purpose policy-as-code evaluation tool. It provides developers with a simple-to-use, yet powerful and expressive domain-specific language (DSL) to define policies and enables developers to validate JSON- or YAML- formatted structured data with those policies.",
+      "downloadLocation": "https://gitpkg.now.sh/aws-cloudformation/cloudformation-guard/guard/ts-lib?33d9931",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/aws-cloudformation/cloudformation-guard#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/cfn-guard@3.1.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "8a14a9a96126ad074c8947b0658a1615cf4919774a26387adb4fca48315491aaed5f1ffa99e0116873bea5166fc588249f4845438fc8299db6b41e81edba4dde"
         }
       ]
     },
@@ -11633,7 +11681,17 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-async-mutex-0.5.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-axios-1.11.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-cfn-guard-3.1.1",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-0.0.5",
       "relationshipType": "DEPENDENCY_OF"
     },

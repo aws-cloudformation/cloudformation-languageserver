@@ -1,4 +1,7 @@
+import { pathToArtifact } from '../utils/ArtifactsDir';
 import { Closeable } from '../utils/Closeable';
+import { isWindows } from '../utils/Environment';
+import { FileStoreFactory } from './FileStore';
 import { LMDBStoreFactory } from './LMDB';
 import { MemoryStoreFactory } from './MemoryStore';
 
@@ -24,14 +27,14 @@ export interface DataStore {
     clear(): Promise<void>;
 
     keys(limit: number): ReadonlyArray<string>;
-
-    stats(): unknown;
 }
 
 export interface DataStoreFactory extends Closeable {
     get(store: StoreName): DataStore;
 
     storeNames(): ReadonlyArray<string>;
+
+    close(): Promise<void>;
 }
 
 export interface DataStoreFactoryProvider extends Closeable {
@@ -56,21 +59,26 @@ export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider 
 
 export class MultiDataStoreFactoryProvider implements DataStoreFactoryProvider {
     private readonly memoryStoreFactory: MemoryStoreFactory;
-    private readonly lmdbStoreFactory: LMDBStoreFactory;
+    private readonly persistedStore: DataStoreFactory;
 
-    constructor(lmdbStore?: LMDBStoreFactory, memStore?: MemoryStoreFactory) {
-        this.lmdbStoreFactory = lmdbStore ?? new LMDBStoreFactory();
-        this.memoryStoreFactory = memStore ?? new MemoryStoreFactory();
+    constructor(rootDir: string = pathToArtifact()) {
+        if (isWindows) {
+            this.persistedStore = new FileStoreFactory(rootDir);
+        } else {
+            this.persistedStore = new LMDBStoreFactory(rootDir);
+        }
+
+        this.memoryStoreFactory = new MemoryStoreFactory();
     }
 
     get(store: StoreName, persistence: Persistence): DataStore {
         if (persistence === Persistence.memory) {
             return this.memoryStoreFactory.get(store);
         }
-        return this.lmdbStoreFactory.get(store);
+        return this.persistedStore.get(store);
     }
 
     close(): Promise<void> {
-        return this.lmdbStoreFactory.close();
+        return this.persistedStore.close();
     }
 }
