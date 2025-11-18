@@ -1,7 +1,9 @@
 import { DateTime } from 'luxon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AwsCredentials } from '../../../src/auth/AwsCredentials';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../../src/document/DocumentManager';
+import { TargetedFeatureFlag } from '../../../src/featureFlag/FeatureFlagI';
 import { CfnService } from '../../../src/services/CfnService';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import { S3Service } from '../../../src/services/S3Service';
@@ -20,9 +22,11 @@ import {
     StackActionPhase,
     StackActionState,
 } from '../../../src/stacks/actions/StackActionRequestType';
-import { DRY_RUN_VALIDATION_NAME, ValidationWorkflow, VALIDATION_NAME } from '../../../src/stacks/actions/ValidationWorkflow';
-import { TargetedFeatureFlag } from '../../../src/featureFlag/FeatureFlagI';
-import { AwsCredentials } from '../../../src/auth/AwsCredentials';
+import {
+    DRY_RUN_VALIDATION_NAME,
+    ValidationWorkflow,
+    VALIDATION_NAME,
+} from '../../../src/stacks/actions/ValidationWorkflow';
 
 vi.mock('../../../src/stacks/actions/StackActionOperations');
 
@@ -294,7 +298,7 @@ describe('ValidationWorkflow', () => {
                     setChanges: vi.fn(),
                     setValidationDetails: vi.fn(),
                 }),
-                remove: vi.fn()
+                remove: vi.fn(),
             };
             validationWorkflow = new ValidationWorkflow(
                 mockCfnService,
@@ -398,7 +402,7 @@ describe('ValidationWorkflow', () => {
                     setChanges: vi.fn(),
                     setValidationDetails: vi.fn(),
                 }),
-                remove: vi.fn()
+                remove: vi.fn(),
             };
 
             // Default to CREATE changeSetType (stack doesn't exist)

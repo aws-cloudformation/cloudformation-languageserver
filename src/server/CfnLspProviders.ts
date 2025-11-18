@@ -25,7 +25,6 @@ import { StackActionWorkflow } from '../stacks/actions/StackActionWorkflowType';
 import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
 import { StackEventManager } from '../stacks/StackEventManager';
 import { StackManager } from '../stacks/StackManager';
-import { localCfnClientExists } from '../utils/ClientUtil';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
 import { CfnExternal } from './CfnExternal';

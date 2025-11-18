@@ -196,12 +196,10 @@ export class CfnService {
     }
 
     @Count({ name: 'describeEvents' })
-    public async describeEvents(
-        params: {
-            ChangeSetName: string;
-            StackName: string
-        }
-    ): Promise<DescribeEventsCommandOutput> {
+    public async describeEvents(params: {
+        ChangeSetName: string;
+        StackName: string;
+    }): Promise<DescribeEventsCommandOutput> {
         return await this.withClient(async (client) => {
             let nextToken: string | undefined;
             let result: DescribeEventsCommandOutput | undefined;

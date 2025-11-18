@@ -3,7 +3,7 @@ import {
     ChangeSetType,
     DescribeEventsCommandOutput,
     StackStatus,
-    OnStackFailure
+    OnStackFailure,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { dump } from 'js-yaml';
