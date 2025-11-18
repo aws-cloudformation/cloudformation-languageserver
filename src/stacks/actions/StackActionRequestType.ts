@@ -147,6 +147,7 @@ export type Failable = {
 export type DescribeValidationStatusResult = GetStackActionStatusResult &
     Failable & {
         ValidationDetails?: ValidationDetail[];
+        deploymentMode?: DeploymentMode;
     };
 
 export type DescribeDeploymentStatusResult = GetStackActionStatusResult &

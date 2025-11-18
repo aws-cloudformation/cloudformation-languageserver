@@ -90,6 +90,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             phase: StackActionPhase.VALIDATION_IN_PROGRESS,
             startTime: Date.now(),
             state: StackActionState.IN_PROGRESS,
+            deploymentMode: params.deploymentMode,
         });
 
         void this.runValidationAsync(params, changeSetName);
@@ -125,6 +126,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             ...this.getStatus(params),
             ValidationDetails: workflow.validationDetails,
             FailureReason: workflow.failureReason,
+            deploymentMode: workflow.deploymentMode,
         };
     }
 

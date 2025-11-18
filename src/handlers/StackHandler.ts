@@ -387,17 +387,20 @@ export function listStackResourcesHandler(
     };
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment,
+@typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument,
+@typescript-eslint/no-unsafe-call */
 export function describeChangeSetHandler(
     components: ServerComponents,
 ): RequestHandler<DescribeChangeSetParams, DescribeChangeSetResult, void> {
     return async (rawParams: DescribeChangeSetParams): Promise<DescribeChangeSetResult> => {
         const params = parseWithPrettyError(parseDescribeChangeSetParams, rawParams);
 
-        const result = await components.cfnService.describeChangeSet({
+        const result = (await components.cfnService.describeChangeSet({
             ChangeSetName: params.changeSetName,
             IncludePropertyValues: true,
             StackName: params.stackName,
-        });
+        })) as any; // TODO: Remove 'as any' once SDK is released
 
         return {
             changeSetName: params.changeSetName,
@@ -406,6 +409,7 @@ export function describeChangeSetHandler(
             creationTime: result.CreationTime?.toISOString(),
             description: result.Description,
             changes: mapChangesToStackChanges(result.Changes),
+            deploymentMode: result.DeploymentMode,
         };
     };
 }
