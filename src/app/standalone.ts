@@ -11,14 +11,11 @@ import { ExtensionName } from '../utils/ExtensionConfig';
 
 let server: unknown;
 
-function getLogger() {
-    return LoggerFactory.getLogger('Init');
-}
-
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access */
 async function onInitialize(params: ExtendedInitializeParams) {
     const ClientInfo = params.clientInfo;
     const AwsMetadata = params.initializationOptions?.['aws'];
+    LoggerFactory.initialize(AwsMetadata?.logLevel);
 
     getLogger().info(
         {
@@ -39,7 +36,6 @@ async function onInitialize(params: ExtendedInitializeParams) {
         Process: `${process.platform}-${process.arch}`,
         Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
     });
-    LoggerFactory.initialize(AwsMetadata);
     TelemetryService.initialize(ClientInfo, AwsMetadata);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
@@ -80,3 +76,7 @@ process.on('unhandledRejection', (reason, _promise) => {
 process.on('uncaughtException', (error, origin) => {
     getLogger().error(error, `Uncaught exception ${origin}`);
 });
+
+function getLogger() {
+    return LoggerFactory.getLogger('Init');
+}

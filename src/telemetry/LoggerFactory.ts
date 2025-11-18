@@ -1,40 +1,30 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
-// eslint-disable-next-line no-restricted-syntax -- circular dependency
-import { readdir, stat, unlink, writeFile, readFile } from 'fs/promises';
+import { existsSync } from 'fs';
+import { readdir, stat, unlink, writeFile, readFile } from 'fs/promises'; // eslint-disable-line no-restricted-syntax -- circular dependency
 import { join } from 'path';
 import { DateTime } from 'luxon';
 import pino, { LevelWithSilent, Logger } from 'pino';
-import { AwsMetadata } from '../server/InitParams';
 import { pathToArtifact } from '../utils/ArtifactsDir';
 import { Closeable } from '../utils/Closeable';
 import { ExtensionId, ExtensionName } from '../utils/ExtensionConfig';
 import { TelemetrySettings } from './TelemetryConfig';
 
-export const LogLevel: Record<LevelWithSilent, number> = {
-    silent: 0,
-    fatal: 1,
-    error: 2,
-    warn: 3,
-    info: 4,
-    debug: 5,
-    trace: 6,
-} as const;
-
 export class LoggerFactory implements Closeable {
     private static readonly MaxFileSize = 50 * 1024 * 1024; // 50MB
 
-    private static readonly _instance: LoggerFactory = new LoggerFactory();
+    private static _instance: LoggerFactory;
 
+    private readonly logsDirectory: string;
     private readonly baseLogger: Logger;
-    private readonly logLevel: LevelWithSilent;
     private readonly loggers = new Map<string, Logger>();
     private readonly interval: NodeJS.Timeout;
+    private readonly timeout: NodeJS.Timeout;
 
     private constructor(
-        private readonly logsDirectory: string = pathToArtifact('logs'),
-        level?: LevelWithSilent,
+        rootDir: string,
+        private readonly logLevel: LevelWithSilent,
     ) {
-        this.logLevel = level ?? TelemetrySettings.logLevel;
+        this.logsDirectory = join(rootDir, 'logs');
 
         this.baseLogger = pino({
             name: ExtensionName,
@@ -54,7 +44,7 @@ export class LoggerFactory implements Closeable {
                         target: 'pino/file',
                         options: {
                             destination: join(
-                                logsDirectory,
+                                this.logsDirectory,
                                 `${ExtensionId}-${DateTime.utc().toFormat('yyyy-MM-dd')}.log`,
                             ),
                             mkdir: true,
@@ -64,7 +54,9 @@ export class LoggerFactory implements Closeable {
             },
         });
 
-        void this.cleanOldLogs();
+        this.timeout = setTimeout(() => {
+            void this.cleanOldLogs();
+        }, 60 * 1000);
         this.interval = setInterval(
             () => {
                 void this.trimLogs();
@@ -75,6 +67,9 @@ export class LoggerFactory implements Closeable {
 
     private async cleanOldLogs() {
         try {
+            if (!existsSync(this.logsDirectory)) {
+                return;
+            }
             const files = await readdir(this.logsDirectory);
             const oneWeekAgo = DateTime.utc().minus({ weeks: 1 });
 
@@ -136,18 +131,26 @@ export class LoggerFactory implements Closeable {
     }
 
     close() {
+        clearTimeout(this.timeout);
         clearInterval(this.interval);
     }
 
     static getLogger(clazz: string | Function): Logger {
+        if (LoggerFactory._instance === undefined) {
+            LoggerFactory.initialize();
+        }
         return LoggerFactory._instance.getLogger(clazz);
     }
 
-    static initialize(metadata?: AwsMetadata) {
-        const newLevel = metadata?.logLevel ?? TelemetrySettings.logLevel;
-        if (Object.keys(LogLevel).includes(newLevel) && LoggerFactory._instance.logLevel !== newLevel) {
-            LoggerFactory._instance.reconfigure(newLevel);
+    static initialize(logLevel?: LevelWithSilent, rootDir: string = pathToArtifact()) {
+        if (LoggerFactory._instance !== undefined) {
+            throw new Error('Logger was already configured');
         }
+        LoggerFactory._instance = new LoggerFactory(rootDir, logLevel ?? TelemetrySettings.logLevel);
+    }
+
+    static reconfigure(newLevel: LevelWithSilent) {
+        LoggerFactory._instance.reconfigure(newLevel);
     }
 }
 

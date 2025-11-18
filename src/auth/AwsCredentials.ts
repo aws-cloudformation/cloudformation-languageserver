@@ -5,6 +5,8 @@ import { LspAuthHandlers } from '../protocol/LspAuthHandlers';
 import { DefaultSettings } from '../settings/Settings';
 import { SettingsManager } from '../settings/SettingsManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { getRegion } from '../utils/Region';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import { UpdateCredentialsParams, IamCredentials } from './AwsLspAuthTypes';
@@ -22,6 +24,9 @@ const DecryptedCredentialsSchema = z.object({
 export class AwsCredentials {
     private readonly logger = LoggerFactory.getLogger(AwsCredentials);
 
+    @Telemetry()
+    private readonly telemery!: ScopedTelemetry;
+
     private iamCredentials?: IamCredentials;
     private readonly encryptionKey?: Buffer;
 
@@ -32,6 +37,11 @@ export class AwsCredentials {
     ) {
         this.encryptionKey = encryptionKey ? Buffer.from(encryptionKey, 'base64') : undefined;
         this.logger.info(`AWS credentials ${encryptionKey ? 'encrypted' : 'unencrypted'}`);
+
+        this.telemery.registerGaugeProvider('encrypted', () => (encryptionKey === undefined ? 0 : 1));
+        this.telemery.registerGaugeProvider('unencrypted', () => (encryptionKey === undefined ? 1 : 0));
+        this.telemery.registerGaugeProvider('authenticated', () => (this.credentialsAvailable() ? 1 : 0));
+        this.telemery.registerGaugeProvider('unauthenticated', () => (this.credentialsAvailable() ? 0 : 1));
     }
 
     credentialsAvailable() {

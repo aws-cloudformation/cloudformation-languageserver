@@ -88,7 +88,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
             await dataStore.put<PrivateSchemasType>(profile, value);
 
             this.processedProfiles.add(profile);
-            logger?.info(`${schemas.length} private schemas retrieved for profile: ${profile}`);
+            logger?.info(`${schemas.length} private schemas retrieved`);
         } catch (error) {
             logger?.error(error, `Failed to get private schemas`);
             throw error;

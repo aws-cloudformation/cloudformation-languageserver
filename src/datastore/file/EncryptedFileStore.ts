@@ -38,6 +38,10 @@ export class EncryptedFileStore implements DataStore {
                 return;
             }
 
+            if (this.lock.isLocked()) {
+                return this.content?.[key];
+            }
+
             const decrypted = decrypt(this.KEY, readFileSync(this.file));
             this.content = JSON.parse(decrypted) as Record<string, unknown>;
             return this.content[key] as T | undefined;

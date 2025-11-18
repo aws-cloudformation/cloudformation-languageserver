@@ -854,9 +854,7 @@ function main(): void {
             process.exit(1);
         }
 
-        LoggerFactory.initialize({
-            logLevel: 'silent',
-        });
+        LoggerFactory.initialize('silent');
         TelemetryService.initialize(undefined, {
             telemetryEnabled: false,
         });
