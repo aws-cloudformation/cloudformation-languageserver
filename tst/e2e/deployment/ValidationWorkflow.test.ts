@@ -46,6 +46,9 @@ describe('ValidationWorkflow', () => {
         mockComponents.s3Service.putObject.resolves({ VersionId: 'v1', $metadata: {} });
         mockComponents.s3Service.getHeadObject.resolves({ ETag: '"test-etag"', $metadata: {} });
 
+        const mockFeatureFlag = { isEnabled: () => false } as any;
+        const mockAwsCredentials = { getIAM: () => ({ region: 'us-east-1' }) } as any;
+
         validationWorkflow = new ValidationWorkflow(
             mockComponents.cfnService,
             mockComponents.documentManager,
@@ -53,6 +56,8 @@ describe('ValidationWorkflow', () => {
             mockComponents.syntaxTreeManager,
             validationManager,
             mockComponents.s3Service,
+            mockFeatureFlag,
+            mockAwsCredentials,
         );
     });
 
