@@ -335,10 +335,10 @@ export class ResourceStateImporter {
         const yamlOutput = this.yamlStringifyPreservingSnippets(output);
         if (resourceSectionExists) {
             // Existing resource section - add 2 spaces to all lines for proper indentation
-            return '\n  ' + yamlOutput.replaceAll('\n', '\n  ').trim();
+            return '\n  ' + yamlOutput.replaceAll('\n', '\n  ').trim() + '\n';
         } else {
             // No resource section - content is already properly indented
-            return '\n' + yamlOutput.trim();
+            return '\n' + yamlOutput.trim() + '\n';
         }
     }
 

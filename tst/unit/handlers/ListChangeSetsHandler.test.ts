@@ -6,7 +6,7 @@ import { ServerComponents } from '../../../src/server/ServerComponents';
 describe('listChangeSetsHandler', () => {
     const mockToken = {} as CancellationToken;
 
-    it('should return empty array on error', async () => {
+    it('should throw error when listChangeSets fails', async () => {
         const mockCfnService = {
             listChangeSets: vi.fn().mockRejectedValue(new Error('Test error')),
         };
@@ -16,9 +16,8 @@ describe('listChangeSetsHandler', () => {
         } as unknown as ServerComponents;
 
         const handler = listChangeSetsHandler(mockComponents);
-        const result = await handler({ stackName: 'test-stack' }, mockToken);
 
-        expect(result).toEqual({ changeSets: [] });
+        await expect(handler({ stackName: 'test-stack' }, mockToken)).rejects.toThrow('Test error');
     });
 
     it('should transform change sets correctly with pagination', async () => {

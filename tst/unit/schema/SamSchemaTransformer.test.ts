@@ -74,12 +74,95 @@ describe('SamSchemaTransformer', () => {
         const result = SamSchemaTransformer.transformSamSchema(mockSamSchema);
         const functionSchema = result.get('AWS::Serverless::Function')!;
 
-        // Verify all definitions are included
+        // Verify only referenced definitions are included (full reference chain)
         expect(functionSchema.definitions).toBeDefined();
-        expect(functionSchema.definitions).toEqual(mockSamSchema.definitions);
+
+        const expectedDefinitions = {
+            aws_serverless_functionResource: {
+                properties: {
+                    Type: { enum: ['AWS::Serverless::Function'] },
+                    Properties: { $ref: '#/definitions/FunctionProperties' },
+                },
+            },
+            FunctionProperties: {
+                properties: {
+                    Runtime: { type: 'string' },
+                    CodeUri: { $ref: '#/definitions/CodeUriType' },
+                },
+            },
+            CodeUriType: {
+                type: 'string',
+            },
+        };
+
+        expect(functionSchema.definitions).toEqual(expectedDefinitions);
 
         // This ensures $refs like { $ref: '#/definitions/CodeUriType' } will work
         expect(functionSchema.definitions!.CodeUriType).toEqual({ type: 'string' });
-        expect(functionSchema.definitions!.SomeOtherDefinition).toEqual({ type: 'object' });
+        // SomeOtherDefinition should not be included as it's not referenced
+        expect(functionSchema.definitions!.SomeOtherDefinition).toBeUndefined();
+    });
+
+    test('should handle deep nested references and convert additionalProperties', () => {
+        const mockSamSchema = {
+            properties: {
+                Resources: {
+                    additionalProperties: {
+                        anyOf: [{ $ref: '#/definitions/aws_serverless_functionResource' }],
+                    },
+                },
+            },
+            definitions: {
+                aws_serverless_functionResource: {
+                    properties: {
+                        Type: { enum: ['AWS::Serverless::Function'] },
+                        Properties: { $ref: '#/definitions/FunctionProperties' },
+                    },
+                },
+                FunctionProperties: {
+                    properties: {
+                        Events: {
+                            additionalProperties: { $ref: '#/definitions/EventDefinition' },
+                            type: 'object',
+                        },
+                    },
+                },
+                EventDefinition: {
+                    properties: {
+                        Properties: { $ref: '#/definitions/EventProperties' },
+                    },
+                },
+                EventProperties: {
+                    properties: {
+                        Auth: { $ref: '#/definitions/ApiAuth' },
+                    },
+                },
+                ApiAuth: {
+                    properties: {
+                        ApiKeyRequired: { type: 'boolean' },
+                    },
+                },
+                UnusedDefinition: { type: 'string' },
+            },
+        };
+
+        const result = SamSchemaTransformer.transformSamSchema(mockSamSchema);
+        const functionSchema = result.get('AWS::Serverless::Function')!;
+
+        // Should include all definitions in the nested chain
+        expect(functionSchema.definitions!.aws_serverless_functionResource).toBeDefined();
+        expect(functionSchema.definitions!.FunctionProperties).toBeDefined();
+        expect(functionSchema.definitions!.EventDefinition).toBeDefined();
+        expect(functionSchema.definitions!.EventProperties).toBeDefined();
+        expect(functionSchema.definitions!.ApiAuth).toBeDefined();
+
+        // Should exclude unused definition
+        expect(functionSchema.definitions!.UnusedDefinition).toBeUndefined();
+
+        // Should convert additionalProperties to patternProperties
+        const eventsProperty = functionSchema.properties.Events as any;
+        expect(eventsProperty.additionalProperties).toBe(false);
+        expect(eventsProperty.patternProperties).toBeDefined();
+        expect(eventsProperty.patternProperties['.*']).toEqual({ $ref: '#/definitions/EventDefinition' });
     });
 });

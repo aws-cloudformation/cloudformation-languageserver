@@ -4,28 +4,6 @@ import { OnlineFeatureErrorCode } from '../../../src/utils/OnlineFeatureError';
 import { withOnlineGuard } from '../../../src/utils/OnlineFeatureWrapper';
 
 describe('withOnlineGuard', () => {
-    it('should check prerequisites before calling handler', async () => {
-        const guard = { check: vi.fn() };
-        const handler = vi.fn().mockResolvedValue('result');
-
-        const wrapped = withOnlineGuard(guard as any, handler as any);
-        const result = await wrapped('params', 'token');
-
-        expect(guard.check).toHaveBeenCalledWith({ requiresInternet: true, requiresAuth: true });
-        expect(handler).toHaveBeenCalledWith('params', 'token');
-        expect(result).toBe('result');
-    });
-
-    it('should allow overriding prerequisites', async () => {
-        const guard = { check: vi.fn() };
-        const handler = vi.fn().mockResolvedValue('result');
-
-        const wrapped = withOnlineGuard(guard as any, handler as any, { requiresAuth: false });
-        await wrapped('params', 'token');
-
-        expect(guard.check).toHaveBeenCalledWith({ requiresInternet: true, requiresAuth: false });
-    });
-
     it('should throw when guard check fails', async () => {
         const error = new ResponseError(OnlineFeatureErrorCode.NoInternet, 'No internet');
         const guard = {

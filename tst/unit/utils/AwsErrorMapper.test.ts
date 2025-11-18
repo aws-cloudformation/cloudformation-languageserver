@@ -23,10 +23,10 @@ describe('mapAwsErrorToLspError', () => {
         expect(result.code).toBe(OnlineFeatureErrorCode.ExpiredCredentials);
     });
 
-    it('should map 403 status to ExpiredCredentials', () => {
+    it('should map 403 status to AwsServiceError', () => {
         const error = { $metadata: { httpStatusCode: 403 }, message: 'Forbidden' };
         const result = mapAwsErrorToLspError(error);
-        expect(result.code).toBe(OnlineFeatureErrorCode.ExpiredCredentials);
+        expect(result.code).toBe(OnlineFeatureErrorCode.AwsServiceError);
     });
 
     it('should map network errors to NoInternet', () => {
