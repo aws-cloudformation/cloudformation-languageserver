@@ -72,6 +72,7 @@
     "@opentelemetry/sdk-trace-node": "2.0.1",
     "@tree-sitter-grammars/tree-sitter-yaml": "0.7.1",
     "archiver": "7.0.1",
+    "async-mutex": "0.5.0",
     "axios": "1.11.0",
     "cfn-guard": "https://gitpkg.now.sh/aws-cloudformation/cloudformation-guard/guard/ts-lib?33d9931",
     "deep-object-diff": "1.1.9",

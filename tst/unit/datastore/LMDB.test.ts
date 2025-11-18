@@ -1,5 +1,6 @@
 import fs from 'fs';
-import path, { join } from 'path';
+import { join } from 'path';
+import { v4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DataStore, StoreName } from '../../../src/datastore/DataStore';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
@@ -7,7 +8,7 @@ import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
 describe('LMDB', () => {
     let lmdbFactory: LMDBStoreFactory;
     let lmdbStore: DataStore;
-    const testDir = join(path.join(process.cwd(), 'tmp-tst'), 'lmdb');
+    const testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-tests', v4());
 
     beforeEach(() => {
         if (!fs.existsSync(testDir)) {
