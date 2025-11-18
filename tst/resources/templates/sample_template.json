@@ -168,7 +168,7 @@
       "UpdateReplacePolicy": "Snapshot",
       "Condition": "CreateProdResources",
       "DependsOn": [
-        "EC2Instance",
+        "MyEC2Instance",
         "NewVolume"
       ],
       "Metadata": {
