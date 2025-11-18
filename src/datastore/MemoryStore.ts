@@ -1,11 +1,15 @@
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { TelemetryService } from '../telemetry/TelemetryService';
 import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 
 export class MemoryStore implements DataStore {
     private readonly store = new Map<string, unknown>();
+    private readonly telemetry: ScopedTelemetry;
 
-    constructor(private readonly name: string) {}
+    constructor(private readonly name: string) {
+        this.telemetry = TelemetryService.instance.get(`MemoryStore.${name}`);
+    }
 
     get<T>(key: string): T | undefined {
         const val = this.store.get(key);
@@ -14,8 +18,10 @@ export class MemoryStore implements DataStore {
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
-        this.store.set(key, value);
-        return Promise.resolve(true);
+        return this.telemetry.measureAsync('put', () => {
+            this.store.set(key, value);
+            return Promise.resolve(true);
+        });
     }
 
     remove(key: string): Promise<boolean> {

@@ -29,9 +29,11 @@ export class LMDBStore implements DataStore {
         return this.store.get(key) as T | undefined;
     }
 
-    async put<T>(key: string, value: T): Promise<boolean> {
+    put<T>(key: string, value: T): Promise<boolean> {
         this.log.info(`Put ${key}`);
-        return await this.store.put(key, value);
+        return this.telemetry.measureAsync('put', () => {
+            return this.store.put(key, value);
+        });
     }
 
     remove(key: string): Promise<boolean> {
