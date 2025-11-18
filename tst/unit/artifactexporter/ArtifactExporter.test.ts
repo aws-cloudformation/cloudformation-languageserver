@@ -14,6 +14,7 @@ vi.mock('archiver');
 
 describe('ArtifactExporter', () => {
     let mockS3Service: S3Service;
+    const templatePath = `file:///${join(__dirname, 'template.yaml')}`;
 
     const BASIC_TEMPLATE = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket';
 
@@ -81,12 +82,7 @@ Resources:
 
     describe('getTemplateArtifacts', () => {
         it('should identify Lambda function artifacts', () => {
-            const exporter = new ArtifactExporter(
-                mockS3Service,
-                DocumentType.YAML,
-                'file:///template.yaml',
-                LAMBDA_TEMPLATE,
-            );
+            const exporter = new ArtifactExporter(mockS3Service, DocumentType.YAML, templatePath, LAMBDA_TEMPLATE);
 
             const artifacts = exporter.getTemplateArtifacts();
             expect(artifacts).toEqual([
@@ -98,12 +94,7 @@ Resources:
         });
 
         it('should identify Serverless function artifacts', () => {
-            const exporter = new ArtifactExporter(
-                mockS3Service,
-                DocumentType.YAML,
-                'file:///template.yaml',
-                SERVERLESS_TEMPLATE,
-            );
+            const exporter = new ArtifactExporter(mockS3Service, DocumentType.YAML, templatePath, SERVERLESS_TEMPLATE);
 
             const artifacts = exporter.getTemplateArtifacts();
             expect(artifacts).toEqual([
@@ -120,7 +111,7 @@ Resources:
             const template = new ArtifactExporter(
                 mockS3Service,
                 DocumentType.YAML,
-                'file:///path/to/template.yaml',
+                `file:///${join(__dirname, 'path/to/template.yaml')}`,
                 BASIC_TEMPLATE,
             );
             expect(template).toBeDefined();
@@ -130,7 +121,7 @@ Resources:
             const template = new ArtifactExporter(
                 mockS3Service,
                 DocumentType.YAML,
-                'file:///path/to/template.yaml',
+                `file:///${join(__dirname, 'path/to/template.yaml')}`,
                 BASIC_TEMPLATE,
             );
             const result = await template.export('test-bucket');
@@ -138,12 +129,7 @@ Resources:
         });
 
         it('should update Lambda function Code to S3 reference', async () => {
-            const exporter = new ArtifactExporter(
-                mockS3Service,
-                DocumentType.YAML,
-                'file:///template.yaml',
-                LAMBDA_TEMPLATE,
-            );
+            const exporter = new ArtifactExporter(mockS3Service, DocumentType.YAML, templatePath, LAMBDA_TEMPLATE);
 
             const result = await exporter.export('test-bucket');
 
@@ -164,7 +150,7 @@ Resources:
             const exporter = new ArtifactExporter(
                 mockS3Service,
                 DocumentType.YAML,
-                'file:///template.yaml',
+                `file:///${join(__dirname, 'template.yaml')}`,
                 SERVERLESS_TEMPLATE,
             );
 
@@ -180,12 +166,7 @@ Resources:
         });
 
         it('should not modify existing S3 URLs', async () => {
-            const exporter = new ArtifactExporter(
-                mockS3Service,
-                DocumentType.YAML,
-                'file:///template.yaml',
-                S3_URL_TEMPLATE,
-            );
+            const exporter = new ArtifactExporter(mockS3Service, DocumentType.YAML, templatePath, S3_URL_TEMPLATE);
 
             const result = await exporter.export('test-bucket');
 
