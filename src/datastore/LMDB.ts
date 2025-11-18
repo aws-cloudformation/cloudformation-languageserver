@@ -1,17 +1,18 @@
 import { readdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { open, Database, RootDatabase } from 'lmdb';
+import { Logger } from 'pino';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { pathToArtifact } from '../utils/ArtifactsDir';
+import { toString } from '../utils/String';
 import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 import { encryptionStrategy } from './lmdb/Utils';
 
-const log = LoggerFactory.getLogger('LMDB');
-
 export class LMDBStore implements DataStore {
+    private readonly log: Logger;
     private readonly telemetry: ScopedTelemetry;
 
     constructor(
@@ -19,27 +20,34 @@ export class LMDBStore implements DataStore {
         private readonly store: Database<unknown, string>,
     ) {
         this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
+        this.log = LoggerFactory.getLogger(`LMDB.${name}`);
+        this.log.info('Initialized');
     }
 
     get<T>(key: string): T | undefined {
+        this.log.info(`Get ${key}`);
         return this.store.get(key) as T | undefined;
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
+        this.log.info(`Put ${key}`);
         return this.telemetry.measureAsync('put', () => {
             return this.store.put(key, value);
         });
     }
 
     remove(key: string): Promise<boolean> {
+        this.log.info(`Remove ${key}`);
         return this.store.remove(key);
     }
 
     clear(): Promise<void> {
+        this.log.info(`Clear ${this.name}`);
         return this.store.clearAsync();
     }
 
-    keys(limit: number = Number.POSITIVE_INFINITY): ReadonlyArray<string> {
+    keys(limit: number): ReadonlyArray<string> {
+        this.log.info(`Keys ${limit}`);
         return this.store.getKeys({ limit }).asArray;
     }
 
@@ -49,6 +57,7 @@ export class LMDBStore implements DataStore {
 }
 
 export class LMDBStoreFactory implements DataStoreFactory {
+    private readonly log: Logger;
     @Telemetry({ scope: 'LMDB.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly storePath: string;
@@ -58,19 +67,22 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private readonly stores = new Map<StoreName, LMDBStore>();
 
     constructor(
-        private readonly rootDir: string = pathToArtifact('lmdb'),
+        private readonly rootDir: string = pathToArtifact('.lmdb'),
         storeNames: StoreName[] = [StoreName.public_schemas, StoreName.sam_schemas],
     ) {
-        this.storePath = join(rootDir, Version);
+        this.log = LoggerFactory.getLogger('LMDB.Global');
+
+        this.storePath = join(rootDir, VersionFileName);
+        this.log.info(`Initializing LMDB ${Version} at ${this.storePath} with stores: ${toString(storeNames)}`);
 
         this.env = open({
             path: this.storePath,
             maxDbs: 10,
             mapSize: TotalMaxDbSize,
             remapChunks: true,
-            pageSize: 8192,
             encoding: Encoding,
             encryptionKey: encryptionStrategy(Version),
+            commitDelay: 0,
         });
 
         for (const store of storeNames) {
@@ -89,10 +101,16 @@ export class LMDBStoreFactory implements DataStoreFactory {
             2 * 60 * 1000,
         );
 
-        log.info(`Initialized LMDB ${Version} at ${rootDir}`);
+        console.log(toString(stats(this.env))); // eslint-disable-line no-console
+        for (const store of this.stores.values()) {
+            console.log(store.name, toString(store.stats())); // eslint-disable-line no-console
+        }
+
+        this.log.info('Initialized');
     }
 
     get(store: StoreName): DataStore {
+        this.log.info(`Get store ${store}`);
         const val = this.stores.get(store);
         if (val === undefined) {
             throw new Error(`Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`);
@@ -116,13 +134,13 @@ export class LMDBStoreFactory implements DataStoreFactory {
         const entries = readdirSync(this.rootDir, { withFileTypes: true });
         for (const entry of entries) {
             try {
-                if (entry.isDirectory() && entry.name !== Version) {
-                    this.telemetry.count('oldVersion.cleanup.count', 1, { unit: '1' });
+                if (entry.name !== VersionFileName) {
+                    this.telemetry.count('oldVersion.cleanup.count', 1);
                     rmSync(join(this.rootDir, entry.name), { recursive: true, force: true });
                 }
             } catch (error) {
-                log.error(error, 'Failed to cleanup old LMDB versions');
-                this.telemetry.count('oldVersion.cleanup.error', 1, { unit: '1' });
+                this.log.error(error, 'Failed to cleanup old LMDB versions');
+                this.telemetry.count('oldVersion.cleanup.error', 1);
             }
         }
     }
@@ -130,7 +148,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private registerLMDBGauges(): void {
         let totalBytes = 0;
         const envStat = stats(this.env);
-        this.telemetry.registerGaugeProvider('version', () => VersionNumber);
+        this.telemetry.registerGaugeProvider('version', () => Version);
         this.telemetry.registerGaugeProvider('env.size', () => envStat.totalSize, { unit: 'By' });
         this.telemetry.registerGaugeProvider('env.max.size', () => envStat.maxSize, {
             unit: 'By',
@@ -157,10 +175,10 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 }
 
-const VersionNumber = 2;
-const Version = `v${VersionNumber}`;
+const Version = 4;
+const VersionFileName = `.v${Version}.lmdb`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
-const TotalMaxDbSize = 250 * 1024 * 1024; // 250MB max size
+const TotalMaxDbSize = 5 * 250 * 1024 * 1024; // 250MB max size
 
 function stats(store: RootDatabase | Database): StoreStatsType {
     const stats = store.getStats() as Record<string, number>;

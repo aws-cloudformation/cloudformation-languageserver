@@ -7,12 +7,18 @@ import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';
 import { CloudFormationResourceSchema, SamSchema, SamSchemaTransformer } from './SamSchemaTransformer';
 
 export class GetSamSchemaTask extends GetSchemaTask {
+    private ranSuccessfully: boolean = false;
+
     constructor(private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>) {
         super();
     }
 
     @Measure({ name: 'getSchemas' })
     protected override async runImpl(dataStore: DataStore, logger?: Logger): Promise<void> {
+        if (this.ranSuccessfully) {
+            return;
+        }
+
         try {
             const resourceSchemas = await this.getSamSchemas();
 
@@ -31,8 +37,9 @@ export class GetSamSchemaTask extends GetSchemaTask {
             };
 
             await dataStore.put(SamStoreKey, samSchemasData);
+            this.ranSuccessfully = true;
 
-            logger?.info(`${resourceSchemas.size} SAM schemas downloaded and stored`);
+            logger?.info(`${schemas.length} SAM schemas downloaded and stored`);
         } catch (error) {
             logger?.error(error, 'Failed to download SAM schema');
             throw error;

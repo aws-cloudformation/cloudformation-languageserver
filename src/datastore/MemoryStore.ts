@@ -33,14 +33,8 @@ export class MemoryStore implements DataStore {
         return Promise.resolve();
     }
 
-    keys(limit: number = Number.POSITIVE_INFINITY): ReadonlyArray<string> {
+    keys(limit: number): ReadonlyArray<string> {
         return [...this.store.keys()].slice(0, limit);
-    }
-
-    stats(): unknown {
-        return {
-            numKeys: [...this.store.keys()].length,
-        };
     }
 }
 
@@ -48,10 +42,6 @@ export class MemoryStoreFactory implements DataStoreFactory {
     @Telemetry({ scope: 'MemoryStore.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly stores = new Map<StoreName, MemoryStore>();
-
-    constructor() {
-        this.registerMemoryStoreGauges();
-    }
 
     get(store: StoreName): DataStore {
         let val = this.stores.get(store);
@@ -73,16 +63,12 @@ export class MemoryStoreFactory implements DataStoreFactory {
 
     private registerMemoryStoreGauges(): void {
         this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size);
-        this.telemetry.registerGaugeProvider(
-            'global.entries',
-            () => {
-                let total = 0;
-                for (const store of this.stores.values()) {
-                    total += store.keys().length;
-                }
-                return total;
-            },
-            { unit: '1' },
-        );
+        this.telemetry.registerGaugeProvider('global.entries', () => {
+            let total = 0;
+            for (const store of this.stores.values()) {
+                total += store.keys(1000).length;
+            }
+            return total;
+        });
     }
 }

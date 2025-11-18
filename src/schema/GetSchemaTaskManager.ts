@@ -53,17 +53,10 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
             this.settingsSubscription.unsubscribe();
         }
 
-        // Set initial settings
-        this.profile = settingsManager.getCurrentSettings().profile.profile;
-
         // Subscribe to profile settings changes
         this.settingsSubscription = settingsManager.subscribe('profile', (newProfileSettings) => {
-            this.onSettingsChanged(newProfileSettings.profile);
+            this.profile = newProfileSettings.profile;
         });
-    }
-
-    private onSettingsChanged(newProfile: string): void {
-        this.profile = newProfile;
     }
 
     addTask(region: AwsRegion, regionFirstCreatedMs?: number) {
@@ -79,7 +72,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
             .then(() => {
                 this.onSchemaUpdate(undefined, this.profile);
             })
-            .catch(() => {});
+            .catch(this.log.error);
     }
 
     runSamTask() {
@@ -88,7 +81,7 @@ export class GetSchemaTaskManager implements SettingsConfigurable, Closeable {
             .then(() => {
                 this.onSchemaUpdate(); // No params = SAM update
             })
-            .catch(() => {});
+            .catch(this.log.error);
     }
 
     public currentRegionalTasks() {
