@@ -343,19 +343,21 @@ export function processWorkflowUpdates(
 }
 
 export function parseValidationEvents(events: DescribeEventsCommandOutput, validationName: string): ValidationDetail[] {
-    const validEvents = events.OperationEvents.filter((event) => event.EventType === 'VALIDATION_ERROR');
+    const validEvents = events.OperationEvents?.filter((event) => event.EventType === 'VALIDATION_ERROR');
 
-    return validEvents.map((event) => {
-        const timestamp = event.Timestamp instanceof Date ? event.Timestamp.toISOString() : event.Timestamp;
-        return {
-            Timestamp: DateTime.fromISO(timestamp),
-            ValidationName: validationName,
-            LogicalId: event.LogicalResourceId,
-            Message: [event.ValidationName, event.ValidationStatusReason].filter(Boolean).join(': '),
-            Severity: event.ValidationFailureMode === 'FAIL' ? 'ERROR' : 'INFO',
-            ResourcePropertyPath: event.ValidationPath,
-        };
-    });
+    return (
+        validEvents?.map((event) => {
+            const timestamp = event.Timestamp instanceof Date ? event.Timestamp.toISOString() : event.Timestamp;
+            return {
+                Timestamp: DateTime.fromISO(timestamp ?? ''),
+                ValidationName: validationName,
+                LogicalId: event.LogicalResourceId,
+                Message: [event.ValidationName, event.ValidationStatusReason].filter(Boolean).join(': '),
+                Severity: event.ValidationFailureMode === 'FAIL' ? 'ERROR' : 'INFO',
+                ResourcePropertyPath: event.ValidationPath,
+            };
+        }) ?? []
+    );
 }
 
 export async function publishValidationDiagnostics(
