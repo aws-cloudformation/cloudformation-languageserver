@@ -46,12 +46,12 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "@aws-sdk/client-cloudcontrol": "3.873.0",
-    "@aws-sdk/client-cloudformation": "3.873.0",
-    "@aws-sdk/client-iam": "3.873.0",
-    "@aws-sdk/client-s3": "3.873.0",
-    "@aws-sdk/client-sts": "3.873.0",
-    "@aws-sdk/credential-provider-node": "3.873.0",
+    "@aws-sdk/client-cloudcontrol": "3.934.0",
+    "@aws-sdk/client-cloudformation": "3.934.0",
+    "@aws-sdk/client-iam": "3.934.0",
+    "@aws-sdk/client-s3": "3.934.0",
+    "@aws-sdk/client-sts": "3.934.0",
+    "@aws-sdk/credential-provider-node": "3.934.0",
     "@base2/pretty-print-object": "1.0.2",
     "@langchain/anthropic": "0.3.26",
     "@langchain/aws": "0.1.14",
