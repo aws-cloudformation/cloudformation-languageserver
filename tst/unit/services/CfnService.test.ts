@@ -23,6 +23,7 @@ import {
     waitUntilStackUpdateComplete,
     waitUntilStackCreateComplete,
     OnFailure,
+    EventType,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { mockClient } from 'aws-sdk-client-mock';
@@ -362,14 +363,14 @@ describe('CfnService', () => {
                 OperationEvents: [
                     {
                         EventId: 'event-1',
-                        EventType: 'VALIDATION_ERROR',
-                        Timestamp: '2023-01-01T00:00:00Z',
+                        EventType: EventType.VALIDATION_ERROR,
+                        Timestamp: new Date('2023-01-01T00:00:00Z'),
                         LogicalResourceId: 'Resource1',
                     },
                     {
                         EventId: 'event-2',
-                        EventType: 'VALIDATION_ERROR',
-                        Timestamp: '2023-01-01T00:01:00Z',
+                        EventType: EventType.VALIDATION_ERROR,
+                        Timestamp: new Date('2023-01-01T00:01:00Z'),
                         LogicalResourceId: 'Resource2',
                     },
                 ],
@@ -380,8 +381,8 @@ describe('CfnService', () => {
                 OperationEvents: [
                     {
                         EventId: 'event-3',
-                        EventType: 'VALIDATION_ERROR',
-                        Timestamp: '2023-01-01T00:02:00Z',
+                        EventType: EventType.VALIDATION_ERROR,
+                        Timestamp: new Date('2023-01-01T00:02:00Z'),
                         LogicalResourceId: 'Resource3',
                     },
                 ],

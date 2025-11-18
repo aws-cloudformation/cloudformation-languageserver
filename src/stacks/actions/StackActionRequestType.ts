@@ -125,7 +125,7 @@ export type ValidationDetail = {
     ValidationName: string;
     LogicalId?: string;
     ResourcePropertyPath?: string;
-    Timestamp: DateTime;
+    Timestamp?: DateTime;
     Severity: 'INFO' | 'ERROR';
     Message: string;
     diagnosticId?: string;

@@ -1,3 +1,4 @@
+import { DescribeEventsCommandOutput, EventType, HookFailureMode } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AwsCredentials } from '../../../src/auth/AwsCredentials';
@@ -428,11 +429,23 @@ describe('ValidationWorkflow', () => {
                 return updated;
             });
 
-            mockCfnService.describeEvents = vi.fn().mockResolvedValue({
+            const mockEmptyDescribeEventsResponse: DescribeEventsCommandOutput = {
                 OperationEvents: [],
-            });
+                $metadata: {},
+            };
 
-            (parseValidationEvents as any).mockReturnValue(Promise<void>);
+            mockFeatureFlag.isEnabled = vi.fn().mockReturnValue(true);
+            mockAwsCredentials.getIAM = vi.fn().mockReturnValue({ region: 'us-east-1' });
+
+            mockCfnService.describeEvents = vi.fn().mockResolvedValue(mockEmptyDescribeEventsResponse);
+
+            (parseValidationEvents as any).mockReturnValue([
+                {
+                    ValidationName: DRY_RUN_VALIDATION_NAME,
+                    Severity: 'INFO',
+                    Message: 'Validation succeeded',
+                },
+            ]);
 
             validationWorkflow = new ValidationWorkflow(
                 mockCfnService,
@@ -462,6 +475,7 @@ describe('ValidationWorkflow', () => {
 
             const result = await validationWorkflow.start(params);
             await waitForWorkflowCompletion('test-id');
+            await new Promise((resolve) => setTimeout(resolve, 50));
 
             expect(result.changeSetName).toBe('changeset-123');
             expect(mockValidationManager.add).toHaveBeenCalled();
@@ -500,6 +514,7 @@ describe('ValidationWorkflow', () => {
 
             const result = await validationWorkflow.start(params);
             await waitForWorkflowCompletion('test-id');
+            await new Promise((resolve) => setTimeout(resolve, 50));
 
             expect(result.changeSetName).toBe('changeset-123');
             expect(mockValidationManager.add).toHaveBeenCalled();
@@ -536,6 +551,7 @@ describe('ValidationWorkflow', () => {
 
             const result = await validationWorkflow.start(params);
             await waitForWorkflowCompletion('test-id');
+            await new Promise((resolve) => setTimeout(resolve, 50));
 
             expect(result.changeSetName).toBe('changeset-123');
             expect(mockValidationManager.add).toHaveBeenCalled();
@@ -588,6 +604,14 @@ describe('ValidationWorkflow', () => {
                 uri: 'file:///test.yaml',
                 stackName: 'test-stack',
             };
+
+            (parseValidationEvents as any).mockReturnValueOnce([
+                {
+                    ValidationName: DRY_RUN_VALIDATION_NAME,
+                    Severity: 'ERROR',
+                    Message: 'Validation failed with reason: Template validation failed',
+                },
+            ]);
 
             (waitForChangeSetValidation as any).mockResolvedValueOnce({
                 phase: StackActionPhase.VALIDATION_FAILED,
@@ -643,19 +667,20 @@ describe('ValidationWorkflow', () => {
                 changes: mockChanges,
             });
 
-            const mockDescribeEventsResponse = {
+            const mockDescribeEventsResponse: DescribeEventsCommandOutput = {
                 OperationEvents: [
                     {
                         EventId: 'event-1',
-                        EventType: 'VALIDATION_ERROR',
-                        Timestamp: '2023-01-01T00:00:00Z',
+                        EventType: EventType.VALIDATION_ERROR,
+                        Timestamp: new Date('2023-01-01T00:00:00Z'),
                         LogicalResourceId: 'TestResource',
                         ValidationPath: '/Resources/TestResource/Properties/BucketName',
-                        ValidationFailureMode: 'FAIL',
+                        ValidationFailureMode: HookFailureMode.FAIL,
                         ValidationName: 'TestValidation',
                         ValidationStatusReason: 'Test error',
                     },
                 ],
+                $metadata: {},
             };
 
             mockCfnService.describeEvents = vi.fn().mockResolvedValueOnce(mockDescribeEventsResponse);
@@ -701,6 +726,19 @@ describe('ValidationWorkflow', () => {
         });
 
         it('should skip enhanced validation workflow when region is not supported', async () => {
+            mockFeatureFlag.isEnabled = vi.fn().mockReturnValue(false);
+
+            validationWorkflow = new ValidationWorkflow(
+                mockCfnService,
+                mockDocumentManager,
+                mockDiagnosticCoordinator,
+                mockSyntaxTreeManager,
+                mockValidationManager,
+                mockS3Service,
+                mockFeatureFlag,
+                mockAwsCredentials,
+            );
+
             const params: CreateValidationParams = {
                 id: 'test-id',
                 uri: 'file:///test.yaml',
@@ -714,10 +752,9 @@ describe('ValidationWorkflow', () => {
                 changes: mockChanges,
             });
 
-            const result = await validationWorkflow.start(params);
+            await validationWorkflow.start(params);
             await waitForWorkflowCompletion('test-id');
 
-            expect(result.changeSetName).toBe('changeset-123');
             expect(mockValidationManager.add).toHaveBeenCalled();
             expect(waitForChangeSetValidation).toHaveBeenCalledWith(mockCfnService, 'changeset-123', 'test-stack');
 

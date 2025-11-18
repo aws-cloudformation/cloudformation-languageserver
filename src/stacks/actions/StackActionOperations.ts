@@ -4,6 +4,8 @@ import {
     DescribeEventsCommandOutput,
     StackStatus,
     OnStackFailure,
+    EventType,
+    HookFailureMode,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { dump } from 'js-yaml';
@@ -305,9 +307,8 @@ export async function deleteChangeSet(
 }
 
 export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | undefined {
-    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
     return changes?.map((change: Change) => {
-        const resourceChange = change.ResourceChange as any;
+        const resourceChange = change.ResourceChange;
         return {
             type: change.Type,
             resourceChange: resourceChange
@@ -343,17 +344,16 @@ export function processWorkflowUpdates(
 }
 
 export function parseValidationEvents(events: DescribeEventsCommandOutput, validationName: string): ValidationDetail[] {
-    const validEvents = events.OperationEvents?.filter((event) => event.EventType === 'VALIDATION_ERROR');
+    const validEvents = events.OperationEvents?.filter((event) => event.EventType === EventType.VALIDATION_ERROR);
 
     return (
         validEvents?.map((event) => {
-            const timestamp = event.Timestamp instanceof Date ? event.Timestamp.toISOString() : event.Timestamp;
             return {
-                Timestamp: DateTime.fromISO(timestamp ?? ''),
+                Timestamp: event.Timestamp ? DateTime.fromISO(event.Timestamp.toISOString()) : undefined,
                 ValidationName: validationName,
                 LogicalId: event.LogicalResourceId,
                 Message: [event.ValidationName, event.ValidationStatusReason].filter(Boolean).join(': '),
-                Severity: event.ValidationFailureMode === 'FAIL' ? 'ERROR' : 'INFO',
+                Severity: event.ValidationFailureMode === HookFailureMode.FAIL ? 'ERROR' : 'INFO',
                 ResourcePropertyPath: event.ValidationPath,
             };
         }) ?? []
