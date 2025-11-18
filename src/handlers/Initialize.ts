@@ -10,7 +10,6 @@ export function initializedHandler(workspace: LspWorkspace, components: ServerCo
         components.settingsManager
             .syncConfiguration()
             .then(() => {
-                components.schemaRetriever.initialize();
                 return components.cfnLintService.initialize();
             })
             .then(async () => {

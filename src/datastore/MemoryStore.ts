@@ -36,12 +36,20 @@ export class MemoryStore implements DataStore {
     keys(limit: number): ReadonlyArray<string> {
         return [...this.store.keys()].slice(0, limit);
     }
+
+    size() {
+        return this.store.size;
+    }
 }
 
 export class MemoryStoreFactory implements DataStoreFactory {
     @Telemetry({ scope: 'MemoryStore.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly stores = new Map<StoreName, MemoryStore>();
+
+    constructor() {
+        this.registerMemoryStoreGauges();
+    }
 
     get(store: StoreName): DataStore {
         let val = this.stores.get(store);
@@ -62,13 +70,10 @@ export class MemoryStoreFactory implements DataStoreFactory {
     }
 
     private registerMemoryStoreGauges(): void {
-        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size);
-        this.telemetry.registerGaugeProvider('global.entries', () => {
-            let total = 0;
-            for (const store of this.stores.values()) {
-                total += store.keys(1000).length;
-            }
-            return total;
-        });
+        this.telemetry.registerGaugeProvider('env.entries', () => this.stores.size);
+
+        for (const [name, store] of this.stores.entries()) {
+            this.telemetry.registerGaugeProvider(`store.${name}.entries`, () => store.size());
+        }
     }
 }
