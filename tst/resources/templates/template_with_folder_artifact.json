@@ -1,0 +1,10 @@
+{
+  "Resources": {
+    "MyFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Properties": {
+        "CodeUri": "./artifact/code"
+      }
+    }
+  }
+}
