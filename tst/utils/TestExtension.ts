@@ -64,6 +64,7 @@ import { RelationshipSchemaService } from '../../src/services/RelationshipSchema
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
+import { createMockCfnLintService } from './MockServerComponents';
 import { getTestPrivateSchemas, samFileType, SamSchemaFiles, schemaFileType, Schemas } from './SchemaUtils';
 import { wait } from './Utils';
 
@@ -139,6 +140,7 @@ export class TestExtension implements Closeable {
                     this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
                         schemaRetriever,
+                        cfnLintService: createMockCfnLintService(),
                         featureFlags: new FeatureFlagProvider((_env) => {
                             return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
                         }, ffFile),
@@ -156,6 +158,11 @@ export class TestExtension implements Closeable {
                 onShutdown: () => this.server.close(),
             },
         );
+
+        // Handle workspace/configuration requests from the server
+        this.clientConnection.onRequest('workspace/configuration', () => {
+            return [{}]; // Return empty configuration
+        });
 
         this.serverConnection.listen();
         this.clientConnection.listen();
