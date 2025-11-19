@@ -1,0 +1,338 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Template with parameters, mappings, and conditions",
+  "Parameters": {
+    "StringParam": {
+      "Type": "String",
+      "Default": "default-value",
+      "Description": "A string parameter",
+      "AllowedValues": [
+        "default-value",
+        "other-value"
+      ],
+      "MinLength": 3,
+      "MaxLength": 20,
+      "AllowedPattern": "[a-zA-Z0-9-]+",
+      "NoEcho": false,
+      "ConstraintDescription": "Must be alphanumeric with hyphens"
+    },
+    "NumberParam": {
+      "Type": "Number",
+      "Default": 42,
+      "MinValue": 1,
+      "MaxValue": 100
+    },
+    "EnvironmentType": {
+      "Type": "String",
+      "Default": "dev",
+      "Description": "Environment type",
+      "AllowedValues": [
+        "dev",
+        "test",
+        "prod"
+      ],
+      "ConstraintDescription": "Must be dev, test, or prod"
+    },
+    "InstanceType": {
+      "Type": "String",
+      "Default": "t2.micro",
+      "Description": "EC2 instance type",
+      "AllowedValues": [
+        "t2.micro",
+        "t2.small",
+        "t2.medium"
+      ],
+      "ConstraintDescription": "Must be a valid EC2 instance type"
+    },
+    "LambdaExecutionRoleAction": {
+      "Type": "String",
+      "Default": "sts:AssumeRole",
+      "Description": ""
+    }
+  },
+  "Mappings": {
+    "EnvironmentMap": {
+      "dev": {
+        "InstanceType": "t2.micro",
+        "MinSize": 1,
+        "MaxSize": 2
+      },
+      "test": {
+        "InstanceType": "t2.small",
+        "MinSize": 2,
+        "MaxSize": 4
+      },
+      "prod": {
+        "InstanceType": "t2.medium",
+        "MinSize": 3,
+        "MaxSize": 6
+      }
+    },
+    "RegionMap": {
+      "us-east-1": {
+        "AMI": "ami-0c55b159cbfafe1f0"
+      },
+      "us-west-2": {
+        "AMI": "ami-0d1cd67c26f5fca19"
+      }
+    }
+  },
+  "Conditions": {
+    "IsProduction": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnvironmentType"
+        },
+        "prod"
+      ]
+    },
+    "IsDevelopment": {
+      "Fn::Equals": [
+        {
+          "Ref": "EnvironmentType"
+        },
+        "dev"
+      ]
+    },
+    "CreateProdResources": {
+      "Fn::And": [
+        {
+          "Condition": "IsProduction"
+        },
+        {
+          "Fn::Equals": [
+            {
+              "Ref": "AWS::Region"
+            },
+            "us-east-1"
+          ]
+        }
+      ]
+    }
+  },
+  "Resources": {
+    "MyBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": {
+          "Fn::Sub": "${AWS::StackName}-bucket"
+        },
+        "VersioningConfiguration": {
+          "Status": "Enabled"
+        },
+        "Tags": [
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "EnvironmentType"
+            }
+          },
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-bucket"
+            }
+          }
+        ]
+      },
+      "Condition": "CreateProdResources"
+    },
+    "MyInstance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            {
+              "Ref": "EnvironmentType"
+            },
+            "InstanceType"
+          ]
+        },
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionMap",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AMI"
+          ]
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-instance"
+            }
+          },
+          {
+            "Key": "Environment",
+            "Value": {
+              "Ref": "EnvironmentType"
+            }
+          }
+        ],
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Sub": "#!/bin/bash\necho 'Hello from ${EnvironmentType}'\n"
+          }
+        }
+      }
+    },
+    "MyAutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "MinSize": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            {
+              "Ref": "EnvironmentType"
+            },
+            "MinSize"
+          ]
+        },
+        "MaxSize": {
+          "Fn::FindInMap": [
+            "EnvironmentMap",
+            {
+              "Ref": "EnvironmentType"
+            },
+            "MaxSize"
+          ]
+        },
+        "DesiredCapacity": {
+          "Fn::If": [
+            "IsProduction",
+            3,
+            1
+          ]
+        },
+        "LaunchConfigurationName": {
+          "Ref": "MyLaunchConfig"
+        },
+        "AvailabilityZones": {
+          "Fn::GetAZs": ""
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}-asg"
+            },
+            "PropagateAtLaunch": true
+          }
+        ]
+      }
+    },
+    "MyLaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": {
+          "Fn::FindInMap": [
+            "RegionMap",
+            {
+              "Ref": "AWS::Region"
+            },
+            "AMI"
+          ]
+        },
+        "InstanceType": {
+          "Ref": "InstanceType"
+        }
+      }
+    },
+    "MyLambdaFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "FunctionName": {
+          "Fn::Sub": "${AWS::StackName}-function"
+        },
+        "Runtime": "python3.9",
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "LambdaExecutionRole",
+            "Arn"
+          ]
+        },
+        "Code": {
+          "ZipFile": "def handler(event, context):\n    return {'statusCode': 200}\n"
+        },
+        "Environment": {
+          "Variables": {
+            "ENV_TYPE": {
+              "Ref": "EnvironmentType"
+            },
+            "BUCKET_NAME": {
+              "Ref": "MyBucket"
+            }
+          }
+        }
+      }
+    },
+    "LambdaExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": {"Ref": "LambdaExecutionRoleAction"}
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+        ],
+        "Policies": [
+          {
+            "PolicyName": "S3Access",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject"
+                  ],
+                  "Resource": {
+                    "Fn::Sub": "${MyBucket.Arn}/*"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "BucketName": {
+      "Description": "Name of the S3 bucket",
+      "Value": {
+        "Ref": "MyBucket"
+      },
+      "Condition": "CreateProdResources"
+    },
+    "InstanceId": {
+      "Description": "Instance ID",
+      "Value": {
+        "Ref": "MyInstance"
+      }
+    },
+    "LambdaFunctionArn": {
+      "Description": "Lambda function ARN",
+      "Value": {
+        "Fn::GetAtt": [
+          "MyLambdaFunction",
+          "Arn"
+        ]
+      }
+    }
+  }
+}

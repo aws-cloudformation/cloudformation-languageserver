@@ -779,6 +779,10 @@ export abstract class SyntaxTree {
         return this.tree.rootNode.text;
     }
 
+    public getRootNode() {
+        return this.tree.rootNode;
+    }
+
     /**
      * Find block_mapping that contains keys at the same indentation level as the cursor
      * Used for creating sibling synthetic keys

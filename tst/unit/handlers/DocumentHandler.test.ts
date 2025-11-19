@@ -1,8 +1,12 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DidChangeTextDocumentParams, Range } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentUri } from 'vscode-languageserver-textdocument/lib/esm/main';
+import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { Document, CloudFormationFileType } from '../../../src/document/Document';
+import { createEdit } from '../../../src/document/DocumentUtils';
 import {
     didOpenHandler,
     didChangeHandler,
@@ -142,6 +146,102 @@ describe('DocumentHandler', () => {
             expect(
                 mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, LintTrigger.OnChange, true),
             ).toBe(true);
+        });
+
+        it('should apply multiple sequential edits correctly', () => {
+            const syntaxTreeManager = new SyntaxTreeManager();
+            const testUri = 'file:///test/sample_template.json';
+            const expectedUri = 'file:///test/sample_template_expected.json';
+            const templatePath = join(__dirname, '../../resources/templates/sample_template.json');
+            const expectedPath = join(__dirname, '../../resources/templates/sample_template_after_edits.json');
+            const initialContent = readFileSync(templatePath, 'utf8');
+            const expectedContent = readFileSync(expectedPath, 'utf8');
+
+            syntaxTreeManager.add(testUri, initialContent);
+            syntaxTreeManager.add(expectedUri, expectedContent);
+
+            const changes = [
+                { range: { start: { line: 248, character: 40 }, end: { line: 248, character: 40 } }, text: '}' },
+                { range: { start: { line: 248, character: 39 }, end: { line: 248, character: 39 } }, text: 'Action' },
+                { range: { start: { line: 248, character: 35 }, end: { line: 248, character: 35 } }, text: 'cution' },
+                { range: { start: { line: 248, character: 34 }, end: { line: 248, character: 34 } }, text: 'bdaEx' },
+                { range: { start: { line: 248, character: 29 }, end: { line: 248, character: 33 } }, text: ' "La' },
+                { range: { start: { line: 248, character: 25 }, end: { line: 248, character: 28 } }, text: 'Ref"' },
+                { range: { start: { line: 248, character: 24 }, end: { line: 248, character: 24 } }, text: '{' },
+                {
+                    range: { start: { line: 45, character: 5 }, end: { line: 45, character: 5 } },
+                    text: ',\n    "LambdaExecutionRoleAction": {\n      "Type": "String",\n      "Default": "sts:AssumeRole",\n      "Description": ""\n    }\n',
+                },
+            ];
+
+            let currentContent = initialContent;
+
+            for (const change of changes) {
+                const start = { row: change.range.start.line, column: change.range.start.character };
+                const end = { row: change.range.end.line, column: change.range.end.character };
+                const { edit, newContent } = createEdit(currentContent, change.text, start, end);
+                syntaxTreeManager.updateWithEdit(testUri, newContent, edit);
+                currentContent = newContent;
+            }
+
+            const actualTree = syntaxTreeManager.getSyntaxTree(testUri);
+            const expectedTree = syntaxTreeManager.getSyntaxTree(expectedUri);
+            expect(actualTree).toBeDefined();
+            expect(expectedTree).toBeDefined();
+
+            const actualRoot = actualTree!.getRootNode();
+            const expectedRoot = expectedTree!.getRootNode();
+
+            // Check for corruption in actual tree
+            const corruptedNodes: string[] = [];
+            const errorNodes: string[] = [];
+
+            function walkTree(node: any): void {
+                const nodeText = node.text;
+
+                if (nodeText.startsWith(': null')) {
+                    corruptedNodes.push(`${node.type} at ${node.startPosition.row}:${node.startPosition.column}`);
+                }
+
+                if (node.type === 'ERROR') {
+                    errorNodes.push(`ERROR at ${node.startPosition.row}:${node.startPosition.column}`);
+                }
+
+                for (let i = 0; i < node.childCount; i++) {
+                    walkTree(node.child(i));
+                }
+            }
+
+            walkTree(actualRoot);
+
+            expect(corruptedNodes, `Found nodes with ": null" corruption:\n${corruptedNodes.join('\n')}`).toHaveLength(
+                0,
+            );
+            expect(errorNodes, `Found ERROR nodes:\n${errorNodes.join('\n')}`).toHaveLength(0);
+
+            // Compare tree structures
+            expect(actualRoot.type).toBe(expectedRoot.type);
+            expect(actualRoot.hasError).toBe(false);
+            expect(expectedRoot.hasError).toBe(false);
+
+            // Compare parsed JSON to ensure semantic equivalence
+            const actualJson = JSON.parse(actualTree!.content());
+            const expectedJson = JSON.parse(expectedTree!.content());
+
+            expect(actualJson.Parameters.LambdaExecutionRoleAction).toEqual({
+                Type: 'String',
+                Default: 'sts:AssumeRole',
+                Description: '',
+            });
+            expect(
+                actualJson.Resources.LambdaExecutionRole.Properties.AssumeRolePolicyDocument.Statement[0].Action,
+            ).toEqual({
+                Ref: 'LambdaExecutionRoleAction',
+            });
+
+            // Verify overall structure matches
+            expect(Object.keys(actualJson)).toEqual(Object.keys(expectedJson));
+            expect(Object.keys(actualJson.Parameters)).toEqual(Object.keys(expectedJson.Parameters));
         });
 
         it('should use delayed linting and Guard validation for files', () => {
