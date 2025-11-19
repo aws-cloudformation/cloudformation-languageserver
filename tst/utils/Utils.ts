@@ -1,4 +1,6 @@
 import { setImmediate } from 'node:timers/promises';
+import { TextDocument } from 'vscode-languageserver-textdocument';
+import { Document } from '../../src/document/Document';
 
 export async function flushAllPromises() {
     await setImmediate();
@@ -51,4 +53,14 @@ export async function waitFor(
     intervalMs: number = defaultIntervalMs,
 ): Promise<void> {
     await WaitFor.waitFor(code, timeoutMs, intervalMs);
+}
+
+export function createTestDocument(uri: string, languageId: string, version: number, content: string): Document {
+    const td = TextDocument.create(uri, languageId, version, content);
+    return new Document(td.uri, () => td);
+}
+
+// Helper to create Document from TextDocument
+export function createDocument(textDocument: TextDocument): Document {
+    return new Document(textDocument.uri, () => textDocument);
 }
