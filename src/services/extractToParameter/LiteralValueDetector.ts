@@ -2,10 +2,7 @@ import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
 import { IntrinsicFunction, TopLevelSection } from '../../context/ContextType';
 import { PropertyPath } from '../../context/syntaxtree/SyntaxTree';
-import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
-
-const logger = LoggerFactory.getLogger('LiteralValueDetector');
 
 /**
  * Analyzes CloudFormation template syntax nodes to identify extractable literal values.
@@ -189,137 +186,115 @@ export class LiteralValueDetector {
     private extractLiteralInfo(
         node: SyntaxNode,
     ): { value: string | number | boolean | unknown[]; type: LiteralValueType } | undefined {
-        logger.debug('extractLiteralInfo - before parsing', { type: node?.type, text: node?.text });
-
         if (!node?.type || !node.text) {
             return undefined;
         }
 
-        let result: { value: string | number | boolean | unknown[]; type: LiteralValueType } | undefined;
-
         switch (node.type) {
             case 'string': {
-                result = {
+                return {
                     value: this.parseStringLiteral(node.text),
                     type: LiteralValueType.STRING,
                 };
-                break;
             }
 
             case 'string_content': {
-                result = {
+                return {
                     value: node.text,
                     type: LiteralValueType.STRING,
                 };
-                break;
             }
 
             case 'number': {
                 const parsed = this.parseNumberLiteral(node.text);
-                result = Number.isNaN(parsed)
+                return Number.isNaN(parsed)
                     ? undefined
                     : {
                           value: parsed,
                           type: LiteralValueType.NUMBER,
                       };
-                break;
             }
 
             case 'true': {
-                result = {
+                return {
                     value: true,
                     type: LiteralValueType.BOOLEAN,
                 };
-                break;
             }
 
             case 'false': {
-                result = {
+                return {
                     value: false,
                     type: LiteralValueType.BOOLEAN,
                 };
-                break;
             }
 
             case 'array': {
-                result = {
+                return {
                     value: this.parseArrayLiteral(node),
                     type: LiteralValueType.ARRAY,
                 };
-                break;
             }
 
             case 'block_sequence': {
-                result = {
+                return {
                     value: this.parseArrayLiteral(node),
                     type: LiteralValueType.ARRAY,
                 };
-                break;
             }
 
             case 'plain_scalar': {
-                result = this.parseYamlScalar(node.text);
-                break;
+                return this.parseYamlScalar(node.text);
             }
 
             case 'quoted_scalar':
             case 'double_quote_scalar':
             case 'single_quote_scalar': {
-                result = {
+                return {
                     value: this.parseStringLiteral(node.text),
                     type: LiteralValueType.STRING,
                 };
-                break;
             }
 
             case 'flow_sequence': {
-                result = {
+                return {
                     value: this.parseArrayLiteral(node),
                     type: LiteralValueType.ARRAY,
                 };
-                break;
             }
 
             case 'object':
             case 'flow_node':
             case 'string_scalar':
             case 'block_scalar': {
-                result = {
+                return {
                     value: node.text,
                     type: LiteralValueType.STRING,
                 };
-                break;
             }
 
             case 'integer_scalar':
             case 'float_scalar': {
                 const parsed = this.parseNumberLiteral(node.text);
-                result = Number.isNaN(parsed)
+                return Number.isNaN(parsed)
                     ? undefined
                     : {
                           value: parsed,
                           type: LiteralValueType.NUMBER,
                       };
-                break;
             }
 
             case 'boolean_scalar': {
-                result = {
+                return {
                     value: node.text === 'true',
                     type: LiteralValueType.BOOLEAN,
                 };
-                break;
             }
 
             default: {
-                result = undefined;
-                break;
+                return undefined;
             }
         }
-
-        logger.debug('extractLiteralInfo - after parsing', { result });
-
-        return result;
     }
 
     private parseStringLiteral(text: string): string {
