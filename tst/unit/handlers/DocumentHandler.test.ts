@@ -128,6 +128,10 @@ describe('DocumentHandler', () => {
         it('should handle incremental changes and update syntax tree', () => {
             const textDocument = createTextDocument();
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
+            
+            mockServices.syntaxTreeManager.getSyntaxTree.returns({
+                content: () => testContent,
+            } as any);
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
 
@@ -143,8 +147,9 @@ describe('DocumentHandler', () => {
                 }),
             );
 
+            const expectedContent = 'HellomplateFormatVersion: "2010-09-09"';
             expect(
-                mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, LintTrigger.OnChange, true),
+                mockServices.cfnLintService.lintDelayed.calledWith(expectedContent, testUri, LintTrigger.OnChange, true),
             ).toBe(true);
         });
 
@@ -258,9 +263,9 @@ describe('DocumentHandler', () => {
             );
 
             expect(
-                mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, LintTrigger.OnChange, true),
+                mockServices.cfnLintService.lintDelayed.calledWith('new content', testUri, LintTrigger.OnChange, true),
             ).toBe(true);
-            expect(mockServices.guardService.validateDelayed.calledWith(testContent, testUri)).toBe(true);
+            expect(mockServices.guardService.validateDelayed.calledWith('new content', testUri)).toBe(true);
         });
 
         it('should create syntax tree when update fails', () => {

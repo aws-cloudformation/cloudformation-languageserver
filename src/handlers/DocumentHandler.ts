@@ -71,15 +71,7 @@ export function didChangeHandler(
         }
 
         const changes = params.contentChanges;
-
-        log.info(
-            {
-                uri: documentUri,
-                version,
-                changeCount: changes.length,
-            },
-            'didChange start',
-        );
+        let finalContent = textDocument.getText();
 
         try {
             const tree = components.syntaxTreeManager.getSyntaxTree(documentUri);
@@ -112,14 +104,11 @@ export function didChangeHandler(
                     currentContent = change.text;
                 }
             }
-
-            log.info({ uri: documentUri, version }, 'didChange complete');
+            finalContent = currentContent;
         } catch (error) {
             log.error({ error, uri: documentUri, version }, 'Error updating tree - recreating');
             components.syntaxTreeManager.add(documentUri, textDocument.getText());
         }
-
-        const finalContent = textDocument.getText();
 
         // Trigger cfn-lint validation
         components.cfnLintService.lintDelayed(finalContent, documentUri, LintTrigger.OnChange, true).catch((reason) => {
