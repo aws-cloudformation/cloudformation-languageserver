@@ -308,6 +308,12 @@ export function mockCfnAi() {
     return stubInterface<CfnAI>();
 }
 
+export function createMockOnlineFeatureGuard() {
+    const mock = stubInterface<any>();
+    mock.check.returns(undefined);
+    return mock;
+}
+
 type StubbedInstanceProps<T, Exclude extends keyof T = never> = Omit<
     {
         [P in keyof T]: T[P] extends object ? StubbedInstance<T[P]> : T[P];
@@ -377,6 +383,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         s3Service: overrides.s3Service ?? stubInterface(),
         onlineStatus: overrides.onlineStatus ?? stubInterface<OnlineStatus>(),
         featureFlags: overrides.featureFlags ?? stubInterface<FeatureFlagProvider>(),
+        onlineFeatureGuard: overrides.onlineFeatureGuard ?? createMockOnlineFeatureGuard(),
         close: () => Promise.resolve(),
         configurables: () => [],
     };

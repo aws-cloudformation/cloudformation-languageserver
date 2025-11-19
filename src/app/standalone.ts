@@ -1,3 +1,4 @@
+import { arch, platform } from 'os';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
@@ -10,14 +11,11 @@ import { ExtensionName } from '../utils/ExtensionConfig';
 
 let server: unknown;
 
-function getLogger() {
-    return LoggerFactory.getLogger('Init');
-}
-
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access */
 async function onInitialize(params: ExtendedInitializeParams) {
     const ClientInfo = params.clientInfo;
     const AwsMetadata = params.initializationOptions?.['aws'];
+    LoggerFactory.initialize(AwsMetadata?.logLevel);
 
     getLogger().info(
         {
@@ -33,7 +31,11 @@ async function onInitialize(params: ExtendedInitializeParams) {
         },
         `${ExtensionName} initializing...`,
     );
-    LoggerFactory.initialize(AwsMetadata);
+    getLogger().info({
+        Machine: `${platform()}-${arch()}`,
+        Process: `${process.platform}-${process.arch}`,
+        Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
+    });
     TelemetryService.initialize(ClientInfo, AwsMetadata);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
@@ -46,8 +48,8 @@ async function onInitialize(params: ExtendedInitializeParams) {
 }
 
 function onInitialized(params: InitializedParams) {
-    getLogger().info(`${ExtensionName} initialized`);
     (server as any).initialized(params);
+    getLogger().info(`${ExtensionName} initialized`);
 }
 
 function onShutdown() {
@@ -74,3 +76,7 @@ process.on('unhandledRejection', (reason, _promise) => {
 process.on('uncaughtException', (error, origin) => {
     getLogger().error(error, `Uncaught exception ${origin}`);
 });
+
+function getLogger() {
+    return LoggerFactory.getLogger('Init');
+}

@@ -49,12 +49,9 @@ import {
     DescribeChangeSetParams,
     DescribeChangeSetResult,
 } from '../stacks/StackRequestType';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { handleLspError } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
-
-const log = LoggerFactory.getLogger('StackHandler');
 
 export function getParametersHandler(
     components: ServerComponents,
@@ -326,19 +323,14 @@ export function listStacksHandler(
 ): RequestHandler<ListStacksParams, ListStacksResult, void> {
     return async (params: ListStacksParams): Promise<ListStacksResult> => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('listStacks', async () => {
-            try {
-                if (params.statusToInclude?.length && params.statusToExclude?.length) {
-                    throw new Error('Cannot specify both statusToInclude and statusToExclude');
-                }
-                return await components.stackManager.listStacks(
-                    params.statusToInclude,
-                    params.statusToExclude,
-                    params.loadMore,
-                );
-            } catch (error) {
-                log.error(error, 'Error listing stacks');
-                return { stacks: [], nextToken: undefined };
+            if (params.statusToInclude?.length && params.statusToExclude?.length) {
+                throw new Error('Cannot specify both statusToInclude and statusToExclude');
             }
+            return await components.stackManager.listStacks(
+                params.statusToInclude,
+                params.statusToExclude,
+                params.loadMore,
+            );
         });
     };
 }
@@ -348,20 +340,16 @@ export function listChangeSetsHandler(
 ): RequestHandler<ListChangeSetParams, ListChangeSetResult, void> {
     return async (params: ListChangeSetParams): Promise<ListChangeSetResult> => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('listChangeSets', async () => {
-            try {
-                const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
-                return {
-                    changeSets: result.changeSets.map((cs) => ({
-                        changeSetName: cs.ChangeSetName ?? '',
-                        status: cs.Status ?? '',
-                        creationTime: cs.CreationTime?.toISOString(),
-                        description: cs.Description,
-                    })),
-                    nextToken: result.nextToken,
-                };
-            } catch {
-                return { changeSets: [] };
-            }
+            const result = await components.cfnService.listChangeSets(params.stackName, params.nextToken);
+            return {
+                changeSets: result.changeSets.map((cs) => ({
+                    changeSetName: cs.ChangeSetName ?? '',
+                    status: cs.Status ?? '',
+                    creationTime: cs.CreationTime?.toISOString(),
+                    description: cs.Description,
+                })),
+                nextToken: result.nextToken,
+            };
         });
     };
 }
@@ -370,34 +358,32 @@ export function listStackResourcesHandler(
     components: ServerComponents,
 ): RequestHandler<ListStackResourcesParams, ListStackResourcesResult, void> {
     return async (rawParams): Promise<ListStackResourcesResult> => {
-        try {
-            const params = parseWithPrettyError(parseListStackResourcesParams, rawParams);
-            const response = await components.cfnService.listStackResources({
-                StackName: params.stackName,
-                NextToken: params.nextToken,
-            });
-            return {
-                resources: response.StackResourceSummaries ?? [],
-                nextToken: response.NextToken,
-            };
-        } catch (error) {
-            log.error(error, 'Error listing stack resources');
-            return { resources: [] };
-        }
+        const params = parseWithPrettyError(parseListStackResourcesParams, rawParams);
+        const response = await components.cfnService.listStackResources({
+            StackName: params.stackName,
+            NextToken: params.nextToken,
+        });
+        return {
+            resources: response.StackResourceSummaries ?? [],
+            nextToken: response.NextToken,
+        };
     };
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment,
+@typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument,
+@typescript-eslint/no-unsafe-call */
 export function describeChangeSetHandler(
     components: ServerComponents,
 ): RequestHandler<DescribeChangeSetParams, DescribeChangeSetResult, void> {
     return async (rawParams: DescribeChangeSetParams): Promise<DescribeChangeSetResult> => {
         const params = parseWithPrettyError(parseDescribeChangeSetParams, rawParams);
 
-        const result = await components.cfnService.describeChangeSet({
+        const result = (await components.cfnService.describeChangeSet({
             ChangeSetName: params.changeSetName,
             IncludePropertyValues: true,
             StackName: params.stackName,
-        });
+        })) as any; // TODO: Remove 'as any' once SDK is released
 
         return {
             changeSetName: params.changeSetName,
@@ -406,6 +392,7 @@ export function describeChangeSetHandler(
             creationTime: result.CreationTime?.toISOString(),
             description: result.Description,
             changes: mapChangesToStackChanges(result.Changes),
+            deploymentMode: result.DeploymentMode,
         };
     };
 }

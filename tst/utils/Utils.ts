@@ -45,13 +45,14 @@ export class WaitFor {
                     throw error;
                 }
             }
+            await flushAllPromises();
             await new Promise((resolve) => setTimeout(resolve, this.delayIntervalMs));
         }
         throw lastError!;
     }
 
-    static async waitFor(code: () => void | Promise<void>): Promise<void> {
-        await new WaitFor(100).wait(code);
+    static async waitFor(code: () => void | Promise<void>, timeoutMs: number = 100): Promise<void> {
+        await new WaitFor(timeoutMs).wait(code);
     }
 }
 

@@ -2,7 +2,7 @@ import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/Dele
 import { updateReplacePolicyValueDocsMap } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
 import { Context } from '../context/Context';
 import { ResourceAttribute } from '../context/ContextType';
-import { Condition, Entity, Mapping, Parameter, Resource } from '../context/semantic/Entity';
+import { Condition, Constant, Entity, Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
 import { PropertyType } from '../schema/ResourceSchema';
 
@@ -887,6 +887,11 @@ export function formatIntrinsicArgumentHover(context: Context): string {
             doc.push(`**Mapping:** ${mapping.name}`);
             break;
         }
+
+        case EntityType.Constant: {
+            doc.push(formatConstantHover(context.entity as Constant));
+            break;
+        }
     }
 
     return doc.filter((item) => item.trim() !== '').join('\n\n');
@@ -1100,6 +1105,24 @@ export function formatParameterHover(parameter: Parameter): string {
 
     if (parameter.ConstraintDescription) {
         doc.push(`**Constraint Description:** ${parameter.ConstraintDescription}`);
+    }
+
+    return doc.filter((item) => item.trim() !== '').join('\n\n');
+}
+
+/**
+ * Formats hover information for a constant entity
+ */
+export function formatConstantHover(constant: Constant): string {
+    const doc: string[] = [];
+
+    const valueType = typeof constant.value === 'string' ? 'string' : 'object';
+    doc.push(`\`\`\`typescript\n(constant) ${constant.name}: ${valueType}\n\`\`\``, '---');
+
+    if (typeof constant.value === 'string') {
+        doc.push(`**Value:** ${constant.value}`);
+    } else if (typeof constant.value === 'object') {
+        doc.push(`**Value:** [Object]`);
     }
 
     return doc.filter((item) => item.trim() !== '').join('\n\n');

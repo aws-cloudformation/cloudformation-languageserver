@@ -5,6 +5,7 @@ import { SectionType, TopLevelSection } from '../../src/context/ContextType';
 import { ContextWithRelatedEntities } from '../../src/context/ContextWithRelatedEntities';
 import {
     Condition,
+    Constant,
     Entity,
     ForEachResource,
     Mapping,
@@ -121,6 +122,15 @@ export function createParameterContext(logicalId: string, other?: Partial<Entity
         type: other?.type,
         propertyPath: other?.propertyPath,
         entity: Parameter.from(logicalId, other?.data),
+    });
+}
+
+export function createConstantContext(logicalId: string, other?: Partial<EntityTypeParams>) {
+    return createMockContext(TopLevelSection.Constants, logicalId, {
+        text: other?.text,
+        type: other?.type,
+        propertyPath: other?.propertyPath,
+        entity: new Constant(logicalId, other?.data),
     });
 }
 

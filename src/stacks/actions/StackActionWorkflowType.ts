@@ -9,6 +9,7 @@ import {
     StackChange,
     ValidationDetail,
     CreateStackActionResult,
+    DeploymentMode,
 } from './StackActionRequestType';
 
 export type StackActionWorkflowState = {
@@ -23,6 +24,7 @@ export type StackActionWorkflowState = {
     validationDetails?: ValidationDetail[];
     lastPolled?: number;
     failureReason?: string;
+    deploymentMode?: DeploymentMode;
 };
 
 export type ValidationWaitForResult = {

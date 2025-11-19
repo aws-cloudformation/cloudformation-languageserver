@@ -102,10 +102,10 @@ export class TelemetryService implements Closeable {
         );
 
         telemetry.registerGaugeProvider(
-            'process.memory.heap.usage_percent',
+            'process.memory.heap.usage',
             () => {
                 const usage = process.memoryUsage();
-                return Math.round((usage.heapUsed / usage.heapTotal) * 100);
+                return 100 * (usage.heapUsed / usage.heapTotal);
             },
             { unit: '%' },
         );
@@ -127,7 +127,7 @@ export class TelemetryService implements Closeable {
 
                 if (timeDiffMicros > 0) {
                     const utilization = ((userDiff + systemDiff) / timeDiffMicros) * 100;
-                    const clampedUtilization = Math.min(Math.max(Math.round(utilization * 100) / 100, 0), 100);
+                    const clampedUtilization = Math.min(Math.max(utilization, 0), 100);
 
                     lastCpuUsage = currentUsage;
                     lastTime = currentTime;

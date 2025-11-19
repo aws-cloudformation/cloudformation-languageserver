@@ -1,5 +1,6 @@
-import { FeatureFlagProvider } from '../featureFlag/FeatureFlagProvider';
+import { FeatureFlagProvider, getFromGitHub } from '../featureFlag/FeatureFlagProvider';
 import { LspComponents } from '../protocol/LspComponents';
+import { getSamSchemas } from '../schema/GetSamSchemaTask';
 import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { SchemaStore } from '../schema/SchemaStore';
@@ -13,6 +14,7 @@ import { OnlineStatus } from '../services/OnlineStatus';
 import { S3Service } from '../services/S3Service';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
+import { OnlineFeatureGuard } from '../utils/OnlineFeatureGuard';
 import { CfnInfraCore } from './CfnInfraCore';
 
 /**
@@ -34,6 +36,7 @@ export class CfnExternal implements Configurables, Closeable {
 
     readonly onlineStatus: OnlineStatus;
     readonly featureFlags: FeatureFlagProvider;
+    readonly onlineFeatureGuard: OnlineFeatureGuard;
 
     constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Partial<CfnExternal> = {}) {
         this.awsClient = overrides.awsClient ?? new AwsClient(core.awsCredentials, core.cloudformationEndpoint);
@@ -46,8 +49,11 @@ export class CfnExternal implements Configurables, Closeable {
         this.schemaStore = overrides.schemaStore ?? new SchemaStore(core.dataStoreFactory);
         this.schemaRetriever =
             overrides.schemaRetriever ??
-            new SchemaRetriever(this.schemaStore, getRemotePublicSchemas, () =>
-                getRemotePrivateSchemas(core.awsCredentials, this.cfnService),
+            new SchemaRetriever(
+                this.schemaStore,
+                getRemotePublicSchemas,
+                () => getRemotePrivateSchemas(core.awsCredentials, this.cfnService),
+                getSamSchemas,
             );
 
         this.cfnLintService =
@@ -58,7 +64,8 @@ export class CfnExternal implements Configurables, Closeable {
             new GuardService(core.documentManager, core.diagnosticCoordinator, core.syntaxTreeManager);
 
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus(core.clientMessage);
-        this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider();
+        this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider(getFromGitHub);
+        this.onlineFeatureGuard = overrides.onlineFeatureGuard ?? new OnlineFeatureGuard(core.awsCredentials);
     }
 
     configurables(): Configurable[] {

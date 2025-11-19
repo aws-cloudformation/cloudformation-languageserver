@@ -1,3 +1,10 @@
+export class CancellationError extends Error {
+    constructor(key: string) {
+        super(`Request cancelled for key: ${key}`);
+        this.name = 'CancellationError';
+    }
+}
+
 interface DelayedRequest<T> {
     executor: () => Promise<T>;
     resolve: (result: T) => void;
@@ -142,7 +149,7 @@ export class Delayer<T> {
 
         if (request) {
             this.pendingRequests.delete(key);
-            request.reject(new Error(`Request cancelled for key: ${key}`));
+            request.reject(new CancellationError(key));
         }
 
         // Note: We don't cancel running requests as they can't be safely cancelled
@@ -163,7 +170,7 @@ export class Delayer<T> {
 
         // Reject all pending requests
         for (const [key, request] of this.pendingRequests.entries()) {
-            request.reject(new Error(`Request cancelled for key: ${key}`));
+            request.reject(new CancellationError(key));
         }
         this.pendingRequests.clear();
 

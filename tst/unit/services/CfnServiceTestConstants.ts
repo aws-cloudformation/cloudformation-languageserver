@@ -1,4 +1,11 @@
-import { StackResourceDriftStatus, StackStatus, ChangeSetStatus, ResourceStatus } from '@aws-sdk/client-cloudformation';
+import {
+    StackResourceDriftStatus,
+    StackStatus,
+    ChangeSetStatus,
+    ResourceStatus,
+    EventType,
+    HookFailureMode,
+} from '@aws-sdk/client-cloudformation';
 import { Templates } from '../../utils/TemplateUtils';
 
 /**
@@ -84,6 +91,21 @@ export const MOCK_RESPONSES = {
                 LogicalResourceId: TEST_CONSTANTS.STACK_NAME,
                 ResourceStatus: ResourceStatus.CREATE_COMPLETE,
                 Timestamp: new Date('2023-01-01T00:00:00Z'),
+            },
+        ],
+    },
+
+    DESCRIBE_EVENTS: {
+        OperationEvents: [
+            {
+                EventId: 'event-1',
+                EventType: EventType.VALIDATION_ERROR,
+                Timestamp: new Date('2023-01-01T00:00:00Z'),
+                LogicalResourceId: 'TestResource',
+                ValidationPath: '/Resources/TestResource/Properties/BucketName',
+                ValidationFailureMode: HookFailureMode.FAIL,
+                ValidationName: 'TestValidation',
+                ValidationStatusReason: 'Test error',
             },
         ],
     },

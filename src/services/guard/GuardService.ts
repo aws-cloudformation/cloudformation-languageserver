@@ -1,4 +1,3 @@
-import { readFile } from 'fs/promises';
 import { performance } from 'perf_hooks';
 import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
@@ -11,8 +10,9 @@ import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
-import { Delayer } from '../../utils/Delayer';
+import { CancellationError, Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
+import { readFileIfExistsAsync } from '../../utils/File';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
 import { getRulesForPack, getAvailableRulePacks, GuardRuleData } from './GeneratedGuardRules';
@@ -377,9 +377,8 @@ export class GuardService implements SettingsConfigurable, Closeable {
                 await this.delayer.delay(uri, () => this.validate(content, uri, forceUseContent));
             }
         } catch (error) {
-            const errorMessage = extractErrorMessage(error);
-            // Check if this is a cancellation error - these are normal during rapid typing
-            if (errorMessage.includes('Request cancelled') || errorMessage.includes('cancelled')) {
+            // Suppress cancellation errors as they are expected behavior
+            if (error instanceof CancellationError) {
                 return;
             }
             // For other errors, re-throw to be handled by caller
@@ -640,7 +639,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
      */
     private async loadRulesFromFile(filePath: string): Promise<GuardRule[]> {
         try {
-            const fileContent = await readFile(filePath, 'utf8');
+            const fileContent = await readFileIfExistsAsync(filePath, 'utf8');
             return this.parseRulesFromContent(fileContent, filePath);
         } catch (error) {
             throw new Error(`Failed to read rules file '${filePath}': ${extractErrorMessage(error)}`);

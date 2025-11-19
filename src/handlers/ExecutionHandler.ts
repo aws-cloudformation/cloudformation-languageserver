@@ -7,8 +7,6 @@ import { TelemetryService } from '../telemetry/TelemetryService';
 import { extractErrorMessage } from '../utils/Errors';
 import { toString } from '../utils/String';
 
-const log = LoggerFactory.getLogger('ExecutionHandler');
-
 export function executionHandler(
     documents: LspDocuments,
     components: ServerComponents,
@@ -66,7 +64,9 @@ export function executionHandler(
                     const diagnosticId = args[1] as string;
                     components.diagnosticCoordinator
                         .handleClearCfnDiagnostic(uri, diagnosticId)
-                        .catch((err) => log.error(err, `Error clearing diagnostic`));
+                        .catch((err) =>
+                            LoggerFactory.getLogger('ExecutionHandler').error(err, `Error clearing diagnostic`),
+                        );
                     TelemetryService.instance.get('CodeAction').count(`accepted.clearDiagnostic`, 1);
                 }
                 break;

@@ -1,4 +1,3 @@
-import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { MemoryDataStoreFactoryProvider } from '../../../src/datastore/DataStore';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
@@ -8,6 +7,7 @@ import { SchemaStore } from '../../../src/schema/SchemaStore';
 import { Settings } from '../../../src/settings/Settings';
 import { AwsRegion } from '../../../src/utils/Region';
 import { createMockSettingsManager } from '../../utils/MockServerComponents';
+import { getTestPrivateSchemas, samFileType } from '../../utils/SchemaUtils';
 
 describe('SchemaRetriever', () => {
     const key = AwsRegion.US_EAST_1;
@@ -36,6 +36,7 @@ describe('SchemaRetriever', () => {
     let schemaRetriever: SchemaRetriever;
     let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
     let mockGetPrivateResources: ReturnType<typeof vi.fn>;
+    let mockGetSam: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -54,14 +55,10 @@ describe('SchemaRetriever', () => {
         schemaStore = new SchemaStore(dataStoreFactory);
 
         mockGetPublicSchemas = vi.fn().mockResolvedValue([]);
-        mockGetPrivateResources = vi.fn().mockResolvedValue([
-            {
-                TypeName: 'Custom::TestResource',
-                Description: 'Test private resource',
-            } as DescribeTypeOutput,
-        ]);
+        mockGetPrivateResources = vi.fn().mockResolvedValue(getTestPrivateSchemas());
+        mockGetSam = vi.fn().mockResolvedValue(samFileType());
 
-        schemaRetriever = new SchemaRetriever(schemaStore, mockGetPublicSchemas, mockGetPrivateResources);
+        schemaRetriever = new SchemaRetriever(schemaStore, mockGetPublicSchemas, mockGetPrivateResources, mockGetSam);
     });
 
     afterEach(() => {
@@ -126,14 +123,6 @@ describe('SchemaRetriever', () => {
         expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
     });
 
-    it('should track available regions', async () => {
-        // Put data in the store first
-        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
-
-        schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
-        expect(schemaRetriever.availableRegions.has(AwsRegion.US_EAST_1)).toBe(true);
-    });
-
     it('should get default schema using user settings', async () => {
         // Put data in the store first
         await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
@@ -176,23 +165,6 @@ describe('SchemaRetriever', () => {
 
         // Rebuild affected schemas
         schemaRetriever.rebuildAffectedCombinedSchemas(AwsRegion.US_EAST_1);
-
-        // Should still have the schema (rebuilt)
-        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
-    });
-
-    it('should rebuild for current settings', async () => {
-        // Put data in the store first
-        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
-
-        // Get a schema to create a cached entry
-        schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
-
-        // Verify it's cached
-        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
-
-        // Rebuild for current settings
-        schemaRetriever.rebuildForCurrentSettings();
 
         // Should still have the schema (rebuilt)
         expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);

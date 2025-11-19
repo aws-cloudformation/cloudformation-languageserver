@@ -5,11 +5,11 @@ import {
     DetailedStatus,
     OnStackFailure,
     Tag,
+    ResourceChangeDetail,
 } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { Parameter as EntityParameter } from '../../context/semantic/Entity';
 import { Identifiable } from '../../protocol/LspTypes';
-import { ResourceChangeDetailV2 } from '../../services/CfnServiceV2';
 
 export type ResourceToImport = {
     ResourceType: string;
@@ -90,7 +90,7 @@ export type StackChange = {
         beforeContext?: string;
         afterContext?: string;
         resourceDriftStatus?: string;
-        details?: ResourceChangeDetailV2[];
+        details?: ResourceChangeDetail[];
     };
 };
 
@@ -125,7 +125,7 @@ export type ValidationDetail = {
     ValidationName: string;
     LogicalId?: string;
     ResourcePropertyPath?: string;
-    Timestamp: DateTime;
+    Timestamp?: DateTime;
     Severity: 'INFO' | 'ERROR';
     Message: string;
     diagnosticId?: string;
@@ -147,6 +147,7 @@ export type Failable = {
 export type DescribeValidationStatusResult = GetStackActionStatusResult &
     Failable & {
         ValidationDetails?: ValidationDetail[];
+        deploymentMode?: DeploymentMode;
     };
 
 export type DescribeDeploymentStatusResult = GetStackActionStatusResult &

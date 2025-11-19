@@ -6,7 +6,7 @@ import { LspDiagnostics } from '../protocol/LspDiagnostics';
 import { ValidationManager } from '../stacks/actions/ValidationManager';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { Delayer } from '../utils/Delayer';
+import { CancellationError, Delayer } from '../utils/Delayer';
 
 type SourceToDiagnostics = Map<string, Diagnostic[]>;
 
@@ -54,6 +54,10 @@ export class DiagnosticCoordinator {
             // Debounce the actual LSP publishing to avoid spam on keystrokes
             await this.delayer.delay(uri, () => this.publishToLsp(uri));
         } catch (error) {
+            // Suppress cancellation errors as they are expected behavior
+            if (error instanceof CancellationError) {
+                return;
+            }
             this.log.error(error, `Failed to publish diagnostics for source ${source}, URI ${uri}`);
             throw error;
         }

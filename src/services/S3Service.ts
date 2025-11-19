@@ -1,4 +1,4 @@
-import { readFileSync } from 'fs';
+import { readFileSync } from 'fs'; // eslint-disable-line no-restricted-syntax -- Needs to be fixed
 import { fileURLToPath } from 'url';
 import { S3Client, PutObjectCommand, ListBucketsCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { Measure } from '../telemetry/TelemetryDecorator';

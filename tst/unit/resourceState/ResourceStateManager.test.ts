@@ -5,7 +5,6 @@ import {
 } from '@aws-sdk/client-cloudcontrol';
 import { DateTime } from 'luxon';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ResponseError } from 'vscode-languageserver';
 import { ResourceStateManager } from '../../../src/resourceState/ResourceStateManager';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { CcapiService } from '../../../src/services/CcapiService';
@@ -174,22 +173,19 @@ describe('ResourceStateManager', () => {
             expect(result?.resourceIdentifiers).toEqual(['bucket-1', 'bucket-2', 'bucket-3']);
         });
 
-        it('should return undefined when fetch fails', async () => {
+        it('should throw error when S3 listBuckets fails', async () => {
             vi.mocked(mockS3Service.listBuckets).mockRejectedValue(new Error('S3 error'));
 
-            const result = await manager.listResources('AWS::S3::Bucket');
-
-            expect(result).toBeUndefined();
+            await expect(manager.listResources('AWS::S3::Bucket')).rejects.toThrow('S3 error');
         });
 
-        it('should handle private resource exceptions', async () => {
+        it('should throw error with custom message for private resource exceptions', async () => {
             const error = new PrivateTypeException({
                 message: 'Private type error',
                 $metadata: {},
             });
             vi.mocked(mockCcapiService.listResources).mockRejectedValue(error);
 
-            await expect(manager.listResources('MyOrg::Custom::Resource')).rejects.toThrow(ResponseError);
             await expect(manager.listResources('MyOrg::Custom::Resource')).rejects.toThrow(
                 "Failed to list identifiers for MyOrg::Custom::Resource. Cloud Control API hasn't received a valid response from the resource handler, due to a configuration error. This includes issues such as the resource handler returning an invalid response, or timing out.",
             );
@@ -279,7 +275,6 @@ describe('ResourceStateManager', () => {
 
             expect(mockS3Service.listBuckets).toHaveBeenCalledOnce();
             expect(mockCcapiService.listResources).not.toHaveBeenCalled();
-            expect(result.refreshFailed).toBe(false);
             expect(result.resources).toEqual([
                 {
                     typeName: 'AWS::S3::Bucket',
@@ -298,7 +293,6 @@ describe('ResourceStateManager', () => {
 
             expect(mockCcapiService.listResources).toHaveBeenCalledOnce();
             expect(mockS3Service.listBuckets).not.toHaveBeenCalled();
-            expect(result.refreshFailed).toBe(false);
             expect(result.resources).toEqual([
                 {
                     typeName: 'AWS::IAM::Role',
@@ -321,29 +315,18 @@ describe('ResourceStateManager', () => {
 
             expect(mockS3Service.listBuckets).toHaveBeenCalledOnce();
             expect(mockCcapiService.listResources).toHaveBeenCalledOnce();
-            expect(result.refreshFailed).toBe(false);
             expect(result.resources).toHaveLength(2);
         });
 
-        it('should handle S3 service failure', async () => {
+        it('should throw error when S3 service fails', async () => {
             vi.mocked(mockS3Service.listBuckets).mockRejectedValue(new Error('S3 error'));
 
-            const result = await manager.refreshResourceList(['AWS::S3::Bucket']);
-
-            expect(result.refreshFailed).toBe(true);
-            expect(result.resources).toEqual([
-                {
-                    typeName: 'AWS::S3::Bucket',
-                    resourceIdentifiers: [],
-                    nextToken: undefined,
-                },
-            ]);
+            await expect(manager.refreshResourceList(['AWS::S3::Bucket'])).rejects.toThrow('S3 error');
         });
 
         it('should return empty result for empty resource types', async () => {
             const result = await manager.refreshResourceList([]);
 
-            expect(result.refreshFailed).toBe(false);
             expect(result.resources).toEqual([]);
             expect(mockS3Service.listBuckets).not.toHaveBeenCalled();
             expect(mockCcapiService.listResources).not.toHaveBeenCalled();
@@ -362,9 +345,8 @@ describe('ResourceStateManager', () => {
 
             const [firstResult, secondResult] = await Promise.all([firstCall, secondCall]);
 
-            expect(firstResult.refreshFailed).toBe(false);
-            expect(secondResult.refreshFailed).toBe(false);
-            expect(secondResult.resources[0].resourceIdentifiers).toEqual([]);
+            expect(firstResult.resources.at(0)?.resourceIdentifiers).toContain('bucket-1');
+            expect(secondResult.resources.at(0)?.resourceIdentifiers).toEqual([]);
             expect(mockS3Service.listBuckets).toHaveBeenCalledOnce();
         });
     });

@@ -1,6 +1,8 @@
 import { randomBytes } from 'crypto';
+import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PassThrough } from 'stream';
+import { v4 } from 'uuid';
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node';
 import {
     InitializeRequest,
@@ -47,10 +49,11 @@ import {
 import { createConnection } from 'vscode-languageserver/node';
 import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '../../src/auth/AuthProtocol';
 import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';
-import { MemoryDataStoreFactoryProvider } from '../../src/datastore/DataStore';
+import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
+import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../src/schema/SchemaStore';
 import { CfnExternal } from '../../src/server/CfnExternal';
 import { CfnInfraCore } from '../../src/server/CfnInfraCore';
@@ -61,15 +64,18 @@ import { RelationshipSchemaService } from '../../src/services/RelationshipSchema
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
+import { getTestPrivateSchemas, samFileType, SamSchemaFiles, schemaFileType, Schemas } from './SchemaUtils';
 import { wait } from './Utils';
 
+const id = v4();
+const rootDir = join(process.cwd(), 'node_modules', '.cache', 'e2e-tests', id);
 const awsMetadata: AwsMetadata = {
     clientInfo: {
         extension: {
             name: `Test ${ExtensionName}`,
             version: '1.0.0-test',
         },
-        clientId: '1111-1111-1111-1111',
+        clientId: id,
     },
     encryption: {
         key: randomBytes(32).toString('base64'),
@@ -110,19 +116,32 @@ export class TestExtension implements Closeable {
             {
                 onInitialize: (params) => {
                     const lsp = this.serverConnection.components;
-                    LoggerFactory.initialize(awsMetadata);
+                    LoggerFactory.reconfigure('warn');
 
-                    const dataStoreFactory = new MemoryDataStoreFactoryProvider();
+                    const dataStoreFactory = new MultiDataStoreFactoryProvider(rootDir);
                     this.core = new CfnInfraCore(lsp, params, {
                         dataStoreFactory,
                     });
 
                     const schemaStore = new SchemaStore(dataStoreFactory);
+                    const schemaRetriever = new SchemaRetriever(
+                        schemaStore,
+                        (_region) => {
+                            return Promise.resolve(schemaFileType(Object.values(Schemas)));
+                        },
+                        () => Promise.resolve(getTestPrivateSchemas()),
+                        () => {
+                            return Promise.resolve(samFileType(Object.values(SamSchemaFiles)));
+                        },
+                    );
+
+                    const ffFile = join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json');
                     this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
-                        featureFlags: new FeatureFlagProvider(
-                            join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json'),
-                        ),
+                        schemaRetriever,
+                        featureFlags: new FeatureFlagProvider((_env) => {
+                            return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
+                        }, ffFile),
                     });
 
                     this.providers = new CfnLspProviders(this.core, this.external, {

@@ -1,10 +1,20 @@
+import { pathToArtifact } from '../utils/ArtifactsDir';
 import { Closeable } from '../utils/Closeable';
+import { isWindows } from '../utils/Environment';
+import { FileStoreFactory } from './FileStore';
 import { LMDBStoreFactory } from './LMDB';
 import { MemoryStoreFactory } from './MemoryStore';
 
 export enum Persistence {
     memory = 'memory',
     local = 'local',
+}
+
+export enum StoreName {
+    public_schemas = 'public_schemas',
+    sam_schemas = 'sam_schemas',
+    private_schemas = 'private_schemas',
+    combined_schemas = 'combined_schemas',
 }
 
 export interface DataStore {
@@ -17,31 +27,29 @@ export interface DataStore {
     clear(): Promise<void>;
 
     keys(limit: number): ReadonlyArray<string>;
-
-    stats(): unknown;
 }
 
 export interface DataStoreFactory extends Closeable {
-    getOrCreate(store: string): DataStore;
+    get(store: StoreName): DataStore;
 
     storeNames(): ReadonlyArray<string>;
 
-    stats(): unknown;
+    close(): Promise<void>;
 }
 
 export interface DataStoreFactoryProvider extends Closeable {
-    get(store: string, persistence: Persistence): DataStore;
+    get(store: StoreName, persistence: Persistence): DataStore;
 }
 
 export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider {
     private readonly memoryStoreFactory = new MemoryStoreFactory();
 
-    get(store: string, _persistence: Persistence): DataStore {
+    get(store: StoreName, _persistence: Persistence): DataStore {
         return this.getMemoryStore(store);
     }
 
-    getMemoryStore(store: string): DataStore {
-        return this.memoryStoreFactory.getOrCreate(store);
+    getMemoryStore(store: StoreName): DataStore {
+        return this.memoryStoreFactory.get(store);
     }
 
     close(): Promise<void> {
@@ -50,17 +58,27 @@ export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider 
 }
 
 export class MultiDataStoreFactoryProvider implements DataStoreFactoryProvider {
-    private readonly memoryStoreFactory = new MemoryStoreFactory();
-    private readonly lmdbStoreFactory = new LMDBStoreFactory();
+    private readonly memoryStoreFactory: MemoryStoreFactory;
+    private readonly persistedStore: DataStoreFactory;
 
-    get(store: string, persistence: Persistence): DataStore {
-        if (persistence === Persistence.memory) {
-            return this.memoryStoreFactory.getOrCreate(store);
+    constructor(rootDir: string = pathToArtifact()) {
+        if (isWindows) {
+            this.persistedStore = new FileStoreFactory(rootDir);
+        } else {
+            this.persistedStore = new LMDBStoreFactory(rootDir);
         }
-        return this.lmdbStoreFactory.getOrCreate(store);
+
+        this.memoryStoreFactory = new MemoryStoreFactory();
+    }
+
+    get(store: StoreName, persistence: Persistence): DataStore {
+        if (persistence === Persistence.memory) {
+            return this.memoryStoreFactory.get(store);
+        }
+        return this.persistedStore.get(store);
     }
 
     close(): Promise<void> {
-        return this.lmdbStoreFactory.close();
+        return this.persistedStore.close();
     }
 }

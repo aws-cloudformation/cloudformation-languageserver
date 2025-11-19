@@ -9,15 +9,14 @@ import { Closeable } from '../utils/Closeable';
 import { AwsRegion, getRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
 import { GetSchemaTaskManager } from './GetSchemaTaskManager';
-import { PrivateSchemasType } from './PrivateSchemas';
 import { RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
 import { SamSchemasType, SamStoreKey } from './SamSchemas';
+import { CloudFormationResourceSchema } from './SamSchemaTransformer';
 import { SchemaStore } from './SchemaStore';
 
 const StaleDaysThreshold = 7;
 
 export class SchemaRetriever implements SettingsConfigurable, Closeable {
-    readonly availableRegions: Set<AwsRegion> = new Set();
     private settingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
     private readonly log = LoggerFactory.getLogger(SchemaRetriever);
@@ -29,12 +28,14 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     constructor(
         private readonly schemaStore: SchemaStore,
         private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
-        private readonly getPrivateResources: () => Promise<DescribeTypeOutput[]>,
+        getPrivateResources: () => Promise<DescribeTypeOutput[]>,
+        getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
     ) {
         this.schemaTaskManager = new GetSchemaTaskManager(
             this.schemaStore,
             this.getPublicSchemas,
-            this.getPrivateResources,
+            getPrivateResources,
+            getSamSchemas,
             this.settings.profile,
             (region, profile) => this.rebuildAffectedCombinedSchemas(region, profile),
         );
@@ -99,45 +100,24 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     @Measure({ name: 'getSchemas' })
     get(region: AwsRegion, profile: string): CombinedSchemas {
         // Check if combined schemas are already cached first
-        const cacheKey = `${region}:${profile}`;
-        const cachedCombined = this.schemaStore.combinedSchemas.get<CombinedSchemas>(cacheKey);
-
+        const cachedCombined = this.schemaStore.get(region, profile);
         if (cachedCombined) {
             return cachedCombined;
         }
 
         // Only do expensive regional check if no cached combined schemas
         const regionalSchemas = this.getRegionalSchemasFromStore(region);
-        if (regionalSchemas) {
-            this.availableRegions.add(region);
-        } else {
+        if (!regionalSchemas) {
             this.schemaTaskManager.addTask(region);
+            return CombinedSchemas.from();
         }
 
-        // Create and cache combined schemas
-        const privateSchemas = this.schemaStore.privateSchemas.get<PrivateSchemasType>(profile);
-        const samSchemas = this.schemaStore.samSchemas.get<SamSchemasType>(SamStoreKey);
-        const combinedSchemas = CombinedSchemas.from(regionalSchemas, privateSchemas, samSchemas);
-
-        void this.schemaStore.combinedSchemas.put(cacheKey, combinedSchemas);
-        return combinedSchemas;
+        return this.schemaStore.put(region, profile, regionalSchemas);
     }
 
     updatePrivateSchemas() {
         this.schemaStore.invalidateCombinedSchemas();
         this.schemaTaskManager.runPrivateTask();
-    }
-
-    // Method to invalidate cache when any schemas are updated
-    invalidateCache() {
-        this.schemaStore.invalidateCombinedSchemas();
-    }
-
-    // Proactively rebuild combined schemas to avoid lazy loading delays
-    @Measure({ name: 'rebuildCurrentSchemas' })
-    rebuildForCurrentSettings() {
-        this.schemaStore.invalidateCombinedSchemas();
-        this.get(this.settings.region, this.settings.profile);
     }
 
     // Surgically rebuild affected combined schemas
@@ -146,7 +126,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         if (!updatedRegion && !updatedProfile) {
             // SAM update - affects all schemas
             this.schemaStore.invalidateCombinedSchemas();
-            this.rebuildForCurrentSettings();
+            this.get(this.settings.region, this.settings.profile);
             return;
         }
 
@@ -155,7 +135,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             const [region, profile] = key.split(':');
             if ((updatedRegion && region === updatedRegion) || (updatedProfile && profile === updatedProfile)) {
                 // Invalidate and rebuild this specific combined schema
-                void this.schemaStore.combinedSchemas.remove(key);
+                this.schemaStore.combinedSchemas.remove(key).catch(this.log.error);
                 this.get(region as AwsRegion, profile);
             }
         }

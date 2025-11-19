@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, copyFileSync, rmSync, createWriteStream, statSync, readFileSync } from 'fs';
+import { existsSync, mkdtempSync, copyFileSync, rmSync, createWriteStream, statSync } from 'fs';
 import { tmpdir } from 'os';
 import path, { join, basename } from 'path';
 import { pathToFileURL } from 'url';
@@ -6,6 +6,7 @@ import archiver from 'archiver';
 import { dump } from 'js-yaml';
 import { detectDocumentType } from '../document/DocumentUtils';
 import { S3Service } from '../services/S3Service';
+import { readFileIfExists } from '../utils/File';
 import { ArtifactExporter } from './ArtifactExporter';
 
 export function isS3Url(url: string): boolean {
@@ -254,7 +255,7 @@ class CloudFormationStackResource extends Resource {
         }
 
         const templateUri = pathToFileURL(templateAbsPath).href;
-        const content = readFileSync(templateAbsPath, 'utf8');
+        const content = readFileIfExists(templateAbsPath, 'utf8');
         const templateType = detectDocumentType(templateUri, content).type;
 
         const template = new ArtifactExporter(this.s3Service, templateType, templateUri, content);

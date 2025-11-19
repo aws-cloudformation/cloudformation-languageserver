@@ -2,8 +2,8 @@
 
 import { ContextManager } from '../src/context/ContextManager';
 import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
-import { readFileSync, writeFileSync, readdirSync, statSync, existsSync, mkdirSync } from 'fs';
-import { join, extname, resolve, basename, dirname } from 'path';
+import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
+import { join, extname, resolve, dirname } from 'path';
 import { EntityType } from '../src/context/semantic/SemanticTypes';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
@@ -694,7 +694,6 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
 
         // Data points as bullets
         const syntaxTreeDataPoints = result.syntaxTreeLatencies.length;
-        const contextWithEntitiesDataPoints = result.contextWithEntitiesLatencies.length;
         const dataPointsInfo = `• Syntax Tree: ${formatNumber(syntaxTreeDataPoints)}<br>• Valid Context: ${formatNumber(contextValidCount)}<br>• Found Context: ${formatNumber(contextFoundCount)}<br>• Context+Entities: ${formatNumber(contextWithEntitiesFoundCount)}`;
 
         // Success rates as bullets
@@ -855,9 +854,7 @@ function main(): void {
             process.exit(1);
         }
 
-        LoggerFactory.initialize({
-            logLevel: 'silent',
-        });
+        LoggerFactory.initialize('silent');
         TelemetryService.initialize(undefined, {
             telemetryEnabled: false,
         });

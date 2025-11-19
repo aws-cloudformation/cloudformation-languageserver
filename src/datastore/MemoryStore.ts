@@ -1,7 +1,7 @@
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { TelemetryService } from '../telemetry/TelemetryService';
-import { DataStore, DataStoreFactory } from './DataStore';
+import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 
 export class MemoryStore implements DataStore {
     private readonly store = new Map<string, unknown>();
@@ -12,48 +12,55 @@ export class MemoryStore implements DataStore {
     }
 
     get<T>(key: string): T | undefined {
-        const val = this.store.get(key);
-        if (val === undefined) return undefined;
-        return val as T;
+        return this.telemetry.countExecution('get', () => {
+            return this.store.get(key) as T | undefined;
+        });
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
-        return this.telemetry.measureAsync('put', () => {
+        return this.telemetry.countExecutionAsync('put', () => {
             this.store.set(key, value);
             return Promise.resolve(true);
         });
     }
 
     remove(key: string): Promise<boolean> {
-        return Promise.resolve(this.store.delete(key));
+        return this.telemetry.countExecutionAsync('remove', () => {
+            return Promise.resolve(this.store.delete(key));
+        });
     }
 
     clear(): Promise<void> {
-        this.store.clear();
-        return Promise.resolve();
+        return this.telemetry.countExecutionAsync('clear', () => {
+            this.store.clear();
+            return Promise.resolve();
+        });
     }
 
-    keys(limit: number = Number.POSITIVE_INFINITY): ReadonlyArray<string> {
-        return [...this.store.keys()].slice(0, limit);
+    keys(limit: number): ReadonlyArray<string> {
+        return this.telemetry.countExecution('keys', () => {
+            return [...this.store.keys()].slice(0, limit);
+        });
     }
 
-    stats(): unknown {
-        return {
-            numKeys: [...this.store.keys()].length,
-        };
+    size() {
+        return this.store.size;
     }
 }
 
 export class MemoryStoreFactory implements DataStoreFactory {
     @Telemetry({ scope: 'MemoryStore.Global' }) private readonly telemetry!: ScopedTelemetry;
 
-    private readonly stores = new Map<string, MemoryStore>();
+    private readonly metricsInterval: NodeJS.Timeout;
+    private readonly stores = new Map<StoreName, MemoryStore>();
 
     constructor() {
-        this.registerMemoryStoreGauges();
+        this.metricsInterval = setInterval(() => {
+            this.emitMetrics();
+        }, 60 * 1000);
     }
 
-    getOrCreate(store: string): DataStore {
+    get(store: StoreName): DataStore {
         let val = this.stores.get(store);
         if (val === undefined) {
             val = new MemoryStore(store);
@@ -67,37 +74,16 @@ export class MemoryStoreFactory implements DataStoreFactory {
         return [...this.stores.keys()];
     }
 
-    stats(): unknown {
-        const keys = [];
-        const stores: Record<string, number> = {};
-        for (const [key, value] of this.stores.entries()) {
-            keys.push(key);
-            stores[key] = value.keys().length;
-        }
-
-        return {
-            numStores: keys.length,
-            storeNames: keys.sort(),
-            stores,
-        };
-    }
-
     close(): Promise<void> {
+        clearInterval(this.metricsInterval);
         return Promise.resolve();
     }
 
-    private registerMemoryStoreGauges(): void {
-        this.telemetry.registerGaugeProvider('stores.count', () => this.stores.size);
-        this.telemetry.registerGaugeProvider(
-            'global.entries',
-            () => {
-                let total = 0;
-                for (const store of this.stores.values()) {
-                    total += store.keys().length;
-                }
-                return total;
-            },
-            { unit: '1' },
-        );
+    private emitMetrics(): void {
+        this.telemetry.histogram('env.entries', this.stores.size);
+
+        for (const [name, store] of this.stores.entries()) {
+            this.telemetry.histogram(`store.${name}.entries`, store.size());
+        }
     }
 }

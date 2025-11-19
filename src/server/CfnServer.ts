@@ -53,6 +53,7 @@ import { LspComponents } from '../protocol/LspComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { withTelemetryContext } from '../telemetry/TelemetryContext';
 import { closeSafely } from '../utils/Closeable';
+import { withOnlineGuard } from '../utils/OnlineFeatureWrapper';
 import { CfnExternal } from './CfnExternal';
 import { CfnInfraCore } from './CfnInfraCore';
 import { CfnLspProviders } from './CfnLspProviders';
@@ -68,14 +69,13 @@ export class CfnServer {
         private readonly external = new CfnExternal(lsp, core),
         private readonly providers = new CfnLspProviders(core, external),
     ) {
-        log.info('Initializing...');
+        log.info(`Setting up LSP handlers...`);
         this.components = {
             ...core,
             ...external,
             ...providers,
         };
 
-        log.info('Seting up handlers...');
         this.setupHandlers();
     }
 
@@ -130,16 +130,25 @@ export class CfnServer {
             withTelemetryContext('Stack.Template.Artifacts', getTemplateArtifactsHandler(this.components)),
         );
         this.lsp.stackHandlers.onCreateValidation(
-            withTelemetryContext('Stack.Create.Validate', createValidationHandler(this.components)),
+            withTelemetryContext(
+                'Stack.Create.Validate',
+                withOnlineGuard(this.components.onlineFeatureGuard, createValidationHandler(this.components)),
+            ),
         );
         this.lsp.stackHandlers.onGetCapabilities(
-            withTelemetryContext('Stack.Capabilities', getCapabilitiesHandler(this.components)),
+            withTelemetryContext(
+                'Stack.Capabilities',
+                withOnlineGuard(this.components.onlineFeatureGuard, getCapabilitiesHandler(this.components)),
+            ),
         );
         this.lsp.stackHandlers.onGetTemplateResources(
             withTelemetryContext('Stack.Template.Resources', getTemplateResourcesHandler(this.components)),
         );
         this.lsp.stackHandlers.onCreateDeployment(
-            withTelemetryContext('Stack.Create.Deployment', createDeploymentHandler(this.components)),
+            withTelemetryContext(
+                'Stack.Create.Deployment',
+                withOnlineGuard(this.components.onlineFeatureGuard, createDeploymentHandler(this.components)),
+            ),
         );
         this.lsp.stackHandlers.onGetValidationStatus(
             withTelemetryContext('Stack.Validation.Status', getValidationStatusHandler(this.components)),
@@ -154,7 +163,10 @@ export class CfnServer {
             withTelemetryContext('Stack.Describe.Deployment.Status', describeDeploymentStatusHandler(this.components)),
         );
         this.lsp.stackHandlers.onDeleteChangeSet(
-            withTelemetryContext('Stack.Delete.ChangeSet', deleteChangeSetHandler(this.components)),
+            withTelemetryContext(
+                'Stack.Delete.ChangeSet',
+                withOnlineGuard(this.components.onlineFeatureGuard, deleteChangeSetHandler(this.components)),
+            ),
         );
         this.lsp.stackHandlers.onGetChangeSetDeletionStatus(
             withTelemetryContext(
@@ -168,27 +180,53 @@ export class CfnServer {
                 describeChangeSetDeletionStatusHandler(this.components),
             ),
         );
-        this.lsp.stackHandlers.onListStacks(withTelemetryContext('Stack.List', listStacksHandler(this.components)));
+        this.lsp.stackHandlers.onListStacks(
+            withTelemetryContext(
+                'Stack.List',
+                withOnlineGuard(this.components.onlineFeatureGuard, listStacksHandler(this.components)),
+            ),
+        );
         this.lsp.stackHandlers.onListChangeSets(
-            withTelemetryContext('Stack.List.ChangeSets', listChangeSetsHandler(this.components)),
+            withTelemetryContext(
+                'Stack.List.ChangeSets',
+                withOnlineGuard(this.components.onlineFeatureGuard, listChangeSetsHandler(this.components)),
+            ),
         );
         this.lsp.stackHandlers.onListStackResources(
-            withTelemetryContext('Stack.List.Resources', listStackResourcesHandler(this.components)),
+            withTelemetryContext(
+                'Stack.List.Resources',
+                withOnlineGuard(this.components.onlineFeatureGuard, listStackResourcesHandler(this.components)),
+            ),
         );
         this.lsp.stackHandlers.onDescribeChangeSet(
-            withTelemetryContext('Stack.Describe.ChangeSet', describeChangeSetHandler(this.components)),
+            withTelemetryContext(
+                'Stack.Describe.ChangeSet',
+                withOnlineGuard(this.components.onlineFeatureGuard, describeChangeSetHandler(this.components)),
+            ),
         );
         this.lsp.stackHandlers.onGetStackTemplate(
-            withTelemetryContext('Stack.Get.Template', getManagedResourceStackTemplateHandler(this.components)),
+            withTelemetryContext(
+                'Stack.Get.Template',
+                withOnlineGuard(
+                    this.components.onlineFeatureGuard,
+                    getManagedResourceStackTemplateHandler(this.components),
+                ),
+            ),
         );
         this.lsp.stackHandlers.onGetStackEvents(
-            withTelemetryContext('Stack.Get.Events', getStackEventsHandler(this.components)),
+            withTelemetryContext(
+                'Stack.Get.Events',
+                withOnlineGuard(this.components.onlineFeatureGuard, getStackEventsHandler(this.components)),
+            ),
         );
         this.lsp.stackHandlers.onClearStackEvents(
             withTelemetryContext('Stack.Clear.Events', clearStackEventsHandler(this.components)),
         );
         this.lsp.stackHandlers.onDescribeStack(
-            withTelemetryContext('Stack.Describe', describeStackHandler(this.components)),
+            withTelemetryContext(
+                'Stack.Describe',
+                withOnlineGuard(this.components.onlineFeatureGuard, describeStackHandler(this.components)),
+            ),
         );
 
         this.lsp.cfnEnvironmentHandlers.onParseCfnEnvironmentFiles(
@@ -206,13 +244,22 @@ export class CfnServer {
         );
 
         this.lsp.resourceHandlers.onListResources(
-            withTelemetryContext('Resource.List', listResourcesHandler(this.components)),
+            withTelemetryContext(
+                'Resource.List',
+                withOnlineGuard(this.components.onlineFeatureGuard, listResourcesHandler(this.components)),
+            ),
         );
         this.lsp.resourceHandlers.onRefreshResourceList(
-            withTelemetryContext('Resource.Refresh.List', refreshResourceListHandler(this.components)),
+            withTelemetryContext(
+                'Resource.Refresh.List',
+                withOnlineGuard(this.components.onlineFeatureGuard, refreshResourceListHandler(this.components)),
+            ),
         );
         this.lsp.resourceHandlers.onSearchResource(
-            withTelemetryContext('Resource.Search', searchResourceHandler(this.components)),
+            withTelemetryContext(
+                'Resource.Search',
+                withOnlineGuard(this.components.onlineFeatureGuard, searchResourceHandler(this.components)),
+            ),
         );
         this.lsp.resourceHandlers.onGetResourceTypes(
             withTelemetryContext('Resource.Get.Types', getResourceTypesHandler(this.components)),
@@ -221,14 +268,23 @@ export class CfnServer {
             withTelemetryContext('Resource.Remove.Type', removeResourceTypeHandler(this.components)),
         );
         this.lsp.resourceHandlers.onResourceStateImport(
-            withTelemetryContext('Resource.State.Import', importResourceStateHandler(this.components)),
+            withTelemetryContext(
+                'Resource.State.Import',
+                withOnlineGuard(this.components.onlineFeatureGuard, importResourceStateHandler(this.components)),
+            ),
         );
         this.lsp.resourceHandlers.onStackMgmtInfo(
-            withTelemetryContext('Resource.Stack.Mgmt.Info', getStackMgmtInfo(this.components)),
+            withTelemetryContext(
+                'Resource.Stack.Mgmt.Info',
+                withOnlineGuard(this.components.onlineFeatureGuard, getStackMgmtInfo(this.components)),
+            ),
         );
 
         this.lsp.s3Handlers.onUploadFile(
-            withTelemetryContext('S3.Upload.File', uploadFileToS3Handler(this.components)),
+            withTelemetryContext(
+                'S3.Upload.File',
+                withOnlineGuard(this.components.onlineFeatureGuard, uploadFileToS3Handler(this.components)),
+            ),
         );
     }
 

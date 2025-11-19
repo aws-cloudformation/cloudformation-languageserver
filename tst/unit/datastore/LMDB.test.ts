@@ -1,13 +1,14 @@
 import fs from 'fs';
-import path, { join } from 'path';
+import { join } from 'path';
+import { v4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { DataStore } from '../../../src/datastore/DataStore';
+import { DataStore, StoreName } from '../../../src/datastore/DataStore';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
 
 describe('LMDB', () => {
     let lmdbFactory: LMDBStoreFactory;
     let lmdbStore: DataStore;
-    const testDir = join(path.join(process.cwd(), 'tmp-tst'), 'lmdb');
+    const testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-tests', v4());
 
     beforeEach(() => {
         if (!fs.existsSync(testDir)) {
@@ -15,7 +16,7 @@ describe('LMDB', () => {
         }
 
         lmdbFactory = new LMDBStoreFactory(testDir);
-        lmdbStore = lmdbFactory.getOrCreate('test-store');
+        lmdbStore = lmdbFactory.get(StoreName.public_schemas);
     });
 
     afterEach(async () => {
@@ -78,8 +79,8 @@ describe('LMDB', () => {
             const schemaValue = 'schema-value';
             const astValue = 'ast-value';
 
-            const schemaStore = lmdbFactory.getOrCreate('schemas');
-            const astStore = lmdbFactory.getOrCreate('ast');
+            const schemaStore = lmdbFactory.get(StoreName.public_schemas);
+            const astStore = lmdbFactory.get(StoreName.sam_schemas);
 
             await schemaStore.put(key, schemaValue);
             await astStore.put(key, astValue);
@@ -148,16 +149,13 @@ describe('LMDB', () => {
             const key = 'shared-key';
             const schemaValue = 'schema-value';
             const astValue = 'ast-value';
-            const settingsValue = 'settings-value';
 
-            const schemaStore = lmdbFactory.getOrCreate('schemas');
-            const astStore = lmdbFactory.getOrCreate('ast');
-            const settingsStore = lmdbFactory.getOrCreate('settings');
+            const schemaStore = lmdbFactory.get(StoreName.public_schemas);
+            const astStore = lmdbFactory.get(StoreName.sam_schemas);
 
             // Add data to multiple stores
             await schemaStore.put(key, schemaValue);
             await astStore.put(key, astValue);
-            await settingsStore.put(key, settingsValue);
 
             // Clear only the schemas store
             await schemaStore.clear();
@@ -165,7 +163,6 @@ describe('LMDB', () => {
             // Verify only schemas store is cleared
             expect(schemaStore.get<string>(key)).toBeUndefined();
             expect(astStore.get<string>(key)).toBe(astValue);
-            expect(settingsStore.get<string>(key)).toBe(settingsValue);
         });
 
         it('should allow putting new data after clearing', async () => {
@@ -199,7 +196,7 @@ describe('LMDB', () => {
 
             // Create new instance that should load from the same files
             const newFactory = new LMDBStoreFactory(testDir);
-            const newStore = newFactory.getOrCreate('test-store');
+            const newStore = newFactory.get(StoreName.public_schemas);
             const result = newStore.get<typeof value>(key);
 
             expect(result).toEqual(value);

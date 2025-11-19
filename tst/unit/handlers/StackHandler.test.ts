@@ -449,7 +449,7 @@ describe('StackActionHandler', () => {
             expect(result.stacks).toEqual(mockStacks);
         });
 
-        it('should return empty array on error', async () => {
+        it('should throw error when listStacks fails', async () => {
             const mockComponents = {
                 stackManager: {
                     listStacks: vi.fn().mockRejectedValue(new Error('API Error')),
@@ -457,9 +457,8 @@ describe('StackActionHandler', () => {
             } as any;
 
             const handler = listStacksHandler(mockComponents);
-            const result = (await handler(mockParams, mockToken)) as ListStacksResult;
 
-            expect(result.stacks).toEqual([]);
+            await expect(handler(mockParams, mockToken)).rejects.toThrow('API Error');
         });
 
         it('should pass statusToInclude to stackManager', async () => {
@@ -506,7 +505,7 @@ describe('StackActionHandler', () => {
             );
         });
 
-        it('should return empty array when both statusToInclude and statusToExclude are provided', async () => {
+        it('should throw error when both statusToInclude and statusToExclude are provided', async () => {
             const mockComponents = {
                 stackManager: {
                     listStacks: vi.fn(),
@@ -519,9 +518,10 @@ describe('StackActionHandler', () => {
             };
 
             const handler = listStacksHandler(mockComponents);
-            const result = (await handler(paramsWithBoth, mockToken)) as ListStacksResult;
 
-            expect(result.stacks).toEqual([]);
+            await expect(handler(paramsWithBoth, mockToken)).rejects.toThrow(
+                'Cannot specify both statusToInclude and statusToExclude',
+            );
             expect(mockComponents.stackManager.listStacks).not.toHaveBeenCalled();
         });
     });
@@ -556,14 +556,13 @@ describe('StackActionHandler', () => {
             ).toBe(true);
         });
 
-        it('should return empty array on error', async () => {
+        it('should throw error when listStackResources fails', async () => {
             mockComponents.cfnService.listStackResources.rejects(new Error('API Error'));
 
             const handler = listStackResourcesHandler(mockComponents);
             const params = { stackName: 'test-stack' };
-            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
 
-            expect(result.resources).toEqual([]);
+            await expect(handler(params, {} as any)).rejects.toThrow('API Error');
         });
 
         it('should handle undefined StackResourceSummaries', async () => {
