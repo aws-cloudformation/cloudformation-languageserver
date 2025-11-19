@@ -178,7 +178,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
             fileType === CloudFormationFileType.Unknown ||
             fileType === CloudFormationFileType.Empty
         ) {
-            this.telemetry.count(`validate.file.${fileType}`, 1);
+            this.telemetry.count(`validate.file.skipped`, 1);
             // Not a CloudFormation file, publish empty diagnostics to clear any previous issues
             this.publishDiagnostics(uri, []);
             return;

@@ -419,7 +419,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             fileType === CloudFormationFileType.Unknown ||
             fileType === CloudFormationFileType.Empty
         ) {
-            this.telemetry.count(`lint.file.${fileType}`, 1);
+            this.telemetry.count(`lint.file.skipped`, 1);
             this.publishDiagnostics(uri, []);
             return;
         }
