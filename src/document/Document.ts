@@ -17,15 +17,13 @@ export class Document {
     private cachedParsedContent: unknown;
 
     constructor(
-        private readonly textDocument: TextDocument,
+        public readonly uri: DocumentUri,
+        private readonly textDocument: (uri: string) => TextDocument,
         detectIndentation: boolean = true,
         fallbackTabSize: number = DefaultSettings.editor.tabSize,
-        public readonly uri: DocumentUri = textDocument.uri,
-        public readonly languageId: string = textDocument.languageId,
-        public readonly version: number = textDocument.version,
-        public readonly lineCount: number = textDocument.lineCount,
     ) {
-        const { extension, type } = detectDocumentType(textDocument.uri, textDocument.getText());
+        const doc = this.textDocument(uri);
+        const { extension, type } = detectDocumentType(doc.uri, doc.getText());
 
         this.extension = extension;
         this.documentType = type;
@@ -37,12 +35,24 @@ export class Document {
         this.processIndentation(detectIndentation, fallbackTabSize);
     }
 
+    public get languageId(): string {
+        return this.textDocument(this.uri).languageId;
+    }
+
+    public get version(): number {
+        return this.textDocument(this.uri).version;
+    }
+
+    public get lineCount(): number {
+        return this.textDocument(this.uri).lineCount;
+    }
+
     public get cfnFileType(): CloudFormationFileType {
         return this._cfnFileType;
     }
 
     public updateCfnFileType(): void {
-        const content = this.textDocument.getText();
+        const content = this.textDocument(this.uri).getText();
         if (!content.trim()) {
             this._cfnFileType = CloudFormationFileType.Empty;
             this.cachedParsedContent = undefined;
@@ -55,14 +65,12 @@ export class Document {
         } catch {
             // If parsing fails, leave cfnFileType unchanged and clear cache
             this.cachedParsedContent = undefined;
-            this.log.debug(
-                `Failed to parse document ${this.textDocument.uri}, keeping cfnFileType as ${this._cfnFileType}`,
-            );
+            this.log.debug(`Failed to parse document ${this.uri}, keeping cfnFileType as ${this._cfnFileType}`);
         }
     }
 
     private parseContent(): unknown {
-        const content = this.textDocument.getText();
+        const content = this.textDocument(this.uri).getText();
         if (this.documentType === DocumentType.JSON) {
             return JSON.parse(content);
         }
@@ -125,7 +133,7 @@ export class Document {
     }
 
     public getText(range?: Range) {
-        return this.textDocument.getText(range);
+        return this.textDocument(this.uri).getText(range);
     }
 
     public getLines(): string[] {
@@ -133,11 +141,11 @@ export class Document {
     }
 
     public positionAt(offset: number) {
-        return this.textDocument.positionAt(offset);
+        return this.textDocument(this.uri).positionAt(offset);
     }
 
     public offsetAt(position: Position) {
-        return this.textDocument.offsetAt(position);
+        return this.textDocument(this.uri).offsetAt(position);
     }
 
     public isTemplate() {
@@ -145,7 +153,7 @@ export class Document {
     }
 
     public contents() {
-        return this.textDocument.getText();
+        return this.textDocument(this.uri).getText();
     }
 
     public metadata(): DocumentMetadata {
