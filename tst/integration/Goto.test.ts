@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Location } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
 import { wait, getYamlTemplate, getJsonTemplate } from '../utils/Utils';
 
@@ -149,7 +148,7 @@ describe('Integration Test: Goto/Definition', () => {
                 expect(result).toBeDefined();
                 if (Array.isArray(result)) {
                     expect(result.length).toBeGreaterThan(0);
-                    expect(result[0].range.start.line).toBe(74); 
+                    expect(result[0].range.start.line).toBe(74);
                 } else {
                     expect(result.range.start.line).toBe(74);
                 }
@@ -488,7 +487,7 @@ Parameters:
                     position: { line: 170, character: 15 },
                 });
 
-                 expect(result).toBeDefined();
+                expect(result).toBeDefined();
                 if (Array.isArray(result)) {
                     expect(result.length).toBeGreaterThan(0);
                     expect(result[0].range.start.line).toBe(112);

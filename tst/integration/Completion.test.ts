@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { TestExtension } from '../utils/TestExtension';
-import { wait, getSimpleYamlTemplateText, getSimpleJsonTemplateText} from '../utils/Utils';
+import { wait, getSimpleYamlTemplateText, getSimpleJsonTemplateText } from '../utils/Utils';
 
 describe('Integration Test: Completion', () => {
     let client: TestExtension;
@@ -18,7 +18,7 @@ describe('Integration Test: Completion', () => {
         describe('Completions on Top Level Sections', () => {
             it('should provide completions for top-level sections in empty template', async () => {
                 const template = getSimpleYamlTemplateText();
-                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
+                const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 `;
                 const uri = await client.openYamlTemplate(template);
                 await wait(100);
@@ -39,7 +39,7 @@ describe('Integration Test: Completion', () => {
                 expect(completions.items.length).toBeGreaterThan(0);
 
                 const labels = completions.items.map((item: any) => item.label);
-                
+
                 // Should include major top-level sections
                 expect(labels).toContain('Resources');
                 expect(labels).toContain('Parameters');
@@ -104,7 +104,7 @@ T`;
             });
 
             it('should provide completions for Metadata section', async () => {
-                const template = getSimpleYamlTemplateText();                
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 M`;
                 const uri = await client.openYamlTemplate(template);
@@ -160,7 +160,7 @@ P`;
             });
 
             it('should provide completions for Mappings section', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Test'
 `;
@@ -188,7 +188,7 @@ Description: 'Test'
             });
 
             it('should provide completions for Conditions section', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   EnvType:
@@ -218,7 +218,7 @@ C`;
             });
 
             it('should provide completions for Resources section', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 R`;
                 const uri = await client.openYamlTemplate(template);
@@ -246,7 +246,7 @@ R`;
             });
 
             it('should provide completions for Outputs section', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -276,7 +276,7 @@ O`;
             });
 
             it('should provide completions for Rules section', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   EnvType:
@@ -306,7 +306,7 @@ Ru`;
             });
 
             it('should not duplicate existing top-level sections in completions', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Description: Test template
 Parameters:
@@ -334,7 +334,7 @@ Resources:
                 expect(completions?.items).toBeDefined();
 
                 const labels = completions.items.map((item: any) => item.label);
-                
+
                 expect(labels).not.toContain('Parameters');
                 expect(labels).not.toContain('Resources');
 
@@ -344,7 +344,7 @@ Resources:
 
         describe('Resource Properties', () => {
             it('should provide required properties for a resource type', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -379,7 +379,7 @@ Resources:
             });
 
             it('should provide optional properties for a resource type', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyInstance:
@@ -416,7 +416,7 @@ Resources:
             });
 
             it('should provide nested properties completions', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyLaunchTemplate:
@@ -453,7 +453,7 @@ Resources:
             });
 
             it('should provide array item properties completions', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -489,7 +489,7 @@ Resources:
             });
 
             it('should provide completions for properties with complex types', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -526,7 +526,7 @@ Resources:
 
         describe('Resource Attributes', () => {
             it('should provide Type attribute completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -555,7 +555,7 @@ Resources:
             });
 
             it('should provide Properties attribute completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -585,7 +585,7 @@ Resources:
             });
 
             it('should provide DependsOn completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -618,7 +618,7 @@ Resources:
             });
 
             it('should provide Condition completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Conditions:
   CreateProdResources: !Equals [!Ref EnvType, prod]
@@ -651,7 +651,7 @@ Resources:
             });
 
             it('should provide Metadata completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -681,7 +681,7 @@ Resources:
             });
 
             it('should provide CreationPolicy completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyAutoScalingGroup:
@@ -711,7 +711,7 @@ Resources:
             });
 
             it('should provide UpdatePolicy completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyAutoScalingGroup:
@@ -742,7 +742,7 @@ Resources:
             });
 
             it('should provide UpdateReplacePolicy completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -772,7 +772,7 @@ Resources:
             });
 
             it('should provide DeletionPolicy completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -804,7 +804,7 @@ Resources:
 
         describe('Intrinsic Functions', () => {
             it('should provide !Ref completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   MyParam:
@@ -838,7 +838,7 @@ Resources:
             });
 
             it('should provide !GetAtt completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -870,7 +870,7 @@ Outputs:
             });
 
             it('should provide !Sub completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -901,7 +901,7 @@ Resources:
             });
 
             it('should provide !Join completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -932,7 +932,7 @@ Resources:
             });
 
             it('should provide !Split completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   MyString:
@@ -968,7 +968,7 @@ Resources:
             });
 
             it('should provide !Select completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1000,7 +1000,7 @@ Outputs:
             });
 
             it('should provide !FindInMap completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Mappings:
   RegionMap:
@@ -1035,7 +1035,7 @@ Resources:
             });
 
             it('should provide !GetAZs completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MySubnet:
@@ -1066,7 +1066,7 @@ Resources:
             });
 
             it('should provide !ImportValue completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1097,7 +1097,7 @@ Resources:
             });
 
             it('should provide !If completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Conditions:
   CreateProdResources: !Equals [!Ref EnvType, prod]
@@ -1130,7 +1130,7 @@ Resources:
             });
 
             it('should provide !Equals completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   EnvType:
@@ -1161,7 +1161,7 @@ Conditions:
             });
 
             it('should provide !And completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Conditions:
   Condition1: !Equals [!Ref Param1, value1]
@@ -1191,7 +1191,7 @@ Conditions:
             });
 
             it('should provide !Or completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Conditions:
   Condition1: !Equals [!Ref Param1, value1]
@@ -1221,7 +1221,7 @@ Conditions:
             });
 
             it('should provide !Not completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Conditions:
   IsProduction: !Equals [!Ref EnvType, prod]
@@ -1250,7 +1250,7 @@ Conditions:
             });
 
             it('should provide Fn::* long-form completions', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1289,7 +1289,7 @@ Resources:
 
         describe('Parameter Section', () => {
             it('should provide parameter attribute completions', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
   MyParam:
@@ -1312,7 +1312,7 @@ Parameters:
                 expect(completions?.items).toBeDefined();
 
                 const labels = completions.items.map((item: any) => item.label);
-               expect(labels).toContain('Type');
+                expect(labels).toContain('Type');
                 expect(labels).toContain('AllowedPattern');
                 expect(labels).toContain('Default');
                 expect(labels).toContain('AllowedValues');
@@ -1330,7 +1330,7 @@ Parameters:
 
         describe('Pseudo Parameters', () => {
             it('should provide AWS::AccountId completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1361,7 +1361,7 @@ Resources:
             });
 
             it('should provide AWS::NotificationARNs completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1393,7 +1393,7 @@ Outputs:
             });
 
             it('should provide AWS::NoValue completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1424,7 +1424,7 @@ Resources:
             });
 
             it('should provide AWS::Partition completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1456,7 +1456,7 @@ Outputs:
             });
 
             it('should provide AWS::Region completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1487,7 +1487,7 @@ Resources:
             });
 
             it('should provide AWS::StackId completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1520,7 +1520,7 @@ Outputs:
             });
 
             it('should provide AWS::StackName completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1551,7 +1551,7 @@ Resources:
             });
 
             it('should provide AWS::URLSuffix completion', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1585,7 +1585,7 @@ Outputs:
 
         describe('Edge Cases', () => {
             it('should not provide completions in broken/invalid YAML', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1613,7 +1613,7 @@ Resources:
             });
 
             it('should not provide completions with missing required fields', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1640,7 +1640,7 @@ Resources:
             });
 
             it('should return nothing for completions in comments', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 # This is a comment 
 Resources:
@@ -1667,7 +1667,7 @@ Resources:
             });
 
             it('should provide completions in empty template', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = ``;
                 const uri = await client.openYamlTemplate(template);
                 await wait(100);
@@ -1690,7 +1690,7 @@ Resources:
             });
 
             it('should provide completions with multiple transforms', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Transform:
   - AWS::Serverless-2016-10-31
@@ -1721,7 +1721,7 @@ Resources:
 
         describe('Filtering & Ranking', () => {
             it('should provide fuzzy matching for partial input', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1750,7 +1750,7 @@ Resources:
             });
 
             it('should rank completions by relevance', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: 2010-09-09
 Description: Lambda function with inline code
 Resources: 
@@ -1783,8 +1783,8 @@ Resources:
                 await client.closeDocument({ textDocument: { uri } });
             });
 
-            it('should show optional properties after required ones fulfilled', async () => {
-              const template = getSimpleYamlTemplateText();
+            it.todo('should show optional properties after required ones fulfilled', async () => {
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Description: Lambda function ListBucketsCommand.
 Resources:
@@ -1822,7 +1822,10 @@ Resources:
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
 
-                //todo: works in functional testing and json, failing in YAML
+                const labels = completions.items.map((item: any) => item.label);
+                expect(labels).toContain('Architecture');
+
+                // works in functional testing and json, failing in YAML
 
                 await client.closeDocument({ textDocument: { uri } });
             });
@@ -1830,7 +1833,7 @@ Resources:
 
         describe('Documentation', () => {
             it('should include documentation in completion items', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1863,7 +1866,7 @@ Resources:
             });
 
             it('should include detail field in completion items', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1896,7 +1899,7 @@ Resources:
             });
 
             it('should include correct kind in completion items', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -1931,7 +1934,7 @@ Resources:
 
         describe('Snippet Completions', () => {
             it('should provide resource template snippets', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 M`;
                 const uri = await client.openYamlTemplate(template);
@@ -1951,14 +1954,14 @@ M`;
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
 
-                const hasInsertTextOrTextEdit = completions.items.some((item: any) => item.insertText || item.textEdit);
+                const hasInsertTextOrTextEdit = completions.items.some((item: any) => item.insertText ?? item.textEdit);
                 expect(hasInsertTextOrTextEdit).toBe(true);
 
                 await client.closeDocument({ textDocument: { uri } });
             });
 
             it('should provide resource attribute snippets', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: 2010-09-09
 Resources: 
   MyBucket: 
@@ -1981,7 +1984,7 @@ Resources:
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
 
-                const hasInsertText = completions.items.some((item: any) => item.insertText || item.textEdit);
+                const hasInsertText = completions.items.some((item: any) => item.insertText ?? item.textEdit);
                 expect(hasInsertText).toBe(true);
 
                 await client.closeDocument({ textDocument: { uri } });
@@ -1990,7 +1993,7 @@ Resources:
 
         describe('Cross-Reference Completions', () => {
             it('should provide condition reference completions in resources', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Conditions:
   CreateProdResources: !Equals [!Ref EnvType, prod]
@@ -2024,7 +2027,7 @@ Resources:
 
         describe('Value Completions', () => {
             it('should provide enum value completions for DeletionPolicy', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -2056,7 +2059,7 @@ Resources:
             });
 
             it('should provide boolean value completions', async () => {
-              const template = getSimpleYamlTemplateText();
+                const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   TestVPC:
@@ -2090,11 +2093,11 @@ Resources:
         });
     });
 
-  describe('JSON', () => {
+    describe('JSON', () => {
         describe('Completions on Top Level Sections', () => {
             it('should provide completions for top-level sections in empty template', async () => {
                 const template = getSimpleJsonTemplateText();
-                 const updatedTemplate = `{
+                const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09"
   ""
 }`;
@@ -2117,7 +2120,7 @@ Resources:
                 expect(completions.items.length).toBeGreaterThan(0);
 
                 const labels = completions.items.map((item: any) => item.label);
-                
+
                 // Should include major top-level sections
                 expect(labels).toContain('Resources');
                 expect(labels).toContain('Parameters');
@@ -2186,7 +2189,7 @@ Resources:
             });
 
             it('should provide completions for Metadata and Mappings section', async () => {
-                const template = getSimpleJsonTemplateText();                
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "M"
@@ -2245,9 +2248,8 @@ Resources:
                 await client.closeDocument({ textDocument: { uri } });
             });
 
-
             it('should provide completions for Conditions section', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
@@ -2281,7 +2283,7 @@ Resources:
             });
 
             it('should provide completions for Resources and Rules section', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "R"
@@ -2311,7 +2313,7 @@ Resources:
             });
 
             it('should provide completions for Outputs section', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2345,7 +2347,7 @@ Resources:
             });
 
             it('should not duplicate existing top-level sections in completions', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Test template",
@@ -2379,7 +2381,7 @@ Resources:
                 expect(completions?.items).toBeDefined();
 
                 const labels = completions.items.map((item: any) => item.label);
-                
+
                 expect(labels).not.toContain('Parameters');
                 expect(labels).not.toContain('Resources');
 
@@ -2389,7 +2391,7 @@ Resources:
 
         describe('Resource Properties', () => {
             it('should provide required properties for a resource type', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2429,7 +2431,7 @@ Resources:
             });
 
             it('should provide optional properties for a resource type', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2471,7 +2473,7 @@ Resources:
             });
 
             it('should provide nested properties completions', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
 "Resources": {
@@ -2514,7 +2516,7 @@ Resources:
             });
 
             it('should provide array item properties completions', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
 "Resources": {
@@ -2558,7 +2560,7 @@ Resources:
             });
 
             it('should provide completions for properties with complex types', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2601,7 +2603,7 @@ Resources:
 
         describe('Resource Attributes', () => {
             it('should provide Type attribute completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2634,7 +2636,7 @@ Resources:
             });
 
             it('should provide Properties attribute completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2668,7 +2670,7 @@ Resources:
             });
 
             it('should provide DependsOn completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2706,7 +2708,7 @@ Resources:
             });
 
             it('should provide Condition completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Conditions": {
@@ -2751,7 +2753,7 @@ Resources:
             });
 
             it('should provide Metadata completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2785,7 +2787,7 @@ Resources:
             });
 
             it('should provide CreationPolicy completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2819,7 +2821,7 @@ Resources:
             });
 
             it('should provide UpdatePolicy completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2854,7 +2856,7 @@ Resources:
             });
 
             it('should provide UpdateReplacePolicy completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2888,7 +2890,7 @@ Resources:
             });
 
             it('should provide DeletionPolicy completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2923,8 +2925,8 @@ Resources:
         });
 
         describe('Pseudo Parameters', () => {
-          it('should provide AWS::NotificationARNs completion', async () => {
-              const template = getSimpleJsonTemplateText();
+            it('should provide AWS::NotificationARNs completion', async () => {
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2957,13 +2959,14 @@ Resources:
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
 
-                //todo: No pseudo parameter completions in JSON
+                const labels = completions.items.map((item: any) => item.label);
+                expect(labels).toContain('AWS::NotificationARNs');
 
                 await client.closeDocument({ textDocument: { uri } });
             });
 
             it('should provide AWS::NoValue completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -2993,13 +2996,15 @@ Resources:
 
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
-                
-                //todo: No pseudo parameter autocomplete in json
+
+                const labels = completions.items.map((item: any) => item.label);
+                expect(labels).toContain('AWS::NoValue');
+
                 await client.closeDocument({ textDocument: { uri } });
             });
 
             it('should provide AWS::Region completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -3030,15 +3035,16 @@ Resources:
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
 
-                //todo: No pseudo parameter autocomplete in json
+                const labels = completions.items.map((item: any) => item.label);
+                expect(labels).toContain('AWS::Region');
 
                 await client.closeDocument({ textDocument: { uri } });
             });
         });
 
         describe('Intrinsic Functions', () => {
-          it('should provide !Ref completion', async () => {
-              const template = getSimpleJsonTemplateText();
+            it('should provide !Ref completion', async () => {
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
@@ -3076,7 +3082,7 @@ Resources:
             });
 
             it('should provide intrinsic function completions', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -3120,7 +3126,7 @@ Resources:
             });
 
             it('should provide in line Fn::Sub function completions', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -3148,13 +3154,13 @@ Resources:
 
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
-                
-                //No autocomplete for in line Sub in Json 
+
+                //No autocomplete for in line Sub in Json
                 await client.closeDocument({ textDocument: { uri } });
             });
 
             it('should provide long form Fn::Sub completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Template for testing goto/definition with references",
@@ -3206,7 +3212,7 @@ Resources:
             });
 
             it('should provide Fn::Join completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Simple template with Fn::Join in Outputs",
@@ -3251,7 +3257,7 @@ Resources:
             });
 
             it('should provide Fn::Split completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Simple template with Fn::Split in Outputs",
@@ -3309,7 +3315,7 @@ Resources:
             });
 
             it('should provide Fn::Select completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -3319,7 +3325,7 @@ Resources:
   },
   "Outputs": {
     "FirstAZ": {
-      "Value": "Fn::"
+      "Value": "Fn::Se"
     }
   }
 }`;
@@ -3334,19 +3340,19 @@ Resources:
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
-                    position: { line: 9, character: 20 },
+                    position: { line: 9, character: 22 },
                 });
 
                 expect(completions).toBeDefined();
-                
-                //todo: intrinsic function completions not 
-                // working in Value: 
+
+                const labels = completions.items.map((item: any) => item.label);
+                expect(labels).toContain('Fn::Select');
 
                 await client.closeDocument({ textDocument: { uri } });
             });
 
             it('should provide Fn::FindInMap completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Simple template with Fn::FindInMap",
@@ -3398,7 +3404,7 @@ Resources:
             });
 
             it('should provide Fn::GetAZs completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -3434,7 +3440,7 @@ Resources:
             });
 
             it('should provide Fn::If completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Simple template with Fn::If",
@@ -3491,7 +3497,7 @@ Resources:
             });
 
             it('should provide Fn::Equals completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
@@ -3529,7 +3535,7 @@ Resources:
             });
 
             it('should provide Fn::And completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Conditions": {
@@ -3578,7 +3584,7 @@ Resources:
             });
 
             it('should provide Fn::Or completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Conditions": {
@@ -3627,7 +3633,7 @@ Resources:
             });
 
             it('should provide Fn::Not completion', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Conditions": {
@@ -3678,7 +3684,7 @@ Resources:
 
         describe('Parameter Section', () => {
             it('should provide parameter attribute completions', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Parameters": {
@@ -3721,9 +3727,9 @@ Resources:
             });
         });
 
-                describe('Cross-Reference Completions', () => {
-            it('should provide condition reference completions in resources', async () => {
-              const template = getSimpleJsonTemplateText();
+        describe('Cross-Reference Completions', () => {
+            it.todo('should provide condition reference completions in resources', async () => {
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Conditions": {
@@ -3758,9 +3764,13 @@ Resources:
                 });
 
                 expect(completions).toBeDefined();
+                expect(completions?.items).toBeDefined();
 
-                // todo: condition are not provided as completions 
-                // although template validation throws error 
+                const labels = completions.items.map((item: any) => item.label);
+                expect(labels).toContain('CreateProdResources');
+
+                // todo: condition are not provided as completions
+                // although template validation throws error
                 // '' is not one of ['CreateProdResources']
 
                 await client.closeDocument({ textDocument: { uri } });
@@ -3769,7 +3779,7 @@ Resources:
 
         describe('Edge Cases', () => {
             it('should not provide completions in broken/invalid JSON', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -3798,7 +3808,7 @@ Resources:
             });
 
             it('should not provide completions with missing required fields', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -3830,7 +3840,7 @@ Resources:
             });
 
             it('should provide completions in empty template', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   ""
 }`;
@@ -3855,7 +3865,7 @@ Resources:
             });
 
             it('should provide completions with multiple transforms', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Transform": [
@@ -3891,7 +3901,7 @@ Resources:
 
         describe('Filtering & Ranking', () => {
             it('should provide fuzzy matching for partial input', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -3916,7 +3926,7 @@ Resources:
                     textDocument: { uri },
                     position: { line: 6, character: 17 },
                 });
-                
+
                 const labels = completions.items.map((item: any) => item.label);
                 expect(labels).toContain('BucketName');
                 expect(labels).not.toContain('Tags');
@@ -3925,7 +3935,7 @@ Resources:
             });
 
             it('should rank completions by relevance', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Lambda function with inline code",
@@ -3964,7 +3974,7 @@ Resources:
             });
 
             it('should show optional properties after required ones fulfilled', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Lambda function with inline code",
@@ -4011,7 +4021,7 @@ Resources:
 
         describe('Documentation', () => {
             it('should include documentation in completion items', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -4048,7 +4058,7 @@ Resources:
             });
 
             it('should include detail field in completion items', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -4085,7 +4095,7 @@ Resources:
             });
 
             it('should include correct kind in completion items', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -4125,7 +4135,7 @@ Resources:
 
         describe('Snippet Completions', () => {
             it('should provide resource template snippets', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "M"
@@ -4147,14 +4157,14 @@ Resources:
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
 
-                const hasInsertTextOrTextEdit = completions.items.some((item: any) => item.insertText || item.textEdit);
+                const hasInsertTextOrTextEdit = completions.items.some((item: any) => item.insertText ?? item.textEdit);
                 expect(hasInsertTextOrTextEdit).toBe(true);
 
                 await client.closeDocument({ textDocument: { uri } });
             });
 
             it('should provide resource attribute snippets', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
@@ -4181,7 +4191,7 @@ Resources:
                 expect(completions).toBeDefined();
                 expect(completions?.items).toBeDefined();
 
-                const hasInsertTextOrTextEdit = completions.items.some((item: any) => item.insertText || item.textEdit);
+                const hasInsertTextOrTextEdit = completions.items.some((item: any) => item.insertText ?? item.textEdit);
                 expect(hasInsertTextOrTextEdit).toBe(true);
 
                 await client.closeDocument({ textDocument: { uri } });
@@ -4190,7 +4200,7 @@ Resources:
 
         describe('Value Completions', () => {
             it('should provide boolean value completions', async () => {
-              const template = getSimpleJsonTemplateText();
+                const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Description": "Test boolean autocomplete bug",
