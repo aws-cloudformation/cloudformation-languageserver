@@ -92,7 +92,7 @@ jobs:
           VERSION=$(node -p "require('./package.json').version")
           NODE_VERSION=${{ matrix.node-version }}
           NODE_MAJOR=$(echo $NODE_VERSION | cut -d. -f1)
-          
+
           TAG=${{ needs.version-and-tag.outputs.tag }}
           if [[ "$TAG" =~ -alpha$ ]]; then
             FILE_NAME="${APP_NAME}-${VERSION}-alpha-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
@@ -101,7 +101,7 @@ jobs:
           else
             FILE_NAME="${APP_NAME}-${VERSION}-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
           fi
-          
+
           ASSET_NAME=$(echo "$FILE_NAME" | tr '[:upper:]' '[:lower:]')
           echo "ASSET_NAME=${ASSET_NAME}" >> $GITHUB_OUTPUT
 
@@ -117,17 +117,17 @@ jobs:
             /bin/bash -c '
               set -ex
               yum install -y make gcc-c++ python3 tar gzip wget tree
-          
+
               wget -q https://go.dev/dl/go${{ needs.get-configs.outputs.go-version }}.linux-${{ matrix.go-arch }}.tar.gz
               tar -C /usr/local -xzf go${{ needs.get-configs.outputs.go-version }}.linux-${{ matrix.go-arch }}.tar.gz
               export PATH=$PATH:/usr/local/go/bin
-          
+
               curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
               export NVM_DIR="$HOME/.nvm"
               . "$NVM_DIR/nvm.sh"
               nvm install ${{ matrix.node-version }}
               nvm use ${{ matrix.node-version }}
-          
+
               npm ci
 
               TAG="${{ needs.version-and-tag.outputs.tag }}"
@@ -138,10 +138,10 @@ jobs:
               else
                 npm run bundle:prod
               fi
-          
+
               tree -f bundle/production/node_modules/tree-sitter
               tree -f bundle/production/node_modules/tree-sitter-json
-          
+
               GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../../bundle/production/bin/cfn-init
               cp ./cfn-init/THIRD-PARTY-LICENSES.txt ./bundle/production/bin/
             '
@@ -161,7 +161,7 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - { os: "macos-latest", arch: "x64", platform: "darwin", go-arch: "amd64", node-version: "22.x" }
+          - { os: "macos-15-intel", arch: "x64", platform: "darwin", go-arch: "amd64", node-version: "22.x" }
           - { os: "macos-latest", arch: "arm64", platform: "darwin", go-arch: "arm64", node-version: "22.x" }
           - { os: "windows-latest", arch: "x64", platform: "win32", go-arch: "amd64", node-version: "22.x" }
           - { os: "windows-11-arm", arch: "arm64", platform: "win32", go-arch: "arm64", node-version: "22.x" }

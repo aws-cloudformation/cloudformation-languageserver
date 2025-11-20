@@ -1,3 +1,5 @@
+import os from 'os';
+import { resolve, basename } from 'path';
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
 import { toString } from './String';
 
@@ -20,30 +22,77 @@ export function handleLspError(error: unknown, contextMessage: string): never {
     throw new ResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`);
 }
 
+const UserInfo = os.userInfo();
+const SensitiveInfo = [
+    UserInfo.username,
+    `${UserInfo.uid}`,
+    `${UserInfo.gid}`,
+    UserInfo.shell,
+    UserInfo.homedir,
+    resolve(__dirname),
+]
+    .filter((v): v is string => typeof v === 'string' && v.length > 0)
+    .sort((a, b) => b.length - a.length);
+
+const BaseDir = basename(resolve(__dirname));
+
+function sanitizePath(path: string): string {
+    let sanitized = path;
+
+    // Strip sensitive info first
+    for (const info of SensitiveInfo) {
+        sanitized = sanitized.replaceAll(info, 'REDACTED');
+    }
+
+    // Normalize path separators for consistent processing
+    const normalized = sanitized.replaceAll('\\', '/');
+
+    // Strip cloudformation-languageserver prefix
+    for (const partial of ['cloudformation-languageserver', BaseDir]) {
+        const idx = normalized.indexOf(partial);
+        if (idx !== -1) {
+            return '/' + normalized.slice(idx + partial.length + 1);
+        }
+    }
+
+    // Restore original separators if no prefix found
+    return sanitized;
+}
+
 /**
  * Best effort extraction of location of exception based on stack trace
  */
-export function extractLocationFromStack(stack?: string): {
-    'error.file'?: string;
-    'error.line'?: number;
-    'error.column'?: number;
-} {
+export function extractLocationFromStack(stack?: string): Record<string, string> {
     if (!stack) return {};
 
-    // Match first line with file location: at ... (/path/to/file.ts:line:column)
-    const match = stack.match(/at .+\((.+):(\d+):(\d+)\)|at (.+):(\d+):(\d+)/);
-    if (!match) return {};
+    const matches = [...stack.matchAll(/at (.*)/g)];
 
-    const fullPath = match[1] || match[4];
-    const line = parseInt(match[2] || match[5], 10); // eslint-disable-line unicorn/prefer-number-properties
-    const column = parseInt(match[3] || match[6], 10); // eslint-disable-line unicorn/prefer-number-properties
+    if (matches.length === 0) return {};
 
-    // Extract only filename without path
-    const filename = fullPath?.split('/').pop()?.split('\\').pop();
+    const result: Record<string, string> = {};
 
-    return {
-        'error.file': filename,
-        'error.line': line,
-        'error.column': column,
-    };
+    for (const [index, match] of matches.entries()) {
+        if (!match[1]) {
+            continue;
+        }
+
+        let line = match[1].trim();
+        if (!line) {
+            continue;
+        }
+
+        // Extract function name and path separately
+        const parenMatch = line.match(/^(.+?)\s+\((.+)\)$/);
+        if (parenMatch) {
+            const funcName = parenMatch[1];
+            const path = sanitizePath(parenMatch[2]);
+            line = `${funcName} (${path})`;
+        } else {
+            line = sanitizePath(line);
+        }
+
+        result[`stack${index}`] = line.trim();
+    }
+
+    return result;
 }
