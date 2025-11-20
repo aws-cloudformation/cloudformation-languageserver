@@ -340,7 +340,7 @@ describe('Context', () => {
                 expect(resource.UpdatePolicy).toBeDefined();
                 expect(resource.UpdateReplacePolicy).toBe('Snapshot');
                 expect(resource.Condition).toBe('CreateProdResources');
-                expect(resource.DependsOn).toEqual(['EC2Instance', 'NewVolume']);
+                expect(resource.DependsOn).toEqual(['MyEC2Instance', 'NewVolume']);
                 expect(resource.Metadata).toBeDefined();
                 expect(resource.Properties).toBeDefined();
 
