@@ -30,7 +30,9 @@ const SensitiveInfo = [
     UserInfo.shell,
     UserInfo.homedir,
     resolve(__dirname),
-].filter((v): v is string => typeof v === 'string' && v.length > 0);
+]
+    .filter((v): v is string => typeof v === 'string' && v.length > 0)
+    .sort((a, b) => b.length - a.length);
 
 const BaseDir = basename(resolve(__dirname));
 

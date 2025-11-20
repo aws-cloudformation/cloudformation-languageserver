@@ -102,7 +102,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
             `Error: test\n    at Object.<anonymous> (${homedir}/project/file.ts:10:5)`,
         );
         expect(result).toEqual({
-            stack0: 'Object.<anonymous> (/Users/REDACTED/project/file.ts:10:5)',
+            stack0: 'Object.<anonymous> (REDACTED/project/file.ts:10:5)',
         });
     });
 
