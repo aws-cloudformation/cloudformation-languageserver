@@ -88,11 +88,11 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
     test('redacts username from paths', () => {
         const username = os.userInfo().username;
         const result = extractLocationFromStack(
-            `Error: test\n    at Object.<anonymous> (/home/${username}/project/file.ts:10:5)`,
+            `Error: test\n    at Object.<anonymous> (/SomeDir/${username}/project/file.ts:10:5)`,
         );
 
         expect(result).toEqual({
-            stack0: 'Object.<anonymous> (/home/REDACTED/project/file.ts:10:5)',
+            stack0: 'Object.<anonymous> (/SomeDir/REDACTED/project/file.ts:10:5)',
         });
     });
 
