@@ -4,7 +4,7 @@ import { TextDocumentChangeEvent } from 'vscode-languageserver/lib/common/textDo
 import { NotificationHandler } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
-import { Document } from '../document/Document';
+import { CloudFormationFileType, Document } from '../document/Document';
 import { createEdit } from '../document/DocumentUtils';
 import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
@@ -27,7 +27,7 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
 
         const content = document.contents();
 
-        if (document.isTemplate()) {
+        if (document.isTemplate() || document.cfnFileType === CloudFormationFileType.Empty) {
             try {
                 components.syntaxTreeManager.addWithTypes(uri, content, document.documentType, document.cfnFileType);
             } catch (error) {
@@ -199,7 +199,11 @@ function updateSyntaxTree(syntaxTreeManager: SyntaxTreeManager, textDocument: Te
     const uri = textDocument.uri;
     const document = new Document(textDocument);
     if (syntaxTreeManager.getSyntaxTree(uri)) {
-        syntaxTreeManager.updateWithEdit(uri, document.contents(), edit);
+        if (document.cfnFileType === CloudFormationFileType.Other) {
+            syntaxTreeManager.deleteSyntaxTree(uri);
+        } else {
+            syntaxTreeManager.updateWithEdit(uri, document.contents(), edit);
+        }
     } else {
         syntaxTreeManager.addWithTypes(uri, document.contents(), document.documentType, document.cfnFileType);
     }

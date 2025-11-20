@@ -23,7 +23,7 @@ export class SyntaxTreeManager {
     }
 
     public addWithTypes(uri: string, content: string, type: DocumentType, cfnFileType: CloudFormationFileType) {
-        if (cfnFileType !== CloudFormationFileType.Template) {
+        if (cfnFileType !== CloudFormationFileType.Template && cfnFileType !== CloudFormationFileType.Empty) {
             return;
         }
 
@@ -36,7 +36,7 @@ export class SyntaxTreeManager {
 
     @Measure({ name: 'createTree' })
     private createTree(uri: string, content: string, type: DocumentType, cfnFileType: CloudFormationFileType) {
-        if (cfnFileType !== CloudFormationFileType.Template) {
+        if (cfnFileType !== CloudFormationFileType.Template && cfnFileType !== CloudFormationFileType.Empty) {
             throw new Error('Syntax tree can only be created for CloudFormation templates');
         }
 

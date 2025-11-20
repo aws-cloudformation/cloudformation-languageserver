@@ -129,6 +129,7 @@ export function createMockCfnLintService() {
     mock.mountFolder.returns(Promise.resolve());
     mock.lint.returns(Promise.resolve());
     mock.lintDelayed.returns(Promise.resolve());
+    mock.isInitialized.returns(true);
     return mock;
 }
 

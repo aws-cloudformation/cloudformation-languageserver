@@ -413,8 +413,13 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         // Check if this file should be processed by cfn-lint
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
-        if (!fileType || fileType === CloudFormationFileType.Unknown) {
-            this.telemetry.count(`lint.file.${CloudFormationFileType.Unknown}`, 1);
+        if (
+            !fileType ||
+            fileType === CloudFormationFileType.Other ||
+            fileType === CloudFormationFileType.Unknown ||
+            fileType === CloudFormationFileType.Empty
+        ) {
+            this.telemetry.count(`lint.file.skipped`, 1);
             this.publishDiagnostics(uri, []);
             return;
         }
