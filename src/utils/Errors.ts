@@ -91,7 +91,7 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
             line = sanitizePath(line);
         }
 
-        result[`stack${index}`] = line.trim();
+        result[`error.stack${index}`] = line.trim();
     }
 
     return result;
