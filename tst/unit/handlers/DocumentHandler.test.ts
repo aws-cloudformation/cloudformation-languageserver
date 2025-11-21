@@ -126,7 +126,8 @@ describe('DocumentHandler', () => {
         }
 
         it('should handle incremental changes and update syntax tree', () => {
-            const textDocument = createTextDocument();
+            const expectedContent = 'AWSTemplateFormatVersion: "2010-09-10"';
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, expectedContent);
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
 
             mockServices.syntaxTreeManager.getSyntaxTree.returns({
@@ -140,14 +141,14 @@ describe('DocumentHandler', () => {
                     textDocument: { uri: testUri },
                     contentChanges: [
                         {
-                            range: Range.create(0, 0, 0, 5),
-                            text: 'Hello',
+                            range: Range.create(0, 37, 0, 38),
+                            text: '0',
                         },
                     ],
                 }),
             );
 
-            const expectedContent = 'HellomplateFormatVersion: "2010-09-09"';
+            expect(mockServices.syntaxTreeManager.updateWithEdit.calledOnce).toBe(true);
             expect(
                 mockServices.cfnLintService.lintDelayed.calledWith(
                     expectedContent,
@@ -254,8 +255,9 @@ describe('DocumentHandler', () => {
             expect(Object.keys(actualJson.Parameters)).toEqual(Object.keys(expectedJson.Parameters));
         });
 
-        it('should use delayed linting and Guard validation for files', () => {
-            const textDocument = createTextDocument();
+        it('should handle full document replacement and trigger validation', () => {
+            const newContent = 'Resources:\n  MyBucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, newContent);
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
@@ -263,21 +265,24 @@ describe('DocumentHandler', () => {
             handler(
                 createParams({
                     textDocument: { uri: testUri },
-                    contentChanges: [{ text: 'new content' }],
+                    contentChanges: [{ text: newContent }],
                 }),
             );
 
+            expect(mockServices.syntaxTreeManager.add.calledWith(testUri, newContent)).toBe(true);
             expect(
-                mockServices.cfnLintService.lintDelayed.calledWith('new content', testUri, LintTrigger.OnChange, true),
+                mockServices.cfnLintService.lintDelayed.calledWith(newContent, testUri, LintTrigger.OnChange, true),
             ).toBe(true);
-            expect(mockServices.guardService.validateDelayed.calledWith('new content', testUri)).toBe(true);
+            expect(mockServices.guardService.validateDelayed.calledWith(newContent, testUri)).toBe(true);
         });
 
         it('should create syntax tree when update fails', () => {
             const textDocument = createTextDocument();
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
 
-            mockServices.syntaxTreeManager.getSyntaxTree.returns({} as any); // Mock existing tree
+            mockServices.syntaxTreeManager.getSyntaxTree.returns({
+                content: () => testContent,
+            } as any);
             mockServices.syntaxTreeManager.updateWithEdit.throws(new Error('Update failed'));
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
@@ -334,6 +339,55 @@ describe('DocumentHandler', () => {
             ).not.toThrow();
             expect(mockServices.cfnLintService.lintDelayed.called).toBe(false);
             expect(mockServices.guardService.validateDelayed.called).toBe(false);
+        });
+
+        it('should return early for non-template documents', () => {
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, 'not a template');
+            mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(
+                createParams({
+                    textDocument: { uri: testUri },
+                    contentChanges: [{ text: 'not a template' }],
+                }),
+            );
+
+            expect(mockServices.syntaxTreeManager.add.called).toBe(false);
+            expect(mockServices.cfnLintService.lintDelayed.called).toBe(false);
+        });
+
+        it('should delete syntax tree when document becomes non-template', () => {
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, 'not a template');
+            mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
+            mockServices.syntaxTreeManager.getSyntaxTree.returns({} as any);
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(
+                createParams({
+                    textDocument: { uri: testUri },
+                    contentChanges: [{ text: 'not a template' }],
+                }),
+            );
+
+            expect(mockServices.syntaxTreeManager.deleteSyntaxTree.calledWith(testUri)).toBe(true);
+        });
+
+        it('should create new tree when no existing tree', () => {
+            const newContent = 'Resources:\n  MyBucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, newContent);
+            mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
+            mockServices.syntaxTreeManager.getSyntaxTree.returns(undefined);
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(
+                createParams({
+                    textDocument: { uri: testUri },
+                    contentChanges: [{ text: newContent }],
+                }),
+            );
+
+            expect(mockServices.syntaxTreeManager.add.calledWith(testUri, newContent)).toBe(true);
         });
     });
 

@@ -3,7 +3,7 @@ import { DidChangeTextDocumentParams } from 'vscode-languageserver';
 import { TextDocumentChangeEvent } from 'vscode-languageserver/lib/common/textDocuments';
 import { NotificationHandler } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { CloudFormationFileType } from '../document/Document';
+import { CloudFormationFileType, Document } from '../document/Document';
 import { createEdit } from '../document/DocumentUtils';
 import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
@@ -34,26 +34,9 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
             }
         }
 
-        components.cfnLintService.lintDelayed(content, uri, LintTrigger.OnOpen).catch((reason) => {
-            // Handle cancellation gracefully - user might have closed/changed the document
-            if (reason instanceof CancellationError) {
-                // Do nothing - cancellation is expected behavior
-            } else {
-                log.error(reason, `Linting error for ${uri}`);
-            }
-        });
+        triggerValidation(components, content, uri, LintTrigger.OnOpen, ValidationTrigger.OnOpen);
 
-        // Trigger Guard validation
-        components.guardService.validateDelayed(content, uri, ValidationTrigger.OnOpen).catch((reason) => {
-            // Handle cancellation gracefully - user might have closed/changed the document
-            if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                // Do nothing
-            } else {
-                log.error(reason, `Guard validation error for ${uri}`);
-            }
-        });
-
-        components.documentManager.sendDocumentMetadata(0);
+        components.documentManager.sendDocumentMetadata();
     };
 }
 
@@ -71,67 +54,63 @@ export function didChangeHandler(
             return;
         }
 
-        const changes = params.contentChanges;
-        let finalContent = textDocument.getText();
+        // This is the document AFTER changes
+        const document = new Document(textDocument);
+        const finalContent = document.getText();
 
-        try {
-            const tree = components.syntaxTreeManager.getSyntaxTree(documentUri);
-            let currentContent = tree ? tree.content() : '';
+        const tree = components.syntaxTreeManager.getSyntaxTree(documentUri);
 
-            for (const change of changes) {
-                if ('range' in change) {
-                    // Incremental change
-                    const start: Point = {
-                        row: change.range.start.line,
-                        column: change.range.start.character,
-                    };
-                    const end: Point = {
-                        row: change.range.end.line,
-                        column: change.range.end.character,
-                    };
-
-                    const { edit, newContent } = createEdit(currentContent, change.text, start, end);
-
-                    if (tree) {
-                        components.syntaxTreeManager.updateWithEdit(documentUri, newContent, edit);
-                    } else {
-                        components.syntaxTreeManager.add(documentUri, newContent);
-                    }
-
-                    currentContent = newContent;
-                } else {
-                    // Full document change
-                    components.syntaxTreeManager.add(documentUri, change.text);
-                    currentContent = change.text;
-                }
+        // Short-circuit if this is not a template
+        if (!document.isTemplate()) {
+            if (tree) {
+                // Clean-up if was but no longer is a template
+                components.syntaxTreeManager.deleteSyntaxTree(documentUri);
             }
-            finalContent = currentContent;
-        } catch (error) {
-            log.error({ error, uri: documentUri, version }, 'Error updating tree - recreating');
-            components.syntaxTreeManager.add(documentUri, textDocument.getText());
+            return;
         }
 
-        // Trigger cfn-lint validation
-        components.cfnLintService.lintDelayed(finalContent, documentUri, LintTrigger.OnChange, true).catch((reason) => {
-            // Handle both getTextDocument and linting errors
-            if (reason instanceof CancellationError) {
-                // Do nothing - cancellation is expected behavior
-            } else {
-                log.error(reason, `Error in didChange processing for ${documentUri}`);
-            }
-        });
-
-        // Trigger Guard validation
-        components.guardService
-            .validateDelayed(finalContent, documentUri, ValidationTrigger.OnChange, true)
-            .catch((reason) => {
-                // Handle both getTextDocument and validation errors
-                if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                    // Do nothing
-                } else {
-                    log.error(reason, `Error in Guard didChange processing for ${documentUri}`);
+        if (tree) {
+            // This starts as the text BEFORE changes
+            let currentContent = tree.content();
+            try {
+                const changes = params.contentChanges;
+                for (const change of changes) {
+                    if ('range' in change) {
+                        // Incremental change
+                        const start: Point = {
+                            row: change.range.start.line,
+                            column: change.range.start.character,
+                        };
+                        const end: Point = {
+                            row: change.range.end.line,
+                            column: change.range.end.character,
+                        };
+                        const { edit, newContent } = createEdit(currentContent, change.text, start, end);
+                        components.syntaxTreeManager.updateWithEdit(documentUri, newContent, edit);
+                        currentContent = newContent;
+                    } else {
+                        // Full document change
+                        components.syntaxTreeManager.add(documentUri, change.text);
+                        currentContent = change.text;
+                    }
                 }
-            });
+            } catch (error) {
+                log.error({ error, uri: documentUri, version }, 'Error updating tree - recreating');
+                components.syntaxTreeManager.add(documentUri, finalContent);
+            }
+        } else {
+            // If we don't have a tree yet, just parse the final document
+            components.syntaxTreeManager.add(documentUri, finalContent);
+        }
+
+        triggerValidation(
+            components,
+            finalContent,
+            documentUri,
+            LintTrigger.OnChange,
+            ValidationTrigger.OnChange,
+            true,
+        );
 
         // Republish validation diagnostics if available
         const validationDetails = components.validationManager
@@ -179,26 +158,33 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
         const documentUri = event.document.uri;
         const documentContent = event.document.getText();
 
-        // Trigger cfn-lint validation
-        components.cfnLintService.lintDelayed(documentContent, documentUri, LintTrigger.OnSave).catch((reason) => {
-            if (reason instanceof CancellationError) {
-                // Do nothing - cancellation is expected behavior
-            } else {
-                log.error(reason, `Linting error for ${documentUri}`);
-            }
-        });
-
-        // Trigger Guard validation
-        components.guardService
-            .validateDelayed(documentContent, documentUri, ValidationTrigger.OnSave)
-            .catch((reason) => {
-                if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-                    // Do nothing
-                } else {
-                    log.error(reason, `Guard validation error for ${documentUri}`);
-                }
-            });
+        triggerValidation(components, documentContent, documentUri, LintTrigger.OnSave, ValidationTrigger.OnSave);
 
         components.documentManager.sendDocumentMetadata(0);
     };
+}
+
+function triggerValidation(
+    components: ServerComponents,
+    content: string,
+    uri: string,
+    lintTrigger: LintTrigger,
+    validationTrigger: ValidationTrigger,
+    debounce?: boolean,
+): void {
+    components.cfnLintService.lintDelayed(content, uri, lintTrigger, debounce).catch((reason) => {
+        if (reason instanceof CancellationError) {
+            // Do nothing - cancellation is expected behavior
+        } else {
+            log.error(reason, `Linting error for ${uri}`);
+        }
+    });
+
+    components.guardService.validateDelayed(content, uri, validationTrigger, debounce).catch((reason) => {
+        if (reason instanceof Error && reason.message.includes('Request cancelled')) {
+            // Do nothing
+        } else {
+            log.error(reason, `Guard validation error for ${uri}`);
+        }
+    });
 }
