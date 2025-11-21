@@ -1,5 +1,3 @@
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DidChangeTextDocumentParams, Range } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
@@ -15,6 +13,7 @@ import {
 } from '../../../src/handlers/DocumentHandler';
 import { LintTrigger } from '../../../src/services/cfnLint/CfnLintService';
 import { createMockComponents, MockedServerComponents } from '../../utils/MockServerComponents';
+import { Templates } from '../../utils/TemplateUtils';
 import { flushAllPromises } from '../../utils/Utils';
 
 describe('DocumentHandler', () => {
@@ -163,10 +162,8 @@ describe('DocumentHandler', () => {
             const syntaxTreeManager = new SyntaxTreeManager();
             const testUri = 'file:///test/sample_template.json';
             const expectedUri = 'file:///test/sample_template_expected.json';
-            const templatePath = join(__dirname, '../../resources/templates/sample_template.json');
-            const expectedPath = join(__dirname, '../../resources/templates/sample_template_after_edits.json');
-            const initialContent = readFileSync(templatePath, 'utf8');
-            const expectedContent = readFileSync(expectedPath, 'utf8');
+            const initialContent = Templates.sample.json.contents;
+            const expectedContent = Templates.sampleExpected.json.contents;
 
             syntaxTreeManager.add(testUri, initialContent);
             syntaxTreeManager.add(expectedUri, expectedContent);
