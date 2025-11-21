@@ -11,6 +11,7 @@ import { TelemetrySettings } from './TelemetryConfig';
 
 export class LoggerFactory implements Closeable {
     private static readonly MaxFileSize = 50 * 1024 * 1024; // 50MB
+    private static readonly FileName = `${ExtensionId}-${DateTime.utc().toFormat('yyyy-MM-dd')}.log`;
 
     private static _instance: LoggerFactory;
 
@@ -43,10 +44,7 @@ export class LoggerFactory implements Closeable {
                     {
                         target: 'pino/file',
                         options: {
-                            destination: join(
-                                this.logsDirectory,
-                                `${ExtensionId}-${DateTime.utc().toFormat('yyyy-MM-dd')}.log`,
-                            ),
+                            destination: join(this.logsDirectory, LoggerFactory.FileName),
                             mkdir: true,
                         },
                     },
@@ -74,17 +72,13 @@ export class LoggerFactory implements Closeable {
             const oneWeekAgo = DateTime.utc().minus({ weeks: 1 });
 
             for (const file of files) {
-                if (!file.endsWith('.log')) continue;
-
                 const filePath = join(this.logsDirectory, file);
                 const stats = await stat(filePath);
 
-                if (DateTime.fromJSDate(stats.mtime) < oneWeekAgo) {
+                if (file !== LoggerFactory.FileName && DateTime.fromJSDate(stats.mtime) < oneWeekAgo) {
                     await unlink(filePath);
                 }
             }
-
-            await this.trimLogs();
         } catch (err) {
             this.baseLogger.error(err, 'Error cleaning up old logs');
         }

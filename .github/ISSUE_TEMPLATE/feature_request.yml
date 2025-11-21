@@ -1,0 +1,48 @@
+name: Feature Request
+description: Suggest a new feature or enhancement for the CloudFormation Language Server
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a feature! Please describe your idea below.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem does this feature solve?
+      placeholder: I'm frustrated when...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How would you like this feature to work?
+      placeholder: Describe your ideal solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What alternative solutions or workarounds have you considered?
+      placeholder: Describe any alternatives you've thought about
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use case
+      description: Describe a specific scenario where this feature would be useful
+      placeholder: When working on...
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Any other context, mockups, or examples
+      placeholder: Screenshots, code examples, links to similar features, etc.

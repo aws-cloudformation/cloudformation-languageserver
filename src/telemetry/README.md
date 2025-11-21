@@ -48,7 +48,8 @@ Metrics includes the following metadata:
 | `RequestId` | Random unique identifier for each operation (UUID) | `5555-6666-7777-8888`                                       |
 
 ## Data Transmission
-Metrics export every 30 seconds via HTTPS with TLS 1.2+ encryption using OpenTelemetry Protocol (OTLP).
+Metrics export every 60 seconds via HTTPS with TLS 1.2+ encryption using OpenTelemetry Protocol (OTLP).
+All metrics are stored in AWS [us-east-1](https://docs.aws.amazon.com/global-infrastructure/latest/regions/aws-regions.html) region
 
 ## Enable or Disable Telemetry
 Your LSP client (AWS ToolKit, VSCode, JetBrains, etc.) controls telemetry enablement via initialization options. For example:
