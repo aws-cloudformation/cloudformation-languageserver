@@ -60,12 +60,13 @@ export function didChangeHandler(
 
         const tree = components.syntaxTreeManager.getSyntaxTree(documentUri);
 
-        // Short-circuit if this is not a template
-        if (!document.isTemplate()) {
+        // Short-circuit if this is not a template (anymore)
+        if (document.cfnFileType === CloudFormationFileType.Other) {
             if (tree) {
                 // Clean-up if was but no longer is a template
                 components.syntaxTreeManager.deleteSyntaxTree(documentUri);
             }
+            components.documentManager.sendDocumentMetadata();
             return;
         }
 
