@@ -14,25 +14,25 @@ describe('extractLocationFromStack', () => {
     test('extracts location from stack with parentheses format', () => {
         const stack = 'Error: test\n    at Object.<anonymous> (/path/to/file.ts:01234:56789)';
         expect(extractLocationFromStack(stack)).toEqual({
-            stack0: 'Object.<anonymous> (/path/to/file.ts:01234:56789)',
+            'error.stack0': 'Object.<anonymous> (/path/to/file.ts:01234:56789)',
         });
     });
 
     test('extracts location from stack without parentheses format', () => {
         const stack = 'Error: test\n    at /path/to/file.js:01234:56789';
-        expect(extractLocationFromStack(stack)).toEqual({ stack0: '/path/to/file.js:01234:56789' });
+        expect(extractLocationFromStack(stack)).toEqual({ 'error.stack0': '/path/to/file.js:01234:56789' });
     });
 
     test('extracts filename from Windows path', () => {
         const stack = 'Error: test\n    at Object.<anonymous> (C:\\path\\to\\file.ts:01234:56789)';
         expect(extractLocationFromStack(stack)).toEqual({
-            stack0: String.raw`Object.<anonymous> (C:\path\to\file.ts:01234:56789)`,
+            'error.stack0': String.raw`Object.<anonymous> (C:\path\to\file.ts:01234:56789)`,
         });
     });
 
     test('returns empty object when no match found', () => {
         const stack = 'Error: test\n    at something without location';
-        expect(extractLocationFromStack(stack)).toEqual({ stack0: 'something without location' });
+        expect(extractLocationFromStack(stack)).toEqual({ 'error.stack0': 'something without location' });
     });
 
     test('extract error from exception', () => {
@@ -43,9 +43,9 @@ Error: Request cancelled for key: SendDocuments
     at new Promise (<anonymous>)
 `;
         expect(extractLocationFromStack(stack)).toEqual({
-            stack0: 'Delayer.cancel (/src/utils/Delayer.ts?f28b:145:28)',
-            stack1: 'eval (/src/utils/Delayer.ts?f28b:36:18)',
-            stack2: 'new Promise (<anonymous>)',
+            'error.stack0': 'Delayer.cancel (/src/utils/Delayer.ts?f28b:145:28)',
+            'error.stack1': 'eval (/src/utils/Delayer.ts?f28b:36:18)',
+            'error.stack2': 'new Promise (<anonymous>)',
         });
     });
 
@@ -61,12 +61,12 @@ Error: ENOENT: no such file or directory, scandir '/workspace/cfn-lsp/cloudforma
     at process.processTimers (node:internal/timers:523:7)
 `),
         ).toEqual({
-            stack0: 'readdirSync (node:fs:1584:26)',
-            stack1: 'node:electron/js2c/node_init:2:16044',
-            stack2: 'LMDBStoreFactory.cleanupOldVersions (/src/datastore/LMDB.ts?d928:98:36)',
-            stack3: 'Timeout.eval (/src/datastore/LMDB.ts?d928:58:22)',
-            stack4: 'listOnTimeout (node:internal/timers:588:17)',
-            stack5: 'process.processTimers (node:internal/timers:523:7)',
+            'error.stack0': 'readdirSync (node:fs:1584:26)',
+            'error.stack1': 'node:electron/js2c/node_init:2:16044',
+            'error.stack2': 'LMDBStoreFactory.cleanupOldVersions (/src/datastore/LMDB.ts?d928:98:36)',
+            'error.stack3': 'Timeout.eval (/src/datastore/LMDB.ts?d928:58:22)',
+            'error.stack4': 'listOnTimeout (node:internal/timers:588:17)',
+            'error.stack5': 'process.processTimers (node:internal/timers:523:7)',
         });
     });
 
@@ -79,9 +79,11 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
     at async PeriodicExportingMetricReader._runOnce (/workspace/cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/src/export/PeriodicExportingMetricReader.js:57:13)
 `),
         ).toEqual({
-            stack0: 'PeriodicExportingMetricReader._doRun (/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/src/export/PeriodicExportingMetricReader.js:88:19)',
-            stack1: 'process.processTicksAndRejections (node:internal/process/task_queues:105:5)',
-            stack2: 'async PeriodicExportingMetricReader._runOnce (/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/src/export/PeriodicExportingMetricReader.js:57:13)',
+            'error.stack0':
+                'PeriodicExportingMetricReader._doRun (/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/src/export/PeriodicExportingMetricReader.js:88:19)',
+            'error.stack1': 'process.processTicksAndRejections (node:internal/process/task_queues:105:5)',
+            'error.stack2':
+                'async PeriodicExportingMetricReader._runOnce (/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/src/export/PeriodicExportingMetricReader.js:57:13)',
         });
     });
 
@@ -92,7 +94,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
         );
 
         expect(result).toEqual({
-            stack0: 'Object.<anonymous> (/SomeDir/REDACTED/project/file.ts:10:5)',
+            'error.stack0': 'Object.<anonymous> (/SomeDir/REDACTED/project/file.ts:10:5)',
         });
     });
 
@@ -102,7 +104,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
             `Error: test\n    at Object.<anonymous> (${homedir}/project/file.ts:10:5)`,
         );
         expect(result).toEqual({
-            stack0: 'Object.<anonymous> (REDACTED/project/file.ts:10:5)',
+            'error.stack0': 'Object.<anonymous> (REDACTED/project/file.ts:10:5)',
         });
     });
 
@@ -111,7 +113,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
     at Object.<anonymous> (C:\Users\testuser\cloudformation-languageserver\src\file.ts:10:5)`;
 
         expect(extractLocationFromStack(stack)).toEqual({
-            stack0: 'Object.<anonymous> (/src/file.ts:10:5)',
+            'error.stack0': 'Object.<anonymous> (/src/file.ts:10:5)',
         });
     });
 
@@ -120,7 +122,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
     at func (C:\workspace/cloudformation-languageserver\src/file.ts:10:5)`;
 
         expect(extractLocationFromStack(stack)).toEqual({
-            stack0: 'func (/src/file.ts:10:5)',
+            'error.stack0': 'func (/src/file.ts:10:5)',
         });
     });
 
@@ -132,8 +134,8 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
         const result = extractLocationFromStack(stack);
 
         expect(result).toEqual({
-            stack0: 'func1 (/src/a.ts:1:1)',
-            stack1: 'func2 (/src/b.ts:2:2)',
+            'error.stack0': 'func1 (/src/a.ts:1:1)',
+            'error.stack1': 'func2 (/src/b.ts:2:2)',
         });
     });
 
@@ -141,7 +143,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
         const stack = 'Error: test\n    at <anonymous>';
 
         expect(extractLocationFromStack(stack)).toEqual({
-            stack0: '<anonymous>',
+            'error.stack0': '<anonymous>',
         });
     });
 
@@ -149,8 +151,8 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
         const stack = 'Error: test\n    at func1 (file.ts:1:1)\n    at \n    at func2 (file.ts:2:2)';
 
         expect(extractLocationFromStack(stack)).toEqual({
-            stack0: 'func1 (file.ts:1:1)',
-            stack2: 'func2 (file.ts:2:2)',
+            'error.stack0': 'func1 (file.ts:1:1)',
+            'error.stack2': 'func2 (file.ts:2:2)',
         });
     });
 
@@ -160,8 +162,8 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
     at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`;
 
         expect(extractLocationFromStack(stack)).toEqual({
-            stack0: 'Module._compile (node:internal/modules/cjs/loader:1159:14)',
-            stack1: 'Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)',
+            'error.stack0': 'Module._compile (node:internal/modules/cjs/loader:1159:14)',
+            'error.stack1': 'Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)',
         });
     });
 });
