@@ -1,4 +1,4 @@
-import { arch, platform } from 'os';
+import { arch, machine, platform, release, type } from 'os';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
@@ -11,7 +11,7 @@ import { ExtensionName } from '../utils/ExtensionConfig';
 
 let server: unknown;
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, no-console */
 async function onInitialize(params: ExtendedInitializeParams) {
     const ClientInfo = params.clientInfo;
     const AwsMetadata = params.initializationOptions?.['aws'];
@@ -32,7 +32,7 @@ async function onInitialize(params: ExtendedInitializeParams) {
         `${ExtensionName} initializing...`,
     );
     getLogger().info({
-        Machine: `${platform()}-${arch()}`,
+        Machine: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
         Process: `${process.platform}-${process.arch}`,
         Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
     });
@@ -53,12 +53,12 @@ function onInitialized(params: InitializedParams) {
 }
 
 function onShutdown() {
-    getLogger().info(`${ExtensionName} shutting down...`);
+    console.info(`${ExtensionName} shutting down...`);
     return (server as any).close();
 }
 
 function onExit() {
-    getLogger().info(`${ExtensionName} exiting`);
+    console.info(`${ExtensionName} exiting`);
 }
 
 const lsp = new LspConnection(createConnection(ProposedFeatures.all), {
@@ -70,11 +70,22 @@ const lsp = new LspConnection(createConnection(ProposedFeatures.all), {
 lsp.listen();
 
 process.on('unhandledRejection', (reason, _promise) => {
-    getLogger().error(reason, 'Unhandled promise rejection');
+    console.error(reason, 'Unhandled promise rejection');
+
+    try {
+        getLogger().error(reason, 'Unhandled promise rejection');
+    } catch {
+        // do nothing
+    }
 });
 
 process.on('uncaughtException', (error, origin) => {
-    getLogger().error(error, `Uncaught exception ${origin}`);
+    console.error(error, `Unhandled exception ${origin}`);
+    try {
+        getLogger().error(error, `Uncaught exception ${origin}`);
+    } catch {
+        // do nothing
+    }
 });
 
 function getLogger() {
