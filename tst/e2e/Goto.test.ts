@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { getYamlTemplate, getJsonTemplate } from '../utils/TemplateUtils';
 import { TestExtension } from '../utils/TestExtension';
-import { wait, getYamlTemplate, getJsonTemplate } from '../utils/Utils';
 
-describe('Integration Test: Goto/Definition', () => {
+describe('Goto/Definition', () => {
     let client: TestExtension;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         client = new TestExtension();
         await client.ready();
-    }, 30000);
+    });
 
-    afterAll(async () => {
+    afterEach(async () => {
         await client.close();
     });
 
@@ -19,8 +19,6 @@ describe('Integration Test: Goto/Definition', () => {
             it('should navigate to parameter definition from !Ref in resource property', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 // Click on "StringParam" in !Ref StringParam (line 72)
                 const result: any = await client.definition({
@@ -43,8 +41,6 @@ describe('Integration Test: Goto/Definition', () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 // Click on "EnvironmentType" in !FindInMap [ EnvironmentMap, !Ref EnvironmentType, InstanceType ]
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -65,8 +61,6 @@ describe('Integration Test: Goto/Definition', () => {
             it('should navigate to parameter definition from condition', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 // Click on "EnvironmentType" in IsProd condition
                 const result: any = await client.definition({
@@ -91,8 +85,6 @@ describe('Integration Test: Goto/Definition', () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 // Click on "MyS3Bucket" in output Value: !Ref MyS3Bucket
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -114,8 +106,6 @@ describe('Integration Test: Goto/Definition', () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 // Click on "LambdaExecutionRole" in !GetAtt LambdaExecutionRole.Arn
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -136,8 +126,6 @@ describe('Integration Test: Goto/Definition', () => {
             it('should navigate to resource definition from DependsOn', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 // Click on MyEC2Instance resource name in DependsOn array
                 const result: any = await client.definition({
@@ -161,8 +149,6 @@ describe('Integration Test: Goto/Definition', () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 // Click on "CreateProdResources" in Condition: CreateProdResources
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -184,8 +170,6 @@ describe('Integration Test: Goto/Definition', () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 // Click on "IsProd" in CreateProdResources: !Condition IsProd
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -203,8 +187,6 @@ describe('Integration Test: Goto/Definition', () => {
             it('should navigate to mapping definition from !FindInMap', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 // Click on "EnvironmentMap" in !FindInMap [ EnvironmentMap, !Ref EnvironmentType, InstanceType ]
                 const result: any = await client.definition({
@@ -226,8 +208,6 @@ describe('Integration Test: Goto/Definition', () => {
             it('should navigate to mapping definition from !FindInMap with region', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 // Click on "RegionMap" in !FindInMap [ RegionMap, !Ref "AWS::Region", AMI ]
                 const result: any = await client.definition({
@@ -252,8 +232,6 @@ describe('Integration Test: Goto/Definition', () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 // Click on "AWS::Region" - pseudo parameters don't have definitions
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -271,8 +249,6 @@ describe('Integration Test: Goto/Definition', () => {
             it('should not navigate for pseudo parameters like AWS::StackName', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 // Click on "AWS::StackName" in !Join
                 const result: any = await client.definition({
@@ -299,8 +275,6 @@ Resources:
       BucketName: !Ref NonExistentParameter`;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const result: any = await client.definition({
                     textDocument: { uri },
                     position: { line: 5, character: 25 },
@@ -317,8 +291,6 @@ Resources:
             it('should not navigate from whitespace', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -340,8 +312,6 @@ Parameters:
     Type: String`;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const result: any = await client.definition({
                     textDocument: { uri },
                     position: { line: 1, character: 30 },
@@ -361,8 +331,6 @@ Parameters:
             it('should navigate to parameter definition from Ref in resource property', async () => {
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
-
-                await wait(2000);
 
                 // Click on "StringParam" in "Ref": "StringParam"
                 const result: any = await client.definition({
@@ -385,8 +353,6 @@ Parameters:
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
 
-                await wait(2000);
-
                 // Click on "EnvironmentType" in FindInMap Ref
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -407,8 +373,6 @@ Parameters:
             it('should navigate to parameter definition from condition', async () => {
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
-
-                await wait(2000);
 
                 // Click on "EnvironmentType" in IsProd condition
                 const result: any = await client.definition({
@@ -433,8 +397,6 @@ Parameters:
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
 
-                await wait(2000);
-
                 // Click on "MyS3Bucket" in output Value Ref
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -456,8 +418,6 @@ Parameters:
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
 
-                await wait(2000);
-
                 // Click on "LambdaExecutionRole" in Fn::GetAtt array
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -478,8 +438,6 @@ Parameters:
             it('should navigate to resource definition from DependsOn', async () => {
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
-
-                await wait(2000);
 
                 // Click on resource name in DependsOn array
                 const result: any = await client.definition({
@@ -503,8 +461,6 @@ Parameters:
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
 
-                await wait(2000);
-
                 // Click on "CreateProdResources" in "Condition": "CreateProdResources"
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -525,8 +481,6 @@ Parameters:
             it('should navigate to condition definition from Condition reference', async () => {
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
-
-                await wait(2000);
 
                 // Click on "IsProd" in CreateProdResources condition
                 const result: any = await client.definition({
@@ -551,8 +505,6 @@ Parameters:
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
 
-                await wait(2000);
-
                 // Click on "EnvironmentMap" in Fn::FindInMap array
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -573,8 +525,6 @@ Parameters:
             it('should navigate to mapping definition from Fn::FindInMap with region', async () => {
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
-
-                await wait(2000);
 
                 // Click on "RegionMap" in Fn::FindInMap
                 const result: any = await client.definition({
@@ -599,8 +549,6 @@ Parameters:
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
 
-                await wait(2000);
-
                 // Click on "AWS::Region" - pseudo parameters don't have definitions
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -618,8 +566,6 @@ Parameters:
             it('should not navigate for pseudo parameters like AWS::StackName', async () => {
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
-
-                await wait(2000);
 
                 // Click on "AWS::StackName" in Fn::Join
                 const result: any = await client.definition({
@@ -651,8 +597,6 @@ Parameters:
 }`;
                 const uri = await client.openJsonTemplate(template);
 
-                await wait(2000);
-
                 const result: any = await client.definition({
                     textDocument: { uri },
                     position: { line: 6, character: 35 },
@@ -669,8 +613,6 @@ Parameters:
             it('should not navigate from whitespace', async () => {
                 const template = getJsonTemplate();
                 const uri = await client.openJsonTemplate(template);
-
-                await wait(2000);
 
                 const result: any = await client.definition({
                     textDocument: { uri },
@@ -711,8 +653,6 @@ Parameters:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-
-                await wait(2000);
 
                 // Click on "MyParam" nested in Fn::Join
                 const result: any = await client.definition({

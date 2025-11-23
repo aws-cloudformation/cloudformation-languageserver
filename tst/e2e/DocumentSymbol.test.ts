@@ -1,17 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DocumentSymbol, SymbolKind } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
-import { wait } from '../utils/Utils';
 
-describe('Integration Test: DocumentSymbol', () => {
+describe('DocumentSymbol', () => {
     let client: TestExtension;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         client = new TestExtension();
         await client.ready();
-    }, 30000);
+    });
 
-    afterAll(async () => {
+    afterEach(async () => {
         await client.close();
     });
 
@@ -44,7 +43,6 @@ Metadata:
   Version: 1.0`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -93,7 +91,6 @@ Metadata:
   Meta1: value`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -123,7 +120,6 @@ Resources:
     Type: AWS::S3::Bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -141,7 +137,6 @@ Resources:
                 const template = '';
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -157,7 +152,6 @@ Resources:
                 const template = `AWSTemplateFormatVersion: '2010-09-09'`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -184,7 +178,6 @@ Mappings:
       InstanceType: t2.micro`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -218,7 +211,6 @@ Conditions:
   IsTest: !Equals [!Ref EnvType, test]`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -253,7 +245,6 @@ Rules:
       - Assert: !Contains [['t2.micro', 't2.small'], !Ref InstanceType]`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -284,7 +275,6 @@ Metadata:
   LastModified: 2024-01-01`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -323,7 +313,6 @@ Parameters:
     Type: AWS::EC2::KeyPair::KeyName`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -366,7 +355,6 @@ Resources:
           exports.handler = async () => ({ statusCode: 500 });`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -402,7 +390,6 @@ Parameters:
     Default: us-east-1a,us-east-1b`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -428,7 +415,6 @@ Resources:
     Type: AWS::S3::Bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -451,7 +437,6 @@ Resources:
     Type: AWS::S3::Bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -476,7 +461,6 @@ Resources:
       BucketName: test-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -502,7 +486,6 @@ Resources:
   Invalid`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -520,7 +503,6 @@ Resources: {}
 Outputs: {}`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -553,7 +535,6 @@ Resources:
           Value: Dev`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -574,7 +555,6 @@ Resources:
 # Yet another comment`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -599,7 +579,6 @@ Resources:
     Type: AWS::S3::Bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -663,7 +642,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -716,7 +694,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -750,7 +727,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -784,7 +760,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -815,7 +790,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -844,7 +818,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -884,7 +857,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -921,7 +893,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -947,7 +918,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -976,7 +946,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -999,7 +968,6 @@ Resources:
                 const template = '{}';
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -1019,7 +987,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -1062,7 +1029,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },
@@ -1096,7 +1062,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(500);
 
                 const result = (await client.documentSymbol({
                     textDocument: { uri },

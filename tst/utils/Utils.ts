@@ -1,49 +1,7 @@
-import { Templates } from './TemplateUtils';
-
 export function flushAllPromises() {
     return new Promise((resolve) => {
         setTimeout(resolve, 0);
     });
-}
-
-export function getSimpleJsonTemplateText(): string {
-    return Templates.simple.json.contents;
-}
-
-export function getSimpleYamlTemplateText(): string {
-    return Templates.simple.yaml.contents;
-}
-
-export function getYamlTemplate(): string {
-    return Templates.sample.yaml.contents;
-}
-
-export function getJsonTemplate(): string {
-    return Templates.sample.json.contents;
-}
-
-export function getComprehensiveYamlTemplate(): string {
-    return Templates.comprehensive.yaml.contents;
-}
-
-export function getComprehensiveJsonTemplate(): string {
-    return Templates.comprehensive.json.contents;
-}
-
-export function getForEachYamlTemplate(): string {
-    return Templates.foreach.yaml.contents;
-}
-
-export function getForEachJsonTemplate(): string {
-    return Templates.foreach.json.contents;
-}
-
-export function getBrokenYamlTemplate(): string {
-    return Templates.broken.yaml.contents;
-}
-
-export function getBrokenJsonTemplate(): string {
-    return Templates.broken.json.contents;
 }
 
 export class WaitFor {
@@ -78,8 +36,4 @@ export class WaitFor {
     static async waitFor(code: () => void | Promise<void>, timeoutMs: number = 100): Promise<void> {
         await new WaitFor(timeoutMs).wait(code);
     }
-}
-
-export async function wait(ms: number) {
-    await new Promise((resolve) => setTimeout(resolve, ms));
 }

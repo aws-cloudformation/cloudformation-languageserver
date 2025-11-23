@@ -1,6 +1,6 @@
 import os from 'os';
 import { describe, test, expect } from 'vitest';
-import { extractLocationFromStack } from '../../src/utils/Errors';
+import { extractLocationFromStack } from '../../../src/utils/Errors';
 
 describe('extractLocationFromStack', () => {
     test('returns empty object when stack is undefined', () => {

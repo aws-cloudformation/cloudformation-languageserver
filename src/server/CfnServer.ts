@@ -61,6 +61,7 @@ import { ServerComponents } from './ServerComponents';
 
 const log = LoggerFactory.getLogger('CfnServer');
 export class CfnServer {
+    private isClosed: boolean = false;
     private readonly components: ServerComponents;
 
     constructor(
@@ -289,6 +290,10 @@ export class CfnServer {
     }
 
     async close(): Promise<void> {
+        if (this.isClosed) {
+            return;
+        }
         await closeSafely(this.providers, this.external, this.core);
+        this.isClosed = true;
     }
 }

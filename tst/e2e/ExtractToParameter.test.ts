@@ -7,8 +7,9 @@ import { applyWorkspaceEdit } from '../utils/WorkspaceEditUtils';
 describe('Extract to Parameter - End-to-End CodeAction Workflow Tests', () => {
     let extension: TestExtension;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         extension = new TestExtension();
+        await extension.ready();
     });
 
     afterEach(async () => {

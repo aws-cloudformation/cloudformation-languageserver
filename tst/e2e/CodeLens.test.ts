@@ -1,17 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CodeLens } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
-import { wait } from '../utils/Utils';
 
-describe('Integration Test: CodeLens', () => {
+describe('CodeLens', () => {
     let client: TestExtension;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         client = new TestExtension();
         await client.ready();
-    }, 30000);
+    });
 
-    afterAll(async () => {
+    afterEach(async () => {
         await client.close();
     });
 
@@ -27,7 +26,6 @@ Resources:
       BucketName: test-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 const result = (await client.codeLens({
                     textDocument: { uri },
@@ -56,8 +54,6 @@ Resources:
     Type: AWS::S3::Bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -78,8 +74,6 @@ Resources:
 Description: Template without resources`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -99,8 +93,6 @@ Description: Template without resources`;
 Resources:`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -124,8 +116,6 @@ Resources:
     Type: AWS::S3::Bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -153,8 +143,6 @@ Resources:
       BucketName: !Ref BucketName`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -185,8 +173,6 @@ Resources:
       BucketName: managed-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -216,8 +202,6 @@ Resources:
       BucketName: managed-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -245,8 +229,6 @@ Resources:
       BucketName: regular-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -273,8 +255,6 @@ Resources:
       BucketName: managed-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -301,8 +281,6 @@ Resources:
       BucketName: managed-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -330,8 +308,6 @@ Resources:
       BucketName: managed-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -365,8 +341,6 @@ Resources:
       BucketName: managed-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -408,8 +382,6 @@ Resources:
       BucketName: managed-bucket-2`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -441,8 +413,6 @@ Resources:
     Type: AWS::S3::Bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -470,8 +440,6 @@ Resources:
   InvalidResource`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -486,8 +454,6 @@ Resources:
                 const template = '';
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -504,8 +470,6 @@ Resources:
 # Comment 3`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -529,8 +493,6 @@ Resources:
       BucketName: partial-bucket`;
 
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -565,8 +527,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -596,8 +556,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -620,8 +578,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -643,8 +599,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -680,8 +634,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -717,8 +669,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -752,8 +702,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -786,8 +734,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -820,8 +766,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -863,8 +807,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];
@@ -915,8 +857,6 @@ Resources:
 }`;
 
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
-
                 const result = (await client.codeLens({
                     textDocument: { uri },
                 })) as CodeLens[];

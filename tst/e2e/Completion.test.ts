@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { getSimpleYamlTemplateText, getSimpleJsonTemplateText } from '../utils/TemplateUtils';
 import { TestExtension } from '../utils/TestExtension';
-import { wait, getSimpleYamlTemplateText, getSimpleJsonTemplateText } from '../utils/Utils';
 
-describe('Integration Test: Completion', () => {
+describe('Completion', () => {
     let client: TestExtension;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
         client = new TestExtension();
         await client.ready();
-    }, 30000);
+    });
 
-    afterAll(async () => {
+    afterEach(async () => {
         await client.close();
     });
 
@@ -21,13 +21,11 @@ describe('Integration Test: Completion', () => {
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -53,13 +51,11 @@ describe('Integration Test: Completion', () => {
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09"
 D`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -81,13 +77,11 @@ D`;
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 T`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -108,13 +102,11 @@ T`;
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 M`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -137,13 +129,11 @@ M`;
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 P`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -165,13 +155,11 @@ P`;
 Description: 'Test'
 `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -195,13 +183,11 @@ Parameters:
     Type: String
 C`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -222,13 +208,11 @@ C`;
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 R`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -253,13 +237,11 @@ Resources:
     Type: AWS::S3::Bucket
 O`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -283,13 +265,11 @@ Parameters:
     Type: String
 Ru`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -317,13 +297,11 @@ Resources:
     Type: AWS::S3::Bucket
 `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -352,13 +330,11 @@ Resources:
     Properties:
       `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -388,13 +364,11 @@ Resources:
       ImageId: ami-12345678
       `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -425,13 +399,11 @@ Resources:
       LaunchTemplateData:
         `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -462,13 +434,11 @@ Resources:
       Tags:
         - `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -498,13 +468,11 @@ Resources:
       LifecycleConfiguration:
         `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -532,13 +500,11 @@ Resources:
   MyBucket:
     T`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -562,13 +528,11 @@ Resources:
     Type: AWS::S3::Bucket
     P`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -594,13 +558,11 @@ Resources:
     Type: AWS::EC2::Instance
     D`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -627,13 +589,11 @@ Resources:
     Type: AWS::S3::Bucket
     C`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -658,13 +618,11 @@ Resources:
     Type: AWS::S3::Bucket
     M`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -688,13 +646,11 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Cr`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -718,13 +674,11 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     U`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -749,13 +703,11 @@ Resources:
     Type: AWS::S3::Bucket
     UpdateR`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -779,13 +731,11 @@ Resources:
     Type: AWS::S3::Bucket
     Del`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -815,13 +765,11 @@ Resources:
     Properties:
       BucketName: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -847,13 +795,11 @@ Outputs:
   BucketArn:
     Value: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -878,13 +824,11 @@ Resources:
     Properties:
       BucketName: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -909,13 +853,11 @@ Resources:
     Properties:
       BucketName: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -945,13 +887,11 @@ Resources:
         - Key: Items
           Value: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -977,13 +917,11 @@ Outputs:
   FirstAZ:
     Value: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1012,13 +950,11 @@ Resources:
     Properties:
       ImageId: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1043,13 +979,11 @@ Resources:
     Properties:
       AvailabilityZone: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1074,13 +1008,11 @@ Resources:
     Properties:
       BucketName: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1107,13 +1039,11 @@ Resources:
     Properties:
       BucketName: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1138,13 +1068,11 @@ Parameters:
 Conditions:
   IsProduction: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1168,13 +1096,11 @@ Conditions:
   Condition2: !Equals [!Ref Param2, value2]
   BothConditions: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1198,13 +1124,11 @@ Conditions:
   Condition2: !Equals [!Ref Param2, value2]
   EitherCondition: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1227,13 +1151,11 @@ Conditions:
   IsProduction: !Equals [!Ref EnvType, prod]
   IsNotProduction: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1259,13 +1181,11 @@ Resources:
       BucketName:
         Fn::`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1295,13 +1215,11 @@ Parameters:
   MyParam:
     `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1338,13 +1256,11 @@ Resources:
     Properties:
       BucketName: !Ref AWS::Acc`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1370,13 +1286,11 @@ Outputs:
   Notifications:
     Value: !Ref AWS::Not`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1401,13 +1315,11 @@ Resources:
     Properties:
       BucketName: !Ref AWS::NoV`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1433,13 +1345,11 @@ Outputs:
   Partition:
     Value: !Ref AWS::Par`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1464,13 +1374,11 @@ Resources:
     Properties:
       BucketName: !Ref AWS::Reg`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1496,13 +1404,11 @@ Outputs:
   StackId:
     Value: !Ref AWS::Stac`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1528,13 +1434,11 @@ Resources:
     Properties:
       BucketName: !Ref AWS::StackN`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1560,13 +1464,11 @@ Outputs:
   URLSuffix:
     Value: !Ref AWS::URL`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1593,13 +1495,11 @@ Resources:
     Properties
       BucketName: `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1620,13 +1520,11 @@ Resources:
     Properties:
       `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1647,13 +1545,11 @@ Resources:
   MyBucket:
     Type: AWS::S3::Bucket`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1670,13 +1566,11 @@ Resources:
                 const template = getSimpleYamlTemplateText();
                 const updatedTemplate = ``;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1699,13 +1593,11 @@ Resources:
   MyFunction:
     Type: `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1729,13 +1621,11 @@ Resources:
     Properties:
       BucketNa`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1759,13 +1649,11 @@ Resources:
     Properties: 
       `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1806,13 +1694,11 @@ Resources:
           };
       `;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1841,13 +1727,11 @@ Resources:
     Properties:
       `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1874,13 +1758,11 @@ Resources:
     Properties:
       `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1907,13 +1789,11 @@ Resources:
     Properties:
       BucketName: !`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1938,13 +1818,11 @@ Resources:
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 M`;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -1968,13 +1846,11 @@ Resources:
     Type: AWS::S3::Bucket
     `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2002,13 +1878,11 @@ Resources:
     Type: AWS::S3::Bucket
     Condition: `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2034,13 +1908,11 @@ Resources:
     Type: AWS::S3::Bucket
     DeletionPolicy: `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2068,13 +1940,11 @@ Resources:
       CidrBlock: 10.0.0.0/16
       EnableDnsHostnames: `;
                 const uri = await client.openYamlTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2102,13 +1972,11 @@ Resources:
   ""
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2136,13 +2004,11 @@ Resources:
   "D"
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2166,13 +2032,11 @@ Resources:
   "T"
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2195,13 +2059,11 @@ Resources:
   "M"
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2226,13 +2088,11 @@ Resources:
   "P"
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2260,13 +2120,11 @@ Resources:
   "C"
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2289,13 +2147,11 @@ Resources:
   "R"
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2324,13 +2180,11 @@ Resources:
   "O"
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2364,13 +2218,11 @@ Resources:
   ""
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2404,13 +2256,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2445,13 +2295,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2488,13 +2336,11 @@ Resources:
 }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2533,13 +2379,11 @@ Resources:
 }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2575,13 +2419,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2613,13 +2455,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2647,13 +2487,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2684,13 +2522,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2729,13 +2565,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2764,13 +2598,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2798,13 +2630,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2832,13 +2662,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2867,13 +2695,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2901,13 +2727,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2943,13 +2767,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -2981,13 +2803,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3019,13 +2839,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3062,13 +2880,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3098,13 +2914,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3139,13 +2953,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3189,13 +3001,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3234,13 +3044,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3292,13 +3100,11 @@ Resources:
 }
 `;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3330,13 +3136,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3381,13 +3185,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3417,13 +3219,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3474,13 +3274,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3512,13 +3310,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3561,13 +3357,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3610,13 +3404,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3659,13 +3451,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3694,13 +3484,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3750,13 +3538,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3788,13 +3574,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3820,13 +3604,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3845,13 +3627,11 @@ Resources:
   ""
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3879,13 +3659,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3914,13 +3692,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3949,13 +3725,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -3995,13 +3769,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -4034,13 +3806,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -4071,13 +3841,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -4108,13 +3876,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -4141,13 +3907,11 @@ Resources:
   "M"
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -4175,13 +3939,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },
@@ -4216,13 +3978,11 @@ Resources:
   }
 }`;
                 const uri = await client.openJsonTemplate(template);
-                await wait(100);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
                     contentChanges: [{ text: updatedTemplate }],
                 });
-                await wait(100);
 
                 const completions: any = await client.completion({
                     textDocument: { uri },

@@ -7,8 +7,9 @@ describe('DocumentHandler', () => {
 
     let extension: TestExtension;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         extension = new TestExtension();
+        await extension.ready();
     });
 
     afterEach(async () => {

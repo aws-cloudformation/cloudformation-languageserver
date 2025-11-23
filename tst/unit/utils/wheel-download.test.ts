@@ -4,7 +4,7 @@ import { join } from 'path';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 describe('wheel download utility', () => {
-    const testWheelsDir = join(__dirname, '../../test-wheels');
+    const testWheelsDir = join(process.cwd(), 'node_modules', '.cache', 'test-wheels');
 
     beforeEach(() => {
         if (existsSync(testWheelsDir)) {
