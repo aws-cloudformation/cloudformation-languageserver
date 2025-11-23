@@ -76,8 +76,24 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
                     to: 'assets',
                 },
                 {
-                    from: 'node_modules/cfn-guard/guard_bg.wasm',
+                    from: 'vendor/cfn-guard/guard_bg.wasm',
                     to: 'guard_bg.wasm',
+                },
+                {
+                    from: 'vendor/cfn-guard/guard.js',
+                    to: 'vendor/cfn-guard/guard.js',
+                },
+                {
+                    from: 'vendor/cfn-guard/index.js',
+                    to: 'vendor/cfn-guard/index.js',
+                },
+                {
+                    from: 'vendor/cfn-guard/package.json',
+                    to: 'vendor/cfn-guard/package.json',
+                },
+                {
+                    from: 'vendor/cfn-guard/guard_bg.wasm',
+                    to: 'vendor/cfn-guard/guard_bg.wasm',
                 },
             ],
         }),
@@ -116,7 +132,7 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
 
                         const externals = ExternalsDeps.map((dep) => {
                             if (dep === 'cfn-guard') {
-                                return `${dep}@${PackageLock.packages[`node_modules/${dep}`].resolved}`;
+                                return `${dep}@${PackageLock.packages[`node_modules/${dep}`].version}`;
                             }
                             return `${dep}@${PackageLock.packages[`node_modules/${dep}`].version}`;
                         });

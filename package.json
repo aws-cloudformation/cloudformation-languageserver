@@ -152,7 +152,6 @@
     "@opentelemetry/sdk-trace-base",
     "@opentelemetry/sdk-trace-node",
     "@tree-sitter-grammars/tree-sitter-yaml",
-    "cfn-guard",
     "lmdb",
     "pino",
     "pino-pretty",
