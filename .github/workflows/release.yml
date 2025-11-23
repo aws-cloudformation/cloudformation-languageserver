@@ -64,20 +64,20 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ ubuntu-22.04, windows-latest, macos-latest ]
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
     with:
       ref: ${{ needs.version-and-tag.outputs.tag }}
       runs-on: ${{ matrix.os }}
 
-  bundle-linux:
+  bundle-linux-old:
     needs: [ get-configs, version-and-tag, build-and-test ]
     strategy:
       fail-fast: true
       matrix:
         include:
-          - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "22" }
-          - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "22" }
-    runs-on: ubuntu-22.04
+          - { arch: "x64", docker-platform: "linux/amd64", go-arch: "amd64", use_qemu: false, node-version: "18" }
+          - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "18" }
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
         with:
@@ -95,11 +95,11 @@ jobs:
 
           TAG=${{ needs.version-and-tag.outputs.tag }}
           if [[ "$TAG" =~ -alpha$ ]]; then
-            FILE_NAME="${APP_NAME}-${VERSION}-alpha-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
+            FILE_NAME="${APP_NAME}-${VERSION}-alpha-glib2.28-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
           elif [[ "$TAG" =~ -beta$ ]]; then
-            FILE_NAME="${APP_NAME}-${VERSION}-beta-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
+            FILE_NAME="${APP_NAME}-${VERSION}-beta-glib2.28-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
           else
-            FILE_NAME="${APP_NAME}-${VERSION}-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
+            FILE_NAME="${APP_NAME}-${VERSION}-glib2.28-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
           fi
 
           ASSET_NAME=$(echo "$FILE_NAME" | tr '[:upper:]' '[:lower:]')
@@ -109,38 +109,60 @@ jobs:
         if: matrix.use_qemu
         uses: docker/setup-qemu-action@v3
 
-      - name: Bundle (${{ matrix.docker-platform }}
+      - name: Bundle (${{ matrix.docker-platform }}-${{ node-version }})
         run: |
-          docker run --rm -v ${{ github.workspace }}:/work -w /work \
+          docker run --rm -t -v ${{ github.workspace }}:/work -w /work \
             --platform ${{ matrix.docker-platform }} \
-            amazonlinux:2023 \
+            node:18-buster \
             /bin/bash -c '
-              set -ex
-              yum install -y make gcc-c++ python3 tar gzip wget tree
+              set -e
+          
+              git config --global --add safe.directory /work
+              echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list
+              echo "deb http://archive.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
+              apt-get -o Acquire::Check-Valid-Until=false update
+
+              apt-get update
+              apt-get install -y make g++ python3 build-essential tar gzip wget tree
+          
+              SYS_LIB=$(find /usr/lib -name libstdc++.so.6 | head -n 1)
+              SYS_MAX=$(strings "$SYS_LIB" | grep "GLIBCXX_[0-9]" | sort -V | tail -n 1)
+              SYS_MIN=$(strings "$SYS_LIB" | grep "GLIBCXX_[0-9]" | sort -V | head -n 1)
+              echo "----------------------------------------------------------------"
+              echo "SYSTEM BASELINE:"
+              echo "Library Path: $SYS_LIB"
+              echo "Max GLIBCXX Supported: $SYS_MAX"
+              echo "Min GLIBCXX Supported: $SYS_MIN"
+              echo "----------------------------------------------------------------"
 
               wget -q https://go.dev/dl/go${{ needs.get-configs.outputs.go-version }}.linux-${{ matrix.go-arch }}.tar.gz
               tar -C /usr/local -xzf go${{ needs.get-configs.outputs.go-version }}.linux-${{ matrix.go-arch }}.tar.gz
               export PATH=$PATH:/usr/local/go/bin
 
-              curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-              export NVM_DIR="$HOME/.nvm"
-              . "$NVM_DIR/nvm.sh"
-              nvm install ${{ matrix.node-version }}
-              nvm use ${{ matrix.node-version }}
+              uname -r && node -v && npm -v && go version
 
               npm ci
 
               TAG="${{ needs.version-and-tag.outputs.tag }}"
               if [[ "$TAG" =~ -alpha$ ]]; then
-                npm run bundle:alpha
+                npm run bundle:alpha -- --env rebuild=true
               elif [[ "$TAG" =~ -beta$ ]]; then
-                npm run bundle:beta
+                npm run bundle:beta -- --env rebuild=true
               else
-                npm run bundle:prod
+                npm run bundle:prod -- --env rebuild=true
               fi
 
-              tree -f bundle/production/node_modules/tree-sitter
-              tree -f bundle/production/node_modules/tree-sitter-json
+              if [ -z "$(find . -name "*.node" -print -quit)" ]; then
+                 echo "::warning::No .node files found to check"
+                 exit 1
+              else
+                 find . -name "*.node" -print0 | while IFS= read -r -d "" file; do
+                    echo "Inspecting: $file"
+                    FILE_MAX=$(strings "$file" | grep "GLIBCXX_[0-9]" | sort -V | tail -n 1)
+                    FILE_MIN=$(strings "$file" | grep "GLIBCXX_[0-9]" | sort -V | head -n 1)
+                    echo "  > FileMAX - $FILE_MAX FileMIN - $FILE_MIN"
+                 done
+              fi
 
               GOARCH=${{ matrix.go-arch }} go build -C ./cfn-init/cmd -v -o ../../bundle/production/bin/cfn-init
               cp ./cfn-init/THIRD-PARTY-LICENSES.txt ./bundle/production/bin/
@@ -155,12 +177,14 @@ jobs:
           include-hidden-files: true
           compression-level: 6
 
-  bundle-win-mac:
+  bundle:
     needs: [ get-configs, version-and-tag, build-and-test ]
     strategy:
       fail-fast: true
       matrix:
         include:
+          - { os: "ubuntu-latest", arch: "x64", platform: "linux", go-arch: "amd64", node-version: "22.x" }
+          - { os: "ubuntu-24.04-arm", arch: "arm64", platform: "linux", go-arch: "arm64", node-version: "22.x" }
           - { os: "macos-15-intel", arch: "x64", platform: "darwin", go-arch: "amd64", node-version: "22.x" }
           - { os: "macos-latest", arch: "arm64", platform: "darwin", go-arch: "arm64", node-version: "22.x" }
           - { os: "windows-latest", arch: "x64", platform: "win32", go-arch: "amd64", node-version: "22.x" }
@@ -191,7 +215,7 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Bundle (${{ matrix.platform }}-${{ matrix.arch }})
+      - name: Bundle (${{ matrix.platform }}/${{ matrix.arch }}-${{ node-version }})
         shell: bash
         run: |
           TAG=${{ needs.version-and-tag.outputs.tag }}
@@ -249,7 +273,7 @@ jobs:
           compression-level: 6
 
   release:
-    needs: [ version-and-tag, bundle-linux, bundle-win-mac ]
+    needs: [ version-and-tag, bundle-linux-old, bundle ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
