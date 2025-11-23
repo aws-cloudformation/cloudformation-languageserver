@@ -339,7 +339,7 @@ describe('DocumentHandler', () => {
         });
 
         it('should return early for non-template documents', () => {
-            const textDocument = TextDocument.create(testUri, 'yaml', 1, 'not a template');
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, 'Foo: Bar');
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
@@ -355,15 +355,15 @@ describe('DocumentHandler', () => {
         });
 
         it('should delete syntax tree when document becomes non-template', () => {
-            const textDocument = TextDocument.create(testUri, 'yaml', 1, 'not a template');
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, 'someKey: someValue');
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
-            mockServices.syntaxTreeManager.getSyntaxTree.returns({} as any);
+            mockServices.syntaxTreeManager.getSyntaxTree.returns({ content: () => 'old content' } as any);
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
             handler(
                 createParams({
                     textDocument: { uri: testUri },
-                    contentChanges: [{ text: 'not a template' }],
+                    contentChanges: [{ text: 'someKey: someValue' }],
                 }),
             );
 
