@@ -1,14 +1,15 @@
 import { lookup } from 'node:dns/promises';
-import { MessageType } from 'vscode-languageserver-protocol';
-import { ClientMessage } from '../telemetry/ClientMessage';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Closeable } from '../utils/Closeable';
+
+const logger = LoggerFactory.getLogger('OnlineStatus');
 
 export class OnlineStatus implements Closeable {
     private _isOnline: boolean = false;
     private notifiedOnce: boolean = false;
     private readonly timeout: NodeJS.Timeout;
 
-    constructor(private readonly clientMessage: ClientMessage) {
+    constructor() {
         void this.hasInternet();
 
         this.timeout = setInterval(
@@ -26,21 +27,14 @@ export class OnlineStatus implements Closeable {
         } catch {
             this._isOnline = false;
         } finally {
-            await this.notify();
+            this.notify();
         }
     }
 
-    private async notify() {
+    private notify() {
         if (!this.notifiedOnce && !this._isOnline) {
-            try {
-                await this.clientMessage.showMessageNotification(
-                    MessageType.Warning,
-                    'Internet connection lost. Some AWS CloudFormation features may not work properly.',
-                );
-                this.notifiedOnce = true;
-            } catch {
-                // Nothing to do here
-            }
+            logger.warn('Internet connection lost. Some AWS CloudFormation features may not work properly.');
+            this.notifiedOnce = true;
         }
     }
 
