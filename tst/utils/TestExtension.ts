@@ -66,7 +66,7 @@ import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
 import { createMockCfnLintService } from './MockServerComponents';
 import { getTestPrivateSchemas, samFileType, SamSchemaFiles, schemaFileType, Schemas } from './SchemaUtils';
-import { wait } from './Utils';
+import { wait, WaitFor } from './Utils';
 
 const id = v4();
 const rootDir = join(process.cwd(), 'node_modules', '.cache', 'e2e-tests', id);
@@ -98,7 +98,8 @@ export class TestExtension implements Closeable {
     providers!: CfnLspProviders;
     server!: CfnServer;
 
-    private isReady = false;
+    private lspClientReady = false;
+    private lspServerReady = false;
 
     constructor(
         private readonly initializeParams: ExtendedInitializeParams = {
@@ -154,8 +155,16 @@ export class TestExtension implements Closeable {
                     this.server = new CfnServer(lsp, this.core, this.external, this.providers);
                     return LspCapabilities;
                 },
-                onInitialized: (params) => this.server.initialized(params),
-                onShutdown: () => this.server.close(),
+                onInitialized: (params) => {
+                    this.server.initialized(params);
+                    this.lspServerReady = true;
+                },
+                onShutdown: () => {
+                    return this.server.close();
+                },
+                onExit: () => {
+                    return this.server.close();
+                },
             },
         );
 
@@ -177,11 +186,17 @@ export class TestExtension implements Closeable {
     }
 
     async ready() {
-        if (!this.isReady) {
+        if (!this.lspClientReady) {
             await this.clientConnection.sendRequest(InitializeRequest.type, this.initializeParams);
             await this.clientConnection.sendNotification(InitializedNotification.type, {});
-            this.isReady = true;
+            this.lspClientReady = true;
         }
+
+        await WaitFor.waitFor(() => {
+            if (!this.lspServerReady) {
+                throw new Error('Server is not ready yet');
+            }
+        }, 5000);
     }
 
     async send(method: string, params: any) {

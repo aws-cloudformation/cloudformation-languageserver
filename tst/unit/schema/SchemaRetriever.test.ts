@@ -131,14 +131,7 @@ describe('SchemaRetriever', () => {
         expect(result).toBeInstanceOf(CombinedSchemas);
     });
 
-    it('should update private schemas when called', () => {
-        schemaRetriever.updatePrivateSchemas();
-        expect(mockGetPrivateResources).toHaveBeenCalled();
-    });
-
     it('should handle settings configuration', () => {
-        vi.spyOn(schemaRetriever, 'updatePrivateSchemas');
-
         // Configure with new settings
         const testSettings = {
             profile: {
@@ -147,26 +140,11 @@ describe('SchemaRetriever', () => {
             },
         } as Settings;
         const mockSettingsManager = createMockSettingsManager(testSettings);
+
+        // Configure should set up subscription without immediately triggering
         schemaRetriever.configure(mockSettingsManager);
 
-        // The configure method should trigger schema updates
-        expect(schemaRetriever.updatePrivateSchemas).toHaveBeenCalled();
-    });
-
-    it('should rebuild affected combined schemas', async () => {
-        // Put data in the store first
-        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
-
-        // Get a schema to create a cached entry
-        schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
-
-        // Verify it's cached
-        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
-
-        // Rebuild affected schemas
-        schemaRetriever.rebuildAffectedCombinedSchemas(AwsRegion.US_EAST_1);
-
-        // Should still have the schema (rebuilt)
-        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
+        // Verify subscription was created (private task not called yet)
+        expect(mockGetPrivateResources).not.toHaveBeenCalled();
     });
 });

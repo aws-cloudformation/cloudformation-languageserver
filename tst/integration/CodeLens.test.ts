@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CodeLens } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
 import { wait } from '../utils/Utils';
@@ -6,12 +6,11 @@ import { wait } from '../utils/Utils';
 describe('Integration Test: CodeLens', () => {
     let client: TestExtension;
 
-    beforeAll(async () => {
+    beforeEach(() => {
         client = new TestExtension();
-        await client.ready();
-    }, 30000);
+    });
 
-    afterAll(async () => {
+    afterEach(async () => {
         await client.close();
     });
 

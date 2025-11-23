@@ -35,7 +35,7 @@ describe('GetSchemaTask', () => {
             const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, mockGetSchemas, undefined);
             const dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(12345);
 
-            await task.run(mockDataStore, mockLogger);
+            await task.run(mockDataStore);
 
             expect(mockGetSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
 
@@ -50,10 +50,6 @@ describe('GetSchemaTask', () => {
                 }),
             );
 
-            expect(
-                mockLogger.info.calledWith(`${mockSchemas.length} public schemas retrieved for ${AwsRegion.US_EAST_1}`),
-            ).toBe(true);
-
             dateNowSpy.mockRestore();
         });
 
@@ -63,7 +59,7 @@ describe('GetSchemaTask', () => {
             const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, mockGetSchemas, firstCreatedMs);
             const dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(12345);
 
-            await task.run(mockDataStore, mockLogger);
+            await task.run(mockDataStore);
 
             const storedValue = mockDataStore.get(AwsRegion.US_EAST_1);
             expect(storedValue).toEqual(
@@ -93,13 +89,7 @@ describe('GetSchemaTask', () => {
             // Force max attempts by setting attempts to max
             (task as any).attempts = GetPublicSchemaTask.MaxAttempts;
 
-            await task.run(mockDataStore, mockLogger);
-
-            expect(
-                mockLogger.error.calledWith(
-                    `Reached max attempts for retrieving schemas for ${AwsRegion.US_EAST_1} without success`,
-                ),
-            ).toBe(true);
+            await task.run(mockDataStore);
 
             const storedValue = mockDataStore.get(AwsRegion.US_EAST_1);
             expect(storedValue).toBeUndefined();
@@ -115,22 +105,21 @@ describe('GetSchemaTask', () => {
             } as DescribeTypeOutput,
         ];
 
-        it('should retrieve and save private schemas for new profile', async () => {
+        it('should retrieve and save private schemas', async () => {
             const mockGetSchemas = vi.fn().mockResolvedValue(mockPrivateSchemas);
-            const mockGetProfile = vi.fn().mockReturnValue('test-profile');
-            const task = new GetPrivateSchemasTask(mockGetSchemas, mockGetProfile);
+            const task = new GetPrivateSchemasTask(mockGetSchemas);
 
             const dateNowSpy = vi.spyOn(Date, 'now').mockReturnValue(98765);
 
-            await task.run(mockDataStore, mockLogger);
+            await task.run(mockDataStore);
 
             expect(mockGetSchemas).toHaveBeenCalled();
 
-            const storedValue = mockDataStore.get('test-profile');
+            const storedValue = mockDataStore.get('PrivateSchemas');
             expect(storedValue).toEqual(
                 expect.objectContaining({
                     version: 'v1',
-                    identifier: 'test-profile',
+                    identifier: 'PrivateSchemas',
                     schemas: mockPrivateSchemas,
                     firstCreatedMs: 98765,
                     lastModifiedMs: 98765,
@@ -140,34 +129,23 @@ describe('GetSchemaTask', () => {
             dateNowSpy.mockRestore();
         });
 
-        it('should skip retrieval for already processed profile', async () => {
+        it('should always retrieve schemas on each run', async () => {
             const mockGetSchemas = vi.fn().mockResolvedValue(mockPrivateSchemas);
-            const mockGetProfile = vi.fn().mockReturnValue('processed-profile');
-            const task = new GetPrivateSchemasTask(mockGetSchemas, mockGetProfile);
+            const task = new GetPrivateSchemasTask(mockGetSchemas);
 
-            // First run should process the profile
-            await task.run(mockDataStore, mockLogger);
+            await task.run(mockDataStore);
             expect(mockGetSchemas).toHaveBeenCalledTimes(1);
 
-            // Second run should skip processing
-            mockGetSchemas.mockClear();
-
-            await task.run(mockDataStore, mockLogger);
-            expect(mockGetSchemas).not.toHaveBeenCalled();
+            await task.run(mockDataStore);
+            expect(mockGetSchemas).toHaveBeenCalledTimes(2);
         });
 
         it('should handle errors and rethrow', async () => {
             const error = new Error('Schema retrieval failed');
             const mockGetSchemas = vi.fn().mockRejectedValue(error);
-            const mockGetProfile = vi.fn().mockReturnValue('error-profile');
-            const task = new GetPrivateSchemasTask(mockGetSchemas, mockGetProfile);
+            const task = new GetPrivateSchemasTask(mockGetSchemas);
 
-            await expect(task.run(mockDataStore, mockLogger)).rejects.toThrow('Schema retrieval failed');
-
-            // Check that error was logged using Sinon stub
-            expect(mockLogger.error.called).toBe(true);
-            const errorCall = mockLogger.error.getCall(0);
-            expect(errorCall.lastArg).toContain('Failed to get private schemas');
+            await expect(task.run(mockDataStore)).rejects.toThrow('Schema retrieval failed');
         });
     });
 });
