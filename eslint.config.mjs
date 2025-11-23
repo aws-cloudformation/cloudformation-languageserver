@@ -26,6 +26,7 @@ export default tseslint.config([
         '**/*.md',
         'src/services/guard/assets/**',
         'sbom/',
+        'vendor/',
     ]),
     eslint.configs.recommended,
     ...tseslint.configs.recommendedTypeChecked,
