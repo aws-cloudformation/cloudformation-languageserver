@@ -26,6 +26,7 @@ export default tseslint.config([
         '**/*.md',
         'src/services/guard/assets/**',
         'sbom/',
+        '.cfn_guard_package',
     ]),
     eslint.configs.recommended,
     ...tseslint.configs.recommendedTypeChecked,

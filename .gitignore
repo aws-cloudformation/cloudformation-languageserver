@@ -15,3 +15,4 @@ tools/*
 /tmp-tst
 /jscpd
 /tmp
+/.cfn_guard_package
