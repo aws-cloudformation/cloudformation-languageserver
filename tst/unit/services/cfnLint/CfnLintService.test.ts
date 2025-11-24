@@ -73,7 +73,10 @@ const createTestServiceWithState = (
 const createGitSyncService = (lintFileResult: any[] = []) => {
     const mockSettings = createMockSettingsManager();
     const gitSyncWorkerManager = stubObject<PyodideWorkerManager>(
-        new PyodideWorkerManager(mockSettings.getCurrentSettings().diagnostics.cfnLint.initialization),
+        new PyodideWorkerManager(
+            mockSettings.getCurrentSettings().diagnostics.cfnLint.initialization,
+            mockSettings.getCurrentSettings().diagnostics.cfnLint,
+        ),
     );
     gitSyncWorkerManager.initialize.resolves();
     gitSyncWorkerManager.lintFile.resolves(lintFileResult);
@@ -465,7 +468,10 @@ describe('CfnLintService', () => {
             // Create a new service instance with the mock context manager
             const mockSettings = createMockSettingsManager();
             const gitSyncWorkerManager = stubObject<PyodideWorkerManager>(
-                new PyodideWorkerManager(mockSettings.getCurrentSettings().diagnostics.cfnLint.initialization),
+                new PyodideWorkerManager(
+                    mockSettings.getCurrentSettings().diagnostics.cfnLint.initialization,
+                    mockSettings.getCurrentSettings().diagnostics.cfnLint,
+                ),
             );
             gitSyncWorkerManager.initialize.resolves();
             gitSyncWorkerManager.lintFile.resolves([]); // Empty results to trigger the GitSync logic
@@ -543,7 +549,10 @@ describe('CfnLintService', () => {
             mockComponents.diagnostics.publishDiagnostics.resolves();
             const mockSettings = createMockSettingsManager();
             const uninitializedWorkerManager = stubObject<PyodideWorkerManager>(
-                new PyodideWorkerManager(mockSettings.getCurrentSettings().diagnostics.cfnLint.initialization),
+                new PyodideWorkerManager(
+                    mockSettings.getCurrentSettings().diagnostics.cfnLint.initialization,
+                    mockSettings.getCurrentSettings().diagnostics.cfnLint,
+                ),
             );
             const uninitializedDelayer = stubObject<Delayer<void>>(new Delayer<void>(1000));
 

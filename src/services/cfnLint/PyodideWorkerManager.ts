@@ -2,7 +2,7 @@ import path from 'path';
 import { Worker } from 'worker_threads';
 import { PublishDiagnosticsParams } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
-import { CfnLintInitializationSettings } from '../../settings/Settings';
+import { CfnLintInitializationSettings, CfnLintSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { WorkerNotInitializedError } from './CfnLintErrors';
@@ -33,6 +33,7 @@ export class PyodideWorkerManager {
 
     constructor(
         private readonly retryConfig: CfnLintInitializationSettings,
+        private cfnLintSettings: CfnLintSettings,
         private readonly log = LoggerFactory.getLogger(PyodideWorkerManager),
     ) {}
 
@@ -169,7 +170,12 @@ export class PyodideWorkerManager {
         uri: string,
         fileType: CloudFormationFileType,
     ): Promise<PublishDiagnosticsParams[]> {
-        return await this.executeTask<PublishDiagnosticsParams[]>('lint', { content, uri, fileType });
+        return await this.executeTask<PublishDiagnosticsParams[]>('lint', {
+            content,
+            uri,
+            fileType,
+            settings: this.cfnLintSettings,
+        });
     }
 
     public async lintFile(
@@ -177,7 +183,16 @@ export class PyodideWorkerManager {
         uri: string,
         fileType: CloudFormationFileType,
     ): Promise<PublishDiagnosticsParams[]> {
-        return await this.executeTask<PublishDiagnosticsParams[]>('lintFile', { path, uri, fileType });
+        return await this.executeTask<PublishDiagnosticsParams[]>('lintFile', {
+            path,
+            uri,
+            fileType,
+            settings: this.cfnLintSettings,
+        });
+    }
+
+    public updateSettings(settings: CfnLintSettings): void {
+        this.cfnLintSettings = settings;
     }
 
     public async mountFolder(fsDir: string, mountDir: string): Promise<void> {
