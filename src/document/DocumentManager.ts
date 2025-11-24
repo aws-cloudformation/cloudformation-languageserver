@@ -46,25 +46,19 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
     }
 
     get(uri: string) {
-        let document = this.documentMap.get(uri);
-        if (document) {
-            return document;
-        }
-
         const textDocument = this.documents.get(uri);
         if (!textDocument) {
             return;
         }
 
+        let document = this.documentMap.get(uri);
+        if (document) {
+            return document;
+        }
+
         document = new Document(
             uri,
-            (u) => {
-                const doc = this.documents.get(u);
-                if (!doc) {
-                    throw new Error(`TextDocument not found for uri: ${u}`);
-                }
-                return doc;
-            },
+            (u) => this.documents.get(u),
             this.editorSettings.detectIndentation,
             this.editorSettings.tabSize,
         );
@@ -86,13 +80,7 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
             if (!document) {
                 document = new Document(
                     textDoc.uri,
-                    (u) => {
-                        const doc = this.documents.get(u);
-                        if (!doc) {
-                            throw new Error(`TextDocument not found for uri: ${u}`);
-                        }
-                        return doc;
-                    },
+                    (u) => this.documents.get(u),
                     this.editorSettings.detectIndentation,
                     this.editorSettings.tabSize,
                 );

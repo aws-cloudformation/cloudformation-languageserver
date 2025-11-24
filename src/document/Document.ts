@@ -18,12 +18,14 @@ export class Document {
 
     constructor(
         public readonly uri: DocumentUri,
-        private readonly textDocument: (uri: string) => TextDocument,
+        private readonly textDocument: (uri: string) => TextDocument | undefined,
         detectIndentation: boolean = true,
         fallbackTabSize: number = DefaultSettings.editor.tabSize,
     ) {
-        const doc = this.textDocument(uri);
-        const { extension, type } = detectDocumentType(doc.uri, doc.getText());
+        const doc = this.getTextDocument();
+        const { extension, type } = doc
+            ? detectDocumentType(doc.uri, doc.getText())
+            : { extension: '', type: DocumentType.YAML };
 
         this.extension = extension;
         this.documentType = type;
@@ -35,16 +37,20 @@ export class Document {
         this.processIndentation(detectIndentation, fallbackTabSize);
     }
 
-    public get languageId(): string {
-        return this.textDocument(this.uri).languageId;
+    private getTextDocument(): TextDocument | undefined {
+        return this.textDocument(this.uri);
     }
 
-    public get version(): number {
-        return this.textDocument(this.uri).version;
+    public get languageId(): string | undefined {
+        return this.getTextDocument()?.languageId;
     }
 
-    public get lineCount(): number {
-        return this.textDocument(this.uri).lineCount;
+    public get version(): number | undefined {
+        return this.getTextDocument()?.version;
+    }
+
+    public get lineCount(): number | undefined {
+        return this.getTextDocument()?.lineCount;
     }
 
     public get cfnFileType(): CloudFormationFileType {
@@ -52,7 +58,7 @@ export class Document {
     }
 
     public updateCfnFileType(): void {
-        const content = this.textDocument(this.uri).getText();
+        const content = this.getTextDocument()?.getText() ?? '';
         if (!content.trim()) {
             this._cfnFileType = CloudFormationFileType.Empty;
             this.cachedParsedContent = undefined;
@@ -70,7 +76,7 @@ export class Document {
     }
 
     private parseContent(): unknown {
-        const content = this.textDocument(this.uri).getText();
+        const content = this.getTextDocument()?.getText() ?? '';
         if (this.documentType === DocumentType.JSON) {
             return JSON.parse(content);
         }
@@ -133,7 +139,7 @@ export class Document {
     }
 
     public getText(range?: Range) {
-        return this.textDocument(this.uri).getText(range);
+        return this.getTextDocument()?.getText(range) ?? '';
     }
 
     public getLines(): string[] {
@@ -141,11 +147,11 @@ export class Document {
     }
 
     public positionAt(offset: number) {
-        return this.textDocument(this.uri).positionAt(offset);
+        return this.getTextDocument()?.positionAt(offset);
     }
 
     public offsetAt(position: Position) {
-        return this.textDocument(this.uri).offsetAt(position);
+        return this.getTextDocument()?.offsetAt(position);
     }
 
     public isTemplate() {
@@ -153,7 +159,7 @@ export class Document {
     }
 
     public contents() {
-        return this.textDocument(this.uri).getText();
+        return this.getTextDocument()?.getText() ?? '';
     }
 
     public metadata(): DocumentMetadata {
@@ -163,9 +169,9 @@ export class Document {
             ext: this.extension,
             type: this.documentType,
             cfnType: this.cfnFileType,
-            languageId: this.languageId,
-            version: this.version,
-            lineCount: this.lineCount,
+            languageId: this.languageId ?? '',
+            version: this.version ?? 0,
+            lineCount: this.lineCount ?? 0,
         };
     }
 
