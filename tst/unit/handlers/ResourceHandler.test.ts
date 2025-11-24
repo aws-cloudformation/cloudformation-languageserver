@@ -1,10 +1,18 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CancellationToken } from 'vscode-languageserver-protocol';
+import { CancellationToken, RequestHandler } from 'vscode-languageserver-protocol';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
+import { Document } from '../../../src/document/Document';
 import {
     getManagedResourceStackTemplateHandler,
+    importResourceStateHandler,
     removeResourceTypeHandler,
 } from '../../../src/handlers/ResourceHandler';
+import {
+    ResourceStateParams,
+    ResourceStatePurpose,
+    ResourceStateResult,
+} from '../../../src/resourceState/ResourceStateTypes';
 import { GetStackTemplateParams } from '../../../src/stacks/StackRequestType';
 import { createMockComponents } from '../../utils/MockServerComponents';
 
@@ -154,5 +162,39 @@ describe('ResourceHandler - removeResourceTypeHandler', () => {
         expect(() => handler('')).toThrow(TypeError);
         expect(() => handler(null as any)).toThrow();
         expect(() => handler(undefined as any)).toThrow();
+    });
+});
+
+describe('ResourceHandler - importResourceStateHandler', () => {
+    let mockComponents: ReturnType<typeof createMockComponents>;
+    let handler: RequestHandler<ResourceStateParams, ResourceStateResult, void>;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockComponents = createMockComponents();
+        handler = importResourceStateHandler(mockComponents);
+    });
+
+    it('should throw error if template file is not open', async () => {
+        mockComponents.documentManager.get.returns(
+            new Document(TextDocument.create('sample.yaml', 'yaml', 1, 'Hello:')),
+        );
+        mockComponents.documentManager.isTemplate.resolves(false);
+
+        await expect(async () => {
+            await handler(
+                {
+                    textDocument: { uri: 'docUri' },
+                    resourceSelections: [
+                        {
+                            resourceType: 'AWS::S3::Bucket',
+                            resourceIdentifiers: ['bucket1234'],
+                        },
+                    ],
+                    purpose: ResourceStatePurpose.IMPORT,
+                },
+                CancellationToken.None,
+            );
+        }).rejects.toThrow('Must open CloudFormation template to import or clone resource state');
     });
 });

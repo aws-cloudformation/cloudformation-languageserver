@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { ServerRequestHandler } from 'vscode-languageserver';
+import { ResponseError, ServerRequestHandler } from 'vscode-languageserver';
 import { RequestHandler } from 'vscode-languageserver/node';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
@@ -79,9 +79,12 @@ export function listResourcesHandler(
 
 export function importResourceStateHandler(
     components: ServerComponents,
-): ServerRequestHandler<ResourceStateParams, ResourceStateResult, never, void> {
+): RequestHandler<ResourceStateParams, ResourceStateResult, void> {
     return async (params: ResourceStateParams): Promise<ResourceStateResult> => {
         components.usageTracker.track(EventType.DidImportResources);
+        if (!components.documentManager.get(params.textDocument.uri)?.isTemplate()) {
+            throw new ResponseError(400, 'Must open CloudFormation template to import or clone resource state');
+        }
         return await components.resourceStateImporter.importResourceState(params);
     };
 }
