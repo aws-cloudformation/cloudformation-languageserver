@@ -1,4 +1,4 @@
-import { CompletionParams } from 'vscode-languageserver';
+import { CompletionItem, CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
 import {
@@ -20,6 +20,7 @@ import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from 
 import { CompletionSettings, DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Track } from '../telemetry/TelemetryDecorator';
+import { EventType, UsageTracker } from '../usageTracker/UsageTracker';
 import { Closeable } from '../utils/Closeable';
 import { CompletionFormatter } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
@@ -51,6 +52,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         private readonly documentManager: DocumentManager,
         private readonly schemaRetriever: SchemaRetriever,
         private readonly entityFieldCompletionProviderMap = createEntityFieldProviders(),
+        private readonly usageTracker: UsageTracker,
     ) {}
 
     @Track({ name: 'getCompletions', trackObjectKey: 'items' })
@@ -95,6 +97,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
 
         if (completions instanceof Promise) {
             return await completions.then((result) => {
+                trackCompletion(this.usageTracker, provider, result);
                 return this.formatter.format(
                     {
                         isIncomplete: result.length > this.completionSettings.maxCompletions,
@@ -107,6 +110,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                 );
             });
         } else if (completions) {
+            trackCompletion(this.usageTracker, provider, completions);
             const completionList = {
                 isIncomplete: completions.length > this.completionSettings.maxCompletions,
                 items: completions.slice(0, this.completionSettings.maxCompletions),
@@ -284,6 +288,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
             core.documentManager,
             external.schemaRetriever,
             createEntityFieldProviders(),
+            core.usageTracker,
         );
     }
 }
@@ -324,4 +329,14 @@ export function createEntityFieldProviders() {
     entityFieldProviderMap.set(EntityType.Parameter, new EntityFieldCompletionProvider<Parameter>());
     entityFieldProviderMap.set(EntityType.Output, new EntityFieldCompletionProvider<Output>());
     return entityFieldProviderMap;
+}
+
+function trackCompletion(
+    tracker: UsageTracker,
+    provider: CompletionProvider | undefined,
+    completions: CompletionItem[],
+) {
+    if (provider !== undefined && !(provider instanceof TopLevelSectionCompletionProvider) && completions.length > 0) {
+        tracker.someUsed(EventType.MeaningfulCompletion);
+    }
 }

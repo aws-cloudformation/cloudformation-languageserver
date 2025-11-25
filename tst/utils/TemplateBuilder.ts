@@ -15,6 +15,7 @@ import { DocumentType, Document } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
+import { UsageTracker } from '../../src/usageTracker/UsageTracker';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
 import {
@@ -152,6 +153,7 @@ export class TemplateBuilder {
             this.documentManager,
             this.schemaRetriever,
             undefined,
+            new UsageTracker(),
         );
         const mockFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever, mockFeatureFlag);

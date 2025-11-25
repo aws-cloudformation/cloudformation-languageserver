@@ -22,6 +22,7 @@ import { ServerComponents } from '../server/ServerComponents';
 import { GetStackTemplateParams, GetStackTemplateResult } from '../stacks/StackRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
+import { EventType } from '../usageTracker/UsageTracker';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('ResourceHandler');
@@ -80,6 +81,7 @@ export function importResourceStateHandler(
     components: ServerComponents,
 ): ServerRequestHandler<ResourceStateParams, ResourceStateResult, never, void> {
     return async (params: ResourceStateParams): Promise<ResourceStateResult> => {
+        components.usageTracker.track(EventType.DidImportResources);
         return await components.resourceStateImporter.importResourceState(params);
     };
 }
