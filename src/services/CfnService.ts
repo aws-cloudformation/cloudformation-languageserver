@@ -64,6 +64,11 @@ import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 import { Count } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
+const CHANGESET_WAITER_MIN_DELAY = 1;
+const CHANGESET_WAITER_MAX_DELAY = 8;
+const STACK_WAITER_MIN_DELAY = 3;
+const STACK_WAITER_MAX_DELAY = 10;
+
 export class CfnService {
     public constructor(private readonly awsClient: AwsClient) {}
 
@@ -342,6 +347,8 @@ export class CfnService {
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
                 maxWaitTime: timeoutMinutes * 60,
+                minDelay: CHANGESET_WAITER_MIN_DELAY,
+                maxDelay: CHANGESET_WAITER_MAX_DELAY,
             };
             return await waitUntilChangeSetCreateComplete(waiterConfig, params);
         });
@@ -355,6 +362,8 @@ export class CfnService {
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
                 maxWaitTime: timeoutMinutes * 60,
+                minDelay: STACK_WAITER_MIN_DELAY,
+                maxDelay: STACK_WAITER_MAX_DELAY,
             };
             return await waitUntilStackCreateComplete(waiterConfig, params);
         });
@@ -368,6 +377,8 @@ export class CfnService {
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
                 maxWaitTime: timeoutMinutes * 60,
+                minDelay: STACK_WAITER_MIN_DELAY,
+                maxDelay: STACK_WAITER_MAX_DELAY,
             };
             return await waitUntilStackUpdateComplete(waiterConfig, params);
         });
@@ -381,6 +392,8 @@ export class CfnService {
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
                 maxWaitTime: timeoutMinutes * 60,
+                minDelay: STACK_WAITER_MIN_DELAY,
+                maxDelay: STACK_WAITER_MAX_DELAY,
             };
             return await waitUntilStackImportComplete(waiterConfig, params);
         });
@@ -394,6 +407,8 @@ export class CfnService {
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
                 maxWaitTime: timeoutMinutes * 60,
+                minDelay: STACK_WAITER_MIN_DELAY,
+                maxDelay: STACK_WAITER_MAX_DELAY,
             };
             return await waitUntilStackDeleteComplete(waiterConfig, params);
         });
