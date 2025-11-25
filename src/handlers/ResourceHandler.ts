@@ -1,8 +1,9 @@
 import { randomUUID } from 'crypto';
-import { ServerRequestHandler } from 'vscode-languageserver';
+import { ResponseError, ServerRequestHandler } from 'vscode-languageserver';
 import { RequestHandler } from 'vscode-languageserver/node';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
+import { CloudFormationFileType } from '../document/Document';
 import { parseResourceTypeName } from '../resourceState/ResourceStateParser';
 import {
     ResourceTypesResult,
@@ -79,9 +80,22 @@ export function listResourcesHandler(
 
 export function importResourceStateHandler(
     components: ServerComponents,
-): ServerRequestHandler<ResourceStateParams, ResourceStateResult, never, void> {
+): RequestHandler<ResourceStateParams, ResourceStateResult, void> {
     return async (params: ResourceStateParams): Promise<ResourceStateResult> => {
         components.usageTracker.track(EventType.DidImportResources);
+        const doc = components.documentManager.get(params.textDocument.uri);
+        if (!doc) {
+            const msg = `${params.purpose} failed: ${params.textDocument.uri} not found`;
+            log.error(msg);
+            throw new ResponseError(500, msg); // all open TextDocuments should be registered by protocol
+        }
+
+        if (!doc.isTemplate() && doc.cfnFileType !== CloudFormationFileType.Empty) {
+            throw new ResponseError(
+                400,
+                `${params.purpose} failed: ${params.textDocument.uri} is not a valid CloudFormation template`,
+            );
+        }
         return await components.resourceStateImporter.importResourceState(params);
     };
 }
