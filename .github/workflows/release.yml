@@ -215,7 +215,7 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Bundle (${{ matrix.platform }}/${{ matrix.arch }}-${{ node-version }})
+      - name: Bundle (${{ matrix.os }}-${{ matrix.node-version }})
         shell: bash
         run: |
           TAG=${{ needs.version-and-tag.outputs.tag }}
