@@ -56,7 +56,7 @@ function generateExternals() {
 
 const EXTERNALS = generateExternals();
 
-function createPlugins(isDevelopment, outputPath, mode, env) {
+function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false) {
     const plugins = [];
 
     plugins.push(
@@ -131,18 +131,30 @@ function createPlugins(isDevelopment, outputPath, mode, env) {
                         execSync('npm ci --omit=dev', { cwd: tmpDir, stdio: 'inherit' });
 
                         const externals = ExternalsDeps.map((dep) => {
-                            if (dep === 'cfn-guard') {
-                                return `${dep}@${PackageLock.packages[`node_modules/${dep}`].version}`;
-                            }
                             return `${dep}@${PackageLock.packages[`node_modules/${dep}`].version}`;
                         });
                         console.log(
-                            `[InstallDependencies] Installing externals: ${JSON.stringify(externals, null, 2)}`,
+                            `[InstallDependencies] Installing externals: npm install --save-exact ${externals.join(' ')}`,
                         );
                         execSync(`npm install --save-exact ${externals.join(' ')}`, {
                             cwd: tmpDir,
                             stdio: 'inherit',
                         });
+
+                        if (rebuild) {
+                            const rebuildDeps = Package.rebuildDependencies || [];
+                            for (const dep of rebuildDeps) {
+                                const prebuildPath = path.join(tmpDir, 'node_modules', dep, 'prebuilds');
+                                if (fs.existsSync(prebuildPath)) {
+                                    console.log(`[InstallDependencies] Removing prebuilds: ${prebuildPath}`);
+                                    fs.rmSync(prebuildPath, { recursive: true, force: true });
+                                }
+                            }
+
+                            console.log(`[InstallDependencies] Rebuilding: npm rebuild ${rebuildDeps.join(' ')}`);
+                            execSync(`npm rebuild ${rebuildDeps.join(' ')}`, { cwd: tmpDir, stdio: 'inherit' });
+                        }
+
                         callback();
                     } catch (error) {
                         console.error('[InstallDependencies] Error:', error);
@@ -262,6 +274,7 @@ const baseConfig = {
 module.exports = (env = {}) => {
     const mode = env.mode;
     let awsEnv = env.env;
+    const rebuild = env.rebuild === 'true' || env.rebuild === true;
 
     // Validate mode
     const validModes = ['development', 'production'];
@@ -315,6 +328,6 @@ module.exports = (env = {}) => {
                 chunks: 'all',
             },
         },
-        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv),
+        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, rebuild),
     };
 };

@@ -177,5 +177,10 @@
   ],
   "unusedDependencies": [
     "cbor-x"
+  ],
+  "rebuildDependencies": [
+    "@tree-sitter-grammars/tree-sitter-yaml",
+    "tree-sitter",
+    "tree-sitter-json"
   ]
 }
