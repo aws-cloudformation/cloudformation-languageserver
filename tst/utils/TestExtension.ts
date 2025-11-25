@@ -53,6 +53,7 @@ import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
+import { SamStoreKey } from '../../src/schema/SamSchemas';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../src/schema/SchemaStore';
 import { CfnExternal } from '../../src/server/CfnExternal';
@@ -61,6 +62,7 @@ import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
 import { AwsMetadata, ExtendedInitializeParams } from '../../src/server/InitParams';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
+import { DefaultSettings } from '../../src/settings/Settings';
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
 import { Closeable } from '../../src/utils/Closeable';
 import { ExtensionName } from '../../src/utils/ExtensionConfig';
@@ -68,32 +70,15 @@ import { createMockCfnLintService } from './MockServerComponents';
 import { getTestPrivateSchemas, samFileType, SamSchemaFiles, schemaFileType, Schemas } from './SchemaUtils';
 import { flushAllPromises, WaitFor } from './Utils';
 
+type TestExtensionConfig = {
+    id?: string;
+    initializeParams?: Partial<ExtendedInitializeParams>;
+    workspaceConfig?: Record<string, unknown>[];
+};
+
 export class TestExtension implements Closeable {
-    private readonly id = v4();
-    private readonly rootDir = join(process.cwd(), 'node_modules', '.cache', 'e2e-tests', this.id);
-    private readonly awsMetadata: AwsMetadata = {
-        clientInfo: {
-            extension: {
-                name: `Test ${ExtensionName}`,
-                version: '1.0.0-test',
-            },
-            clientId: this.id,
-        },
-        encryption: {
-            key: randomBytes(32).toString('base64'),
-            mode: 'JWT',
-        },
-    };
-    private readonly initializeParams: ExtendedInitializeParams = {
-        processId: process.pid,
-        rootUri: null,
-        capabilities: {},
-        clientInfo: this.awsMetadata.clientInfo?.extension,
-        workspaceFolders: [],
-        initializationOptions: {
-            aws: this.awsMetadata,
-        },
-    };
+    private readonly awsMetadata: AwsMetadata;
+    private readonly initializeParams: ExtendedInitializeParams;
 
     private readonly readStream = new PassThrough();
     private readonly writeStream = new PassThrough();
@@ -108,10 +93,37 @@ export class TestExtension implements Closeable {
     providers!: CfnLspProviders;
     server!: CfnServer;
 
-    private lspClientReady = false;
-    private lspServerReady = false;
+    private isReady = false;
 
-    constructor() {
+    constructor(config: TestExtensionConfig = {}) {
+        const id = config.id ?? v4();
+        const rootDir = join(process.cwd(), 'node_modules', '.cache', 'e2e-tests', id);
+
+        this.awsMetadata = {
+            clientInfo: {
+                extension: {
+                    name: `Test ${ExtensionName}`,
+                    version: '1.0.0-test',
+                },
+                clientId: id,
+            },
+            encryption: {
+                key: randomBytes(32).toString('base64'),
+                mode: 'JWT',
+            },
+        };
+        this.initializeParams = {
+            processId: process.pid,
+            rootUri: null,
+            capabilities: {},
+            clientInfo: this.awsMetadata.clientInfo?.extension,
+            workspaceFolders: [],
+            initializationOptions: {
+                aws: this.awsMetadata,
+            },
+            ...config.initializeParams,
+        };
+
         this.serverConnection = new LspConnection(
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
             {
@@ -119,7 +131,7 @@ export class TestExtension implements Closeable {
                     const lsp = this.serverConnection.components;
                     LoggerFactory.reconfigure('warn');
 
-                    const dataStoreFactory = new MultiDataStoreFactoryProvider(this.rootDir);
+                    const dataStoreFactory = new MultiDataStoreFactoryProvider(rootDir);
                     this.core = new CfnInfraCore(lsp, params, {
                         dataStoreFactory,
                     });
@@ -154,22 +166,15 @@ export class TestExtension implements Closeable {
                     this.server = new CfnServer(lsp, this.core, this.external, this.providers);
                     return LspCapabilities;
                 },
-                onInitialized: (params) => {
-                    this.server.initialized(params);
-                    this.lspServerReady = true;
-                },
-                onShutdown: () => {
-                    return this.server.close();
-                },
-                onExit: () => {
-                    return this.server.close();
-                },
+                onInitialized: (params) => this.server.initialized(params),
+                onShutdown: () => this.server.close(),
+                onExit: () => this.server.close(),
             },
         );
 
         // Handle workspace/configuration requests from the server
         this.clientConnection.onRequest('workspace/configuration', () => {
-            return [{}]; // Return empty configuration
+            return config.workspaceConfig ?? [{}];
         });
 
         this.serverConnection.listen();
@@ -185,40 +190,39 @@ export class TestExtension implements Closeable {
     }
 
     async ready() {
-        if (!this.lspClientReady) {
+        if (!this.isReady) {
             await this.clientConnection.sendRequest(InitializeRequest.type, this.initializeParams);
             await this.clientConnection.sendNotification(InitializedNotification.type, {});
-            this.lspClientReady = true;
+
+            await WaitFor.waitFor(() => {
+                const store = this.external.schemaStore;
+                const pbSchemas = store?.publicSchemas?.get(DefaultSettings.profile.region);
+                const samSchemas = store?.samSchemas?.get(SamStoreKey);
+
+                if (pbSchemas === undefined || samSchemas === undefined) {
+                    throw new Error('Schemas not loaded yet');
+                }
+            }, 5_000);
+
+            await flushAllPromises();
+            this.isReady = true;
         }
-
-        await WaitFor.waitFor(() => {
-            if (!this.lspServerReady) {
-                throw new Error('Server is not ready yet');
-            }
-        }, 5000);
-
-        await flushAllPromises();
     }
 
     async send(method: string, params: any) {
         await this.ready();
-        const value = await this.clientConnection.sendRequest(method, params);
-        await wait(100);
-        return value;
+        return await this.clientConnection.sendRequest(method, params);
     }
 
     async notify(method: string, params: any) {
         await this.ready();
-        const value = await this.clientConnection.sendNotification(method, params);
-        await wait(100);
-        return value;
+        return await this.clientConnection.sendNotification(method, params);
     }
 
     async close() {
         await this.clientConnection.sendRequest(ShutdownRequest.type);
         await this.clientConnection.sendNotification(ExitNotification.type);
         this.clientConnection.dispose();
-        await flushAllPromises();
     }
 
     // ====================================================================
@@ -227,18 +231,20 @@ export class TestExtension implements Closeable {
 
     async openDocument(params: DidOpenTextDocumentParams) {
         await this.notify(DidOpenTextDocumentNotification.method, params);
+        await wait(10);
     }
 
     async changeDocument(params: DidChangeTextDocumentParams) {
         await this.notify(DidChangeTextDocumentNotification.method, params);
+        await wait(10);
     }
 
     async closeDocument(params: DidCloseTextDocumentParams) {
         await this.notify(DidCloseTextDocumentNotification.method, params);
     }
 
-    saveDocument(params: DidSaveTextDocumentParams) {
-        return this.notify(DidSaveTextDocumentNotification.method, params);
+    async saveDocument(params: DidSaveTextDocumentParams) {
+        await this.notify(DidSaveTextDocumentNotification.method, params);
     }
 
     completion(params: CompletionParams) {

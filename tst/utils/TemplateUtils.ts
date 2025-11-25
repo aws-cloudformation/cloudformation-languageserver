@@ -4,18 +4,26 @@ import { Point } from 'tree-sitter';
 import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { Position } from 'vscode-languageserver-textdocument/lib/esm/main';
 
+const cache = new Map<string, string>();
+const loadTemplate = (name: string) => {
+    if (!cache.has(name)) {
+        cache.set(name, readFileSync(join(__dirname, '..', 'resources', 'templates', name), 'utf8'));
+    }
+    return cache.get(name)!;
+};
+
 export const Templates: Record<string, Record<'json' | 'yaml', { fileName: string; contents: string }>> = {
     broken: {
         json: {
             fileName: 'file://broken.json',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'broken.json'), 'utf8');
+                return loadTemplate('broken.json');
             },
         },
         yaml: {
             fileName: 'file://broken.yaml',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'broken.yaml'), 'utf8');
+                return loadTemplate('broken.yaml');
             },
         },
     },
@@ -23,13 +31,13 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
         json: {
             fileName: 'file://simple.json',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'simple.json'), 'utf8');
+                return loadTemplate('simple.json');
             },
         },
         yaml: {
             fileName: 'file://simple.yaml',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'simple.yaml'), 'utf8');
+                return loadTemplate('simple.yaml');
             },
         },
     },
@@ -37,13 +45,13 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
         json: {
             fileName: 'file://sample_template.json',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'sample_template.json'), 'utf8');
+                return loadTemplate('sample_template.json');
             },
         },
         yaml: {
             fileName: 'file://sample_template.yaml',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'sample_template.yaml'), 'utf8');
+                return loadTemplate('sample_template.yaml');
             },
         },
     },
@@ -51,13 +59,13 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
         json: {
             fileName: 'file://comprehensive.json',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'comprehensive.json'), 'utf8');
+                return loadTemplate('comprehensive.json');
             },
         },
         yaml: {
             fileName: 'file://comprehensive.yaml',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'comprehensive.yaml'), 'utf8');
+                return loadTemplate('comprehensive.yaml');
             },
         },
     },
@@ -65,13 +73,13 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
         json: {
             fileName: 'file://condition-usage.json',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'condition-usage.json'), 'utf8');
+                return loadTemplate('condition-usage.json');
             },
         },
         yaml: {
             fileName: 'file://condition-usage.yaml',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'condition-usage.yaml'), 'utf8');
+                return loadTemplate('condition-usage.yaml');
             },
         },
     },
@@ -79,13 +87,13 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
         json: {
             fileName: 'file://parameter_usage.json',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'parameter_usage.json'), 'utf8');
+                return loadTemplate('parameter_usage.json');
             },
         },
         yaml: {
             fileName: 'file://parameter_usage.yaml',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'parameter_usage.yaml'), 'utf8');
+                return loadTemplate('parameter_usage.yaml');
             },
         },
     },
@@ -93,13 +101,13 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
         json: {
             fileName: 'file://foreach_template.json',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'foreach_template.json'), 'utf8');
+                return loadTemplate('foreach_template.json');
             },
         },
         yaml: {
             fileName: 'file://foreach_template.yaml',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'foreach_template.yaml'), 'utf8');
+                return loadTemplate('foreach_template.yaml');
             },
         },
     },
@@ -107,13 +115,13 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
         json: {
             fileName: 'file://constants.json',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'constants.json'), 'utf8');
+                return loadTemplate('constants.json');
             },
         },
         yaml: {
             fileName: 'file://constants.yaml',
             get contents() {
-                return readFileSync(join(__dirname, '..', 'resources', 'templates', 'constants.yaml'), 'utf8');
+                return loadTemplate('constants.yaml');
             },
         },
     },

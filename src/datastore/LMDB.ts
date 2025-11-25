@@ -12,7 +12,6 @@ import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
 
 export class LMDBStoreFactory implements DataStoreFactory {
-    private isClosed: boolean = false;
     private readonly log = LoggerFactory.getLogger('LMDB.Global');
     @Telemetry({ scope: 'LMDB.Global' }) private readonly telemetry!: ScopedTelemetry;
 
@@ -87,18 +86,12 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     async close(): Promise<void> {
-        if (this.isClosed) {
-            return;
-        }
-
         // Clear the stores map but don't close individual stores
         // LMDB will close them when we close the environment
         clearInterval(this.metricsInterval);
         clearTimeout(this.timeout);
         this.stores.clear();
-        await this.env.flushed;
         await this.env.close();
-        this.isClosed = true;
     }
 
     private cleanupOldVersions(): void {

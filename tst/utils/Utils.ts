@@ -1,13 +1,13 @@
-export function flushAllPromises() {
-    return new Promise((resolve) => {
-        setTimeout(resolve, 0);
-    });
+import { setImmediate } from 'node:timers/promises';
+
+export async function flushAllPromises() {
+    await setImmediate();
 }
 
 export class WaitFor {
     constructor(
-        private readonly maxWaitMs: number = 25,
-        private readonly delayIntervalMs: number = 1,
+        private readonly maxWaitMs: number,
+        private readonly delayIntervalMs: number,
         private readonly throwableTypesToExpect: (new (...args: any[]) => Error)[] = [Error],
     ) {}
 
@@ -33,7 +33,11 @@ export class WaitFor {
         throw lastError!;
     }
 
-    static async waitFor(code: () => void | Promise<void>, timeoutMs: number = 100): Promise<void> {
-        await new WaitFor(timeoutMs).wait(code);
+    static async waitFor(
+        code: () => void | Promise<void>,
+        timeoutMs: number = 100,
+        intervalMs: number = 5,
+    ): Promise<void> {
+        await new WaitFor(timeoutMs, intervalMs).wait(code);
     }
 }

@@ -7,9 +7,8 @@ import { applyWorkspaceEdit } from '../utils/WorkspaceEditUtils';
 describe('Extract to Parameter - JSON Tests', () => {
     let extension: TestExtension;
 
-    beforeEach(async () => {
+    beforeEach(() => {
         extension = new TestExtension();
-        await extension.ready();
     });
 
     afterEach(async () => {

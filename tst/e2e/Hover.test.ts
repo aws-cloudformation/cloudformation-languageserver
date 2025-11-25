@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import {
     getComprehensiveYamlTemplate,
     getYamlTemplate,
@@ -10,12 +10,12 @@ import { TestExtension } from '../utils/TestExtension';
 describe('Hover', () => {
     let client: TestExtension;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         client = new TestExtension();
         await client.ready();
     });
 
-    afterEach(async () => {
+    afterAll(async () => {
         await client.close();
     });
 

@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { getYamlTemplate, getJsonTemplate } from '../utils/TemplateUtils';
 import { TestExtension } from '../utils/TestExtension';
 
 describe('Goto/Definition', () => {
     let client: TestExtension;
 
-    beforeEach(async () => {
+    beforeAll(async () => {
         client = new TestExtension();
         await client.ready();
     });
 
-    afterEach(async () => {
+    afterAll(async () => {
         await client.close();
     });
 

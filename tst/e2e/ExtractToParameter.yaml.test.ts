@@ -6,9 +6,8 @@ import { WaitFor } from '../utils/Utils';
 describe('Extract to Parameter - YAML Tests', () => {
     let extension: TestExtension;
 
-    beforeEach(async () => {
+    beforeEach(() => {
         extension = new TestExtension();
-        await extension.ready();
     });
 
     afterEach(async () => {
