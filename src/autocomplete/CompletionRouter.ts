@@ -337,6 +337,6 @@ function trackCompletion(
     completions: CompletionItem[],
 ) {
     if (provider !== undefined && !(provider instanceof TopLevelSectionCompletionProvider) && completions.length > 0) {
-        tracker.someUsed(EventType.MeaningfulCompletion);
+        tracker.track(EventType.MeaningfulCompletion);
     }
 }
