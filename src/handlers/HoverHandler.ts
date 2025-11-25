@@ -2,6 +2,7 @@ import { Hover, HoverParams, MarkupKind } from 'vscode-languageserver';
 import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
 import { ServerComponents } from '../server/ServerComponents';
 import { TelemetryService } from '../telemetry/TelemetryService';
+import { EventType } from '../usageTracker/UsageTracker';
 
 export function hoverHandler(
     components: ServerComponents,
@@ -15,6 +16,7 @@ export function hoverHandler(
             };
         }
 
+        components.usageTracker.track(EventType.MeaningfulHover);
         return {
             contents: {
                 kind: MarkupKind.Markdown,

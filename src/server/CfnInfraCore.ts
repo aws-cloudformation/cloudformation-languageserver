@@ -11,6 +11,8 @@ import { SettingsManager } from '../settings/SettingsManager';
 import { ValidationManager } from '../stacks/actions/ValidationManager';
 import { ClientMessage } from '../telemetry/ClientMessage';
 import { TelemetryService } from '../telemetry/TelemetryService';
+import { UsageTracker } from '../usageTracker/UsageTracker';
+import { UsageTrackerMetrics } from '../usageTracker/UsageTrackerMetrics';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
 import { ExtendedInitializeParams } from './InitParams';
@@ -34,6 +36,8 @@ export class CfnInfraCore implements Configurables, Closeable {
     readonly validationManager: ValidationManager;
     readonly diagnosticCoordinator: DiagnosticCoordinator;
     readonly cloudformationEndpoint?: string;
+    readonly usageTracker: UsageTracker;
+    readonly usageTrackerMetrics: UsageTrackerMetrics;
 
     constructor(
         lspComponents: LspComponents,
@@ -68,6 +72,9 @@ export class CfnInfraCore implements Configurables, Closeable {
         this.diagnosticCoordinator =
             overrides.diagnosticCoordinator ??
             new DiagnosticCoordinator(lspComponents.diagnostics, this.syntaxTreeManager, this.validationManager);
+
+        this.usageTracker = overrides.usageTracker ?? new UsageTracker();
+        this.usageTrackerMetrics = overrides.usageTrackerMetrics ?? new UsageTrackerMetrics(this.usageTracker);
     }
 
     configurables(): Configurable[] {

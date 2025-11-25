@@ -65,6 +65,8 @@ import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow'
 import { StackEventManager } from '../../src/stacks/StackEventManager';
 import { StackManager } from '../../src/stacks/StackManager';
 import { ClientMessage } from '../../src/telemetry/ClientMessage';
+import { UsageTracker } from '../../src/usageTracker/UsageTracker';
+import { UsageTrackerMetrics } from '../../src/usageTracker/UsageTrackerMetrics';
 import { Closeable } from '../../src/utils/Closeable';
 import { Configurables } from '../../src/utils/Configurable';
 
@@ -368,6 +370,8 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         awsCredentials: overrides.awsCredentials ?? createMockAwsCredentials(),
         validationManager: overrides.validationManager ?? stubInterface<ValidationManager>(),
         diagnosticCoordinator: overrides.diagnosticCoordinator ?? createMockDiagnosticCoordinator(),
+        usageTracker: stubInterface<UsageTracker>(),
+        usageTrackerMetrics: stubInterface<UsageTrackerMetrics>(),
         close: () => Promise.resolve(),
         configurables: () => [],
     };

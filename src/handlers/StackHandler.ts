@@ -50,6 +50,7 @@ import {
     DescribeChangeSetResult,
 } from '../stacks/StackRequestType';
 import { TelemetryService } from '../telemetry/TelemetryService';
+import { EventType } from '../usageTracker/UsageTracker';
 import { handleLspError } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
@@ -111,6 +112,7 @@ export function createValidationHandler(
 ): RequestHandler<CreateValidationParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('createValidation', async () => {
+            components.usageTracker.track(EventType.DidValidation);
             try {
                 const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
                 return await components.validationWorkflowService.start(params);
@@ -126,6 +128,7 @@ export function createDeploymentHandler(
 ): RequestHandler<CreateDeploymentParams, CreateStackActionResult, void> {
     return async (rawParams) => {
         return await TelemetryService.instance.get('StackHandler').measureAsync('createDeployment', async () => {
+            components.usageTracker.track(EventType.DidDeployment);
             try {
                 const params = parseWithPrettyError(parseCreateDeploymentParams, rawParams);
                 return await components.deploymentWorkflowService.start(params);
