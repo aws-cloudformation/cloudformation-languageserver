@@ -54,6 +54,7 @@ if (parentPort) {
                         payload.content as string,
                         payload.uri as string,
                         payload.fileType as CloudFormationFileType,
+                        payload.settings as Record<string, unknown>,
                     );
                     break;
                 }
@@ -62,6 +63,7 @@ if (parentPort) {
                         payload.path as string,
                         payload.uri as string,
                         payload.fileType as CloudFormationFileType,
+                        payload.settings as Record<string, unknown>,
                     );
                     break;
                 }
@@ -247,30 +249,71 @@ async function initializePyodide(): Promise<InitializeResult> {
           
           return results
       
-      def lint_str(template_str, uri, template_args=None):
+      def parse_cfn_lint_settings(settings):
+          """Parse cfn-lint settings into ManualArgs format"""
+          config = {}
+          if not settings:
+              return config
+              
+          if settings.get('ignoreChecks'):
+              config['ignore_checks'] = settings['ignoreChecks']
+          if settings.get('includeChecks'):
+              config['include_checks'] = settings['includeChecks']
+          if settings.get('mandatoryChecks'):
+              config['mandatory_checks'] = settings['mandatoryChecks']
+          if settings.get('includeExperimental'):
+              config['include_experimental'] = settings['includeExperimental']
+          if settings.get('configureRules'):
+              # Parse configure rules from string format "RuleId:key=value"
+              configure_rules = {}
+              for rule_config in settings['configureRules']:
+                  if ':' in rule_config:
+                      rule_id, config_str = rule_config.split(':', 1)
+                      if '=' in config_str:
+                          key, value = config_str.split('=', 1)
+                          if rule_id not in configure_rules:
+                              configure_rules[rule_id] = {}
+                          # Convert string values to appropriate types
+                          if value.lower() == 'true':
+                              configure_rules[rule_id][key] = True
+                          elif value.lower() == 'false':
+                              configure_rules[rule_id][key] = False
+                          else:
+                              try:
+                                  configure_rules[rule_id][key] = int(value)
+                              except ValueError:
+                                  configure_rules[rule_id][key] = value
+              if configure_rules:
+                  config['configure_rules'] = configure_rules
+          if settings.get('regions'):
+              config['regions'] = settings['regions']
+          return config
+
+      def lint_str(template_str, uri, settings=None):
           """
           Lint a CloudFormation template string and return LSP diagnostics
           
           Args:
               template_str (str): CloudFormation template as a string
               uri (str): Document URI
-              template_args (dict, optional): Additional template arguments
+              settings (dict, optional): cfn-lint settings
 
           Returns:
               dict: LSP PublishDiagnosticsParams
           """
+          config = parse_cfn_lint_settings(settings)
+          return match_to_diagnostics(lint(template_str, config=ManualArgs(**config) if config else None), uri)
 
-          return match_to_diagnostics(lint(template_str), uri)
-
-      def lint_uri(lint_path, uri, lint_type, template_args=None):
-          args = ManualArgs()
+      def lint_uri(lint_path, uri, lint_type, settings=None):
+          config = parse_cfn_lint_settings(settings)
           path = Path(lint_path)
+          
           if lint_type == "template":
-              args["templates"] = [str(path)]
+              config["templates"] = [str(path)]
           elif lint_type == "gitsync-deployment":
-              args["deployment_files"] = [str(path)]
+              config["deployment_files"] = [str(path)]
 
-          return match_to_diagnostics(lint_by_config(args), uri)
+          return match_to_diagnostics(lint_by_config(ManualArgs(**config)), uri)
     `);
 
         // Create result object first
@@ -309,6 +352,7 @@ async function lintTemplate(
     content: string,
     uri: string,
     _fileType: CloudFormationFileType,
+    settings?: Record<string, unknown>,
 ): Promise<PublishDiagnosticsParams[]> {
     if (!initialized || !pyodide) {
         throw new Error('Pyodide not initialized');
@@ -319,9 +363,11 @@ async function lintTemplate(
     const pyUri = pyodide.toPy(uri);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const pyContent = pyodide.toPy(content.replaceAll('"""', '\\"\\"\\"'));
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const pySettings = pyodide.toPy(settings ?? {});
 
     // Execute Python code and get result
-    const pythonCode = `lint_str(r"""${pyContent}""", r"""${pyUri}""")`;
+    const pythonCode = `lint_str(r"""${pyContent}""", r"""${pyUri}""", ${pySettings})`;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await pyodide.runPythonAsync(pythonCode);
 
@@ -333,13 +379,17 @@ async function lintFile(
     path: string,
     uri: string,
     fileType: CloudFormationFileType,
+    settings?: Record<string, unknown>,
 ): Promise<PublishDiagnosticsParams[]> {
     if (!initialized || !pyodide) {
         throw new Error('Pyodide not initialized');
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const pySettings = pyodide.toPy(settings ?? {});
+
     // Execute Python code and get result
-    const pythonCode = `lint_uri(r"""${path}""", r"""${uri}""", r"""${fileType}""")`;
+    const pythonCode = `lint_uri(r"""${path}""", r"""${uri}""", r"""${fileType}""", ${pySettings})`;
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await pyodide.runPythonAsync(pythonCode);
 

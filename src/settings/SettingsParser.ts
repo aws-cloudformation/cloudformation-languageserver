@@ -47,12 +47,58 @@ function createCfnLintInitializationSchema(defaults: Settings['diagnostics']['cf
 }
 
 function createCfnLintSchema(defaults: Settings['diagnostics']['cfnLint']) {
+    const customizationSchema = z
+        .object({
+            ignoreChecks: z.array(z.string()).readonly().optional(),
+            includeChecks: z.array(z.string()).readonly().optional(),
+            mandatoryChecks: z.array(z.string()).readonly().optional(),
+            includeExperimental: z.boolean().optional(),
+            configureRules: z.array(z.string()).readonly().optional(),
+            regions: z.array(z.string()).readonly().optional(),
+            customRules: z.array(z.string()).readonly().optional(),
+            appendRules: z.array(z.string()).readonly().optional(),
+            overrideSpec: z.string().optional(),
+            registrySchemas: z.array(z.string()).readonly().optional(),
+        })
+        .optional();
+
     return z
         .object({
             enabled: z.boolean().default(defaults.enabled),
             delayMs: z.number().default(defaults.delayMs),
             lintOnChange: z.boolean().default(defaults.lintOnChange),
             initialization: createCfnLintInitializationSchema(defaults.initialization),
+            ignoreChecks: z.array(z.string()).readonly().default(defaults.ignoreChecks),
+            includeChecks: z.array(z.string()).readonly().default(defaults.includeChecks),
+            mandatoryChecks: z.array(z.string()).readonly().default(defaults.mandatoryChecks),
+            includeExperimental: z.boolean().default(defaults.includeExperimental),
+            configureRules: z.array(z.string()).readonly().default(defaults.configureRules),
+            regions: z.array(z.string()).readonly().default(defaults.regions),
+            customRules: z.array(z.string()).readonly().default(defaults.customRules),
+            appendRules: z.array(z.string()).readonly().default(defaults.appendRules),
+            overrideSpec: z.string().default(defaults.overrideSpec),
+            registrySchemas: z.array(z.string()).readonly().default(defaults.registrySchemas),
+            customization: customizationSchema,
+        })
+        .transform((data) => {
+            // Merge customization settings into main object
+            if (data.customization) {
+                const { customization, ...rest } = data;
+                return {
+                    ...rest,
+                    ignoreChecks: customization.ignoreChecks ?? data.ignoreChecks,
+                    includeChecks: customization.includeChecks ?? data.includeChecks,
+                    mandatoryChecks: customization.mandatoryChecks ?? data.mandatoryChecks,
+                    includeExperimental: customization.includeExperimental ?? data.includeExperimental,
+                    configureRules: customization.configureRules ?? data.configureRules,
+                    regions: customization.regions ?? data.regions,
+                    customRules: customization.customRules ?? data.customRules,
+                    appendRules: customization.appendRules ?? data.appendRules,
+                    overrideSpec: customization.overrideSpec ?? data.overrideSpec,
+                    registrySchemas: customization.registrySchemas ?? data.registrySchemas,
+                };
+            }
+            return data;
         })
         .default(defaults);
 }

@@ -29,6 +29,16 @@ export type CfnLintSettings = Toggleable<{
     delayMs: number;
     lintOnChange: boolean;
     initialization: CfnLintInitializationSettings;
+    ignoreChecks: readonly string[];
+    includeChecks: readonly string[];
+    mandatoryChecks: readonly string[];
+    includeExperimental: boolean;
+    configureRules: readonly string[];
+    regions: readonly string[];
+    customRules: readonly string[];
+    appendRules: readonly string[];
+    overrideSpec: string;
+    registrySchemas: readonly string[];
 }>;
 
 export type GuardSettings = Toggleable<{
@@ -87,6 +97,16 @@ export const DefaultSettings: DeepReadonly<Settings> = {
                 backoffMultiplier: 2,
                 totalTimeoutMs: 120_000, // 2 minutes total timeout
             },
+            ignoreChecks: [],
+            includeChecks: [],
+            mandatoryChecks: [],
+            includeExperimental: false,
+            configureRules: [],
+            regions: [],
+            customRules: [],
+            appendRules: [],
+            overrideSpec: '',
+            registrySchemas: [],
         },
         cfnGuard: {
             enabled: true,
