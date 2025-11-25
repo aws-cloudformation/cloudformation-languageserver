@@ -3,6 +3,7 @@ import { ResponseError, ServerRequestHandler } from 'vscode-languageserver';
 import { RequestHandler } from 'vscode-languageserver/node';
 import { TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
+import { CloudFormationFileType } from '../document/Document';
 import { parseResourceTypeName } from '../resourceState/ResourceStateParser';
 import {
     ResourceTypesResult,
@@ -82,8 +83,18 @@ export function importResourceStateHandler(
 ): RequestHandler<ResourceStateParams, ResourceStateResult, void> {
     return async (params: ResourceStateParams): Promise<ResourceStateResult> => {
         components.usageTracker.track(EventType.DidImportResources);
-        if (!components.documentManager.get(params.textDocument.uri)?.isTemplate()) {
-            throw new ResponseError(400, 'Must open CloudFormation template to import or clone resource state');
+        const doc = components.documentManager.get(params.textDocument.uri);
+        if (!doc) {
+            const msg = `${params.purpose} failed: ${params.textDocument.uri} not found`;
+            log.error(msg);
+            throw new ResponseError(500, msg); // all open TextDocuments should be registered by protocol
+        }
+
+        if (!doc.isTemplate() && doc.cfnFileType !== CloudFormationFileType.Empty) {
+            throw new ResponseError(
+                400,
+                `${params.purpose} failed: ${params.textDocument.uri} is not a valid CloudFormation template`,
+            );
         }
         return await components.resourceStateImporter.importResourceState(params);
     };
