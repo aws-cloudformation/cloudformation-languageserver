@@ -1,6 +1,5 @@
-import os from 'os';
-import { resolve, basename } from 'path';
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
+import { SensitiveInfo } from './SensitiveInfo';
 import { toString } from './String';
 
 export function extractErrorMessage(error: unknown) {
@@ -22,48 +21,15 @@ export function handleLspError(error: unknown, contextMessage: string): never {
     throw new ResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`);
 }
 
-const UserInfo = os.userInfo();
-const SensitiveInfo = [
-    UserInfo.username,
-    `${UserInfo.uid}`,
-    `${UserInfo.gid}`,
-    UserInfo.shell,
-    UserInfo.homedir,
-    resolve(__dirname),
-]
-    .filter((v): v is string => typeof v === 'string' && v.length > 0)
-    .sort((a, b) => b.length - a.length);
-
-const BaseDir = basename(resolve(__dirname));
-
-function sanitizePath(path: string): string {
-    let sanitized = path;
-
-    // Strip sensitive info first
-    for (const info of SensitiveInfo) {
-        sanitized = sanitized.replaceAll(info, 'REDACTED');
-    }
-
-    // Normalize path separators for consistent processing
-    const normalized = sanitized.replaceAll('\\', '/');
-
-    // Strip cloudformation-languageserver prefix
-    for (const partial of ['cloudformation-languageserver', BaseDir]) {
-        const idx = normalized.indexOf(partial);
-        if (idx !== -1) {
-            return '/' + normalized.slice(idx + partial.length + 1);
-        }
-    }
-
-    // Restore original separators if no prefix found
-    return sanitized;
-}
-
 /**
  * Best effort extraction of location of exception based on stack trace
  */
 export function extractLocationFromStack(stack?: string): Record<string, string> {
     if (!stack) return {};
+
+    if (!SensitiveInfo.didComputeSuccessfully()) {
+        return {};
+    }
 
     const matches = [...stack.matchAll(/at (.*)/g)];
 
@@ -85,10 +51,10 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
         const parenMatch = line.match(/^(.+?)\s+\((.+)\)$/);
         if (parenMatch) {
             const funcName = parenMatch[1];
-            const path = sanitizePath(parenMatch[2]);
+            const path = SensitiveInfo.sanitizePath(parenMatch[2]);
             line = `${funcName} (${path})`;
         } else {
-            line = sanitizePath(line);
+            line = SensitiveInfo.sanitizePath(line);
         }
 
         result[`error.stack${index}`] = line.trim();
