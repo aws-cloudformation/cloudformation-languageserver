@@ -1,5 +1,6 @@
 import os from 'os';
 import { basename, resolve } from 'path';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 
 export class SensitiveInfo {
     private static ComputedOnce = false;
@@ -34,8 +35,8 @@ export class SensitiveInfo {
                 .sort((a, b) => b.length - a.length);
 
             SensitiveInfo.ComputedSuccessfully = true;
-        } catch {
-            // do nothing
+        } catch (err) {
+            LoggerFactory.getLogger('SensitiveInfo').warn(err, 'Disabling error trace');
         }
 
         return this.Info;
@@ -43,6 +44,10 @@ export class SensitiveInfo {
 
     static sanitizePath(path: string): string {
         let sanitized = path;
+
+        if (!this.didComputeSuccessfully()) {
+            return '';
+        }
 
         // Strip sensitive info first
         for (const info of this.getSensitiveInfo()) {
