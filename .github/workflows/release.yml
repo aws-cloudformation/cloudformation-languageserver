@@ -109,7 +109,7 @@ jobs:
         if: matrix.use_qemu
         uses: docker/setup-qemu-action@v3
 
-      - name: Bundle (${{ matrix.docker-platform }}-${{ node-version }})
+      - name: Bundle (${{ matrix.docker-platform }}-${{ matrix.node-version }})
         run: |
           docker run --rm -t -v ${{ github.workspace }}:/work -w /work \
             --platform ${{ matrix.docker-platform }} \
