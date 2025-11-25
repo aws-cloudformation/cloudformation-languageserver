@@ -4,6 +4,7 @@ import sinon from 'ts-sinon';
 import { describe, expect, beforeEach, vi, test, Mock } from 'vitest';
 import { CloudFormationFileType } from '../../../../src/document/Document';
 import { PyodideWorkerManager } from '../../../../src/services/cfnLint/PyodideWorkerManager';
+import { CfnLintSettings } from '../../../../src/settings/Settings';
 import { mockLogger } from '../../../utils/MockServerComponents';
 
 // Mock Worker class
@@ -21,6 +22,34 @@ vi.mock('path', async (importOriginal) => {
         join: vi.fn().mockImplementation((...args) => args.join('/')),
     };
 });
+
+/**
+ * Helper function to create default CfnLintSettings for tests
+ */
+function createDefaultCfnLintSettings(): CfnLintSettings {
+    return {
+        enabled: true,
+        delayMs: 1000,
+        lintOnChange: true,
+        initialization: {
+            maxRetries: 0,
+            initialDelayMs: 100,
+            maxDelayMs: 1000,
+            backoffMultiplier: 2,
+            totalTimeoutMs: 10000,
+        },
+        ignoreChecks: [],
+        includeChecks: [],
+        mandatoryChecks: [],
+        includeExperimental: false,
+        configureRules: [],
+        regions: [],
+        customRules: [],
+        appendRules: [],
+        overrideSpec: '',
+        registrySchemas: [],
+    };
+}
 
 /**
  * Helper function to wait until a condition is met or timeout occurs
@@ -82,6 +111,7 @@ describe('PyodideWorkerManager', () => {
                 backoffMultiplier: 2,
                 totalTimeoutMs: 5000, // Short timeout for tests
             },
+            createDefaultCfnLintSettings(),
             mockLogging,
         );
     }, 10000);
@@ -292,6 +322,7 @@ describe('PyodideWorkerManager', () => {
                         content: mockContent,
                         uri: mockUri,
                         fileType: mockFileType,
+                        settings: createDefaultCfnLintSettings(),
                     },
                 }),
             ).toBe(true);
@@ -339,6 +370,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 5000,
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -402,6 +435,7 @@ describe('PyodideWorkerManager', () => {
                         path: mockPath,
                         uri: mockUri,
                         fileType: mockFileType,
+                        settings: createDefaultCfnLintSettings(),
                     },
                 }),
             ).toBe(true);
@@ -525,6 +559,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 5000,
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -619,6 +655,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 5000,
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -646,6 +684,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 5000,
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -689,6 +729,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 5000,
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -716,6 +758,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 3,
                     totalTimeoutMs: 10000, // Large timeout so it doesn't interfere
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -763,6 +807,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 10, // Would normally create very long delays
                     totalTimeoutMs: 10000, // Large timeout so it doesn't interfere
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -810,6 +856,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 10000, // Large timeout so it doesn't interfere
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -856,6 +904,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 2200, // Explicit timeout
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -890,6 +940,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 300, // Explicit timeout of 300ms
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -927,6 +979,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 120_000, // Uses default value from DefaultSettings
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -956,6 +1010,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 200, // But explicit timeout is only 200ms
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -993,6 +1049,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 0, // Immediate timeout
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -1020,6 +1078,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 10000, // Very large timeout (10 seconds)
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 
@@ -1049,6 +1109,8 @@ describe('PyodideWorkerManager', () => {
                     backoffMultiplier: 2,
                     totalTimeoutMs: 5000,
                 },
+                createDefaultCfnLintSettings(),
+
                 mockLogging,
             );
 

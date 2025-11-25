@@ -83,7 +83,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     ) {
         this.settings = DefaultSettings.diagnostics.cfnLint;
         this.delayer = delayer ?? new Delayer<void>(this.settings.delayMs);
-        this.workerManager = workerManager ?? new PyodideWorkerManager(this.settings.initialization);
+        this.workerManager = workerManager ?? new PyodideWorkerManager(this.settings.initialization, this.settings);
     }
 
     configure(settingsManager: ISettingsSubscriber): void {
@@ -103,6 +103,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
 
     private onSettingsChanged(newSettings: CfnLintSettings): void {
         this.settings = newSettings;
+        this.workerManager.updateSettings(newSettings);
         // Note: Delayer delay is immutable, set at construction time
         // The new delayMs will be used for future operations that check this.settings.delayMs
     }
