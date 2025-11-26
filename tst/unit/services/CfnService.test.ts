@@ -30,7 +30,6 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { CfnService } from '../../../src/services/CfnService';
-import { createMockSettingsManager } from '../../utils/MockServerComponents';
 import { TEST_CONSTANTS, MOCK_RESPONSES } from './CfnServiceTestConstants';
 
 // Mock the waiter functions
@@ -53,8 +52,6 @@ const mockClientComponent = {
     getCloudFormationClient: mockGetCloudFormationClient,
 } as unknown as AwsClient;
 
-const mockSettingsManager = createMockSettingsManager();
-
 describe('CfnService', () => {
     let service: CfnService;
 
@@ -63,7 +60,7 @@ describe('CfnService', () => {
         cloudFormationMock.reset();
         mockGetCloudFormationClient.mockReturnValue(new CloudFormationClient({}));
 
-        service = new CfnService(mockClientComponent, mockSettingsManager);
+        service = new CfnService(mockClientComponent);
     });
 
     afterEach(() => {
