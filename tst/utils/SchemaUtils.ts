@@ -8,131 +8,127 @@ import { ResourceSchema } from '../../src/schema/ResourceSchema';
 import { SamSchemas } from '../../src/schema/SamSchemas';
 import { CloudFormationResourceSchema } from '../../src/schema/SamSchemaTransformer';
 
+const cache = new Map<string, string>();
+const loadSchema = (name: string) => {
+    if (!cache.has(name)) {
+        cache.set(name, readFileSync(join(__dirname, '..', 'resources', 'schemas', name), 'utf8'));
+    }
+    return cache.get(name)!;
+};
+
 export const Schemas = {
     S3Bucket: {
         fileName: 'file://aws-s3-bucket.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-s3-bucket.json'), 'utf8');
+            return loadSchema('aws-s3-bucket.json');
         },
     },
     EC2Instance: {
         fileName: 'file://aws-ec2-instance.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ec2-instance.json'), 'utf8');
+            return loadSchema('aws-ec2-instance.json');
         },
     },
     IAMRole: {
         fileName: 'file://aws-iam-role.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-iam-role.json'), 'utf8');
+            return loadSchema('aws-iam-role.json');
         },
     },
     LambdaFunction: {
         fileName: 'file://aws-lambda-function.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-lambda-function.json'), 'utf8');
+            return loadSchema('aws-lambda-function.json');
         },
     },
     EC2VPC: {
         fileName: 'file://aws-ec2-vpc.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ec2-vpc.json'), 'utf8');
+            return loadSchema('aws-ec2-vpc.json');
         },
     },
     EC2Subnet: {
         fileName: 'file://aws-ec2-subnet.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ec2-subnet.json'), 'utf8');
+            return loadSchema('aws-ec2-subnet.json');
         },
     },
     EC2SecurityGroup: {
         fileName: 'file://aws-ec2-securitygroup.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ec2-securitygroup.json'), 'utf8');
+            return loadSchema('aws-ec2-securitygroup.json');
         },
     },
     EC2LaunchTemplate: {
         fileName: 'file://aws-ec2-launchtemplate.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ec2-launchtemplate.json'), 'utf8');
+            return loadSchema('aws-ec2-launchtemplate.json');
         },
     },
     AutoScalingGroup: {
         fileName: 'file://aws-autoscaling-autoscalinggroup.json',
         get contents() {
-            return readFileSync(
-                join(__dirname, '..', 'resources', 'schemas', 'aws-autoscaling-autoscalinggroup.json'),
-                'utf8',
-            );
+            return loadSchema('aws-autoscaling-autoscalinggroup.json');
         },
     },
     RDSDBInstance: {
         fileName: 'file://aws-rds-dbinstance.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-rds-dbinstance.json'), 'utf8');
+            return loadSchema('aws-rds-dbinstance.json');
         },
     },
     CloudWatchAlarm: {
         fileName: 'file://aws-cloudwatch-alarm.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-cloudwatch-alarm.json'), 'utf8');
+            return loadSchema('aws-cloudwatch-alarm.json');
         },
     },
     SNSTopic: {
         fileName: 'file://aws-sns-topic.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-sns-topic.json'), 'utf8');
+            return loadSchema('aws-sns-topic.json');
         },
     },
     SSMParameter: {
         fileName: 'file://aws-ssm-parameter.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ssm-parameter.json'), 'utf8');
+            return loadSchema('aws-ssm-parameter.json');
         },
     },
     DynamoDBGlobalTable: {
         fileName: 'file://aws-dynamodb-globaltable.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-dynamodb-globaltable.json'), 'utf8');
+            return loadSchema('aws-dynamodb-globaltable.json');
         },
     },
     EC2SpotFleet: {
         fileName: 'file://aws-ec2-spotfleet.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-ec2-spotfleet.json'), 'utf8');
+            return loadSchema('aws-ec2-spotfleet.json');
         },
     },
     ELBv2ListenerRule: {
         fileName: 'file://aws-elasticloadbalancingv2-listenerrule.json',
         get contents() {
-            return readFileSync(
-                join(__dirname, '..', 'resources', 'schemas', 'aws-elasticloadbalancingv2-listenerrule.json'),
-                'utf8',
-            );
+            return loadSchema('aws-elasticloadbalancingv2-listenerrule.json');
         },
     },
     ELBv2Listener: {
         fileName: 'file://aws-elasticloadbalancingv2-listener.json',
         get contents() {
-            return readFileSync(
-                join(__dirname, '..', 'resources', 'schemas', 'aws-elasticloadbalancingv2-listener.json'),
-                'utf8',
-            );
+            return loadSchema('aws-elasticloadbalancingv2-listener.json');
         },
     },
     SecurityLakeSubscriberNotification: {
         fileName: 'file://aws-securitylake-subscribernotification.json',
         get contents() {
-            return readFileSync(
-                join(__dirname, '..', 'resources', 'schemas', 'aws-securitylake-subscribernotification.json'),
-                'utf8',
-            );
+            return loadSchema('aws-securitylake-subscribernotification.json');
         },
     },
     SyntheticsCanary: {
         fileName: 'file://aws-synthetics-canary.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-synthetics-canary.json'), 'utf8');
+            return loadSchema('aws-synthetics-canary.json');
         },
     },
 };
@@ -141,13 +137,13 @@ export const SamSchemaFiles = {
     ServerlessFunction: {
         fileName: 'file://aws-serverless-function.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-serverless-function.json'), 'utf8');
+            return loadSchema('aws-serverless-function.json');
         },
     },
     ServerlessApi: {
         fileName: 'file://aws-serverless-api.json',
         get contents() {
-            return readFileSync(join(__dirname, '..', 'resources', 'schemas', 'aws-serverless-api.json'), 'utf8');
+            return loadSchema('aws-serverless-api.json');
         },
     },
 };
@@ -225,21 +221,25 @@ export function samFileType(
     return map;
 }
 
+let testPrivateSchemas: DescribeTypeOutput[] | undefined;
+
 export function getTestPrivateSchemas(): DescribeTypeOutput[] {
-    const schemas: DescribeTypeOutput[] = [];
-    const privateSchemasDir = join(__dirname, '..', 'resources', 'private-schemas');
+    if (!testPrivateSchemas) {
+        testPrivateSchemas = [];
+        const privateSchemasDir = join(__dirname, '..', 'resources', 'private-schemas');
 
-    for (const file of readdirSync(privateSchemasDir)) {
-        const content = readFileSync(join(privateSchemasDir, file), 'utf8');
-        const schema = JSON.parse(content);
+        for (const file of readdirSync(privateSchemasDir)) {
+            const content = readFileSync(join(privateSchemasDir, file), 'utf8');
+            const schema = JSON.parse(content);
 
-        schemas.push({
-            TypeName: schema.typeName,
-            Schema: content,
-            Type: 'RESOURCE',
-            Visibility: 'PRIVATE',
-        });
+            testPrivateSchemas.push({
+                TypeName: schema.typeName,
+                Schema: content,
+                Type: 'RESOURCE',
+                Visibility: 'PRIVATE',
+            });
+        }
     }
 
-    return schemas;
+    return testPrivateSchemas;
 }

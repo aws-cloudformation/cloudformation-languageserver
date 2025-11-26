@@ -1,10 +1,11 @@
-import { beforeEach, afterEach, describe, expect, test } from 'vitest';
+import { describe, expect, test, beforeEach, afterEach } from 'vitest';
 import { Hover, MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { templateSectionDocsMap } from '../../src/artifacts/TemplateSectionDocs';
 import { TopLevelSection } from '../../src/context/ContextType';
+import { getSimpleYamlTemplateText } from '../utils/TemplateUtils';
 import { TestExtension } from '../utils/TestExtension';
-import { getSimpleYamlTemplateText, WaitFor } from '../utils/Utils';
+import { WaitFor } from '../utils/Utils';
 
 describe('Hover Tests', () => {
     const documentUri = 'file:///test.yaml';

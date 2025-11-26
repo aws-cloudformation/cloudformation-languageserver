@@ -3,7 +3,7 @@ import { CodeAction, CodeActionKind, Range, TextEdit } from 'vscode-languageserv
 import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';
 
-describe('Extract to Parameter - YAML Integration Tests', () => {
+describe('Extract to Parameter - YAML Tests', () => {
     let extension: TestExtension;
 
     beforeEach(() => {

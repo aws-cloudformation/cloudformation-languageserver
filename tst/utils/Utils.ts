@@ -1,55 +1,13 @@
-import { Templates } from './TemplateUtils';
+import { setImmediate } from 'node:timers/promises';
 
-export function flushAllPromises() {
-    return new Promise((resolve) => {
-        setTimeout(resolve, 0);
-    });
-}
-
-export function getSimpleJsonTemplateText(): string {
-    return Templates.simple.json.contents;
-}
-
-export function getSimpleYamlTemplateText(): string {
-    return Templates.simple.yaml.contents;
-}
-
-export function getYamlTemplate(): string {
-    return Templates.sample.yaml.contents;
-}
-
-export function getJsonTemplate(): string {
-    return Templates.sample.json.contents;
-}
-
-export function getComprehensiveYamlTemplate(): string {
-    return Templates.comprehensive.yaml.contents;
-}
-
-export function getComprehensiveJsonTemplate(): string {
-    return Templates.comprehensive.json.contents;
-}
-
-export function getForEachYamlTemplate(): string {
-    return Templates.foreach.yaml.contents;
-}
-
-export function getForEachJsonTemplate(): string {
-    return Templates.foreach.json.contents;
-}
-
-export function getBrokenYamlTemplate(): string {
-    return Templates.broken.yaml.contents;
-}
-
-export function getBrokenJsonTemplate(): string {
-    return Templates.broken.json.contents;
+export async function flushAllPromises() {
+    await setImmediate();
 }
 
 export class WaitFor {
     constructor(
-        private readonly maxWaitMs: number = 25,
-        private readonly delayIntervalMs: number = 1,
+        private readonly maxWaitMs: number,
+        private readonly delayIntervalMs: number,
         private readonly throwableTypesToExpect: (new (...args: any[]) => Error)[] = [Error],
     ) {}
 
@@ -75,11 +33,11 @@ export class WaitFor {
         throw lastError!;
     }
 
-    static async waitFor(code: () => void | Promise<void>, timeoutMs: number = 100): Promise<void> {
-        await new WaitFor(timeoutMs).wait(code);
+    static async waitFor(
+        code: () => void | Promise<void>,
+        timeoutMs: number = 100,
+        intervalMs: number = 5,
+    ): Promise<void> {
+        await new WaitFor(timeoutMs, intervalMs).wait(code);
     }
-}
-
-export async function wait(ms: number) {
-    await new Promise((resolve) => setTimeout(resolve, ms));
 }
