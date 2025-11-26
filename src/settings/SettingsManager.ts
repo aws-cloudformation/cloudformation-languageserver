@@ -8,7 +8,7 @@ import { toString } from '../utils/String';
 import { PartialDataObserver, SubscriptionManager } from '../utils/SubscriptionManager';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import { ISettingsSubscriber, SettingsPathKey } from './ISettingsSubscriber';
-import { Settings, SettingsState } from './Settings';
+import { DefaultSettings, Settings, SettingsState } from './Settings';
 import { parseSettings } from './SettingsParser';
 
 const logger = LoggerFactory.getLogger('SettingsManager');
@@ -27,6 +27,10 @@ export class SettingsManager implements ISettingsSubscriber {
      */
     getCurrentSettings(): Settings {
         return this.settingsState.toSettings();
+    }
+
+    reset() {
+        this.validateAndUpdate(DefaultSettings);
     }
 
     /**

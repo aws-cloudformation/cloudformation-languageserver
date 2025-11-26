@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach, afterEach } from 'vitest';
+import { describe, expect, test, beforeEach, beforeAll, afterAll } from 'vitest';
 import { Hover, MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { templateSectionDocsMap } from '../../src/artifacts/TemplateSectionDocs';
@@ -11,11 +11,15 @@ describe('Hover Tests', () => {
     const documentUri = 'file:///test.yaml';
     let extension: TestExtension;
 
-    beforeEach(() => {
+    beforeAll(() => {
         extension = new TestExtension();
     });
 
-    afterEach(async () => {
+    beforeEach(async () => {
+        await extension.reset();
+    });
+
+    afterAll(async () => {
         await extension.close();
     });
 

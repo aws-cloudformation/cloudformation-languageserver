@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { CodeAction, CodeActionKind, Range, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';
@@ -7,11 +7,15 @@ import { applyWorkspaceEdit } from '../utils/WorkspaceEditUtils';
 describe('Extract to Parameter - End-to-End CodeAction Workflow Tests', () => {
     let extension: TestExtension;
 
-    beforeEach(() => {
+    beforeAll(() => {
         extension = new TestExtension();
     });
 
-    afterEach(async () => {
+    beforeEach(async () => {
+        await extension.reset();
+    });
+
+    afterAll(async () => {
         await extension.close();
     });
 

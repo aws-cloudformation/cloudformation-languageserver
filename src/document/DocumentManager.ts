@@ -183,6 +183,10 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
         return [...this.documentMap.values()].filter((doc) => doc.isTemplate() && doc.extension === extension).length;
     }
 
+    clear() {
+        this.documentMap.clear();
+    }
+
     close() {
         clearInterval(this.interval);
     }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { getSimpleYamlTemplateText, getSimpleJsonTemplateText } from '../utils/TemplateUtils';
 import { TestExtension } from '../utils/TestExtension';
 
@@ -8,6 +8,10 @@ describe('Completion', () => {
     beforeAll(async () => {
         client = new TestExtension();
         await client.ready();
+    });
+
+    beforeEach(async () => {
+        await client.reset();
     });
 
     afterAll(async () => {

@@ -209,6 +209,16 @@ export class TestExtension implements Closeable {
         }
     }
 
+    async reset() {
+        await this.ready();
+        this.core.settingsManager.reset();
+        this.core.syntaxTreeManager.deleteAllTrees();
+        this.core.documentManager.clear();
+        this.core.awsCredentials.handleIamCredentialsDelete();
+        this.core.usageTracker.clear();
+        this.core.validationManager.clear();
+    }
+
     async send(method: string, params: any) {
         await this.ready();
         return await this.clientConnection.sendRequest(method, params);

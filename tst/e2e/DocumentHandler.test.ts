@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';
 
@@ -7,11 +7,15 @@ describe('DocumentHandler', () => {
 
     let extension: TestExtension;
 
-    beforeEach(() => {
+    beforeAll(() => {
         extension = new TestExtension();
     });
 
-    afterEach(async () => {
+    beforeEach(async () => {
+        await extension.reset();
+    });
+
+    afterAll(async () => {
         await extension.close();
     });
 
