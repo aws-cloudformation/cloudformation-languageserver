@@ -1,14 +1,10 @@
-import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { CodeAction, CodeActionKind, Range, TextEdit } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';
 
 describe('Extract All Occurrences to Parameter', () => {
-    let extension: TestExtension;
-
-    beforeAll(() => {
-        extension = new TestExtension();
-    });
+    const extension = new TestExtension();
 
     beforeEach(async () => {
         await extension.reset();

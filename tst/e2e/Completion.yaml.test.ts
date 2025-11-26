@@ -1,15 +1,11 @@
-import { beforeEach, describe, expect, test, beforeAll, afterAll } from 'vitest';
+import { beforeEach, describe, expect, test, afterAll } from 'vitest';
 import { CompletionList } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';
 
 describe('Completion Tests', () => {
     const documentUri = 'file:///test.yaml';
-    let extension: TestExtension;
-
-    beforeAll(() => {
-        extension = new TestExtension();
-    });
+    const extension = new TestExtension();
 
     beforeEach(async () => {
         await extension.reset();

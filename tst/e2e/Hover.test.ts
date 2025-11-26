@@ -8,10 +8,9 @@ import {
 import { TestExtension } from '../utils/TestExtension';
 
 describe('Hover', () => {
-    let client: TestExtension;
+    const client = new TestExtension();
 
     beforeAll(async () => {
-        client = new TestExtension();
         await client.ready();
     });
 

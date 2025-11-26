@@ -3,10 +3,9 @@ import { DocumentSymbol, SymbolKind } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
 
 describe('DocumentSymbol', () => {
-    let client: TestExtension;
+    const client = new TestExtension();
 
     beforeAll(async () => {
-        client = new TestExtension();
         await client.ready();
     });
 

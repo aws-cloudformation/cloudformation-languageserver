@@ -3,10 +3,9 @@ import { CodeLens } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
 
 describe('CodeLens', () => {
-    let client: TestExtension;
+    const client = new TestExtension();
 
     beforeAll(async () => {
-        client = new TestExtension();
         await client.ready();
     });
 

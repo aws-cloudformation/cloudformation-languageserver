@@ -3,10 +3,9 @@ import { getYamlTemplate, getJsonTemplate } from '../utils/TemplateUtils';
 import { TestExtension } from '../utils/TestExtension';
 
 describe('Goto/Definition', () => {
-    let client: TestExtension;
+    const client = new TestExtension();
 
     beforeAll(async () => {
-        client = new TestExtension();
         await client.ready();
     });
 
