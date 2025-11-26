@@ -24,4 +24,8 @@ export class UsageTracker {
             return this.events.has(event);
         });
     }
+
+    clear() {
+        this.events.clear();
+    }
 }
