@@ -126,6 +126,35 @@ describe('ValidationWorkflow', () => {
                 mockS3Service,
             );
         });
+
+        it('should start validation workflow with CREATE when stack is in REVIEW_IN_PROGRESS', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+            };
+
+            mockCfnService.describeStacks = vi.fn().mockResolvedValue({
+                Stacks: [{ StackName: 'test-stack', StackStatus: 'REVIEW_IN_PROGRESS' }],
+            });
+            (processChangeSet as any).mockResolvedValue('changeset-123');
+
+            const result = await validationWorkflow.start(params);
+
+            expect(result).toEqual({
+                id: 'test-id',
+                changeSetName: 'changeset-123',
+                stackName: 'test-stack',
+            });
+
+            expect(processChangeSet).toHaveBeenCalledWith(
+                mockCfnService,
+                mockDocumentManager,
+                params,
+                'CREATE',
+                mockS3Service,
+            );
+        });
     });
 
     it('should start validation workflow with IMPORT when resourcesToImport has items', async () => {

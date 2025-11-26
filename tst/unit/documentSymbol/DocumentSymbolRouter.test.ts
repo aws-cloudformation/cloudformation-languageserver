@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach, it } from 'vitest';
 import { DocumentSymbolParams, SymbolKind } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentSymbolRouter } from '../../../src/documentSymbol/DocumentSymbolRouter';
-import { getYamlTemplate } from '../../utils/Utils';
+import { getYamlTemplate } from '../../utils/TemplateUtils';
 
 describe('DocumentSymbolRouter', () => {
     let router: DocumentSymbolRouter;

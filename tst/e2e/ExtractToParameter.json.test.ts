@@ -4,7 +4,7 @@ import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';
 import { applyWorkspaceEdit } from '../utils/WorkspaceEditUtils';
 
-describe('Extract to Parameter - JSON Integration Tests', () => {
+describe('Extract to Parameter - JSON Tests', () => {
     let extension: TestExtension;
 
     beforeEach(() => {

@@ -1,20 +1,19 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { TestExtension } from '../utils/TestExtension';
 import {
-    wait,
     getComprehensiveYamlTemplate,
     getYamlTemplate,
     getForEachYamlTemplate,
     getBrokenYamlTemplate,
-} from '../utils/Utils';
+} from '../utils/TemplateUtils';
+import { TestExtension } from '../utils/TestExtension';
 
-describe('Integration Test: Hover', () => {
+describe('Hover', () => {
     let client: TestExtension;
 
     beforeAll(async () => {
         client = new TestExtension();
         await client.ready();
-    }, 30000);
+    });
 
     afterAll(async () => {
         await client.close();
@@ -25,8 +24,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for parameters top level section', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -56,8 +53,6 @@ describe('Integration Test: Hover', () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 41, character: 1 },
@@ -85,8 +80,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for conditions top level section', async () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -116,8 +109,6 @@ describe('Integration Test: Hover', () => {
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 68, character: 1 },
@@ -145,8 +136,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for transform top level section', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -176,8 +165,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 0, character: 1 },
@@ -206,8 +193,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 1, character: 1 },
@@ -234,8 +219,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 9, character: 1 },
@@ -261,8 +244,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for rules top level section', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -292,8 +273,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 213, character: 25 },
@@ -319,8 +298,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for resource properties', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -348,8 +325,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 218, character: 14 },
@@ -375,8 +350,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for resource attributes', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -404,8 +377,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 228, character: 8 },
@@ -431,8 +402,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for resource properties with schema validation', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -462,8 +431,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 141, character: 20 },
@@ -491,8 +458,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for !Sub intrinsic function', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -522,8 +487,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 239, character: 20 },
@@ -551,8 +514,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for !Select intrinsic function', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -582,8 +543,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 217, character: 25 },
@@ -611,8 +570,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for !Join intrinsic function', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -642,8 +599,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 457, character: 11 },
@@ -671,8 +626,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for !If condition function', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -702,8 +655,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 91, character: 20 },
@@ -731,8 +682,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for !Not condition function', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -762,8 +711,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 100, character: 25 },
@@ -791,8 +738,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for !Or condition function', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -824,8 +769,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 141, character: 26 },
@@ -853,8 +796,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for !Ref argument (resource reference)', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -884,8 +825,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 238, character: 32 },
@@ -913,8 +852,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for !GetAtt attribute name argument', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -944,8 +881,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 159, character: 38 },
@@ -974,8 +909,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 217, character: 35 },
@@ -1003,8 +936,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for condition reference in !If', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 // Hover on "IsProduction" on multiline !If
                 // No hover on single line array If [IsProd, 0, 0]
@@ -1036,8 +967,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 448, character: 35 },
@@ -1068,8 +997,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 31, character: 10 },
@@ -1097,8 +1024,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for parameter with Default value', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1128,8 +1053,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 31, character: 10 },
@@ -1157,8 +1080,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for parameter with AllowedPattern', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1188,8 +1109,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 46, character: 5 },
@@ -1217,8 +1136,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for parameter with MaxLength constraint', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1248,8 +1165,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 52, character: 10 },
@@ -1277,8 +1192,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for parameter with MaxValue constraint', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1310,8 +1223,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 33, character: 7 },
@@ -1339,8 +1250,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for AllowedValues attribute', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1370,8 +1279,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 40, character: 7 },
@@ -1399,8 +1306,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for MinLength attribute', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1430,8 +1335,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 50, character: 7 },
@@ -1460,8 +1363,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 55, character: 7 },
@@ -1489,8 +1390,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for MaxValue attribute', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1522,8 +1421,6 @@ describe('Integration Test: Hover', () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 103, character: 26 },
@@ -1551,8 +1448,6 @@ describe('Integration Test: Hover', () => {
             it('should provide hover documentation for AWS::NoValue pseudo parameter', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1592,8 +1487,6 @@ Resources:
           - !Ref AWS::Region`;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 9, character: 25 },
@@ -1631,8 +1524,6 @@ Outputs:
     Value: !Ref AWS::StackId`;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 9, character: 25 },
@@ -1669,8 +1560,6 @@ Resources:
         - - 'topic'
           - !Ref AWS::StackName`;
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1712,8 +1601,6 @@ Outputs:
 `;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 12, character: 25 },
@@ -1754,8 +1641,6 @@ Outputs:
         - !Ref AWS::Partition
 `;
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1799,8 +1684,6 @@ Outputs:
 `;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 13, character: 25 },
@@ -1831,8 +1714,6 @@ Outputs:
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 169, character: 25 },
@@ -1860,8 +1741,6 @@ Outputs:
             it('should provide hover documentation for condition reference in output', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1891,8 +1770,6 @@ Outputs:
             it('should provide hover documentation for mapping in findInMap', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -1924,8 +1801,6 @@ Outputs:
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 401, character: 7 },
@@ -1954,8 +1829,6 @@ Outputs:
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 402, character: 7 },
@@ -1983,8 +1856,6 @@ Outputs:
             it('should provide hover documentation for output Export field', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -2016,8 +1887,6 @@ Outputs:
                 const template = getForEachYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 11, character: 10 },
@@ -2046,8 +1915,6 @@ Outputs:
                 const template = getForEachYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 17, character: 17 },
@@ -2075,8 +1942,6 @@ Outputs:
             it('should provide hover documentation for ForEach function resource type', async () => {
                 const template = getForEachYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -2118,8 +1983,6 @@ Resources:
 `;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 4, character: 15 },
@@ -2156,8 +2019,6 @@ Resources:
 `;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 4, character: 15 },
@@ -2188,8 +2049,6 @@ Resources:
                 const template = getBrokenYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 6, character: 20 },
@@ -2206,8 +2065,6 @@ Resources:
                 const template = getYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 2, character: 1 },
@@ -2223,8 +2080,6 @@ Resources:
             it('should not provide hover documentation on comments', async () => {
                 const template = getComprehensiveYamlTemplate();
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -2257,8 +2112,6 @@ Resources:
             - Primary: true
               PrivateIpAddress: "10.0.0.1"`;
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -2297,8 +2150,6 @@ Resources:
                   Minutes: 15`;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 21, character: 20 },
@@ -2323,8 +2174,6 @@ Resources:
       Runtime: nodejs18.x
       CodeUri: ./src`;
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -2360,8 +2209,6 @@ Resources:
     Condition: ComplexCondition`;
                 const uri = await client.openYamlTemplate(template);
 
-                await wait(2000);
-
                 const hover: any = await client.hover({
                     textDocument: { uri },
                     position: { line: 11, character: 25 },
@@ -2381,8 +2228,6 @@ Resources:
     Properties:
       SomeProperty: value`;
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -2408,8 +2253,6 @@ Resources:
       NestedCustom:
         SubProperty: value`;
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },
@@ -2445,8 +2288,6 @@ Resources:
           - !Ref AWS::Region
           - !Ref AWS::AccountId`;
                 const uri = await client.openYamlTemplate(template);
-
-                await wait(2000);
 
                 const hover: any = await client.hover({
                     textDocument: { uri },

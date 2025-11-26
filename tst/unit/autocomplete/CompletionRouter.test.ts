@@ -10,6 +10,7 @@ import { EntityType } from '../../../src/context/semantic/SemanticTypes';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../../../src/document/Document';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
+import { UsageTracker } from '../../../src/usageTracker/UsageTracker';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createResourceContext, createTopLevelContext } from '../../utils/MockContext';
 import {
@@ -250,6 +251,7 @@ describe('CompletionRouter', () => {
             mockDocumentManager,
             mockComponents.schemaRetriever,
             entityFieldProviderMap,
+            new UsageTracker(),
         );
 
         function expectCompletionProvider(

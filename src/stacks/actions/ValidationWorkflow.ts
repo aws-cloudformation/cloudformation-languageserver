@@ -1,4 +1,4 @@
-import { ChangeSetType } from '@aws-sdk/client-cloudformation';
+import { ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
 import { AwsCredentials } from '../../auth/AwsCredentials';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
@@ -60,8 +60,14 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             changeSetType = ChangeSetType.IMPORT;
         } else {
             try {
-                await this.cfnService.describeStacks({ StackName: params.stackName });
-                changeSetType = ChangeSetType.UPDATE;
+                const describeResult = await this.cfnService.describeStacks({ StackName: params.stackName });
+                const stack = describeResult.Stacks?.[0];
+
+                if (stack?.StackStatus === StackStatus.REVIEW_IN_PROGRESS) {
+                    changeSetType = ChangeSetType.CREATE;
+                } else {
+                    changeSetType = ChangeSetType.UPDATE;
+                }
             } catch {
                 changeSetType = ChangeSetType.CREATE;
             }

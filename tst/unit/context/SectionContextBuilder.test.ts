@@ -1,8 +1,8 @@
 import { describe, expect, test, afterAll } from 'vitest';
 import { TopLevelSection, TopLevelSections } from '../../../src/context/ContextType';
 import { contextEntitiesInSections, getEntityMap } from '../../../src/context/SectionContextBuilder';
+import { getJsonTemplate, getYamlTemplate } from '../../utils/TemplateUtils';
 import { createJsonTree, createYamlTree } from '../../utils/TestTree';
-import { getJsonTemplate, getYamlTemplate } from '../../utils/Utils';
 
 describe('SectionContextBuilder', () => {
     const yamlTree = createYamlTree(getYamlTemplate());

@@ -1,10 +1,18 @@
+import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CancellationToken } from 'vscode-languageserver-protocol';
+import { CancellationToken, RequestHandler } from 'vscode-languageserver-protocol';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
+import { CloudFormationFileType, Document } from '../../../src/document/Document';
 import {
     getManagedResourceStackTemplateHandler,
+    importResourceStateHandler,
     removeResourceTypeHandler,
 } from '../../../src/handlers/ResourceHandler';
+import {
+    ResourceStateParams,
+    ResourceStatePurpose,
+    ResourceStateResult,
+} from '../../../src/resourceState/ResourceStateTypes';
 import { GetStackTemplateParams } from '../../../src/stacks/StackRequestType';
 import { createMockComponents } from '../../utils/MockServerComponents';
 
@@ -154,5 +162,45 @@ describe('ResourceHandler - removeResourceTypeHandler', () => {
         expect(() => handler('')).toThrow(TypeError);
         expect(() => handler(null as any)).toThrow();
         expect(() => handler(undefined as any)).toThrow();
+    });
+});
+
+describe('ResourceHandler - importResourceStateHandler', () => {
+    let mockComponents: ReturnType<typeof createMockComponents>;
+    let handler: RequestHandler<ResourceStateParams, ResourceStateResult, void>;
+    const params = {
+        textDocument: { uri: 'docUri' },
+        resourceSelections: [
+            {
+                resourceType: 'AWS::S3::Bucket',
+                resourceIdentifiers: ['bucket1234'],
+            },
+        ],
+        purpose: ResourceStatePurpose.IMPORT,
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockComponents = createMockComponents();
+        handler = importResourceStateHandler(mockComponents);
+    });
+
+    it('should throw error if document not found', async () => {
+        mockComponents.documentManager.get.returns(undefined);
+
+        await expect(async () => {
+            await handler(params, CancellationToken.None);
+        }).rejects.toThrow('Import failed: docUri not found');
+    });
+
+    it('should throw error if document is not a valid CloudFormation template', async () => {
+        const mockDoc = stubInterface<Document>();
+        mockDoc.isTemplate.returns(false);
+        Object.defineProperty(mockDoc, 'cfnFileType', { value: CloudFormationFileType.Other });
+        mockComponents.documentManager.get.returns(mockDoc);
+
+        await expect(async () => {
+            await handler(params, CancellationToken.None);
+        }).rejects.toThrow('Import failed: docUri is not a valid CloudFormation template');
     });
 });
