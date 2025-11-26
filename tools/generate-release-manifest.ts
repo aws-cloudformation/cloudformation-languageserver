@@ -71,10 +71,10 @@ function fetchReleases(): GHRelease[] {
     });
 }
 
-function parseTarget(filename: string): { platform: string; arch: string; nodejs?: string } | null {
+export function parseTarget(filename: string): { platform: string; arch: string; nodejs?: string } | null {
     // eslint-disable-next-line security/detect-unsafe-regex
-    const match = filename.match(/(darwin|linux|win32)-(x64|arm64)(?:-node(\d+))?/);
-    return match ? { platform: match[1], arch: match[2], nodejs: match[3] } : null;
+    const match = filename.match(/^cloudformation-languageserver-(.*)-(.*)-(x64|arm64)(?:-node(\d+))?\.zip$/);
+    return match ? { platform: match[2], arch: match[3], nodejs: match[4] } : null;
 }
 
 function generateManifest() {
