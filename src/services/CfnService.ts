@@ -60,17 +60,16 @@ import {
     ChangeSetType,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
+import { SettingsManager } from '../settings/SettingsManager';
 import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 import { Count } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
-const CHANGESET_WAITER_MIN_DELAY = 1;
-const CHANGESET_WAITER_MAX_DELAY = 8;
-const STACK_WAITER_MIN_DELAY = 3;
-const STACK_WAITER_MAX_DELAY = 10;
-
 export class CfnService {
-    public constructor(private readonly awsClient: AwsClient) {}
+    public constructor(
+        private readonly awsClient: AwsClient,
+        private readonly settingsManager: SettingsManager,
+    ) {}
 
     protected async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
         const client = this.awsClient.getCloudFormationClient();
@@ -339,76 +338,66 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DeleteStackCommand(params)));
     }
 
-    public async waitUntilChangeSetCreateComplete(
-        params: DescribeChangeSetCommandInput,
-        timeoutMinutes: number = 5,
-    ): Promise<WaiterResult> {
+    public async waitUntilChangeSetCreateComplete(params: DescribeChangeSetCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
+            const settings = this.settingsManager.getCurrentSettings();
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
-                maxWaitTime: timeoutMinutes * 60,
-                minDelay: CHANGESET_WAITER_MIN_DELAY,
-                maxDelay: CHANGESET_WAITER_MAX_DELAY,
+                maxWaitTime: settings.awsClient.cloudformation.waiter.changeSet.maxWaitTime,
+                minDelay: settings.awsClient.cloudformation.waiter.changeSet.minDelay,
+                maxDelay: settings.awsClient.cloudformation.waiter.changeSet.maxDelay,
             };
             return await waitUntilChangeSetCreateComplete(waiterConfig, params);
         });
     }
 
-    public async waitUntilStackCreateComplete(
-        params: DescribeStacksCommandInput,
-        timeoutMinutes: number = 30,
-    ): Promise<WaiterResult> {
+    public async waitUntilStackCreateComplete(params: DescribeStacksCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
+            const settings = this.settingsManager.getCurrentSettings();
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
-                maxWaitTime: timeoutMinutes * 60,
-                minDelay: STACK_WAITER_MIN_DELAY,
-                maxDelay: STACK_WAITER_MAX_DELAY,
+                maxWaitTime: settings.awsClient.cloudformation.waiter.stack.maxWaitTime,
+                minDelay: settings.awsClient.cloudformation.waiter.stack.minDelay,
+                maxDelay: settings.awsClient.cloudformation.waiter.stack.maxDelay,
             };
             return await waitUntilStackCreateComplete(waiterConfig, params);
         });
     }
 
-    public async waitUntilStackUpdateComplete(
-        params: DescribeStacksCommandInput,
-        timeoutMinutes: number = 30,
-    ): Promise<WaiterResult> {
+    public async waitUntilStackUpdateComplete(params: DescribeStacksCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
+            const settings = this.settingsManager.getCurrentSettings();
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
-                maxWaitTime: timeoutMinutes * 60,
-                minDelay: STACK_WAITER_MIN_DELAY,
-                maxDelay: STACK_WAITER_MAX_DELAY,
+                maxWaitTime: settings.awsClient.cloudformation.waiter.stack.maxWaitTime,
+                minDelay: settings.awsClient.cloudformation.waiter.stack.minDelay,
+                maxDelay: settings.awsClient.cloudformation.waiter.stack.maxDelay,
             };
             return await waitUntilStackUpdateComplete(waiterConfig, params);
         });
     }
 
-    public async waitUntilStackImportComplete(
-        params: DescribeStacksCommandInput,
-        timeoutMinutes: number = 30,
-    ): Promise<WaiterResult> {
+    public async waitUntilStackImportComplete(params: DescribeStacksCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
+            const settings = this.settingsManager.getCurrentSettings();
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
-                maxWaitTime: timeoutMinutes * 60,
-                minDelay: STACK_WAITER_MIN_DELAY,
-                maxDelay: STACK_WAITER_MAX_DELAY,
+                maxWaitTime: settings.awsClient.cloudformation.waiter.stack.maxWaitTime,
+                minDelay: settings.awsClient.cloudformation.waiter.stack.minDelay,
+                maxDelay: settings.awsClient.cloudformation.waiter.stack.maxDelay,
             };
             return await waitUntilStackImportComplete(waiterConfig, params);
         });
     }
 
-    public async waitUntilStackDeleteComplete(
-        params: DescribeStacksCommandInput,
-        timeoutMinutes: number = 30,
-    ): Promise<WaiterResult> {
+    public async waitUntilStackDeleteComplete(params: DescribeStacksCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
+            const settings = this.settingsManager.getCurrentSettings();
             const waiterConfig: WaiterConfiguration<CloudFormationClient> = {
                 client,
-                maxWaitTime: timeoutMinutes * 60,
-                minDelay: STACK_WAITER_MIN_DELAY,
-                maxDelay: STACK_WAITER_MAX_DELAY,
+                maxWaitTime: settings.awsClient.cloudformation.waiter.stack.maxWaitTime,
+                minDelay: settings.awsClient.cloudformation.waiter.stack.minDelay,
+                maxDelay: settings.awsClient.cloudformation.waiter.stack.maxDelay,
             };
             return await waitUntilStackDeleteComplete(waiterConfig, params);
         });

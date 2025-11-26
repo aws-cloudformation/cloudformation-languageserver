@@ -30,6 +30,7 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { CfnService } from '../../../src/services/CfnService';
+import { createMockSettingsManager } from '../../utils/MockServerComponents';
 import { TEST_CONSTANTS, MOCK_RESPONSES } from './CfnServiceTestConstants';
 
 // Mock the waiter functions
@@ -52,6 +53,8 @@ const mockClientComponent = {
     getCloudFormationClient: mockGetCloudFormationClient,
 } as unknown as AwsClient;
 
+const mockSettingsManager = createMockSettingsManager();
+
 describe('CfnService', () => {
     let service: CfnService;
 
@@ -60,7 +63,7 @@ describe('CfnService', () => {
         cloudFormationMock.reset();
         mockGetCloudFormationClient.mockReturnValue(new CloudFormationClient({}));
 
-        service = new CfnService(mockClientComponent);
+        service = new CfnService(mockClientComponent, mockSettingsManager);
     });
 
     afterEach(() => {
@@ -631,12 +634,12 @@ describe('CfnService', () => {
             vi.mocked(waitUntilChangeSetCreateComplete).mockResolvedValue(mockWaiterResult);
 
             const params = { ChangeSetName: 'test-changeset', StackName: 'test-stack' };
-            const result = await service.waitUntilChangeSetCreateComplete(params, 10);
+            const result = await service.waitUntilChangeSetCreateComplete(params);
 
             expect(waitUntilChangeSetCreateComplete).toHaveBeenCalledWith(
                 expect.objectContaining({
                     client: expect.any(Object),
-                    maxWaitTime: 600, // 10 minutes * 60 seconds
+                    maxWaitTime: 600,
                 }),
                 params,
             );
@@ -652,7 +655,7 @@ describe('CfnService', () => {
 
             expect(waitUntilChangeSetCreateComplete).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    maxWaitTime: 300, // 5 minutes * 60 seconds
+                    maxWaitTime: 600,
                 }),
                 params,
             );
@@ -666,12 +669,12 @@ describe('CfnService', () => {
             vi.mocked(waitUntilStackUpdateComplete).mockResolvedValue(mockWaiterResult);
 
             const params = { StackName: 'test-stack' };
-            const result = await service.waitUntilStackUpdateComplete(params, 60);
+            const result = await service.waitUntilStackUpdateComplete(params);
 
             expect(waitUntilStackUpdateComplete).toHaveBeenCalledWith(
                 expect.objectContaining({
                     client: expect.any(Object),
-                    maxWaitTime: 3600, // 60 minutes * 60 seconds
+                    maxWaitTime: 1800,
                 }),
                 params,
             );
@@ -727,18 +730,17 @@ describe('CfnService', () => {
             expect(result).toBe(mockWaiterResult);
         });
 
-        it('should use custom timeout when provided', async () => {
+        it('should use timeout from settings', async () => {
             const params = { StackName: 'test-stack' };
-            const timeoutMinutes = 15;
             const mockWaiterResult = { state: WaiterState.SUCCESS };
 
             vi.mocked(waitUntilStackCreateComplete).mockResolvedValue(mockWaiterResult);
 
-            const result = await service.waitUntilStackCreateComplete(params, timeoutMinutes);
+            const result = await service.waitUntilStackCreateComplete(params);
 
             expect(waitUntilStackCreateComplete).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    maxWaitTime: timeoutMinutes * 60,
+                    maxWaitTime: 1800,
                 }),
                 params,
             );
