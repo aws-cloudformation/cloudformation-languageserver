@@ -149,4 +149,6 @@ function generateManifest() {
     console.log('Manifest generated: assets/release-manifest.json');
 }
 
-generateManifest();
+if (require.main === module) {
+    generateManifest();
+}
