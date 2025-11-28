@@ -148,6 +148,46 @@ function createSettingsSchema(defaults: Settings) {
             completion: createCompletionSchema(defaults.completion),
             diagnostics: createDiagnosticsSchema(defaults.diagnostics),
             editor: createEditorSchema(defaults.editor),
+            awsClient: z
+                .object({
+                    cloudformation: z
+                        .object({
+                            waiter: z
+                                .object({
+                                    changeSet: z
+                                        .object({
+                                            minDelay: z
+                                                .number()
+                                                .default(defaults.awsClient.cloudformation.waiter.changeSet.minDelay),
+                                            maxDelay: z
+                                                .number()
+                                                .default(defaults.awsClient.cloudformation.waiter.changeSet.maxDelay),
+                                            maxWaitTime: z
+                                                .number()
+                                                .default(
+                                                    defaults.awsClient.cloudformation.waiter.changeSet.maxWaitTime,
+                                                ),
+                                        })
+                                        .default(defaults.awsClient.cloudformation.waiter.changeSet),
+                                    stack: z
+                                        .object({
+                                            minDelay: z
+                                                .number()
+                                                .default(defaults.awsClient.cloudformation.waiter.stack.minDelay),
+                                            maxDelay: z
+                                                .number()
+                                                .default(defaults.awsClient.cloudformation.waiter.stack.maxDelay),
+                                            maxWaitTime: z
+                                                .number()
+                                                .default(defaults.awsClient.cloudformation.waiter.stack.maxWaitTime),
+                                        })
+                                        .default(defaults.awsClient.cloudformation.waiter.stack),
+                                })
+                                .default(defaults.awsClient.cloudformation.waiter),
+                        })
+                        .default(defaults.awsClient.cloudformation),
+                })
+                .default(defaults.awsClient),
         })
         .default(defaults);
 }
