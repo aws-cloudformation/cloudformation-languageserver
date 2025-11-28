@@ -2,22 +2,22 @@
   "spdxVersion": "SPDX-2.3",
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
-  "name": "@aws/cloudformation-languageserver@1.0.0",
-  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.0.0-84ef8af9-3ae0-4ace-b80b-4ad2e87d9c02",
+  "name": "@aws/cloudformation-languageserver@1.2.0",
+  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.2.0-3d55929d-3030-4898-8ceb-5ed395589c94",
   "creationInfo": {
-    "created": "2025-11-18T23:05:29.697Z",
+    "created": "2025-11-29T21:55:32.866Z",
     "creators": [
       "Tool: npm/cli-10.9.2"
     ]
   },
   "documentDescribes": [
-    "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0"
+    "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0"
   ],
   "packages": [
     {
       "name": "@aws/cloudformation-languageserver",
-      "SPDXID": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
-      "versionInfo": "1.0.0",
+      "SPDXID": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
+      "versionInfo": "1.2.0",
       "packageFileName": "",
       "description": "AWS CloudFormation Language Server implementation",
       "primaryPackagePurpose": "LIBRARY",
@@ -29,7 +29,7 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws/cloudformation-languageserver@1.0.0"
+          "referenceLocator": "pkg:npm/%40aws/cloudformation-languageserver@1.2.0"
         }
       ]
     },
@@ -9004,30 +9004,6 @@
       ]
     },
     {
-      "name": "cfn-guard",
-      "SPDXID": "SPDXRef-Package-cfn-guard-3.1.1",
-      "versionInfo": "3.1.1",
-      "packageFileName": "node_modules/cfn-guard",
-      "description": "AWS CloudFormation Guard is an open-source general-purpose policy-as-code evaluation tool. It provides developers with a simple-to-use, yet powerful and expressive domain-specific language (DSL) to define policies and enables developers to validate JSON- or YAML- formatted structured data with those policies.",
-      "downloadLocation": "https://gitpkg.now.sh/aws-cloudformation/cloudformation-guard/guard/ts-lib?33d9931",
-      "filesAnalyzed": false,
-      "homepage": "https://github.com/aws-cloudformation/cloudformation-guard#readme",
-      "licenseDeclared": "Apache-2.0",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/cfn-guard@3.1.1"
-        }
-      ],
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "8a14a9a96126ad074c8947b0658a1615cf4919774a26387adb4fca48315491aaed5f1ffa99e0116873bea5166fc588249f4845438fc8299db6b41e81edba4dde"
-        }
-      ]
-    },
-    {
       "name": "cjs-module-lexer",
       "SPDXID": "SPDXRef-Package-cjs-module-lexer-1.4.3",
       "versionInfo": "1.4.3",
@@ -12867,6 +12843,54 @@
       ]
     },
     {
+      "name": "stack-utils",
+      "SPDXID": "SPDXRef-Package-stack-utils-2.0.6",
+      "versionInfo": "2.0.6",
+      "packageFileName": "node_modules/stack-utils",
+      "description": "Captures and cleans stack traces",
+      "downloadLocation": "https://registry.npmjs.org/stack-utils/-/stack-utils-2.0.6.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/tapjs/stack-utils#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/stack-utils@2.0.6"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5e5916bdf226e919ac5ad349c7ebaab4a2d2f1ea856f1520d19ccb5ea63471a132f65ee1aee5fc2298839e3b0b6afa0182a08247bd53a963bc31a5d885e27745"
+        }
+      ]
+    },
+    {
+      "name": "escape-string-regexp",
+      "SPDXID": "SPDXRef-Package-escape-string-regexp-2.0.0",
+      "versionInfo": "2.0.0",
+      "packageFileName": "node_modules/stack-utils/node_modules/escape-string-regexp",
+      "description": "Escape RegExp special characters",
+      "downloadLocation": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-2.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/sindresorhus/escape-string-regexp#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/escape-string-regexp@2.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "529cdc2c25e895459c36ee47b5530761d5c98c0ae3b05f42d1a367aae658638b96fd5bb49a2cb96285af6d5df8e476ae56f700527a51ba130c72a4dc18e636fb"
+        }
+      ]
+    },
+    {
       "name": "statuses",
       "SPDXID": "SPDXRef-Package-statuses-2.0.2",
       "versionInfo": "2.0.2",
@@ -13705,252 +13729,275 @@
           "checksumValue": "d885476fd87832debe51793232cd176df202521d5e52b9492403aea411d484b4672a4aee6b0c8375d6110acd048b3b7dd349ed20c93dff8464b1897e1604a971"
         }
       ]
+    },
+    {
+      "name": "cfn-guard",
+      "SPDXID": "SPDXRef-Package-cfn-guard-3.1.1",
+      "versionInfo": "3.1.1",
+      "packageFileName": "vendor/cfn-guard",
+      "description": "AWS CloudFormation Guard is an open-source general-purpose policy-as-code evaluation tool. It provides developers with a simple-to-use, yet powerful and expressive domain-specific language (DSL) to define policies and enables developers to validate JSON- or YAML- formatted structured data with those policies.",
+      "downloadLocation": "NOASSERTION",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/aws-cloudformation/cloudformation-guard#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/cfn-guard@3.1.1"
+        }
+      ]
     }
   ],
   "relationships": [
     {
       "spdxElementId": "SPDXRef-DOCUMENT",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DESCRIBES"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.934.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudformation-3.934.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-iam-3.934.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-s3-3.934.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.client-sts-3.934.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.934.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-base2.pretty-print-object-1.0.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.anthropic-0.3.26",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.aws-0.1.14",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.cohere-0.3.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.core-0.3.72",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.google-genai-0.2.16",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.google-vertexai-0.2.16",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.langgraph-0.4.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.mcp-adapters-0.6.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.ollama-0.2.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-langchain.openai-0.6.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.auto-instrumentations-node-0.62.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.resources-2.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-logs-0.203.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-metrics-2.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-node-0.203.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-trace-base-2.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.sdk-trace-node-2.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-tree-sitter-grammars.tree-sitter-yaml-0.7.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-archiver-7.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-async-mutex-0.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-axios-1.11.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-cfn-guard-3.1.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-deep-object-diff-1.1.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-fuse.js-7.1.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-ini-5.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-jose-4.15.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-lmdb-3.4.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-luxon-3.7.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-partial-json-0.1.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-pino-9.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-pino-pretty-13.1.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-pyodide-0.28.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-stack-utils-2.0.6",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-tree-sitter-0.22.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-tree-sitter-json-0.24.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-ts-essentials-10.1.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-vscode-languageserver-9.0.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-vscode-languageserver-textdocument-1.0.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-vscode-uri-3.1.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-yauzl-3.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-zod-4.0.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -22931,6 +22978,11 @@
     {
       "spdxElementId": "SPDXRef-Package-atomic-sleep-1.0.0",
       "relatedSpdxElement": "SPDXRef-Package-sonic-boom-4.2.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-escape-string-regexp-2.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-stack-utils-2.0.6",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
