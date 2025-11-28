@@ -12,6 +12,7 @@ export enum AwsRegion {
     CA_WEST_1 = 'ca-west-1',
 
     SA_EAST_1 = 'sa-east-1',
+    MX_CENTRAL_1 = 'mx-central-1',
 
     EU_NORTH_1 = 'eu-north-1',
     EU_WEST_1 = 'eu-west-1',
@@ -23,6 +24,7 @@ export enum AwsRegion {
     EU_SOUTH_2 = 'eu-south-2',
 
     AP_EAST_1 = 'ap-east-1',
+    AP_EAST_2 = 'ap-east-2',
     AP_SOUTH_1 = 'ap-south-1',
     AP_SOUTH_2 = 'ap-south-2',
     AP_NORTHEAST_1 = 'ap-northeast-1',
@@ -32,6 +34,8 @@ export enum AwsRegion {
     AP_SOUTHEAST_2 = 'ap-southeast-2',
     AP_SOUTHEAST_3 = 'ap-southeast-3',
     AP_SOUTHEAST_4 = 'ap-southeast-4',
+    AP_SOUTHEAST_5 = 'ap-southeast-5',
+    AP_SOUTHEAST_7 = 'ap-southeast-7',
 
     ME_SOUTH_1 = 'me-south-1',
     ME_CENTRAL_1 = 'me-central-1',
