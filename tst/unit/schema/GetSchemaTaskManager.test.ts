@@ -1,197 +1,144 @@
-import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import * as sinon from 'sinon';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MemoryDataStoreFactoryProvider } from '../../../src/datastore/DataStore';
 import { GetSchemaTaskManager } from '../../../src/schema/GetSchemaTaskManager';
 import { SchemaStore } from '../../../src/schema/SchemaStore';
-import { AwsRegion } from '../../../src/utils/Region';
-import { flushAllPromises } from '../../utils/Utils';
+import { getTestPrivateSchemas, samFileType, Schemas, SamSchemaFiles, schemaFileType } from '../../utils/SchemaUtils';
+import { waitFor } from '../../utils/Utils';
 
 describe('GetSchemaTaskManager', () => {
-    let mockSchemaStore: SchemaStore;
-    let manager: GetSchemaTaskManager;
-    let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
-    let mockGetPrivateResources: ReturnType<typeof vi.fn>;
-    let mockOnSchemaUpdate: ReturnType<typeof vi.fn>;
-    let mockGetSamSchema: ReturnType<typeof vi.fn>;
+    const timeout = 250;
+
+    let schemaStore: SchemaStore;
+    let taskManager: GetSchemaTaskManager;
+    let getPublicSchemasStub: sinon.SinonStub;
+    let getPrivateResourcesStub: sinon.SinonStub;
+    let getSamSchemasStub: sinon.SinonStub;
 
     beforeEach(() => {
-        vi.clearAllMocks();
-        const dataStoreFactory = new MemoryDataStoreFactoryProvider();
-        mockSchemaStore = new SchemaStore(dataStoreFactory);
+        schemaStore = new SchemaStore(new MemoryDataStoreFactoryProvider());
 
-        mockGetPublicSchemas = vi.fn();
-        mockGetPrivateResources = vi.fn().mockResolvedValue([
-            {
-                TypeName: 'Custom::TestResource',
-                Description: 'Test private resource',
-            } as DescribeTypeOutput,
-        ]);
-        mockGetSamSchema = vi.fn();
+        getPublicSchemasStub = sinon.stub().resolves(schemaFileType([Schemas.S3Bucket]));
+        getPrivateResourcesStub = sinon.stub().resolves(getTestPrivateSchemas());
+        getSamSchemasStub = sinon.stub().resolves(samFileType([SamSchemaFiles.ServerlessFunction]));
 
-        mockOnSchemaUpdate = vi.fn();
-
-        manager = new GetSchemaTaskManager(
-            mockSchemaStore,
-            mockGetPublicSchemas,
-            mockGetPrivateResources,
-            mockGetSamSchema,
-            'default',
-            mockOnSchemaUpdate,
+        taskManager = new GetSchemaTaskManager(
+            schemaStore,
+            getPublicSchemasStub,
+            getPrivateResourcesStub,
+            getSamSchemasStub,
         );
     });
 
     afterEach(() => {
-        manager.close();
+        sinon.restore();
     });
 
-    it('should process multiple different regions sequentially', async () => {
-        let resolveFirst: (value: any) => void;
+    describe('addTask', () => {
+        it('should add and run public schema task for new region', async () => {
+            taskManager.addTask('us-east-1');
+            taskManager.addTask('us-east-1');
+            taskManager.addTask('eu-west-1');
+            taskManager.addTask('eu-west-2');
 
-        mockGetPublicSchemas
-            .mockImplementationOnce(
-                () =>
-                    new Promise((resolve) => {
-                        resolveFirst = resolve;
-                    }),
-            )
-            .mockImplementationOnce(() => new Promise(() => {}));
-
-        // Add two different regions
-        manager.addTask(AwsRegion.US_EAST_1);
-        manager.addTask(AwsRegion.US_WEST_2);
-
-        // First region starts immediately
-        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
-        expect(mockGetPublicSchemas).toHaveBeenCalledTimes(1);
-
-        // Complete first task
-        resolveFirst!([{ name: 'first.json', content: '{}', createdMs: Date.now() }]);
-        await flushAllPromises();
-
-        // Now second region should start
-        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_WEST_2);
-        expect(mockGetPublicSchemas).toHaveBeenCalledTimes(2);
-    });
-
-    it('should not add duplicate regions to queue', () => {
-        manager.addTask(AwsRegion.US_EAST_1);
-        manager.addTask(AwsRegion.US_EAST_1);
-        manager.addTask(AwsRegion.US_EAST_1);
-
-        // Should only have one task in queue
-        const regionalTasks = manager.currentRegionalTasks();
-        expect(regionalTasks.size).toBe(1);
-        expect(regionalTasks.has(AwsRegion.US_EAST_1)).toBe(true);
-    });
-
-    it('should track multiple different regions in queue', () => {
-        mockGetPublicSchemas.mockImplementation(() => new Promise(() => {}));
-
-        // Add different regions while first is processing
-        manager.addTask(AwsRegion.US_EAST_1);
-        manager.addTask(AwsRegion.US_WEST_2);
-        manager.addTask(AwsRegion.EU_WEST_1);
-        manager.addTask(AwsRegion.US_EAST_1); // duplicate
-
-        // Should track all unique regions
-        const regionalTasks = manager.currentRegionalTasks();
-        expect(regionalTasks.size).toBe(3);
-        expect(regionalTasks.has(AwsRegion.US_EAST_1)).toBe(true);
-        expect(regionalTasks.has(AwsRegion.US_WEST_2)).toBe(true);
-        expect(regionalTasks.has(AwsRegion.EU_WEST_1)).toBe(true);
-    });
-
-    it('should handle slow promises without blocking other operations', async () => {
-        let resolvePromise: (value: any) => void;
-
-        mockGetPublicSchemas.mockImplementation(
-            () =>
-                new Promise((resolve) => {
-                    resolvePromise = resolve;
-                }),
-        );
-
-        manager.addTask(AwsRegion.US_EAST_1);
-
-        // Task should start but not complete
-        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
-        expect((manager as any).isRunning).toBe(true);
-
-        // Should not have data in store yet
-        expect(mockSchemaStore.publicSchemas.get(AwsRegion.US_EAST_1)).toBeUndefined();
-
-        // Complete the task
-        resolvePromise!([{ name: 'test.json', content: '{}', createdMs: Date.now() }]);
-        await flushAllPromises();
-
-        // Should have saved to datastore
-        expect(mockSchemaStore.publicSchemas.get(AwsRegion.US_EAST_1)).toBeDefined();
-        expect((manager as any).isRunning).toBe(false);
-    });
-
-    it('should handle task failures by retrying', async () => {
-        mockGetPublicSchemas
-            .mockRejectedValueOnce(new Error('Network error'))
-            .mockResolvedValueOnce([{ name: 'retry.json', content: '{}', createdMs: Date.now() }]);
-
-        manager.addTask(AwsRegion.US_EAST_1);
-
-        await flushAllPromises();
-
-        // Should have been called twice (original + retry)
-        expect(mockGetPublicSchemas).toHaveBeenCalledTimes(2);
-        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
-    });
-
-    it('should handle private task with slow promises', async () => {
-        let resolvePromise: (value: any) => void;
-
-        mockGetPrivateResources.mockImplementation(
-            () =>
-                new Promise((resolve) => {
-                    resolvePromise = resolve;
-                }),
-        );
-
-        manager.runPrivateTask();
-
-        expect(mockGetPrivateResources).toHaveBeenCalled();
-
-        // Should not have data in store yet
-        expect(mockSchemaStore.privateSchemas.keys(10)).toHaveLength(0);
-
-        resolvePromise!([{ TypeName: 'Custom::Test', Description: 'Test' } as DescribeTypeOutput]);
-        await flushAllPromises();
-
-        // Should have saved to private store
-        expect(mockSchemaStore.privateSchemas.keys(10).length).toBeGreaterThan(0);
-    });
-
-    it('should call schema retriever callback after successful task completion', async () => {
-        mockGetPublicSchemas.mockResolvedValue([{ name: 'test.json', content: '{}', createdMs: Date.now() }]);
-
-        manager.addTask(AwsRegion.US_EAST_1);
-        await flushAllPromises();
-
-        expect(mockOnSchemaUpdate).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
-    });
-
-    it('should call schema retriever callback after private task completion', async () => {
-        manager.runPrivateTask();
-        await flushAllPromises();
-
-        expect(mockOnSchemaUpdate).toHaveBeenCalledWith(undefined, 'default');
-    });
-
-    it('should call schema retriever callback after SAM task completion', async () => {
-        // Mock the SAM task to resolve immediately
-        vi.spyOn(manager as any, 'samTask', 'get').mockReturnValue({
-            run: vi.fn().mockResolvedValue(undefined),
+            await waitFor(() => {
+                expect(getPublicSchemasStub.calledWith('eu-west-2')).toBe(true);
+                expect(getPublicSchemasStub.calledWith('eu-west-1')).toBe(true);
+                expect(getPublicSchemasStub.calledWith('us-east-1')).toBe(true);
+            }, timeout);
         });
 
-        manager.runSamTask();
-        await flushAllPromises();
+        it('should store schemas in datastore after task completion', async () => {
+            taskManager.addTask('us-west-2');
 
-        expect(mockOnSchemaUpdate).toHaveBeenCalledWith();
+            await waitFor(() => {
+                const schemas = schemaStore.getPublicSchemas('us-west-2');
+                expect(schemas).toBeDefined();
+                expect(schemas?.region).toBe('us-west-2');
+            }, timeout);
+        });
+
+        it('should preserve firstCreatedMs when provided', async () => {
+            const firstCreatedMs = Date.now() - 10000;
+            taskManager.addTask('ap-south-1', firstCreatedMs);
+            await waitFor(() => {
+                const schemas = schemaStore.getPublicSchemas('ap-south-1');
+                expect(schemas?.firstCreatedMs).toBe(firstCreatedMs);
+            }, timeout);
+        });
+
+        it('should retry failed tasks', async () => {
+            getPublicSchemasStub.onFirstCall().rejects(new Error('Network error'));
+            getPublicSchemasStub.onSecondCall().resolves(schemaFileType([Schemas.EC2Instance]));
+
+            taskManager.addTask('us-east-1');
+            await waitFor(() => expect(getPublicSchemasStub.callCount).toBe(2), timeout);
+        });
+    });
+
+    describe('runPrivateTask', () => {
+        it('should fetch private schemas', async () => {
+            taskManager.runPrivateTask();
+            await waitFor(() => expect(getPrivateResourcesStub.called).toBe(true), timeout);
+        });
+
+        it('should store private schemas in datastore', async () => {
+            taskManager.runPrivateTask();
+            await waitFor(() => {
+                const schemas = schemaStore.getPrivateSchemas();
+                expect(schemas).toBeDefined();
+                expect(schemas?.schemas.length).toBeGreaterThan(0);
+            }, timeout);
+        });
+
+        it('should invalidate combined schemas after completion', async () => {
+            const invalidateSpy = sinon.spy(schemaStore, 'invalidate');
+
+            taskManager.runPrivateTask();
+            await waitFor(() => expect(invalidateSpy.called).toBe(true), timeout);
+        });
+
+        it('should handle errors gracefully', async () => {
+            getPrivateResourcesStub.rejects(new Error('Auth error'));
+
+            taskManager.runPrivateTask();
+            await waitFor(() => {
+                const schemas = schemaStore.getPrivateSchemas();
+                expect(schemas).toBeUndefined();
+            }, timeout);
+        });
+    });
+
+    describe('runSamTask', () => {
+        it('should fetch SAM schemas', async () => {
+            taskManager.runSamTask();
+            await waitFor(() => expect(getSamSchemasStub.called).toBe(true), timeout);
+        });
+
+        it('should store SAM schemas in datastore', async () => {
+            taskManager.runSamTask();
+            await waitFor(() => {
+                const schemas = schemaStore.getSamSchemas();
+                expect(schemas).toBeDefined();
+                expect(schemas?.schemas.length).toBeGreaterThan(0);
+            }, timeout);
+        });
+
+        it('should invalidate combined schemas after completion', async () => {
+            const invalidateSpy = sinon.spy(schemaStore, 'invalidate');
+
+            taskManager.runSamTask();
+            await waitFor(() => expect(invalidateSpy.called).toBe(true), timeout);
+        });
+
+        it('should handle errors gracefully', async () => {
+            getSamSchemasStub.rejects(new Error('Download error'));
+
+            taskManager.runSamTask();
+            await waitFor(() => {
+                const schemas = schemaStore.getSamSchemas();
+                expect(schemas).toBeUndefined();
+            }, timeout);
+        });
     });
 });

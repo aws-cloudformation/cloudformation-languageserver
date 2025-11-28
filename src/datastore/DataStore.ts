@@ -14,7 +14,6 @@ export enum StoreName {
     public_schemas = 'public_schemas',
     sam_schemas = 'sam_schemas',
     private_schemas = 'private_schemas',
-    combined_schemas = 'combined_schemas',
 }
 
 export interface DataStore {

@@ -1,25 +1,27 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
-import { Logger } from 'pino';
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { DataStore } from '../datastore/DataStore';
 import { CfnService } from '../services/CfnService';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { AwsRegion } from '../utils/Region';
 import { downloadFile } from '../utils/RemoteDownload';
-import { PrivateSchemas, PrivateSchemasType } from './PrivateSchemas';
+import { PrivateSchemas, PrivateSchemasType, PrivateStoreKey } from './PrivateSchemas';
 import { RegionalSchemas, RegionalSchemasType, SchemaFileType } from './RegionalSchemas';
 import { cfnResourceSchemaLink, unZipFile } from './RemoteSchemaHelper';
 
 export abstract class GetSchemaTask {
-    protected abstract runImpl(dataStore: DataStore, logger?: Logger): Promise<void>;
+    protected abstract runImpl(dataStore: DataStore): Promise<void>;
 
-    async run(dataStore: DataStore, logger?: Logger) {
-        await this.runImpl(dataStore, logger);
+    async run(dataStore: DataStore) {
+        await this.runImpl(dataStore);
     }
 }
 
 export class GetPublicSchemaTask extends GetSchemaTask {
+    private readonly logger = LoggerFactory.getLogger(GetPublicSchemaTask);
+
     @Telemetry()
     private readonly telemetry!: ScopedTelemetry;
 
@@ -35,9 +37,20 @@ export class GetPublicSchemaTask extends GetSchemaTask {
     }
 
     @Measure({ name: 'getSchemas' })
-    protected override async runImpl(dataStore: DataStore, logger?: Logger) {
+    protected override async runImpl(dataStore: DataStore) {
+        this.telemetry.count(`getSchemas.maxAttempt.fault`, 0, {
+            attributes: {
+                region: this.region,
+            },
+        });
+
         if (this.attempts >= GetPublicSchemaTask.MaxAttempts) {
-            logger?.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
+            this.telemetry.count(`getSchemas.maxAttempt.fault`, 1, {
+                attributes: {
+                    region: this.region,
+                },
+            });
+            this.logger.error(`Reached max attempts for retrieving schemas for ${this.region} without success`);
             return;
         }
 
@@ -53,44 +66,35 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         };
 
         await dataStore.put<RegionalSchemasType>(this.region, value);
-        logger?.info(`${schemas.length} public schemas retrieved for ${this.region}`);
+        this.logger.info(`${schemas.length} public schemas retrieved for ${this.region}`);
     }
 }
 
 export class GetPrivateSchemasTask extends GetSchemaTask {
-    private readonly processedProfiles = new Set<string>();
+    private readonly logger = LoggerFactory.getLogger(GetPrivateSchemasTask);
 
-    constructor(
-        private readonly getSchemas: () => Promise<DescribeTypeOutput[]>,
-        private readonly getProfile: () => string,
-    ) {
+    constructor(private readonly getSchemas: () => Promise<DescribeTypeOutput[]>) {
         super();
     }
 
     @Measure({ name: 'getSchemas' })
-    protected override async runImpl(dataStore: DataStore, logger?: Logger) {
+    protected override async runImpl(dataStore: DataStore) {
         try {
-            const profile = this.getProfile();
-            if (this.processedProfiles.has(profile)) {
-                return;
-            }
-
             const schemas: DescribeTypeOutput[] = await this.getSchemas();
 
             const value: PrivateSchemasType = {
                 version: PrivateSchemas.V1,
-                identifier: profile,
+                identifier: PrivateStoreKey,
                 schemas: schemas,
                 firstCreatedMs: Date.now(),
                 lastModifiedMs: Date.now(),
             };
 
-            await dataStore.put<PrivateSchemasType>(profile, value);
+            await dataStore.put<PrivateSchemasType>(PrivateStoreKey, value);
 
-            this.processedProfiles.add(profile);
-            logger?.info(`${schemas.length} private schemas retrieved`);
+            this.logger.info(`${schemas.length} private schemas retrieved`);
         } catch (error) {
-            logger?.error(error, `Failed to get private schemas`);
+            this.logger.error(error, 'Failed to get private schemas');
             throw error;
         }
     }
