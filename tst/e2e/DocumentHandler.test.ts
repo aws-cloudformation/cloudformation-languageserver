@@ -1,17 +1,21 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';
 
 describe('DocumentHandler', () => {
     const uri = 'file:///test.yaml';
 
-    let extension: TestExtension;
+    const extension = new TestExtension();
 
-    beforeEach(() => {
-        extension = new TestExtension();
+    beforeEach(async () => {
+        await extension.reset();
     });
 
-    afterEach(async () => {
+    beforeEach(async () => {
+        await extension.reset();
+    });
+
+    afterAll(async () => {
         await extension.close();
     });
 
