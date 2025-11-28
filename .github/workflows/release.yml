@@ -95,11 +95,11 @@ jobs:
 
           TAG=${{ needs.version-and-tag.outputs.tag }}
           if [[ "$TAG" =~ -alpha$ ]]; then
-            FILE_NAME="${APP_NAME}-${VERSION}-alpha-glib2.28-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
+            FILE_NAME="${APP_NAME}-${VERSION}-alpha-linuxglib2.28-${{ matrix.arch }}-node${NODE_MAJOR}"
           elif [[ "$TAG" =~ -beta$ ]]; then
-            FILE_NAME="${APP_NAME}-${VERSION}-beta-glib2.28-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
+            FILE_NAME="${APP_NAME}-${VERSION}-beta-linuxglib2.28-${{ matrix.arch }}-node${NODE_MAJOR}"
           else
-            FILE_NAME="${APP_NAME}-${VERSION}-glib2.28-linux-${{ matrix.arch }}-node${NODE_MAJOR}"
+            FILE_NAME="${APP_NAME}-${VERSION}-linuxglib2.28-${{ matrix.arch }}-node${NODE_MAJOR}"
           fi
 
           ASSET_NAME=$(echo "$FILE_NAME" | tr '[:upper:]' '[:lower:]')
