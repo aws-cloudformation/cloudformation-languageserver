@@ -11,10 +11,6 @@ describe('DocumentHandler', () => {
         await extension.reset();
     });
 
-    beforeEach(async () => {
-        await extension.reset();
-    });
-
     afterAll(async () => {
         await extension.close();
     });
@@ -35,7 +31,7 @@ describe('DocumentHandler', () => {
             const document = extension.components.documentManager.get(uri);
             expect(document).toBeDefined();
             expect(document?.contents()).toBe(content);
-        });
+        }, 2_500);
     });
 
     it('should handle document change and update DocumentManager', async () => {
@@ -65,7 +61,7 @@ describe('DocumentHandler', () => {
         await WaitFor.waitFor(() => {
             const document = extension.components.documentManager.get(uri);
             expect(document?.contents()).toBe(`Hello${newContent}`);
-        });
+        }, 2_500);
 
         const replaceContent = 'SomeRandomContent';
         await extension.changeDocument({
@@ -76,7 +72,7 @@ describe('DocumentHandler', () => {
         await WaitFor.waitFor(() => {
             const document = extension.components.documentManager.get(uri);
             expect(document?.contents()).toBe(replaceContent);
-        });
+        }, 2_500);
     });
 
     it('should handle document close and remove from DocumentManager', async () => {
@@ -93,7 +89,7 @@ describe('DocumentHandler', () => {
 
         await WaitFor.waitFor(() => {
             expect(extension.components.documentManager.get(uri)).toBeDefined();
-        });
+        }, 2_500);
 
         await extension.closeDocument({
             textDocument: { uri },
@@ -101,6 +97,6 @@ describe('DocumentHandler', () => {
 
         await WaitFor.waitFor(() => {
             expect(extension.components.documentManager.get(uri)).toBeUndefined();
-        });
+        }, 2_500);
     });
 });
