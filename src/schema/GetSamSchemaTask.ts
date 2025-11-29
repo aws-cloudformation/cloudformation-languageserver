@@ -1,5 +1,5 @@
-import { Logger } from 'pino';
 import { DataStore } from '../datastore/DataStore';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { downloadJson } from '../utils/RemoteDownload';
 import { GetSchemaTask } from './GetSchemaTask';
@@ -7,12 +7,14 @@ import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';
 import { CloudFormationResourceSchema, SamSchema, SamSchemaTransformer } from './SamSchemaTransformer';
 
 export class GetSamSchemaTask extends GetSchemaTask {
+    private readonly logger = LoggerFactory.getLogger(GetSamSchemaTask);
+
     constructor(private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>) {
         super();
     }
 
     @Measure({ name: 'getSchemas' })
-    protected override async runImpl(dataStore: DataStore, logger?: Logger): Promise<void> {
+    protected override async runImpl(dataStore: DataStore): Promise<void> {
         try {
             const resourceSchemas = await this.getSamSchemas();
 
@@ -32,9 +34,9 @@ export class GetSamSchemaTask extends GetSchemaTask {
 
             await dataStore.put(SamStoreKey, samSchemasData);
 
-            logger?.info(`${resourceSchemas.size} SAM schemas downloaded and stored`);
+            this.logger.info(`${resourceSchemas.size} SAM schemas downloaded and stored`);
         } catch (error) {
-            logger?.error(error, 'Failed to download SAM schema');
+            this.logger.error(error, 'Failed to download SAM schema');
             throw error;
         }
     }

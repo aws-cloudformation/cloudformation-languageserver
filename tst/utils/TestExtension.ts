@@ -53,7 +53,6 @@ import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
-import { SamStoreKey } from '../../src/schema/SamSchemas';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../src/schema/SchemaStore';
 import { CfnExternal } from '../../src/server/CfnExternal';
@@ -182,6 +181,10 @@ export class TestExtension implements Closeable {
     }
 
     get components() {
+        if (this.core === undefined || this.external === undefined || this.providers === undefined) {
+            throw new Error('LSP server has not fully initialized yet');
+        }
+
         return {
             ...this.core,
             ...this.external,
@@ -196,8 +199,8 @@ export class TestExtension implements Closeable {
 
             await WaitFor.waitFor(() => {
                 const store = this.external.schemaStore;
-                const pbSchemas = store?.publicSchemas?.get(DefaultSettings.profile.region);
-                const samSchemas = store?.samSchemas?.get(SamStoreKey);
+                const pbSchemas = store?.getPublicSchemas(DefaultSettings.profile.region);
+                const samSchemas = store?.getSamSchemas();
 
                 if (pbSchemas === undefined || samSchemas === undefined) {
                     throw new Error('Schemas not loaded yet');
