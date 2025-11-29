@@ -197,7 +197,7 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
 
 function updateSyntaxTree(syntaxTreeManager: SyntaxTreeManager, textDocument: TextDocument, edit: Edit) {
     const uri = textDocument.uri;
-    const document = new Document(textDocument);
+    const document = new Document(uri, () => textDocument);
     if (syntaxTreeManager.getSyntaxTree(uri)) {
         if (document.cfnFileType === CloudFormationFileType.Other) {
             syntaxTreeManager.deleteSyntaxTree(uri);

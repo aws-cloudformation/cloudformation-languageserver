@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CodeActionKind } from 'vscode-languageserver-protocol';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
-import { Document } from '../../../src/document/Document';
 import { RelatedResourcesSnippetProvider } from '../../../src/relatedResources/RelatedResourcesSnippetProvider';
 import {
     createMockComponents,
@@ -12,6 +10,7 @@ import {
     createMockSyntaxTreeManager,
 } from '../../utils/MockServerComponents';
 import { combinedSchemas } from '../../utils/SchemaUtils';
+import { createTestDocument } from '../../utils/Utils';
 
 // Mock the SectionContextBuilder module
 vi.mock('../../../src/context/SectionContextBuilder', () => ({
@@ -62,7 +61,7 @@ describe('RelatedResourcesSnippetProvider', () => {
         it('should generate code action for YAML document without Resources section', () => {
             const templateUri = 'file:///test/template.yaml';
             const yamlContent = 'AWSTemplateFormatVersion: "2010-09-09"\n';
-            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+            const document = createTestDocument(templateUri, 'yaml', 1, yamlContent);
 
             documentManager.get.withArgs(templateUri).returns(document);
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(undefined);
@@ -91,7 +90,7 @@ Resources:
   MyBucket:
     Type: AWS::S3::Bucket
 `;
-            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+            const document = createTestDocument(templateUri, 'yaml', 1, yamlContent);
 
             const mockSyntaxTree = {
                 findTopLevelSections: vi.fn().mockReturnValue(
@@ -124,7 +123,7 @@ Resources:
         it('should generate code action for JSON document without Resources section', () => {
             const templateUri = 'file:///test/template.json';
             const jsonContent = '{\n  "AWSTemplateFormatVersion": "2010-09-09"\n}';
-            const document = new Document(TextDocument.create(templateUri, 'json', 1, jsonContent));
+            const document = createTestDocument(templateUri, 'json', 1, jsonContent);
 
             documentManager.get.withArgs(templateUri).returns(document);
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(undefined);
@@ -149,7 +148,7 @@ Resources:
     }
   }
 }`;
-            const document = new Document(TextDocument.create(templateUri, 'json', 1, jsonContent));
+            const document = createTestDocument(templateUri, 'json', 1, jsonContent);
 
             const mockSyntaxTree = {
                 findTopLevelSections: vi.fn().mockReturnValue(
@@ -184,7 +183,7 @@ Resources:
   MyBucket:
     Type: AWS::S3::Bucket
 `;
-            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+            const document = createTestDocument(templateUri, 'yaml', 1, yamlContent);
 
             const mockSyntaxTree = {
                 findTopLevelSections: vi.fn().mockReturnValue(
@@ -224,7 +223,7 @@ Resources:
   MyBucket:
     Type: AWS::S3::Bucket
 `;
-            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+            const document = createTestDocument(templateUri, 'yaml', 1, yamlContent);
 
             const mockSyntaxTree = {
                 findTopLevelSections: vi.fn().mockReturnValue(
@@ -270,7 +269,7 @@ Resources:
   LambdaFunctionRelatedToS3Bucket:
     Type: AWS::Lambda::Function
 `;
-            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+            const document = createTestDocument(templateUri, 'yaml', 1, yamlContent);
 
             const mockSyntaxTree = {
                 findTopLevelSections: vi.fn().mockReturnValue(
@@ -310,7 +309,7 @@ Resources:
   MyBucket:
     Type: AWS::S3::Bucket
 `;
-            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+            const document = createTestDocument(templateUri, 'yaml', 1, yamlContent);
 
             const mockSyntaxTree = {
                 findTopLevelSections: vi.fn().mockReturnValue(
