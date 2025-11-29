@@ -211,6 +211,8 @@ export class TestExtension implements Closeable {
 
     async reset() {
         await this.ready();
+        (this.serverConnection.components.documents.documents as any)._syncedDocuments.clear();
+
         this.core.settingsManager.reset();
         this.core.syntaxTreeManager.deleteAllTrees();
         this.core.documentManager.clear();
@@ -241,12 +243,10 @@ export class TestExtension implements Closeable {
 
     async openDocument(params: DidOpenTextDocumentParams) {
         await this.notify(DidOpenTextDocumentNotification.method, params);
-        await wait(10);
     }
 
     async changeDocument(params: DidChangeTextDocumentParams) {
         await this.notify(DidChangeTextDocumentNotification.method, params);
-        await wait(10);
     }
 
     async closeDocument(params: DidCloseTextDocumentParams) {
@@ -337,8 +337,4 @@ export class TestExtension implements Closeable {
         });
         return uri;
     }
-}
-
-async function wait(ms: number) {
-    await new Promise((resolve) => setTimeout(resolve, ms));
 }
