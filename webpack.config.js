@@ -19,6 +19,7 @@ const KEEP_FILES = [
     '.cjs',
     '.gyp',
     '.js',
+    '.js.map',
     '.mjs',
     '.node',
     '.wasm',
@@ -300,8 +301,8 @@ module.exports = (env = {}) => {
     console.info(`Building server with mode: ${mode}`);
     console.info(`NODE_ENV: ${mode}`);
     console.info(`AWS_ENV: ${awsEnv}`);
-    console.info(`Platform: ${process.platform} Arch: ${process.arch}`);
-    console.info(`Node.js ${process.version} Versions: ${JSON.stringify(process.versions, null, 2)}`);
+    console.info(`Platform: ${process.platform}, Arch: ${process.arch}, Rebuild: ${rebuild}`);
+    console.info(`Node.js ${process.version}, Versions: ${JSON.stringify(process.versions, null, 2)}`);
     console.info(`Output path: ${outputPath}`);
 
     return {
