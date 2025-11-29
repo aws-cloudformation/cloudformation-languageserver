@@ -55,6 +55,26 @@ export const Templates: Record<string, Record<'json' | 'yaml', { fileName: strin
             },
         },
     },
+    sampleExpected: {
+        json: {
+            fileName: 'file://sample_template_after_edits.json',
+            get contents() {
+                return readFileSync(
+                    join(__dirname, '..', 'resources', 'templates', 'sample_template_after_edits.json'),
+                    'utf8',
+                );
+            },
+        },
+        yaml: {
+            fileName: 'file://sample_template_after_edits.yaml',
+            get contents() {
+                return readFileSync(
+                    join(__dirname, '..', 'resources', 'templates', 'sample_template_after_edits.yaml'),
+                    'utf8',
+                );
+            },
+        },
+    },
     comprehensive: {
         json: {
             fileName: 'file://comprehensive.json',

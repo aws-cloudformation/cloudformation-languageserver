@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DidChangeTextDocumentParams, Range } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { DocumentUri } from 'vscode-languageserver-textdocument/lib/esm/main';
+import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { Document, CloudFormationFileType } from '../../../src/document/Document';
+import { createEdit } from '../../../src/document/DocumentUtils';
 import {
     didOpenHandler,
     didChangeHandler,
@@ -11,6 +13,7 @@ import {
 } from '../../../src/handlers/DocumentHandler';
 import { LintTrigger } from '../../../src/services/cfnLint/CfnLintService';
 import { createMockComponents, MockedServerComponents } from '../../utils/MockServerComponents';
+import { Templates } from '../../utils/TemplateUtils';
 import { flushAllPromises } from '../../utils/Utils';
 
 describe('DocumentHandler', () => {
@@ -122,8 +125,13 @@ describe('DocumentHandler', () => {
         }
 
         it('should handle incremental changes and update syntax tree', () => {
-            const textDocument = createTextDocument();
+            const expectedContent = 'AWSTemplateFormatVersion: "2010-09-10"';
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, expectedContent);
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
+
+            mockServices.syntaxTreeManager.getSyntaxTree.returns({
+                content: () => testContent,
+            } as any);
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
 
@@ -132,20 +140,121 @@ describe('DocumentHandler', () => {
                     textDocument: { uri: testUri },
                     contentChanges: [
                         {
-                            range: Range.create(0, 0, 0, 5),
-                            text: 'Hello',
+                            range: Range.create(0, 37, 0, 38),
+                            text: '0',
                         },
                     ],
                 }),
             );
 
+            expect(mockServices.syntaxTreeManager.updateWithEdit.calledOnce).toBe(true);
             expect(
-                mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, LintTrigger.OnChange, true),
+                mockServices.cfnLintService.lintDelayed.calledWith(
+                    expectedContent,
+                    testUri,
+                    LintTrigger.OnChange,
+                    true,
+                ),
             ).toBe(true);
         });
 
-        it('should use delayed linting and Guard validation for files', () => {
-            const textDocument = createTextDocument();
+        it('should apply multiple sequential edits correctly', () => {
+            const syntaxTreeManager = new SyntaxTreeManager();
+            const testUri = 'file:///test/sample_template.json';
+            const expectedUri = 'file:///test/sample_template_expected.json';
+            const initialContent = Templates.sample.json.contents;
+            const expectedContent = Templates.sampleExpected.json.contents;
+
+            syntaxTreeManager.add(testUri, initialContent);
+            syntaxTreeManager.add(expectedUri, expectedContent);
+
+            const changes = [
+                { range: { start: { line: 248, character: 40 }, end: { line: 248, character: 40 } }, text: '}' },
+                { range: { start: { line: 248, character: 39 }, end: { line: 248, character: 39 } }, text: 'Action' },
+                { range: { start: { line: 248, character: 35 }, end: { line: 248, character: 35 } }, text: 'cution' },
+                { range: { start: { line: 248, character: 34 }, end: { line: 248, character: 34 } }, text: 'bdaEx' },
+                { range: { start: { line: 248, character: 29 }, end: { line: 248, character: 33 } }, text: ' "La' },
+                { range: { start: { line: 248, character: 25 }, end: { line: 248, character: 28 } }, text: 'Ref"' },
+                { range: { start: { line: 248, character: 24 }, end: { line: 248, character: 24 } }, text: '{' },
+                {
+                    range: { start: { line: 45, character: 5 }, end: { line: 45, character: 5 } },
+                    text: ',\n    "LambdaExecutionRoleAction": {\n      "Type": "String",\n      "Default": "sts:AssumeRole",\n      "Description": ""\n    }\n',
+                },
+            ];
+
+            let currentContent = initialContent;
+
+            for (const change of changes) {
+                const start = { row: change.range.start.line, column: change.range.start.character };
+                const end = { row: change.range.end.line, column: change.range.end.character };
+                const { edit, newContent } = createEdit(currentContent, change.text, start, end);
+                syntaxTreeManager.updateWithEdit(testUri, newContent, edit);
+                currentContent = newContent;
+            }
+
+            const actualTree = syntaxTreeManager.getSyntaxTree(testUri);
+            const expectedTree = syntaxTreeManager.getSyntaxTree(expectedUri);
+            expect(actualTree).toBeDefined();
+            expect(expectedTree).toBeDefined();
+
+            const actualRoot = actualTree!.getRootNode();
+            const expectedRoot = expectedTree!.getRootNode();
+
+            // Check for corruption in actual tree
+            const corruptedNodes: string[] = [];
+            const errorNodes: string[] = [];
+
+            function walkTree(node: any): void {
+                const nodeText = node.text;
+
+                if (nodeText.startsWith(': null')) {
+                    corruptedNodes.push(`${node.type} at ${node.startPosition.row}:${node.startPosition.column}`);
+                }
+
+                if (node.type === 'ERROR') {
+                    errorNodes.push(`ERROR at ${node.startPosition.row}:${node.startPosition.column}`);
+                }
+
+                for (let i = 0; i < node.childCount; i++) {
+                    walkTree(node.child(i));
+                }
+            }
+
+            walkTree(actualRoot);
+
+            expect(corruptedNodes, `Found nodes with ": null" corruption:\n${corruptedNodes.join('\n')}`).toHaveLength(
+                0,
+            );
+            expect(errorNodes, `Found ERROR nodes:\n${errorNodes.join('\n')}`).toHaveLength(0);
+
+            // Compare tree structures
+            expect(actualRoot.type).toBe(expectedRoot.type);
+            expect(actualRoot.hasError).toBe(false);
+            expect(expectedRoot.hasError).toBe(false);
+
+            // Compare parsed JSON to ensure semantic equivalence
+            const actualJson = JSON.parse(actualTree!.content());
+            const expectedJson = JSON.parse(expectedTree!.content());
+
+            expect(actualJson.Parameters.LambdaExecutionRoleAction).toEqual({
+                Type: 'String',
+                Default: 'sts:AssumeRole',
+                Description: '',
+            });
+            expect(
+                actualJson.Resources.LambdaExecutionRole.Properties.AssumeRolePolicyDocument.Statement[0].Action,
+            ).toEqual({
+                Ref: 'LambdaExecutionRoleAction',
+            });
+
+            // Verify overall structure matches
+            expect(Object.keys(actualJson)).toEqual(Object.keys(expectedJson));
+            expect(Object.keys(actualJson.Parameters)).toEqual(Object.keys(expectedJson.Parameters));
+        });
+
+        it('should handle full document replacement and trigger validation', () => {
+            const newContent = 'Resources:\n  MyBucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, newContent);
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
@@ -153,21 +262,24 @@ describe('DocumentHandler', () => {
             handler(
                 createParams({
                     textDocument: { uri: testUri },
-                    contentChanges: [{ text: 'new content' }],
+                    contentChanges: [{ text: newContent }],
                 }),
             );
 
+            expect(mockServices.syntaxTreeManager.add.calledWith(testUri, newContent)).toBe(true);
             expect(
-                mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, LintTrigger.OnChange, true),
+                mockServices.cfnLintService.lintDelayed.calledWith(newContent, testUri, LintTrigger.OnChange, true),
             ).toBe(true);
-            expect(mockServices.guardService.validateDelayed.calledWith(testContent, testUri)).toBe(true);
+            expect(mockServices.guardService.validateDelayed.calledWith(newContent, testUri)).toBe(true);
         });
 
         it('should create syntax tree when update fails', () => {
             const textDocument = createTextDocument();
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
 
-            mockServices.syntaxTreeManager.getSyntaxTree.returns({} as any); // Mock existing tree
+            mockServices.syntaxTreeManager.getSyntaxTree.returns({
+                content: () => testContent,
+            } as any);
             mockServices.syntaxTreeManager.updateWithEdit.throws(new Error('Update failed'));
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
@@ -224,6 +336,55 @@ describe('DocumentHandler', () => {
             ).not.toThrow();
             expect(mockServices.cfnLintService.lintDelayed.called).toBe(false);
             expect(mockServices.guardService.validateDelayed.called).toBe(false);
+        });
+
+        it('should return early for non-template documents', () => {
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, 'Foo: Bar');
+            mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(
+                createParams({
+                    textDocument: { uri: testUri },
+                    contentChanges: [{ text: 'not a template' }],
+                }),
+            );
+
+            expect(mockServices.syntaxTreeManager.add.called).toBe(false);
+            expect(mockServices.cfnLintService.lintDelayed.called).toBe(false);
+        });
+
+        it('should delete syntax tree when document becomes non-template', () => {
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, 'someKey: someValue');
+            mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
+            mockServices.syntaxTreeManager.getSyntaxTree.returns({ content: () => 'old content' } as any);
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(
+                createParams({
+                    textDocument: { uri: testUri },
+                    contentChanges: [{ text: 'someKey: someValue' }],
+                }),
+            );
+
+            expect(mockServices.syntaxTreeManager.deleteSyntaxTree.calledWith(testUri)).toBe(true);
+        });
+
+        it('should create new tree when no existing tree', () => {
+            const newContent = 'Resources:\n  MyBucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create(testUri, 'yaml', 1, newContent);
+            mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
+            mockServices.syntaxTreeManager.getSyntaxTree.returns(undefined);
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(
+                createParams({
+                    textDocument: { uri: testUri },
+                    contentChanges: [{ text: newContent }],
+                }),
+            );
+
+            expect(mockServices.syntaxTreeManager.add.calledWith(testUri, newContent)).toBe(true);
         });
     });
 
