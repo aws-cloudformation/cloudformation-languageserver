@@ -55,7 +55,7 @@ export function didChangeHandler(
         }
 
         // This is the document AFTER changes
-        const document = new Document(textDocument);
+        const document = new Document(textDocument.uri, () => textDocument);
         const finalContent = document.getText();
 
         const tree = components.syntaxTreeManager.getSyntaxTree(documentUri);
