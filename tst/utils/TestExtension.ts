@@ -249,6 +249,32 @@ export class TestExtension implements Closeable {
         await this.notify(DidChangeTextDocumentNotification.method, params);
     }
 
+    // Helper to apply text edits manually for testing
+    static applyEdit(
+        content: string,
+        range: { start: { line: number; character: number }; end: { line: number; character: number } },
+        text: string,
+    ): string {
+        const lines = content.split('\n');
+        const startLine = lines[range.start.line];
+        const endLine = lines[range.end.line];
+
+        if (range.start.line === range.end.line) {
+            // Single line edit
+            const before = startLine.slice(0, Math.max(0, range.start.character));
+            const after = endLine.slice(Math.max(0, range.end.character));
+            lines[range.start.line] = before + text + after;
+        } else {
+            // Multi-line edit
+            const before = startLine.slice(0, Math.max(0, range.start.character));
+            const after = endLine.slice(Math.max(0, range.end.character));
+            const newText = before + text + after;
+            lines.splice(range.start.line, range.end.line - range.start.line + 1, newText);
+        }
+
+        return lines.join('\n');
+    }
+
     async closeDocument(params: DidCloseTextDocumentParams) {
         await this.notify(DidCloseTextDocumentNotification.method, params);
     }

@@ -99,4 +99,107 @@ describe('DocumentHandler', () => {
             expect(extension.components.documentManager.get(uri)).toBeUndefined();
         }, 2_500);
     });
+
+    it('should create syntax tree for template documents on open', async () => {
+        const content = 'AWSTemplateFormatVersion: "2010-09-09"\nResources: {}';
+
+        await extension.openDocument({
+            textDocument: {
+                uri,
+                languageId: 'yaml',
+                version: 1,
+                text: content,
+            },
+        });
+
+        await WaitFor.waitFor(() => {
+            const tree = extension.components.syntaxTreeManager.getSyntaxTree(uri);
+            expect(tree).toBeDefined();
+            expect(tree?.content()).toBe(content);
+        });
+    });
+
+    it('should update syntax tree on incremental document changes', async () => {
+        const initialContent = 'AWSTemplateFormatVersion: "2010-09-09"\nResources: {}';
+
+        await extension.openDocument({
+            textDocument: {
+                uri,
+                languageId: 'yaml',
+                version: 1,
+                text: initialContent,
+            },
+        });
+
+        await WaitFor.waitFor(() => {
+            expect(extension.components.syntaxTreeManager.getSyntaxTree(uri)).toBeDefined();
+        });
+
+        const editRange = { start: { line: 0, character: 35 }, end: { line: 0, character: 37 } };
+        const editText = '00';
+        const expectedContent = TestExtension.applyEdit(initialContent, editRange, editText);
+
+        await extension.changeDocument({
+            textDocument: { uri, version: 2 },
+            contentChanges: [
+                {
+                    range: editRange,
+                    text: editText,
+                },
+            ],
+        });
+
+        await WaitFor.waitFor(() => {
+            const tree = extension.components.syntaxTreeManager.getSyntaxTree(uri);
+            expect(tree).toBeDefined();
+            expect(tree?.content()).toBe(expectedContent);
+        });
+    });
+
+    it('should delete syntax tree when document is closed', async () => {
+        const content = 'AWSTemplateFormatVersion: "2010-09-09"';
+
+        await extension.openDocument({
+            textDocument: {
+                uri,
+                languageId: 'yaml',
+                version: 1,
+                text: content,
+            },
+        });
+
+        await WaitFor.waitFor(() => {
+            expect(extension.components.syntaxTreeManager.getSyntaxTree(uri)).toBeDefined();
+        });
+
+        await extension.closeDocument({
+            textDocument: { uri },
+        });
+
+        await WaitFor.waitFor(() => {
+            expect(extension.components.syntaxTreeManager.getSyntaxTree(uri)).toBeUndefined();
+        });
+    });
+
+    it('should not create syntax tree for non-template documents', async () => {
+        const content = 'someKey: someValue\nanotherKey: anotherValue';
+
+        await extension.openDocument({
+            textDocument: {
+                uri,
+                languageId: 'yaml',
+                version: 1,
+                text: content,
+            },
+        });
+
+        await WaitFor.waitFor(() => {
+            expect(extension.components.documentManager.get(uri)).toBeDefined();
+        });
+
+        // Give it time to potentially create a tree (it shouldn't)
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        expect(extension.components.syntaxTreeManager.getSyntaxTree(uri)).toBeUndefined();
+    });
 });
