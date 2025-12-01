@@ -56,7 +56,7 @@ Error: Request cancelled for key: SendDocuments
     test('full stack', () => {
         expect(
             extractLocationFromStack(String.raw`
-Error: ENOENT: no such file or directory, scandir 'cfn-lsp/cloudformation-languageserver/bundle/development/.aws-cfn-storage/lmdb'
+Error: ENOENT: no such file or directory, scandir 'some-dir/cloudformation-languageserver/bundle/development/.aws-cfn-storage/lmdb'
     at readdirSync (node:fs:1584:26)
     at node:electron/js2c/node_init:2:16044
     at LMDBStoreFactory.cleanupOldVersions (webpack://aws/cloudformation-languageserver/src/datastore/LMDB.ts?d928:98:36)
@@ -66,7 +66,7 @@ Error: ENOENT: no such file or directory, scandir 'cfn-lsp/cloudformation-langua
 `),
         ).toEqual({
             'error.message':
-                "Error: ENOENT: no such file or directory, scandir 'cfn-lsp/cloudformation-languageserver/bundle/development/.aws-cfn-storage/lmdb'",
+                "Error: ENOENT: no such file or directory, scandir 'some-dir/cloudformation-languageserver/bundle/development/.aws-cfn-storage/lmdb'",
             'error.stack0': 'readdirSync node:fs 1584:26',
             'error.stack1': 'undefined node:electron/js2c/node_init 2:16044',
             'error.stack2':

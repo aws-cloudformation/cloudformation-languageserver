@@ -1,4 +1,6 @@
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { toString } from '../utils/String';
 import { CompoundFeatureFlag } from './CombinedFeatureFlags';
@@ -17,6 +19,9 @@ import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 const log = LoggerFactory.getLogger('FeatureFlagSupplier');
 
 export class FeatureFlagSupplier implements Closeable {
+    @Telemetry()
+    private readonly telemetry!: ScopedTelemetry;
+
     private readonly _featureFlags = new Map<FeatureFlagConfigKey, FeatureFlag | DynamicFeatureFlag>();
     private readonly _targetedFeatureFlags = new Map<
         TargetedFeatureFlagConfigKey,
@@ -27,7 +32,7 @@ export class FeatureFlagSupplier implements Closeable {
         for (const [key, builder] of Object.entries(FeatureBuilders)) {
             const ff = new DynamicFeatureFlag(
                 key,
-                () => featureConfigSupplier(key, configSupplier, defaultConfig),
+                () => featureConfigSupplier(key, configSupplier, defaultConfig, this.telemetry),
                 builder,
             );
             this._featureFlags.set(key, ff);
@@ -36,7 +41,7 @@ export class FeatureFlagSupplier implements Closeable {
         for (const [key, builder] of Object.entries(TargetedFeatureBuilders)) {
             const ff = new DynamicTargetedFeatureFlag(
                 key,
-                () => featureConfigSupplier(key, configSupplier, defaultConfig),
+                () => featureConfigSupplier(key, configSupplier, defaultConfig, this.telemetry),
                 builder,
             );
             this._targetedFeatureFlags.set(key, ff);
@@ -77,10 +82,13 @@ function featureConfigSupplier(
     key: string,
     configSupplier: () => unknown,
     defaultConfig: () => unknown,
+    telemetry: ScopedTelemetry,
 ): FeatureFlagConfigType | undefined {
+    telemetry.count('used.config.default', 0);
     try {
         return FeatureFlagConfigSchema.parse(configSupplier()).features[key];
     } catch (err) {
+        telemetry.count('used.config.default', 1);
         log.warn(err, `Failed to parse feature flag config: \n${toString(configSupplier())}. Using defaults instead`);
         return FeatureFlagConfigSchema.parse(defaultConfig()).features[key];
     }
