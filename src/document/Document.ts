@@ -171,7 +171,7 @@ export class Document {
             cfnType: this.cfnFileType,
             languageId: this.languageId ?? '',
             version: this.version ?? 0,
-            lineCount: this.lineCount ?? 0,
+            lineCount: this.lineCount ?? -1,
         };
     }
 

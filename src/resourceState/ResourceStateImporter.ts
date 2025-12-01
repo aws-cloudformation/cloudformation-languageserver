@@ -420,7 +420,7 @@ export class ResourceStateImporter {
                         : { line: resourcesSection.endPosition.row + 1, character: 0 };
             } else {
                 // Find the last non-empty line
-                let lastNonEmptyLine = (document.lineCount ?? 1) - 1;
+                let lastNonEmptyLine = document.lineCount ? document.lineCount - 1 : 0;
                 while (lastNonEmptyLine >= 0 && document.getLine(lastNonEmptyLine)?.trim().length === 0) {
                     lastNonEmptyLine--;
                 }
@@ -434,7 +434,11 @@ export class ResourceStateImporter {
             };
         }
 
-        let line = resourcesSection ? resourcesSection.endPosition.row : (document.lineCount ?? 1) - 1;
+        let line = resourcesSection
+            ? resourcesSection.endPosition.row
+            : document.lineCount
+              ? document.lineCount - 1
+              : 0;
 
         // For JSON without Resources section, check if file is essentially empty
         if (!resourcesSection) {
