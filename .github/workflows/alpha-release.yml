@@ -32,8 +32,7 @@ jobs:
         id: version-and-tag
         run: |
           PKG_VERSION=$(jq -r .version package.json)
-          DATE=$(date +%Y%m%d%H%M)
-          TAG="v${PKG_VERSION}-${DATE}-alpha"
+          TAG="v${PKG_VERSION}-${{ inputs.ref || 'main' }}-alpha"
           
           git tag "$TAG"
           git push origin "$TAG"

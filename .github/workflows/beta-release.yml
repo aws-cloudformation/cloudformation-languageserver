@@ -27,13 +27,13 @@ jobs:
         id: version-and-tag
         run: |
           PKG_VERSION=$(jq -r .version package.json)
+          TAG="v${PKG_VERSION}-beta"
 
-          FULL_TAG="v${PKG_VERSION}-beta"
-          git tag "$FULL_TAG"
-          git push origin "$FULL_TAG"
+          git tag "$TAG"
+          git push origin "$TAG"
           echo "Created tag from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
-          echo "tag=$FULL_TAG" >> $GITHUB_OUTPUT
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
 
   call-release:
     needs: [create-beta-tag]
