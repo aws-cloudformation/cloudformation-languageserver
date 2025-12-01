@@ -1,5 +1,6 @@
 // https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/resource-type-schemas.html
-import { dashesToUnderscores } from './String';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { dashesToUnderscores, toString } from './String';
 
 // Make sure keys and values are exactly the same (ignore casing, '-', '_')
 export enum AwsRegion {
@@ -65,7 +66,8 @@ export function getRegion(region: unknown): AwsRegion {
 
     const value = AwsRegion[enumKey as keyof typeof AwsRegion];
     if (!value) {
-        throw new Error(`Unknown region ${String(region)}`);
+        LoggerFactory.getLogger('Region').warn(`Unknown region ${toString(region)}`);
+        return enumKey.replaceAll('_', '-').toLowerCase() as AwsRegion;
     }
 
     return value;

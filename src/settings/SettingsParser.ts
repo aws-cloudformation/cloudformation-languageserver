@@ -1,13 +1,14 @@
 import { z } from 'zod';
-import { AwsRegion } from '../utils/Region';
+import { getRegion } from '../utils/Region';
 import { ProfileSettings, Settings } from './Settings';
-
-const AwsRegionSchema = z.enum(Object.values(AwsRegion));
 
 function createProfileSchema(defaults: Settings['profile']) {
     return z
         .object({
-            region: AwsRegionSchema.nullish().transform((val) => val ?? defaults.region),
+            region: z
+                .string()
+                .nullish()
+                .transform((val) => getRegion(val ?? defaults.region)),
             profile: z
                 .string()
                 .nullish()

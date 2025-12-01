@@ -3,35 +3,45 @@ import { DynamicTargetedFeatureFlag } from '../../../src/featureFlag/DynamicFeat
 import { FeatureFlagSupplier } from '../../../src/featureFlag/FeatureFlagSupplier';
 
 describe('FeatureFlagSupplier', () => {
+    const configSupplier = () => {
+        return {
+            version: 1,
+            description: 'test',
+            features: {
+                EnhancedDryRun: { enabled: true, fleetPercentage: 100, allowlistedRegions: ['us-east-1'] },
+                Constants: { enabled: false },
+            },
+        };
+    };
+
+    const throwError = () => {
+        throw new Error('Error fallback');
+    };
+
     afterEach(() => {
         vi.restoreAllMocks();
     });
 
-    it('should initialize with targeted feature flags', () => {
-        const configSupplier = vi.fn(() => ({
-            version: 1,
-            description: 'test',
-            features: {
-                EnhancedDryRun: { enabled: true },
-            },
-        }));
+    it('should initialize with feature flags', () => {
+        const supplier = new FeatureFlagSupplier(configSupplier, throwError);
 
-        const supplier = new FeatureFlagSupplier(configSupplier);
+        expect([...supplier.featureFlags.keys()]).toEqual(['Constants']);
+        expect(supplier.featureFlags.get('Constants')?.isEnabled()).toBe(false);
 
-        expect(supplier.featureFlags.size).toBe(1);
-        expect(supplier.targetedFeatureFlags.size).toBe(1);
-        expect(supplier.targetedFeatureFlags.has('EnhancedDryRun')).toBe(true);
+        expect([...supplier.targetedFeatureFlags.keys()]).toEqual(['EnhancedDryRun']);
+        expect(supplier.targetedFeatureFlags.get('EnhancedDryRun')?.isEnabled('us-east-1')).toBe(true);
+        expect(supplier.targetedFeatureFlags.get('EnhancedDryRun')?.isEnabled('us-east-2')).toBe(false);
+
         supplier.close();
     });
 
     it('should close all dynamic feature flags', () => {
-        const configSupplier = vi.fn(() => ({
-            version: 1,
-            description: 'test',
-            features: {},
-        }));
-
-        const supplier = new FeatureFlagSupplier(configSupplier);
+        const supplier = new FeatureFlagSupplier(
+            () => {
+                return { version: 1, description: 'test', features: {} };
+            },
+            () => {},
+        );
         const closeSpy = vi.spyOn(DynamicTargetedFeatureFlag.prototype, 'close');
 
         supplier.close();
@@ -39,21 +49,40 @@ describe('FeatureFlagSupplier', () => {
         expect(closeSpy).toHaveBeenCalled();
     });
 
-    it('should handle invalid config gracefully', () => {
-        const configSupplier = vi.fn(() => 'invalid');
+    it('should handle invalid config and fallback to default', () => {
+        const supplier = new FeatureFlagSupplier(() => 'invalid', configSupplier);
 
-        const supplier = new FeatureFlagSupplier(configSupplier);
+        expect([...supplier.featureFlags.keys()]).toEqual(['Constants']);
+        expect([...supplier.targetedFeatureFlags.keys()]).toEqual(['EnhancedDryRun']);
 
-        expect(supplier.targetedFeatureFlags.size).toBe(1);
         supplier.close();
     });
 
     it('should handle undefined config', () => {
-        const configSupplier = vi.fn(() => undefined);
+        const supplier = new FeatureFlagSupplier(() => undefined, configSupplier);
 
-        const supplier = new FeatureFlagSupplier(configSupplier);
+        expect([...supplier.featureFlags.keys()]).toEqual(['Constants']);
+        expect([...supplier.targetedFeatureFlags.keys()]).toEqual(['EnhancedDryRun']);
 
-        expect(supplier.targetedFeatureFlags.size).toBe(1);
         supplier.close();
+    });
+
+    it('throws if both suppliers fail', () => {
+        expect(
+            () =>
+                new FeatureFlagSupplier(
+                    () => undefined,
+                    () => undefined,
+                ),
+        ).toThrow(
+            '[\n' +
+                '  {\n' +
+                '    "expected": "object",\n' +
+                '    "code": "invalid_type",\n' +
+                '    "path": [],\n' +
+                '    "message": "Invalid input: expected object, received undefined"\n' +
+                '  }\n' +
+                ']',
+        );
     });
 });

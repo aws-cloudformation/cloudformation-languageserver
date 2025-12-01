@@ -23,14 +23,22 @@ export class FeatureFlagSupplier implements Closeable {
         TargetedFeatureFlag<unknown> | DynamicTargetedFeatureFlag<unknown>
     >();
 
-    constructor(configSupplier: () => unknown) {
+    constructor(configSupplier: () => unknown, defaultConfig: () => unknown) {
         for (const [key, builder] of Object.entries(FeatureBuilders)) {
-            const ff = new DynamicFeatureFlag(key, () => featureConfigSupplier(key, configSupplier), builder);
+            const ff = new DynamicFeatureFlag(
+                key,
+                () => featureConfigSupplier(key, configSupplier, defaultConfig),
+                builder,
+            );
             this._featureFlags.set(key, ff);
         }
 
         for (const [key, builder] of Object.entries(TargetedFeatureBuilders)) {
-            const ff = new DynamicTargetedFeatureFlag(key, () => featureConfigSupplier(key, configSupplier), builder);
+            const ff = new DynamicTargetedFeatureFlag(
+                key,
+                () => featureConfigSupplier(key, configSupplier, defaultConfig),
+                builder,
+            );
             this._targetedFeatureFlags.set(key, ff);
         }
     }
@@ -65,17 +73,16 @@ export class FeatureFlagSupplier implements Closeable {
     }
 }
 
-function featureConfigSupplier(key: string, configSupplier: () => unknown): FeatureFlagConfigType | undefined {
+function featureConfigSupplier(
+    key: string,
+    configSupplier: () => unknown,
+    defaultConfig: () => unknown,
+): FeatureFlagConfigType | undefined {
     try {
-        const config = configSupplier();
-        if (!config) {
-            return undefined;
-        }
-        const parsed = FeatureFlagConfigSchema.parse(config);
-        return parsed.features[key];
+        return FeatureFlagConfigSchema.parse(configSupplier()).features[key];
     } catch (err) {
-        log.error(err, `Failed to parse feature flag config\n${toString(configSupplier())}`);
-        return undefined;
+        log.warn(err, `Failed to parse feature flag config: \n${toString(configSupplier())}. Using defaults instead`);
+        return FeatureFlagConfigSchema.parse(defaultConfig()).features[key];
     }
 }
 

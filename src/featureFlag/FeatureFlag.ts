@@ -1,4 +1,3 @@
-import { AwsRegion, getRegion } from '../utils/Region';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 import { PartialFleetSelector } from './PartialFleetSelector';
 
@@ -37,18 +36,18 @@ export class FleetTargetedFeatureFlag implements TargetedFeatureFlag<string> {
 }
 
 export class RegionAllowlistFeatureFlag implements TargetedFeatureFlag<string> {
-    private readonly allowlist: Set<AwsRegion>;
+    private readonly allowlist: Set<string>;
 
     constructor(
         private readonly featureName: string,
-        allowedRegions: AwsRegion[],
+        allowedRegions: string[],
     ) {
         this.allowlist = new Set(allowedRegions);
     }
 
     isEnabled(region: string): boolean {
         try {
-            return this.allowlist.has(getRegion(region));
+            return this.allowlist.has(region);
         } catch {
             return false;
         }
