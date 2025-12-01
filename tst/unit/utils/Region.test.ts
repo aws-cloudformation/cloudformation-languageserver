@@ -26,9 +26,24 @@ describe('Region', () => {
             expect(getRegion('EU_WEST_1')).toBe(AwsRegion.EU_WEST_1);
         });
 
-        it('should not throw when region is unknown or invalid', () => {
+        it('should not throw when region has a valid pattern', () => {
             expect(getRegion('invalid_region')).toBe('invalid-region');
             expect(getRegion('US_test-1')).toBe('us-test-1');
+        });
+
+        it('can parse all regions', () => {
+            for (const reg of Object.keys(AwsRegion)) {
+                expect(getRegion(reg)).toBe(reg.toLowerCase().replaceAll('_', '-'));
+            }
+
+            for (const reg of Object.values(AwsRegion)) {
+                expect(getRegion(reg)).toBe(reg);
+            }
+        });
+
+        it('throws on invalid regions', () => {
+            expect(() => getRegion('a')).toThrow('Invalid region a (a)');
+            expect(() => getRegion('a'.repeat(26))).toThrow(`Invalid region ${'a'.repeat(26)} (${'a'.repeat(26)})`);
         });
     });
 });

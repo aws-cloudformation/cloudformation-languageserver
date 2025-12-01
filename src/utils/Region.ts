@@ -1,6 +1,6 @@
 // https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/resource-type-schemas.html
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { dashesToUnderscores, toString } from './String';
+import { toString } from './String';
 
 // Make sure keys and values are exactly the same (ignore casing, '-', '_')
 export enum AwsRegion {
@@ -51,24 +51,22 @@ export enum AwsRegion {
     CN_NORTHWEST_1 = 'cn-northwest-1',
 }
 
-function isValidRegion(region: string) {
-    return region in AwsRegion;
-}
+const Regions: ReadonlyArray<string> = Object.values(AwsRegion);
 
 export function getRegion(region: unknown): AwsRegion {
-    let enumKey = String(region).trim();
-    if (!isValidRegion(enumKey)) {
-        enumKey = enumKey.toUpperCase();
-        if (!isValidRegion(enumKey)) {
-            enumKey = dashesToUnderscores(enumKey);
-        }
+    const key = String(region)
+        .replaceAll('_', '-')
+        .replaceAll(/[^a-zA-Z0-9-]/g, '')
+        .toLowerCase()
+        .trim();
+
+    if (key.length < 4 || key.length > 25) {
+        throw new Error(`Invalid region ${toString(region)} (${key})`);
     }
 
-    const value = AwsRegion[enumKey as keyof typeof AwsRegion];
-    if (!value) {
+    if (!Regions.includes(key)) {
         LoggerFactory.getLogger('Region').warn(`Unknown region ${toString(region)}`);
-        return enumKey.replaceAll('_', '-').toLowerCase() as AwsRegion;
     }
 
-    return value;
+    return key as AwsRegion;
 }
