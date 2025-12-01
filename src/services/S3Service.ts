@@ -29,6 +29,7 @@ export class S3Service {
         });
     }
 
+    @Measure({ name: 'putObject' })
     async putObjectContent(content: string | Buffer, bucketName: string, key: string) {
         return await this.withClient(async (client) => {
             return await client.send(
@@ -41,6 +42,7 @@ export class S3Service {
         });
     }
 
+    @Measure({ name: 'headObject' })
     async getHeadObject(bucketName: string, key: string) {
         return await this.withClient(async (client) => {
             return await client.send(
