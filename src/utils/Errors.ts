@@ -1,6 +1,5 @@
-import os from 'os';
-import { resolve, basename } from 'path';
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
+import { determineSensitiveInfo, getErrorStack } from './ErrorStackInfo';
 import { toString } from './String';
 
 export function extractErrorMessage(error: unknown) {
@@ -22,42 +21,7 @@ export function handleLspError(error: unknown, contextMessage: string): never {
     throw new ResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`);
 }
 
-const UserInfo = os.userInfo();
-const SensitiveInfo = [
-    UserInfo.username,
-    `${UserInfo.uid}`,
-    `${UserInfo.gid}`,
-    UserInfo.shell,
-    UserInfo.homedir,
-    resolve(__dirname),
-]
-    .filter((v): v is string => typeof v === 'string' && v.length > 0)
-    .sort((a, b) => b.length - a.length);
-
-const BaseDir = basename(resolve(__dirname));
-
-function sanitizePath(path: string): string {
-    let sanitized = path;
-
-    // Strip sensitive info first
-    for (const info of SensitiveInfo) {
-        sanitized = sanitized.replaceAll(info, 'REDACTED');
-    }
-
-    // Normalize path separators for consistent processing
-    const normalized = sanitized.replaceAll('\\', '/');
-
-    // Strip cloudformation-languageserver prefix
-    for (const partial of ['cloudformation-languageserver', BaseDir]) {
-        const idx = normalized.indexOf(partial);
-        if (idx !== -1) {
-            return '/' + normalized.slice(idx + partial.length + 1);
-        }
-    }
-
-    // Restore original separators if no prefix found
-    return sanitized;
-}
+const Stack = getErrorStack();
 
 /**
  * Best effort extraction of location of exception based on stack trace
@@ -65,33 +29,35 @@ function sanitizePath(path: string): string {
 export function extractLocationFromStack(stack?: string): Record<string, string> {
     if (!stack) return {};
 
-    const matches = [...stack.matchAll(/at (.*)/g)];
+    const lines = stack
+        .trim()
+        .split('\n')
+        .map((line) => {
+            let newLine = line.trim();
+            for (const word of determineSensitiveInfo()) {
+                if (word !== 'aws' && word !== 'cloudformation-languageserver') {
+                    newLine = newLine.replaceAll(word, '[*]');
+                }
+            }
 
-    if (matches.length === 0) return {};
+            return newLine;
+        });
+
+    if (lines.length === 0) {
+        return {};
+    }
 
     const result: Record<string, string> = {};
+    result['error.message'] = lines[0];
 
-    for (const [index, match] of matches.entries()) {
-        if (!match[1]) {
+    for (const [idx, line] of lines.slice(1, 6).entries()) {
+        const parsed = Stack.parseLine(line);
+
+        if (!parsed) {
             continue;
         }
 
-        let line = match[1].trim();
-        if (!line) {
-            continue;
-        }
-
-        // Extract function name and path separately
-        const parenMatch = line.match(/^(.+?)\s+\((.+)\)$/);
-        if (parenMatch) {
-            const funcName = parenMatch[1];
-            const path = sanitizePath(parenMatch[2]);
-            line = `${funcName} (${path})`;
-        } else {
-            line = sanitizePath(line);
-        }
-
-        result[`error.stack${index}`] = line.trim();
+        result[`error.stack${idx}`] = `${parsed.function} ${parsed.file} ${parsed.line}:${parsed.column}`;
     }
 
     return result;
