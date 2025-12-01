@@ -21,11 +21,16 @@ export class FeatureFlagProvider implements Closeable {
         private readonly getLatestFeatureFlags: (env: string) => Promise<unknown>,
         private readonly localFile = join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`),
     ) {
-        this.config = JSON.parse(readFileIfExists(localFile, 'utf8'));
+        this.config = defaultConfig(localFile);
 
-        this.supplier = new FeatureFlagSupplier(() => {
-            return this.config;
-        });
+        this.supplier = new FeatureFlagSupplier(
+            () => {
+                return this.config;
+            },
+            () => {
+                return defaultConfig(localFile);
+            },
+        );
 
         // https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api?apiVersion=2022-11-28#primary-rate-limit-for-unauthenticated-users
         // GitHub rate limits unauthenticated users to 60 requests per minute, so our refresh cycle has to be less than that
@@ -86,4 +91,8 @@ export function getFromGitHub(env: string): Promise<unknown> {
     return downloadJson(
         `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/heads/main/assets/featureFlag/${env.toLowerCase()}.json`,
     );
+}
+
+function defaultConfig(configFile: string): unknown {
+    return JSON.parse(readFileIfExists(configFile, 'utf8'));
 }

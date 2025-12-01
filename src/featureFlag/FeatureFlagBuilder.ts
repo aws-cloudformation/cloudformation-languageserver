@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { AwsRegion } from '../utils/Region';
 import { AndFeatureFlag, CompoundFeatureFlag, LocalHostTargetedFeatureFlag } from './CombinedFeatureFlags';
 import { FleetTargetedFeatureFlag, RegionAllowlistFeatureFlag, StaticFeatureFlag } from './FeatureFlag';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
@@ -7,7 +6,7 @@ import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 const FeatureFlagSchema = z.object({
     enabled: z.boolean(),
     fleetPercentage: z.number().optional(),
-    allowlistedRegions: z.array(z.enum(Object.values(AwsRegion))).optional(),
+    allowlistedRegions: z.array(z.string()).optional(),
 });
 
 export const FeatureFlagConfigSchema = z.object({
@@ -47,7 +46,7 @@ export function buildLocalHost(name: string, config?: FeatureFlagConfigType) {
 }
 
 export function buildRegional(name: string, config?: FeatureFlagConfigType) {
-    let allowlist: AwsRegion[] = [];
+    let allowlist: string[] = [];
 
     if (config?.allowlistedRegions !== undefined) {
         allowlist = config.allowlistedRegions;

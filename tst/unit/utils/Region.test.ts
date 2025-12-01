@@ -26,9 +26,9 @@ describe('Region', () => {
             expect(getRegion('EU_WEST_1')).toBe(AwsRegion.EU_WEST_1);
         });
 
-        it('should throw an error for invalid region strings', () => {
-            expect(() => getRegion('invalid-region')).toThrow('Unknown region invalid-region');
-            expect(() => getRegion('us-central-1')).toThrow('Unknown region us-central-1');
+        it('should not throw when region is unknown or invalid', () => {
+            expect(getRegion('invalid_region')).toBe('invalid-region');
+            expect(getRegion('US_test-1')).toBe('us-test-1');
         });
     });
 });
