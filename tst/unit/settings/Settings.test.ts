@@ -63,6 +63,22 @@ describe('SettingsState', () => {
                     insertSpaces: false,
                     detectIndentation: true,
                 },
+                awsClient: {
+                    cloudformation: {
+                        waiter: {
+                            changeSet: {
+                                minDelay: 1,
+                                maxDelay: 8,
+                                maxWaitTime: 600,
+                            },
+                            stack: {
+                                minDelay: 3,
+                                maxDelay: 10,
+                                maxWaitTime: 1800,
+                            },
+                        },
+                    },
+                },
             };
 
             settingsState.update(newSettings);

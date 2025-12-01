@@ -65,12 +65,30 @@ export type EditorSettings = {
     detectIndentation: boolean;
 };
 
+export type AwsClientSettings = {
+    cloudformation: {
+        waiter: {
+            changeSet: {
+                minDelay: number;
+                maxDelay: number;
+                maxWaitTime: number;
+            };
+            stack: {
+                minDelay: number;
+                maxDelay: number;
+                maxWaitTime: number;
+            };
+        };
+    };
+};
+
 export interface Settings {
     profile: ProfileSettings;
     hover: HoverSettings;
     completion: CompletionSettings;
     diagnostics: DiagnosticsSettings;
     editor: EditorSettings;
+    awsClient: AwsClientSettings;
 }
 
 export const DefaultSettings: DeepReadonly<Settings> = {
@@ -126,6 +144,22 @@ export const DefaultSettings: DeepReadonly<Settings> = {
         insertSpaces: true,
         detectIndentation: true,
     },
+    awsClient: {
+        cloudformation: {
+            waiter: {
+                changeSet: {
+                    minDelay: 1,
+                    maxDelay: 8,
+                    maxWaitTime: 600,
+                },
+                stack: {
+                    minDelay: 3,
+                    maxDelay: 10,
+                    maxWaitTime: 1800,
+                },
+            },
+        },
+    },
 } as const;
 
 export class SettingsState implements Settings {
@@ -134,6 +168,7 @@ export class SettingsState implements Settings {
     completion = structuredClone(DefaultSettings.completion);
     diagnostics = structuredClone(DefaultSettings.diagnostics);
     editor = structuredClone(DefaultSettings.editor);
+    awsClient = structuredClone(DefaultSettings.awsClient);
 
     update(settings: Settings): void {
         Object.assign(this, structuredClone(settings));
