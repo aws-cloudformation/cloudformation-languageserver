@@ -122,7 +122,7 @@ function generateManifest() {
                 targetMap.get(key)!.contents.push({
                     filename: asset.name,
                     url: asset.url,
-                    hashes: asset.digest ? [asset.digest] : [],
+                    hashes: [], // TODO: ToolKit uses sha384, while Github uses SHA256
                     bytes: asset.size,
                 });
             }
