@@ -1,5 +1,5 @@
 import { hkdfSync } from 'crypto';
-import { homedir, userInfo, platform, arch, hostname, cpus } from 'os';
+import { homedir, platform, arch, hostname, cpus } from 'os';
 import { ExtensionName } from './ExtensionConfig';
 
 export function stableMachineSpecificKey(salt: string, info: string, keyLen: number = 255): Buffer {
@@ -13,7 +13,7 @@ export function stableMachineSpecificKey(salt: string, info: string, keyLen: num
                   .trim()
             : 'unknown-cpu';
 
-    const fingerprintString = [ExtensionName, platform(), arch(), hostname(), userInfo().username, homedir(), cpuModel]
+    const fingerprintString = [ExtensionName, platform(), arch(), hostname(), homedir(), cpuModel]
         .join('-')
         .replaceAll(/[^a-zA-Z0-9]/g, '');
 

@@ -69,7 +69,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 noSubdir: config.noSubdir,
                 overlappingSync: config.overlappingSync,
             },
-            `Initialized LMDB v${VersionNumber} with stores: ${toString(storeNames)}`,
+            `Initialized LMDB ${Version} with stores: ${toString(storeNames)}`,
         );
     }
 
@@ -139,7 +139,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 }
 
-const VersionNumber = 4;
+const VersionNumber = 5;
 const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
 const TotalMaxDbSize = 250 * 1024 * 1024; // 250MB max size

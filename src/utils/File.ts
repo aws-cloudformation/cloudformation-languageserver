@@ -1,5 +1,5 @@
-import { readFileSync, existsSync, PathLike } from 'fs'; // eslint-disable-line no-restricted-syntax
-import { readFile } from 'fs/promises'; // eslint-disable-line no-restricted-syntax
+import { readFileSync, existsSync, PathLike } from 'fs'; // eslint-disable-line no-restricted-imports
+import { readFile } from 'fs/promises'; // eslint-disable-line no-restricted-imports
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { toString } from './String';
 

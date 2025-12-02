@@ -3,6 +3,7 @@ import { stableMachineSpecificKey } from '../../utils/MachineKey';
 
 export function encryptionKey(version: number): Buffer {
     switch (version) {
+        case 2:
         case 1: {
             return stableMachineSpecificKey('filedb-static-salt', 'filedb-encryption-key-derivation', 32);
         }
