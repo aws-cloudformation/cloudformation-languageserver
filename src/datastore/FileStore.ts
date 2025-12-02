@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
 import { join } from 'path';
 import { Logger } from 'pino';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -13,13 +13,18 @@ export class FileStoreFactory implements DataStoreFactory {
     @Telemetry({ scope: 'FileStore.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly stores = new Map<StoreName, EncryptedFileStore>();
+    private readonly fileDbRoot: string;
     private readonly fileDbDir: string;
+
     private readonly metricsInterval: NodeJS.Timeout;
+    private readonly timeout: NodeJS.Timeout;
 
     constructor(rootDir: string) {
         this.log = LoggerFactory.getLogger('FileStore.Global');
 
-        this.fileDbDir = join(rootDir, 'filedb', `${Version}`);
+        this.fileDbRoot = join(rootDir, 'filedb');
+        this.fileDbDir = join(this.fileDbRoot, Version);
+
         if (!existsSync(this.fileDbDir)) {
             mkdirSync(this.fileDbDir, { recursive: true });
         }
@@ -27,13 +32,21 @@ export class FileStoreFactory implements DataStoreFactory {
         this.metricsInterval = setInterval(() => {
             this.emitMetrics();
         }, 60 * 1000);
-        this.log.info(`Initialized FileStore v${Version}`);
+
+        this.timeout = setTimeout(
+            () => {
+                this.cleanupOldVersions();
+            },
+            2 * 60 * 1000,
+        );
+
+        this.log.info(`Initialized FileDB ${Version}`);
     }
 
     get(store: StoreName): DataStore {
         let val = this.stores.get(store);
         if (!val) {
-            val = new EncryptedFileStore(encryptionKey(Version), store, this.fileDbDir);
+            val = new EncryptedFileStore(encryptionKey(VersionNumber), store, this.fileDbDir);
             this.stores.set(store, val);
         }
         return val;
@@ -44,12 +57,13 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 
     close(): Promise<void> {
+        clearTimeout(this.timeout);
         clearInterval(this.metricsInterval);
         return Promise.resolve();
     }
 
     private emitMetrics(): void {
-        this.telemetry.histogram('version', Version);
+        this.telemetry.histogram('version', VersionNumber);
         this.telemetry.histogram('env.entries', this.stores.size);
 
         let totalBytes = 0;
@@ -67,6 +81,22 @@ export class FileStoreFactory implements DataStoreFactory {
             unit: 'By',
         });
     }
+
+    private cleanupOldVersions(): void {
+        const entries = readdirSync(this.fileDbRoot, { withFileTypes: true });
+        for (const entry of entries) {
+            try {
+                if (entry.name !== Version) {
+                    this.telemetry.count('oldVersion.cleanup.count', 1);
+                    rmSync(join(this.fileDbRoot, entry.name), { recursive: true, force: true });
+                }
+            } catch (error) {
+                this.log.error(error, 'Failed to cleanup old FileDB versions');
+                this.telemetry.count('oldVersion.cleanup.error', 1);
+            }
+        }
+    }
 }
 
-const Version = 1;
+const VersionNumber = 2;
+const Version = `v${VersionNumber}`;

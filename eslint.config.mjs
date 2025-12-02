@@ -161,13 +161,27 @@ export default tseslint.config([
                     message:
                         'Usage of raw ResourceAttribute strings is restricted in src code. Use ResourceAttribute enum instead',
                 },
+            ],
+            'no-restricted-imports': [
+                'error',
                 {
-                    selector: "ImportSpecifier[imported.name='readFileSync']",
-                    message: 'Use methods in File.ts',
-                },
-                {
-                    selector: "ImportSpecifier[imported.name='readFile']",
-                    message: 'Use methods in File.ts',
+                    paths: [
+                        {
+                            name: 'os',
+                            importNames: ['userInfo'],
+                            message: 'userInfo is not supported in sandbox Linux environments',
+                        },
+                        {
+                            name: 'fs',
+                            importNames: ['readFileSync', 'readFile'],
+                            message: 'Use methods in File.ts',
+                        },
+                        {
+                            name: 'fs/promises',
+                            importNames: ['readFile'],
+                            message: 'Use methods in File.ts',
+                        },
+                    ],
                 },
             ],
         },

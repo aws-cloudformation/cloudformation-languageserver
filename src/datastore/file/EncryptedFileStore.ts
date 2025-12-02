@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, statSync, unlinkSync } from 'fs'; // eslint-disable-line no-restricted-syntax -- files being checked
+import { existsSync, readFileSync, statSync, unlinkSync } from 'fs'; // eslint-disable-line no-restricted-imports -- files being checked
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { Mutex } from 'async-mutex';
