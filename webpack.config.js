@@ -57,7 +57,7 @@ function generateExternals() {
 
 const EXTERNALS = generateExternals();
 
-function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false) {
+function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, buildTarget = '') {
     const plugins = [];
 
     plugins.push(
@@ -222,6 +222,7 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false) {
         new webpack.DefinePlugin({
             'process.env.NODE_ENV': JSON.stringify(mode),
             'process.env.AWS_ENV': JSON.stringify(env),
+            'process.env.BUILD_TARGET': JSON.stringify(buildTarget),
         }),
     );
 
@@ -276,6 +277,7 @@ module.exports = (env = {}) => {
     const mode = env.mode;
     let awsEnv = env.env;
     const rebuild = env.rebuild === 'true' || env.rebuild === true;
+    const buildTarget = env.buildTarget || '';
 
     // Validate mode
     const validModes = ['development', 'production'];
@@ -329,6 +331,6 @@ module.exports = (env = {}) => {
                 chunks: 'all',
             },
         },
-        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, rebuild),
+        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, rebuild, buildTarget),
     };
 };
