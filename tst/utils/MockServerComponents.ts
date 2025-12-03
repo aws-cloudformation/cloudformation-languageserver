@@ -1,4 +1,5 @@
 import { Logger } from 'pino';
+import { SinonStub, stub } from 'sinon';
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { RemoteConsole } from 'vscode-languageserver/node';
 import { CfnAI } from '../../src/ai/CfnAI';
@@ -428,5 +429,29 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         ...core,
         ...external,
         ...providers,
+    };
+}
+
+export function createMockAwsClient(
+    mockCloudControlSend: SinonStub,
+    mockCloudFormationSend: SinonStub,
+    mockS3Send: SinonStub,
+): (credentials: AwsCredentials, endpoint?: string) => AwsClient {
+    return (credentials: AwsCredentials, endpoint?: string) => {
+        const mockClient = new AwsClient(credentials, endpoint);
+
+        stub(mockClient, 'getCloudControlClient').returns({
+            send: mockCloudControlSend,
+        } as any);
+
+        stub(mockClient, 'getCloudFormationClient').returns({
+            send: mockCloudFormationSend,
+        } as any);
+
+        stub(mockClient, 'getS3Client').returns({
+            send: mockS3Send,
+        } as any);
+
+        return mockClient;
     };
 }

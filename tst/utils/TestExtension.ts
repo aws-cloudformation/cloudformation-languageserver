@@ -48,6 +48,7 @@ import {
 } from 'vscode-languageserver';
 import { createConnection } from 'vscode-languageserver/node';
 import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '../../src/auth/AuthProtocol';
+import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';
 import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
@@ -61,6 +62,7 @@ import { CfnInfraCore } from '../../src/server/CfnInfraCore';
 import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
 import { AwsMetadata, ExtendedInitializeParams } from '../../src/server/InitParams';
+import { AwsClient } from '../../src/services/AwsClient';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { DefaultSettings } from '../../src/settings/Settings';
 import { LoggerFactory } from '../../src/telemetry/LoggerFactory';
@@ -74,6 +76,7 @@ type TestExtensionConfig = {
     id?: string;
     initializeParams?: Partial<ExtendedInitializeParams>;
     workspaceConfig?: Record<string, unknown>[];
+    awsClientFactory?: (credentials: AwsCredentials, endpoint?: string) => AwsClient;
 };
 
 export class TestExtension implements Closeable {
@@ -156,6 +159,10 @@ export class TestExtension implements Closeable {
                         featureFlags: new FeatureFlagProvider((_env) => {
                             return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
                         }, ffFile),
+                        awsClient: config.awsClientFactory?.(
+                            this.core.awsCredentials,
+                            this.core.cloudformationEndpoint,
+                        ),
                     });
 
                     this.providers = new CfnLspProviders(this.core, this.external, {
