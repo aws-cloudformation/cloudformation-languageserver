@@ -1,172 +1,188 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { MemoryDataStoreFactoryProvider } from '../../../src/datastore/DataStore';
+import { DateTime } from 'luxon';
+import * as sinon from 'sinon';
+import { StubbedInstance, stubInterface } from 'ts-sinon';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
+import { GetSchemaTaskManager } from '../../../src/schema/GetSchemaTaskManager';
 import { RegionalSchemasType } from '../../../src/schema/RegionalSchemas';
+import { SamSchemasType } from '../../../src/schema/SamSchemas';
 import { SchemaRetriever } from '../../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../../src/schema/SchemaStore';
-import { Settings } from '../../../src/settings/Settings';
+import { ISettingsSubscriber } from '../../../src/settings/ISettingsSubscriber';
+import { DefaultSettings, Settings } from '../../../src/settings/Settings';
 import { AwsRegion } from '../../../src/utils/Region';
-import { createMockSettingsManager } from '../../utils/MockServerComponents';
-import { getTestPrivateSchemas, samFileType } from '../../utils/SchemaUtils';
+import { PartialDataObserver } from '../../../src/utils/SubscriptionManager';
+import { getTestPrivateSchemas, samFileType, Schemas, SamSchemaFiles, schemaFileType } from '../../utils/SchemaUtils';
 
 describe('SchemaRetriever', () => {
-    const key = AwsRegion.US_EAST_1;
+    const defaultRegion = DefaultSettings.profile.region;
+    const schemaStore = stubInterface<SchemaStore>();
+    const getPublicSchemasStub = sinon.stub().resolves(schemaFileType([Schemas.S3Bucket]));
+    const getPrivateResourcesStub = sinon.stub().resolves(getTestPrivateSchemas());
+    const getSamSchemasStub = sinon.stub().resolves(samFileType([SamSchemaFiles.ServerlessFunction]));
 
-    const mockSchemaData: RegionalSchemasType = {
-        version: 'v1',
-        region: AwsRegion.US_EAST_1,
-        schemas: [
-            {
-                name: 'test-schema.json',
-                content: JSON.stringify({
-                    typeName: 'AWS::S3::Bucket',
-                    properties: {},
-                    description: 'description',
-                    primaryIdentifier: [],
-                    additionalProperties: false,
-                }),
-                createdMs: 1622548800000, // 2021-06-01
-            },
-        ],
-        firstCreatedMs: 1622548800000, // 2021-06-01
-        lastModifiedMs: 1625140800000, // 2021-07-01
-    };
-
-    let schemaStore: SchemaStore;
+    let settingsManager: ISettingsSubscriber;
+    let taskManagerStub: StubbedInstance<GetSchemaTaskManager>;
     let schemaRetriever: SchemaRetriever;
-    let mockGetPublicSchemas: ReturnType<typeof vi.fn>;
-    let mockGetPrivateResources: ReturnType<typeof vi.fn>;
-    let mockGetSam: ReturnType<typeof vi.fn>;
 
     beforeEach(() => {
-        vi.clearAllMocks();
+        schemaStore.getPublicSchemaRegions.returns([]);
+        schemaStore.getPublicSchemas.returns(undefined);
+        schemaStore.getSamSchemas.returns(undefined);
 
-        // Mock Date.now to return a fixed timestamp
-        vi.spyOn(Date.prototype, 'getTime').mockImplementation(function (this: Date) {
-            // For the current date (when no date is provided to the constructor)
-            if (this.toString() === new Date().toString()) {
-                return 1625140800000; // 2021-07-01
-            }
-            // For dates created with timestamps (like the lastModifiedMs)
-            return this.valueOf();
-        });
+        getPublicSchemasStub.resetHistory();
+        getPrivateResourcesStub.resetHistory();
+        getSamSchemasStub.resetHistory();
 
-        const dataStoreFactory = new MemoryDataStoreFactoryProvider();
-        schemaStore = new SchemaStore(dataStoreFactory);
+        settingsManager = {
+            subscribe: sinon.stub(),
+            getCurrentSettings: sinon.stub(),
+        };
 
-        mockGetPublicSchemas = vi.fn().mockResolvedValue([]);
-        mockGetPrivateResources = vi.fn().mockResolvedValue(getTestPrivateSchemas());
-        mockGetSam = vi.fn().mockResolvedValue(samFileType());
+        taskManagerStub = stubInterface<GetSchemaTaskManager>();
+        schemaRetriever = new SchemaRetriever(
+            schemaStore,
+            getPublicSchemasStub,
+            getPrivateResourcesStub,
+            getSamSchemasStub,
+            taskManagerStub,
+        );
 
-        schemaRetriever = new SchemaRetriever(schemaStore, mockGetPublicSchemas, mockGetPrivateResources, mockGetSam);
+        expect(taskManagerStub.addTask.calledWith(DefaultSettings.profile.region)).toBe(true);
+        expect(taskManagerStub.runPrivateTask.called).toBe(false);
+        expect(taskManagerStub.runSamTask.called).toBe(false);
     });
 
     afterEach(() => {
-        vi.restoreAllMocks();
-        schemaRetriever.close();
+        sinon.restore();
     });
 
-    it('should check for missing schemas on initialization', () => {
-        // Need to configure to trigger initialization
-        const mockSettingsManager = {
-            getCurrentSettings: () => ({ profile: { region: AwsRegion.US_EAST_1, profile: 'default' } }),
-            subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
-        };
-        schemaRetriever.configure(mockSettingsManager as any);
+    describe('constructor', () => {
+        it('should not add task if schemas already present', () => {
+            const newStore = stubInterface<SchemaStore>();
+            const newTaskManagerStub = stubInterface<GetSchemaTaskManager>();
 
-        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
+            newStore.getPublicSchemas.returns(createPublicSchema(1, defaultRegion));
+            new SchemaRetriever(
+                newStore,
+                getPublicSchemasStub,
+                getPrivateResourcesStub,
+                getSamSchemasStub,
+                newTaskManagerStub,
+            );
+
+            expect(newTaskManagerStub.addTask.called).toBe(false);
+        });
     });
 
-    it('should get schema from database if available', async () => {
-        // Put data in the store first
-        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
+    describe('initialize', () => {
+        it('should add task for stale public schemas', () => {
+            const staleDate = DateTime.now().minus({ days: 8 }).toMillis();
+            schemaStore.getPublicSchemaRegions.returns([defaultRegion]);
+            schemaStore.getPublicSchemas.returns(createPublicSchema(staleDate, defaultRegion));
 
-        const result = schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
+            taskManagerStub.addTask.resetHistory();
+            schemaRetriever.initialize();
 
-        expect(result).toBeInstanceOf(CombinedSchemas);
-        expect(result?.numSchemas).toBeGreaterThan(0);
-    });
-
-    it('should return empty CombinedSchemas if schema is not in database', () => {
-        const result = schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
-
-        expect(result).toBeInstanceOf(CombinedSchemas);
-        expect(result.numSchemas).toBe(0);
-        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
-    });
-
-    it('should check for stale schemas on initialization', async () => {
-        // Create a schema with a timestamp that's 8 days old (stale)
-        const staleTimestamp = 1625140800000 - 8 * 24 * 60 * 60 * 1000;
-        const staleSchemaData = { ...mockSchemaData, lastModifiedMs: staleTimestamp };
-
-        // Put stale data in the store
-        await schemaStore.publicSchemas.put(key, staleSchemaData);
-
-        // Mock Date.now to return a fixed timestamp
-        vi.spyOn(Date.prototype, 'getTime').mockImplementation(function (this: Date) {
-            // For the current date (when no date is provided to the constructor)
-            if (this.toString() === new Date().toString()) {
-                return 1625140800000; // 2021-07-01
-            }
-            // For dates created with timestamps (like the lastModifiedMs)
-            return this.valueOf();
+            expect(taskManagerStub.addTask.called).toBe(true);
         });
 
-        // Need to configure to trigger initialization
-        const mockSettingsManager = {
-            getCurrentSettings: () => ({ profile: { region: AwsRegion.US_EAST_1, profile: 'default' } }),
-            subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
-        };
-        schemaRetriever.configure(mockSettingsManager as any);
+        it('should not add task for fresh public schemas', () => {
+            const freshDate = DateTime.now().minus({ days: 3 }).toMillis();
+            schemaStore.getPublicSchemaRegions.returns([defaultRegion]);
+            schemaStore.getPublicSchemas.returns(createPublicSchema(freshDate, defaultRegion));
 
-        expect(mockGetPublicSchemas).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
+            taskManagerStub.addTask.resetHistory();
+            schemaRetriever.initialize();
+
+            expect(taskManagerStub.addTask.called).toBe(false);
+        });
+
+        it('should run SAM task for missing SAM schemas', () => {
+            schemaStore.getSamSchemas.returns(undefined);
+            schemaRetriever.initialize();
+
+            expect(taskManagerStub.runSamTask.called).toBe(true);
+        });
+
+        it('should run SAM task for stale SAM schemas', () => {
+            const staleDate = DateTime.now().minus({ days: 10 }).toMillis();
+            schemaStore.getSamSchemas.returns(createSamSchema(staleDate));
+
+            taskManagerStub.runSamTask.resetHistory();
+            schemaRetriever.initialize();
+
+            expect(taskManagerStub.runSamTask.called).toBe(true);
+        });
+
+        it('should not run SAM task for fresh SAM schemas', () => {
+            const freshDate = DateTime.now().minus({ days: 1 }).toMillis();
+            schemaStore.getSamSchemas.returns(createSamSchema(freshDate));
+
+            taskManagerStub.runSamTask.resetHistory();
+            schemaRetriever.initialize();
+
+            expect(taskManagerStub.runSamTask.called).toBe(false);
+        });
+
+        it('should run private task', () => {
+            schemaRetriever.initialize();
+
+            expect(taskManagerStub.runPrivateTask.called).toBe(true);
+        });
     });
 
-    it('should get default schema using user settings', async () => {
-        // Put data in the store first
-        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
+    describe('configure', () => {
+        it('should add task for new region on settings change and run private task', () => {
+            let profileObserver: PartialDataObserver<Settings['profile']> | undefined;
+            (settingsManager.subscribe as sinon.SinonStub).callsFake((path, observer) => {
+                if (path === 'profile') {
+                    profileObserver = observer;
+                }
+                return { unsubscribe: sinon.stub() };
+            });
 
-        const result = schemaRetriever.getDefault();
-        expect(result).toBeInstanceOf(CombinedSchemas);
+            schemaRetriever.configure(settingsManager);
+            taskManagerStub.addTask.resetHistory();
+
+            expect(taskManagerStub.addTask.calledWith('eu-west-1')).toBe(false);
+            expect(taskManagerStub.runPrivateTask.called).toBe(false);
+
+            profileObserver?.({ region: 'eu-west-1' as AwsRegion, profile: 'test-profile' });
+            expect(taskManagerStub.addTask.calledWith('eu-west-1')).toBe(true);
+            expect(taskManagerStub.runPrivateTask.called).toBe(true);
+        });
     });
 
-    it('should update private schemas when called', () => {
-        schemaRetriever.updatePrivateSchemas();
-        expect(mockGetPrivateResources).toHaveBeenCalled();
-    });
+    describe('get', () => {
+        it('should return combined schemas for default region', () => {
+            const combinedResult1 = stubInterface<CombinedSchemas>();
+            schemaStore.get.withArgs(defaultRegion, DefaultSettings.profile.profile).returns(combinedResult1);
 
-    it('should handle settings configuration', () => {
-        vi.spyOn(schemaRetriever, 'updatePrivateSchemas');
+            const combinedResult2 = stubInterface<CombinedSchemas>();
+            schemaStore.get.withArgs(AwsRegion.EU_WEST_1, 'anotherProfile').returns(combinedResult2);
 
-        // Configure with new settings
-        const testSettings = {
-            profile: {
-                region: AwsRegion.US_WEST_2,
-                profile: 'new-profile',
-            },
-        } as Settings;
-        const mockSettingsManager = createMockSettingsManager(testSettings);
-        schemaRetriever.configure(mockSettingsManager);
-
-        // The configure method should trigger schema updates
-        expect(schemaRetriever.updatePrivateSchemas).toHaveBeenCalled();
-    });
-
-    it('should rebuild affected combined schemas', async () => {
-        // Put data in the store first
-        await schemaStore.publicSchemas.put(AwsRegion.US_EAST_1, mockSchemaData);
-
-        // Get a schema to create a cached entry
-        schemaRetriever.get(AwsRegion.US_EAST_1, 'default');
-
-        // Verify it's cached
-        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
-
-        // Rebuild affected schemas
-        schemaRetriever.rebuildAffectedCombinedSchemas(AwsRegion.US_EAST_1);
-
-        // Should still have the schema (rebuilt)
-        expect(schemaStore.combinedSchemas.keys(10)).toHaveLength(1);
+            expect(schemaRetriever.getDefault()).toBe(combinedResult1);
+            expect(schemaRetriever.get(AwsRegion.EU_WEST_1, 'anotherProfile')).toBe(combinedResult2);
+        });
     });
 });
+
+function createPublicSchema(date: number, region: string): RegionalSchemasType {
+    return {
+        version: '1',
+        region,
+        schemas: schemaFileType([Schemas.S3Bucket]),
+        firstCreatedMs: date,
+        lastModifiedMs: date,
+    };
+}
+
+function createSamSchema(date: number): SamSchemasType {
+    return {
+        version: '1',
+        schemas: schemaFileType([SamSchemaFiles.ServerlessFunction]),
+        firstCreatedMs: date,
+        lastModifiedMs: date,
+    };
+}

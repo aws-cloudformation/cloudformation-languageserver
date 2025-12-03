@@ -19,12 +19,7 @@ export class SamSchemas {
     readonly lastModifiedMs: number;
     readonly schemas: Map<string, ResourceSchema>;
 
-    constructor(
-        version: string,
-        schemas: { name: string; content: string; createdMs: number }[],
-        firstCreatedMs: number,
-        lastModifiedMs: number,
-    ) {
+    constructor(version: string, schemas: SchemaFileType[], firstCreatedMs: number, lastModifiedMs: number) {
         this.version = version;
         this.firstCreatedMs = firstCreatedMs;
         this.lastModifiedMs = lastModifiedMs;

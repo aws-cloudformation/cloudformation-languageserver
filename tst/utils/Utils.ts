@@ -4,6 +4,9 @@ export async function flushAllPromises() {
     await setImmediate();
 }
 
+const defaultTimeoutMs = 100;
+const defaultIntervalMs = 5;
+
 export class WaitFor {
     constructor(
         private readonly maxWaitMs: number,
@@ -35,9 +38,17 @@ export class WaitFor {
 
     static async waitFor(
         code: () => void | Promise<void>,
-        timeoutMs: number = 100,
-        intervalMs: number = 5,
+        timeoutMs: number = defaultTimeoutMs,
+        intervalMs: number = defaultIntervalMs,
     ): Promise<void> {
         await new WaitFor(timeoutMs, intervalMs).wait(code);
     }
+}
+
+export async function waitFor(
+    code: () => void | Promise<void>,
+    timeoutMs: number = defaultTimeoutMs,
+    intervalMs: number = defaultIntervalMs,
+): Promise<void> {
+    await WaitFor.waitFor(code, timeoutMs, intervalMs);
 }

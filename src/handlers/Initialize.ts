@@ -6,17 +6,16 @@ const logger = LoggerFactory.getLogger('InitializedHandler');
 
 export function initializedHandler(workspace: LspWorkspace, components: ServerComponents): () => void {
     return (): void => {
-        // Sync configuration from LSP workspace first, then initialize CfnLintService
         components.settingsManager
             .syncConfiguration()
             .then(() => {
+                components.schemaRetriever.initialize();
                 return components.cfnLintService.initialize();
             })
             .then(async () => {
                 // Process folders sequentially to avoid overwhelming the system
                 for (const folder of workspace.getAllWorkspaceFolders()) {
                     try {
-                        // Properly await the async mountFolder method
                         await components.cfnLintService.mountFolder(folder);
                     } catch (error) {
                         logger.error(error, `Failed to mount folder ${folder.name}`);

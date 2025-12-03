@@ -9,6 +9,7 @@ export type PrivateSchemasType = {
     lastModifiedMs: number;
 };
 
+export const PrivateStoreKey = 'PrivateSchemas';
 export class PrivateSchemas {
     static readonly V1 = 'v1';
 
