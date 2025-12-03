@@ -1,4 +1,4 @@
-import { stub, SinonStub } from 'sinon';
+import { stub, restore, SinonStub } from 'sinon';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import {
     ListResourcesParams,
@@ -55,8 +55,7 @@ describe('ResourceState E2E', () => {
     });
 
     afterAll(async () => {
-        (client.core.awsCredentials.credentialsAvailable as SinonStub).restore();
-        (client.core.awsCredentials.getIAM as SinonStub).restore();
+        restore();
         await client.close();
     });
 
