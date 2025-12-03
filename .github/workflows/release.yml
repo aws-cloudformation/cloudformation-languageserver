@@ -47,14 +47,17 @@ jobs:
           if [[ "$TAG" == "v$VERSION" ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=false" >> $GITHUB_OUTPUT
-          elif [[ "$TAG" =~ ^v$VERSION-[0-9]{12}-alpha$ ]]; then
+          elif [[ "$TAG" =~ ^v$VERSION-.*-alpha$ ]]; then
+            echo "tag=$TAG" >> $GITHUB_OUTPUT
+            echo "is-prerelease=true" >> $GITHUB_OUTPUT
+          elif [[ "$TAG" == "v$VERSION-alpha" ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=true" >> $GITHUB_OUTPUT
           elif [[ "$TAG" =~ ^v$VERSION-beta$ ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=true" >> $GITHUB_OUTPUT
           else
-            echo "Error: Tag ($TAG) must be v$VERSION, v$VERSION-yyyymmddhhmm-alpha, or v$VERSION-beta"
+            echo "Error: Tag ($TAG) must be v$VERSION, v$VERSION-alpha, v$VERSION-<branch>-alpha, or v$VERSION-beta"
             exit 1
           fi
 
@@ -145,11 +148,11 @@ jobs:
 
               TAG="${{ needs.version-and-tag.outputs.tag }}"
               if [[ "$TAG" =~ -alpha$ ]]; then
-                npm run bundle:alpha -- --env rebuild=true
+                npm run bundle:alpha -- --env rebuild=true --env buildTarget=legacy
               elif [[ "$TAG" =~ -beta$ ]]; then
-                npm run bundle:beta -- --env rebuild=true
+                npm run bundle:beta -- --env rebuild=true --env buildTarget=legacy
               else
-                npm run bundle:prod -- --env rebuild=true
+                npm run bundle:prod -- --env rebuild=true --env buildTarget=legacy
               fi
 
               if [ -z "$(find . -name "*.node" -print -quit)" ]; then
