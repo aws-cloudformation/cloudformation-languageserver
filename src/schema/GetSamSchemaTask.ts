@@ -36,7 +36,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
 
             this.logger.info(`${resourceSchemas.size} SAM schemas downloaded and stored`);
         } catch (error) {
-            this.logger.error(error, 'Failed to download SAM schema');
+            this.logger.error(error, 'Failed to download SAM schemas');
             throw error;
         }
     }
