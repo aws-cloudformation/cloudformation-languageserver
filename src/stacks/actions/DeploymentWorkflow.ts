@@ -6,6 +6,7 @@ import { CfnExternal } from '../../server/CfnExternal';
 import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnService } from '../../services/CfnService';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { Measure } from '../../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
     waitForDeployment,
@@ -33,6 +34,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
         protected readonly documentManager: DocumentManager,
     ) {}
 
+    @Measure({ name: 'deploymentWorkflow' })
     async start(params: CreateDeploymentParams): Promise<CreateStackActionResult> {
         const workflow = {
             id: params.id,
