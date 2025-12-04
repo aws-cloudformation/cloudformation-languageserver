@@ -168,16 +168,14 @@ describe('FileContextManager', () => {
                 documentType: DocumentType.YAML,
                 contents: vi.fn().mockReturnValue(''),
             };
-            const mockFileContext = {} as FileContext;
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => mockFileContext);
 
             const result = fileContextManager.getFileContext(testUri);
 
-            expect(MockedFileContext).toHaveBeenCalledWith(testUri, DocumentType.YAML, '');
-            expect(result).toBe(mockFileContext);
+            expect(MockedFileContext).not.toHaveBeenCalled();
+            expect(result).toBeUndefined();
         });
 
         it('should handle complex CloudFormation templates', () => {
@@ -263,12 +261,11 @@ Outputs:
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => ({}) as FileContext);
 
             const result = fileContextManager.getFileContext(testUri);
 
-            expect(MockedFileContext).toHaveBeenCalledWith(testUri, DocumentType.YAML, undefined);
-            expect(result).toBeDefined();
+            expect(MockedFileContext).not.toHaveBeenCalled();
+            expect(result).toBeUndefined();
         });
 
         it('should handle DocumentManager throwing errors', () => {

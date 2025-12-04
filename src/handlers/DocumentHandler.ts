@@ -25,6 +25,10 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
         }
 
         const content = document.contents();
+        if (!content) {
+            log.error(`No content found for document ${uri}`);
+            return;
+        }
 
         if (document.isTemplate() || document.cfnFileType === CloudFormationFileType.Empty) {
             try {
@@ -57,6 +61,10 @@ export function didChangeHandler(
         // This is the document AFTER changes
         const document = new Document(textDocument.uri, () => textDocument);
         const finalContent = document.getText();
+        if (!finalContent) {
+            log.error(`No content found for document ${documentUri}`);
+            return;
+        }
 
         const tree = components.syntaxTreeManager.getSyntaxTree(documentUri);
 

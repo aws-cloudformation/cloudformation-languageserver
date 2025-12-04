@@ -28,6 +28,9 @@ export class ManagedResourceCodeLens {
         }
 
         const text = document.getText();
+        if (!text) {
+            return [];
+        }
         const lines = text.split('\n');
 
         for (const [, resourceContext] of resourcesMap) {

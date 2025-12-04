@@ -36,6 +36,9 @@ export function getStackActionsCodeLenses(
 
     let codeLensLine = 0;
     const lines = document.getLines();
+    if (!lines) {
+        return [];
+    }
     for (const [i, line] of lines.entries()) {
         const lineContents = line.trim();
         if (lineContents.length > 0 && !lineContents.startsWith('#')) {
