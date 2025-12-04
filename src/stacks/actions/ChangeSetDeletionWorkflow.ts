@@ -5,6 +5,7 @@ import { CfnExternal } from '../../server/CfnExternal';
 import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnService } from '../../services/CfnService';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { Measure } from '../../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../../utils/Errors';
 import { processWorkflowUpdates, mapChangesToStackChanges, isStackInReview } from './StackActionOperations';
 import {
@@ -29,6 +30,7 @@ export class ChangeSetDeletionWorkflow
         protected readonly documentManager: DocumentManager,
     ) {}
 
+    @Measure({ name: 'changeSetDeletionWorkflow' })
     async start(params: CreateDeploymentParams): Promise<CreateStackActionResult> {
         const describeChangeSetResult = await this.cfnService.describeChangeSet({
             StackName: params.stackName,

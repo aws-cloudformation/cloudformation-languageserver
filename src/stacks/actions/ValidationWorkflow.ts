@@ -10,6 +10,7 @@ import { CfnService } from '../../services/CfnService';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { Measure } from '../../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../../utils/Errors';
 import {
     cleanupReviewStack,
@@ -52,6 +53,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
         protected awsCredentials: AwsCredentials,
     ) {}
 
+    @Measure({ name: 'validationWorkflow' })
     async start(params: CreateValidationParams): Promise<CreateStackActionResult> {
         // Determine ChangeSet type based on resourcesToImport and stack existence
         let changeSetType: ChangeSetType;

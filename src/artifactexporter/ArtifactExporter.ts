@@ -6,6 +6,7 @@ import { DocumentType } from '../document/Document';
 import { parseDocumentContent } from '../document/DocumentUtils';
 import { S3Service } from '../services/S3Service';
 import { Artifact } from '../stacks/actions/StackActionRequestType';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { isS3Url, RESOURCE_EXPORTER_MAP } from './ResourceExporters';
 
 export type ArtifactWithProperty = {
@@ -81,6 +82,7 @@ export class ArtifactExporter {
         return artifactMap;
     }
 
+    @Measure({ name: 'getTemplateArtifacts' })
     getTemplateArtifacts(): Artifact[] {
         const artifactMap = this.getResourceMapWithArtifact();
         const result: Artifact[] = [];
@@ -117,6 +119,7 @@ export class ArtifactExporter {
         return result;
     }
 
+    @Measure({ name: 'exportArtifact' })
     async export(bucketName: string, s3KeyPrefix: string = ''): Promise<unknown> {
         if (
             this.templateDict === undefined ||
