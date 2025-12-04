@@ -32,6 +32,7 @@ export function getResourceTypesHandler(
     components: ServerComponents,
 ): ServerRequestHandler<void, ResourceTypesResult, never, void> {
     return (): ResourceTypesResult => {
+        components.usageTracker.track(EventType.DidGetResourceTypes);
         try {
             const resourceTypes = components.resourceStateManager.getResourceTypes();
             return { resourceTypes };

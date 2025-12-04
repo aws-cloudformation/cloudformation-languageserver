@@ -17,7 +17,10 @@ describe('UsageTracker', () => {
         test('tracks multiple events', () => {
             tracker.track(EventType.DidDeployment);
             tracker.track(EventType.DidValidation);
-            expect(tracker.allUsed(EventType.DidDeployment, EventType.DidValidation)).toBe(true);
+            tracker.track(EventType.DidGetResourceTypes);
+            expect(
+                tracker.allUsed(EventType.DidDeployment, EventType.DidValidation, EventType.DidGetResourceTypes),
+            ).toBe(true);
         });
 
         test('does not duplicate events', () => {
@@ -51,7 +54,9 @@ describe('UsageTracker', () => {
     describe('someUsed', () => {
         test('returns true when at least one event tracked', () => {
             tracker.track(EventType.DidDeployment);
-            expect(tracker.someUsed(EventType.DidDeployment, EventType.DidValidation)).toBe(true);
+            expect(
+                tracker.someUsed(EventType.DidDeployment, EventType.DidValidation, EventType.DidGetResourceTypes),
+            ).toBe(true);
         });
 
         test('returns false when no events tracked', () => {
@@ -61,7 +66,10 @@ describe('UsageTracker', () => {
         test('returns true when all events tracked', () => {
             tracker.track(EventType.DidDeployment);
             tracker.track(EventType.DidValidation);
-            expect(tracker.someUsed(EventType.DidDeployment, EventType.DidValidation)).toBe(true);
+            tracker.track(EventType.DidGetResourceTypes);
+            expect(
+                tracker.someUsed(EventType.DidDeployment, EventType.DidValidation, EventType.DidGetResourceTypes),
+            ).toBe(true);
         });
 
         test('returns false for empty list', () => {
