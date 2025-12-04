@@ -265,6 +265,7 @@ describe('StackActionWorkflowOperations', () => {
                     maxRetries: 3,
                     initialDelayMs: 1000,
                     operationName: 'Delete stack test-stack',
+                    totalTimeoutMs: 30000,
                 },
                 expect.any(Object), // logger
             );
@@ -293,6 +294,7 @@ describe('StackActionWorkflowOperations', () => {
                     maxRetries: 3,
                     initialDelayMs: 1000,
                     operationName: 'Delete change set changeset-123',
+                    totalTimeoutMs: 30000,
                 },
                 expect.any(Object), // logger
             );

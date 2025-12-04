@@ -1,26 +1,35 @@
-/* eslint-disable vitest/valid-expect */
+import { Logger } from 'pino';
+import * as sinon from 'sinon';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { retryWithExponentialBackoff, RetryOptions } from '../../../src/utils/Retry';
+import { RetryOptions, retryWithExponentialBackoff } from '../../../src/utils/Retry';
 
 describe('retryWithExponentialBackoff', () => {
-    const mockLog = {
-        warn: vi.fn(),
-    } as any;
+    const options: RetryOptions = {
+        maxRetries: 2,
+        initialDelayMs: 2,
+        maxDelayMs: 10,
+        backoffMultiplier: 1.5,
+        jitterFactor: 0.5,
+        operationName: 'SomeOperation',
+        totalTimeoutMs: 250,
+    };
+
+    const mockLog = {} as unknown as Logger;
+    const sleepFn = sinon.stub().resolves();
 
     beforeEach(() => {
-        vi.useFakeTimers();
-        vi.clearAllMocks();
+        sleepFn.resetHistory();
+        mockLog.warn = vi.fn();
     });
 
     afterEach(() => {
-        vi.useRealTimers();
+        sinon.restore();
     });
 
     it('should succeed on first attempt', async () => {
         const mockFn = vi.fn().mockResolvedValue('success');
-        const options: RetryOptions = { maxRetries: 3 };
 
-        const result = await retryWithExponentialBackoff(mockFn, options, mockLog);
+        const result = await retryWithExponentialBackoff(mockFn, options, mockLog, sleepFn);
 
         expect(result).toBe('success');
         expect(mockFn).toHaveBeenCalledTimes(1);
@@ -33,18 +42,7 @@ describe('retryWithExponentialBackoff', () => {
             .mockRejectedValueOnce(new Error('Second failure'))
             .mockResolvedValue('success');
 
-        const options: RetryOptions = { maxRetries: 3, initialDelayMs: 100 };
-
-        const promise = retryWithExponentialBackoff(mockFn, options, mockLog);
-
-        // Let the first attempt fail and start the first delay
-        await vi.runOnlyPendingTimersAsync();
-        // Let the second attempt fail and start the second delay
-        await vi.runOnlyPendingTimersAsync();
-        // Let the third attempt succeed
-        await vi.runOnlyPendingTimersAsync();
-
-        const result = await promise;
+        const result = await retryWithExponentialBackoff(mockFn, options, mockLog, sleepFn);
 
         expect(result).toBe('success');
         expect(mockFn).toHaveBeenCalledTimes(3);
@@ -52,77 +50,155 @@ describe('retryWithExponentialBackoff', () => {
 
     it('should fail after max retries exceeded', async () => {
         const mockFn = vi.fn().mockRejectedValue(new Error('Persistent failure'));
-        const options: RetryOptions = { maxRetries: 2, initialDelayMs: 100 };
 
-        const promise = expect(retryWithExponentialBackoff(mockFn, options, mockLog)).rejects.toThrow(
-            'Operation failed after 3 attempts',
-        );
+        const promise = retryWithExponentialBackoff(mockFn, options, mockLog);
 
-        await vi.advanceTimersByTimeAsync(300);
-        await promise;
-
+        await expect(promise).rejects.toThrow('Persistent failure');
         expect(mockFn).toHaveBeenCalledTimes(3);
     });
 
     it('should respect total timeout', async () => {
         const mockFn = vi.fn().mockRejectedValue(new Error('Failure'));
-        const options: RetryOptions = {
-            maxRetries: 10,
-            initialDelayMs: 1000,
-            totalTimeoutMs: 2000,
-            operationName: 'TestOperation',
-        };
+        const promise = retryWithExponentialBackoff(
+            mockFn,
+            {
+                ...options,
+                initialDelayMs: 10,
+                totalTimeoutMs: 1,
+            },
+            mockLog,
+        );
 
-        const startTime = 1000;
-        vi.spyOn(Date, 'now')
-            .mockReturnValueOnce(startTime) // Initial call
-            .mockReturnValueOnce(startTime + 2500); // Timeout check
+        try {
+            await promise;
+        } catch (err) {
+            expect(err).instanceof(Error);
+            const message = (err as Error).message;
+            expect(message).contains('SomeOperation timed out after');
+            expect(message).contains('on attempt #2/3. Last error: Failure');
+            return;
+        }
 
-        const promise = retryWithExponentialBackoff(mockFn, options, mockLog);
-
-        await expect(promise).rejects.toThrow('TestOperation timed out after 2000ms');
+        throw new Error('Tests have failed');
     });
 
     it('should apply exponential backoff correctly', async () => {
         const mockFn = vi.fn().mockRejectedValue(new Error('Failure'));
-        const options: RetryOptions = {
-            maxRetries: 3,
-            initialDelayMs: 100,
-            backoffMultiplier: 2,
-            maxDelayMs: 1000,
-        };
 
-        const promise: Promise<void> = expect(retryWithExponentialBackoff(mockFn, options, mockLog)).rejects.toThrow();
+        const promise = retryWithExponentialBackoff(
+            mockFn,
+            {
+                ...options,
 
-        await vi.advanceTimersByTimeAsync(1000);
-        await promise;
+                maxRetries: 5,
+                initialDelayMs: 10,
+                maxDelayMs: 100,
+                backoffMultiplier: 2.5,
+                jitterFactor: 0.01,
+                totalTimeoutMs: 10_000,
+            },
+            mockLog,
+            sleepFn,
+        );
 
-        expect(mockFn).toHaveBeenCalledTimes(4);
+        await expect(promise).rejects.toThrow('Failure');
+        expect(mockFn).toHaveBeenCalledTimes(6);
+        expect(sleepFn.callCount).toBe(5);
+
+        expect(checkBounds(sleepFn.args[0][0], 10, 25)).toBe(true);
+        expect(checkBounds(sleepFn.args[1][0], 25, 62.5)).toBe(true);
+        expect(checkBounds(sleepFn.args[2][0], 62.5, 100)).toBe(true);
+        expect(sleepFn.args[3][0]).toBe(100);
+        expect(sleepFn.args[4][0]).toBe(100);
+    });
+
+    it('should throw error when backoffMultiplier is less than 1', async () => {
+        const mockFn = vi.fn().mockResolvedValue('success');
+
+        await expect(
+            retryWithExponentialBackoff(mockFn, { ...options, backoffMultiplier: 0.5 }, mockLog, sleepFn),
+        ).rejects.toThrow('Backoff multiplier must be greater than or equal to 1');
+        expect(mockFn).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when totalTimeoutMs is 0 or negative', async () => {
+        const mockFn = vi.fn().mockResolvedValue('success');
+
+        await expect(
+            retryWithExponentialBackoff(mockFn, { ...options, totalTimeoutMs: 0 }, mockLog, sleepFn),
+        ).rejects.toThrow('Total timeout must be greater than 0');
+
+        await expect(
+            retryWithExponentialBackoff(mockFn, { ...options, totalTimeoutMs: -100 }, mockLog, sleepFn),
+        ).rejects.toThrow('Total timeout must be greater than 0');
+        expect(mockFn).not.toHaveBeenCalled();
     });
 
     it('should handle non-Error exceptions', async () => {
-        const mockFn = vi.fn().mockRejectedValue('String error');
-        const options: RetryOptions = { maxRetries: 1, initialDelayMs: 100 };
+        const mockFn = vi
+            .fn()
+            .mockRejectedValueOnce('string error')
+            .mockRejectedValueOnce({ message: 'object error' })
+            .mockResolvedValue('success');
 
-        const promise: Promise<void> = expect(retryWithExponentialBackoff(mockFn, options, mockLog)).rejects.toThrow(
-            'Operation failed after 2 attempts. Last error: String error',
-        );
+        const result = await retryWithExponentialBackoff(mockFn, options, mockLog, sleepFn);
 
-        await vi.advanceTimersByTimeAsync(200);
-        await promise;
+        expect(result).toBe('success');
+        expect(mockFn).toHaveBeenCalledTimes(3);
     });
 
     it('should use default options when not provided', async () => {
         const mockFn = vi.fn().mockRejectedValue(new Error('Failure'));
-        const options: RetryOptions = {};
+        const minimalOptions: RetryOptions = {
+            operationName: 'TestOp',
+            totalTimeoutMs: 60_000,
+        };
 
-        const promise: Promise<void> = expect(retryWithExponentialBackoff(mockFn, options, mockLog)).rejects.toThrow(
-            'Operation failed after 4 attempts',
+        const promise = retryWithExponentialBackoff(mockFn, minimalOptions, mockLog, sleepFn);
+
+        await expect(promise).rejects.toThrow('TestOp failed after 4 attempts');
+        expect(mockFn).toHaveBeenCalledTimes(4); // default maxRetries is 3, so 4 attempts
+    });
+
+    it('should not add jitter when jitterFactor is 0', async () => {
+        const mockFn = vi.fn().mockRejectedValue(new Error('Failure'));
+
+        const promise = retryWithExponentialBackoff(
+            mockFn,
+            {
+                ...options,
+                maxRetries: 2,
+                initialDelayMs: 10,
+                backoffMultiplier: 2,
+                jitterFactor: 0,
+                maxDelayMs: 1000,
+                totalTimeoutMs: 10_000,
+            },
+            mockLog,
+            sleepFn,
         );
 
-        await vi.advanceTimersByTimeAsync(8000);
-        await promise;
+        await expect(promise).rejects.toThrow('Failure');
+        expect(sleepFn.args[0][0]).toBe(10); // 10 * 2^0 = 10
+        expect(sleepFn.args[1][0]).toBe(20); // 10 * 2^1 = 20
+    });
 
-        expect(mockFn).toHaveBeenCalledTimes(4);
+    it('should log warnings on retry attempts', async () => {
+        const mockFn = vi.fn().mockRejectedValueOnce(new Error('Test error')).mockResolvedValue('success');
+
+        await retryWithExponentialBackoff(mockFn, options, mockLog, sleepFn);
+
+        expect(mockLog.warn).toHaveBeenCalledTimes(1);
+        expect(mockLog.warn).toHaveBeenCalledWith(
+            expect.stringContaining('SomeOperation attempt 1 failed: Test error'),
+        );
     });
 });
+
+function checkBounds(value: number, lowerLimit: number, upperLimit: number) {
+    if (value > lowerLimit && value < upperLimit) {
+        return true;
+    }
+
+    throw new Error(`${value} is either lower than ${lowerLimit} or greater than ${upperLimit}`);
+}

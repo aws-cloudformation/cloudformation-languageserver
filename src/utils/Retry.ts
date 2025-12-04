@@ -1,4 +1,5 @@
 import { Logger } from 'pino';
+import { extractErrorMessage } from './Errors';
 
 export type RetryOptions = {
     maxRetries?: number;
@@ -6,8 +7,8 @@ export type RetryOptions = {
     maxDelayMs?: number;
     backoffMultiplier?: number;
     jitterFactor?: number;
-    operationName?: string;
-    totalTimeoutMs?: number;
+    operationName: string;
+    totalTimeoutMs: number;
 };
 
 function sleep(ms: number): Promise<void> {
@@ -16,65 +17,79 @@ function sleep(ms: number): Promise<void> {
     });
 }
 
-function checkTotalTimeout(startTime: number, totalTimeoutMs: number | undefined, operationName: string): void {
-    if (totalTimeoutMs !== undefined && Date.now() - startTime > totalTimeoutMs) {
-        throw new Error(`${operationName} timed out after ${totalTimeoutMs}ms`);
-    }
-}
-
-function calculateNextDelay(
-    currentDelay: number,
+function calculateDelay(
+    attempt: number,
+    initialDelayMs: number,
     jitterFactor: number,
     backoffMultiplier: number,
     maxDelayMs: number,
 ): number {
-    const nextDelay = currentDelay * backoffMultiplier;
-    const jitter = jitterFactor > 0 ? Math.random() * jitterFactor * nextDelay : 0;
-    return Math.min(nextDelay + jitter, maxDelayMs);
+    // 1. Exponential Backoff: initial * 2^0, initial * 2^1, etc.
+    const exponentialDelay = initialDelayMs * Math.pow(backoffMultiplier, attempt);
+
+    // 2. Cap at Max Delay
+    const cappedDelay = Math.min(exponentialDelay, maxDelayMs);
+
+    // 3. Add Jitter (randomized percentage of the current delay), capped at maxDelayMs
+    const jitter = jitterFactor > 0 ? Math.random() * jitterFactor * cappedDelay : 0;
+
+    return Math.min(cappedDelay + jitter, maxDelayMs);
 }
 
-/**
- * Retry a function with exponential backoff
- */
 export async function retryWithExponentialBackoff<T>(
     fn: () => Promise<T>,
     options: RetryOptions,
     log: Logger,
+    sleepFn: (ms: number) => Promise<void> = (ms: number) => {
+        return sleep(ms);
+    },
 ): Promise<T> {
-    const maxRetries = options.maxRetries ?? 3;
-    const initialDelayMs = options.initialDelayMs ?? 1000;
-    const maxDelayMs = options.maxDelayMs ?? 30_000;
-    const backoffMultiplier = options.backoffMultiplier ?? 2;
-    const jitterFactor = options.jitterFactor ?? 0;
-    const operationName = options.operationName ?? 'Operation';
-    const totalTimeoutMs = options.totalTimeoutMs;
+    const {
+        maxRetries = 3,
+        initialDelayMs = 1000,
+        maxDelayMs = 5000,
+        backoffMultiplier = 2,
+        jitterFactor = 0.1,
+        operationName,
+        totalTimeoutMs,
+    } = options;
 
-    let lastError: Error = new Error('No attempts made');
-    let currentDelay = initialDelayMs;
-    const startTime = Date.now();
+    if (backoffMultiplier < 1) {
+        throw new Error('Backoff multiplier must be greater than or equal to 1');
+    }
 
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        checkTotalTimeout(startTime, totalTimeoutMs, operationName);
+    if (totalTimeoutMs <= 0) {
+        throw new Error('Total timeout must be greater than 0');
+    }
+
+    let lastError: Error | undefined = undefined;
+    const startTime = performance.now();
+
+    // If maxRetries is 3, we run: 0 (initial), 1, 2, 3. Total 4 attempts.
+    const attempts = maxRetries + 1;
+    for (let attemptIdx = 0; attemptIdx < attempts; attemptIdx++) {
+        if (attemptIdx > 0 && performance.now() - startTime >= totalTimeoutMs) {
+            const message = `${operationName} timed out after ${performance.now() - startTime}ms, on attempt #${attemptIdx + 1}/${attempts}`;
+            const errorMsg = lastError ? `${message}. Last error: ${lastError.message}` : message;
+            throw new Error(errorMsg);
+        }
 
         try {
             return await fn();
         } catch (error) {
-            lastError = error instanceof Error ? error : new Error(String(error));
-
-            if (attempt === maxRetries) {
-                throw new Error(
-                    `${operationName} failed after ${maxRetries + 1} attempts. Last error: ${lastError.message}`,
-                );
+            lastError = error instanceof Error ? error : new Error(extractErrorMessage(error));
+            if (attemptIdx === attempts - 1) {
+                throw new Error(`${operationName} failed after ${attempts} attempts. Last error: ${lastError.message}`);
             }
 
+            const delay = calculateDelay(attemptIdx, initialDelayMs, jitterFactor, backoffMultiplier, maxDelayMs);
             log.warn(
-                `${operationName} attempt ${attempt + 1} failed: ${lastError.message}. Retrying in ${currentDelay}ms...`,
+                `${operationName} attempt ${attemptIdx + 1} failed: ${lastError.message}. Retrying in ${Math.round(delay)}ms...`,
             );
 
-            await sleep(currentDelay);
-            currentDelay = calculateNextDelay(currentDelay, jitterFactor, backoffMultiplier, maxDelayMs);
+            await sleepFn(delay);
         }
     }
 
-    throw lastError;
+    throw new Error('Something went wrong, this is not reachable');
 }

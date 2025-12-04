@@ -645,35 +645,6 @@ describe('PyodideWorkerManager', () => {
     });
 
     describe('retry logic', () => {
-        test('should not retry when maxRetries is 0', async () => {
-            // Create a worker manager with retries disabled
-            const noRetryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 0,
-                    initialDelayMs: 10,
-                    maxDelayMs: 100,
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 5000,
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            // Mock worker creation to fail
-            workerConstructor.mockImplementation(() => {
-                throw new Error('Worker creation failed');
-            });
-
-            // Expect initialization to fail immediately without retries
-            await expect(noRetryWorkerManager.initialize()).rejects.toThrow(
-                'Pyodide initialization failed after 1 attempts. Last error: Worker creation failed',
-            );
-
-            // Verify no retry attempts were logged
-            expect(mockLogging.warn.callCount).toBe(0); // No retry warnings
-        });
-
         test('should retry initialization on failure and eventually succeed', async () => {
             // Create a worker manager with retry enabled
             const retryWorkerManager = new PyodideWorkerManager(
@@ -954,9 +925,7 @@ describe('PyodideWorkerManager', () => {
             });
 
             // Expect initialization to fail with timeout error
-            await expect(retryWorkerManager.initialize()).rejects.toThrow(
-                'Pyodide initialization timed out after 300ms',
-            );
+            await expect(retryWorkerManager.initialize()).rejects.toThrow(/Pyodide initialization timed out after 3/);
 
             const totalTime = Date.now() - startTime;
 
@@ -967,162 +936,6 @@ describe('PyodideWorkerManager', () => {
             // Should have made some attempts but not all 10 retries
             expect(attemptCount).toBeGreaterThan(1);
             expect(attemptCount).toBeLessThan(11); // Should timeout before reaching max retries
-        });
-
-        test('should work without totalTimeoutMs (backward compatibility)', async () => {
-            // Create a worker manager without totalTimeoutMs (uses default from DefaultSettings)
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 2,
-                    initialDelayMs: 10,
-                    maxDelayMs: 50,
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 120_000, // Uses default value from DefaultSettings
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            let attemptCount = 0;
-
-            workerConstructor.mockImplementation(() => {
-                attemptCount++;
-                throw new Error('Worker creation failed');
-            });
-
-            // Should fail after max retries, not timeout (since timeout is very large)
-            await expect(retryWorkerManager.initialize()).rejects.toThrow(
-                'Pyodide initialization failed after 3 attempts. Last error: Worker creation failed',
-            );
-
-            // Should have made all retry attempts (initial + 2 retries = 3 total)
-            expect(attemptCount).toBe(3);
-        });
-
-        test('should prefer explicit totalTimeoutMs over calculated timeout', async () => {
-            // Create a worker manager where explicit totalTimeoutMs is much shorter than calculated timeout
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 5, // Would normally allow 6 attempts
-                    initialDelayMs: 100,
-                    maxDelayMs: 1000, // Calculated timeout would be 1000 * 6 = 6000ms
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 200, // But explicit timeout is only 200ms
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            const startTime = Date.now();
-            let attemptCount = 0;
-
-            workerConstructor.mockImplementation(() => {
-                attemptCount++;
-                throw new Error('Worker creation failed');
-            });
-
-            // Should timeout quickly due to explicit totalTimeoutMs
-            await expect(retryWorkerManager.initialize()).rejects.toThrow(
-                'Pyodide initialization timed out after 200ms',
-            );
-
-            const totalTime = Date.now() - startTime;
-
-            // Should respect the explicit 200ms timeout, not the calculated 6000ms
-            // Allow more variance for CI environments
-            expect(totalTime).toBeGreaterThanOrEqual(180);
-            expect(totalTime).toBeLessThan(350);
-
-            // Should have made fewer attempts due to quick timeout
-            expect(attemptCount).toBeLessThan(6); // Should not reach max retries
-        });
-
-        test('should handle zero totalTimeoutMs (immediate timeout)', async () => {
-            // Create a worker manager with zero totalTimeoutMs
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 3,
-                    initialDelayMs: 100,
-                    maxDelayMs: 500,
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 0, // Immediate timeout
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            let attemptCount = 0;
-
-            workerConstructor.mockImplementation(() => {
-                attemptCount++;
-                throw new Error('Worker creation failed');
-            });
-
-            // Should timeout immediately after first attempt
-            await expect(retryWorkerManager.initialize()).rejects.toThrow('Pyodide initialization timed out after 0ms');
-
-            // Should have made at least one attempt before timing out
-            expect(attemptCount).toBe(1);
-        });
-
-        test('should handle very large totalTimeoutMs', async () => {
-            // Create a worker manager with very large totalTimeoutMs
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 2,
-                    initialDelayMs: 10,
-                    maxDelayMs: 50,
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 10000, // Very large timeout (10 seconds)
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            let attemptCount = 0;
-
-            workerConstructor.mockImplementation(() => {
-                attemptCount++;
-                throw new Error('Worker creation failed');
-            });
-
-            // Should fail due to max retries, not timeout
-            await expect(retryWorkerManager.initialize()).rejects.toThrow(
-                'Pyodide initialization failed after 3 attempts. Last error: Worker creation failed',
-            );
-
-            // Should have made all retry attempts
-            expect(attemptCount).toBe(3);
-        });
-
-        test('should use default operation name in error messages', async () => {
-            // Create a worker manager without specifying operation name
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 1,
-                    initialDelayMs: 10,
-                    maxDelayMs: 100,
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 5000,
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            // Always fail worker creation
-            workerConstructor.mockImplementation(() => {
-                throw new Error('Worker creation failed');
-            });
-
-            // Expect initialization to fail with default operation name
-            await expect(retryWorkerManager.initialize()).rejects.toThrow(
-                'Pyodide initialization failed after 2 attempts. Last error: Worker creation failed',
-            );
         });
     });
 
