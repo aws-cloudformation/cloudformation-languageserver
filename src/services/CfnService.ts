@@ -62,7 +62,7 @@ import {
 import { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClientSettings, DefaultSettings } from '../settings/Settings';
 import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
-import { Count } from '../telemetry/TelemetryDecorator';
+import { Count, Measure } from '../telemetry/TelemetryDecorator';
 import { AwsClient } from './AwsClient';
 
 export class CfnService {
@@ -174,6 +174,7 @@ export class CfnService {
         });
     }
 
+    @Count({ name: 'detectStackDrift' })
     public async detectStackDrift(params: {
         StackName: string;
         LogicalResourceIds?: string[];
@@ -256,6 +257,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new ListStackResourcesCommand(params)));
     }
 
+    @Count({ name: 'describeStackResourceDrifts' })
     public async describeStackResourceDrifts(params: {
         StackName: string;
         StackResourceDriftStatusFilters?: StackResourceDriftStatus[];
@@ -337,6 +339,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DeleteStackCommand(params)));
     }
 
+    @Measure({ name: 'waitUntilChangeSetCreateComplete' })
     public async waitUntilChangeSetCreateComplete(params: DescribeChangeSetCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
             const settings = this.awsClientSettings;
@@ -350,6 +353,7 @@ export class CfnService {
         });
     }
 
+    @Measure({ name: 'waitUntilStackCreateComplete' })
     public async waitUntilStackCreateComplete(params: DescribeStacksCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
             const settings = this.awsClientSettings;
@@ -363,6 +367,7 @@ export class CfnService {
         });
     }
 
+    @Measure({ name: 'waitUntilStackUpdateComplete' })
     public async waitUntilStackUpdateComplete(params: DescribeStacksCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
             const settings = this.awsClientSettings;
@@ -376,6 +381,7 @@ export class CfnService {
         });
     }
 
+    @Measure({ name: 'waitUntilStackImportComplete' })
     public async waitUntilStackImportComplete(params: DescribeStacksCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
             const settings = this.awsClientSettings;
@@ -389,6 +395,7 @@ export class CfnService {
         });
     }
 
+    @Measure({ name: 'waitUntilStackDeleteComplete' })
     public async waitUntilStackDeleteComplete(params: DescribeStacksCommandInput): Promise<WaiterResult> {
         return await this.withClient(async (client) => {
             const settings = this.awsClientSettings;
