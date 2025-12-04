@@ -1,7 +1,8 @@
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { Measure } from '../telemetry/TelemetryDecorator';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
 import { readFileIfExists } from '../utils/File';
@@ -12,6 +13,9 @@ import { FeatureFlagSupplier, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey
 const log = LoggerFactory.getLogger('FeatureFlagProvider');
 
 export class FeatureFlagProvider implements Closeable {
+    @Telemetry()
+    private readonly telemetry!: ScopedTelemetry;
+
     private config: unknown;
     private readonly supplier: FeatureFlagSupplier;
 
@@ -44,6 +48,7 @@ export class FeatureFlagProvider implements Closeable {
             5 * 60 * 1000,
         );
 
+        this.registerGauges();
         this.log();
     }
 
@@ -79,6 +84,14 @@ export class FeatureFlagProvider implements Closeable {
                 })
                 .join('\n')}`,
         );
+    }
+
+    private registerGauges() {
+        for (const [key, flag] of this.supplier.featureFlags.entries()) {
+            this.telemetry.registerGaugeProvider(`featureFlag.${key}`, () => (flag.isEnabled() ? 1 : 0), {
+                description: `State of ${key} feature flag`,
+            });
+        }
     }
 
     close() {
