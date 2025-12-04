@@ -17,6 +17,7 @@ export class UsageTrackerMetrics {
                 EventType.DidImportResources,
                 EventType.MeaningfulHover,
                 EventType.MeaningfulCompletion,
+                EventType.DidGetResourceTypes,
             )
                 ? 1
                 : 0,
