@@ -4,6 +4,7 @@ export enum EventType {
     DidImportResources = 'DidImportResources',
     MeaningfulHover = 'MeaningfulHover',
     MeaningfulCompletion = 'MeaningfulCompletion',
+    DidGetResourceTypes = 'DidGetResourceTypes',
 }
 
 export class UsageTracker {
