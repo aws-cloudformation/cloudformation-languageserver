@@ -76,7 +76,7 @@ describe('ResourceState E2E', () => {
 
             await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams);
+            } satisfies ListResourcesParams);
 
             const result = (await client.send('aws/cfn/resources/types', {})) as ResourceTypesResult;
 
@@ -88,7 +88,7 @@ describe('ResourceState E2E', () => {
         it('should return empty array when no resources requested', async () => {
             const result = (await client.send('aws/cfn/resources/list', {
                 resources: [],
-            } as ListResourcesParams)) as ListResourcesResult;
+            } satisfies ListResourcesParams)) as ListResourcesResult;
 
             expect(result.resources).toEqual([]);
         });
@@ -101,7 +101,7 @@ describe('ResourceState E2E', () => {
 
             const result = (await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams)) as ListResourcesResult;
+            } satisfies ListResourcesParams)) as ListResourcesResult;
 
             expect(result.resources).toHaveLength(1);
             expect(result.resources[0].typeName).toBe('AWS::Lambda::Function');
@@ -122,7 +122,7 @@ describe('ResourceState E2E', () => {
 
             const result = (await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }, { resourceType: 'AWS::DynamoDB::Table' }],
-            } as ListResourcesParams)) as ListResourcesResult;
+            } satisfies ListResourcesParams)) as ListResourcesResult;
 
             expect(result.resources).toHaveLength(2);
             expect(result.resources.map((r) => r.typeName)).toContain('AWS::Lambda::Function');
@@ -138,7 +138,7 @@ describe('ResourceState E2E', () => {
 
             const result = (await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams)) as ListResourcesResult;
+            } satisfies ListResourcesParams)) as ListResourcesResult;
 
             expect(result.resources[0].nextToken).toBe('token-123');
         });
@@ -153,7 +153,7 @@ describe('ResourceState E2E', () => {
 
             await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams);
+            } satisfies ListResourcesParams);
 
             mockCloudControlSend.resolves({
                 TypeName: 'AWS::Lambda::Function',
@@ -166,7 +166,7 @@ describe('ResourceState E2E', () => {
             const result = (await client.send('aws/cfn/resources/search', {
                 resourceType: 'AWS::Lambda::Function',
                 identifier: 'my-function',
-            } as SearchResourceParams)) as SearchResourceResult;
+            } satisfies SearchResourceParams)) as SearchResourceResult;
 
             expect(result.found).toBe(true);
             expect(result.resource?.resourceIdentifiers).toContain('my-function');
@@ -180,14 +180,14 @@ describe('ResourceState E2E', () => {
 
             await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams);
+            } satisfies ListResourcesParams);
 
             mockCloudControlSend.rejects(new Error('ResourceNotFoundException'));
 
             const result = (await client.send('aws/cfn/resources/search', {
                 resourceType: 'AWS::Lambda::Function',
                 identifier: 'non-existent',
-            } as SearchResourceParams)) as SearchResourceResult;
+            } satisfies SearchResourceParams)) as SearchResourceResult;
 
             expect(result.found).toBe(false);
             expect(result.resource).toBeUndefined();
@@ -203,7 +203,7 @@ describe('ResourceState E2E', () => {
 
             const result = (await client.send('aws/cfn/resources/refresh', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as RefreshResourcesParams)) as RefreshResourcesResult;
+            } satisfies RefreshResourcesParams)) as RefreshResourcesResult;
 
             expect(result.resources).toHaveLength(1);
             expect(result.resources[0].typeName).toBe('AWS::Lambda::Function');
@@ -217,7 +217,7 @@ describe('ResourceState E2E', () => {
 
             await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams);
+            } satisfies ListResourcesParams);
 
             mockCloudControlSend.resolves({
                 TypeName: 'AWS::Lambda::Function',
@@ -226,7 +226,7 @@ describe('ResourceState E2E', () => {
 
             const result = (await client.send('aws/cfn/resources/refresh', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as RefreshResourcesParams)) as RefreshResourcesResult;
+            } satisfies RefreshResourcesParams)) as RefreshResourcesResult;
 
             expect(result.resources[0].resourceIdentifiers).toHaveLength(2);
         });
@@ -241,7 +241,7 @@ describe('ResourceState E2E', () => {
 
             const listResult = (await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams)) as ListResourcesResult;
+            } satisfies ListResourcesParams)) as ListResourcesResult;
 
             expect(listResult.resources).toHaveLength(1);
             expect(listResult.resources[0].typeName).toBe('AWS::Lambda::Function');
@@ -256,7 +256,7 @@ describe('ResourceState E2E', () => {
 
             const listAfterRemove = (await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams)) as ListResourcesResult;
+            } satisfies ListResourcesParams)) as ListResourcesResult;
 
             expect(listAfterRemove.resources[0].resourceIdentifiers).toHaveLength(0);
         });
@@ -287,7 +287,7 @@ describe('ResourceState E2E', () => {
                     },
                 ],
                 purpose: ResourceStatePurpose.IMPORT,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(result.successfulImports['AWS::S3::Bucket']).toContain('my-bucket');
             expect(result.failedImports).toEqual({});
@@ -323,7 +323,7 @@ describe('ResourceState E2E', () => {
                     },
                 ],
                 purpose: ResourceStatePurpose.IMPORT,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(result.successfulImports['AWS::S3::Bucket']).toHaveLength(2);
             expect(result.successfulImports['AWS::S3::Bucket']).toContain('bucket-1');
@@ -355,7 +355,7 @@ describe('ResourceState E2E', () => {
                     },
                 ],
                 purpose: ResourceStatePurpose.IMPORT,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             // Verify at least one resource was processed
             expect(result.successfulImports['AWS::S3::Bucket']).toBeDefined();
@@ -370,7 +370,7 @@ describe('ResourceState E2E', () => {
                 textDocument: { uri },
                 resourceSelections: undefined,
                 purpose: ResourceStatePurpose.IMPORT,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(result.successfulImports).toEqual({});
             expect(result.completionItem).toBeUndefined();
@@ -403,7 +403,7 @@ describe('ResourceState E2E', () => {
                     },
                 ],
                 purpose: ResourceStatePurpose.IMPORT,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(result.successfulImports['AWS::Lambda::Function']).toContain('my-function');
             expect(result.completionItem).toBeDefined();
@@ -442,7 +442,7 @@ describe('ResourceState E2E', () => {
                     },
                 ],
                 purpose: ResourceStatePurpose.IMPORT,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(result.successfulImports['AWS::S3::Bucket']).toContain('my-bucket');
             expect(result.successfulImports['AWS::Lambda::Function']).toContain('my-function');
@@ -473,7 +473,7 @@ describe('ResourceState E2E', () => {
                     },
                 ],
                 purpose: ResourceStatePurpose.IMPORT,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(result.successfulImports['AWS::Lambda::Function']).toContain('function-1');
             expect(result.failedImports['AWS::Lambda::Function']).toContain('function-2');
@@ -505,7 +505,7 @@ describe('ResourceState E2E', () => {
                     },
                 ],
                 purpose: ResourceStatePurpose.CLONE,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(result.successfulImports['AWS::S3::Bucket']).toContain('source-bucket');
             expect(result.completionItem).toBeDefined();
@@ -537,7 +537,7 @@ describe('ResourceState E2E', () => {
                     },
                 ],
                 purpose: ResourceStatePurpose.CLONE,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(result.successfulImports['AWS::Lambda::Function']).toContain('source-function');
         });
@@ -628,7 +628,7 @@ Resources:
 
             await client.send('aws/cfn/resources/list', {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
-            } as ListResourcesParams);
+            } satisfies ListResourcesParams);
 
             // Mock GetResource for search
             mockCloudControlSend.resolves({
@@ -642,7 +642,7 @@ Resources:
             const searchResult = (await client.send('aws/cfn/resources/search', {
                 resourceType: 'AWS::Lambda::Function',
                 identifier: 'integration-function',
-            } as SearchResourceParams)) as SearchResourceResult;
+            } satisfies SearchResourceParams)) as SearchResourceResult;
 
             expect(searchResult.found).toBe(true);
 
@@ -667,7 +667,7 @@ Resources:
                     },
                 ],
                 purpose: ResourceStatePurpose.IMPORT,
-            } as ResourceStateParams)) as ResourceStateResult;
+            } satisfies ResourceStateParams)) as ResourceStateResult;
 
             expect(importResult.successfulImports['AWS::Lambda::Function']).toContain('integration-function');
         });
