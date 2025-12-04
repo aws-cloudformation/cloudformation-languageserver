@@ -204,7 +204,12 @@ export class TemplateBuilder {
 
         // Create syntax tree using proper document detection (like real LSP)
         const document = createDocument(textDocument);
-        this.syntaxTreeManager.addWithTypes(this.uri, document.contents(), document.documentType, document.cfnFileType);
+        this.syntaxTreeManager.addWithTypes(
+            this.uri,
+            document.contents() ?? '',
+            document.documentType,
+            document.cfnFileType,
+        );
     }
 
     typeAt(position: Position, text: string): void {

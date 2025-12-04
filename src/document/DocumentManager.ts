@@ -176,7 +176,10 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
     private emitDocSizeMetrics() {
         for (const doc of this.documentMap.values()) {
             if (doc.isTemplate()) {
-                this.telemetry.histogram('documents.template.size.bytes', byteSize(doc.contents()), { unit: 'By' });
+                const content = doc.contents();
+                if (content) {
+                    this.telemetry.histogram('documents.template.size.bytes', byteSize(content), { unit: 'By' });
+                }
             }
         }
     }

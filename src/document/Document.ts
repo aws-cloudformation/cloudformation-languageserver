@@ -139,11 +139,11 @@ export class Document {
     }
 
     public getText(range?: Range) {
-        return this.getTextDocument()?.getText(range) ?? '';
+        return this.getTextDocument()?.getText(range);
     }
 
-    public getLines(): string[] {
-        return this.getText().split('\n');
+    public getLines(): string[] | undefined {
+        return this.getText()?.split('\n');
     }
 
     public positionAt(offset: number) {
@@ -159,7 +159,7 @@ export class Document {
     }
 
     public contents() {
-        return this.getTextDocument()?.getText() ?? '';
+        return this.getTextDocument()?.getText();
     }
 
     public metadata(): DocumentMetadata {
@@ -171,7 +171,7 @@ export class Document {
             cfnType: this.cfnFileType,
             languageId: this.languageId ?? '',
             version: this.version ?? 0,
-            lineCount: this.lineCount ?? -1,
+            lineCount: this.lineCount ?? 0,
         };
     }
 
@@ -207,6 +207,9 @@ export class Document {
 
     private detectIndentationFromContent(): number | undefined {
         const content = this.contents();
+        if (!content) {
+            return undefined;
+        }
         const lines = content.split('\n');
 
         const maxLinesToAnalyze = Math.min(lines.length, 30);

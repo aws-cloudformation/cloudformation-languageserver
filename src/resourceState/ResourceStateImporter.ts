@@ -443,7 +443,16 @@ export class ResourceStateImporter {
         // For JSON without Resources section, check if file is essentially empty
         if (!resourcesSection) {
             try {
-                const parsed = JSON.parse(document.getText()) as Record<string, unknown>;
+                const text = document.getText();
+                if (!text) {
+                    return {
+                        position: { line: 0, character: 0 },
+                        commaPrefixNeeded: false,
+                        newLineSuffixNeeded: false,
+                        replaceEntireFile: true,
+                    };
+                }
+                const parsed = JSON.parse(text) as Record<string, unknown>;
                 const hasContent = Object.keys(parsed).length > 0;
 
                 // If no content, replace entire file
