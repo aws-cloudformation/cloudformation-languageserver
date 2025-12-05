@@ -25,7 +25,7 @@ export class AwsCredentials {
     private readonly logger = LoggerFactory.getLogger(AwsCredentials);
 
     @Telemetry()
-    private readonly telemery!: ScopedTelemetry;
+    private readonly telemetry!: ScopedTelemetry;
 
     private iamCredentials?: IamCredentials;
     private readonly encryptionKey?: Buffer;
@@ -38,10 +38,10 @@ export class AwsCredentials {
         this.encryptionKey = encryptionKey ? Buffer.from(encryptionKey, 'base64') : undefined;
         this.logger.info(`AWS credentials ${encryptionKey ? 'encrypted' : 'unencrypted'}`);
 
-        this.telemery.registerGaugeProvider('encrypted', () => (encryptionKey === undefined ? 0 : 1));
-        this.telemery.registerGaugeProvider('unencrypted', () => (encryptionKey === undefined ? 1 : 0));
-        this.telemery.registerGaugeProvider('authenticated', () => (this.credentialsAvailable() ? 1 : 0));
-        this.telemery.registerGaugeProvider('unauthenticated', () => (this.credentialsAvailable() ? 0 : 1));
+        this.telemetry.registerGaugeProvider('encrypted', () => (encryptionKey === undefined ? 0 : 1));
+        this.telemetry.registerGaugeProvider('unencrypted', () => (encryptionKey === undefined ? 1 : 0));
+        this.telemetry.registerGaugeProvider('authenticated', () => (this.credentialsAvailable() ? 1 : 0));
+        this.telemetry.registerGaugeProvider('unauthenticated', () => (this.credentialsAvailable() ? 0 : 1));
     }
 
     credentialsAvailable() {
@@ -60,6 +60,8 @@ export class AwsCredentials {
             this.logger.error('Authentication failed: encryption key not configured');
             return false;
         }
+        this.telemetry.count('update', 1);
+        this.telemetry.count('update.fault', 0);
 
         try {
             const decrypted = await compactDecrypt(params.data, this.encryptionKey);
@@ -71,6 +73,7 @@ export class AwsCredentials {
             );
 
             const region = getRegion(validatedCredentials.data.region);
+            this.telemetry.count(`update.region.${region}`, 1);
 
             this.iamCredentials = {
                 ...validatedCredentials.data,
@@ -80,6 +83,7 @@ export class AwsCredentials {
             this.settingsManager.updateProfileSettings(validatedCredentials.data.profile, region);
             return true;
         } catch (error) {
+            this.telemetry.count('update.fault', 1);
             this.iamCredentials = undefined;
 
             this.logger.error(error, `Failed to update IAM credentials`);
