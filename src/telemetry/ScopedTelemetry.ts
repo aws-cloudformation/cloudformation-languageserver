@@ -9,20 +9,15 @@ import {
     Tracer,
     UpDownCounter,
     ValueType,
-    MetricAdvice,
 } from '@opentelemetry/api';
 import { Closeable } from '../utils/Closeable';
 import { typeOf } from '../utils/TypeCheck';
 import { TelemetryContext } from './TelemetryContext';
 
-export type MetricConfig = {
-    description?: string;
-    unit?: string;
-    valueType?: ValueType;
-    advice?: MetricAdvice;
+export interface MetricConfig extends MetricOptions {
     trackObjectKey?: string;
     attributes?: Attributes;
-};
+}
 
 export class ScopedTelemetry implements Closeable {
     private readonly counters = new Map<string, Counter>();

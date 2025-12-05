@@ -5,7 +5,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { isWindows } from '../utils/Environment';
-import { toString } from '../utils/String';
+import { formatNumber, toString } from '../utils/String';
 import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 import { LMDBStore } from './lmdb/LMDBStore';
 import { stats } from './lmdb/Stats';
@@ -69,7 +69,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 noSubdir: config.noSubdir,
                 overlappingSync: config.overlappingSync,
             },
-            `Initialized LMDB ${Version} with stores: ${toString(storeNames)}`,
+            `Initialized LMDB ${Version} with stores: ${toString(storeNames)} and ${formatNumber(this.totalBytes() / (1024 * 1024), 4)} MB`,
         );
     }
 
@@ -110,7 +110,8 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private emitMetrics(): void {
-        let totalBytes = 0;
+        const totalBytes = this.totalBytes();
+
         const envStat = stats(this.env);
         this.telemetry.histogram('version', VersionNumber);
         this.telemetry.histogram('env.size.bytes', envStat.totalSize, { unit: 'By' });
@@ -118,11 +119,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
             unit: 'By',
         });
         this.telemetry.histogram('env.entries', envStat.entries);
-        totalBytes += envStat.totalSize;
 
         for (const [name, store] of this.stores.entries()) {
             const stat = store.stats();
-            totalBytes += stat.totalSize;
 
             this.telemetry.histogram(`store.${name}.size.bytes`, stat.totalSize, {
                 unit: 'By',
@@ -136,6 +135,17 @@ export class LMDBStoreFactory implements DataStoreFactory {
         this.telemetry.histogram('total.size.bytes', totalBytes, {
             unit: 'By',
         });
+    }
+
+    private totalBytes() {
+        let totalBytes = 0;
+        totalBytes += stats(this.env).totalSize;
+
+        for (const store of this.stores.values()) {
+            totalBytes += store.stats().totalSize;
+        }
+
+        return totalBytes;
     }
 }
 

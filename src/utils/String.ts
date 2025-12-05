@@ -34,3 +34,7 @@ export function byteSize(str: string) {
     const bytes: Uint8Array = new TextEncoder().encode(str);
     return bytes.length;
 }
+
+export function formatNumber(value: number, decimals: number = 2) {
+    return value.toFixed(decimals);
+}

@@ -66,7 +66,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         };
 
         await dataStore.put<RegionalSchemasType>(this.region, value);
-        this.logger.info(`${schemas.length} public schemas retrieved for ${this.region}`);
+        this.logger.info(`${schemas.length} public schemas downloaded for ${this.region} and saved`);
     }
 }
 
