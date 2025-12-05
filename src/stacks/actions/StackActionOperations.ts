@@ -274,6 +274,7 @@ export async function cleanupReviewStack(
                 maxRetries: 3,
                 initialDelayMs: 1000,
                 operationName: `Delete stack ${workflow.stackName}`,
+                totalTimeoutMs: 30_000,
             },
             logger,
         );
@@ -298,6 +299,7 @@ export async function deleteChangeSet(
                 maxRetries: 3,
                 initialDelayMs: 1000,
                 operationName: `Delete change set ${workflow.changeSetName}`,
+                totalTimeoutMs: 30_000,
             },
             logger,
         );
