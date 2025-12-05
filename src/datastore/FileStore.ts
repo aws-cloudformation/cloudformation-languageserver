@@ -4,6 +4,7 @@ import { Logger } from 'pino';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { formatNumber } from '../utils/String';
 import { DataStore, DataStoreFactory, StoreName } from './DataStore';
 import { EncryptedFileStore } from './file/EncryptedFileStore';
 import { encryptionKey } from './file/Encryption';
@@ -40,7 +41,7 @@ export class FileStoreFactory implements DataStoreFactory {
             2 * 60 * 1000,
         );
 
-        this.log.info(`Initialized FileDB ${Version}`);
+        this.log.info(`Initialized FileDB ${Version} and ${formatNumber(this.totalBytes() / (1024 * 1024), 4)} MB`);
     }
 
     get(store: StoreName): DataStore {
@@ -66,18 +67,16 @@ export class FileStoreFactory implements DataStoreFactory {
         this.telemetry.histogram('version', VersionNumber);
         this.telemetry.histogram('env.entries', this.stores.size);
 
-        let totalBytes = 0;
         for (const [name, store] of this.stores.entries()) {
             const stats = store.stats();
 
-            totalBytes += stats.totalSize;
             this.telemetry.histogram(`store.${name}.entries`, stats.entries);
             this.telemetry.histogram(`store.${name}.size.bytes`, stats.totalSize, {
                 unit: 'By',
             });
         }
 
-        this.telemetry.histogram('total.size.bytes', totalBytes, {
+        this.telemetry.histogram('total.size.bytes', this.totalBytes(), {
             unit: 'By',
         });
     }
@@ -95,6 +94,16 @@ export class FileStoreFactory implements DataStoreFactory {
                 this.telemetry.count('oldVersion.cleanup.error', 1);
             }
         }
+    }
+
+    private totalBytes() {
+        let totalBytes = 0;
+
+        for (const store of this.stores.values()) {
+            totalBytes += store.stats().totalSize;
+        }
+
+        return totalBytes;
     }
 }
 

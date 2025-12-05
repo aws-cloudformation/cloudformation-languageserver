@@ -34,7 +34,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
 
             await dataStore.put(SamStoreKey, samSchemasData);
 
-            this.logger.info(`${resourceSchemas.size} SAM schemas downloaded and stored`);
+            this.logger.info(`${resourceSchemas.size} SAM schemas downloaded and saved`);
         } catch (error) {
             this.logger.error(error, 'Failed to download SAM schemas');
             throw error;
