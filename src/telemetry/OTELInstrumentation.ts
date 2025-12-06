@@ -11,7 +11,7 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ClientInfo } from '../server/InitParams';
-import { isBeta, isAlpha, isProd, isTest } from '../utils/Environment';
+import { isBeta, isAlpha, isProd, isTest, ProcessPlatform } from '../utils/Environment';
 import { ExtensionId, ExtensionVersion } from '../utils/ExtensionConfig';
 
 const ExportIntervalSeconds = 60;
@@ -28,8 +28,6 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
         exportIntervalMillis: ExportIntervalSeconds * 1000,
     });
 
-    const buildTarget = process.env.BUILD_TARGET ? `-${process.env.BUILD_TARGET}` : '';
-
     const sdk = new NodeSDK({
         resource: resourceFromAttributes({
             ['service']: `${ExtensionId}-${ExtensionVersion}`,
@@ -37,7 +35,7 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
             ['client.id']: clientId,
             ['client.type']: `${client?.name ?? 'Unknown'}-${client?.version ?? 'Unknown'}`,
             ['machine.type']: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
-            ['process.type']: `${process.platform}${buildTarget}-${process.arch}`,
+            ['process.type']: `${ProcessPlatform}-${process.arch}`,
             ['process.version']: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
         }),
         resourceDetectors: [],
