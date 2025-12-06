@@ -451,6 +451,32 @@
           ]
         },
         {
+          "platform": "linuxglib2.28",
+          "arch": "arm64",
+          "nodejs": "18",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.1.0-linuxglib2.28-arm64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.1.0/cloudformation-languageserver-1.1.0-linuxglib2.28-arm64-node18.zip",
+              "hashes": [],
+              "bytes": 56287793
+            }
+          ]
+        },
+        {
+          "platform": "linuxglib2.28",
+          "arch": "x64",
+          "nodejs": "18",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.1.0-linuxglib2.28-x64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.1.0/cloudformation-languageserver-1.1.0-linuxglib2.28-x64-node18.zip",
+              "hashes": [],
+              "bytes": 56560705
+            }
+          ]
+        },
+        {
           "platform": "win32",
           "arch": "arm64",
           "nodejs": "22",
@@ -556,6 +582,32 @@
             {
               "filename": "cloudformation-languageserver-1.0.0-linux-x64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-linux-x64-node22.zip",
+              "hashes": [],
+              "bytes": 56559305
+            }
+          ]
+        },
+        {
+          "platform": "linuxglib2.28",
+          "arch": "arm64",
+          "nodejs": "18",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.0.0-linuxglib2.28-arm64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-linuxglib2.28-arm64-node18.zip",
+              "hashes": [],
+              "bytes": 56286393
+            }
+          ]
+        },
+        {
+          "platform": "linuxglib2.28",
+          "arch": "x64",
+          "nodejs": "18",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.0.0-linuxglib2.28-x64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-linuxglib2.28-x64-node18.zip",
               "hashes": [],
               "bytes": 56559305
             }
