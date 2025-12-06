@@ -6,7 +6,7 @@ import { LspConnection } from '../protocol/LspConnection';
 import { ExtendedInitializeParams } from '../server/InitParams';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
-import { AwsEnv, NodeEnv } from '../utils/Environment';
+import { AwsEnv, NodeEnv, ProcessPlatform } from '../utils/Environment';
 import { ExtensionName } from '../utils/ExtensionConfig';
 
 let server: unknown;
@@ -33,7 +33,7 @@ async function onInitialize(params: ExtendedInitializeParams) {
     );
     getLogger().info({
         Machine: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
-        Process: `${process.platform}-${process.arch}`,
+        Process: `${ProcessPlatform}-${process.arch}`,
         Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
     });
     TelemetryService.initialize(ClientInfo, AwsMetadata);
