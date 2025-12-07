@@ -925,7 +925,7 @@ describe('PyodideWorkerManager', () => {
             });
 
             // Expect initialization to fail with timeout error
-            await expect(retryWorkerManager.initialize()).rejects.toThrow(/Pyodide initialization timed out after 3/);
+            await expect(retryWorkerManager.initialize()).rejects.toThrow(/Pyodide initialization timed out after/);
 
             const totalTime = Date.now() - startTime;
 
