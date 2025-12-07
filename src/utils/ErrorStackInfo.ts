@@ -12,12 +12,12 @@ export function determineSensitiveInfo(): string[] {
         errorStackInfo = __dirname
             .replaceAll('\\\\', '/')
             .replaceAll('\\', '/')
-            .split('/')
+            .split(/[/:]/)
             .map((x) => {
                 return x.trim();
             })
             .filter((x) => {
-                return x.length > 0;
+                return x.length > 1;
             });
     } catch (err) {
         LoggerFactory.getLogger('SensitiveInfo').warn(err, 'Cannot get __dirname');

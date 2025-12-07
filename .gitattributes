@@ -1,4 +1,4 @@
-* text=auto eof=lf
+* text=auto eol=lf
 
 ################################################################################
 # The following files are binary and should be left untouched.
@@ -25,7 +25,6 @@
 cfn-init binary
 *.node   binary
 *.wasm   binary
-*.bat    binary
 
 # Documents
 *.pdf    binary
@@ -36,7 +35,6 @@ cfn-init binary
 *.ppt    binary
 *.pptx   binary
 *.odt    binary
-*.csv    binary
 
 # Images
 *.png    binary
@@ -48,7 +46,6 @@ cfn-init binary
 *.tif    binary
 *.tiff   binary
 *.webp   binary
-*.svg    binary
 
 # Audio & Video
 *.mp3    binary
@@ -63,3 +60,10 @@ cfn-init binary
 *.jks      binary
 *.db       binary
 *.sqlite   binary
+
+# Windows batch files must always use CRLF, or they may fail to execute.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# PowerShell can handle LF, but CRLF is safer for Windows-specific scripts
+*.ps1 text eol=crlf
