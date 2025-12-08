@@ -8,7 +8,7 @@ import { SyntaxTree } from '../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { parseJson } from '../../src/document/JsonParser';
 import { parseYaml } from '../../src/document/YamlParser';
-import { removeQuotes, toString } from '../../src/utils/String';
+import { removeQuotes } from '../../src/utils/String';
 import { docPosition, Templates } from './TemplateUtils';
 
 export type ContextAnalysisResult = {
@@ -47,13 +47,6 @@ export class TemplateTestOrchestrator {
     }
 
     public getEntityPositions(section: string, logicalId: string): TextDocumentPositionParams[] {
-        // eslint-disable-next-line no-console
-        console.warn(
-            'Positions',
-            section,
-            logicalId,
-            toString(this.entityPositions.get(section)?.get(logicalId) ?? []),
-        );
         return this.entityPositions.get(section)?.get(logicalId) ?? [];
     }
 
