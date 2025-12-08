@@ -4,17 +4,18 @@ import {
     InsertRelatedResourcesParams,
     TemplateUri,
 } from '../protocol/RelatedResourcesProtocol';
+import { NonEmptyZodString } from '../utils/ZodModel';
 
-const TemplateUriSchema = z.string().min(1);
+const TemplateUriSchema = NonEmptyZodString;
 
 const GetRelatedResourceTypesParamsSchema = z.object({
-    parentResourceType: z.string().min(1),
+    parentResourceType: NonEmptyZodString,
 });
 
 const InsertRelatedResourcesParamsSchema = z.object({
-    templateUri: z.string().min(1),
-    relatedResourceTypes: z.array(z.string().min(1)).min(1),
-    parentResourceType: z.string().min(1),
+    templateUri: NonEmptyZodString,
+    relatedResourceTypes: z.array(NonEmptyZodString).min(1),
+    parentResourceType: NonEmptyZodString,
 });
 
 export function parseTemplateUriParams(input: unknown): TemplateUri {

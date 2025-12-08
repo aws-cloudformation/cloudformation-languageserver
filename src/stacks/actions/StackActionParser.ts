@@ -1,5 +1,6 @@
 import { Capability, OnStackFailure } from '@aws-sdk/client-cloudformation';
 import { z } from 'zod';
+import { NonEmptyZodString, CfnNameZodString } from '../../utils/ZodModel';
 import {
     ListStackResourcesParams,
     GetStackEventsParams,
@@ -44,9 +45,9 @@ const ResourceToImportSchema = z.object({
 const DeploymentModeSchema = z.enum([DeploymentMode.REVERT_DRIFT]);
 
 const CreateValidationParamsSchema = z.object({
-    id: z.string().min(1),
-    uri: z.string().min(1),
-    stackName: z.string().min(1).max(128),
+    id: NonEmptyZodString,
+    uri: NonEmptyZodString,
+    stackName: CfnNameZodString,
     parameters: z.array(ParameterSchema).optional(),
     capabilities: z.array(CapabilitySchema).optional(),
     resourcesToImport: z.array(ResourceToImportSchema).optional(),
@@ -61,42 +62,42 @@ const CreateValidationParamsSchema = z.object({
 });
 
 const CreateDeploymentParamsSchema = z.object({
-    id: z.string().min(1),
-    stackName: z.string().min(1).max(128),
-    changeSetName: z.string().min(1).max(128),
+    id: NonEmptyZodString,
+    stackName: CfnNameZodString,
+    changeSetName: CfnNameZodString,
 });
 
 const DeleteChangeSetParamsSchema = z.object({
-    id: z.string().min(1),
-    stackName: z.string().min(1).max(128),
-    changeSetName: z.string().min(1).max(128),
+    id: NonEmptyZodString,
+    stackName: CfnNameZodString,
+    changeSetName: CfnNameZodString,
 });
 
 const DescribeChangeSetParamsSchema = z.object({
-    stackName: z.string().min(1).max(128),
-    changeSetName: z.string().min(1).max(128),
+    stackName: CfnNameZodString,
+    changeSetName: CfnNameZodString,
 });
 
-const TemplateUriSchema = z.string().min(1);
+const TemplateUriSchema = NonEmptyZodString;
 
 const ListStackResourcesParamsSchema = z.object({
-    stackName: z.string().min(1),
+    stackName: NonEmptyZodString,
     nextToken: z.string().optional(),
     maxItems: z.number().optional(),
 });
 
 const GetStackEventsParamsSchema = z.object({
-    stackName: z.string().min(1).max(128),
+    stackName: CfnNameZodString,
     nextToken: z.string().optional(),
     refresh: z.boolean().optional(),
 });
 
 const ClearStackEventsParamsSchema = z.object({
-    stackName: z.string().min(1).max(128),
+    stackName: CfnNameZodString,
 });
 
 const DescribeStackParamsSchema = z.object({
-    stackName: z.string().min(1).max(128),
+    stackName: CfnNameZodString,
 });
 
 export function parseCreateValidationParams(input: unknown): CreateValidationParams {

@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { NonEmptyZodString } from '../utils/ZodModel';
 import { UploadFileParams } from './S3RequestType';
 
 const UploadFileParamsSchema = z.object({
-    localFilePath: z.string().min(1),
-    s3Url: z.string().min(1),
+    localFilePath: NonEmptyZodString,
+    s3Url: NonEmptyZodString,
 });
 
 export function parseUploadFileParams(input: unknown): UploadFileParams {
