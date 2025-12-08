@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import { NonEmptyZodString } from '../utils/ZodModel';
 
-const ResourceTypeNameSchema = z.string().min(1);
+const ResourceTypeNameSchema = NonEmptyZodString;
 
 export function parseResourceTypeName(input: unknown): string {
     return ResourceTypeNameSchema.parse(input);
