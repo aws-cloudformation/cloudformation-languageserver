@@ -11,7 +11,7 @@ import {
 } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ClientInfo } from '../server/InitParams';
-import { isBeta, isAlpha, isProd, isTest, ProcessPlatform } from '../utils/Environment';
+import { isBeta, isAlpha, isProd, isTest, ProcessPlatform, NodeEnv, AwsEnv } from '../utils/Environment';
 import { ExtensionId, ExtensionVersion } from '../utils/ExtensionConfig';
 
 const ExportIntervalSeconds = 60;
@@ -31,7 +31,7 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
     const sdk = new NodeSDK({
         resource: resourceFromAttributes({
             ['service']: `${ExtensionId}-${ExtensionVersion}`,
-            ['service.env']: `${process.env.NODE_ENV}-${process.env.AWS_ENV}`,
+            ['service.env']: `${NodeEnv}-${AwsEnv}`,
             ['client.id']: clientId,
             ['client.type']: `${client?.name ?? 'Unknown'}-${client?.version ?? 'Unknown'}`,
             ['machine.type']: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,

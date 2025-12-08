@@ -7,7 +7,7 @@ import { ExtendedInitializeParams } from '../server/InitParams';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { AwsEnv, NodeEnv, ProcessPlatform } from '../utils/Environment';
-import { ExtensionName } from '../utils/ExtensionConfig';
+import { ExtensionId, ExtensionName, ExtensionVersion } from '../utils/ExtensionConfig';
 
 let server: unknown;
 
@@ -19,9 +19,12 @@ async function onInitialize(params: ExtendedInitializeParams) {
 
     getLogger().info(
         {
+            Service: `${ExtensionId}-${ExtensionVersion}`,
+            Environment: `${NodeEnv}-${AwsEnv}`,
+            Process: `${ProcessPlatform}-${process.arch}`,
+            Machine: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
+            Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
             ClientInfo,
-            NodeEnv,
-            AwsEnv,
             aws: {
                 clientInfo: AwsMetadata?.clientInfo,
                 telemetryEnabled: AwsMetadata?.telemetryEnabled,
@@ -31,11 +34,6 @@ async function onInitialize(params: ExtendedInitializeParams) {
         },
         `${ExtensionName} initializing...`,
     );
-    getLogger().info({
-        Machine: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
-        Process: `${ProcessPlatform}-${process.arch}`,
-        Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
-    });
     TelemetryService.initialize(ClientInfo, AwsMetadata);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
