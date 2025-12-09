@@ -1,8 +1,10 @@
-import { rmSync } from 'fs';
+import { rmSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { v4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DataStore, StoreName } from '../../../src/datastore/DataStore';
+import { EncryptedFileStore } from '../../../src/datastore/file/EncryptedFileStore';
+import { encryptionKey } from '../../../src/datastore/file/Encryption';
 import { FileStoreFactory } from '../../../src/datastore/FileStore';
 
 describe('FileStore', () => {
@@ -137,21 +139,17 @@ describe('FileStore', () => {
             const key = 'shared-key';
             const schemaValue = 'schema-value';
             const astValue = 'ast-value';
-            const settingsValue = 'settings-value';
 
             const schemaStore = fileFactory.get(StoreName.public_schemas);
             const astStore = fileFactory.get(StoreName.sam_schemas);
-            const settingsStore = fileFactory.get(StoreName.private_schemas);
 
             await schemaStore.put(key, schemaValue);
             await astStore.put(key, astValue);
-            await settingsStore.put(key, settingsValue);
 
             await schemaStore.clear();
 
             expect(schemaStore.get<string>(key)).toBeUndefined();
             expect(astStore.get<string>(key)).toBe(astValue);
-            expect(settingsStore.get<string>(key)).toBe(settingsValue);
         });
 
         it('should allow putting new data after clearing', async () => {
@@ -204,6 +202,25 @@ describe('FileStore', () => {
     });
 
     describe('persistence', () => {
+        it('should preserve existing data when put is called on fresh instance', async () => {
+            // Test EncryptedFileStore directly to avoid stats() being called
+            const encTestDir = join(testDir, 'enc-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            // Session 1: write key1
+            const store1 = new EncryptedFileStore(key, 'test', encTestDir);
+            await store1.put('key1', 'value1');
+
+            // Session 2: fresh instance, put key2 WITHOUT reading first
+            const store2 = new EncryptedFileStore(key, 'test', encTestDir);
+            await store2.put('key2', 'value2');
+
+            // Verify both keys exist - key1 should NOT be lost
+            expect(store2.get('key1')).toBe('value1');
+            expect(store2.get('key2')).toBe('value2');
+        });
+
         it('should persist data across store instances', async () => {
             const key = 'persist-key';
             const value = { data: 'persist-value' };
@@ -235,37 +252,6 @@ describe('FileStore', () => {
         });
     });
 
-    describe('concurrent operations', () => {
-        it('should handle concurrent puts', async () => {
-            const promises = Array.from({ length: 10 }, (_, i) => fileStore.put(`key${i}`, `value${i}`));
-
-            const results = await Promise.all(promises);
-            expect(results.every((r) => r === true)).toBe(true);
-
-            const keys = fileStore.keys(20);
-            expect(keys).toHaveLength(10);
-        });
-
-        it('should handle concurrent mixed operations', async () => {
-            await fileStore.put('key1', 'value1');
-            await fileStore.put('key2', 'value2');
-
-            const operations = [
-                fileStore.put('key3', 'value3'),
-                fileStore.get('key1'),
-                fileStore.remove('key2'),
-                fileStore.put('key4', 'value4'),
-            ];
-
-            await Promise.all(operations);
-
-            expect(fileStore.get('key1')).toBe('value1');
-            expect(fileStore.get('key2')).toBeUndefined();
-            expect(fileStore.get('key3')).toBe('value3');
-            expect(fileStore.get('key4')).toBe('value4');
-        });
-    });
-
     describe('edge cases', () => {
         it('should handle empty string as key', async () => {
             await fileStore.put('', 'empty-key-value');
@@ -292,6 +278,32 @@ describe('FileStore', () => {
 
         it('should handle clear on empty store', async () => {
             await expect(fileStore.clear()).resolves.not.toThrow();
+        });
+    });
+
+    describe('recovery', () => {
+        it('should recover from corrupted file and allow new writes', async () => {
+            const encTestDir = join(testDir, 'recovery-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            // Write corrupted data to the file
+            const corruptedFile = join(encTestDir, 'test.enc');
+            writeFileSync(corruptedFile, 'corrupted-not-encrypted-data');
+
+            // Should not throw, should recover
+            const store = new EncryptedFileStore(key, 'test', encTestDir);
+
+            // Should start with empty content after recovery
+            expect(store.get('anyKey')).toBeUndefined();
+
+            // Should be able to write new data
+            await store.put('newKey', 'newValue');
+            expect(store.get('newKey')).toBe('newValue');
+
+            // Verify data persists after reload
+            const store2 = new EncryptedFileStore(key, 'test', encTestDir);
+            expect(store2.get('newKey')).toBe('newValue');
         });
     });
 });

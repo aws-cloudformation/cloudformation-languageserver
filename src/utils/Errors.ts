@@ -1,5 +1,5 @@
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { determineSensitiveInfo, getErrorStack } from './ErrorStackInfo';
+import { determineSensitiveInfo } from './ErrorStackInfo';
 import { toString } from './String';
 
 export function extractErrorMessage(error: unknown) {
@@ -21,8 +21,6 @@ export function handleLspError(error: unknown, contextMessage: string): never {
     throw new ResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`);
 }
 
-const Stack = getErrorStack();
-
 /**
  * Best effort extraction of location of exception based on stack trace
  */
@@ -40,7 +38,7 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
                 }
             }
 
-            return newLine;
+            return newLine.replaceAll('\\\\', '/').replaceAll('\\', '/');
         });
 
     if (lines.length === 0) {
@@ -49,16 +47,6 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
 
     const result: Record<string, string> = {};
     result['error.message'] = lines[0];
-
-    for (const [idx, line] of lines.slice(1, 6).entries()) {
-        const parsed = Stack.parseLine(line);
-
-        if (!parsed) {
-            continue;
-        }
-
-        result[`error.stack${idx}`] = `${parsed.function} ${parsed.file} ${parsed.line}:${parsed.column}`;
-    }
-
+    result['error.stack'] = lines.slice(1).join('\n');
     return result;
 }

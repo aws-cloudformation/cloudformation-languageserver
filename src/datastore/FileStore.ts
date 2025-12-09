@@ -5,7 +5,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { formatNumber } from '../utils/String';
-import { DataStore, DataStoreFactory, StoreName } from './DataStore';
+import { DataStore, DataStoreFactory, PersistedStores, StoreName } from './DataStore';
 import { EncryptedFileStore } from './file/EncryptedFileStore';
 import { encryptionKey } from './file/Encryption';
 
@@ -20,7 +20,7 @@ export class FileStoreFactory implements DataStoreFactory {
     private readonly metricsInterval: NodeJS.Timeout;
     private readonly timeout: NodeJS.Timeout;
 
-    constructor(rootDir: string) {
+    constructor(rootDir: string, storeNames: StoreName[] = PersistedStores) {
         this.log = LoggerFactory.getLogger('FileStore.Global');
 
         this.fileDbRoot = join(rootDir, 'filedb');
@@ -28,6 +28,10 @@ export class FileStoreFactory implements DataStoreFactory {
 
         if (!existsSync(this.fileDbDir)) {
             mkdirSync(this.fileDbDir, { recursive: true });
+        }
+
+        for (const store of storeNames) {
+            this.stores.set(store, new EncryptedFileStore(encryptionKey(VersionNumber), store, this.fileDbDir));
         }
 
         this.metricsInterval = setInterval(() => {
@@ -45,10 +49,9 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 
     get(store: StoreName): DataStore {
-        let val = this.stores.get(store);
-        if (!val) {
-            val = new EncryptedFileStore(encryptionKey(VersionNumber), store, this.fileDbDir);
-            this.stores.set(store, val);
+        const val = this.stores.get(store);
+        if (val === undefined) {
+            throw new Error(`Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`);
         }
         return val;
     }
