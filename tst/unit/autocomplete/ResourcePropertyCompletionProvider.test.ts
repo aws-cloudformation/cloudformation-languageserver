@@ -1,7 +1,6 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { CompletionParams, CompletionItemKind } from 'vscode-languageserver';
 import { ResourcePropertyCompletionProvider } from '../../../src/autocomplete/ResourcePropertyCompletionProvider';
-import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import {
@@ -9,12 +8,21 @@ import {
     createForEachResourceContext,
     createResourceContext,
 } from '../../utils/MockContext';
-import { createMockComponents } from '../../utils/MockServerComponents';
+import { createMockComponents, createMockSchemaRetriever } from '../../utils/MockServerComponents';
 import { Schemas, combinedSchemas } from '../../utils/SchemaUtils';
 
 describe('ResourcePropertyCompletionProvider', () => {
-    const mockComponents = createMockComponents();
+    const s3Schemas = combinedSchemas([Schemas.S3Bucket]);
+    const emptySchemas = combinedSchemas([]);
+    const mockComponents = createMockComponents({
+        schemaRetriever: createMockSchemaRetriever(s3Schemas),
+    });
     const provider = new ResourcePropertyCompletionProvider(mockComponents.schemaRetriever);
+
+    beforeEach(() => {
+        mockComponents.schemaRetriever.getDefault.returns(s3Schemas);
+        emptySchemas.schemas.clear();
+    });
 
     const mockParams: CompletionParams = {
         textDocument: { uri: 'file:///test.yaml' },
@@ -30,19 +38,8 @@ describe('ResourcePropertyCompletionProvider', () => {
         },
     };
 
-    const setupS3Schema = () => {
-        const testSchemas = combinedSchemas([Schemas.S3Bucket]);
-        mockComponents.schemaRetriever.getDefault.returns(testSchemas);
-        return testSchemas;
-    };
-
-    beforeEach(() => {
-        mockComponents.schemaRetriever.getDefault.reset();
-    });
-
     test('should return all optional properties when inside Properties section with empty text for no required properties', () => {
         const mockContext = createResourceContext('MyBucket', s3BucketContext);
-        setupS3Schema();
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -61,7 +58,6 @@ describe('ResourcePropertyCompletionProvider', () => {
             text: 'Bucket',
             propertyPath: ['Resources', 'MyBucket', 'Properties', 'Bucket'],
         });
-        setupS3Schema();
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -81,16 +77,6 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should exclude already defined properties from completions', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
         const context = createContextFromYamlContentAndPath(
             `Resources:
   MyBucket:
@@ -114,16 +100,6 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should exclude existing properties from nested object completions', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
         // Create a resource with nested properties already defined
         const mockContext = createResourceContext('MyBucket', {
             text: '',
@@ -146,16 +122,6 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should handle deeply nested existing properties correctly', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
         // Create a resource with deeply nested properties
         const mockContext = createResourceContext('MyBucket', {
             text: '',
@@ -186,16 +152,6 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should handle missing nested objects gracefully', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
         // Create a resource where the nested path doesn't exist
         const mockContext = createResourceContext('MyBucket', {
             text: '',
@@ -216,16 +172,6 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should handle array indices in property path correctly', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
         // Create a resource with array properties
         const mockContext = createResourceContext('MyBucket', {
             text: '',
@@ -275,7 +221,6 @@ describe('ResourcePropertyCompletionProvider', () => {
             text: 'BucketName', // Use exact property name to avoid fuzzy search issues
             propertyPath: ['Resources', 'MyBucket', 'Properties', 'BucketName'],
         });
-        setupS3Schema();
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -292,16 +237,6 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should include all properties when none are defined', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
         // Create a resource with no properties defined
         const mockContext = createResourceContext('MyBucket', {
             text: 'B',
@@ -332,7 +267,6 @@ describe('ResourcePropertyCompletionProvider', () => {
                 Properties: { Bucket: 'some-value' },
             },
         });
-        setupS3Schema();
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -371,7 +305,6 @@ describe('ResourcePropertyCompletionProvider', () => {
             text: 'A', // Provide text to get completions
             propertyPath: ['Resources', 'MyBucket', 'Properties', 'A'],
         });
-        setupS3Schema();
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -424,13 +357,11 @@ describe('ResourcePropertyCompletionProvider', () => {
             const mockSchemas = new Map<string, ResourceSchema>();
             mockSchemas.set('AWS::S3::Bucket', modifiedSchema);
 
-            const combinedSchemas = new CombinedSchemas();
-            Object.defineProperty(combinedSchemas, 'schemas', {
-                get: () => mockSchemas,
-            });
+            const schemas = emptySchemas;
+            for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
 
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-            return combinedSchemas;
+            mockComponents.schemaRetriever.getDefault.returns(schemas);
+            return schemas;
         }
 
         setupSchemaWithRequiredProps();
@@ -467,8 +398,6 @@ describe('ResourcePropertyCompletionProvider', () => {
         const originalAtBlockMappingLevel = mockContext.atBlockMappingLevel;
         mockContext.atBlockMappingLevel = vi.fn().mockReturnValue(true);
 
-        setupS3Schema();
-
         const result = provider.getCompletions(mockContext, mockParams);
 
         expect(result).toBeDefined();
@@ -500,8 +429,6 @@ describe('ResourcePropertyCompletionProvider', () => {
 
         // Mock the isBlockMapping method to return false (positioned on a specific node)
         mockContext.atBlockMappingLevel = () => false;
-
-        setupS3Schema();
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -570,13 +497,11 @@ describe('ResourcePropertyCompletionProvider', () => {
             const mockSchemas = new Map<string, ResourceSchema>();
             mockSchemas.set('AWS::S3::Bucket', modifiedSchema);
 
-            const combinedSchemas = new CombinedSchemas();
-            Object.defineProperty(combinedSchemas, 'schemas', {
-                get: () => mockSchemas,
-            });
+            const schemas = emptySchemas;
+            for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
 
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-            return combinedSchemas;
+            mockComponents.schemaRetriever.getDefault.returns(schemas);
+            return schemas;
         }
 
         setupSchemaWithMixedProps();
@@ -657,12 +582,10 @@ describe('ResourcePropertyCompletionProvider', () => {
         const mockSchemas = new Map<string, ResourceSchema>();
         mockSchemas.set('AWS::S3::Bucket', mockSchema);
 
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
+        const schemas = emptySchemas;
+        for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
 
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+        mockComponents.schemaRetriever.getDefault.returns(schemas);
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -735,12 +658,10 @@ describe('ResourcePropertyCompletionProvider', () => {
         const mockSchemas = new Map<string, ResourceSchema>();
         mockSchemas.set('AWS::S3::Bucket', mockSchema);
 
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
+        const schemas = emptySchemas;
+        for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
 
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+        mockComponents.schemaRetriever.getDefault.returns(schemas);
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -758,16 +679,6 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should handle double quoted property names in YAML', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
         const mockContext = createResourceContext('MyBucket', {
             text: `"Bucket"`,
             propertyPath: ['Resources', 'MyBucket', 'Properties', 'Bucket'],
@@ -794,16 +705,6 @@ describe('ResourcePropertyCompletionProvider', () => {
     });
 
     test('should handle single quoted property names in YAML', () => {
-        const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
         const mockContext = createResourceContext('MyBucket', {
             text: 'Bucket',
             propertyPath: ['Resources', 'MyBucket', 'Properties', 'Bucket'],
@@ -887,12 +788,10 @@ describe('ResourcePropertyCompletionProvider', () => {
             const mockSchemas = new Map<string, ResourceSchema>();
             mockSchemas.set('AWS::S3::Bucket', mockSchema);
 
-            const combinedSchemas = new CombinedSchemas();
-            Object.defineProperty(combinedSchemas, 'schemas', {
-                get: () => mockSchemas,
-            });
+            const schemas = emptySchemas;
+            for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
 
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+            mockComponents.schemaRetriever.getDefault.returns(schemas);
             return { mockSchema, combinedSchemas };
         };
 
@@ -1713,7 +1612,6 @@ describe('ResourcePropertyCompletionProvider', () => {
                     Properties: {},
                 },
             });
-            setupS3Schema();
 
             const result = provider.getCompletions(mockContext, mockParams);
 
@@ -1733,7 +1631,6 @@ describe('ResourcePropertyCompletionProvider', () => {
                     Properties: {},
                 },
             });
-            setupS3Schema();
 
             const result = provider.getCompletions(mockContext, mockParams);
 
@@ -1748,16 +1645,6 @@ describe('ResourcePropertyCompletionProvider', () => {
         });
 
         test('should handle nested properties in ForEach resources', () => {
-            const mockSchema = new ResourceSchema(Schemas.S3Bucket.contents);
-            const mockSchemas = new Map<string, ResourceSchema>();
-            mockSchemas.set('AWS::S3::Bucket', mockSchema);
-
-            const combinedSchemas = new CombinedSchemas();
-            Object.defineProperty(combinedSchemas, 'schemas', {
-                get: () => mockSchemas,
-            });
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-
             const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
                 text: '',
                 propertyPath: [
@@ -1824,11 +1711,9 @@ describe('ResourcePropertyCompletionProvider', () => {
             const mockSchemas = new Map<string, ResourceSchema>();
             mockSchemas.set('AWS::S3::Bucket', mockSchema);
 
-            const combinedSchemas = new CombinedSchemas();
-            Object.defineProperty(combinedSchemas, 'schemas', {
-                get: () => mockSchemas,
-            });
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
+            const schemas = emptySchemas;
+            for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
+            mockComponents.schemaRetriever.getDefault.returns(schemas);
 
             const mockContext = createForEachResourceContext('Fn::ForEach::Buckets', 'S3Bucket${BucketName}', {
                 text: '',

@@ -5,6 +5,7 @@ import { describe, expect, beforeEach, vi, test, Mock } from 'vitest';
 import { CloudFormationFileType } from '../../../../src/document/Document';
 import { PyodideWorkerManager } from '../../../../src/services/cfnLint/PyodideWorkerManager';
 import { CfnLintSettings } from '../../../../src/settings/Settings';
+import * as RetryModule from '../../../../src/utils/Retry';
 import { mockLogger } from '../../../utils/MockServerComponents';
 
 // Mock Worker class
@@ -719,223 +720,44 @@ describe('PyodideWorkerManager', () => {
             expect(mockLogging.warn.callCount).toBe(1); // 1 retry warning
         });
 
-        test('should use exponential backoff delays', async () => {
-            // Create a worker manager with specific retry settings
+        test('should pass correct config to retryWithExponentialBackoff', async () => {
+            const retrySpy = vi.spyOn(RetryModule, 'retryWithExponentialBackoff');
+
+            const retryConfig = {
+                maxRetries: 5,
+                initialDelayMs: 123,
+                maxDelayMs: 456,
+                backoffMultiplier: 3,
+                totalTimeoutMs: 9999,
+            };
+
             const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 2,
-                    initialDelayMs: 20,
-                    maxDelayMs: 100,
+                retryConfig,
+                createDefaultCfnLintSettings(),
+                mockLogging,
+            );
+
+            workerConstructor.mockImplementation(() => {
+                throw new Error('fail');
+            });
+
+            await expect(retryWorkerManager.initialize()).rejects.toThrow();
+
+            expect(retrySpy).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({
+                    maxRetries: 5,
+                    initialDelayMs: 123,
+                    maxDelayMs: 456,
                     backoffMultiplier: 3,
-                    totalTimeoutMs: 10000, // Large timeout so it doesn't interfere
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
+                    totalTimeoutMs: 9999,
+                    jitterFactor: 0.1,
+                    operationName: 'Pyodide initialization',
+                }),
+                expect.anything(),
             );
 
-            const startTime = Date.now();
-            const attemptTimes: number[] = [];
-
-            workerConstructor.mockImplementation(() => {
-                attemptTimes.push(Date.now() - startTime);
-                throw new Error('Worker creation failed');
-            });
-
-            // Expect initialization to fail
-            await expect(retryWorkerManager.initialize()).rejects.toThrow();
-
-            // Verify exponential backoff timing with more lenient assertions for CI
-            expect(attemptTimes.length).toBe(3); // Initial + 2 retries
-
-            // Calculate actual delays between attempts
-            const delays = [
-                attemptTimes[1] - attemptTimes[0], // First delay
-                attemptTimes[2] - attemptTimes[1], // Second delay
-            ];
-
-            // First attempt should be immediate
-            expect(attemptTimes[0]).toBeLessThan(20);
-
-            // First delay should be close to initialDelayMs (20ms), but allow variance for CI
-            expect(delays[0]).toBeGreaterThanOrEqual(10);
-            expect(delays[0]).toBeLessThan(50);
-
-            // Second delay should be approximately backoffMultiplier (3) times the first
-            // But allow more variance for CI environments
-            const ratio = delays[1] / delays[0];
-            expect(ratio).toBeGreaterThanOrEqual(2);
-            expect(ratio).toBeLessThanOrEqual(5); // More lenient upper bound
-        });
-
-        test('should respect maxDelayMs cap', async () => {
-            // Create a worker manager with low maxDelayMs
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 3,
-                    initialDelayMs: 50,
-                    maxDelayMs: 80, // Cap at 80ms
-                    backoffMultiplier: 10, // Would normally create very long delays
-                    totalTimeoutMs: 10000, // Large timeout so it doesn't interfere
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            const startTime = Date.now();
-            const attemptTimes: number[] = [];
-
-            workerConstructor.mockImplementation(() => {
-                attemptTimes.push(Date.now() - startTime);
-                throw new Error('Worker creation failed');
-            });
-
-            // Expect initialization to fail
-            await expect(retryWorkerManager.initialize()).rejects.toThrow();
-
-            // Verify delays are capped at maxDelayMs
-            expect(attemptTimes.length).toBe(4); // Initial + 3 retries
-
-            // Calculate actual delays between attempts
-            const delays = [
-                attemptTimes[1] - attemptTimes[0], // First delay
-                attemptTimes[2] - attemptTimes[1], // Second delay
-                attemptTimes[3] - attemptTimes[2], // Third delay
-            ];
-
-            // First delay should be close to initialDelayMs (50ms), but allow variance for CI
-            expect(delays[0]).toBeGreaterThanOrEqual(40);
-            expect(delays[0]).toBeLessThan(80);
-
-            // Subsequent delays should be capped at maxDelayMs (80ms), not exponentially growing
-            // Allow for reasonable timing variations but verify the cap is working
-            expect(delays[1]).toBeGreaterThanOrEqual(60);
-            expect(delays[1]).toBeLessThanOrEqual(120);
-
-            expect(delays[2]).toBeGreaterThanOrEqual(60);
-            expect(delays[2]).toBeLessThanOrEqual(120);
-        });
-
-        test('should apply jitter to prevent synchronized retry storms', async () => {
-            // Create a worker manager with jitter enabled (jitter is hardcoded to 0.1 in implementation)
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 2,
-                    initialDelayMs: 100,
-                    maxDelayMs: 1000,
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 10000, // Large timeout so it doesn't interfere
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            const attemptTimes: number[] = [];
-            const startTime = Date.now();
-
-            workerConstructor.mockImplementation(() => {
-                attemptTimes.push(Date.now() - startTime);
-                throw new Error('Worker creation failed');
-            });
-
-            // Expect initialization to fail
-            await expect(retryWorkerManager.initialize()).rejects.toThrow();
-
-            // Verify that delays have some variance due to jitter (hardcoded 10% jitter in implementation)
-            expect(attemptTimes.length).toBe(3); // Initial + 2 retries
-
-            // Calculate actual delays between attempts
-            const delays = [
-                attemptTimes[1] - attemptTimes[0], // First delay
-                attemptTimes[2] - attemptTimes[1], // Second delay
-            ];
-
-            // With jitter, the delays should not be exactly the expected values
-            // First retry should be around 100ms ± 10ms jitter, but allow more variance for CI
-            expect(delays[0]).toBeGreaterThan(80);
-            expect(delays[0]).toBeLessThan(140);
-
-            // Second retry should be around 200ms ± 20ms jitter, but allow more variance for CI
-            expect(delays[1]).toBeGreaterThan(160);
-            expect(delays[1]).toBeLessThan(280);
-        });
-
-        test('should respect total timeout to prevent excessive retry durations', async () => {
-            // Create a worker manager with settings that would normally take a long time
-            // The implementation uses totalTimeoutMs = maxDelayMs * (maxRetries + 1)
-            // With maxDelayMs=50 and maxRetries=10, totalTimeout = 50 * 11 = 550ms
-            // But the actual delays grow exponentially, so it should timeout before reaching max retries
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 10, // High retry count
-                    initialDelayMs: 100, // Start with higher delay
-                    maxDelayMs: 200, // This means totalTimeout = 200 * 11 = 2200ms
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 2200, // Explicit timeout
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            const startTime = Date.now();
-            let attemptCount = 0;
-
-            workerConstructor.mockImplementation(() => {
-                attemptCount++;
-                throw new Error('Worker creation failed');
-            });
-
-            // Expect initialization to fail
-            await expect(retryWorkerManager.initialize()).rejects.toThrow();
-
-            const totalTime = Date.now() - startTime;
-
-            // The total timeout should prevent it from running the full duration
-            // With exponential backoff (100, 200, 200, 200...), it should timeout before all retries
-            expect(totalTime).toBeLessThan(3000); // Should be around 2200ms + some buffer
-
-            // It might still reach max retries depending on timing, so let's just verify it ran
-            expect(attemptCount).toBeGreaterThan(1); // Should have made multiple attempts
-        });
-
-        test('should use explicit totalTimeoutMs when provided', async () => {
-            // Create a worker manager with explicit totalTimeoutMs
-            const retryWorkerManager = new PyodideWorkerManager(
-                {
-                    maxRetries: 10, // High retry count that would normally take a long time
-                    initialDelayMs: 50,
-                    maxDelayMs: 200,
-                    backoffMultiplier: 2,
-                    totalTimeoutMs: 300, // Explicit timeout of 300ms
-                },
-                createDefaultCfnLintSettings(),
-
-                mockLogging,
-            );
-
-            const startTime = Date.now();
-            let attemptCount = 0;
-
-            workerConstructor.mockImplementation(() => {
-                attemptCount++;
-                throw new Error('Worker creation failed');
-            });
-
-            // Expect initialization to fail with timeout error
-            await expect(retryWorkerManager.initialize()).rejects.toThrow(/Pyodide initialization timed out after/);
-
-            const totalTime = Date.now() - startTime;
-
-            // Should respect the explicit totalTimeoutMs (300ms) rather than calculated timeout
-            expect(totalTime).toBeGreaterThanOrEqual(290); // Should run for at least the timeout duration
-            expect(totalTime).toBeLessThan(400); // Should not run much longer than timeout + buffer
-
-            // Should have made some attempts but not all 10 retries
-            expect(attemptCount).toBeGreaterThan(1);
-            expect(attemptCount).toBeLessThan(11); // Should timeout before reaching max retries
+            retrySpy.mockRestore();
         });
     });
 

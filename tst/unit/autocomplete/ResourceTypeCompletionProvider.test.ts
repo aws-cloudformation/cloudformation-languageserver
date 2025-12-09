@@ -1,11 +1,11 @@
 import { describe, expect, test, beforeEach } from 'vitest';
 import { CompletionParams, CompletionItemKind } from 'vscode-languageserver';
 import { ResourceTypeCompletionProvider } from '../../../src/autocomplete/ResourceTypeCompletionProvider';
-import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createResourceContext } from '../../utils/MockContext';
 import { createMockComponents } from '../../utils/MockServerComponents';
+import { combinedSchemas, createSchemaFrom, Schemas } from '../../utils/SchemaUtils';
 
 describe('ResourceTypeCompletionProvider', () => {
     const mockComponents = createMockComponents();
@@ -16,23 +16,14 @@ describe('ResourceTypeCompletionProvider', () => {
         position: { line: 0, character: 0 },
     };
 
-    const createMockResourceSchemas = () => {
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::EC2::Instance', {} as ResourceSchema);
-        mockSchemas.set('AWS::S3::Bucket', {} as ResourceSchema);
-        mockSchemas.set('AWS::S3::BucketPolicy', {} as ResourceSchema);
-        mockSchemas.set('AWS::Lambda::Function', {} as ResourceSchema);
-        return mockSchemas;
-    };
-
-    const setupMockSchemas = (schemas: Map<string, ResourceSchema>) => {
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => schemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-        return combinedSchemas;
-    };
+    const s3BucketSchema = new ResourceSchema(Schemas.S3Bucket.contents);
+    const fourSchemas = combinedSchemas([
+        Schemas.S3Bucket,
+        Schemas.EC2Instance,
+        Schemas.LambdaFunction,
+        createSchemaFrom(s3BucketSchema, 'AWS::S3::BucketPolicy', {}),
+    ]);
+    const twoSchemas = combinedSchemas([Schemas.S3Bucket, Schemas.EC2Instance]);
 
     beforeEach(() => {
         mockComponents.schemaRetriever.getDefault.reset();
@@ -44,8 +35,7 @@ describe('ResourceTypeCompletionProvider', () => {
             propertyPath: ['Resources', 'MyResource', 'Type'],
             data: { Type: 'AWS::' },
         });
-        const mockSchemas = createMockResourceSchemas();
-        setupMockSchemas(mockSchemas);
+        mockComponents.schemaRetriever.getDefault.returns(fourSchemas);
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -81,8 +71,7 @@ describe('ResourceTypeCompletionProvider', () => {
                 Type: 'AWS::',
             },
         });
-        const mockSchemas = createMockResourceSchemas();
-        setupMockSchemas(mockSchemas);
+        mockComponents.schemaRetriever.getDefault.returns(fourSchemas);
 
         const result = provider.getCompletions(mockContext, mockParams);
 
@@ -105,11 +94,7 @@ describe('ResourceTypeCompletionProvider', () => {
                 Type: 'AWS::',
             },
         });
-
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::EC2::Instance', {} as ResourceSchema);
-        mockSchemas.set('AWS::S3::Bucket', {} as ResourceSchema);
-        setupMockSchemas(mockSchemas);
+        mockComponents.schemaRetriever.getDefault.returns(twoSchemas);
 
         const result = provider.getCompletions(mockContext, mockParams);
 

@@ -3,12 +3,11 @@ import { CompletionParams, CompletionItemKind, CompletionItem, InsertTextFormat 
 import { ResourceEntityCompletionProvider } from '../../../src/autocomplete/ResourceEntityCompletionProvider';
 import { ResourceAttribute } from '../../../src/context/ContextType';
 import { YamlNodeTypes } from '../../../src/context/syntaxtree/utils/TreeSitterTypes';
-import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createForEachResourceContext, createResourceContext } from '../../utils/MockContext';
 import { createMockComponents } from '../../utils/MockServerComponents';
-import { combinedSchemas } from '../../utils/SchemaUtils';
+import { combinedSchemas, createSchemaFrom, Schemas } from '../../utils/SchemaUtils';
 
 describe('ResourceEntityCompletionProvider', () => {
     const mockComponents = createMockComponents();
@@ -21,6 +20,18 @@ describe('ResourceEntityCompletionProvider', () => {
         textDocument: { uri: 'file:///test.yaml' },
         position: { line: 0, character: 0 },
     };
+
+    // Create schemas once at describe level
+    const ec2Schema = new ResourceSchema(Schemas.EC2Instance.contents);
+    const ec2WithRequiredProps = createSchemaFrom(ec2Schema, 'AWS::EC2::Instance', {
+        required: ['InstanceType', 'ImageId'],
+    });
+    const ec2WithNoRequiredProps = createSchemaFrom(ec2Schema, 'AWS::EC2::Instance', {
+        required: [],
+    });
+    const schemasWithRequired = combinedSchemas([ec2WithRequiredProps]);
+    const schemasWithNoRequired = combinedSchemas([ec2WithNoRequiredProps]);
+    const emptySchemas = combinedSchemas([]);
 
     beforeEach(() => {
         mockComponents.schemaRetriever.getDefault.reset();
@@ -123,30 +134,6 @@ describe('ResourceEntityCompletionProvider', () => {
         expect(deletionPolicyItem!.insertText).toBe('DeletionPolicy');
     });
 
-    // Create a mock schema with required properties for testing
-    const setupSchemaWithRequiredProps = (requiredProps: string[] = []) => {
-        const mockSchema = {
-            typeName: 'AWS::EC2::Instance',
-            propertyKeys: new Set(['InstanceType', 'ImageId', 'KeyName', 'SecurityGroups']),
-            required: requiredProps,
-            isReadOnly: () => false,
-            isRequired: (prop: string) => requiredProps.includes(prop),
-            getByPath: () => ({ type: 'string' }),
-            resolveRef: () => ({ type: 'string' }),
-        } as unknown as ResourceSchema;
-
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::EC2::Instance', mockSchema);
-
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => mockSchemas,
-        });
-
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-        return { mockSchema, combinedSchemas };
-    };
-
     test('should enhance Properties completion with snippet when resource type is available', () => {
         // Setup context with a resource that has a Type
         const mockContext = createResourceContext('MyInstance', {
@@ -158,7 +145,7 @@ describe('ResourceEntityCompletionProvider', () => {
         });
 
         // Setup schema with required properties
-        setupSchemaWithRequiredProps(['InstanceType', 'ImageId']);
+        mockComponents.schemaRetriever.getDefault.returns(schemasWithRequired);
 
         // Get completions
         const result = provider.getCompletions(mockContext, mockParams);
@@ -187,7 +174,7 @@ describe('ResourceEntityCompletionProvider', () => {
         });
 
         // Setup schema with required properties
-        setupSchemaWithRequiredProps(['InstanceType', 'ImageId']);
+        mockComponents.schemaRetriever.getDefault.returns(schemasWithRequired);
 
         // Get completions
         const result = provider.getCompletions(mockContext, mockParams);
@@ -214,7 +201,7 @@ describe('ResourceEntityCompletionProvider', () => {
         });
 
         // Setup schema with no required properties
-        setupSchemaWithRequiredProps([]);
+        mockComponents.schemaRetriever.getDefault.returns(schemasWithNoRequired);
 
         // Get completions
         const result = provider.getCompletions(mockContext, mockParams);
@@ -259,8 +246,7 @@ describe('ResourceEntityCompletionProvider', () => {
         });
 
         // Setup empty schemas
-        const testSchemas = combinedSchemas([]);
-        mockComponents.schemaRetriever.getDefault.returns(testSchemas);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
         // Get completions
         const result = provider.getCompletions(mockContext, mockParams);
@@ -307,29 +293,7 @@ describe('ResourceEntityCompletionProvider', () => {
                 },
             });
 
-            const setupSchemaWithRequiredProps = () => {
-                const mockSchema = {
-                    typeName: 'AWS::EC2::Instance',
-                    propertyKeys: new Set(['InstanceType', 'ImageId']),
-                    required: ['InstanceType', 'ImageId'],
-                    isReadOnly: () => false,
-                    isRequired: (prop: string) => ['InstanceType', 'ImageId'].includes(prop),
-                    getByPath: () => ({ type: 'string' }),
-                    resolveRef: () => ({ type: 'string' }),
-                } as unknown as ResourceSchema;
-
-                const mockSchemas = new Map<string, ResourceSchema>();
-                mockSchemas.set('AWS::EC2::Instance', mockSchema);
-
-                const combinedSchemas = new CombinedSchemas();
-                Object.defineProperty(combinedSchemas, 'schemas', {
-                    get: () => mockSchemas,
-                });
-
-                mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-            };
-
-            setupSchemaWithRequiredProps();
+            mockComponents.schemaRetriever.getDefault.returns(schemasWithRequired);
 
             const result = provider.getCompletions(mockContext, mockParams);
 
@@ -381,8 +345,7 @@ describe('ResourceEntityCompletionProvider', () => {
                 },
             });
 
-            const testSchemas = combinedSchemas([]);
-            mockComponents.schemaRetriever.getDefault.returns(testSchemas);
+            mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
             const result = provider.getCompletions(mockContext, mockParams);
 

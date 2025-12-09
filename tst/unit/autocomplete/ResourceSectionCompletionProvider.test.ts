@@ -1,8 +1,6 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { CompletionParams, CompletionItemKind, CompletionTriggerKind } from 'vscode-languageserver';
 import { ResourceSectionCompletionProvider } from '../../../src/autocomplete/ResourceSectionCompletionProvider';
-import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
-import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { createResourceContext } from '../../utils/MockContext';
 import {
     createMockComponents,
@@ -10,6 +8,7 @@ import {
     createMockResourceStateManager,
     createMockSettingsManager,
 } from '../../utils/MockServerComponents';
+import { combinedSchemas, Schemas } from '../../utils/SchemaUtils';
 
 describe('ResourceSectionCompletionProvider', () => {
     const mockComponents = createMockComponents();
@@ -41,63 +40,11 @@ describe('ResourceSectionCompletionProvider', () => {
         },
     };
 
-    // Common mock schemas
-    const createMockResourceSchemas = () => {
-        const mockS3Schema = {
-            typeName: 'AWS::S3::Bucket',
-            propertyKeys: new Set(['BucketName', 'AccessControl']),
-            isReadOnly: () => false,
-            isRequired: () => false,
-            getByPath: (path: string) => {
-                if (path === '/properties/AccessControl') {
-                    return { type: 'string', enum: ['Private', 'PublicRead'] };
-                }
-                return { type: 'string' };
-            },
-            resolveJsonPointerPath: (jsonPointerPath: string) => {
-                switch (jsonPointerPath) {
-                    case '/properties/AccessControl': {
-                        return [{ type: 'string', enum: ['Private', 'PublicRead'] }];
-                    }
-                    case '/properties/BucketName': {
-                        return [{ type: 'string' }];
-                    }
-                    case '/properties': {
-                        return [
-                            {
-                                type: 'object',
-                                properties: {
-                                    AccessControl: { type: 'string', enum: ['Private', 'PublicRead'] },
-                                    BucketName: { type: 'string' },
-                                },
-                            },
-                        ];
-                    }
-                    // No default
-                }
-                return [];
-            },
-        } as unknown as ResourceSchema;
-
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::EC2::Instance', {} as ResourceSchema);
-        mockSchemas.set('AWS::S3::Bucket', mockS3Schema);
-        mockSchemas.set('AWS::S3::BucketPolicy', {} as ResourceSchema);
-        mockSchemas.set('AWS::Lambda::Function', {} as ResourceSchema);
-        return mockSchemas;
-    };
-
-    const setupMockSchemas = (schemas: Map<string, ResourceSchema>) => {
-        const combinedSchemas = new CombinedSchemas();
-        Object.defineProperty(combinedSchemas, 'schemas', {
-            get: () => schemas,
-        });
-        mockComponents.schemaRetriever.getDefault.returns(combinedSchemas);
-        return combinedSchemas;
-    };
+    // Create schemas once at describe level
+    const testSchemas = combinedSchemas([Schemas.S3Bucket, Schemas.EC2Instance, Schemas.LambdaFunction]);
 
     beforeEach(() => {
-        mockComponents.schemaRetriever.getDefault.reset();
+        mockComponents.schemaRetriever.getDefault.returns(testSchemas);
     });
 
     test('should delegate to entity provider when at entity key level', async () => {
@@ -126,9 +73,6 @@ describe('ResourceSectionCompletionProvider', () => {
             data: { Type: 'AWS::' },
         });
 
-        const mockSchemas = createMockResourceSchemas();
-        setupMockSchemas(mockSchemas);
-
         const typeProvider = resourceProviders.get('Type' as any)!;
         const mockCompletions = [{ label: 'AWS::S3::Bucket', kind: CompletionItemKind.Class }];
         const spy = vi.spyOn(typeProvider, 'getCompletions').mockReturnValue(mockCompletions);
@@ -149,9 +93,6 @@ describe('ResourceSectionCompletionProvider', () => {
                 Properties: {},
             },
         });
-
-        const mockSchemas = createMockResourceSchemas();
-        setupMockSchemas(mockSchemas);
 
         const propertyProvider = resourceProviders.get('Property' as any)!;
         const mockCompletions = [
@@ -177,9 +118,6 @@ describe('ResourceSectionCompletionProvider', () => {
             },
         });
 
-        const mockSchemas = createMockResourceSchemas();
-        setupMockSchemas(mockSchemas);
-
         const propertyProvider = resourceProviders.get('Property' as any)!;
         const mockCompletions = [
             { label: 'Private', kind: CompletionItemKind.EnumMember },
@@ -203,9 +141,6 @@ describe('ResourceSectionCompletionProvider', () => {
                 CreationPolicy: {},
             },
         });
-
-        const mockSchemas = createMockResourceSchemas();
-        setupMockSchemas(mockSchemas);
 
         const propertyProvider = resourceProviders.get('Property' as any)!;
         const mockCompletions = [
@@ -232,9 +167,6 @@ describe('ResourceSectionCompletionProvider', () => {
                 },
             },
         });
-
-        const mockSchemas = createMockResourceSchemas();
-        setupMockSchemas(mockSchemas);
 
         const propertyProvider = resourceProviders.get('Property' as any)!;
         const mockCompletions = [
