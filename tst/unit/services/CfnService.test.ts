@@ -357,7 +357,7 @@ describe('CfnService', () => {
             expect(result).toEqual(MOCK_RESPONSES.DESCRIBE_EVENTS);
         });
 
-        it('should fetch all pages when paginated', async () => {
+        it('should return single page with NextToken for pagination', async () => {
             const page1 = {
                 ...MOCK_RESPONSES.DESCRIBE_EVENTS,
                 OperationEvents: [
@@ -376,30 +376,16 @@ describe('CfnService', () => {
                 ],
                 NextToken: 'token1',
             };
-            const page2 = {
-                ...MOCK_RESPONSES.DESCRIBE_EVENTS,
-                OperationEvents: [
-                    {
-                        EventId: 'event-3',
-                        EventType: EventType.VALIDATION_ERROR,
-                        Timestamp: new Date('2023-01-01T00:02:00Z'),
-                        LogicalResourceId: 'Resource3',
-                    },
-                ],
-                NextToken: undefined,
-            };
 
-            cloudFormationMock.on(DescribeEventsCommand).resolvesOnce(page1).resolvesOnce(page2);
+            cloudFormationMock.on(DescribeEventsCommand).resolvesOnce(page1);
 
             const result = await service.describeEvents({
                 ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                 StackName: TEST_CONSTANTS.STACK_NAME,
             });
 
-            expect(result.OperationEvents).toHaveLength(3);
-            expect(result.OperationEvents?.[0].EventId).toBe('event-1');
-            expect(result.OperationEvents?.[2].EventId).toBe('event-3');
-            expect(result.NextToken).toBeUndefined();
+            expect(result.OperationEvents).toHaveLength(2);
+            expect(result.NextToken).toBe('token1');
         });
 
         it('should throw CloudFormationServiceException when API call fails', async () => {

@@ -1,4 +1,4 @@
-import { ChangeSetType, StackStatus } from '@aws-sdk/client-cloudformation';
+import { ChangeSetType, OperationEvent, StackStatus } from '@aws-sdk/client-cloudformation';
 import { AwsCredentials } from '../../auth/AwsCredentials';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../document/DocumentManager';
@@ -181,12 +181,8 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             }
 
             if (this.featureFlag.isEnabled(this.awsCredentials.getIAM().region)) {
-                const describeEventsResponse = await this.cfnService.describeEvents({
-                    ChangeSetName: changeSetName,
-                    StackName: stackName,
-                });
-
-                const validationDetails = parseValidationEvents(describeEventsResponse, VALIDATION_NAME);
+                const allEvents = await this.fetchAllFailedEvents(changeSetName, stackName);
+                const validationDetails = parseValidationEvents(allEvents, VALIDATION_NAME);
 
                 existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                     validationDetails: validationDetails,
@@ -230,6 +226,24 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
                 this.log.error(error, 'Resource cleanup failed');
             }
         }
+    }
+
+    private async fetchAllFailedEvents(changeSetName: string, stackName: string): Promise<OperationEvent[]> {
+        const allEvents: OperationEvent[] = [];
+        let nextToken: string | undefined = undefined;
+
+        do {
+            const response = await this.cfnService.describeEvents({
+                ChangeSetName: changeSetName,
+                StackName: stackName,
+                FailedEventsOnly: true,
+                NextToken: nextToken,
+            });
+            allEvents.push(...(response.OperationEvents ?? []));
+            nextToken = response.NextToken;
+        } while (nextToken);
+
+        return allEvents;
     }
 
     static create(core: CfnInfraCore, external: CfnExternal, validationManager: ValidationManager): ValidationWorkflow {
