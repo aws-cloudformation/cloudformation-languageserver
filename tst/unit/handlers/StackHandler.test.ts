@@ -102,10 +102,13 @@ describe('StackActionHandler', () => {
     let getEntityMapSpy: any;
     const mockToken = {} as CancellationToken;
 
+    const testSchemas = combinedSchemas();
+
     beforeEach(() => {
         syntaxTreeManager = createMockSyntaxTreeManager();
         mockComponents = createMockComponents({ syntaxTreeManager });
         getEntityMapSpy = vi.mocked(SectionContextBuilder.getEntityMap);
+        mockComponents.schemaRetriever.getDefault.returns(testSchemas);
         mockComponents.validationWorkflowService.start.reset();
         mockComponents.validationWorkflowService.getStatus.reset();
         mockComponents.deploymentWorkflowService.start.reset();
@@ -615,8 +618,6 @@ describe('StackActionHandler', () => {
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
             getEntityMapSpy.mockReturnValue(resourcesMap);
 
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas());
-
             const handler = getTemplateResourcesHandler(mockComponents);
             const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
 
@@ -644,8 +645,6 @@ describe('StackActionHandler', () => {
 
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
             getEntityMapSpy.mockReturnValue(resourcesMap);
-
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas());
 
             const handler = getTemplateResourcesHandler(mockComponents);
             const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
@@ -676,8 +675,6 @@ describe('StackActionHandler', () => {
 
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
             getEntityMapSpy.mockReturnValue(resourcesMap);
-
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas());
 
             const handler = getTemplateResourcesHandler(mockComponents);
             const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;
@@ -750,8 +747,6 @@ describe('StackActionHandler', () => {
 
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree);
             getEntityMapSpy.mockReturnValue(resourcesMap);
-
-            mockComponents.schemaRetriever.getDefault.returns(combinedSchemas());
 
             const handler = getTemplateResourcesHandler(mockComponents);
             const result = handler(templateUri, mockToken) as GetTemplateResourcesResult;

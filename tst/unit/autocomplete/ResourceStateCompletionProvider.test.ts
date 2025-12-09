@@ -5,12 +5,13 @@ import { ResourceStateCompletionProvider } from '../../../src/autocomplete/Resou
 import { DocumentType } from '../../../src/document/Document';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { createResourceContext } from '../../utils/MockContext';
-import { createMockComponents } from '../../utils/MockServerComponents';
+import { createMockComponents, createMockSchemaRetriever } from '../../utils/MockServerComponents';
 import { combinedSchemas, Schemas } from '../../utils/SchemaUtils';
 
 describe('ResourceStateCompletionProvider', () => {
-    const mockComponents = createMockComponents();
-    const mockSchemas = combinedSchemas();
+    const mockComponents = createMockComponents({
+        schemaRetriever: createMockSchemaRetriever(defaultSchemas),
+    });
 
     const provider = new ResourceStateCompletionProvider(
         mockComponents.resourceStateManager,
@@ -29,11 +30,8 @@ describe('ResourceStateCompletionProvider', () => {
     };
 
     beforeEach(() => {
-        mockComponents.schemaRetriever.getDefault.reset();
-        if (typeof mockComponents.resourceStateManager.getResource.reset === 'function') {
-            mockComponents.resourceStateManager.getResource.reset();
-        }
-        vi.clearAllMocks();
+        mockComponents.schemaRetriever.getDefault.returns(defaultSchemas);
+        mockComponents.resourceStateManager.getResource.reset();
     });
 
     test('should return undefined when resource has no Type', async () => {
@@ -67,8 +65,7 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const schemas = combinedSchemas([]);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -84,8 +81,7 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const schemas = combinedSchemas([Schemas.S3Bucket]);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        mockComponents.schemaRetriever.getDefault.returns(s3Schemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -101,19 +97,8 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const mockSchema = new ResourceSchema(
-            JSON.stringify({
-                typeName: 'AWS::S3::Bucket',
-                description: 'Test',
-                properties: { BucketName: { type: 'string' } },
-                primaryIdentifier: [],
-                additionalProperties: false,
-            }),
-        );
-
-        const schemas = combinedSchemas([]);
-        schemas.schemas.set('AWS::S3::Bucket', mockSchema);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        emptySchemas.schemas.set('AWS::S3::Bucket', s3BucketEmptyPrimaryIdSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -129,8 +114,7 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const schemas = combinedSchemas([Schemas.S3Bucket]);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        mockComponents.schemaRetriever.getDefault.returns(s3Schemas);
         mockComponents.resourceStateManager.getResource.resolves(undefined);
 
         const result = await provider.getCompletions(context, mockYamlParams);
@@ -147,8 +131,7 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const schemas = combinedSchemas([Schemas.S3Bucket]);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        mockComponents.schemaRetriever.getDefault.returns(s3Schemas);
         mockComponents.resourceStateManager.getResource.resolves({
             typeName: 'AWS::S3::Bucket',
             identifier: 'test',
@@ -171,22 +154,8 @@ describe('ResourceStateCompletionProvider', () => {
             type: DocumentType.YAML,
         });
 
-        const mockSchema = new ResourceSchema(
-            JSON.stringify({
-                typeName: 'Custom::Type',
-                description: 'Test',
-                properties: {
-                    BucketName: { type: 'string' },
-                    VersioningConfiguration: { type: 'object' },
-                },
-                primaryIdentifier: ['/properties/BucketName'],
-                additionalProperties: false,
-            }),
-        );
-
-        const schemas = combinedSchemas([]);
-        schemas.schemas.set('Custom::Type', mockSchema);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        emptySchemas.schemas.set('Custom::Type', customTypeSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
         mockComponents.resourceStateManager.getResource.resolves({
             typeName: 'Custom::Type',
             identifier: 'test',
@@ -220,22 +189,8 @@ describe('ResourceStateCompletionProvider', () => {
             type: DocumentType.YAML,
         });
 
-        const mockSchema = new ResourceSchema(
-            JSON.stringify({
-                typeName: 'Custom::Type',
-                description: 'Test',
-                properties: {
-                    BucketName: { type: 'string' },
-                    VersioningConfiguration: { type: 'object' },
-                },
-                primaryIdentifier: ['/properties/BucketName'],
-                additionalProperties: false,
-            }),
-        );
-
-        const schemas = combinedSchemas([]);
-        schemas.schemas.set('Custom::Type', mockSchema);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        emptySchemas.schemas.set('Custom::Type', customTypeSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
         mockComponents.resourceStateManager.getResource.resolves({
             typeName: 'Custom::Type',
             identifier: 'test',
@@ -270,24 +225,8 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const mockSchema = new ResourceSchema(
-            JSON.stringify({
-                typeName: 'Custom::Type',
-                description: 'Test',
-                properties: {
-                    Device: {
-                        type: 'object',
-                        properties: { DeviceName: { type: 'string' } },
-                    },
-                },
-                primaryIdentifier: ['/properties/Device/DeviceName'],
-                additionalProperties: false,
-            }),
-        );
-
-        const schemas = combinedSchemas([]);
-        schemas.schemas.set('Custom::Type', mockSchema);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        emptySchemas.schemas.set('Custom::Type', customTypeWithNestedIdSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -312,22 +251,8 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const mockSchema = new ResourceSchema(
-            JSON.stringify({
-                typeName: 'Custom::Type',
-                description: 'Test',
-                properties: {
-                    Id1: { type: 'string' },
-                    Id2: { type: 'string' },
-                },
-                primaryIdentifier: ['/properties/Id1', '/properties/Id2'],
-                additionalProperties: false,
-            }),
-        );
-
-        const schemas = combinedSchemas([]);
-        schemas.schemas.set('Custom::Type', mockSchema);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        emptySchemas.schemas.set('Custom::Type', customTypeWithMultipleIdsSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -336,7 +261,7 @@ describe('ResourceStateCompletionProvider', () => {
     });
 
     test('should remove readonly and already defined properties - JSON template', async () => {
-        mockComponents.schemaRetriever.getDefault.returns(mockSchemas);
+        mockComponents.schemaRetriever.getDefault.returns(defaultSchemas);
         mockComponents.documentManager.getLine.returns('"",');
         const context = createResourceContext('MyResource', {
             text: '',
@@ -375,7 +300,7 @@ describe('ResourceStateCompletionProvider', () => {
     });
 
     test('should remove readonly and already defined properties - YAML template', async () => {
-        mockComponents.schemaRetriever.getDefault.returns(mockSchemas);
+        mockComponents.schemaRetriever.getDefault.returns(defaultSchemas);
         mockComponents.documentManager.getLine.returns('"",');
         const context = createResourceContext('MyResource', {
             text: '',
@@ -422,24 +347,8 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const mockSchema = new ResourceSchema(
-            JSON.stringify({
-                typeName: 'Custom::Type',
-                description: 'Test',
-                properties: {
-                    Device: {
-                        type: 'object',
-                        properties: { DeviceName: { type: 'string' } },
-                    },
-                },
-                primaryIdentifier: ['/properties/Device/DeviceName'],
-                additionalProperties: false,
-            }),
-        );
-
-        const schemas = combinedSchemas([]);
-        schemas.schemas.set('Custom::Type', mockSchema);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        emptySchemas.schemas.set('Custom::Type', customTypeWithNestedIdSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -455,24 +364,8 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const mockSchema = new ResourceSchema(
-            JSON.stringify({
-                typeName: 'Custom::Type',
-                description: 'Test',
-                properties: {
-                    Device: {
-                        type: 'object',
-                        properties: { DeviceName: { type: 'string' } },
-                    },
-                },
-                primaryIdentifier: ['/properties/Device/DeviceName'],
-                additionalProperties: false,
-            }),
-        );
-
-        const schemas = combinedSchemas([]);
-        schemas.schemas.set('Custom::Type', mockSchema);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        emptySchemas.schemas.set('Custom::Type', customTypeWithNestedIdSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -496,19 +389,8 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const mockSchema = new ResourceSchema(
-            JSON.stringify({
-                typeName: 'Custom::Type',
-                description: 'Test',
-                properties: { DeviceName: { type: 'string' } },
-                primaryIdentifier: ['DeviceName'],
-                additionalProperties: false,
-            }),
-        );
-
-        const schemas = combinedSchemas([]);
-        schemas.schemas.set('Custom::Type', mockSchema);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        emptySchemas.schemas.set('Custom::Type', customTypeWithNoPrefixSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -525,11 +407,75 @@ describe('ResourceStateCompletionProvider', () => {
             },
         });
 
-        const schemas = combinedSchemas([Schemas.S3Bucket]);
-        mockComponents.schemaRetriever.getDefault.returns(schemas);
+        mockComponents.schemaRetriever.getDefault.returns(s3Schemas);
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
         expect(result.length).toBe(0);
     });
 });
+
+const defaultSchemas = combinedSchemas();
+const s3Schemas = combinedSchemas([Schemas.S3Bucket]);
+const emptySchemas = combinedSchemas([]);
+
+const customTypeSchema = new ResourceSchema(
+    JSON.stringify({
+        typeName: 'Custom::Type',
+        description: 'Test',
+        properties: {
+            BucketName: { type: 'string' },
+            VersioningConfiguration: { type: 'object' },
+        },
+        primaryIdentifier: ['/properties/BucketName'],
+        additionalProperties: false,
+    }),
+);
+
+const customTypeWithNestedIdSchema = new ResourceSchema(
+    JSON.stringify({
+        typeName: 'Custom::Type',
+        description: 'Test',
+        properties: {
+            Device: {
+                type: 'object',
+                properties: { DeviceName: { type: 'string' } },
+            },
+        },
+        primaryIdentifier: ['/properties/Device/DeviceName'],
+        additionalProperties: false,
+    }),
+);
+
+const customTypeWithMultipleIdsSchema = new ResourceSchema(
+    JSON.stringify({
+        typeName: 'Custom::Type',
+        description: 'Test',
+        properties: {
+            Id1: { type: 'string' },
+            Id2: { type: 'string' },
+        },
+        primaryIdentifier: ['/properties/Id1', '/properties/Id2'],
+        additionalProperties: false,
+    }),
+);
+
+const customTypeWithNoPrefixSchema = new ResourceSchema(
+    JSON.stringify({
+        typeName: 'Custom::Type',
+        description: 'Test',
+        properties: { DeviceName: { type: 'string' } },
+        primaryIdentifier: ['DeviceName'],
+        additionalProperties: false,
+    }),
+);
+
+const s3BucketEmptyPrimaryIdSchema = new ResourceSchema(
+    JSON.stringify({
+        typeName: 'AWS::S3::Bucket',
+        description: 'Test',
+        properties: { BucketName: { type: 'string' } },
+        primaryIdentifier: [],
+        additionalProperties: false,
+    }),
+);

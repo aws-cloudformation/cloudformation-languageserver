@@ -19,34 +19,30 @@ vi.mock('../../../src/context/SectionContextBuilder', () => ({
 }));
 
 describe('RelatedResourcesSnippetProvider', () => {
+    const defaultSchemas = combinedSchemas();
+
     const syntaxTreeManager = createMockSyntaxTreeManager();
     const documentManager = createMockDocumentManager();
-    const schemaRetriever = createMockSchemaRetriever();
+    const schemaRetriever = createMockSchemaRetriever(defaultSchemas);
     const relationshipSchemaService = createMockRelationshipSchemaService();
-    let mockComponents: ReturnType<typeof createMockComponents>;
-    let provider: RelatedResourcesSnippetProvider;
-    let mockGetEntityMap: any;
+    const mockComponents = createMockComponents({
+        syntaxTreeManager,
+        documentManager,
+        schemaRetriever,
+        relationshipSchemaService,
+    });
+    const provider = new RelatedResourcesSnippetProvider(
+        mockComponents.documentManager,
+        mockComponents.syntaxTreeManager,
+        mockComponents.schemaRetriever,
+    );
+    const mockGetEntityMap = vi.mocked(getEntityMap) as any;
 
     beforeEach(() => {
-        vi.clearAllMocks();
+        mockGetEntityMap.mockReset();
         syntaxTreeManager.getSyntaxTree.reset();
-        syntaxTreeManager.add.reset();
-        syntaxTreeManager.deleteSyntaxTree.reset();
         documentManager.get.reset();
-        schemaRetriever.getDefault.reset();
-
-        mockComponents = createMockComponents({
-            syntaxTreeManager,
-            documentManager,
-            schemaRetriever,
-            relationshipSchemaService,
-        });
-        provider = new RelatedResourcesSnippetProvider(
-            mockComponents.documentManager,
-            mockComponents.syntaxTreeManager,
-            mockComponents.schemaRetriever,
-        );
-        mockGetEntityMap = vi.mocked(getEntityMap);
+        schemaRetriever.getDefault.returns(defaultSchemas);
     });
 
     describe('insertRelatedResources', () => {
@@ -66,7 +62,6 @@ describe('RelatedResourcesSnippetProvider', () => {
 
             documentManager.get.withArgs(templateUri).returns(document);
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(undefined);
-            schemaRetriever.getDefault.returns(combinedSchemas());
 
             const result = provider.insertRelatedResources(templateUri, ['AWS::Lambda::Function'], 'AWS::S3::Bucket');
 
@@ -109,7 +104,6 @@ Resources:
             documentManager.get.withArgs(templateUri).returns(document);
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree as any);
             mockGetEntityMap.mockReturnValue(new Map([['MyBucket', { entity: { Type: 'AWS::S3::Bucket' } }]]));
-            schemaRetriever.getDefault.returns(combinedSchemas());
 
             const result = provider.insertRelatedResources(templateUri, ['AWS::Lambda::Function'], 'AWS::S3::Bucket');
 
@@ -128,7 +122,6 @@ Resources:
 
             documentManager.get.withArgs(templateUri).returns(document);
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(undefined);
-            schemaRetriever.getDefault.returns(combinedSchemas());
 
             const result = provider.insertRelatedResources(templateUri, ['AWS::Lambda::Function'], 'AWS::S3::Bucket');
 
@@ -167,7 +160,6 @@ Resources:
             documentManager.get.withArgs(templateUri).returns(document);
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree as any);
             mockGetEntityMap.mockReturnValue(new Map([['MyBucket', { entity: { Type: 'AWS::S3::Bucket' } }]]));
-            schemaRetriever.getDefault.returns(combinedSchemas());
 
             const result = provider.insertRelatedResources(templateUri, ['AWS::Lambda::Function'], 'AWS::S3::Bucket');
 
@@ -202,7 +194,6 @@ Resources:
             documentManager.get.withArgs(templateUri).returns(document);
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree as any);
             mockGetEntityMap.mockReturnValue(new Map([['MyBucket', { entity: { Type: 'AWS::S3::Bucket' } }]]));
-            schemaRetriever.getDefault.returns(combinedSchemas());
 
             const result = provider.insertRelatedResources(
                 templateUri,
@@ -293,7 +284,6 @@ Resources:
                     ['LambdaFunctionRelatedToS3Bucket', { entity: { Type: 'AWS::Lambda::Function' } }],
                 ]),
             );
-            schemaRetriever.getDefault.returns(combinedSchemas());
 
             const result = provider.insertRelatedResources(templateUri, ['AWS::Lambda::Function'], 'AWS::S3::Bucket');
 
@@ -328,7 +318,6 @@ Resources:
             documentManager.get.withArgs(templateUri).returns(document);
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree as any);
             mockGetEntityMap.mockReturnValue(new Map([['MyBucket', { entity: { Type: 'AWS::S3::Bucket' } }]]));
-            schemaRetriever.getDefault.returns(combinedSchemas());
 
             const result = provider.insertRelatedResources(templateUri, ['AWS::Lambda::Function'], 'AWS::S3::Bucket');
 

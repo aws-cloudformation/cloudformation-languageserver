@@ -19,7 +19,7 @@ describe('ResourceStateImporter', () => {
     let mockResourceStateManager: any;
     let documentManager: DocumentManager;
     let syntaxTreeManager: SyntaxTreeManager;
-    let schemaRetriever: ReturnType<typeof createMockSchemaRetriever>;
+    const schemaRetriever = createMockSchemaRetriever(combinedSchemas());
     const mockStackManagementInfoProvider = createMockStackManagementInfoProvider();
     let importer: ResourceStateImporter;
 
@@ -37,7 +37,6 @@ describe('ResourceStateImporter', () => {
             detectIndentation: false,
         };
 
-        schemaRetriever = createMockSchemaRetriever(combinedSchemas());
         mockResourceStateManager = {
             getResource: vi.fn(),
             listResources: vi.fn(),
