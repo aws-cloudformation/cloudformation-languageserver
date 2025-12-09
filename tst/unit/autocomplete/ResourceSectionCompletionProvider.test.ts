@@ -44,7 +44,6 @@ describe('ResourceSectionCompletionProvider', () => {
     const testSchemas = combinedSchemas([Schemas.S3Bucket, Schemas.EC2Instance, Schemas.LambdaFunction]);
 
     beforeEach(() => {
-        mockComponents.schemaRetriever.getDefault.reset();
         mockComponents.schemaRetriever.getDefault.returns(testSchemas);
     });
 

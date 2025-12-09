@@ -19,7 +19,7 @@ import { ResourceSectionHoverProvider } from '../../../src/hover/ResourceSection
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { createMockContext, createResourceContext } from '../../utils/MockContext';
 import { createMockSchemaRetriever } from '../../utils/MockServerComponents';
-import { combinedSchemas, combineSchema, Schemas } from '../../utils/SchemaUtils';
+import { combinedSchemas, createSchemaFrom, Schemas } from '../../utils/SchemaUtils';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
 
 describe('ResourceSectionHoverProvider', () => {
@@ -28,13 +28,13 @@ describe('ResourceSectionHoverProvider', () => {
     const mockCombinedSchemas = combinedSchemas([
         Schemas.S3Bucket,
         Schemas.EC2Instance,
-        combineSchema(s3BucketSchema, 'AWS::S3::BucketNameRequired', {
+        createSchemaFrom(s3BucketSchema, 'AWS::S3::BucketNameRequired', {
             required: ['BucketName'],
         }),
-        combineSchema(s3BucketSchema, 'AWS::S3::BucketNameEmptyRequired', {
+        createSchemaFrom(s3BucketSchema, 'AWS::S3::BucketNameEmptyRequired', {
             required: [],
         }),
-        combineSchema(s3BucketSchema, 'AWS::S3::BucketNameBadRef', {
+        createSchemaFrom(s3BucketSchema, 'AWS::S3::BucketNameBadRef', {
             properties: {
                 UnresolvableProperty: {
                     $ref: '#/definitions/NonExistentDefinition',

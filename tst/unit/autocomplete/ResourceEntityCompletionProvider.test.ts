@@ -7,7 +7,7 @@ import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createForEachResourceContext, createResourceContext } from '../../utils/MockContext';
 import { createMockComponents } from '../../utils/MockServerComponents';
-import { combinedSchemas, combineSchema, Schemas } from '../../utils/SchemaUtils';
+import { combinedSchemas, createSchemaFrom, Schemas } from '../../utils/SchemaUtils';
 
 describe('ResourceEntityCompletionProvider', () => {
     const mockComponents = createMockComponents();
@@ -23,10 +23,10 @@ describe('ResourceEntityCompletionProvider', () => {
 
     // Create schemas once at describe level
     const ec2Schema = new ResourceSchema(Schemas.EC2Instance.contents);
-    const ec2WithRequiredProps = combineSchema(ec2Schema, 'AWS::EC2::Instance', {
+    const ec2WithRequiredProps = createSchemaFrom(ec2Schema, 'AWS::EC2::Instance', {
         required: ['InstanceType', 'ImageId'],
     });
-    const ec2WithNoRequiredProps = combineSchema(ec2Schema, 'AWS::EC2::Instance', {
+    const ec2WithNoRequiredProps = createSchemaFrom(ec2Schema, 'AWS::EC2::Instance', {
         required: [],
     });
     const schemasWithRequired = combinedSchemas([ec2WithRequiredProps]);

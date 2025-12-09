@@ -187,7 +187,7 @@ export function combinedSchemas(
     );
 }
 
-export function combineSchema(schema: ResourceSchema, newName: string, changes: any): typeof Schemas.S3Bucket {
+export function createSchemaFrom(schema: ResourceSchema, newName: string, changes: any): typeof Schemas.S3Bucket {
     return {
         fileName: `${newName.toLowerCase().split('::').join('-')}.json`,
         contents: JSON.stringify({

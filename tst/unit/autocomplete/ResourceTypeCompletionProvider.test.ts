@@ -5,7 +5,7 @@ import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createResourceContext } from '../../utils/MockContext';
 import { createMockComponents } from '../../utils/MockServerComponents';
-import { combinedSchemas, combineSchema, Schemas } from '../../utils/SchemaUtils';
+import { combinedSchemas, createSchemaFrom, Schemas } from '../../utils/SchemaUtils';
 
 describe('ResourceTypeCompletionProvider', () => {
     const mockComponents = createMockComponents();
@@ -21,7 +21,7 @@ describe('ResourceTypeCompletionProvider', () => {
         Schemas.S3Bucket,
         Schemas.EC2Instance,
         Schemas.LambdaFunction,
-        combineSchema(s3BucketSchema, 'AWS::S3::BucketPolicy', {}),
+        createSchemaFrom(s3BucketSchema, 'AWS::S3::BucketPolicy', {}),
     ]);
     const twoSchemas = combinedSchemas([Schemas.S3Bucket, Schemas.EC2Instance]);
 
