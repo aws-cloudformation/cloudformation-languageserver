@@ -1,4 +1,4 @@
-import { DescribeEventsCommandOutput, EventType, HookFailureMode } from '@aws-sdk/client-cloudformation';
+import { EventType, HookFailureMode } from '@aws-sdk/client-cloudformation';
 import { DateTime } from 'luxon';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AwsCredentials } from '../../../src/auth/AwsCredentials';
@@ -458,15 +458,13 @@ describe('ValidationWorkflow', () => {
                 return updated;
             });
 
-            const mockEmptyDescribeEventsResponse: DescribeEventsCommandOutput = {
-                OperationEvents: [],
-                $metadata: {},
-            };
-
             mockFeatureFlag.isEnabled = vi.fn().mockReturnValue(true);
             mockAwsCredentials.getIAM = vi.fn().mockReturnValue({ region: 'us-east-1' });
 
-            mockCfnService.describeEvents = vi.fn().mockResolvedValue(mockEmptyDescribeEventsResponse);
+            mockCfnService.describeEvents = vi.fn().mockResolvedValue({
+                OperationEvents: [],
+                $metadata: {},
+            });
 
             (parseValidationEvents as any).mockReturnValue([
                 {
@@ -696,23 +694,23 @@ describe('ValidationWorkflow', () => {
                 changes: mockChanges,
             });
 
-            const mockDescribeEventsResponse: DescribeEventsCommandOutput = {
-                OperationEvents: [
-                    {
-                        EventId: 'event-1',
-                        EventType: EventType.VALIDATION_ERROR,
-                        Timestamp: new Date('2023-01-01T00:00:00Z'),
-                        LogicalResourceId: 'TestResource',
-                        ValidationPath: '/Resources/TestResource/Properties/BucketName',
-                        ValidationFailureMode: HookFailureMode.FAIL,
-                        ValidationName: 'TestValidation',
-                        ValidationStatusReason: 'Test error',
-                    },
-                ],
-                $metadata: {},
-            };
+            const mockOperationEvents = [
+                {
+                    EventId: 'event-1',
+                    EventType: EventType.VALIDATION_ERROR,
+                    Timestamp: new Date('2023-01-01T00:00:00Z'),
+                    LogicalResourceId: 'TestResource',
+                    ValidationPath: '/Resources/TestResource/Properties/BucketName',
+                    ValidationFailureMode: HookFailureMode.FAIL,
+                    ValidationName: 'TestValidation',
+                    ValidationStatusReason: 'Test error',
+                },
+            ];
 
-            mockCfnService.describeEvents = vi.fn().mockResolvedValueOnce(mockDescribeEventsResponse);
+            mockCfnService.describeEvents = vi.fn().mockResolvedValueOnce({
+                OperationEvents: mockOperationEvents,
+                $metadata: {},
+            });
 
             const mockParseValidationEventsResponse = [
                 {
@@ -736,12 +734,14 @@ describe('ValidationWorkflow', () => {
             expect(mockCfnService.describeEvents).toHaveBeenCalledWith({
                 ChangeSetName: 'changeset-123',
                 StackName: 'test-stack',
+                FailedEventsOnly: true,
+                NextToken: undefined,
             });
 
             const workflow = (validationWorkflow as any).workflows.get('test-id');
             expect(workflow.changes).toEqual(mockChanges);
 
-            expect(parseValidationEvents).toHaveBeenCalledWith(mockDescribeEventsResponse, VALIDATION_NAME);
+            expect(parseValidationEvents).toHaveBeenCalledWith(mockOperationEvents, VALIDATION_NAME);
 
             const mockValidation = mockValidationManager.get('test-stack');
             expect(mockValidation?.setValidationDetails).toHaveBeenCalledWith(mockParseValidationEventsResponse);

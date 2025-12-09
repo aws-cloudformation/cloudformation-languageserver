@@ -5,6 +5,7 @@ import {
     OnStackFailure,
     EventType,
     HookFailureMode,
+    OperationEvent,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
 import { DateTime } from 'luxon';
@@ -432,36 +433,33 @@ describe('StackActionWorkflowOperations', () => {
 
     describe('parseValidationEvents', () => {
         it('should parse validation events correctly', () => {
-            const events = {
-                OperationEvents: [
-                    {
-                        EventId: 'event-1',
-                        EventType: EventType.VALIDATION_ERROR,
-                        Timestamp: new Date('2023-01-01T00:00:00Z'),
-                        LogicalResourceId: 'MyS3Bucket',
-                        ValidationPath: '/Resources/MyS3Bucket/Properties/BucketName',
-                        ValidationFailureMode: HookFailureMode.FAIL,
-                        ValidationName: 'S3BucketValidation',
-                        ValidationStatusReason: 'Bucket name must be globally unique',
-                    },
-                    {
-                        EventId: 'event-2',
-                        EventType: EventType.VALIDATION_ERROR,
-                        Timestamp: new Date('2023-01-01T00:01:00Z'),
-                        LogicalResourceId: 'MyLambda',
-                        ValidationFailureMode: HookFailureMode.WARN,
-                        ValidationName: 'LambdaValidation',
-                        ValidationStatusReason: 'Runtime version is deprecated',
-                    },
-                    {
-                        EventId: 'event-3',
-                        EventType: EventType.HOOK_INVOCATION_ERROR,
-                        Timestamp: new Date('2023-01-01T00:02:00Z'),
-                        LogicalResourceId: 'MyResource',
-                    },
-                ],
-                $metadata: {},
-            };
+            const events = [
+                {
+                    EventId: 'event-1',
+                    EventType: EventType.VALIDATION_ERROR,
+                    Timestamp: new Date('2023-01-01T00:00:00Z'),
+                    LogicalResourceId: 'MyS3Bucket',
+                    ValidationPath: '/Resources/MyS3Bucket/Properties/BucketName',
+                    ValidationFailureMode: HookFailureMode.FAIL,
+                    ValidationName: 'S3BucketValidation',
+                    ValidationStatusReason: 'Bucket name must be globally unique',
+                },
+                {
+                    EventId: 'event-2',
+                    EventType: EventType.VALIDATION_ERROR,
+                    Timestamp: new Date('2023-01-01T00:01:00Z'),
+                    LogicalResourceId: 'MyLambda',
+                    ValidationFailureMode: HookFailureMode.WARN,
+                    ValidationName: 'LambdaValidation',
+                    ValidationStatusReason: 'Runtime version is deprecated',
+                },
+                {
+                    EventId: 'event-3',
+                    EventType: EventType.HOOK_INVOCATION_ERROR,
+                    Timestamp: new Date('2023-01-01T00:02:00Z'),
+                    LogicalResourceId: 'MyResource',
+                },
+            ];
 
             const validationName = 'Enhanced Validation';
             const result = parseValidationEvents(events, validationName);
@@ -488,10 +486,7 @@ describe('StackActionWorkflowOperations', () => {
         });
 
         it('should handle empty events', () => {
-            const events = {
-                OperationEvents: [],
-                $metadata: {},
-            };
+            const events: OperationEvent[] = [];
 
             const result = parseValidationEvents(events, 'Test Validation');
 
