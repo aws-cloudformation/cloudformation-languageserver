@@ -18,6 +18,7 @@ import {
     parseGetStackEventsParams,
     parseClearStackEventsParams,
     parseDescribeStackParams,
+    parseDescribeEventsParams,
 } from '../stacks/actions/StackActionParser';
 import {
     TemplateUri,
@@ -48,6 +49,8 @@ import {
     DescribeStackResult,
     DescribeChangeSetParams,
     DescribeChangeSetResult,
+    DescribeEventsParams,
+    DescribeEventsResult,
 } from '../stacks/StackRequestType';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { EventType } from '../usageTracker/UsageTracker';
@@ -441,6 +444,25 @@ export function describeStackHandler(
             return { stack };
         } catch (error) {
             handleLspError(error, 'Failed to describe stack');
+        }
+    };
+}
+
+export function describeEventsHandler(
+    components: ServerComponents,
+): RequestHandler<DescribeEventsParams, DescribeEventsResult, void> {
+    return async (rawParams): Promise<DescribeEventsResult> => {
+        try {
+            const params = parseWithPrettyError(parseDescribeEventsParams, rawParams);
+
+            if (params.refresh) {
+                const result = await components.stackOperationEventManager.refresh(params.stackName ?? '');
+                return { operations: result.operations, nextToken: undefined, gapDetected: result.gapDetected };
+            }
+
+            return await components.stackOperationEventManager.fetchEvents(params.stackName ?? '', params.nextToken);
+        } catch (error) {
+            handleLspError(error, 'Failed to describe events');
         }
     };
 }

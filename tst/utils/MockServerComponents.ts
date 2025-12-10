@@ -65,6 +65,7 @@ import { ValidationManager } from '../../src/stacks/actions/ValidationManager';
 import { ValidationWorkflow } from '../../src/stacks/actions/ValidationWorkflow';
 import { StackEventManager } from '../../src/stacks/StackEventManager';
 import { StackManager } from '../../src/stacks/StackManager';
+import { StackOperationEventManager } from '../../src/stacks/StackOperationEventManager';
 import { ClientMessage } from '../../src/telemetry/ClientMessage';
 import { UsageTracker } from '../../src/usageTracker/UsageTracker';
 import { UsageTrackerMetrics } from '../../src/usageTracker/UsageTrackerMetrics';
@@ -399,6 +400,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
             overrides.stackManagementInfoProvider ?? stubInterface<StackManagementInfoProvider>(),
         stackManager: overrides.stackManager ?? stubInterface<StackManager>(),
         stackEventManager: overrides.stackEventManager ?? stubInterface<StackEventManager>(),
+        stackOperationEventManager: overrides.stackOperationEventManager ?? stubInterface<StackOperationEventManager>(),
         validationWorkflowService: overrides.validationWorkflowService ?? createMockValidationWorkflowService(),
         deploymentWorkflowService: overrides.deploymentWorkflowService ?? createMockDeploymentWorkflowService(),
         changeSetDeletionWorkflowService:

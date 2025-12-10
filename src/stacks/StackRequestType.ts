@@ -1,4 +1,11 @@
-import { StackSummary, StackStatus, StackResourceSummary, StackEvent, Stack } from '@aws-sdk/client-cloudformation';
+import {
+    StackSummary,
+    StackStatus,
+    StackResourceSummary,
+    StackEvent,
+    Stack,
+    OperationEvent,
+} from '@aws-sdk/client-cloudformation';
 import { RequestType } from 'vscode-languageserver-protocol';
 import { ChangeSetReference, DeploymentMode, StackChange } from './actions/StackActionRequestType';
 
@@ -110,4 +117,28 @@ export const DescribeStackRequest = new RequestType<DescribeStackParams, Describ
 
 export const DescribeChangeSetRequest = new RequestType<DescribeChangeSetParams, DescribeChangeSetResult, void>(
     'aws/cfn/stack/changeSet/describe',
+);
+
+export type DescribeEventsParams = {
+    stackName?: string;
+    changeSetName?: string;
+    operationId?: string;
+    failedEventsOnly?: boolean;
+    nextToken?: string;
+    refresh?: boolean;
+};
+
+export type StackOperationGroup = {
+    operationId: string;
+    events: OperationEvent[];
+};
+
+export type DescribeEventsResult = {
+    operations: StackOperationGroup[];
+    nextToken?: string;
+    gapDetected?: boolean;
+};
+
+export const DescribeEventsRequest = new RequestType<DescribeEventsParams, DescribeEventsResult, void>(
+    'aws/cfn/stack/events/describe',
 );

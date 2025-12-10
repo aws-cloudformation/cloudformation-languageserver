@@ -53,6 +53,9 @@ import {
     DescribeChangeSetParams,
     DescribeChangeSetResult,
     DescribeChangeSetRequest,
+    DescribeEventsParams,
+    DescribeEventsResult,
+    DescribeEventsRequest,
 } from '../stacks/StackRequestType';
 import { Identifiable } from './LspTypes';
 
@@ -141,5 +144,9 @@ export class LspStackHandlers {
 
     onDescribeStack(handler: RequestHandler<DescribeStackParams, DescribeStackResult, void>) {
         this.connection.onRequest(DescribeStackRequest.method, handler);
+    }
+
+    onDescribeEvents(handler: RequestHandler<DescribeEventsParams, DescribeEventsResult, void>) {
+        this.connection.onRequest(DescribeEventsRequest.method, handler);
     }
 }
