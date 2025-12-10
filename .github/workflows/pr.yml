@@ -5,6 +5,9 @@ on:
     types: [opened, edited, reopened, synchronize]
     branches: [ main ]
 
+permissions:
+  contents: read
+
 jobs:
   get-configs:
     uses: ./.github/workflows/configs.yml
