@@ -28,6 +28,9 @@ on:
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
   get-configs:
     uses: ./.github/workflows/configs.yml

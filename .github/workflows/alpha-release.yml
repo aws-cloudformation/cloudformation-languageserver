@@ -1,5 +1,5 @@
 name: Release Alpha
-run-name: Release Alpha ${{ github.actor }} ${{ github.event_name }}
+run-name: Release Alpha ${{ inputs.version }} ${{ github.actor }} ${{ github.event_name }}
 
 on:
   workflow_dispatch:
@@ -8,6 +8,9 @@ on:
         description: 'Branch, tag, or commit to build from'
         required: false
         default: 'main'
+
+permissions:
+  contents: read
 
 jobs:
   create-alpha-tag:
@@ -42,9 +45,9 @@ jobs:
           fi
           
           git tag "$TAG"
-          git push origin "$TAG"
           echo "Created tag from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
+          git push origin "$TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
   call-release:

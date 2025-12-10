@@ -1,5 +1,13 @@
 #!/usr/bin/env node --expose-gc
 
+import { TelemetryService } from '../src/telemetry/TelemetryService';
+import { LoggerFactory } from '../src/telemetry/LoggerFactory';
+
+LoggerFactory.initialize('silent');
+TelemetryService.initialize(undefined, {
+    telemetryEnabled: false,
+});
+
 import { ContextManager } from '../src/context/ContextManager';
 import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
@@ -9,8 +17,6 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { discoverTemplateFiles, generatePositions, TestPosition } from './utils';
 import { DocumentType } from '../src/document/Document';
-import { TelemetryService } from '../src/telemetry/TelemetryService';
-import { LoggerFactory } from '../src/telemetry/LoggerFactory';
 
 /**
  * This script benchmarks the performance of context resolution for CloudFormation templates,
@@ -853,11 +859,6 @@ function main(): void {
             console.error(`   Specified paths: ${TEMPLATE_PATHS.join(', ')}`);
             process.exit(1);
         }
-
-        LoggerFactory.initialize('silent');
-        TelemetryService.initialize(undefined, {
-            telemetryEnabled: false,
-        });
 
         console.log(`📋 Found ${templateFiles.length} template files (sorted by size):`);
         for (const { name, documentType, size } of templateFiles) {

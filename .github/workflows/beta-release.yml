@@ -4,6 +4,9 @@ run-name: Release Beta ${{ inputs.version }} ${{ github.actor }} ${{ github.even
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   create-beta-tag:
     runs-on: ubuntu-latest
@@ -30,9 +33,9 @@ jobs:
 
           TAG="v${PKG_VERSION}-beta"
           git tag "$TAG"
-          git push origin "$TAG"
           echo "Created tag from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
+          git push origin "$TAG"
           echo "tag=$TAG" >> $GITHUB_OUTPUT
 
   call-release:
