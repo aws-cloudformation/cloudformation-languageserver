@@ -394,8 +394,145 @@
   ],
   "prod": [
     {
-      "serverVersion": "1.1.0",
+      "serverVersion": "1.2.0",
       "latest": true,
+      "isDelisted": false,
+      "targets": [
+        {
+          "platform": "darwin",
+          "arch": "arm64",
+          "nodejs": "22",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-darwin-arm64-node22.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-darwin-arm64-node22.zip",
+              "hashes": [],
+              "bytes": 56127924
+            }
+          ]
+        },
+        {
+          "platform": "darwin",
+          "arch": "x64",
+          "nodejs": "22",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-darwin-x64-node22.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-darwin-x64-node22.zip",
+              "hashes": [],
+              "bytes": 56280959
+            }
+          ]
+        },
+        {
+          "platform": "linux",
+          "arch": "arm64",
+          "nodejs": "22",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-linux-arm64-node22.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-linux-arm64-node22.zip",
+              "hashes": [],
+              "bytes": 60595846
+            }
+          ]
+        },
+        {
+          "platform": "linux",
+          "arch": "x64",
+          "nodejs": "22",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-linux-x64-node22.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-linux-x64-node22.zip",
+              "hashes": [],
+              "bytes": 60867317
+            }
+          ]
+        },
+        {
+          "platform": "linuxglib2.28",
+          "arch": "arm64",
+          "nodejs": "18",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-linuxglib2.28-arm64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-linuxglib2.28-arm64-node18.zip",
+              "hashes": [],
+              "bytes": 59741112
+            }
+          ]
+        },
+        {
+          "platform": "linuxglib2.28",
+          "arch": "x64",
+          "nodejs": "18",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-linuxglib2.28-x64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-linuxglib2.28-x64-node18.zip",
+              "hashes": [],
+              "bytes": 60134354
+            }
+          ]
+        },
+        {
+          "platform": "win32",
+          "arch": "arm64",
+          "nodejs": "22",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-win32-arm64-node22.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-win32-arm64-node22.zip",
+              "hashes": [],
+              "bytes": 55891744
+            }
+          ]
+        },
+        {
+          "platform": "windows",
+          "arch": "arm64",
+          "nodejs": "22",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-win32-arm64-node22.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-win32-arm64-node22.zip",
+              "hashes": [],
+              "bytes": 55891744
+            }
+          ]
+        },
+        {
+          "platform": "win32",
+          "arch": "x64",
+          "nodejs": "22",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-win32-x64-node22.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-win32-x64-node22.zip",
+              "hashes": [],
+              "bytes": 56307625
+            }
+          ]
+        },
+        {
+          "platform": "windows",
+          "arch": "x64",
+          "nodejs": "22",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.2.0-win32-x64-node22.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.2.0/cloudformation-languageserver-1.2.0-win32-x64-node22.zip",
+              "hashes": [],
+              "bytes": 56307625
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "serverVersion": "1.1.0",
+      "latest": false,
       "isDelisted": false,
       "targets": [
         {
@@ -499,117 +636,6 @@
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.1.0/cloudformation-languageserver-1.1.0-win32-x64-node22.zip",
               "hashes": [],
               "bytes": 52000951
-            }
-          ]
-        }
-      ]
-    },
-    {
-      "serverVersion": "1.0.0",
-      "latest": false,
-      "isDelisted": false,
-      "targets": [
-        {
-          "platform": "darwin",
-          "arch": "arm64",
-          "nodejs": "22",
-          "contents": [
-            {
-              "filename": "cloudformation-languageserver-1.0.0-darwin-arm64-node22.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-darwin-arm64-node22.zip",
-              "hashes": [],
-              "bytes": 51819911
-            }
-          ]
-        },
-        {
-          "platform": "darwin",
-          "arch": "x64",
-          "nodejs": "22",
-          "contents": [
-            {
-              "filename": "cloudformation-languageserver-1.0.0-darwin-x64-node22.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22.zip",
-              "hashes": [],
-              "bytes": 51999694
-            }
-          ]
-        },
-        {
-          "platform": "linux",
-          "arch": "arm64",
-          "nodejs": "22",
-          "contents": [
-            {
-              "filename": "cloudformation-languageserver-1.0.0-linux-arm64-node22.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-linux-arm64-node22.zip",
-              "hashes": [],
-              "bytes": 56286393
-            }
-          ]
-        },
-        {
-          "platform": "linux",
-          "arch": "x64",
-          "nodejs": "22",
-          "contents": [
-            {
-              "filename": "cloudformation-languageserver-1.0.0-linux-x64-node22.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-linux-x64-node22.zip",
-              "hashes": [],
-              "bytes": 56559305
-            }
-          ]
-        },
-        {
-          "platform": "win32",
-          "arch": "arm64",
-          "nodejs": "22",
-          "contents": [
-            {
-              "filename": "cloudformation-languageserver-1.0.0-win32-arm64-node22.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-win32-arm64-node22.zip",
-              "hashes": [],
-              "bytes": 51583667
-            }
-          ]
-        },
-        {
-          "platform": "windows",
-          "arch": "arm64",
-          "nodejs": "22",
-          "contents": [
-            {
-              "filename": "cloudformation-languageserver-1.0.0-win32-arm64-node22.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-win32-arm64-node22.zip",
-              "hashes": [],
-              "bytes": 51583667
-            }
-          ]
-        },
-        {
-          "platform": "win32",
-          "arch": "x64",
-          "nodejs": "22",
-          "contents": [
-            {
-              "filename": "cloudformation-languageserver-1.0.0-win32-x64-node22.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-win32-x64-node22.zip",
-              "hashes": [],
-              "bytes": 51999548
-            }
-          ]
-        },
-        {
-          "platform": "windows",
-          "arch": "x64",
-          "nodejs": "22",
-          "contents": [
-            {
-              "filename": "cloudformation-languageserver-1.0.0-win32-x64-node22.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.0.0/cloudformation-languageserver-1.0.0-win32-x64-node22.zip",
-              "hashes": [],
-              "bytes": 51999548
             }
           ]
         }
