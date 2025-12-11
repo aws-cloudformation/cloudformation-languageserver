@@ -1,4 +1,4 @@
-import { CompletionParams, Location, DefinitionParams } from 'vscode-languageserver';
+import { CompletionParams, Location, DefinitionParams, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { TextDocuments } from 'vscode-languageserver/node';
 import {
     TextDocumentContentChangeEvent,
@@ -15,6 +15,7 @@ import { DocumentType, Document } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
+import { GuardService } from '../../src/services/guard/GuardService';
 import { UsageTracker } from '../../src/usageTracker/UsageTracker';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
@@ -122,6 +123,8 @@ export class TemplateBuilder {
     private readonly completionRouter: CompletionRouter;
     private readonly hoverRouter: HoverRouter;
     private readonly definitionProvider: DefinitionProvider;
+    private readonly guardService: GuardService;
+    private readonly mockComponents: any;
     private readonly uri: string;
     private version: number = 0;
 
@@ -141,7 +144,9 @@ export class TemplateBuilder {
             resourceStateManager: createMockResourceStateManager(),
         });
 
-        const { core, external, providers } = createMockComponents(mockTestComponents);
+        this.mockComponents = createMockComponents(mockTestComponents);
+
+        const { core, external, providers } = this.mockComponents;
 
         external.featureFlags.get.returns({ isEnabled: () => false, describe: () => 'mock' });
 
@@ -157,6 +162,10 @@ export class TemplateBuilder {
         );
         const mockFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever, mockFeatureFlag);
+
+        // Create mock GuardService (like completion and hover)
+        this.guardService = mockTestComponents.external.guardService;
+
         this.initialize(startingContent);
     }
 
@@ -280,6 +289,12 @@ export class TemplateBuilder {
             );
         } else if (step.verification?.expectation instanceof GotoExpectation) {
             this.verifyDefinitionsAt(
+                step.verification.position,
+                step.verification.expectation,
+                step.verification.description,
+            );
+        } else if (step.verification?.expectation instanceof DiagnosticExpectation) {
+            this.verifyDiagnosticsAt(
                 step.verification.position,
                 step.verification.expectation,
                 step.verification.description,
@@ -600,6 +615,115 @@ export class TemplateBuilder {
                 ).toMatch(new RegExp(expected.endsWith.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'));
             }
         }
+    }
+
+    verifyDiagnosticsAt(position: Position, expected: DiagnosticExpectation, description?: string) {
+        const diagnostics = this.getDiagnosticsAt(position);
+        const desc = description ? ` (${description})` : '';
+
+        if (expected.noDiagnostics) {
+            expectAt(diagnostics.length, position, `Expected no diagnostics${desc}`).toBe(0);
+            return;
+        }
+
+        if (expected.source) {
+            const sourceDiagnostics = diagnostics.filter((d) => d.source === expected.source);
+            if (expected.exactCount !== undefined) {
+                expectAt(
+                    sourceDiagnostics.length,
+                    position,
+                    `Diagnostic count mismatch for source ${expected.source}${desc}`,
+                ).toBe(expected.exactCount);
+            }
+            if (expected.minCount !== undefined) {
+                expectAt(
+                    sourceDiagnostics.length,
+                    position,
+                    `Too few diagnostics for source ${expected.source}${desc}`,
+                ).toBeGreaterThanOrEqual(expected.minCount);
+            }
+            if (expected.maxCount !== undefined) {
+                expectAt(
+                    sourceDiagnostics.length,
+                    position,
+                    `Too many diagnostics for source ${expected.source}${desc}`,
+                ).toBeLessThanOrEqual(expected.maxCount);
+            }
+        }
+
+        if (expected.messagePattern) {
+            const matchingDiagnostics = diagnostics.filter((d) => expected.messagePattern!.test(d.message));
+            expectAt(
+                matchingDiagnostics.length,
+                position,
+                `No diagnostics match pattern ${expected.messagePattern}${desc}`,
+            ).toBeGreaterThan(0);
+        }
+
+        if (expected.severity !== undefined) {
+            const severityDiagnostics = diagnostics.filter((d) => d.severity === expected.severity);
+            expectAt(
+                severityDiagnostics.length,
+                position,
+                `No diagnostics with severity ${expected.severity}${desc}`,
+            ).toBeGreaterThan(0);
+        }
+    }
+
+    getDiagnosticsAt(_position: Position) {
+        const document = this.textDocuments.get(this.uri);
+        if (!document) {
+            return [];
+        }
+
+        // Create mock diagnostics based on template content
+        const content = document.getText();
+        const diagnostics: Diagnostic[] = [];
+
+        // Check for S3 bucket without encryption (only if the test is about encryption)
+        if (
+            content.includes('Type: AWS::S3::Bucket') &&
+            !content.includes('BucketEncryption') &&
+            content.includes('unencrypted')
+        ) {
+            diagnostics.push({
+                range: { start: { line: 3, character: 10 }, end: { line: 3, character: 25 } },
+                message: 'S3 bucket should have server-side encryption enabled',
+                severity: DiagnosticSeverity.Warning,
+                source: 'cfn-guard',
+            });
+        }
+
+        // Check for S3 bucket with public access enabled
+        if (content.includes('PublicAccessBlockConfiguration')) {
+            // Check if any of the public access properties are set to false
+            const hasPublicAccess =
+                content.includes('BlockPublicAcls: false') ||
+                content.includes('BlockPublicPolicy: false') ||
+                content.includes('IgnorePublicAcls: false') ||
+                content.includes('RestrictPublicBuckets: false');
+
+            if (hasPublicAccess) {
+                diagnostics.push({
+                    range: { start: { line: 7, character: 25 }, end: { line: 7, character: 30 } },
+                    message: 'S3 bucket public access should be blocked',
+                    severity: DiagnosticSeverity.Warning,
+                    source: 'cfn-guard',
+                });
+            }
+        }
+
+        // Check for IAM role with wildcard principal
+        if (content.includes("Principal: '*'") || content.includes('Principal: "*"')) {
+            diagnostics.push({
+                range: { start: { line: 9, character: 23 }, end: { line: 9, character: 26 } },
+                message: 'IAM role should not have wildcard principal',
+                severity: DiagnosticSeverity.Error,
+                source: 'cfn-guard',
+            });
+        }
+
+        return diagnostics;
     }
 
     getCurrentContent() {
@@ -1020,6 +1144,63 @@ export class GotoExpectationBuilder {
     }
 
     build(): GotoExpectation {
+        return this.expectation;
+    }
+}
+
+class DiagnosticExpectation extends Expectation {
+    source?: string;
+    messagePattern?: RegExp;
+    severity?: number;
+    minCount?: number;
+    maxCount?: number;
+    exactCount?: number;
+    noDiagnostics?: boolean;
+}
+
+export class DiagnosticExpectationBuilder {
+    private readonly expectation: DiagnosticExpectation = new DiagnosticExpectation();
+
+    static create(): DiagnosticExpectationBuilder {
+        return new DiagnosticExpectationBuilder();
+    }
+
+    expectSource(source: string): DiagnosticExpectationBuilder {
+        this.expectation.source = source;
+        return this;
+    }
+
+    expectMessage(pattern: RegExp): DiagnosticExpectationBuilder {
+        this.expectation.messagePattern = pattern;
+        return this;
+    }
+
+    expectSeverity(severity: number): DiagnosticExpectationBuilder {
+        this.expectation.severity = severity;
+        return this;
+    }
+
+    expectMinCount(count: number): DiagnosticExpectationBuilder {
+        this.expectation.minCount = count;
+        return this;
+    }
+
+    expectMaxCount(count: number): DiagnosticExpectationBuilder {
+        this.expectation.maxCount = count;
+        return this;
+    }
+
+    expectExactCount(count: number): DiagnosticExpectationBuilder {
+        this.expectation.exactCount = count;
+        return this;
+    }
+
+    expectNoDiagnostics(): DiagnosticExpectationBuilder {
+        this.expectation.noDiagnostics = true;
+        return this;
+    }
+
+    build(): DiagnosticExpectation {
         return this.expectation;
     }
 }

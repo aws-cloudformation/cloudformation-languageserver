@@ -1,0 +1,6 @@
+Resources:
+  MyBucket:
+    Properties:
+      BucketName: test-bucket
+      PublicReadEnabled: true
+      # Missing Type (cfn-lint) + PublicReadEnabled (guard)
