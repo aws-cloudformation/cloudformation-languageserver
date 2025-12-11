@@ -1,0 +1,5 @@
+Resources:
+  MyBucket:
+    Properties:
+      BucketName: test-bucket
+      # Missing required Type property - cfn-lint error
