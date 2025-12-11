@@ -455,12 +455,16 @@ export function describeEventsHandler(
         try {
             const params = parseWithPrettyError(parseDescribeEventsParams, rawParams);
 
+            if (!params.stackName) {
+                throw new Error('stackName is required for describeEventsHandler');
+            }
+
             if (params.refresh) {
-                const result = await components.stackOperationEventManager.refresh(params.stackName ?? '');
+                const result = await components.stackOperationEventManager.refresh(params.stackName);
                 return { operations: result.operations, nextToken: undefined, gapDetected: result.gapDetected };
             }
 
-            return await components.stackOperationEventManager.fetchEvents(params.stackName ?? '', params.nextToken);
+            return await components.stackOperationEventManager.fetchEvents(params.stackName, params.nextToken);
         } catch (error) {
             handleLspError(error, 'Failed to describe events');
         }

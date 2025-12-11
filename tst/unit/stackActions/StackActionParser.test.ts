@@ -326,13 +326,5 @@ describe('StackActionParser', () => {
             expect(result.nextToken).toBeUndefined();
             expect(result.refresh).toBeUndefined();
         });
-
-        it('should throw error when refresh is true without stackName', () => {
-            expect(() => parseDescribeEventsParams({ operationId: 'op-123', refresh: true })).toThrow();
-        });
-
-        it('should throw error when nextToken provided without stackName', () => {
-            expect(() => parseDescribeEventsParams({ operationId: 'op-123', nextToken: 'token' })).toThrow();
-        });
     });
 });

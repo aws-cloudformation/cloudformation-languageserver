@@ -112,12 +112,6 @@ const DescribeEventsParamsSchema = z
     })
     .refine((data) => data.stackName ?? data.changeSetName ?? data.operationId, {
         message: 'At least one of stackName, changeSetName, or operationId must be provided',
-    })
-    .refine((data) => !data.refresh || data.stackName, {
-        message: 'stackName is required when refresh is true',
-    })
-    .refine((data) => !data.nextToken || data.stackName, {
-        message: 'stackName is required when nextToken is provided',
     });
 
 export function parseCreateValidationParams(input: unknown): CreateValidationParams {
