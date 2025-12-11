@@ -2,14 +2,15 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'fs'; // eslin
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { Logger } from 'pino';
-import { lock, lockSync } from 'proper-lockfile';
+import { lock, LockOptions, lockSync } from 'proper-lockfile';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
 import { DataStore } from '../DataStore';
 import { decrypt, encrypt } from './Encryption';
 
-const LOCK_OPTIONS = { stale: 10_000 }; // 10 seconds
+const LOCK_OPTIONS_SYNC: LockOptions = { stale: 10_000 };
+const LOCK_OPTIONS: LockOptions = { ...LOCK_OPTIONS_SYNC, retries: { retries: 15, minTimeout: 10, maxTimeout: 500 } };
 
 export class EncryptedFileStore implements DataStore {
     private readonly log: Logger;
@@ -33,7 +34,7 @@ export class EncryptedFileStore implements DataStore {
                 this.log.error(error, 'Failed to decrypt file store, recreating store');
                 this.telemetry.count('filestore.recreate', 1);
 
-                const release = lockSync(this.file, LOCK_OPTIONS);
+                const release = lockSync(this.file, LOCK_OPTIONS_SYNC);
                 try {
                     this.saveSync();
                 } finally {

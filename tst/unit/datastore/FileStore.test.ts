@@ -1,5 +1,7 @@
+import { execFile } from 'child_process';
 import { rmSync, mkdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { promisify } from 'util';
 import { v4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DataStore, StoreName } from '../../../src/datastore/DataStore';
@@ -203,7 +205,6 @@ describe('FileStore', () => {
 
     describe('persistence', () => {
         it('should preserve existing data when put is called on fresh instance', async () => {
-            // Test EncryptedFileStore directly to avoid stats() being called
             const encTestDir = join(testDir, 'enc-test');
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
@@ -249,6 +250,37 @@ describe('FileStore', () => {
             expect(newStore.get<{ nested: string }>('key2')).toEqual({ nested: 'value2' });
             expect(newStore.get<number[]>('key3')).toEqual([1, 2, 3]);
             await newFactory.close();
+        });
+    });
+
+    describe('concurrent operations', () => {
+        it('should handle concurrent puts', async () => {
+            const promises = Array.from({ length: 10 }, (_, i) => fileStore.put(`key${i}`, `value${i}`));
+
+            const results = await Promise.all(promises);
+            expect(results.every((r) => r === true)).toBe(true);
+
+            const keys = fileStore.keys(20);
+            expect(keys).toHaveLength(10);
+        });
+
+        it('should handle concurrent mixed operations', async () => {
+            await fileStore.put('key1', 'value1');
+            await fileStore.put('key2', 'value2');
+
+            const operations = [
+                fileStore.put('key3', 'value3'),
+                fileStore.get('key1'),
+                fileStore.remove('key2'),
+                fileStore.put('key4', 'value4'),
+            ];
+
+            await Promise.all(operations);
+
+            expect(fileStore.get('key1')).toBe('value1');
+            expect(fileStore.get('key2')).toBeUndefined();
+            expect(fileStore.get('key3')).toBe('value3');
+            expect(fileStore.get('key4')).toBe('value4');
         });
     });
 
@@ -304,6 +336,40 @@ describe('FileStore', () => {
             // Verify data persists after reload
             const store2 = new EncryptedFileStore(key, 'test', encTestDir);
             expect(store2.get('newKey')).toBe('newValue');
+        });
+    });
+
+    describe('multiprocess', () => {
+        it('should handle concurrent writes from multiple processes', async () => {
+            const encTestDir = join(testDir, 'multiprocess-test');
+            mkdirSync(encTestDir, { recursive: true });
+
+            const workerPath = join(process.cwd(), 'tst', 'unit', 'datastore', 'FilestoreWorker.ts');
+            const numWorkers = 3;
+            const numWrites = 5;
+            const execFileAsync = promisify(execFile);
+
+            const workers = Array.from({ length: numWorkers }, (_, i) =>
+                execFileAsync(process.execPath, [
+                    '--import',
+                    'tsx',
+                    workerPath,
+                    encTestDir,
+                    String(i),
+                    String(numWrites),
+                ]),
+            );
+
+            await Promise.all(workers);
+
+            const key = encryptionKey(2);
+            const store = new EncryptedFileStore(key, 'test', encTestDir);
+
+            for (let w = 0; w < numWorkers; w++) {
+                for (let k = 0; k < numWrites; k++) {
+                    expect(store.get(`worker${w}_key${k}`)).toBe(`worker${w}_value${k}`);
+                }
+            }
         });
     });
 });
