@@ -32,6 +32,7 @@ import {
     getChangeSetDeletionStatusHandler,
     describeStackHandler,
     describeChangeSetHandler,
+    describeEventsHandler,
 } from '../../../src/handlers/StackHandler';
 import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
 import { mapChangesToStackChanges } from '../../../src/stacks/actions/StackActionOperations';
@@ -51,6 +52,7 @@ import {
     DescribeStackResult,
     DescribeChangeSetParams,
     DescribeChangeSetResult,
+    DescribeEventsResult,
 } from '../../../src/stacks/StackRequestType';
 import {
     createMockComponents,
@@ -82,6 +84,7 @@ vi.mock('../../../src/stacks/actions/StackActionParser', () => ({
     parseListStackResourcesParams: vi.fn((input) => input),
     parseDescribeStackParams: vi.fn((input) => input),
     parseDescribeChangeSetParams: vi.fn((input) => input),
+    parseDescribeEventsParams: vi.fn((input) => input),
 }));
 
 vi.mock('../../../src/utils/ZodErrorWrapper', () => ({
@@ -920,6 +923,60 @@ describe('StackActionHandler', () => {
             };
 
             await expect(handler(params, {} as any)).rejects.toThrow('ChangeSet not found');
+        });
+    });
+
+    describe('describeEventsHandler', () => {
+        it('should return flat events from API', async () => {
+            mockComponents.cfnService.describeEvents.resolves({
+                OperationEvents: [
+                    { EventId: '1', OperationId: 'op1', Timestamp: new Date('2024-01-01') },
+                    { EventId: '2', OperationId: 'op1', Timestamp: new Date('2024-01-02') },
+                    { EventId: '3', OperationId: 'op2', Timestamp: new Date('2024-01-03') },
+                ],
+                $metadata: {},
+            });
+
+            const handler = describeEventsHandler(mockComponents);
+            const result = (await handler({ stackName: 'test-stack' }, CancellationToken.None)) as DescribeEventsResult;
+
+            expect(result.events).toHaveLength(3);
+            expect(result.events[0].EventId).toBe('1');
+        });
+
+        it('should pass all parameters to API', async () => {
+            mockComponents.cfnService.describeEvents.resolves({ OperationEvents: [], $metadata: {} });
+
+            const handler = describeEventsHandler(mockComponents);
+            await handler(
+                {
+                    stackName: 'test-stack',
+                    changeSetName: 'cs',
+                    operationId: 'op',
+                    failedEventsOnly: true,
+                    nextToken: 'token',
+                },
+                CancellationToken.None,
+            );
+
+            expect(
+                mockComponents.cfnService.describeEvents.calledWith({
+                    StackName: 'test-stack',
+                    ChangeSetName: 'cs',
+                    OperationId: 'op',
+                    FailedEventsOnly: true,
+                    NextToken: 'token',
+                }),
+            ).toBe(true);
+        });
+
+        it('should handle service errors', async () => {
+            const serviceError = new Error('Service error');
+            mockComponents.cfnService.describeEvents.rejects(serviceError);
+
+            const handler = describeEventsHandler(mockComponents);
+
+            await expect(handler({ stackName: 'test-stack' }, CancellationToken.None)).rejects.toThrow();
         });
     });
 });

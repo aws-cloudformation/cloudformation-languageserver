@@ -5,6 +5,7 @@ import {
     parseCreateValidationParams,
     parseTemplateUriParams,
     parseDescribeChangeSetParams,
+    parseDescribeEventsParams,
 } from '../../../src/stacks/actions/StackActionParser';
 
 describe('StackActionParser', () => {
@@ -257,6 +258,68 @@ describe('StackActionParser', () => {
 
         it('should throw ZodError for undefined input', () => {
             expect(() => parseDescribeChangeSetParams(undefined)).toThrow(ZodError);
+        });
+    });
+
+    describe('parseDescribeEventsParams', () => {
+        it('should parse valid params with stackName', () => {
+            const result = parseDescribeEventsParams({ stackName: 'test-stack' });
+            expect(result.stackName).toBe('test-stack');
+        });
+
+        it('should parse valid params with changeSetName', () => {
+            const result = parseDescribeEventsParams({ changeSetName: 'test-changeset' });
+            expect(result.changeSetName).toBe('test-changeset');
+        });
+
+        it('should parse valid params with operationId', () => {
+            const result = parseDescribeEventsParams({ operationId: 'op-123' });
+            expect(result.operationId).toBe('op-123');
+        });
+
+        it('should parse all optional parameters', () => {
+            const result = parseDescribeEventsParams({
+                stackName: 'test-stack',
+                changeSetName: 'test-changeset',
+                operationId: 'op-123',
+                failedEventsOnly: true,
+                nextToken: 'token123',
+            });
+
+            expect(result.stackName).toBe('test-stack');
+            expect(result.changeSetName).toBe('test-changeset');
+            expect(result.operationId).toBe('op-123');
+            expect(result.failedEventsOnly).toBe(true);
+            expect(result.nextToken).toBe('token123');
+        });
+
+        it('should throw error when no identifier provided', () => {
+            expect(() => parseDescribeEventsParams({})).toThrow();
+        });
+
+        it('should throw error when only optional params provided', () => {
+            expect(() => parseDescribeEventsParams({ failedEventsOnly: true })).toThrow();
+        });
+
+        it('should throw error for invalid stackName', () => {
+            expect(() => parseDescribeEventsParams({ stackName: '' })).toThrow();
+            expect(() => parseDescribeEventsParams({ stackName: 123 as any })).toThrow();
+        });
+
+        it('should throw error for invalid types', () => {
+            expect(() => parseDescribeEventsParams({ stackName: 'test', failedEventsOnly: 'true' as any })).toThrow();
+        });
+
+        it('should accept undefined optional parameters', () => {
+            const result = parseDescribeEventsParams({
+                stackName: 'test-stack',
+                failedEventsOnly: undefined,
+                nextToken: undefined,
+            });
+
+            expect(result.stackName).toBe('test-stack');
+            expect(result.failedEventsOnly).toBeUndefined();
+            expect(result.nextToken).toBeUndefined();
         });
     });
 });

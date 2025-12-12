@@ -48,6 +48,7 @@ import {
     clearStackEventsHandler,
     describeStackHandler,
     describeChangeSetHandler,
+    describeEventsHandler,
 } from '../handlers/StackHandler';
 import { LspComponents } from '../protocol/LspComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -226,6 +227,12 @@ export class CfnServer {
             withTelemetryContext(
                 'Stack.Describe',
                 withOnlineGuard(this.components.onlineFeatureGuard, describeStackHandler(this.components)),
+            ),
+        );
+        this.lsp.stackHandlers.onDescribeEvents(
+            withTelemetryContext(
+                'Stack.Describe.Events',
+                withOnlineGuard(this.components.onlineFeatureGuard, describeEventsHandler(this.components)),
             ),
         );
 

@@ -7,6 +7,7 @@ import {
     ClearStackEventsParams,
     DescribeStackParams,
     DescribeChangeSetParams,
+    DescribeEventsParams,
 } from '../StackRequestType';
 import {
     CreateDeploymentParams,
@@ -100,6 +101,18 @@ const DescribeStackParamsSchema = z.object({
     stackName: CfnNameZodString,
 });
 
+const DescribeEventsParamsSchema = z
+    .object({
+        stackName: CfnNameZodString.optional(),
+        changeSetName: CfnNameZodString.optional(),
+        operationId: z.string().optional(),
+        failedEventsOnly: z.boolean().optional(),
+        nextToken: z.string().optional(),
+    })
+    .refine((data) => data.stackName ?? data.changeSetName ?? data.operationId, {
+        message: 'At least one of stackName, changeSetName, or operationId must be provided',
+    });
+
 export function parseCreateValidationParams(input: unknown): CreateValidationParams {
     return CreateValidationParamsSchema.parse(input);
 }
@@ -134,4 +147,8 @@ export function parseDescribeStackParams(input: unknown): DescribeStackParams {
 
 export function parseDescribeChangeSetParams(input: unknown): DescribeChangeSetParams {
     return DescribeChangeSetParamsSchema.parse(input);
+}
+
+export function parseDescribeEventsParams(input: unknown): DescribeEventsParams {
+    return DescribeEventsParamsSchema.parse(input);
 }
