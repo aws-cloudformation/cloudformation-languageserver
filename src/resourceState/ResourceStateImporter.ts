@@ -114,7 +114,7 @@ export class ResourceStateImporter {
         if (insertPosition.replaceEntireFile) {
             // Replace entire file with properly formatted JSON
             snippetText = docFormattedText;
-            const endPosition = { line: document.lineCount, character: 0 };
+            const endPosition = { line: document.lineCount ?? 0, character: 0 };
             textEdit = TextEdit.replace(Range.create({ line: 0, character: 0 }, endPosition), snippetText);
         } else {
             // Insert at specific position
@@ -420,7 +420,7 @@ export class ResourceStateImporter {
                         : { line: resourcesSection.endPosition.row + 1, character: 0 };
             } else {
                 // Find the last non-empty line
-                let lastNonEmptyLine = document.lineCount - 1;
+                let lastNonEmptyLine = document.lineCount ? document.lineCount - 1 : 0;
                 while (lastNonEmptyLine >= 0 && document.getLine(lastNonEmptyLine)?.trim().length === 0) {
                     lastNonEmptyLine--;
                 }
@@ -434,12 +434,25 @@ export class ResourceStateImporter {
             };
         }
 
-        let line = resourcesSection ? resourcesSection.endPosition.row : document.lineCount - 1;
+        let line = resourcesSection
+            ? resourcesSection.endPosition.row
+            : document.lineCount
+              ? document.lineCount - 1
+              : 0;
 
         // For JSON without Resources section, check if file is essentially empty
         if (!resourcesSection) {
             try {
-                const parsed = JSON.parse(document.getText()) as Record<string, unknown>;
+                const text = document.getText();
+                if (!text) {
+                    return {
+                        position: { line: 0, character: 0 },
+                        commaPrefixNeeded: false,
+                        newLineSuffixNeeded: false,
+                        replaceEntireFile: true,
+                    };
+                }
+                const parsed = JSON.parse(text) as Record<string, unknown>;
                 const hasContent = Object.keys(parsed).length > 0;
 
                 // If no content, replace entire file
@@ -495,7 +508,7 @@ export class ResourceStateImporter {
         }
         // malformed case, allow import to end of document
         return {
-            position: { line: document.lineCount, character: 0 },
+            position: { line: document.lineCount ?? 0, character: 0 },
             commaPrefixNeeded: false,
             newLineSuffixNeeded: false,
             replaceEntireFile: false,

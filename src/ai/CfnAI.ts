@@ -58,10 +58,11 @@ export class CfnAI implements SettingsConfigurable, Closeable {
                 throw new Error(`Template not found ${toString(templateFile)}`);
             }
 
-            return await agent.execute(
-                await Prompts.describeTemplate(document.contents()),
-                await this.getToolsWithFallback(),
-            );
+            const content = document.contents();
+            if (!content) {
+                throw new Error('Document content is undefined');
+            }
+            return await agent.execute(await Prompts.describeTemplate(content), await this.getToolsWithFallback());
         });
     }
 
@@ -72,10 +73,11 @@ export class CfnAI implements SettingsConfigurable, Closeable {
                 throw new Error(`Template not found ${toString(templateFile)}`);
             }
 
-            return await agent.execute(
-                await Prompts.optimizeTemplate(document.contents()),
-                await this.getToolsWithFallback(),
-            );
+            const content = document.contents();
+            if (!content) {
+                throw new Error('Document content is undefined');
+            }
+            return await agent.execute(await Prompts.optimizeTemplate(content), await this.getToolsWithFallback());
         });
     }
 
@@ -86,8 +88,12 @@ export class CfnAI implements SettingsConfigurable, Closeable {
                 return;
             }
 
+            const content = document.contents();
+            if (!content) {
+                throw new Error('Document content is undefined');
+            }
             return await agent.execute(
-                await Prompts.analyzeDiagnostic(document.contents(), diagnostics),
+                await Prompts.analyzeDiagnostic(content, diagnostics),
                 await this.getToolsWithFallback(),
             );
         });
@@ -107,6 +113,9 @@ export class CfnAI implements SettingsConfigurable, Closeable {
             }
 
             const templateContent = document.contents();
+            if (!templateContent) {
+                throw new Error('Document content is undefined');
+            }
 
             const resourceTypes = this.relationshipSchemaService.extractResourceTypesFromTemplate(templateContent);
             const relationshipContext = this.relationshipSchemaService.getRelationshipContext(resourceTypes);

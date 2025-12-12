@@ -100,7 +100,7 @@ export function getTemplateArtifactsHandler(
                 components.s3Service,
                 document.documentType,
                 document.uri,
-                document.contents(),
+                document.contents() ?? '',
             );
             const artifacts = template.getTemplateArtifacts();
             return { artifacts };
