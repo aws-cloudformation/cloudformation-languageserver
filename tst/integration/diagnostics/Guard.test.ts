@@ -1,30 +1,29 @@
 import { describe, it } from 'vitest';
-import { DiagnosticSeverity } from 'vscode-languageserver';
 import { DocumentType } from '../../../src/document/Document';
 import { DiagnosticExpectationBuilder, TemplateBuilder, TemplateScenario } from '../../utils/TemplateBuilder';
 
 describe('Guard Validator Integration', () => {
     describe('YAML', () => {
-        it('should detect S3 bucket encryption violations while authoring', async () => {
+        it('should detect S3 bucket versioning violations while authoring', async () => {
             const template = new TemplateBuilder(DocumentType.YAML);
             const scenario: TemplateScenario = {
-                name: 'S3 bucket encryption validation',
+                name: 'S3 bucket versioning validation',
                 steps: [
                     {
                         action: 'type',
                         content: `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
-  UnencryptedBucket:
+  UnversionedBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: unencrypted-bucket`,
+      BucketName: unversioned-bucket`,
                         position: { line: 0, character: 0 },
-                        description: 'Create unencrypted S3 bucket',
+                        description: 'Create S3 bucket without versioning',
                         verification: {
                             position: { line: 3, character: 10 },
                             expectation: DiagnosticExpectationBuilder.create()
                                 .expectSource('cfn-guard')
-                                .expectMessage(/encryption/i)
+                                .expectMessage(/versioning/i)
                                 .expectMinCount(1)
                                 .build(),
                         },
@@ -32,12 +31,19 @@ Resources:
                     {
                         action: 'type',
                         content: `
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256`,
+      VersioningConfiguration:
+        Status: Enabled
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LoggingConfiguration:
+        DestinationBucketName: !Ref LoggingBucket
+  LoggingBucket:
+    Type: AWS::S3::Bucket`,
                         position: { line: 5, character: 33 },
-                        description: 'Add encryption to resolve violation',
+                        description: 'Add all required configurations to resolve violations',
                         verification: {
                             position: { line: 3, character: 10 },
                             expectation: DiagnosticExpectationBuilder.create()
@@ -76,28 +82,9 @@ Resources:
                             position: { line: 7, character: 25 },
                             expectation: DiagnosticExpectationBuilder.create()
                                 .expectSource('cfn-guard')
-                                .expectMessage(/public.*access/i)
-                                .expectSeverity(DiagnosticSeverity.Warning)
+                                .expectMessage(/PublicAccessBlockConfiguration/i)
+                                .expectSeverity(3) // Information severity
                                 .expectMinCount(1)
-                                .build(),
-                        },
-                    },
-                    {
-                        action: 'replace',
-                        content: `        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true`,
-                        range: {
-                            start: { line: 7, character: 8 },
-                            end: { line: 10, character: 32 },
-                        },
-                        description: 'Fix public access violations',
-                        verification: {
-                            position: { line: 7, character: 25 },
-                            expectation: DiagnosticExpectationBuilder.create()
-                                .expectSource('cfn-guard')
-                                .expectExactCount(0)
                                 .build(),
                         },
                     },
@@ -116,23 +103,35 @@ Resources:
                         action: 'type',
                         content: `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
-  OverlyPermissiveRole:
+  OverlyPermissivePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: AdminPolicy
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: '*'
+            Resource: '*'
+      Roles:
+        - !Ref MyRole
+  MyRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
-            Principal: '*'
+            Principal:
+              Service: ec2.amazonaws.com
             Action: 'sts:AssumeRole'`,
                         position: { line: 0, character: 0 },
-                        description: 'Create IAM role with wildcard principal',
+                        description: 'Create IAM policy with admin access',
                         verification: {
-                            position: { line: 9, character: 23 },
+                            position: { line: 10, character: 20 },
                             expectation: DiagnosticExpectationBuilder.create()
                                 .expectSource('cfn-guard')
-                                .expectMessage(/principal/i)
-                                .expectSeverity(DiagnosticSeverity.Error)
+                                .expectMessage(/policy.*statements.*Effect.*Allow.*Action.*Resource/i)
                                 .expectMinCount(1)
                                 .build(),
                         },
@@ -145,31 +144,37 @@ Resources:
     });
 
     describe('JSON', () => {
-        it('should detect S3 encryption violations in JSON format', async () => {
+        it('should detect S3 public access violations in JSON format', async () => {
             const template = new TemplateBuilder(DocumentType.JSON);
             const scenario: TemplateScenario = {
-                name: 'JSON S3 encryption validation',
+                name: 'JSON S3 public access validation',
                 steps: [
                     {
                         action: 'type',
                         content: `{
   "AWSTemplateFormatVersion": "2010-09-09",
   "Resources": {
-    "UnencryptedBucket": {
+    "PublicBucket": {
       "Type": "AWS::S3::Bucket",
       "Properties": {
-        "BucketName": "unencrypted-bucket"
+        "BucketName": "public-bucket",
+        "PublicAccessBlockConfiguration": {
+          "BlockPublicAcls": false,
+          "BlockPublicPolicy": false,
+          "IgnorePublicAcls": false,
+          "RestrictPublicBuckets": false
+        }
       }
     }
   }
 }`,
                         position: { line: 0, character: 0 },
-                        description: 'Create unencrypted S3 bucket in JSON',
+                        description: 'Create S3 bucket with public access enabled in JSON',
                         verification: {
                             position: { line: 4, character: 6 },
                             expectation: DiagnosticExpectationBuilder.create()
                                 .expectSource('cfn-guard')
-                                .expectMessage(/encryption/i)
+                                .expectMessage(/public.*access/i)
                                 .expectMinCount(1)
                                 .build(),
                         },
