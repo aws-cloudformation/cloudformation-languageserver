@@ -1,4 +1,3 @@
-import { OperationEvent } from '@aws-sdk/client-cloudformation';
 import { ErrorCodes, RequestHandler, ResponseError } from 'vscode-languageserver';
 import { ArtifactExporter } from '../artifactexporter/ArtifactExporter';
 import { TopLevelSection } from '../context/ContextType';
@@ -464,22 +463,8 @@ export function describeEventsHandler(
                 NextToken: params.nextToken,
             });
 
-            const operations = new Map<string, OperationEvent[]>();
-            for (const event of response.OperationEvents ?? []) {
-                const opId = event.OperationId ?? 'unknown';
-                const existing = operations.get(opId);
-                if (existing) {
-                    existing.push(event);
-                } else {
-                    operations.set(opId, [event]);
-                }
-            }
-
             return {
-                operations: [...operations.entries()].map(([operationId, events]) => ({
-                    operationId,
-                    events: events.sort((a, b) => (b.Timestamp?.getTime() ?? 0) - (a.Timestamp?.getTime() ?? 0)),
-                })),
+                events: response.OperationEvents ?? [],
                 nextToken: response.NextToken,
             };
         } catch (error) {

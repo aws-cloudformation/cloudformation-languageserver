@@ -927,7 +927,7 @@ describe('StackActionHandler', () => {
     });
 
     describe('describeEventsHandler', () => {
-        it('should fetch and group events by operation ID', async () => {
+        it('should return flat events from API', async () => {
             mockComponents.cfnService.describeEvents.resolves({
                 OperationEvents: [
                     { EventId: '1', OperationId: 'op1', Timestamp: new Date('2024-01-01') },
@@ -940,9 +940,8 @@ describe('StackActionHandler', () => {
             const handler = describeEventsHandler(mockComponents);
             const result = (await handler({ stackName: 'test-stack' }, CancellationToken.None)) as DescribeEventsResult;
 
-            expect(result.operations).toHaveLength(2);
-            expect(result.operations[0].operationId).toBe('op1');
-            expect(result.operations[0].events).toHaveLength(2);
+            expect(result.events).toHaveLength(3);
+            expect(result.events[0].EventId).toBe('1');
         });
 
         it('should pass all parameters to API', async () => {

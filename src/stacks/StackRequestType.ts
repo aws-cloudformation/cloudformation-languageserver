@@ -127,13 +127,8 @@ export type DescribeEventsParams = {
     nextToken?: string;
 };
 
-export type StackOperationGroup = {
-    operationId: string;
-    events: OperationEvent[];
-};
-
 export type DescribeEventsResult = {
-    operations: StackOperationGroup[];
+    events: OperationEvent[];
     nextToken?: string;
 };
 
