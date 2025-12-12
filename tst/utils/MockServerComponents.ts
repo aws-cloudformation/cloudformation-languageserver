@@ -138,8 +138,8 @@ export function createMockCfnLintService() {
 
 export function createMockGuardService() {
     const mock = stubInterface<GuardService>();
-    mock.validate.returns(Promise.resolve());
-    mock.validateDelayed.returns(Promise.resolve());
+    mock.validate.resolves();
+    mock.validateDelayed.resolves();
     mock.cancelDelayedValidation.returns();
     mock.cancelAllDelayedValidation.returns();
     mock.getPendingValidationCount.returns(0);
