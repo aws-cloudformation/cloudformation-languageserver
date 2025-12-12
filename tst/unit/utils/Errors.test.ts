@@ -14,7 +14,7 @@ describe('extractLocationFromStack', () => {
         const stack = 'Error: test\n    at Object.<anonymous> (/path/to/file.ts:01234:56789)';
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: test',
-            'error.stack0': 'Object.<anonymous> /path/to/file.ts 1234:56789',
+            'error.stack': 'at Object.<anonymous> (/path/to/file.ts:01234:56789)',
         });
     });
 
@@ -22,7 +22,7 @@ describe('extractLocationFromStack', () => {
         const stack = 'Error: test\n    at /path/to/file.js:01234:56789';
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: test',
-            'error.stack0': 'undefined /path/to/file.js 1234:56789',
+            'error.stack': 'at /path/to/file.js:01234:56789',
         });
     });
 
@@ -30,13 +30,16 @@ describe('extractLocationFromStack', () => {
         const stack = 'Error: test\n    at Object.<anonymous> (C:\\path\\to\\file.ts:01234:56789)';
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: test',
-            'error.stack0': 'Object.<anonymous> C:/path/to/file.ts 1234:56789',
+            'error.stack': `at Object.<anonymous> (C:/path/to/file.ts:01234:56789)`,
         });
     });
 
     test('returns just message when no match found', () => {
         const stack = 'Error: test\n    at something without location';
-        expect(extractLocationFromStack(stack)).toEqual({ 'error.message': 'Error: test' });
+        expect(extractLocationFromStack(stack)).toEqual({
+            'error.message': 'Error: test',
+            'error.stack': 'at something without location',
+        });
     });
 
     test('extract error from exception', () => {
@@ -48,8 +51,9 @@ Error: Request cancelled for key: SendDocuments
 `;
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: Request cancelled for key: SendDocuments',
-            'error.stack0': 'Delayer.cancel webpack://aws/cloudformation-languageserver/[*]/[*]/Delayer.ts?f28b 145:28',
-            'error.stack1': 'eval webpack://aws/cloudformation-languageserver/[*]/[*]/Delayer.ts?f28b 36:18',
+            'error.stack': `at Delayer.cancel (webpack://aws/cloudformation-languageserver/[*]/[*]/Delayer.ts?f28b:145:28)
+at eval (webpack://aws/cloudformation-languageserver/[*]/[*]/Delayer.ts?f28b:36:18)
+at new Promise (<anonymous>)`,
         });
     });
 
@@ -67,12 +71,12 @@ Error: ENOENT: no such file or directory, scandir 'some-dir/cloudformation-langu
         ).toEqual({
             'error.message':
                 "Error: ENOENT: no such file or directory, scandir 'some-dir/cloudformation-languageserver/bundle/development/.aws-cfn-storage/lmdb'",
-            'error.stack0': 'readdirSync node:fs 1584:26',
-            'error.stack1': 'undefined node:electron/js2c/node_init 2:16044',
-            'error.stack2':
-                'LMDBStoreFactory.cleanupOldVersions webpack://aws/cloudformation-languageserver/[*]/datastore/LMDB.ts?d928 98:36',
-            'error.stack3': 'Timeout.eval webpack://aws/cloudformation-languageserver/[*]/datastore/LMDB.ts?d928 58:22',
-            'error.stack4': 'listOnTimeout node:internal/timers 588:17',
+            'error.stack': `at readdirSync (node:fs:1584:26)
+at node:electron/js2c/node_init:2:16044
+at LMDBStoreFactory.cleanupOldVersions (webpack://aws/cloudformation-languageserver/[*]/datastore/LMDB.ts?d928:98:36)
+at Timeout.eval (webpack://aws/cloudformation-languageserver/[*]/datastore/LMDB.ts?d928:58:22)
+at listOnTimeout (node:internal/timers:588:17)
+at process.processTimers (node:internal/timers:523:7)`,
         });
     });
 
@@ -87,11 +91,9 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
         ).toEqual({
             'error.message':
                 'Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket hang up)',
-            'error.stack0':
-                'PeriodicExportingMetricReader._doRun cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/[*]/export/PeriodicExportingMetricReader.js 88:19',
-            'error.stack1': 'process.processTicksAndRejections node:internal/process/task_queues 105:5',
-            'error.stack2':
-                'async PeriodicExportingMetricReader._runOnce cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/[*]/export/PeriodicExportingMetricReader.js 57:13',
+            'error.stack': `at PeriodicExportingMetricReader._doRun (cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/[*]/export/PeriodicExportingMetricReader.js:88:19)
+at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+at async PeriodicExportingMetricReader._runOnce (cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/[*]/export/PeriodicExportingMetricReader.js:57:13)`,
         });
     });
 
@@ -101,7 +103,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
 
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: test',
-            'error.stack0': 'Object.<anonymous> C:/testuser/cloudformation-languageserver//[*]/file.ts 10:5',
+            'error.stack': 'at Object.<anonymous> (C:/testuser/cloudformation-languageserver/[*]/file.ts:10:5)',
         });
     });
 
@@ -111,7 +113,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
 
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: test',
-            'error.stack0': 'func C:/cloudformation-languageserver/[*]/file.ts 10:5',
+            'error.stack': 'at func (C:/cloudformation-languageserver/[*]/file.ts:10:5)',
         });
     });
 
@@ -120,6 +122,7 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
 
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: test',
+            'error.stack': 'at <anonymous>',
         });
     });
 
@@ -128,8 +131,9 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
 
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: test',
-            'error.stack0': 'func1 file.ts 1:1',
-            'error.stack2': 'func2 file.ts 2:2',
+            'error.stack': `at func1 (file.ts:1:1)
+at
+at func2 (file.ts:2:2)`,
         });
     });
 
@@ -140,8 +144,8 @@ Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket
 
         expect(extractLocationFromStack(stack)).toEqual({
             'error.message': 'Error: test',
-            'error.stack0': 'Module._compile node:internal/modules/cjs/loader 1159:14',
-            'error.stack1': 'Object.Module._extensions..js node:internal/modules/cjs/loader 1213:10',
+            'error.stack': `at Module._compile (node:internal/modules/cjs/loader:1159:14)
+at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
         });
     });
 });

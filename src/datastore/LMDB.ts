@@ -6,7 +6,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { isWindows } from '../utils/Environment';
 import { formatNumber, toString } from '../utils/String';
-import { DataStore, DataStoreFactory, StoreName } from './DataStore';
+import { DataStore, DataStoreFactory, PersistedStores, StoreName } from './DataStore';
 import { LMDBStore } from './lmdb/LMDBStore';
 import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
@@ -22,7 +22,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
     private readonly stores = new Map<StoreName, LMDBStore>();
 
-    constructor(rootDir: string, storeNames: StoreName[] = [StoreName.public_schemas, StoreName.sam_schemas]) {
+    constructor(rootDir: string, storeNames: StoreName[] = PersistedStores) {
         this.lmdbDir = join(rootDir, 'lmdb');
 
         const config: RootDatabaseOptionsWithPath = {

@@ -1,4 +1,3 @@
-import StackUtils from 'stack-utils';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 
 let errorStackInfo: string[] | undefined;
@@ -25,13 +24,4 @@ export function determineSensitiveInfo(): string[] {
     }
 
     return errorStackInfo;
-}
-
-export function getErrorStack() {
-    try {
-        return new StackUtils({ cwd: process.cwd() });
-    } catch (err) {
-        LoggerFactory.getLogger('SensitiveInfo').warn(err, 'Cannot get process.cwd()');
-        return new StackUtils();
-    }
 }

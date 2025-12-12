@@ -16,6 +16,8 @@ export enum StoreName {
     private_schemas = 'private_schemas',
 }
 
+export const PersistedStores = [StoreName.public_schemas, StoreName.sam_schemas];
+
 export interface DataStore {
     get<T>(key: string): T | undefined;
 
