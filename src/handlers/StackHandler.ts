@@ -1,3 +1,4 @@
+import { OperationEvent } from '@aws-sdk/client-cloudformation';
 import { ErrorCodes, RequestHandler, ResponseError } from 'vscode-languageserver';
 import { ArtifactExporter } from '../artifactexporter/ArtifactExporter';
 import { TopLevelSection } from '../context/ContextType';
@@ -455,16 +456,32 @@ export function describeEventsHandler(
         try {
             const params = parseWithPrettyError(parseDescribeEventsParams, rawParams);
 
-            if (!params.stackName) {
-                throw new Error('stackName is required for describeEventsHandler');
+            const response = await components.cfnService.describeEvents({
+                StackName: params.stackName,
+                ChangeSetName: params.changeSetName,
+                OperationId: params.operationId,
+                FailedEventsOnly: params.failedEventsOnly,
+                NextToken: params.nextToken,
+            });
+
+            const operations = new Map<string, OperationEvent[]>();
+            for (const event of response.OperationEvents ?? []) {
+                const opId = event.OperationId ?? 'unknown';
+                const existing = operations.get(opId);
+                if (existing) {
+                    existing.push(event);
+                } else {
+                    operations.set(opId, [event]);
+                }
             }
 
-            if (params.refresh) {
-                const result = await components.stackOperationEventManager.refresh(params.stackName);
-                return { operations: result.operations, nextToken: undefined, gapDetected: result.gapDetected };
-            }
-
-            return await components.stackOperationEventManager.fetchEvents(params.stackName, params.nextToken);
+            return {
+                operations: [...operations.entries()].map(([operationId, events]) => ({
+                    operationId,
+                    events: events.sort((a, b) => (b.Timestamp?.getTime() ?? 0) - (a.Timestamp?.getTime() ?? 0)),
+                })),
+                nextToken: response.NextToken,
+            };
         } catch (error) {
             handleLspError(error, 'Failed to describe events');
         }

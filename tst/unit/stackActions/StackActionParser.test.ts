@@ -284,7 +284,6 @@ describe('StackActionParser', () => {
                 operationId: 'op-123',
                 failedEventsOnly: true,
                 nextToken: 'token123',
-                refresh: true,
             });
 
             expect(result.stackName).toBe('test-stack');
@@ -292,7 +291,6 @@ describe('StackActionParser', () => {
             expect(result.operationId).toBe('op-123');
             expect(result.failedEventsOnly).toBe(true);
             expect(result.nextToken).toBe('token123');
-            expect(result.refresh).toBe(true);
         });
 
         it('should throw error when no identifier provided', () => {
@@ -310,7 +308,6 @@ describe('StackActionParser', () => {
 
         it('should throw error for invalid types', () => {
             expect(() => parseDescribeEventsParams({ stackName: 'test', failedEventsOnly: 'true' as any })).toThrow();
-            expect(() => parseDescribeEventsParams({ stackName: 'test', refresh: 'yes' as any })).toThrow();
         });
 
         it('should accept undefined optional parameters', () => {
@@ -318,13 +315,11 @@ describe('StackActionParser', () => {
                 stackName: 'test-stack',
                 failedEventsOnly: undefined,
                 nextToken: undefined,
-                refresh: undefined,
             });
 
             expect(result.stackName).toBe('test-stack');
             expect(result.failedEventsOnly).toBeUndefined();
             expect(result.nextToken).toBeUndefined();
-            expect(result.refresh).toBeUndefined();
         });
     });
 });

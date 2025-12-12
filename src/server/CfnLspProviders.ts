@@ -25,7 +25,6 @@ import { StackActionWorkflow } from '../stacks/actions/StackActionWorkflowType';
 import { ValidationWorkflow } from '../stacks/actions/ValidationWorkflow';
 import { StackEventManager } from '../stacks/StackEventManager';
 import { StackManager } from '../stacks/StackManager';
-import { StackOperationEventManager } from '../stacks/StackOperationEventManager';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
 import { CfnExternal } from './CfnExternal';
@@ -39,7 +38,6 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly changeSetDeletionWorkflowService: StackActionWorkflow<DeleteChangeSetParams, DescribeDeletionStatusResult>;
     readonly stackManager: StackManager;
     readonly stackEventManager: StackEventManager;
-    readonly stackOperationEventManager: StackOperationEventManager;
     readonly resourceStateManager: ResourceStateManager;
     readonly resourceStateImporter: ResourceStateImporter;
     readonly relationshipSchemaService: RelationshipSchemaService;
@@ -62,8 +60,6 @@ export class CfnLspProviders implements Configurables, Closeable {
             overrides.stackManagementInfoProvider ?? new StackManagementInfoProvider(external.cfnService);
         this.stackManager = overrides.stackManager ?? new StackManager(external.cfnService);
         this.stackEventManager = overrides.stackEventManager ?? new StackEventManager(external.cfnService);
-        this.stackOperationEventManager =
-            overrides.stackOperationEventManager ?? new StackOperationEventManager(external.cfnService);
         this.validationWorkflowService =
             overrides.validationWorkflowService ?? ValidationWorkflow.create(core, external, core.validationManager);
         this.deploymentWorkflowService =

@@ -125,7 +125,6 @@ export type DescribeEventsParams = {
     operationId?: string;
     failedEventsOnly?: boolean;
     nextToken?: string;
-    refresh?: boolean;
 };
 
 export type StackOperationGroup = {
@@ -136,7 +135,6 @@ export type StackOperationGroup = {
 export type DescribeEventsResult = {
     operations: StackOperationGroup[];
     nextToken?: string;
-    gapDetected?: boolean;
 };
 
 export const DescribeEventsRequest = new RequestType<DescribeEventsParams, DescribeEventsResult, void>(

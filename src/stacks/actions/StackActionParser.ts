@@ -108,7 +108,6 @@ const DescribeEventsParamsSchema = z
         operationId: z.string().optional(),
         failedEventsOnly: z.boolean().optional(),
         nextToken: z.string().optional(),
-        refresh: z.boolean().optional(),
     })
     .refine((data) => data.stackName ?? data.changeSetName ?? data.operationId, {
         message: 'At least one of stackName, changeSetName, or operationId must be provided',

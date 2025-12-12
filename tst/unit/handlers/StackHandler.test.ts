@@ -52,7 +52,6 @@ import {
     DescribeStackResult,
     DescribeChangeSetParams,
     DescribeChangeSetResult,
-    DescribeEventsParams,
     DescribeEventsResult,
 } from '../../../src/stacks/StackRequestType';
 import {
@@ -928,83 +927,53 @@ describe('StackActionHandler', () => {
     });
 
     describe('describeEventsHandler', () => {
-        it('should fetch events for stack', async () => {
-            mockComponents.stackOperationEventManager.fetchEvents.resolves({
-                operations: [{ operationId: 'op1', events: [] }],
-                nextToken: undefined,
+        it('should fetch and group events by operation ID', async () => {
+            mockComponents.cfnService.describeEvents.resolves({
+                OperationEvents: [
+                    { EventId: '1', OperationId: 'op1', Timestamp: new Date('2024-01-01') },
+                    { EventId: '2', OperationId: 'op1', Timestamp: new Date('2024-01-02') },
+                    { EventId: '3', OperationId: 'op2', Timestamp: new Date('2024-01-03') },
+                ],
+                $metadata: {},
             });
 
             const handler = describeEventsHandler(mockComponents);
             const result = (await handler({ stackName: 'test-stack' }, CancellationToken.None)) as DescribeEventsResult;
 
-            expect(result.operations).toHaveLength(1);
-            expect(result.nextToken).toBeUndefined();
-            expect(mockComponents.stackOperationEventManager.fetchEvents.calledWith('test-stack', undefined)).toBe(
-                true,
+            expect(result.operations).toHaveLength(2);
+            expect(result.operations[0].operationId).toBe('op1');
+            expect(result.operations[0].events).toHaveLength(2);
+        });
+
+        it('should pass all parameters to API', async () => {
+            mockComponents.cfnService.describeEvents.resolves({ OperationEvents: [], $metadata: {} });
+
+            const handler = describeEventsHandler(mockComponents);
+            await handler(
+                {
+                    stackName: 'test-stack',
+                    changeSetName: 'cs',
+                    operationId: 'op',
+                    failedEventsOnly: true,
+                    nextToken: 'token',
+                },
+                CancellationToken.None,
             );
-        });
 
-        it('should refresh events when refresh flag is true', async () => {
-            mockComponents.stackOperationEventManager.refresh.resolves({
-                operations: [{ operationId: 'op1', events: [] }],
-                gapDetected: false,
-            });
-
-            const handler = describeEventsHandler(mockComponents);
-            const result = (await handler(
-                { stackName: 'test-stack', refresh: true },
-                CancellationToken.None,
-            )) as DescribeEventsResult;
-
-            expect(result.operations).toHaveLength(1);
-            expect(result.gapDetected).toBe(false);
-            expect(mockComponents.stackOperationEventManager.refresh.calledWith('test-stack')).toBe(true);
-        });
-
-        it('should pass nextToken for pagination', async () => {
-            mockComponents.stackOperationEventManager.fetchEvents.resolves({
-                operations: [],
-                nextToken: 'token123',
-            });
-
-            const handler = describeEventsHandler(mockComponents);
-            const result = (await handler(
-                { stackName: 'test-stack', nextToken: 'token123' },
-                CancellationToken.None,
-            )) as DescribeEventsResult;
-
-            expect(result.nextToken).toBe('token123');
-            expect(mockComponents.stackOperationEventManager.fetchEvents.calledWith('test-stack', 'token123')).toBe(
-                true,
-            );
-        });
-
-        it('should return gapDetected from refresh', async () => {
-            mockComponents.stackOperationEventManager.refresh.resolves({
-                operations: [],
-                gapDetected: true,
-            });
-
-            const handler = describeEventsHandler(mockComponents);
-            const result = (await handler(
-                { stackName: 'test-stack', refresh: true },
-                CancellationToken.None,
-            )) as DescribeEventsResult;
-
-            expect(result.gapDetected).toBe(true);
-        });
-
-        it('should throw error when stackName is missing with refresh', async () => {
-            const handler = describeEventsHandler(mockComponents);
-
-            await expect(
-                handler({ operationId: 'op-123', refresh: true } as DescribeEventsParams, CancellationToken.None),
-            ).rejects.toThrow();
+            expect(
+                mockComponents.cfnService.describeEvents.calledWith({
+                    StackName: 'test-stack',
+                    ChangeSetName: 'cs',
+                    OperationId: 'op',
+                    FailedEventsOnly: true,
+                    NextToken: 'token',
+                }),
+            ).toBe(true);
         });
 
         it('should handle service errors', async () => {
             const serviceError = new Error('Service error');
-            mockComponents.stackOperationEventManager.fetchEvents.rejects(serviceError);
+            mockComponents.cfnService.describeEvents.rejects(serviceError);
 
             const handler = describeEventsHandler(mockComponents);
 
