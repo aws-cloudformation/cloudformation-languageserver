@@ -1,4 +1,4 @@
-import { CompletionParams, Location, DefinitionParams, Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
+import { CompletionParams, Location, DefinitionParams, Diagnostic } from 'vscode-languageserver';
 import { TextDocuments } from 'vscode-languageserver/node';
 import {
     TextDocumentContentChangeEvent,
@@ -128,6 +128,8 @@ export class TemplateBuilder {
     private readonly uri: string;
     private version: number = 0;
 
+    private diagnostics: Diagnostic[] = [];
+
     constructor(format: DocumentType, startingContent: string = '') {
         this.uri = `file:///test-template.${format}`;
         this.textDocuments = new TextDocuments(TextDocument);
@@ -150,6 +152,33 @@ export class TemplateBuilder {
 
         external.featureFlags.get.returns({ isEnabled: () => false, describe: () => 'mock' });
 
+        // Configure Guard settings with enabled rule packs for testing
+        const guardSettings = {
+            enabled: true,
+            delayMs: 0, // No delay for tests
+            validateOnChange: true,
+            enabledRulePacks: ['cis-aws-benchmark-level-1'], // Use a real rule pack
+            timeout: 30000,
+            maxConcurrentValidations: 3,
+            maxQueueSize: 10,
+            memoryCleanupInterval: 60000,
+            maxMemoryUsage: 100 * 1024 * 1024,
+            defaultSeverity: 'information' as const,
+        };
+
+        // Mock settings manager to return our Guard configuration
+        core.settingsManager.getCurrentSettings.returns({
+            profile: { region: 'us-east-1', profile: 'default' },
+            hover: { enabled: true },
+            completion: { enabled: true, maxCompletions: 100 },
+            diagnostics: {
+                cfnLint: { enabled: false } as any, // Disable cfnLint for Guard-only tests
+                cfnGuard: guardSettings,
+            },
+            editor: { tabSize: 2, insertSpaces: true, detectIndentation: true },
+            awsClient: {} as any,
+        });
+
         const completionProviders = createCompletionProviders(core, external, providers);
 
         this.completionRouter = new CompletionRouter(
@@ -163,8 +192,18 @@ export class TemplateBuilder {
         const mockFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever, mockFeatureFlag);
 
-        // Create mock GuardService (like completion and hover)
-        this.guardService = mockTestComponents.external.guardService;
+        // Create real GuardService for integration testing
+        this.guardService = GuardService.create(mockTestComponents);
+
+        // Mock the diagnostic coordinator to capture diagnostics
+        mockTestComponents.core.diagnosticCoordinator.publishDiagnostics.callsFake(
+            (source: string, uri: string, diagnostics: Diagnostic[]) => {
+                if (source === 'cfn-guard' && uri === this.uri) {
+                    this.diagnostics = diagnostics;
+                }
+                return Promise.resolve();
+            },
+        );
 
         this.initialize(startingContent);
     }
@@ -294,7 +333,7 @@ export class TemplateBuilder {
                 step.verification.description,
             );
         } else if (step.verification?.expectation instanceof DiagnosticExpectation) {
-            this.verifyDiagnosticsAt(
+            await this.verifyDiagnosticsAt(
                 step.verification.position,
                 step.verification.expectation,
                 step.verification.description,
@@ -617,8 +656,14 @@ export class TemplateBuilder {
         }
     }
 
-    verifyDiagnosticsAt(position: Position, expected: DiagnosticExpectation, description?: string) {
-        const diagnostics = this.getDiagnosticsAt(position);
+    async verifyDiagnosticsAt(position: Position, expected: DiagnosticExpectation, description?: string) {
+        // Trigger Guard validation to get real diagnostics
+        const document = this.textDocuments.get(this.uri);
+        if (document) {
+            await this.guardService.validate(document.getText(), this.uri);
+        }
+
+        const diagnostics = this.diagnostics;
         const desc = description ? ` (${description})` : '';
 
         if (expected.noDiagnostics) {
@@ -670,60 +715,17 @@ export class TemplateBuilder {
         }
     }
 
-    getDiagnosticsAt(_position: Position) {
+    async getDiagnosticsAt(_position: Position) {
         const document = this.textDocuments.get(this.uri);
         if (!document) {
             return [];
         }
 
-        // Create mock diagnostics based on template content
-        const content = document.getText();
-        const diagnostics: Diagnostic[] = [];
+        // Trigger Guard validation to populate diagnostics
+        await this.guardService.validate(document.getText(), this.uri);
 
-        // Check for S3 bucket without encryption (only if the test is about encryption)
-        if (
-            content.includes('Type: AWS::S3::Bucket') &&
-            !content.includes('BucketEncryption') &&
-            content.includes('unencrypted')
-        ) {
-            diagnostics.push({
-                range: { start: { line: 3, character: 10 }, end: { line: 3, character: 25 } },
-                message: 'S3 bucket should have server-side encryption enabled',
-                severity: DiagnosticSeverity.Warning,
-                source: 'cfn-guard',
-            });
-        }
-
-        // Check for S3 bucket with public access enabled
-        if (content.includes('PublicAccessBlockConfiguration')) {
-            // Check if any of the public access properties are set to false
-            const hasPublicAccess =
-                content.includes('BlockPublicAcls: false') ||
-                content.includes('BlockPublicPolicy: false') ||
-                content.includes('IgnorePublicAcls: false') ||
-                content.includes('RestrictPublicBuckets: false');
-
-            if (hasPublicAccess) {
-                diagnostics.push({
-                    range: { start: { line: 7, character: 25 }, end: { line: 7, character: 30 } },
-                    message: 'S3 bucket public access should be blocked',
-                    severity: DiagnosticSeverity.Warning,
-                    source: 'cfn-guard',
-                });
-            }
-        }
-
-        // Check for IAM role with wildcard principal
-        if (content.includes("Principal: '*'") || content.includes('Principal: "*"')) {
-            diagnostics.push({
-                range: { start: { line: 9, character: 23 }, end: { line: 9, character: 26 } },
-                message: 'IAM role should not have wildcard principal',
-                severity: DiagnosticSeverity.Error,
-                source: 'cfn-guard',
-            });
-        }
-
-        return diagnostics;
+        // Return the actual diagnostics captured from Guard validation
+        return this.diagnostics;
     }
 
     getCurrentContent() {
