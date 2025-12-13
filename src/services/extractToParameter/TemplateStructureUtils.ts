@@ -6,9 +6,6 @@ import { YamlSyntaxTree } from '../../context/syntaxtree/YamlSyntaxTree';
 import { DocumentType } from '../../document/Document';
 import { parseJson } from '../../document/JsonParser';
 import { parseYaml } from '../../document/YamlParser';
-// import { LoggerFactory } from '../../telemetry/LoggerFactory';
-
-// const log = LoggerFactory.getLogger('TemplateStructureUtils');
 
 /**
  * Result of searching for Parameters section in a CloudFormation template.

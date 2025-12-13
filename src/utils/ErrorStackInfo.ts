@@ -23,5 +23,6 @@ export function determineSensitiveInfo(): string[] {
         errorStackInfo = [];
     }
 
+    errorStackInfo = [__dirname.trim(), ...errorStackInfo];
     return errorStackInfo;
 }

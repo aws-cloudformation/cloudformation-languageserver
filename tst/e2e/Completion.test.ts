@@ -1674,7 +1674,7 @@ Resources:
                 await client.closeDocument({ textDocument: { uri } });
             });
 
-            it.todo('should show optional properties after required ones fulfilled', async () => {
+            it('should show optional properties after required ones fulfilled', async () => {
                 const template = getSimpleYamlTemplateText();
                 const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Description: Lambda function ListBucketsCommand.
@@ -1696,7 +1696,7 @@ Resources:
             return response.Buckets;
           };
       `;
-                const uri = await client.openJsonTemplate(template);
+                const uri = await client.openYamlTemplate(template);
 
                 await client.changeDocument({
                     textDocument: { uri, version: 2 },
@@ -1712,9 +1712,30 @@ Resources:
                 expect(completions?.items).toBeDefined();
 
                 const labels = completions.items.map((item: any) => item.label);
-                expect(labels).toContain('Architecture');
-
-                // works in functional testing and json, failing in YAML
+                expect(labels).toEqual([
+                    'Description',
+                    'TracingConfig',
+                    'VpcConfig',
+                    'RuntimeManagementConfig',
+                    'ReservedConcurrentExecutions',
+                    'SnapStart',
+                    'FileSystemConfigs',
+                    'FunctionName',
+                    'KmsKeyArn',
+                    'PackageType',
+                    'CodeSigningConfigArn',
+                    'Layers',
+                    'Tags',
+                    'ImageConfig',
+                    'MemorySize',
+                    'DeadLetterConfig',
+                    'Timeout',
+                    'LoggingConfig',
+                    'RecursiveLoop',
+                    'Environment',
+                    'EphemeralStorage',
+                    'Architectures',
+                ]);
 
                 await client.closeDocument({ textDocument: { uri } });
             });
@@ -3519,7 +3540,7 @@ Resources:
         });
 
         describe('Cross-Reference Completions', () => {
-            it.todo('should provide condition reference completions in resources', async () => {
+            it('should provide condition reference completions in resources', async () => {
                 const template = getSimpleJsonTemplateText();
                 const updatedTemplate = `{
 "AWSTemplateFormatVersion": "2010-09-09",
@@ -3557,10 +3578,6 @@ Resources:
 
                 const labels = completions.items.map((item: any) => item.label);
                 expect(labels).toContain('CreateProdResources');
-
-                // todo: condition are not provided as completions
-                // although template validation throws error
-                // '' is not one of ['CreateProdResources']
 
                 await client.closeDocument({ textDocument: { uri } });
             });
@@ -3787,8 +3804,29 @@ Resources:
                 expect(completions?.items).toBeDefined();
 
                 const labels = completions.items.map((item: any) => item.label);
-                expect(labels).toContain('Description');
-                expect(labels).toContain('Architectures');
+                expect(labels).toEqual([
+                    'Description',
+                    'TracingConfig',
+                    'VpcConfig',
+                    'RuntimeManagementConfig',
+                    'ReservedConcurrentExecutions',
+                    'SnapStart',
+                    'FileSystemConfigs',
+                    'KmsKeyArn',
+                    'PackageType',
+                    'CodeSigningConfigArn',
+                    'Layers',
+                    'Tags',
+                    'ImageConfig',
+                    'MemorySize',
+                    'DeadLetterConfig',
+                    'Timeout',
+                    'LoggingConfig',
+                    'RecursiveLoop',
+                    'Environment',
+                    'EphemeralStorage',
+                    'Architectures',
+                ]);
 
                 await client.closeDocument({ textDocument: { uri } });
             });
