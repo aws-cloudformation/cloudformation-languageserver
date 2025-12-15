@@ -98,6 +98,9 @@ function findYamlIntrinsicReferences(text: string, logicalIds: Set<string>): voi
     if (text.includes('Condition')) {
         extractMatches(text, YamlCondition, logicalIds);
     }
+    if (text.includes('!ValueOf')) {
+        extractMatches(text, YamlValueOfShort, logicalIds);
+    }
     if (text.includes('Fn::ValueOf')) {
         extractMatches(text, YamlValueOf, logicalIds);
     }
@@ -215,6 +218,7 @@ const YamlSingleDep = /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*['"]?([A-Za-z][A-Z
 const YamlInlineDeps = /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*\[([^\]]+)]/g; // Matches DependsOn: [Id1, Id2] with optional quotes
 const YamlListItem = /-\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches - LogicalId in YAML list format
 const YamlInlineItemPattern = /([A-Za-z][A-Za-z0-9]*)/g; // Matches LogicalId within the inline array
+const YamlValueOfShort = /!ValueOf\s+\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches !ValueOf [ParamName, Attr] - YAML short form
 const YamlValueOf = /['"]?Fn::ValueOf['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::ValueOf: [ParamName, Attr] with optional quotes
 
 // Shared pattern for ${} variables - used by both JSON and YAML

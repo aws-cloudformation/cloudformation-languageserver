@@ -293,6 +293,11 @@ describe('Intrinsic Function Coverage', () => {
                 expect(result).toEqual(new Set(['MyParam']));
             });
 
+            it('!ValueOf short form', () => {
+                const result = referencedLogicalIds('!ValueOf [MyParam, Attr]', '', DocumentType.YAML);
+                expect(result).toEqual(new Set(['MyParam']));
+            });
+
             it('Fn::RefAll with nested !If', () => {
                 // Fn::RefAll takes a parameter type, but can be nested in conditions
                 const result = referencedLogicalIds(
