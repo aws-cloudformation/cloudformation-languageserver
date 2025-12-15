@@ -2,6 +2,7 @@ import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../../document/Document';
 import { PseudoParametersSet, ResourceAttributes } from '../ContextType';
 
+/* eslint-disable no-restricted-syntax, security/detect-unsafe-regex */
 export function selectText(specificNode: SyntaxNode, fullEntitySearch: boolean, rootNode?: SyntaxNode): string {
     let text: string | undefined;
     if (fullEntitySearch) {
@@ -81,23 +82,23 @@ function findYamlIntrinsicReferences(text: string, logicalIds: Set<string>): voi
     if (text.includes('!Condition')) {
         extractMatches(text, YamlConditionShort, logicalIds);
     }
-    if (text.includes('Ref:')) {
+    if (text.includes('Ref')) {
         extractMatches(text, YamlRefColon, logicalIds);
     }
-    if (text.includes('Fn::GetAtt:')) {
+    if (text.includes('Fn::GetAtt')) {
         extractMatches(text, YamlGetAttColon, logicalIds);
         extractMatches(text, YamlGetAttColonString, logicalIds);
     }
-    if (text.includes('Fn::FindInMap:')) {
+    if (text.includes('Fn::FindInMap')) {
         extractMatches(text, YamlFindInMapColon, logicalIds);
     }
-    if (text.includes('Fn::If:')) {
+    if (text.includes('Fn::If')) {
         extractMatches(text, YamlIfColon, logicalIds);
     }
-    if (text.includes('Condition:')) {
+    if (text.includes('Condition')) {
         extractMatches(text, YamlCondition, logicalIds);
     }
-    if (text.includes('Fn::ValueOf:')) {
+    if (text.includes('Fn::ValueOf')) {
         extractMatches(text, YamlValueOf, logicalIds);
     }
     // Extract all ${} variables in one pass - covers !Sub, Fn::Sub:, and standalone
@@ -108,7 +109,7 @@ function findYamlIntrinsicReferences(text: string, logicalIds: Set<string>): voi
     if (text.includes('- ')) {
         extractMatches(text, YamlListItem, logicalIds);
     }
-    if (text.includes('DependsOn:')) {
+    if (text.includes('DependsOn')) {
         extractYamlDependsOnReferences(text, logicalIds);
     }
 }
@@ -186,7 +187,7 @@ const CommonProperties = new Set(
     ].flatMap((word) => [word, word.toUpperCase(), word.toLowerCase()]),
 );
 
-// Pre-compiled for performance - exported for testing/analysis
+// Pre-compiled for performance
 const JsonRef = /"Ref"\s*:\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches {"Ref": "LogicalId"} - references to parameters, resources, etc.
 const JsonGetAtt = /"Fn::GetAtt"\s*:\s*\[\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches {"Fn::GetAtt": ["LogicalId", "Attribute"]} - gets attributes from resources
 const JsonGetAttString = /"Fn::GetAtt"\s*:\s*"([A-Za-z][A-Za-z0-9]*)\./g; // Matches {"Fn::GetAtt": "LogicalId.Attribute"} - string syntax
@@ -199,22 +200,22 @@ const JsonArrayItem = /"([A-Za-z][A-Za-z0-9]*)"/g; // Matches "LogicalId" within
 const JsonValueOf = /"Fn::ValueOf"\s*:\s*\[\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches {"Fn::ValueOf": ["ParamName", "Attr"]} - gets parameter attribute
 
 const YamlRef = /!Ref\s+([A-Za-z][A-Za-z0-9]*)/g; // Matches !Ref LogicalId - YAML short form reference
-const YamlGetAtt = /!GetAtt\s+([A-Za-z][A-Za-z0-9]*)/g; // Matches !GetAtt LogicalId.Attribute - YAML short form get attribute
-const YamlGetAttArray = /!GetAtt\s+\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches !GetAtt [LogicalId, Attribute] - YAML short form get attribute with array syntax
+const YamlGetAtt = /!GetAtt\s+['"]?([A-Za-z][A-Za-z0-9]*)/g; // Matches !GetAtt LogicalId.Attribute - YAML short form get attribute with optional quotes
+const YamlGetAttArray = /!GetAtt\s+\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches !GetAtt [LogicalId, Attribute] - YAML short form get attribute with array syntax
 const YamlFindInMap = /!FindInMap\s+\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches !FindInMap [MappingName, Key1, Key2] - YAML short form mapping lookup
 const YamlIf = /!If\s+\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches !If [ConditionName, TrueValue, FalseValue] - YAML short form conditional
 const YamlConditionShort = /!Condition\s+([A-Za-z][A-Za-z0-9]*)/g; // Matches !Condition ConditionName - YAML short form condition reference
-const YamlRefColon = /Ref:\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Ref: LogicalId - YAML long form reference
-const YamlGetAttColon = /Fn::GetAtt:\s*\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Fn::GetAtt: [LogicalId, Attribute] - YAML long form get attribute
-const YamlGetAttColonString = /Fn::GetAtt:\s*([A-Za-z][A-Za-z0-9]*)\./g; // Matches Fn::GetAtt: LogicalId.Attribute - YAML long form string syntax
-const YamlFindInMapColon = /Fn::FindInMap:\s*\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Fn::FindInMap: [MappingName, Key1, Key2] - YAML long form mapping lookup
-const YamlIfColon = /Fn::If:\s*\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Fn::If: [ConditionName, TrueValue, FalseValue] - YAML long form conditional
-const YamlCondition = /Condition:\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Condition: ConditionName - resource condition property in YAML
-const YamlSingleDep = /DependsOn:\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches DependsOn: LogicalId - single resource dependency in YAML
-const YamlInlineDeps = /DependsOn:\s*\[([^\]]+)]/g; // Matches DependsOn: [Id1, Id2] - inline array format in YAML
+const YamlRefColon = /(?<![A-Za-z])['"]?Ref['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Ref:, 'Ref':, "Ref": LogicalId with optional quoted values
+const YamlGetAttColon = /['"]?Fn::GetAtt['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::GetAtt:, 'Fn::GetAtt':, "Fn::GetAtt": [LogicalId, Attribute]
+const YamlGetAttColonString = /['"]?Fn::GetAtt['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)\./g; // Matches Fn::GetAtt: LogicalId.Attribute with optional quotes
+const YamlFindInMapColon = /['"]?Fn::FindInMap['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::FindInMap: [MappingName, ...] with optional quotes
+const YamlIfColon = /['"]?Fn::If['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::If: [ConditionName, ...] with optional quotes
+const YamlCondition = /(?<![A-Za-z])['"]?Condition['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Condition:, 'Condition':, "Condition": ConditionName with optional quoted values
+const YamlSingleDep = /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches DependsOn: LogicalId with optional quotes
+const YamlInlineDeps = /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*\[([^\]]+)]/g; // Matches DependsOn: [Id1, Id2] with optional quotes
 const YamlListItem = /-\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches - LogicalId in YAML list format
 const YamlInlineItemPattern = /([A-Za-z][A-Za-z0-9]*)/g; // Matches LogicalId within the inline array
-const YamlValueOf = /Fn::ValueOf:\s*\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Fn::ValueOf: [ParamName, Attr] - gets parameter attribute
+const YamlValueOf = /['"]?Fn::ValueOf['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::ValueOf: [ParamName, Attr] with optional quotes
 
 // Shared pattern for ${} variables - used by both JSON and YAML
 const SubVariables = /\$\{([A-Za-z][A-Za-z0-9]*)(?:[.:]|(?=\}))/g; // Matches ${LogicalId} or ${Resource.Attr} or ${AWS::Region} - captures first segment only
@@ -222,8 +223,8 @@ const SubVariables = /\$\{([A-Za-z][A-Za-z0-9]*)(?:[.:]|(?=\}))/g; // Matches ${
 const ValidLogicalId = /^[A-Za-z][A-Za-z0-9.]+$/;
 
 // Validated these regex, they will fail fast with ?= lookahead
-// eslint-disable-next-line security/detect-unsafe-regex
-const YamlListDep = /DependsOn:\s*\n(\s*-\s*[A-Za-z][A-Za-z0-9]*(?:\s+-\s*[A-Za-z][A-Za-z0-9]*)*)/g; // Matches DependsOn: followed by YAML list items
+const YamlListDep =
+    /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*\n(\s*-\s*[A-Za-z][A-Za-z0-9]*(?:\s+-\s*[A-Za-z][A-Za-z0-9]*)*)/g; // Matches DependsOn: followed by YAML list items
 
 export function isLogicalIdCandidate(str: unknown): boolean {
     if (!str || typeof str !== 'string' || str.length < 2) return false;

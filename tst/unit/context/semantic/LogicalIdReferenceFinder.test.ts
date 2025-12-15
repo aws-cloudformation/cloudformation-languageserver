@@ -98,23 +98,11 @@ describe('LogicalIdReferenceFinder', () => {
                     const result = referencedLogicalIds(text, '', DocumentType.JSON);
                     expect(result).toEqual(new Set(['Resource1', 'Resource2']));
                 });
-
-                it('should handle Ref with whitespace', () => {
-                    const text = '{ "Ref" : "MyResource" }';
-                    const result = referencedLogicalIds(text, '', DocumentType.JSON);
-                    expect(result).toEqual(new Set(['MyResource']));
-                });
             });
 
             describe('Fn::GetAtt pattern', () => {
                 it('should find GetAtt reference', () => {
                     const text = '{"Fn::GetAtt": ["MyResource", "Arn"]}';
-                    const result = referencedLogicalIds(text, '', DocumentType.JSON);
-                    expect(result).toEqual(new Set(['MyResource']));
-                });
-
-                it('should handle GetAtt with whitespace', () => {
-                    const text = '{ "Fn::GetAtt" : [ "MyResource" , "Arn" ] }';
                     const result = referencedLogicalIds(text, '', DocumentType.JSON);
                     expect(result).toEqual(new Set(['MyResource']));
                 });
@@ -375,6 +363,38 @@ describe('LogicalIdReferenceFinder', () => {
             const text = '{"Fn::Sub": "arn:aws:s3:::${BucketName}/logs/${AWS::AccountId}/${LogPrefix}"}';
             const result = referencedLogicalIds(text, '', DocumentType.JSON);
             expect(result).toEqual(new Set(['BucketName', 'LogPrefix']));
+        });
+    });
+
+    describe('False positive prevention', () => {
+        it('should not match SomeRef as Ref', () => {
+            const text = 'SomeRef: MyValue';
+            const result = referencedLogicalIds(text, '', DocumentType.YAML);
+            expect(result).toEqual(new Set());
+        });
+
+        it('should not match MyCondition as Condition', () => {
+            const text = 'MyCondition: SomeValue';
+            const result = referencedLogicalIds(text, '', DocumentType.YAML);
+            expect(result).toEqual(new Set());
+        });
+
+        it('should not match PreDependsOn as DependsOn', () => {
+            const text = 'PreDependsOn: MyResource';
+            const result = referencedLogicalIds(text, '', DocumentType.YAML);
+            expect(result).toEqual(new Set());
+        });
+
+        it('should match standalone Ref', () => {
+            const text = 'Ref: MyResource';
+            const result = referencedLogicalIds(text, '', DocumentType.YAML);
+            expect(result).toEqual(new Set(['MyResource']));
+        });
+
+        it('should match Condition at start of line', () => {
+            const text = '  Condition: MyCondition';
+            const result = referencedLogicalIds(text, '', DocumentType.YAML);
+            expect(result).toEqual(new Set(['MyCondition']));
         });
     });
 

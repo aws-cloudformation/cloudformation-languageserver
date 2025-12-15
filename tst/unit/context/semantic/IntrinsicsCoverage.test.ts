@@ -38,6 +38,16 @@ describe('Intrinsic Function Coverage', () => {
                 const result = referencedLogicalIds('Fn::GetAtt: MyResource.Arn', '', DocumentType.YAML);
                 expect(result).toEqual(new Set(['MyResource']));
             });
+
+            it('!GetAtt quoted dot notation', () => {
+                const result = referencedLogicalIds('!GetAtt "MyResource.Arn"', '', DocumentType.YAML);
+                expect(result).toEqual(new Set(['MyResource']));
+            });
+
+            it('!GetAtt quoted array notation', () => {
+                const result = referencedLogicalIds('!GetAtt ["MyResource", "Arn"]', '', DocumentType.YAML);
+                expect(result).toEqual(new Set(['MyResource']));
+            });
         });
 
         // Fn::Sub - substitutes variables in strings
@@ -89,6 +99,11 @@ describe('Intrinsic Function Coverage', () => {
 
             it('Fn::If:', () => {
                 const result = referencedLogicalIds('Fn::If: [MyCondition, yes, no]', '', DocumentType.YAML);
+                expect(result).toEqual(new Set(['MyCondition']));
+            });
+
+            it('Fn::If with space before colon', () => {
+                const result = referencedLogicalIds('Fn::If : [MyCondition, yes, no]', '', DocumentType.YAML);
                 expect(result).toEqual(new Set(['MyCondition']));
             });
         });
@@ -776,6 +791,74 @@ describe('Intrinsic Function Coverage', () => {
                 expect(result).toEqual(
                     new Set(['IsProduction', 'HasBackup', 'ProdBackupBucket', 'ProdBucket', 'DevBucket']),
                 );
+            });
+        });
+    });
+
+    describe('Quoted YAML keys', () => {
+        it('single-quoted Ref', () => {
+            const result = referencedLogicalIds("'Ref': MyResource", '', DocumentType.YAML);
+            expect(result).toEqual(new Set(['MyResource']));
+        });
+
+        it('double-quoted Ref', () => {
+            const result = referencedLogicalIds('"Ref": MyResource', '', DocumentType.YAML);
+            expect(result).toEqual(new Set(['MyResource']));
+        });
+
+        it('single-quoted Condition', () => {
+            const result = referencedLogicalIds("'Condition': MyCondition", '', DocumentType.YAML);
+            expect(result).toEqual(new Set(['MyCondition']));
+        });
+
+        it('double-quoted Fn::If', () => {
+            const result = referencedLogicalIds('"Fn::If": [MyCondition, yes, no]', '', DocumentType.YAML);
+            expect(result).toEqual(new Set(['MyCondition']));
+        });
+
+        it('single-quoted Fn::GetAtt', () => {
+            const result = referencedLogicalIds("'Fn::GetAtt': [MyResource, Arn]", '', DocumentType.YAML);
+            expect(result).toEqual(new Set(['MyResource']));
+        });
+
+        it('double-quoted DependsOn', () => {
+            const result = referencedLogicalIds('"DependsOn": MyResource', '', DocumentType.YAML);
+            expect(result).toEqual(new Set(['MyResource']));
+        });
+    });
+
+    describe('Whitespace handling', () => {
+        describe('YAML', () => {
+            it('space before colon', () => {
+                const result = referencedLogicalIds('Ref : MyResource', '', DocumentType.YAML);
+                expect(result).toEqual(new Set(['MyResource']));
+            });
+
+            it('multiple spaces around colon', () => {
+                const result = referencedLogicalIds('Condition  :  MyCondition', '', DocumentType.YAML);
+                expect(result).toEqual(new Set(['MyCondition']));
+            });
+
+            it('no space after colon', () => {
+                const result = referencedLogicalIds('Ref:MyResource', '', DocumentType.YAML);
+                expect(result).toEqual(new Set(['MyResource']));
+            });
+        });
+
+        describe('JSON', () => {
+            it('space before colon', () => {
+                const result = referencedLogicalIds('{"Ref" : "MyResource"}', '', DocumentType.JSON);
+                expect(result).toEqual(new Set(['MyResource']));
+            });
+
+            it('multiple spaces around colon', () => {
+                const result = referencedLogicalIds('{"Ref"  :  "MyResource"}', '', DocumentType.JSON);
+                expect(result).toEqual(new Set(['MyResource']));
+            });
+
+            it('no space after colon', () => {
+                const result = referencedLogicalIds('{"Ref":"MyResource"}', '', DocumentType.JSON);
+                expect(result).toEqual(new Set(['MyResource']));
             });
         });
     });
