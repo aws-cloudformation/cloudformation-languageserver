@@ -1,6 +1,10 @@
 import { SyntaxNode } from 'tree-sitter';
 import { describe, it, expect } from 'vitest';
-import { referencedLogicalIds, selectText } from '../../../../src/context/semantic/LogicalIdReferenceFinder';
+import {
+    referencedLogicalIds,
+    selectText,
+    isLogicalIdCandidate,
+} from '../../../../src/context/semantic/LogicalIdReferenceFinder';
 import { DocumentType } from '../../../../src/document/Document';
 
 const createMockSyntaxNode = (text: string) =>
@@ -80,7 +84,7 @@ describe('LogicalIdReferenceFinder', () => {
         });
     });
 
-    describe('findLogicalIds', () => {
+    describe('referencedLogicalIds', () => {
         describe('JSON format', () => {
             describe('Ref pattern', () => {
                 it('should find single Ref reference', () => {
@@ -371,6 +375,102 @@ describe('LogicalIdReferenceFinder', () => {
             const text = '{"Fn::Sub": "arn:aws:s3:::${BucketName}/logs/${AWS::AccountId}/${LogPrefix}"}';
             const result = referencedLogicalIds(text, '', DocumentType.JSON);
             expect(result).toEqual(new Set(['BucketName', 'LogPrefix']));
+        });
+    });
+
+    describe('isLogicalIdCandidate', () => {
+        describe('valid logical IDs', () => {
+            it('should accept simple alphanumeric IDs', () => {
+                expect(isLogicalIdCandidate('MyResource')).toBe(true);
+                expect(isLogicalIdCandidate('MyBucket123')).toBe(true);
+                expect(isLogicalIdCandidate('Resource1')).toBe(true);
+            });
+
+            it('should accept IDs with dots', () => {
+                expect(isLogicalIdCandidate('My.Resource')).toBe(true);
+                expect(isLogicalIdCandidate('Resource.Arn')).toBe(true);
+            });
+
+            it('should accept IDs starting with uppercase or lowercase', () => {
+                expect(isLogicalIdCandidate('myResource')).toBe(true);
+                expect(isLogicalIdCandidate('MyResource')).toBe(true);
+            });
+        });
+
+        describe('invalid inputs', () => {
+            it('should reject null and undefined', () => {
+                expect(isLogicalIdCandidate(null)).toBe(false);
+                expect(isLogicalIdCandidate(undefined)).toBe(false);
+            });
+
+            it('should reject non-string types', () => {
+                expect(isLogicalIdCandidate(123)).toBe(false);
+                expect(isLogicalIdCandidate({})).toBe(false);
+                expect(isLogicalIdCandidate([])).toBe(false);
+                expect(isLogicalIdCandidate(true)).toBe(false);
+            });
+
+            it('should reject empty string', () => {
+                expect(isLogicalIdCandidate('')).toBe(false);
+            });
+
+            it('should reject single character strings', () => {
+                expect(isLogicalIdCandidate('A')).toBe(false);
+                expect(isLogicalIdCandidate('x')).toBe(false);
+            });
+
+            it('should reject IDs starting with numbers', () => {
+                expect(isLogicalIdCandidate('123Resource')).toBe(false);
+                expect(isLogicalIdCandidate('1Bucket')).toBe(false);
+            });
+
+            it('should reject special characters', () => {
+                expect(isLogicalIdCandidate('-')).toBe(false);
+                expect(isLogicalIdCandidate('.')).toBe(false);
+                expect(isLogicalIdCandidate('_')).toBe(false);
+            });
+
+            it('should reject strings with substitution patterns', () => {
+                expect(isLogicalIdCandidate('${MyVar}')).toBe(false);
+                expect(isLogicalIdCandidate('prefix${Var}suffix')).toBe(false);
+            });
+        });
+
+        describe('common properties exclusion', () => {
+            it('should reject CloudFormation common properties', () => {
+                expect(isLogicalIdCandidate('Type')).toBe(false);
+                expect(isLogicalIdCandidate('Properties')).toBe(false);
+                expect(isLogicalIdCandidate('Condition')).toBe(false);
+                expect(isLogicalIdCandidate('DependsOn')).toBe(false);
+                expect(isLogicalIdCandidate('Metadata')).toBe(false);
+            });
+
+            it('should reject common properties in different cases', () => {
+                expect(isLogicalIdCandidate('type')).toBe(false);
+                expect(isLogicalIdCandidate('TYPE')).toBe(false);
+                expect(isLogicalIdCandidate('properties')).toBe(false);
+                expect(isLogicalIdCandidate('PROPERTIES')).toBe(false);
+            });
+
+            it('should reject other common property names', () => {
+                expect(isLogicalIdCandidate('Description')).toBe(false);
+                expect(isLogicalIdCandidate('Value')).toBe(false);
+                expect(isLogicalIdCandidate('Export')).toBe(false);
+                expect(isLogicalIdCandidate('Name')).toBe(false);
+            });
+        });
+
+        describe('pseudo parameters exclusion', () => {
+            it('should reject AWS pseudo parameters', () => {
+                expect(isLogicalIdCandidate('AWS::AccountId')).toBe(false);
+                expect(isLogicalIdCandidate('AWS::Region')).toBe(false);
+                expect(isLogicalIdCandidate('AWS::StackId')).toBe(false);
+                expect(isLogicalIdCandidate('AWS::StackName')).toBe(false);
+                expect(isLogicalIdCandidate('AWS::NotificationARNs')).toBe(false);
+                expect(isLogicalIdCandidate('AWS::NoValue')).toBe(false);
+                expect(isLogicalIdCandidate('AWS::Partition')).toBe(false);
+                expect(isLogicalIdCandidate('AWS::URLSuffix')).toBe(false);
+            });
         });
     });
 });
