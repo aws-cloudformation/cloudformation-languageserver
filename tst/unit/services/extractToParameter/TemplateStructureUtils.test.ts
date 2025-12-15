@@ -97,13 +97,14 @@ Resources: {}`;
             expect(result?.exists).toBe(false);
         });
 
-        it.todo('should handle malformed YAML gracefully', () => {
-            const malformedYaml = 'Parameters:\n  - invalid: structure';
+        it('should handle malformed YAML gracefully', () => {
+            expect(utils.findParametersSection('Parameters:\n  - invalid: structure', DocumentType.YAML)?.exists).toBe(
+                true,
+            );
 
-            const result = utils.findParametersSection(malformedYaml, DocumentType.YAML);
-
-            expect(result).toBeDefined();
-            expect(result?.exists).toBe(false);
+            expect(utils.findParametersSection('Parameters:- invalid: structure', DocumentType.YAML)?.exists).toBe(
+                false,
+            );
         });
     });
 
