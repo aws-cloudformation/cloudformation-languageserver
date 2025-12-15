@@ -1,22 +1,55 @@
+import { join } from 'path';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { TestExtension } from '../utils/TestExtension';
+import { WaitFor } from '../utils/Utils';
 
 describe('Diagnostic Features', () => {
-    const client = new TestExtension();
-    const diagnosticsReceived: any[] = [];
+    const client = new TestExtension({
+        initializeParams: {
+            initializationOptions: {
+                aws: {
+                    clientInfo: {
+                        extension: {
+                            name: 'Test CloudFormation Language Server',
+                            version: '1.0.0-test',
+                        },
+                        clientId: 'test-client',
+                    },
+                },
+                settings: {
+                    diagnostics: {
+                        cfnGuard: {
+                            enabled: true,
+                            rulesFile: join(__dirname, '../resources/guard/test-guard-rules.guard'),
+                            delayMs: 100,
+                            validateOnChange: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
 
     beforeAll(async () => {
         await client.ready();
 
-        // Listen for diagnostic notifications
-        (client as any).clientConnection.onNotification('textDocument/publishDiagnostics', (params: any) => {
-            diagnosticsReceived.push(params);
+        // Configure guard with custom rules file
+        await client.changeConfiguration({
+            settings: {
+                diagnostics: {
+                    cfnGuard: {
+                        enabled: true,
+                        rulesFile: join(__dirname, '../resources/guard/test-guard-rules.guard'),
+                        delayMs: 100,
+                        validateOnChange: true,
+                    },
+                },
+            },
         });
     });
 
     beforeEach(async () => {
         await client.reset();
-        diagnosticsReceived.length = 0; // Clear previous diagnostics
     });
 
     afterAll(async () => {
@@ -25,7 +58,7 @@ describe('Diagnostic Features', () => {
 
     describe('Guard diagnostics while authoring', () => {
         it('should receive diagnostics during incremental typing', async () => {
-            // Start with basic template
+            // Start with basic template that should trigger our custom guard rules
             const initialTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
@@ -33,51 +66,22 @@ Resources:
 
             const uri = await client.openYamlTemplate(initialTemplate);
 
-            // Wait for initial diagnostics
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            // Wait for diagnostics from our custom guard rules
+            await WaitFor.waitFor(() => {
+                if (client.receivedDiagnostics.length === 0) {
+                    throw new Error('No diagnostics received yet');
+                }
+            }, 5000);
 
-            // Simulate typing Properties section incrementally
-            await client.changeDocument({
-                textDocument: { uri, version: 2 },
-                contentChanges: [
-                    {
-                        range: {
-                            start: { line: 3, character: 25 },
-                            end: { line: 3, character: 25 },
-                        },
-                        text: `
-    Properties:`,
-                    },
-                ],
-            });
+            expect(client.receivedDiagnostics.length).toBeGreaterThan(0);
 
-            // Wait for diagnostics after adding BucketName
-            await new Promise((resolve) => setTimeout(resolve, 300));
+            const latestDiagnostics = client.receivedDiagnostics[client.receivedDiagnostics.length - 1];
+            expect(latestDiagnostics.uri).toBe(uri);
+            expect(latestDiagnostics.diagnostics.length).toBeGreaterThan(0);
 
-            // Now add encryption property incrementally (fixing potential guard violation)
-            await client.changeDocument({
-                textDocument: { uri, version: 4 },
-                contentChanges: [
-                    {
-                        range: {
-                            start: { line: 5, character: 23 },
-                            end: { line: 5, character: 23 },
-                        },
-                        text: `
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256`,
-                    },
-                ],
-            });
-
-            // Wait for final diagnostics
-            await new Promise((resolve) => setTimeout(resolve, 500));
-
-            // Test validates that incremental document changes trigger diagnostic notifications
-            expect(uri).toBeDefined();
-            // In a real environment with guard enabled, we would validate diagnostic content here
+            // Verify we got our custom guard diagnostics
+            const guardDiagnostics = latestDiagnostics.diagnostics.filter((d: any) => d.source === 'cfn-guard');
+            expect(guardDiagnostics.length).toBeGreaterThan(0);
 
             await client.closeDocument({ textDocument: { uri } });
         });
