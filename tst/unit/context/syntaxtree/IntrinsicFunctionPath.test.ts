@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { JsonSyntaxTree } from '../../../../src/context/syntaxtree/JsonSyntaxTree';
 import { YamlSyntaxTree } from '../../../../src/context/syntaxtree/YamlSyntaxTree';
 
 describe('Intrinsic Function Path Preservation', () => {
@@ -20,46 +21,17 @@ Resources:
             Image: alpine
 `;
 
-        const syntaxTree = new YamlSyntaxTree(yamlContent);
-
-        // Find the position of "conditional-container" (inside the Fn::If)
-        const lines = yamlContent.split('\n');
-        let targetLine = -1;
-        let targetCol = -1;
-
-        for (const [i, line] of lines.entries()) {
-            if (line.includes('conditional-container')) {
-                targetLine = i;
-                targetCol = line.indexOf('conditional-container');
-                break;
-            }
-        }
-
-        expect(targetLine).toBeGreaterThan(-1);
-
-        const position = { line: targetLine, character: targetCol };
-        const node = syntaxTree.getNodeAtPosition(position);
-
-        expect(node).toBeDefined();
-
-        const pathInfo = syntaxTree.getPathAndEntityInfo(node);
-
-        // Check if the propertyPath contains Fn::If
-        const hasIntrinsic = pathInfo.propertyPath.some(
-            (segment) => typeof segment === 'string' && segment.startsWith('Fn::'),
-        );
-
-        expect(hasIntrinsic).toBe(true);
-        expect(pathInfo.propertyPath).toContain('Fn::If');
-
-        // The path should be something like:
-        // ['Resources', 'TestResource', 'Properties', 'ContainerDefinitions', 1, 'Fn::If', 1, 'Name']
-        // instead of the broken:
-        // ['Resources', 'TestResource', 'Properties', 'ContainerDefinitions', 1, 1, 'Name']
-
-        const pathStr = JSON.stringify(pathInfo.propertyPath);
-        expect(pathStr).toContain('Fn::If');
-        expect(pathStr).not.toMatch(/\[1,\s*1,\s*"Name"\]/); // Should not have consecutive numeric indices
+        const path = getYamlPath(yamlContent, 11, 18);
+        expect(path).toEqual([
+            'Resources',
+            'TestResource',
+            'Properties',
+            'ContainerDefinitions',
+            1,
+            'Fn::If',
+            1,
+            'Name',
+        ]);
     });
 
     it('should preserve nested Fn::If functions in complex structures', () => {
@@ -84,40 +56,24 @@ Resources:
                   Value: dev-value
 `;
 
-        const syntaxTree = new YamlSyntaxTree(yamlContent);
-
-        // Find the position of "STAGING_VAR" (inside nested Fn::If)
-        const lines = yamlContent.split('\n');
-        let targetLine = -1;
-        let targetCol = -1;
-
-        for (const [i, line] of lines.entries()) {
-            if (line.includes('STAGING_VAR')) {
-                targetLine = i;
-                targetCol = line.indexOf('STAGING_VAR');
-                break;
-            }
-        }
-
-        expect(targetLine).toBeGreaterThan(-1);
-
-        const position = { line: targetLine, character: targetCol };
-        const node = syntaxTree.getNodeAtPosition(position);
-
-        expect(node).toBeDefined();
-
-        const pathInfo = syntaxTree.getPathAndEntityInfo(node);
-
-        // Should contain multiple Fn::If entries for nested conditions
-        const intrinsicCount = pathInfo.propertyPath.filter(
-            (segment) => typeof segment === 'string' && segment.startsWith('Fn::'),
-        ).length;
-
-        expect(intrinsicCount).toBeGreaterThan(0);
-        expect(pathInfo.propertyPath).toContain('Fn::If');
+        const path = getYamlPath(yamlContent, 15, 24);
+        expect(path).toEqual([
+            'Resources',
+            'ComplexResource',
+            'Properties',
+            'ContainerDefinitions',
+            0,
+            'Environment',
+            0,
+            'Fn::If',
+            2,
+            'Fn::If',
+            1,
+            'Name',
+        ]);
     });
 
-    it.todo('should handle other intrinsic functions like Fn::Sub', () => {
+    it('should handle other intrinsic functions like Fn::Sub', () => {
         const yamlContent = `
 AWSTemplateFormatVersion: '2010-09-09'
 Resources:
@@ -130,35 +86,344 @@ Resources:
           id: !Ref UniqueId
 `;
 
-        const syntaxTree = new YamlSyntaxTree(yamlContent);
+        const path = getYamlPath(yamlContent, 8, 11);
+        expect(path).toEqual(['Resources', 'TestResource', 'Properties', 'BucketName', 'Fn::Sub', 1, 'env']);
+    });
 
-        // Find the position of "my-bucket" (inside Fn::Sub)
-        const lines = yamlContent.split('\n');
-        let targetLine = -1;
-        let targetCol = -1;
+    describe('YAML shorthand', () => {
+        it('!If in array returning complex objects', () => {
+            // Line 18: "          - Name: conditional-container"
+            const path = getYamlPath(YAML_TEMPLATE, 18, 20);
+            expect(path).toEqual([
+                'Resources',
+                'TaskDefinition',
+                'Properties',
+                'ContainerDefinitions',
+                1,
+                'Fn::If',
+                1,
+                'Name',
+            ]);
+        });
 
-        for (const [i, line] of lines.entries()) {
-            if (line.includes('my-bucket')) {
-                targetLine = i;
-                targetCol = line.indexOf('my-bucket');
-                break;
-            }
-        }
+        it('nested !If > !If in complex structures', () => {
+            // Line 27: "                  - Name: STAGING_VAR"
+            const path = getYamlPath(YAML_TEMPLATE, 27, 26);
+            expect(path).toEqual([
+                'Resources',
+                'TaskDefinition',
+                'Properties',
+                'ContainerDefinitions',
+                1,
+                'Fn::If',
+                1,
+                'Environment',
+                0,
+                'Fn::If',
+                2,
+                'Fn::If',
+                1,
+                'Name',
+            ]);
+        });
 
-        expect(targetLine).toBeGreaterThan(-1);
+        it('!Sub array form with variable mapping containing nested !Ref', () => {
+            // Line 37: "        - 'my-bucket-${env}-${id}'"
+            const templateStringPath = getYamlPath(YAML_TEMPLATE, 37, 12);
+            expect(templateStringPath).toEqual(['Resources', 'Bucket', 'Properties', 'BucketName', 'Fn::Sub', 0]);
 
-        const position = { line: targetLine, character: targetCol };
-        const node = syntaxTree.getNodeAtPosition(position);
+            // Line 38: "        - env: !Ref Environment"
+            const varMappingPath = getYamlPath(YAML_TEMPLATE, 38, 20);
+            expect(varMappingPath).toEqual([
+                'Resources',
+                'Bucket',
+                'Properties',
+                'BucketName',
+                'Fn::Sub',
+                1,
+                'env',
+                'Ref',
+            ]);
+        });
 
-        expect(node).toBeDefined();
+        it('!Equals with nested !Ref in Conditions', () => {
+            // Line 7: "    - !Ref Environment"
+            const path = getYamlPath(YAML_TEMPLATE, 7, 10);
+            expect(path).toEqual(['Conditions', 'IsProduction', 'Fn::Equals', 0, 'Ref']);
+        });
 
-        const pathInfo = syntaxTree.getPathAndEntityInfo(node);
+        it('!Select with nested !GetAZs', () => {
+            // Line 44: "        - 0"
+            const path = getYamlPath(YAML_TEMPLATE, 44, 10);
+            expect(path).toEqual(['Resources', 'Instance', 'Properties', 'AvailabilityZone', 'Fn::Select', 0]);
+        });
 
-        // Should contain Fn::Sub in the propertyPath
-        const hasSubFunction = pathInfo.propertyPath.some(
-            (segment) => typeof segment === 'string' && segment === 'Fn::Sub',
-        );
+        it('!Join inline array form', () => {
+            // Line 47: "        - Key: !Join ['-', [prefix, suffix]]"
+            const path = getYamlPath(YAML_TEMPLATE, 47, 24);
+            expect(path).toEqual(['Resources', 'Instance', 'Properties', 'Tags', 0, 'Key', 'Fn::Join']);
+        });
+    });
 
-        expect(hasSubFunction).toBe(true);
+    describe('JSON', () => {
+        it('Fn::If in array - position on Fn::If key', () => {
+            // Line 10: Fn::If inside ContainerDefinitions array
+            const path = getJsonPath(JSON_TEMPLATE, 10, 16);
+            expect(path).toEqual(['Resources', 'TaskDefinition', 'Properties', 'ContainerDefinitions', 1, 'Fn::If']);
+        });
+
+        it('Fn::If in array - position on condition name (index 0)', () => {
+            // Line 10: position on "IsProduction" string
+            const path = getJsonPath(JSON_TEMPLATE, 10, 24);
+            expect(path).toEqual(['Resources', 'TaskDefinition', 'Properties', 'ContainerDefinitions', 1, 'Fn::If', 0]);
+        });
+
+        it('Fn::Sub array form - position on template string (index 0)', () => {
+            // Line 17: Fn::Sub template string
+            const path = getJsonPath(JSON_TEMPLATE, 17, 40);
+            expect(path).toEqual(['Resources', 'Bucket', 'Properties', 'BucketName', 'Fn::Sub', 0]);
+        });
+
+        it('Fn::Equals with nested Ref', () => {
+            // Line 2: Fn::Equals containing Ref
+            const path = getJsonPath(JSON_TEMPLATE, 2, 40);
+            expect(path).toEqual(['Conditions', 'IsProduction', 'Fn::Equals', 0, 'Ref']);
+        });
+    });
+
+    describe('YAML flow-style', () => {
+        it('flow-style Fn::Sub', () => {
+            const template = `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: { Fn::Sub: "my-bucket-\${AWS::Region}" }`;
+            // Position on the string value inside Fn::Sub
+            const path = getYamlPath(template, 4, 30);
+            expect(path).toEqual(['Resources', 'Bucket', 'Properties', 'BucketName', 'Fn::Sub']);
+        });
+
+        it('flow-style nested intrinsics - position on inner Ref value', () => {
+            const template = `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: { Fn::If: [IsProd, { Ref: ProdName }, { Ref: DevName }] }`;
+            //                               ^col 44 (ProdName value)
+            const path = getYamlPath(template, 4, 44);
+            expect(path).toEqual(['Resources', 'Bucket', 'Properties', 'BucketName', 'Fn::If', 'Ref']);
+        });
+    });
+
+    describe('YAML edge cases', () => {
+        it('!GetAtt dot notation', () => {
+            const template = `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+Outputs:
+  BucketArn:
+    Value: !GetAtt Bucket.Arn`;
+            // Position on the value "Bucket.Arn"
+            const path = getYamlPath(template, 5, 18);
+            expect(path).toEqual(['Outputs', 'BucketArn', 'Value', 'Fn::GetAtt']);
+        });
+
+        it('!GetAtt array form', () => {
+            const template = `Outputs:
+  Arn:
+    Value: !GetAtt [MyBucket, Arn]`;
+            // Position on "MyBucket" inside the array
+            const path = getYamlPath(template, 2, 20);
+            expect(path).toEqual(['Outputs', 'Arn', 'Value', 'Fn::GetAtt']);
+        });
+
+        it('simple !Sub string form (not array)', () => {
+            const template = `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "my-bucket-\${AWS::Region}"`;
+            // Position on the string value
+            const path = getYamlPath(template, 4, 24);
+            expect(path).toEqual(['Resources', 'Bucket', 'Properties', 'BucketName', 'Fn::Sub']);
+        });
+
+        it('standalone !Ref as direct value', () => {
+            const template = `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketNameParam`;
+            // Position on the parameter name value
+            const path = getYamlPath(template, 4, 20);
+            expect(path).toEqual(['Resources', 'Bucket', 'Properties', 'BucketName', 'Ref']);
+        });
+
+        it('sibling intrinsics at same level', () => {
+            const template = `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      Tags:
+        - Key: !Sub "\${Env}-key"
+          Value: !Ref SomeParam`;
+            // Position on Key's Sub value
+            const keyPath = getYamlPath(template, 5, 18);
+            expect(keyPath).toEqual(['Resources', 'Bucket', 'Properties', 'Tags', 0, 'Key', 'Fn::Sub']);
+
+            // Position on Value's Ref value
+            const valuePath = getYamlPath(template, 6, 20);
+            expect(valuePath).toEqual(['Resources', 'Bucket', 'Properties', 'Tags', 0, 'Value', 'Ref']);
+        });
+
+        it('intrinsics in Outputs section', () => {
+            const template = `Outputs:
+  BucketArn:
+    Value: !GetAtt MyBucket.Arn
+    Export:
+      Name: !Sub "\${AWS::StackName}-BucketArn"`;
+            const getAttPath = getYamlPath(template, 2, 18);
+            expect(getAttPath).toEqual(['Outputs', 'BucketArn', 'Value', 'Fn::GetAtt']);
+
+            const subPath = getYamlPath(template, 4, 18);
+            expect(subPath).toEqual(['Outputs', 'BucketArn', 'Export', 'Name', 'Fn::Sub']);
+        });
+    });
+
+    describe('JSON edge cases', () => {
+        it('deeply nested intrinsics (3+ levels)', () => {
+            const template = `{
+  "Resources": {
+    "Bucket": {
+      "Properties": {
+        "BucketName": { "Fn::If": ["Cond", { "Fn::Sub": ["x-{y}", { "y": { "Ref": "P" } }] }, ""] }
+      }
+    }
+  }
+}`;
+            // Position on "P" value inside the deepest Ref
+            const path = getJsonPath(template, 4, 82);
+            expect(path).toEqual([
+                'Resources',
+                'Bucket',
+                'Properties',
+                'BucketName',
+                'Fn::If',
+                1,
+                'Fn::Sub',
+                1,
+                'y',
+                'Ref',
+            ]);
+        });
+    });
+
+    describe('malformed templates (fallback)', () => {
+        it('incomplete template triggers fallback for context path', () => {
+            const incomplete = `AWSTemplateFormatVersion: '2010-09-09'
+Conditions:
+  IsProd: !Equals [!Ref`;
+            // When parent is ERROR node, fallback provides context
+            const path = getYamlPath(incomplete, 2, 20);
+            expect(path).toEqual(['Conditions', 'IsProd']);
+        });
+
+        it('incomplete !Sub with no value', () => {
+            const incomplete = `Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub
+        -`;
+            // Position on the dash (first array item)
+            const path = getYamlPath(incomplete, 5, 9);
+            expect(path).toEqual(['Resources', 'Bucket', 'Properties', 'BucketName', 'Fn::Sub', 0]);
+        });
     });
 });
+
+function getYamlPath(content: string, line: number, character: number): (string | number)[] {
+    const tree = new YamlSyntaxTree(content);
+    const node = tree.getNodeAtPosition({ line, character });
+    return [...tree.getPathAndEntityInfo(node).propertyPath];
+}
+
+function getJsonPath(content: string, line: number, character: number): (string | number)[] {
+    const tree = new JsonSyntaxTree(content);
+    const node = tree.getNodeAtPosition({ line, character });
+    return [...tree.getPathAndEntityInfo(node).propertyPath];
+}
+
+const YAML_TEMPLATE = `
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Environment:
+    Type: String
+Conditions:
+  IsProduction: !Equals
+    - !Ref Environment
+    - production
+Resources:
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+        - Name: container1
+          Image: nginx
+        - !If
+          - IsProduction
+          - Name: conditional-container
+            Image: redis
+            Environment:
+              - !If
+                - IsProduction
+                - Name: PROD_VAR
+                  Value: prod-value
+                - !If
+                  - IsProduction
+                  - Name: STAGING_VAR
+                    Value: staging-value
+                  - Name: DEV_VAR
+                    Value: dev-value
+          - Name: fallback-container
+            Image: alpine
+  Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub
+        - 'my-bucket-\${env}-\${id}'
+        - env: !Ref Environment
+          id: !GetAtt TaskDefinition.Arn
+  Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      Tags:
+        - Key: !Join ['-', [prefix, suffix]]
+          Value: test
+`;
+
+const JSON_TEMPLATE = `{
+  "Conditions": {
+    "IsProduction": { "Fn::Equals": [{ "Ref": "Environment" }, "production"] }
+  },
+  "Resources": {
+    "TaskDefinition": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          { "Name": "container1", "Image": "nginx" },
+          { "Fn::If": ["IsProduction", { "Name": "conditional-container" }, { "Name": "fallback" }] }
+        ]
+      }
+    },
+    "Bucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": { "Fn::Sub": ["my-bucket-\${env}", { "env": { "Ref": "Environment" } }] }
+      }
+    }
+  }
+}`;

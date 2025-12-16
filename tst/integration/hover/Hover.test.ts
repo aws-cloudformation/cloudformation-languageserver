@@ -1118,7 +1118,6 @@ Resources:`,
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Condition:** HasMultipleAZs')
                                 .expectContainsText(['HasMultipleAZs', '!Not', '!Equals', '!Select'])
-                                .todo(`Returns nothing`)
                                 .build(),
                         },
                     },
