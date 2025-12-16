@@ -97,6 +97,7 @@ export class ChangeSetDeletionWorkflow
         };
     }
 
+    @Measure({ name: 'stackDeletionAsync' })
     protected async runStackDeletionAsync(params: CreateDeploymentParams): Promise<void> {
         const workflowId = params.id;
 
@@ -128,6 +129,7 @@ export class ChangeSetDeletionWorkflow
         }
     }
 
+    @Measure({ name: 'changeSetDeletionAsync' })
     protected runChangeSetDeletionAsync(params: CreateDeploymentParams): void {
         const workflowId = params.id;
 
