@@ -44,4 +44,31 @@ describe('withOnlineGuard', () => {
 
         expect(handler).toHaveBeenCalledWith('params', 'token', 'workDone', 'resultProgress');
     });
+
+    it('should detect and transform permission errors', async () => {
+        const guard = { check: vi.fn() };
+        const permissionError = {
+            code: 'AccessDenied',
+            message: 'User is not authorized to perform: cloudformation:ListStacks',
+        };
+        const handler = vi.fn().mockRejectedValue(permissionError);
+
+        const wrapped = withOnlineGuard(guard as any, handler as any);
+
+        await expect(wrapped()).rejects.toMatchObject({
+            code: OnlineFeatureErrorCode.AwsServiceError,
+            data: {
+                errorType: 'permission',
+                service: 'aws',
+                operation: 'unknown',
+                retryable: false,
+            },
+        });
+
+        // Verify the message contains the original error info (pretty-printed object)
+        await expect(wrapped()).rejects.toHaveProperty('message');
+        const error = await wrapped().catch((e: any) => e);
+        expect(error.message).toContain('AccessDenied');
+        expect(error.message).toContain('User is not authorized to perform: cloudformation:ListStacks');
+    });
 });

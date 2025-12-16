@@ -100,31 +100,37 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
 
     @Measure({ name: 'listResources' })
     public async listResources(typeName: string, nextToken?: string): Promise<ResourceList | undefined> {
-        const cached = this.resourceListMap.get(typeName);
+        try {
+            const cached = this.resourceListMap.get(typeName);
 
-        if (!nextToken) {
-            // Initial request - fetch first page and cache it
-            const resourceList = await this.retrieveResourceList(typeName);
-            if (resourceList) {
-                this.resourceListMap.set(typeName, resourceList);
-                return resourceList;
+            if (!nextToken) {
+                // Initial request - fetch first page and cache it
+                const resourceList = await this.retrieveResourceList(typeName);
+                if (resourceList) {
+                    this.resourceListMap.set(typeName, resourceList);
+                    return resourceList;
+                }
+                return;
             }
-            return;
-        }
 
-        // Pagination request - fetch next page and append to cache
-        const resourceListNextPage = await this.retrieveResourceList(typeName, nextToken);
-        if (resourceListNextPage && cached) {
-            // Deduplicate efficiently using Set for O(1) lookup
-            const cachedSet = new Set(cached.resourceIdentifiers);
-            const newIdentifiers = resourceListNextPage.resourceIdentifiers.filter((id) => !cachedSet.has(id));
-            cached.resourceIdentifiers.push(...newIdentifiers);
-            cached.nextToken = resourceListNextPage.nextToken;
-            cached.lastUpdatedTimestamp = DateTime.now();
-            return cached;
-        }
+            // Pagination request - fetch next page and append to cache
+            const resourceListNextPage = await this.retrieveResourceList(typeName, nextToken);
+            if (resourceListNextPage && cached) {
+                // Deduplicate efficiently using Set for O(1) lookup
+                const cachedSet = new Set(cached.resourceIdentifiers);
+                const newIdentifiers = resourceListNextPage.resourceIdentifiers.filter((id) => !cachedSet.has(id));
+                cached.resourceIdentifiers.push(...newIdentifiers);
+                cached.nextToken = resourceListNextPage.nextToken;
+                cached.lastUpdatedTimestamp = DateTime.now();
+                return cached;
+            }
 
-        return resourceListNextPage;
+            return resourceListNextPage;
+        } catch (error) {
+            // Clear cache for this resource type on error
+            this.resourceListMap.delete(typeName);
+            throw error;
+        }
     }
 
     @Measure({ name: 'searchResourceByIdentifier' })
