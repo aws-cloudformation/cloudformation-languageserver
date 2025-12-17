@@ -108,6 +108,17 @@ export class ScopedTelemetry implements Closeable {
         }
     }
 
+    private recordFault(name: string, error: unknown, config?: MetricConfig): void {
+        this.count(`${name}.fault`, 1, {
+            ...config,
+            attributes: {
+                ...config?.attributes,
+                'error.type': error instanceof Error ? error.name : 'unknown',
+                ...(error instanceof Error ? extractLocationFromStack(error.stack) : {}),
+            },
+        });
+    }
+
     private executeWithMetrics<T>(name: string, fn: () => T, trackResponse: boolean, config?: MetricConfig): T {
         if (!this.meter) {
             return fn();
@@ -123,14 +134,7 @@ export class ScopedTelemetry implements Closeable {
             if (trackResponse) this.recordResponse(name, result, config);
             return result;
         } catch (error) {
-            this.count(`${name}.fault`, 1, {
-                ...config,
-                attributes: {
-                    ...config?.attributes,
-                    'error.type': error instanceof Error ? error.name : 'unknown',
-                    ...(error instanceof Error ? extractLocationFromStack(error.stack) : {}),
-                },
-            });
+            this.recordFault(name, error, config);
             throw error;
         } finally {
             this.recordDuration(name, performance.now() - startTime, config);
@@ -157,14 +161,7 @@ export class ScopedTelemetry implements Closeable {
             if (trackResponse) this.recordResponse(name, result, config);
             return result;
         } catch (error) {
-            this.count(`${name}.fault`, 1, {
-                ...config,
-                attributes: {
-                    ...config?.attributes,
-                    'error.type': error instanceof Error ? error.name : 'unknown',
-                    ...(error instanceof Error ? extractLocationFromStack(error.stack) : {}),
-                },
-            });
+            this.recordFault(name, error, config);
             throw error;
         } finally {
             this.recordDuration(name, performance.now() - startTime, config);
