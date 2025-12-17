@@ -21,6 +21,7 @@ import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem, handleSnippetJsonQuotes } from './CompletionUtils';
 
@@ -35,6 +36,7 @@ export class ResourceStateCompletionProvider implements CompletionProvider {
         private readonly schemaRetriever: SchemaRetriever,
     ) {}
 
+    @Measure({ name: 'getCompletions' })
     public async getCompletions(context: Context, params: CompletionParams): Promise<CompletionItem[]> {
         const resource = context.entity as Resource;
         if (!resource?.Type || !resource?.Properties) {

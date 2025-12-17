@@ -66,6 +66,23 @@ describe('ScopedTelemetry', () => {
             expect(() => scopedTelemetry.measure('test', fn)).toThrow('test error');
             expect(mockMeter.createCounter).toHaveBeenCalledWith('test.fault', expect.any(Object));
         });
+
+        it('should record fault with error attributes', () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => {
+                throw new TypeError('test error');
+            });
+
+            expect(() => scopedTelemetry.measure('test', fn)).toThrow('test error');
+            expect(mockCounter.add).toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({
+                    'error.type': 'TypeError',
+                }),
+            );
+        });
     });
 
     describe('measureAsync', () => {
@@ -89,6 +106,23 @@ describe('ScopedTelemetry', () => {
 
             await expect(scopedTelemetry.measureAsync('test', fn)).rejects.toThrow('test error');
             expect(mockMeter.createCounter).toHaveBeenCalledWith('test.fault', expect.any(Object));
+        });
+
+        it('should record fault with error attributes on async error', async () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => {
+                return Promise.reject(new ReferenceError('test error'));
+            });
+
+            await expect(scopedTelemetry.measureAsync('test', fn)).rejects.toThrow('test error');
+            expect(mockCounter.add).toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({
+                    'error.type': 'ReferenceError',
+                }),
+            );
         });
     });
 
