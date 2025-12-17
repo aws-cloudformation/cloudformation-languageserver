@@ -18,7 +18,7 @@ export class ParameterAttributeHoverProvider implements HoverProvider {
         'Type',
     ]);
 
-    @Measure({ name: 'getInformation' })
+    @Measure({ name: 'getInformation', extractContextAttributes: true })
     getInformation(context: Context): string | undefined {
         const attributeName = context.text;
 

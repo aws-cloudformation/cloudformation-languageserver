@@ -24,7 +24,7 @@ export class ResourceEntityCompletionProvider implements CompletionProvider {
         this.entityFieldProvider = new EntityFieldCompletionProvider<Resource>();
     }
 
-    @Measure({ name: 'getCompletions' })
+    @Measure({ name: 'getCompletions', extractContextAttributes: true })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const entityCompletions = this.entityFieldProvider.getCompletions(context, params);
 

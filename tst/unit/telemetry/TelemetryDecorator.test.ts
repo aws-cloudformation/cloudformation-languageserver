@@ -262,5 +262,72 @@ describe('TelemetryDecorator', () => {
                 valueType: 1,
             });
         });
+
+        it('should extract context attributes when enabled', () => {
+            const mockContext = {
+                constructor: { name: 'Context' },
+                getResourceEntity: () => ({ Type: 'AWS::S3::Bucket' }),
+                propertyPath: ['Resources', 'MyBucket', 'Properties'],
+                section: 'Properties',
+            };
+
+            class TestClass {
+                @Measure({ name: 'method', extractContextAttributes: true })
+                method(_context: any) {
+                    return 'result';
+                }
+            }
+
+            new TestClass().method(mockContext);
+
+            expect(mockTelemetry.measure).toHaveBeenCalledWith('method', expect.any(Function), {
+                name: 'method',
+                extractContextAttributes: true,
+                attributes: {
+                    'resource.type': 'AWS::S3::Bucket',
+                    'property.path': 'Resources.MyBucket.Properties',
+                    section: 'Properties',
+                },
+            });
+        });
+
+        it('should work without context when extraction enabled', () => {
+            class TestClass {
+                @Measure({ name: 'method', extractContextAttributes: true })
+                method(_otherParam: string) {
+                    return 'result';
+                }
+            }
+
+            new TestClass().method('test');
+
+            expect(mockTelemetry.measure).toHaveBeenCalledWith('method', expect.any(Function), {
+                name: 'method',
+                extractContextAttributes: true,
+            });
+        });
+
+        it('should handle context extraction errors gracefully', () => {
+            const mockContext = {
+                constructor: { name: 'Context' },
+                getResourceEntity: () => {
+                    throw new Error('test error');
+                },
+            };
+
+            class TestClass {
+                @Measure({ name: 'method', extractContextAttributes: true })
+                method(_context: any) {
+                    return 'result';
+                }
+            }
+
+            expect(() => new TestClass().method(mockContext)).not.toThrow();
+            expect(mockTelemetry.measure).toHaveBeenCalledWith('method', expect.any(Function), {
+                name: 'method',
+                extractContextAttributes: true,
+                attributes: {},
+            });
+        });
     });
 });
