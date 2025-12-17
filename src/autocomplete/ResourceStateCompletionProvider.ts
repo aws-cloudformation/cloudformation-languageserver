@@ -36,7 +36,7 @@ export class ResourceStateCompletionProvider implements CompletionProvider {
         private readonly schemaRetriever: SchemaRetriever,
     ) {}
 
-    @Measure({ name: 'getCompletions' })
+    @Measure({ name: 'getCompletions', extractContextAttributes: true })
     public async getCompletions(context: Context, params: CompletionParams): Promise<CompletionItem[]> {
         const resource = context.entity as Resource;
         if (!resource?.Type || !resource?.Properties) {
