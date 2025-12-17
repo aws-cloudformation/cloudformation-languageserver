@@ -2,7 +2,7 @@
 
 This guide covers installing and configuring the CloudFormation Language Server for standalone editors.
 
-> **Note**: For Visual Studio Code and JetBrains IDEs, the language server is bundled with the [AWS Toolkit](https://aws.amazon.com/visualstudio/) extensions.
+> **Note**: For Visual Studio Code, the language server is bundled with the [AWS Toolkit](https://aws.amazon.com/visualstudio/) extensions.
 
 ## Prerequisites
 

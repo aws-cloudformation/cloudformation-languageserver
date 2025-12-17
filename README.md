@@ -62,7 +62,7 @@ The server implements the Language Server Protocol (LSP) to enable code editors 
 
 For standalone editors like Neovim, Emacs, Helix, or Sublime Text, see the [Installation Guide](INSTALLATION.md).
 
-For Visual Studio Code and JetBrains IDEs, the language server is bundled with the [AWS Toolkit](https://aws.amazon.com/visualstudio/) extensions.
+For Visual Studio Code, the language server is bundled with the [AWS Toolkit](https://aws.amazon.com/visualstudio/) extensions.
 
 ## Telemetry
 
