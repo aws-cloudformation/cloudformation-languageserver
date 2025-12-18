@@ -410,6 +410,10 @@ export abstract class SyntaxTree {
             syntheticKeyOrValue.type = CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE;
             syntheticKeyOrValue.grammarType = CommonNodeTypes.SYNTHETIC_KEY_OR_VALUE;
             return syntheticKeyOrValue;
+        } else if (NodeType.isNodeType(lastCharNode, YamlNodeTypes.TAG)) {
+            // Cursor is after an intrinsic function tag like !Sub or incomplete tag like !E
+            // Return the tag node itself so autocomplete can suggest completions
+            return lastCharNode;
         }
 
         return undefined; // No completions for other node types
@@ -432,13 +436,18 @@ export abstract class SyntaxTree {
         // First try the normal tree traversal approach
         const result = this.getPathAndEntityInfoNormal(node);
 
-        // If we got a valid result with a non-empty property path, or it is JSON, return it
-        if (result.propertyPath.length > 0 || this.type === DocumentType.JSON) {
+        // If we got a valid result with a non-empty property path, return it
+        if (result.propertyPath.length > 0) {
             return result;
         }
 
         // If normal traversal failed (likely due to malformed tree), try position-based fallback
-        return this.pathAndEntityYamlFallback(node);
+        if (this.type === DocumentType.YAML) {
+            return this.pathAndEntityYamlFallback(node);
+        }
+
+        // JSON fallback for malformed documents
+        return this.pathAndEntityJsonFallback(node);
     }
 
     // Normal tree traversal approach for well-formed documents
@@ -469,6 +478,48 @@ export abstract class SyntaxTree {
             const parent = current.parent;
             if (!parent) break;
 
+            // Handle YAML tags like !If, !Sub, !Ref, etc.
+            // This check must run independently (not in an else-if chain) because:
+            // When a YAML intrinsic function like !Sub is used, the tree structure varies:
+            //
+            // Array form (e.g., !Sub ['template', {var: value}]):
+            //   block_mapping_pair (key: "BucketName")
+            //     └── block_node (contains the tag)
+            //           ├── tag ("!Sub")
+            //           └── block_sequence (the function arguments)
+            //
+            // Simple form (e.g., !Sub 'template'):
+            //   block_mapping_pair (key: "BucketName")
+            //     └── flow_node (contains the tag)
+            //           ├── tag ("!Sub")
+            //           └── single_quote_scalar (the string value)
+            //
+            // When walking up from content inside the function, we reach the node with the tag.
+            // At this point, the parent is block_mapping_pair. If we used else-if, the pair condition
+            // would match first (adding "BucketName" to path) and skip the tag condition entirely.
+            // By checking the tag independently, we ensure both "Fn::Sub" AND "BucketName" are added.
+            //
+            // Skip when parent is ERROR node - tree is malformed, let fallback handle it.
+            const parentIsError = NodeType.isNodeType(parent, CommonNodeTypes.ERROR);
+            if (
+                !parentIsError &&
+                this.type === DocumentType.YAML &&
+                (NodeType.isNodeType(current, YamlNodeTypes.BLOCK_NODE) ||
+                    NodeType.isNodeType(current, YamlNodeTypes.FLOW_NODE)) &&
+                current.children?.length > 0 &&
+                current.children.some((child) => NodeType.isNodeType(child, YamlNodeTypes.TAG))
+            ) {
+                const tagNode = current.children.find((child) => NodeType.isNodeType(child, YamlNodeTypes.TAG));
+                const tagText = tagNode?.text;
+                if (tagText) {
+                    const normalizedTag = normalizeIntrinsicFunction(tagText);
+                    if (IntrinsicsSet.has(normalizedTag)) {
+                        propertyPath.push(normalizedTag);
+                    }
+                }
+                entityPath.push(current);
+            }
+
             // Handle key-value pairs (like "Parameters: {...}")
             if (NodeType.isPairNode(parent, this.type)) {
                 // This is a key-value pair. Add the key to our semantic path.
@@ -486,22 +537,6 @@ export abstract class SyntaxTree {
                     sibling = sibling.previousNamedSibling;
                 }
                 propertyPath.push(index);
-                entityPath.push(current);
-            } else if (
-                this.type === DocumentType.YAML &&
-                NodeType.isNodeType(current, YamlNodeTypes.BLOCK_NODE) &&
-                current.children?.length > 0 &&
-                NodeType.isNodeType(current.children[0], YamlNodeTypes.TAG)
-            ) {
-                // Handle YAML tags like !If, !Ref, etc.
-                const tagNode = current.children[0];
-                const tagText = tagNode.text;
-                if (tagText) {
-                    const normalizedTag = normalizeIntrinsicFunction(tagText);
-                    if (IntrinsicsSet.has(normalizedTag)) {
-                        propertyPath.push(normalizedTag);
-                    }
-                }
                 entityPath.push(current);
             } else if (NodeType.isNodeType(parent, JsonNodeTypes.ARRAY)) {
                 // Handle JSON array items - calculate index by counting non-punctuation siblings
@@ -629,6 +664,181 @@ export abstract class SyntaxTree {
             }
         } else if (contextPairs.length === 1) {
             entityRootNode = contextPairs[0];
+        }
+
+        return { path, propertyPath, entityRootNode };
+    }
+
+    /**
+     * Fallback for JSON documents when the tree has errors.
+     * Uses text-based parsing to infer context from the document structure.
+     */
+    private pathAndEntityJsonFallback(node: SyntaxNode): PathAndEntity {
+        const path: SyntaxNode[] = [node];
+        const propertyPath: (string | number)[] = [];
+        let entityRootNode: SyntaxNode | undefined;
+
+        // For JSON, we need to parse the text content to find the context
+        // Walk up to find the ERROR node and extract context from it
+        let errorNode: SyntaxNode | null = node;
+        while (errorNode && !NodeType.isNodeType(errorNode, CommonNodeTypes.ERROR)) {
+            errorNode = errorNode.parent;
+        }
+
+        if (!errorNode) {
+            return { path, propertyPath, entityRootNode };
+        }
+
+        const text = errorNode.text;
+        const nodeText = node.text;
+
+        // Find the node's position in the error text
+        const nodeIndex = text.lastIndexOf(nodeText);
+        if (nodeIndex === -1) {
+            return { path, propertyPath, entityRootNode };
+        }
+
+        // Parse the JSON structure up to the node position
+        // Track the path using a stack-based approach
+        const pathStack: (string | number)[] = [];
+        let currentKey: string | undefined;
+        let inString = false;
+        let stringStart = -1;
+        const arrayIndexStack: number[] = [];
+
+        for (let i = 0; i < nodeIndex; i++) {
+            const char = text[i];
+
+            if (inString) {
+                if (char === '"' && text[i - 1] !== '\\') {
+                    inString = false;
+                    const stringContent = text.slice(stringStart + 1, i);
+                    // Check if this string is followed by a colon (making it a key)
+                    let j = i + 1;
+                    while (j < text.length && /\s/.test(text[j])) j++;
+                    if (text[j] === ':') {
+                        currentKey = stringContent;
+                    }
+                }
+            } else {
+                switch (char) {
+                    case '"': {
+                        inString = true;
+                        stringStart = i;
+
+                        break;
+                    }
+                    case '{': {
+                        if (currentKey !== undefined) {
+                            pathStack.push(currentKey);
+                            currentKey = undefined;
+                        }
+                        arrayIndexStack.push(-1); // -1 indicates we're in an object, not array
+
+                        break;
+                    }
+                    case '[': {
+                        if (currentKey !== undefined) {
+                            pathStack.push(currentKey);
+                            currentKey = undefined;
+                        }
+                        arrayIndexStack.push(0); // Start array index at 0
+
+                        break;
+                    }
+                    case '}': {
+                        if (
+                            pathStack.length > 0 &&
+                            arrayIndexStack.length > 0 &&
+                            arrayIndexStack[arrayIndexStack.length - 1] === -1
+                        ) {
+                            pathStack.pop();
+                        }
+                        arrayIndexStack.pop();
+                        currentKey = undefined;
+
+                        break;
+                    }
+                    case ']': {
+                        if (
+                            pathStack.length > 0 &&
+                            arrayIndexStack.length > 0 &&
+                            arrayIndexStack[arrayIndexStack.length - 1] >= 0
+                        ) {
+                            pathStack.pop();
+                        }
+                        arrayIndexStack.pop();
+                        currentKey = undefined;
+
+                        break;
+                    }
+                    case ',': {
+                        // Increment array index if we're in an array
+                        if (arrayIndexStack.length > 0 && arrayIndexStack[arrayIndexStack.length - 1] >= 0) {
+                            arrayIndexStack[arrayIndexStack.length - 1]++;
+                        }
+                        currentKey = undefined;
+
+                        break;
+                    }
+                    // No default
+                }
+            }
+        }
+
+        // Add the current array index if we're in an array
+        if (arrayIndexStack.length > 0 && arrayIndexStack[arrayIndexStack.length - 1] >= 0) {
+            pathStack.push(arrayIndexStack[arrayIndexStack.length - 1]);
+        }
+
+        // Add the current key if we have one
+        if (currentKey !== undefined) {
+            pathStack.push(currentKey);
+        }
+
+        // Add the node's text if it looks like a key
+        const cleanNodeText = nodeText.replaceAll(/^"|"$/g, '');
+        if (cleanNodeText && !pathStack.includes(cleanNodeText)) {
+            // Check if this is followed by a colon
+            const afterNode = text.slice(nodeIndex + nodeText.length).trim();
+            if (afterNode.startsWith(':') || afterNode === '') {
+                pathStack.push(cleanNodeText);
+            }
+        }
+
+        propertyPath.push(...pathStack);
+
+        // Try to find entity root from the path
+        if (propertyPath.length >= 2 && propertyPath[0] === TopLevelSection.Resources) {
+            const resourceKey = propertyPath[1] as string;
+            // Try to extract the resource definition using a more robust regex
+            // eslint-disable-next-line security/detect-non-literal-regexp
+            const resourceStartPattern = new RegExp(`"${resourceKey}"\\s*:\\s*\\{`);
+            const resourceStartMatch = resourceStartPattern.exec(text);
+            if (resourceStartMatch) {
+                const startIdx = resourceStartMatch.index;
+                // Find the matching closing brace
+                let braceCount = 0;
+                let endIdx = startIdx;
+                for (let i = startIdx; i < text.length; i++) {
+                    if (text[i] === '{') braceCount++;
+                    else if (text[i] === '}') {
+                        braceCount--;
+                        if (braceCount === 0) {
+                            endIdx = i + 1;
+                            break;
+                        }
+                    }
+                }
+                if (endIdx > startIdx) {
+                    entityRootNode = createSyntheticNode(
+                        text.slice(startIdx, endIdx),
+                        node.startPosition,
+                        node.endPosition,
+                        errorNode,
+                    );
+                }
+            }
         }
 
         return { path, propertyPath, entityRootNode };

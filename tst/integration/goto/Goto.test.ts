@@ -90,7 +90,6 @@ Metadata:
                             position: { line: 51, character: 28 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsNotProduction')
-                                .todo('Goto failing in !And')
                                 .expectDefinitionPosition({ line: 44, character: 2 })
                                 .build(),
                         },

@@ -2,6 +2,7 @@ import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../../document/Document';
 import { PseudoParametersSet, ResourceAttributes } from '../ContextType';
 
+/* eslint-disable no-restricted-syntax, security/detect-unsafe-regex */
 export function selectText(specificNode: SyntaxNode, fullEntitySearch: boolean, rootNode?: SyntaxNode): string {
     let text: string | undefined;
     if (fullEntitySearch) {
@@ -35,43 +36,32 @@ export function referencedLogicalIds(
 }
 
 function findJsonIntrinsicReferences(text: string, logicalIds: Set<string>): void {
-    // Single pass through text with combined regex for better performance
-    const refIndex = text.indexOf('"Ref"');
-    const getAttIndex = text.indexOf('"Fn::GetAtt"');
-    const findMapIndex = text.indexOf('"Fn::FindInMap"');
-    const subIndex = text.indexOf('"Fn::Sub"');
-    const ifIndex = text.indexOf('"Fn::If"');
-    const conditionIndex = text.indexOf('"Condition"');
-    const dependsIndex = text.indexOf('"DependsOn"');
-    const subVarIndex = text.indexOf('${');
-
-    if (refIndex !== -1) {
+    // Early exit checks - only run regex if marker exists
+    if (text.includes('"Ref"')) {
         extractMatches(text, JsonRef, logicalIds);
     }
-    if (getAttIndex !== -1) {
+    if (text.includes('"Fn::GetAtt"')) {
         extractMatches(text, JsonGetAtt, logicalIds);
+        extractMatches(text, JsonGetAttString, logicalIds);
     }
-    if (findMapIndex !== -1) {
+    if (text.includes('"Fn::FindInMap"')) {
         extractMatches(text, JsonFindInMap, logicalIds);
     }
-    if (subIndex !== -1) {
-        let subMatch: RegExpExecArray | null;
-        while ((subMatch = JsonSub.exec(text)) !== null) {
-            const templateString = subMatch[1];
-            extractMatches(templateString, JsonSubVariables, logicalIds);
-        }
-    }
-    if (ifIndex !== -1) {
+    if (text.includes('"Fn::If"')) {
         extractMatches(text, JsonIf, logicalIds);
     }
-    if (conditionIndex !== -1) {
+    if (text.includes('"Condition"')) {
         extractMatches(text, JsonCondition, logicalIds);
     }
-    if (subVarIndex !== -1) {
-        extractMatches(text, JsonSubVariables, logicalIds);
-    }
-    if (dependsIndex !== -1) {
+    if (text.includes('"DependsOn"')) {
         extractJsonDependsOnReferences(text, logicalIds);
+    }
+    if (text.includes('"Fn::ValueOf"')) {
+        extractMatches(text, JsonValueOf, logicalIds);
+    }
+    // Extract all ${} variables in one pass - covers Fn::Sub and standalone
+    if (text.includes('${')) {
+        extractMatches(text, SubVariables, logicalIds);
     }
 }
 
@@ -86,44 +76,43 @@ function findYamlIntrinsicReferences(text: string, logicalIds: Set<string>): voi
     if (text.includes('!FindInMap')) {
         extractMatches(text, YamlFindInMap, logicalIds);
     }
-
-    // Extract template strings from !Sub and find variables within them
-    if (text.includes('!Sub')) {
-        let subMatch: RegExpExecArray | null;
-        while ((subMatch = YamlSub.exec(text)) !== null) {
-            const templateString = subMatch[1];
-            extractMatches(templateString, YamlSubVariables, logicalIds);
-        }
+    if (text.includes('!If')) {
+        extractMatches(text, YamlIf, logicalIds);
     }
-    if (text.includes('Ref:')) {
+    if (text.includes('!Condition')) {
+        extractMatches(text, YamlConditionShort, logicalIds);
+    }
+    if (text.includes('Ref')) {
         extractMatches(text, YamlRefColon, logicalIds);
     }
-    if (text.includes('Fn::GetAtt:')) {
+    if (text.includes('Fn::GetAtt')) {
         extractMatches(text, YamlGetAttColon, logicalIds);
+        extractMatches(text, YamlGetAttColonString, logicalIds);
     }
-    if (text.includes('Fn::FindInMap:')) {
+    if (text.includes('Fn::FindInMap')) {
         extractMatches(text, YamlFindInMapColon, logicalIds);
     }
-
-    // Extract template strings from Fn::Sub and find variables within them
-    if (text.includes('Fn::Sub:')) {
-        let subMatch: RegExpExecArray | null;
-        while ((subMatch = YamlSubColon.exec(text)) !== null) {
-            const templateString = subMatch[1];
-            extractMatches(templateString, YamlSubVariables, logicalIds);
-        }
+    if (text.includes('Fn::If')) {
+        extractMatches(text, YamlIfColon, logicalIds);
     }
-    if (text.includes('Condition:')) {
+    if (text.includes('Condition')) {
         extractMatches(text, YamlCondition, logicalIds);
     }
+    if (text.includes('!ValueOf')) {
+        extractMatches(text, YamlValueOfShort, logicalIds);
+    }
+    if (text.includes('Fn::ValueOf')) {
+        extractMatches(text, YamlValueOf, logicalIds);
+    }
+    // Extract all ${} variables in one pass - covers !Sub, Fn::Sub:, and standalone
     if (text.includes('${')) {
-        extractMatches(text, YamlSubVariables, logicalIds);
+        extractMatches(text, SubVariables, logicalIds);
     }
+    // Handle YAML list items (for Fn::GetAtt list syntax, DependsOn lists, etc.)
     if (text.includes('- ')) {
-        extractMatches(text, YamlInlineListItem, logicalIds);
+        extractMatches(text, YamlListItem, logicalIds);
     }
-
-    if (text.includes('DependsOn:')) {
+    if (text.includes('DependsOn')) {
         extractYamlDependsOnReferences(text, logicalIds);
     }
 }
@@ -173,6 +162,7 @@ function extractYamlDependsOnReferences(text: string, logicalIds: Set<string>): 
 
 const CommonProperties = new Set(
     [
+        'AWS',
         'Type',
         'Properties',
         ...ResourceAttributes,
@@ -203,38 +193,42 @@ const CommonProperties = new Set(
 // Pre-compiled for performance
 const JsonRef = /"Ref"\s*:\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches {"Ref": "LogicalId"} - references to parameters, resources, etc.
 const JsonGetAtt = /"Fn::GetAtt"\s*:\s*\[\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches {"Fn::GetAtt": ["LogicalId", "Attribute"]} - gets attributes from resources
+const JsonGetAttString = /"Fn::GetAtt"\s*:\s*"([A-Za-z][A-Za-z0-9]*)\./g; // Matches {"Fn::GetAtt": "LogicalId.Attribute"} - string syntax
 const JsonFindInMap = /"Fn::FindInMap"\s*:\s*\[\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches {"Fn::FindInMap": ["MappingName", "Key1", "Key2"]} - lookups in mappings
-const JsonSub = /"Fn::Sub"\s*:\s*"([^"]+)"/g; // Matches {"Fn::Sub": "template string"} - string substitution with variables
 const JsonIf = /"Fn::If"\s*:\s*\[\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches {"Fn::If": ["ConditionName", "TrueValue", "FalseValue"]} - conditional logic
 const JsonCondition = /"Condition"\s*:\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches "Condition": "ConditionName" - resource condition property
-const JsonSubVariables = /\$\{([A-Za-z][A-Za-z0-9:]*)\}/g; // Matches ${LogicalId} or ${AWS::Region} - variables in Fn::Sub templates
 const JsonSingleDep = /"DependsOn"\s*:\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches "DependsOn": "LogicalId" - single resource dependency
 const JsonArrayDep = /"DependsOn"\s*:\s*\[([^\]]+)]/g; // Matches "DependsOn": ["Id1", "Id2"] - array of resource dependencies
 const JsonArrayItem = /"([A-Za-z][A-Za-z0-9]*)"/g; // Matches "LogicalId" within the DependsOn array
+const JsonValueOf = /"Fn::ValueOf"\s*:\s*\[\s*"([A-Za-z][A-Za-z0-9]*)"/g; // Matches {"Fn::ValueOf": ["ParamName", "Attr"]} - gets parameter attribute
 
 const YamlRef = /!Ref\s+([A-Za-z][A-Za-z0-9]*)/g; // Matches !Ref LogicalId - YAML short form reference
-const YamlGetAtt = /!GetAtt\s+([A-Za-z][A-Za-z0-9]*)/g; // Matches !GetAtt LogicalId.Attribute - YAML short form get attribute
-const YamlGetAttArray = /!GetAtt\s+\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches !GetAtt [LogicalId, Attribute] - YAML short form get attribute with array syntax
+const YamlGetAtt = /!GetAtt\s+['"]?([A-Za-z][A-Za-z0-9]*)/g; // Matches !GetAtt LogicalId.Attribute - YAML short form get attribute with optional quotes
+const YamlGetAttArray = /!GetAtt\s+\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches !GetAtt [LogicalId, Attribute] - YAML short form get attribute with array syntax
 const YamlFindInMap = /!FindInMap\s+\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches !FindInMap [MappingName, Key1, Key2] - YAML short form mapping lookup
-const YamlSub = /!Sub\s+["']?([^"'\n]+)["']?/g; // Matches !Sub "template string" - YAML short form string substitution
-const YamlRefColon = /Ref:\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Ref: LogicalId - YAML long form reference
-const YamlGetAttColon = /Fn::GetAtt:\s*\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Fn::GetAtt: [LogicalId, Attribute] - YAML long form get attribute
-const YamlFindInMapColon = /Fn::FindInMap:\s*\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Fn::FindInMap: [MappingName, Key1, Key2] - YAML long form mapping lookup
-const YamlSubColon = /Fn::Sub:\s*["']?([^"'\n]+)["']?/g; // Matches Fn::Sub: "template string" - YAML long form string substitution
-const YamlCondition = /Condition:\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches Condition: ConditionName - resource condition property in YAML
-const YamlSubVariables = /\$\{([A-Za-z][A-Za-z0-9:]*)\}/g; // Matches ${LogicalId} or ${AWS::Region} - variables in Fn::Sub templates
-const YamlSingleDep = /DependsOn:\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches DependsOn: LogicalId - single resource dependency in YAML
-const YamlInlineDeps = /DependsOn:\s*\[([^\]]+)]/g; // Matches DependsOn: [Id1, Id2] - inline array format in YAML
+const YamlIf = /!If\s+\[\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches !If [ConditionName, TrueValue, FalseValue] - YAML short form conditional
+const YamlConditionShort = /!Condition\s+([A-Za-z][A-Za-z0-9]*)/g; // Matches !Condition ConditionName - YAML short form condition reference
+const YamlRefColon = /(?<![A-Za-z])['"]?Ref['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Ref:, 'Ref':, "Ref": LogicalId with optional quoted values
+const YamlGetAttColon = /['"]?Fn::GetAtt['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::GetAtt:, 'Fn::GetAtt':, "Fn::GetAtt": [LogicalId, Attribute]
+const YamlGetAttColonString = /['"]?Fn::GetAtt['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)\./g; // Matches Fn::GetAtt: LogicalId.Attribute with optional quotes
+const YamlFindInMapColon = /['"]?Fn::FindInMap['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::FindInMap: [MappingName, ...] with optional quotes
+const YamlIfColon = /['"]?Fn::If['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::If: [ConditionName, ...] with optional quotes
+const YamlCondition = /(?<![A-Za-z])['"]?Condition['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Condition:, 'Condition':, "Condition": ConditionName with optional quoted values
+const YamlSingleDep = /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches DependsOn: LogicalId with optional quotes
+const YamlInlineDeps = /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*\[([^\]]+)]/g; // Matches DependsOn: [Id1, Id2] with optional quotes
 const YamlListItem = /-\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches - LogicalId in YAML list format
 const YamlInlineItemPattern = /([A-Za-z][A-Za-z0-9]*)/g; // Matches LogicalId within the inline array
+const YamlValueOfShort = /!ValueOf\s+\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches !ValueOf [ParamName, Attr] - YAML short form
+const YamlValueOf = /['"]?Fn::ValueOf['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::ValueOf: [ParamName, Attr] with optional quotes
+
+// Shared pattern for ${} variables - used by both JSON and YAML
+const SubVariables = /\$\{([A-Za-z][A-Za-z0-9]*)(?:[.:]|(?=\}))/g; // Matches ${LogicalId} or ${Resource.Attr} or ${AWS::Region} - captures first segment only
 
 const ValidLogicalId = /^[A-Za-z][A-Za-z0-9.]+$/;
 
 // Validated these regex, they will fail fast with ?= lookahead
-// eslint-disable-next-line security/detect-unsafe-regex
-const YamlListDep = /DependsOn:\s*\n(\s*-\s*[A-Za-z][A-Za-z0-9]*(?:\s+-\s*[A-Za-z][A-Za-z0-9]*)*)/g; // Matches DependsOn: followed by YAML list items
-
-const YamlInlineListItem = /^(?=\s*-)\s*-\s+([A-Za-z][A-Za-z0-9]*)/gm; // Matches - LogicalId - standalone list items (for DependsOn arrays)
+const YamlListDep =
+    /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*\n(\s*-\s*[A-Za-z][A-Za-z0-9]*(?:\s+-\s*[A-Za-z][A-Za-z0-9]*)*)/g; // Matches DependsOn: followed by YAML list items
 
 export function isLogicalIdCandidate(str: unknown): boolean {
     if (!str || typeof str !== 'string' || str.length < 2) return false;
