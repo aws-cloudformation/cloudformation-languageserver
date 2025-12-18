@@ -10,7 +10,7 @@ import { DataStore } from '../DataStore';
 import { decrypt, encrypt } from './Encryption';
 
 const LOCK_OPTIONS_SYNC: LockOptions = { stale: 10_000 };
-const LOCK_OPTIONS: LockOptions = { ...LOCK_OPTIONS_SYNC, retries: { retries: 15, minTimeout: 10, maxTimeout: 500 } };
+const LOCK_OPTIONS: LockOptions = { ...LOCK_OPTIONS_SYNC, retries: { retries: 20, minTimeout: 50, maxTimeout: 1000 } };
 
 export class EncryptedFileStore implements DataStore {
     private readonly log: Logger;
