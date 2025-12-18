@@ -57,13 +57,17 @@ function createTelemetryMethodDecorator(methodNames: MethodNames) {
                 // Extract Context attributes from arguments if enabled
                 let enhancedConfig = decoratorOptions;
                 if (decoratorOptions.extractContextAttributes) {
-                    const contextArg = args.find((arg) => arg?.constructor?.name === 'Context');
+                    const contextArg = args.find(
+                        (arg) =>
+                            arg?.constructor?.name === 'Context' ||
+                            arg?.constructor?.name === 'ContextWithRelatedEntities',
+                    );
                     if (contextArg) {
                         const contextAttributes: Record<string, string> = {};
                         try {
+                            contextAttributes['entity.type'] = contextArg.getEntityType();
                             contextAttributes['resource.type'] = contextArg.getResourceEntity()?.Type ?? 'unknown';
                             contextAttributes['property.path'] = contextArg.propertyPath?.join('.') ?? 'unknown';
-                            contextAttributes['section'] = contextArg.section ?? 'unknown';
                         } catch {
                             // Ignore errors extracting context attributes
                         }
