@@ -1,7 +1,13 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, Position, TextEdit } from 'vscode-languageserver';
 import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
 import { Context } from '../context/Context';
-import { IntrinsicFunction, PseudoParameter, PseudoParametersSet, TopLevelSection } from '../context/ContextType';
+import {
+    IntrinsicFunction,
+    IntrinsicShortForms,
+    PseudoParameter,
+    PseudoParametersSet,
+    TopLevelSection,
+} from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Constant, Mapping, Parameter, Resource } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
@@ -70,6 +76,16 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             return undefined;
         }
 
+        // Handle nested !Ref expressions (e.g., !Equals [!Ref AWS::, ...])
+        // The intrinsicContext reports the outer function (Equals), but context.text contains the nested !Ref
+        // Skip if user is typing another nested function (e.g., !Ref !Su)
+        if (
+            context.text.startsWith(IntrinsicShortForms.Ref) &&
+            !context.text.slice(IntrinsicShortForms.Ref.length).trimStart().startsWith('!')
+        ) {
+            return this.handleRefArguments(context, params, syntaxTree);
+        }
+
         const intrinsicFunction = context.intrinsicContext.intrinsicFunction();
         if (!intrinsicFunction) {
             return undefined;
@@ -114,11 +130,17 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
             ...constantsCompletions,
         ];
 
-        if (allCompletions.length === this.pseudoParameterCompletionItems.length) {
-            return this.applyFuzzySearch(this.pseudoParameterCompletionItems, context.text);
+        // Extract just the argument part if context.text includes the !Ref prefix
+        let searchText = context.text;
+        if (searchText.startsWith(IntrinsicShortForms.Ref)) {
+            searchText = searchText.slice(IntrinsicShortForms.Ref.length).trim();
         }
 
-        return this.applyFuzzySearch(allCompletions, context.text);
+        if (allCompletions.length === this.pseudoParameterCompletionItems.length) {
+            return this.applyFuzzySearch(this.pseudoParameterCompletionItems, searchText);
+        }
+
+        return this.applyFuzzySearch(allCompletions, searchText);
     }
 
     private handleSubArguments(

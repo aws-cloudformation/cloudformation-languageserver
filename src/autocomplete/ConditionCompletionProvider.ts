@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { TopLevelSection } from '../context/ContextType';
+import { IntrinsicShortForms, TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -40,8 +40,14 @@ export class ConditionCompletionProvider implements CompletionProvider {
             [...conditionMap.keys()].filter((k) => k !== conditionLogicalNameToOmit),
         );
 
-        if (context.text.length > 0) {
-            return this.conditionFuzzySearch(items, context.text);
+        // Extract search text, handling !Condition prefix
+        let searchText = context.text;
+        if (searchText.startsWith(IntrinsicShortForms.Condition)) {
+            searchText = searchText.slice(IntrinsicShortForms.Condition.length).trim();
+        }
+
+        if (searchText.length > 0) {
+            return this.conditionFuzzySearch(items, searchText);
         }
 
         return items;
