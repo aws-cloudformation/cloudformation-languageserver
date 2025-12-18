@@ -144,6 +144,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
         };
     }
 
+    @Measure({ name: 'validationAsync' })
     protected async runValidationAsync(params: CreateValidationParams, changeSetName: string): Promise<void> {
         const uri = params.uri;
         const workflowId = params.id;

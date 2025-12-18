@@ -113,6 +113,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
         };
     }
 
+    @Measure({ name: 'deploymentAsync' })
     protected async runDeploymentAsync(params: CreateDeploymentParams, changeSetType: ChangeSetType): Promise<void> {
         const workflowId = params.id;
         const stackName = params.stackName;
