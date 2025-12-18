@@ -266,9 +266,9 @@ describe('TelemetryDecorator', () => {
         it('should extract context attributes when enabled', () => {
             const mockContext = {
                 constructor: { name: 'Context' },
+                getEntityType: () => 'Resource',
                 getResourceEntity: () => ({ Type: 'AWS::S3::Bucket' }),
                 propertyPath: ['Resources', 'MyBucket', 'Properties'],
-                section: 'Properties',
             };
 
             class TestClass {
@@ -284,9 +284,9 @@ describe('TelemetryDecorator', () => {
                 name: 'method',
                 extractContextAttributes: true,
                 attributes: {
+                    'entity.type': 'Resource',
                     'resource.type': 'AWS::S3::Bucket',
                     'property.path': 'Resources.MyBucket.Properties',
-                    section: 'Properties',
                 },
             });
         });
