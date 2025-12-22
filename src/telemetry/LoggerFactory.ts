@@ -52,6 +52,12 @@ export class LoggerFactory implements Closeable {
             },
         });
 
+        // Handle stream errors to prevent uncaught exceptions when worker thread exits
+        const stream = (this.baseLogger as unknown as Record<symbol, NodeJS.EventEmitter>)[pino.symbols.streamSym];
+        stream?.on?.('error', () => {
+            // Silently ignore - worker thread has exited during shutdown
+        });
+
         this.timeout = setTimeout(() => {
             void this.cleanOldLogs();
         }, 60 * 1000);
