@@ -216,13 +216,13 @@ const YamlIfColon = /['"]?Fn::If['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]
 const YamlCondition = /(?<![A-Za-z])['"]?Condition['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Condition:, 'Condition':, "Condition": ConditionName with optional quoted values
 const YamlSingleDep = /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches DependsOn: LogicalId with optional quotes
 const YamlInlineDeps = /(?<![A-Za-z])['"]?DependsOn['"]?\s*:\s*\[([^\]]+)]/g; // Matches DependsOn: [Id1, Id2] with optional quotes
-const YamlListItem = /-\s*([A-Za-z][A-Za-z0-9]*)/g; // Matches - LogicalId in YAML list format
+const YamlListItem = /(?:^|\s)-\s+([A-Za-z][A-Za-z0-9]*)/gm; // Matches - LogicalId in YAML list format (requires whitespace before hyphen)
 const YamlInlineItemPattern = /([A-Za-z][A-Za-z0-9]*)/g; // Matches LogicalId within the inline array
 const YamlValueOfShort = /!ValueOf\s+\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches !ValueOf [ParamName, Attr] - YAML short form
 const YamlValueOf = /['"]?Fn::ValueOf['"]?\s*:\s*\[\s*['"]?([A-Za-z][A-Za-z0-9]*)['"]?/g; // Matches Fn::ValueOf: [ParamName, Attr] with optional quotes
 
 // Shared pattern for ${} variables - used by both JSON and YAML
-const SubVariables = /\$\{([A-Za-z][A-Za-z0-9]*)(?:[.:]|(?=\}))/g; // Matches ${LogicalId} or ${Resource.Attr} or ${AWS::Region} - captures first segment only
+const SubVariables = /\$\{([A-Za-z][A-Za-z0-9]*)(?:[^A-Za-z0-9]|$)/g; // Matches ${LogicalId} followed by any non-alphanumeric char or end
 
 const ValidLogicalId = /^[A-Za-z][A-Za-z0-9.]+$/;
 

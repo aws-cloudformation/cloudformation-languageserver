@@ -509,8 +509,7 @@ Conditions:`,
                         verification: {
                             position: { line: 101, character: 25 },
                             expectation: HoverExpectationBuilder.create()
-                                .expectContainsText(['**Condition**, IsProductionOrStaging'])
-                                .todo(`hover on condition name reference for !Condition and not just Condition:`)
+                                .expectContainsText(['**Condition:** IsProductionOrStaging'])
                                 .build(),
                         },
                     },
@@ -2572,8 +2571,7 @@ Resources:
                         verification: {
                             position: { line: 114, character: 28 },
                             expectation: HoverExpectationBuilder.create()
-                                .expectContainsText(['**Condition**, IsProductionOrStaging'])
-                                .todo('hover on condition name reference for !Condition and not just Condition:')
+                                .expectContainsText(['**Condition:** IsProductionOrStaging'])
                                 .build(),
                         },
                     },

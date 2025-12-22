@@ -45,6 +45,15 @@ export enum IntrinsicFunction {
     Implies = 'Fn::Implies',
 }
 
+export enum IntrinsicShortForms {
+    Condition = '!Condition',
+    Ref = '!Ref',
+}
+
+export enum EntitySection {
+    Condition = 'Condition',
+}
+
 export const IntrinsicsUsingConditionKeyword: ReadonlyArray<IntrinsicFunction> = [
     IntrinsicFunction.And,
     IntrinsicFunction.Or,
