@@ -1,8 +1,11 @@
+import { SyntaxNode } from 'tree-sitter';
 import { CompletionItem, CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
 import {
+    EntitySection,
     IntrinsicFunction,
+    IntrinsicShortForms,
     IntrinsicsUsingConditionKeyword,
     ResourceAttribute,
     TopLevelSection,
@@ -38,7 +41,6 @@ export type CompletionProviderType =
     | 'IntrinsicFunctionArgument'
     | 'ParameterTypeValue'
     | EntityType;
-const Condition = 'Condition';
 
 export class CompletionRouter implements SettingsConfigurable, Closeable {
     private completionSettings: CompletionSettings = DefaultSettings.completion;
@@ -122,11 +124,32 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
     }
 
     private shouldUseConditionCompletionProvider(context: Context): boolean {
+        // Check for YAML short form !Condition - tree-sitter may place cursor node inside the argument,
+        // so we check parent nodes to find the containing !Condition expression
+        if (this.isInsideConditionShortForm(context.syntaxNode)) {
+            return true;
+        }
         return (
-            context.entitySection === Condition ||
+            context.entitySection === EntitySection.Condition ||
             this.isAtConditionKey(context) ||
             this.conditionUsageWithinIntrinsic(context)
         );
+    }
+
+    private isInsideConditionShortForm(node?: SyntaxNode): boolean {
+        if (!node) {
+            return false;
+        }
+
+        const MAX_PARENT_DEPTH = 3;
+        let current: SyntaxNode | undefined | null = node;
+        for (let i = 0; i < MAX_PARENT_DEPTH && current; i++) {
+            if (current.text.startsWith(IntrinsicShortForms.Condition)) {
+                return true;
+            }
+            current = current?.parent;
+        }
+        return false;
     }
 
     private isAtConditionKey(context: Context): boolean {
@@ -137,7 +160,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
 
         const lastPathElement = propertyPath[propertyPath.length - 1];
 
-        if (lastPathElement === Condition) {
+        if (lastPathElement === EntitySection.Condition) {
             return this.isInConditionUsageContext(context);
         }
 
@@ -145,23 +168,35 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
     }
 
     private isInConditionUsageContext(context: Context): boolean {
-        // Resource Condition attribute: ['Resources', 'LogicalId', this.CONDITION]
-        if (context.matchPathWithLogicalId(TopLevelSection.Resources, Condition)) {
+        // Resource Condition attribute: ['Resources', 'LogicalId', 'Condition']
+        if (context.matchPathWithLogicalId(TopLevelSection.Resources, EntitySection.Condition)) {
             return true;
         }
 
-        // Resource UpdatePolicy Condition: ['Resources', 'LogicalId', 'UpdatePolicy', this.CONDITION]
-        if (context.matchPathWithLogicalId(TopLevelSection.Resources, ResourceAttribute.UpdatePolicy, Condition)) {
+        // Resource UpdatePolicy Condition: ['Resources', 'LogicalId', 'UpdatePolicy', 'Condition']
+        if (
+            context.matchPathWithLogicalId(
+                TopLevelSection.Resources,
+                ResourceAttribute.UpdatePolicy,
+                EntitySection.Condition,
+            )
+        ) {
             return true;
         }
 
-        // Resource Metadata Condition: ['Resources', 'LogicalId', 'Metadata', this.CONDITION]
-        if (context.matchPathWithLogicalId(TopLevelSection.Resources, ResourceAttribute.Metadata, Condition)) {
+        // Resource Metadata Condition: ['Resources', 'LogicalId', 'Metadata', 'Condition']
+        if (
+            context.matchPathWithLogicalId(
+                TopLevelSection.Resources,
+                ResourceAttribute.Metadata,
+                EntitySection.Condition,
+            )
+        ) {
             return true;
         }
 
-        // Output Condition attribute: ['Outputs', 'LogicalId', this.CONDITION]
-        return context.matchPathWithLogicalId(TopLevelSection.Outputs, Condition);
+        // Output Condition attribute: ['Outputs', 'LogicalId', 'Condition']
+        return context.matchPathWithLogicalId(TopLevelSection.Outputs, EntitySection.Condition);
     }
 
     private conditionUsageWithinIntrinsic(context: Context): boolean {
@@ -252,9 +287,16 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
     }
 
     private shouldUseIntrinsicFunctionProvider(context: Context): boolean {
-        // YAML short form
+        // YAML short form - check if user is typing a function name (starts with !)
         if (context.documentType !== DocumentType.JSON && context.text.startsWith('!')) {
-            return true;
+            // Check the last token - if it starts with !, user is typing a function name
+            const lastSpaceIndex = context.text.lastIndexOf(' ');
+            if (lastSpaceIndex === -1) {
+                return true; // No space, just "!Ref" or "!Su"
+            }
+            // Check if part after last space starts with ! (nested function like "!Base64 !Re")
+            const afterSpace = context.text.slice(Math.max(0, lastSpaceIndex + 1));
+            return afterSpace.startsWith('!');
         }
 
         // Typing "Fn:" for function name completion

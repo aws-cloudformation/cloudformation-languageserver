@@ -125,7 +125,6 @@ Resources:
                             position: { line: 65, character: 32 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
-                                .todo('No logic for goto in formatted string')
                                 .expectDefinitionPosition({ line: 4, character: 2 })
                                 .build(),
                         },
@@ -492,7 +491,6 @@ Resources:
                             position: { line: 196, character: 35 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
-                                .todo('No logic for goto in formatted string')
                                 .expectDefinitionPosition({ line: 4, character: 2 })
                                 .build(),
                         },
@@ -791,7 +789,6 @@ Outputs:
                             position: { line: 96, character: 46 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
-                                .todo('No logic for goto in formatted string')
                                 .expectDefinitionPosition({ line: 4, character: 2 })
                                 .build(),
                         },
@@ -1172,10 +1169,7 @@ Outputs:
                         description: 'Click on EnvironmentName in !Sub formatted string',
                         verification: {
                             position: { line: 319, character: 46 },
-                            expectation: GotoExpectationBuilder.create()
-                                .expectDefinition('EnvironmentName')
-                                .todo('No logic for goto in formatted string')
-                                .build(),
+                            expectation: GotoExpectationBuilder.create().expectDefinition('EnvironmentName').build(),
                         },
                     },
                     {

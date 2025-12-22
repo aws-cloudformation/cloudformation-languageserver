@@ -310,21 +310,16 @@ Conditions:
                         verification: {
                             position: { line: 103, character: 25 },
                             expectation: CompletionExpectationBuilder.create()
-                                .expectContainsItems(['AWS::Region'])
-                                .todo(
-                                    `intrinsic functions are being suggested incorrectly!
-                                [
-                                  "!RefAll",
-                                  "!GetAZs",
-                                  "!Ref",
-                                  "!Equals",
-                                  "!Base64",
-                                  "!GetAtt",
-                                  "!Transform",
-                                  "!EachMemberEquals",
-                                  "!EachMemberIn",
-                                ]`,
-                                )
+                                .expectItems([
+                                    'AWS::AccountId',
+                                    'AWS::NoValue',
+                                    'AWS::NotificationARNs',
+                                    'AWS::Partition',
+                                    'AWS::Region',
+                                    'AWS::StackId',
+                                    'AWS::StackName',
+                                    'AWS::URLSuffix',
+                                ])
                                 .build(),
                         },
                     },
@@ -393,8 +388,16 @@ Rules:
                         verification: {
                             position: { line: 114, character: 45 },
                             expectation: CompletionExpectationBuilder.create()
-                                .expectContainsItems(['AWS::Region'])
-                                .todo(`no suggestion of pseudo-parameter after AWS:: is typed; needs the R`)
+                                .expectItems([
+                                    'AWS::AccountId',
+                                    'AWS::NoValue',
+                                    'AWS::NotificationARNs',
+                                    'AWS::Partition',
+                                    'AWS::Region',
+                                    'AWS::StackId',
+                                    'AWS::StackName',
+                                    'AWS::URLSuffix',
+                                ])
                                 .build(),
                         },
                     },
@@ -1072,7 +1075,6 @@ Resources:
                                     'IsProductionOrStaging',
                                 ])
                                 .expectExcludesItems(['ComplexCondition', 'HasMultipleAZs'])
-                                .todo(`not working even when testing not on last line of YAML`)
                                 .build(),
                         },
                     },
