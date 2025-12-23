@@ -114,7 +114,10 @@ export class ResourceStateImporter {
         if (insertPosition.replaceEntireFile) {
             // Replace entire file with properly formatted JSON
             snippetText = docFormattedText;
-            const endPosition = { line: document.lineCount ?? 0, character: 0 };
+            if (document.lineCount === undefined) {
+                return this.getFailureResponse('Import failed. Document is no longer available.');
+            }
+            const endPosition = { line: document.lineCount, character: 0 };
             textEdit = TextEdit.replace(Range.create({ line: 0, character: 0 }, endPosition), snippetText);
         } else {
             // Insert at specific position
