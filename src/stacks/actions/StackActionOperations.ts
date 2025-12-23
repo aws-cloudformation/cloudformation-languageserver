@@ -107,12 +107,7 @@ export async function processChangeSet(
             const s3KeyPrefix = params.s3Key?.includes('/')
                 ? params.s3Key.slice(0, params.s3Key.lastIndexOf('/'))
                 : undefined;
-            const template = new ArtifactExporter(
-                s3Service,
-                document.documentType,
-                document.uri,
-                document.contents() ?? '',
-            );
+            const template = new ArtifactExporter(s3Service, document.documentType, document.uri, templateBody);
 
             const exportedTemplate = await template.export(params.s3Bucket, s3KeyPrefix);
 

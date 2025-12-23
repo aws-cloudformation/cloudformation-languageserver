@@ -25,7 +25,7 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
         }
 
         const content = document.contents();
-        if (!content) {
+        if (content === undefined) {
             log.error(`No content found for document ${uri}`);
             return;
         }
@@ -61,7 +61,7 @@ export function didChangeHandler(
         // This is the document AFTER changes
         const document = new Document(textDocument.uri, () => textDocument);
         const finalContent = document.getText();
-        if (!finalContent) {
+        if (finalContent === undefined) {
             log.error(`No content found for document ${documentUri}`);
             return;
         }
