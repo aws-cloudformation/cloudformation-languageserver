@@ -2,7 +2,7 @@ import { existsSync, readFileSync, statSync, writeFileSync } from 'fs'; // eslin
 import { writeFile } from 'fs/promises';
 import { join } from 'path';
 import { Logger } from 'pino';
-import { lock, LockOptions, lockSync } from 'proper-lockfile';
+import { lock, LockOptions } from 'proper-lockfile';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
@@ -33,13 +33,8 @@ export class EncryptedFileStore implements DataStore {
             } catch (error) {
                 this.log.error(error, 'Failed to decrypt file store, recreating store');
                 this.telemetry.count('filestore.recreate', 1);
-
-                const release = lockSync(this.file, LOCK_OPTIONS_SYNC);
-                try {
-                    this.saveSync();
-                } finally {
-                    release();
-                }
+                this.content = {};
+                this.saveSync();
             }
         } else {
             this.saveSync();
