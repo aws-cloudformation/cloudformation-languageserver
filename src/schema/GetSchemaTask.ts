@@ -100,7 +100,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
         } catch (error) {
             const { category, httpStatus } = classifyAwsError(error);
             this.telemetry.count('getSchemas.error', 1, {
-                attributes: { category, httpStatus: httpStatus ?? 0 },
+                attributes: { category, httpStatus },
             });
             this.logger.error(error, 'Failed to get private schemas');
             throw error;
