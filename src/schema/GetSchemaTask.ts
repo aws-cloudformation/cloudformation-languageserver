@@ -5,6 +5,7 @@ import { CfnService } from '../services/CfnService';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
+import { classifyAwsError } from '../utils/AwsErrorMapper';
 import { AwsRegion } from '../utils/Region';
 import { downloadFile } from '../utils/RemoteDownload';
 import { PrivateSchemas, PrivateSchemasType, PrivateStoreKey } from './PrivateSchemas';
@@ -73,6 +74,9 @@ export class GetPublicSchemaTask extends GetSchemaTask {
 export class GetPrivateSchemasTask extends GetSchemaTask {
     private readonly logger = LoggerFactory.getLogger(GetPrivateSchemasTask);
 
+    @Telemetry()
+    private readonly telemetry!: ScopedTelemetry;
+
     constructor(private readonly getSchemas: () => Promise<DescribeTypeOutput[]>) {
         super();
     }
@@ -94,6 +98,10 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
 
             this.logger.info(`${schemas.length} private schemas retrieved`);
         } catch (error) {
+            const { category, httpStatus } = classifyAwsError(error);
+            this.telemetry.count('getSchemas.error', 1, {
+                attributes: { category, httpStatus: httpStatus ?? 0 },
+            });
             this.logger.error(error, 'Failed to get private schemas');
             throw error;
         }
