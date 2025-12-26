@@ -16,7 +16,7 @@ export enum StoreName {
     private_schemas = 'private_schemas',
 }
 
-export const PersistedStores = [StoreName.public_schemas, StoreName.sam_schemas];
+export const PersistedStores: ReadonlyArray<StoreName> = [StoreName.public_schemas, StoreName.sam_schemas];
 
 export interface DataStore {
     get<T>(key: string): T | undefined;
@@ -33,7 +33,7 @@ export interface DataStore {
 export interface DataStoreFactory extends Closeable {
     get(store: StoreName): DataStore;
 
-    storeNames(): ReadonlyArray<string>;
+    storeNames: ReadonlyArray<string>;
 
     close(): Promise<void>;
 }

@@ -20,7 +20,10 @@ export class FileStoreFactory implements DataStoreFactory {
     private readonly metricsInterval: NodeJS.Timeout;
     private readonly timeout: NodeJS.Timeout;
 
-    constructor(rootDir: string, storeNames: StoreName[] = PersistedStores) {
+    constructor(
+        rootDir: string,
+        public readonly storeNames = PersistedStores,
+    ) {
         this.log = LoggerFactory.getLogger('FileStore.Global');
 
         this.fileDbRoot = join(rootDir, 'filedb');
@@ -54,10 +57,6 @@ export class FileStoreFactory implements DataStoreFactory {
             throw new Error(`Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`);
         }
         return val;
-    }
-
-    storeNames(): ReadonlyArray<string> {
-        return [...this.stores.keys()];
     }
 
     close(): Promise<void> {
