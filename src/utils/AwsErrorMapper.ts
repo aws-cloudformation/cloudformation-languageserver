@@ -60,6 +60,34 @@ function isRetryableAwsError(error: AwsError): boolean {
     return statusCode !== undefined && RETRYABLE_STATUS_CODES.has(statusCode);
 }
 
+export type AwsErrorCategory = 'credentials' | 'network' | 'permissions' | 'throttling' | 'service' | 'unknown';
+
+export function classifyAwsError(error: unknown): { category: AwsErrorCategory; httpStatus?: number } {
+    if (!isAwsError(error)) {
+        return { category: 'unknown' };
+    }
+
+    const httpStatus = error.$metadata?.httpStatusCode;
+
+    if (isCredentialError(error)) {
+        return { category: 'credentials', httpStatus };
+    }
+    if (isNetworkError(error)) {
+        return { category: 'network', httpStatus };
+    }
+    if (error.name === 'AccessDeniedException' || httpStatus === 403) {
+        return { category: 'permissions', httpStatus };
+    }
+    if (error.name === 'ThrottlingException' || httpStatus === 429) {
+        return { category: 'throttling', httpStatus };
+    }
+    if (httpStatus !== undefined) {
+        return { category: 'service', httpStatus };
+    }
+
+    return { category: 'unknown' };
+}
+
 export function mapAwsErrorToLspError(error: unknown): ResponseError<unknown> {
     if (error instanceof ResponseError) {
         return error;
