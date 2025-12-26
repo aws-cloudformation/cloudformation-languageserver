@@ -6,11 +6,12 @@ import { StoreName } from '../../../src/datastore/DataStore';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
 
 describe('LMDB fork detection and recovery', () => {
-    const testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-recovery-test', v4());
+    let testDir: string;
     let factory: LMDBStoreFactory;
     let originalPid: number;
 
     beforeEach(() => {
+        testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-recovery-test', v4());
         originalPid = process.pid;
         fs.mkdirSync(testDir, { recursive: true });
         factory = new LMDBStoreFactory(testDir);
@@ -19,7 +20,6 @@ describe('LMDB fork detection and recovery', () => {
     afterEach(async () => {
         Object.defineProperty(process, 'pid', { value: originalPid, configurable: true });
         await factory.close();
-        fs.rmSync(testDir, { recursive: true, force: true });
     });
 
     describe('fork detection', () => {
