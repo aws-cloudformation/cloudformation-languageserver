@@ -30,7 +30,8 @@ describe('DocumentHandler', () => {
     }
 
     function createMockDocument(cfnFileType = CloudFormationFileType.Template) {
-        const doc = new Document(createTextDocument());
+        const textDoc = createTextDocument();
+        const doc = new Document(textDoc.uri, () => textDoc);
         (doc as any)._cfnFileType = cfnFileType;
         return doc;
     }
