@@ -17,7 +17,7 @@ import { HoverProvider } from './HoverProvider';
 export class ResourceSectionHoverProvider implements HoverProvider {
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
-    @Measure({ name: 'getInformation' })
+    @Measure({ name: 'getInformation', extractContextAttributes: true })
     getInformation(context: Context) {
         const resource = context.getResourceEntity();
         if (!resource) {
