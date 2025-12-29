@@ -341,6 +341,11 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
                 continue;
             }
 
+            // Skip Fn::ForEach resources
+            if (resourceName.startsWith(IntrinsicFunction.ForEach)) {
+                continue;
+            }
+
             const resource = resourceContext.entity;
 
             completionItems.push(
@@ -690,7 +695,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const items = [...resourceEntities.keys()]
-            .filter((logicalId) => logicalId !== context.logicalId)
+            .filter((logicalId) => logicalId !== context.logicalId && !logicalId.startsWith(IntrinsicFunction.ForEach))
             .map((logicalId) => createCompletionItem(logicalId, CompletionItemKind.Reference, { context }));
 
         return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;

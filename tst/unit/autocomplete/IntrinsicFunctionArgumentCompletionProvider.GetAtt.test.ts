@@ -288,6 +288,30 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
             expect(labels).toContain('LambdaRole');
             expect(labels).toContain('DatabaseInstance');
         });
+
+        it('should exclude Fn::ForEach resources from completions', () => {
+            const resourceDataWithForEach = {
+                ...mockResourceData,
+                'Fn::ForEach::Buckets': { Type: 'AWS::S3::Bucket' },
+                'Fn::ForEach::Instances': { Type: 'AWS::EC2::Instance' },
+            };
+            setupResourceEntities(resourceDataWithForEach);
+
+            const mockContext = createMockGetAttContext('', []);
+
+            const result = provider.getCompletions(mockContext, createTestParams());
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(4); // Should only include the 4 regular resources
+
+            const labels = result!.map((item) => item.label);
+            expect(labels).toContain('MyVPC');
+            expect(labels).toContain('MyS3Bucket');
+            expect(labels).toContain('LambdaRole');
+            expect(labels).toContain('DatabaseInstance');
+            expect(labels).not.toContain('Fn::ForEach::Buckets');
+            expect(labels).not.toContain('Fn::ForEach::Instances');
+        });
     });
 
     describe('Invalid Arguments', () => {
