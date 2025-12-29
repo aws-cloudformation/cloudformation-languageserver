@@ -204,4 +204,20 @@ describe('LMDB', () => {
             await newFactory.close();
         });
     });
+
+    describe('stats', () => {
+        it('should return store statistics', async () => {
+            const store = lmdbFactory.get(StoreName.public_schemas);
+
+            await store.put('key1', 'value1');
+            await store.put('key2', { nested: 'data' });
+
+            const storeStats = (store as any).stats();
+
+            expect(storeStats).toHaveProperty('totalSize');
+            expect(storeStats).toHaveProperty('entries');
+            expect(storeStats).toHaveProperty('maxSize');
+            expect(storeStats.entries).toBeGreaterThanOrEqual(0);
+        });
+    });
 });

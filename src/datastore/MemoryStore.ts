@@ -70,7 +70,7 @@ export class MemoryStoreFactory implements DataStoreFactory {
         return val;
     }
 
-    storeNames(): ReadonlyArray<string> {
+    get storeNames(): ReadonlyArray<string> {
         return [...this.stores.keys()];
     }
 
