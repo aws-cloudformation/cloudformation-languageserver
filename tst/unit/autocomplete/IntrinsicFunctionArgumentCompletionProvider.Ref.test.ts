@@ -238,6 +238,45 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Ref Function', () => {
             const resourceCompletions = result!.filter((item) => item.detail?.includes('Resource ('));
             expect(resourceCompletions.length).toBe(2); // Should include all resources in Outputs section
         });
+
+        it('should exclude Fn::ForEach resources from completions', () => {
+            const context = createMockContext(TopLevelSection.Resources, 'MyResource', { text: '' });
+            Object.defineProperty(context, 'intrinsicContext', {
+                value: createMockIntrinsicContext(IntrinsicFunction.Ref, ''),
+            });
+
+            const mockResourcesMap = new Map([
+                ['MyResource', { entity: { Type: 'AWS::S3::Bucket' } }],
+                ['OtherResource', { entity: { Type: 'AWS::EC2::Instance' } }],
+                ['Fn::ForEach::Buckets', { entity: { Type: 'AWS::S3::Bucket' } }],
+                ['Fn::ForEach::Instances', { entity: { Type: 'AWS::EC2::Instance' } }],
+            ]);
+
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTree.findTopLevelSections.returns(new Map([[TopLevelSection.Resources, {} as SyntaxNode]]));
+            (mockSyntaxTree as any).type = DocumentType.YAML;
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            (getEntityMap as any).mockImplementation((syntaxTree: any, section: TopLevelSection) => {
+                if (section === TopLevelSection.Resources) {
+                    return mockResourcesMap;
+                }
+                return new Map();
+            });
+
+            const result = provider.getCompletions(context, createTestParams());
+
+            expect(result).toBeDefined();
+            const resourceCompletions = result!.filter((item) => item.detail?.includes('Resource ('));
+            // Should only include OtherResource (MyResource is excluded as current, Fn::ForEach:: resources are filtered)
+            expect(resourceCompletions.length).toBe(1);
+            expect(resourceCompletions[0].label).toBe('OtherResource');
+
+            // Verify Fn::ForEach resources are not in the results
+            const labels = result!.map((item) => item.label);
+            expect(labels).not.toContain('Fn::ForEach::Buckets');
+            expect(labels).not.toContain('Fn::ForEach::Instances');
+        });
     });
 
     describe('filtering and fuzzy search', () => {
