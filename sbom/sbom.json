@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "@aws/cloudformation-languageserver@1.2.0",
-  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.2.0-3d55929d-3030-4898-8ceb-5ed395589c94",
+  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.2.0-ba9d3384-6516-4e02-96d2-97c94f72d388",
   "creationInfo": {
-    "created": "2025-11-29T21:55:32.866Z",
+    "created": "2025-12-24T22:12:27.534Z",
     "creators": [
       "Tool: npm/cli-10.9.2"
     ]
@@ -8380,30 +8380,6 @@
       ]
     },
     {
-      "name": "@types/retry",
-      "SPDXID": "SPDXRef-Package-types.retry-0.12.0",
-      "versionInfo": "0.12.0",
-      "packageFileName": "node_modules/@types/retry",
-      "description": "TypeScript definitions for retry",
-      "downloadLocation": "https://registry.npmjs.org/@types/retry/-/retry-0.12.0.tgz",
-      "filesAnalyzed": false,
-      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped#readme",
-      "licenseDeclared": "MIT",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40types/retry@0.12.0"
-        }
-      ],
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "c1628e0a54d38a2cdc6615e73d8e308a4540c267581e9f2ae83982f84254cc032cc9c6fb1c1df62a1f51378fb4804c6398f9994804238144572060133de800bc"
-        }
-      ]
-    },
-    {
       "name": "@types/tedious",
       "SPDXID": "SPDXRef-Package-types.tedious-4.0.14",
       "versionInfo": "4.0.14",
@@ -12219,6 +12195,78 @@
       ]
     },
     {
+      "name": "proper-lockfile",
+      "SPDXID": "SPDXRef-Package-proper-lockfile-4.1.2",
+      "versionInfo": "4.1.2",
+      "packageFileName": "node_modules/proper-lockfile",
+      "description": "A inter-process and inter-machine lockfile utility that works on a local or network file system",
+      "downloadLocation": "https://registry.npmjs.org/proper-lockfile/-/proper-lockfile-4.1.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/moxystudio/node-proper-lockfile",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/proper-lockfile@4.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "4e334f6e537807001631753cb3d004cf82664319c3d4d34bedb34e63f00a533c9a99cdfbf4558049485cfcad692f69e855bf9799928b2faf1c8f32ec88e00c68"
+        }
+      ]
+    },
+    {
+      "name": "retry",
+      "SPDXID": "SPDXRef-Package-retry-0.12.0",
+      "versionInfo": "0.12.0",
+      "packageFileName": "node_modules/proper-lockfile/node_modules/retry",
+      "description": "Abstraction for exponential and custom retry strategies for failed operations.",
+      "downloadLocation": "https://registry.npmjs.org/retry/-/retry-0.12.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/tim-kos/node-retry",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/retry@0.12.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "f4b9224f08d487aad3e79e43b44f6b4d7f81281c8f7eb333100b67944b5d130af73647dfc228a1a9ed9b5800e0f8e4118edf6097a20276607f6450c2180b52a3"
+        }
+      ]
+    },
+    {
+      "name": "signal-exit",
+      "SPDXID": "SPDXRef-Package-signal-exit-3.0.7",
+      "versionInfo": "3.0.7",
+      "packageFileName": "node_modules/proper-lockfile/node_modules/signal-exit",
+      "description": "when you want to fire an event no matter how a process exits.",
+      "downloadLocation": "https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.7.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/tapjs/signal-exit",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/signal-exit@3.0.7"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c270f6644fa5f923c2feea12d2f5de13d2f5fb4c2e68ca8a95fcfd00c528dfc26cc8b48159215c1d1d51ae2eb62d9735daf2ebd606f78e5ee2c10860c2901b19"
+        }
+      ]
+    },
+    {
       "name": "protobufjs",
       "SPDXID": "SPDXRef-Package-protobufjs-7.5.4",
       "versionInfo": "7.5.4",
@@ -12839,54 +12887,6 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "51c8dc24e5a49eb36417a3cb5fcdea70733a28781528d915eb663c6b9b980d5bfdc9d19057000730aa877498ded554d6a658c6d1662908386b09d00e607e135a"
-        }
-      ]
-    },
-    {
-      "name": "stack-utils",
-      "SPDXID": "SPDXRef-Package-stack-utils-2.0.6",
-      "versionInfo": "2.0.6",
-      "packageFileName": "node_modules/stack-utils",
-      "description": "Captures and cleans stack traces",
-      "downloadLocation": "https://registry.npmjs.org/stack-utils/-/stack-utils-2.0.6.tgz",
-      "filesAnalyzed": false,
-      "homepage": "https://github.com/tapjs/stack-utils#readme",
-      "licenseDeclared": "MIT",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/stack-utils@2.0.6"
-        }
-      ],
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "5e5916bdf226e919ac5ad349c7ebaab4a2d2f1ea856f1520d19ccb5ea63471a132f65ee1aee5fc2298839e3b0b6afa0182a08247bd53a963bc31a5d885e27745"
-        }
-      ]
-    },
-    {
-      "name": "escape-string-regexp",
-      "SPDXID": "SPDXRef-Package-escape-string-regexp-2.0.0",
-      "versionInfo": "2.0.0",
-      "packageFileName": "node_modules/stack-utils/node_modules/escape-string-regexp",
-      "description": "Escape RegExp special characters",
-      "downloadLocation": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-2.0.0.tgz",
-      "filesAnalyzed": false,
-      "homepage": "https://github.com/sindresorhus/escape-string-regexp#readme",
-      "licenseDeclared": "MIT",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/escape-string-regexp@2.0.0"
-        }
-      ],
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "529cdc2c25e895459c36ee47b5530761d5c98c0ae3b05f42d1a367aae658638b96fd5bb49a2cb96285af6d5df8e476ae56f700527a51ba130c72a4dc18e636fb"
         }
       ]
     },
@@ -13951,12 +13951,12 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-pyodide-0.28.2",
+      "spdxElementId": "SPDXRef-Package-proper-lockfile-4.1.2",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-stack-utils-2.0.6",
+      "spdxElementId": "SPDXRef-Package-pyodide-0.28.2",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.2.0",
       "relationshipType": "DEPENDENCY_OF"
     },
@@ -22626,11 +22626,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-types.retry-0.12.0",
-      "relatedSpdxElement": "SPDXRef-Package-p-retry-4.6.2",
-      "relationshipType": "DEPENDENCY_OF"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-retry-0.13.1",
       "relatedSpdxElement": "SPDXRef-Package-p-retry-4.6.2",
       "relationshipType": "DEPENDENCY_OF"
@@ -22778,6 +22773,16 @@
     {
       "spdxElementId": "SPDXRef-Package-xtend-4.0.2",
       "relatedSpdxElement": "SPDXRef-Package-postgres-interval-1.2.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-retry-0.12.0",
+      "relatedSpdxElement": "SPDXRef-Package-proper-lockfile-4.1.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-signal-exit-3.0.7",
+      "relatedSpdxElement": "SPDXRef-Package-proper-lockfile-4.1.2",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -22978,11 +22983,6 @@
     {
       "spdxElementId": "SPDXRef-Package-atomic-sleep-1.0.0",
       "relatedSpdxElement": "SPDXRef-Package-sonic-boom-4.2.0",
-      "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-escape-string-regexp-2.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-stack-utils-2.0.6",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
