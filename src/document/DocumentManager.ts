@@ -118,7 +118,7 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
 
         return {
             ...this.editorSettings,
-            tabSize: document.getTabSize(),
+            tabSize: document.getTabSize(this.editorSettings.detectIndentation),
         };
     }
 

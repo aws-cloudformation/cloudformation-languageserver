@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, afterAll } from 'vitest';
-import { CompletionList } from 'vscode-languageserver';
+import { CompletionList, InsertTextFormat } from 'vscode-languageserver';
 import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';
 
@@ -13,6 +13,96 @@ describe('Completion Tests', () => {
 
     afterAll(async () => {
         await extension.close();
+    });
+
+    describe('Indentation Detection', () => {
+        test('should use user-typed 2-space indentation in snippets when file starts empty', async () => {
+            // Start with empty file (simulates user opening new file)
+            await extension.openDocument({
+                textDocument: {
+                    uri: documentUri,
+                    languageId: 'yaml',
+                    version: 1,
+                    text: '',
+                },
+            });
+
+            // User types content with 2-space indentation
+            await extension.changeDocument({
+                textDocument: { uri: documentUri, version: 2 },
+                contentChanges: [
+                    {
+                        text: `AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    `,
+                    },
+                ],
+            });
+
+            await WaitFor.waitFor(async () => {
+                const completions = await extension.completion({
+                    textDocument: { uri: documentUri },
+                    position: { line: 4, character: 4 },
+                    context: { triggerKind: 2 },
+                });
+
+                const completionList = completions as CompletionList;
+                const propertiesCompletion = completionList.items.find(
+                    (item) => item.label === 'Properties' && item.insertTextFormat === InsertTextFormat.Snippet,
+                );
+
+                expect(propertiesCompletion).toBeDefined();
+                // Snippet should use 2-space indentation (detected from user's typing)
+                const insertText = propertiesCompletion?.insertText ?? '';
+                expect(insertText).toContain('\n  '); // 2-space indent
+                expect(insertText).not.toContain('\n    '); // Not 4-space
+            });
+        });
+
+        test('should use 4-space indentation when user types with 4 spaces', async () => {
+            await extension.openDocument({
+                textDocument: {
+                    uri: documentUri,
+                    languageId: 'yaml',
+                    version: 1,
+                    text: '',
+                },
+            });
+
+            // User types with 4-space indentation
+            await extension.changeDocument({
+                textDocument: { uri: documentUri, version: 2 },
+                contentChanges: [
+                    {
+                        text: `AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+    MyBucket:
+        Type: AWS::S3::Bucket
+        `,
+                    },
+                ],
+            });
+
+            await WaitFor.waitFor(async () => {
+                const completions = await extension.completion({
+                    textDocument: { uri: documentUri },
+                    position: { line: 4, character: 8 },
+                    context: { triggerKind: 2 },
+                });
+
+                const completionList = completions as CompletionList;
+                const propertiesCompletion = completionList.items.find(
+                    (item) => item.label === 'Properties' && item.insertTextFormat === InsertTextFormat.Snippet,
+                );
+
+                expect(propertiesCompletion).toBeDefined();
+                // Snippet should use 4-space indentation
+                const insertText = propertiesCompletion?.insertText ?? '';
+                expect(insertText).toContain('\n    '); // 4-space indent
+            });
+        });
     });
 
     test('should provide context-based completions for non-empty file', async () => {

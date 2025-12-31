@@ -13,6 +13,7 @@ export class Document {
     private _cfnFileType: CloudFormationFileType;
     public readonly fileName: string;
     private tabSize: number;
+    private indentationDetected: boolean = false;
     private cachedParsedContent: unknown;
 
     constructor(
@@ -160,8 +161,23 @@ export class Document {
         };
     }
 
-    public getTabSize() {
+    public getTabSize(detectIndentation: boolean = true) {
+        if (detectIndentation) {
+            this.refreshIndentationIfNeeded();
+        }
         return this.tabSize;
+    }
+
+    private refreshIndentationIfNeeded(): void {
+        if (this.indentationDetected) {
+            return;
+        }
+
+        const detected = this.detectIndentationFromContent();
+        if (detected !== undefined) {
+            this.tabSize = detected;
+            this.indentationDetected = true;
+        }
     }
 
     public processIndentation(detectIndentation: boolean, fallbackTabSize: number) {
@@ -172,6 +188,7 @@ export class Document {
 
         const detected = this.detectIndentationFromContent();
         this.tabSize = detected ?? fallbackTabSize;
+        this.indentationDetected = detected !== undefined;
     }
 
     private detectIndentationFromContent(): number | undefined {

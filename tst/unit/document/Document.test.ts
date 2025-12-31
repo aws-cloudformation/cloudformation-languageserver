@@ -321,4 +321,84 @@ describe('Document', () => {
             });
         });
     });
+
+    describe('indentation detection', () => {
+        it('should use fallback tabSize for empty file', () => {
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, '');
+            const doc = new Document(textDocument, true, 4);
+
+            expect(doc.getTabSize(true)).toBe(4);
+        });
+
+        it('should detect 2-space indentation from content', () => {
+            const content = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument, true, 4);
+
+            expect(doc.getTabSize(true)).toBe(2);
+        });
+
+        it('should detect 4-space indentation from content', () => {
+            const content = 'Resources:\n    Bucket:\n        Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument, true, 2);
+
+            expect(doc.getTabSize(true)).toBe(4);
+        });
+
+        it('should use fallback when detectIndentation is disabled', () => {
+            const content = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument, false, 4);
+
+            expect(doc.getTabSize(false)).toBe(4);
+        });
+
+        it('should lazily detect indentation when content is added after creation', () => {
+            // Start with empty content
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, '');
+            const doc = new Document(textDocument, true, 4);
+
+            // Initially uses fallback
+            expect(doc.getTabSize(true)).toBe(4);
+
+            // Simulate user typing with 2-space indentation
+            Object.defineProperty(textDocument, 'getText', {
+                value: () => 'Resources:\n  Bucket:',
+            });
+
+            // Should now detect 2-space indentation
+            expect(doc.getTabSize(true)).toBe(2);
+        });
+
+        it('should not re-detect once indentation is detected', () => {
+            const content = 'Resources:\n  Bucket:';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument, true, 4);
+
+            // First call detects 2-space
+            expect(doc.getTabSize(true)).toBe(2);
+
+            // Simulate content change to 4-space indentation
+            Object.defineProperty(textDocument, 'getText', {
+                value: () => 'Resources:\n    Bucket:',
+            });
+
+            // Should still return 2 (already detected)
+            expect(doc.getTabSize(true)).toBe(2);
+        });
+
+        it('should reset detection when processIndentation is called with detectIndentation=false', () => {
+            const content = 'Resources:\n  Bucket:';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument, true, 4);
+
+            expect(doc.getTabSize(true)).toBe(2);
+
+            // Reset with detectIndentation disabled
+            doc.processIndentation(false, 8);
+
+            expect(doc.getTabSize(false)).toBe(8);
+        });
+    });
 });
