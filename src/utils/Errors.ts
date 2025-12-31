@@ -1,3 +1,4 @@
+import { Attributes } from '@opentelemetry/api';
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
 import { determineSensitiveInfo } from './ErrorStackInfo';
 import { toString } from './String';
@@ -49,4 +50,15 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
     result['error.message'] = lines[0];
     result['error.stack'] = lines.slice(1).join('\n');
     return result;
+}
+
+export function errorAttributes(error: unknown, origin?: 'uncaughtException' | 'unhandledRejection'): Attributes {
+    const location = error instanceof Error ? extractLocationFromStack(error.stack) : {};
+    const type = error instanceof Error ? error.name : typeof error;
+
+    return {
+        'error.type': type,
+        'error.origin': origin ?? 'Unknown',
+        ...location,
+    };
 }

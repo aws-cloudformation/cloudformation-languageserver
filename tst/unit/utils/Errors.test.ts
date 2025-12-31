@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { extractLocationFromStack } from '../../../src/utils/Errors';
+import { errorAttributes, extractLocationFromStack } from '../../../src/utils/Errors';
 
 describe('extractLocationFromStack', () => {
     test('returns empty object when stack is undefined', () => {
@@ -146,6 +146,91 @@ at func2 (file.ts:2:2)`,
             'error.message': 'Error: test',
             'error.stack': `at Module._compile (node:internal/modules/cjs/loader:1159:14)
 at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
+        });
+    });
+});
+
+describe('errorAttributes', () => {
+    test('returns attributes for Error with stack and default origin', () => {
+        const error = new Error('test message');
+        error.stack = 'Error: test message\n    at func (file.ts:10:5)';
+
+        const result = errorAttributes(error);
+
+        expect(result).toEqual({
+            'error.type': 'Error',
+            'error.origin': 'Unknown',
+            'error.message': 'Error: test message',
+            'error.stack': 'at func (file.ts:10:5)',
+        });
+    });
+
+    test('returns attributes for custom Error type', () => {
+        const error = new TypeError('type error');
+        error.stack = 'TypeError: type error\n    at func (file.ts:1:1)';
+
+        const result = errorAttributes(error);
+
+        expect(result).toEqual({
+            'error.type': 'TypeError',
+            'error.origin': 'Unknown',
+            'error.message': 'TypeError: type error',
+            'error.stack': 'at func (file.ts:1:1)',
+        });
+    });
+
+    test('returns attributes with uncaughtException origin', () => {
+        const error = new Error('test');
+        error.stack = 'Error: test\n    at x (x.ts:1:1)';
+
+        const result = errorAttributes(error, 'uncaughtException');
+
+        expect(result).toEqual({
+            'error.type': 'Error',
+            'error.origin': 'uncaughtException',
+            'error.message': 'Error: test',
+            'error.stack': 'at x (x.ts:1:1)',
+        });
+    });
+
+    test('returns attributes with unhandledRejection origin', () => {
+        const error = new Error('test');
+        error.stack = 'Error: test\n    at x (x.ts:1:1)';
+
+        const result = errorAttributes(error, 'unhandledRejection');
+
+        expect(result).toEqual({
+            'error.type': 'Error',
+            'error.origin': 'unhandledRejection',
+            'error.message': 'Error: test',
+            'error.stack': 'at x (x.ts:1:1)',
+        });
+    });
+
+    test('returns attributes for non-Error string value', () => {
+        const result = errorAttributes('string error');
+
+        expect(result).toEqual({
+            'error.type': 'string',
+            'error.origin': 'Unknown',
+        });
+    });
+
+    test('returns attributes for non-Error null value', () => {
+        const result = errorAttributes(null);
+
+        expect(result).toEqual({
+            'error.type': 'object',
+            'error.origin': 'Unknown',
+        });
+    });
+
+    test('returns attributes for non-Error undefined value', () => {
+        const result = errorAttributes(undefined);
+
+        expect(result).toEqual({
+            'error.type': 'undefined',
+            'error.origin': 'Unknown',
         });
     });
 });

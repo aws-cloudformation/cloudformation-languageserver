@@ -11,6 +11,7 @@ import {
     ValueType,
 } from '@opentelemetry/api';
 import { Closeable } from '../utils/Closeable';
+import { errorAttributes } from '../utils/Errors';
 import { typeOf } from '../utils/TypeCheck';
 import { TelemetryContext } from './TelemetryContext';
 
@@ -49,6 +50,21 @@ export class ScopedTelemetry implements Closeable {
     histogram(name: string, value: number, config?: MetricConfig): void {
         const { options, attributes } = generateConfig(config);
         this.getOrCreateHistogram(name, options)?.record(value, attributes);
+    }
+
+    error(name: string, error: unknown, origin?: 'uncaughtException' | 'unhandledRejection', config?: MetricConfig) {
+        if (config === undefined) {
+            this.count(name, 1, {
+                attributes: errorAttributes(error, origin),
+            });
+        } else {
+            config.attributes = {
+                ...config.attributes,
+                ...errorAttributes(error, origin),
+            };
+
+            this.count(name, 1, config);
+        }
     }
 
     registerGaugeProvider(name: string, provider: () => number, config?: MetricConfig): void {
@@ -91,7 +107,7 @@ export class ScopedTelemetry implements Closeable {
         try {
             return fn();
         } catch (error) {
-            this.count(`${name}.fault`, 1, config);
+            this.error(`${name}.fault`, error, undefined, config);
             throw error;
         }
     }
@@ -102,7 +118,7 @@ export class ScopedTelemetry implements Closeable {
         try {
             return await fn();
         } catch (error) {
-            this.count(`${name}.fault`, 1, config);
+            this.error(`${name}.fault`, error, undefined, config);
             throw error;
         }
     }
@@ -122,7 +138,7 @@ export class ScopedTelemetry implements Closeable {
             if (trackResponse) this.recordResponse(name, result, config);
             return result;
         } catch (error) {
-            this.count(`${name}.fault`, 1, config);
+            this.error(`${name}.fault`, error, undefined, config);
             throw error;
         } finally {
             this.recordDuration(name, performance.now() - startTime, config);
@@ -149,7 +165,7 @@ export class ScopedTelemetry implements Closeable {
             if (trackResponse) this.recordResponse(name, result, config);
             return result;
         } catch (error) {
-            this.count(`${name}.fault`, 1, config);
+            this.error(`${name}.fault`, error, undefined, config);
             throw error;
         } finally {
             this.recordDuration(name, performance.now() - startTime, config);
@@ -243,10 +259,10 @@ export class ScopedTelemetry implements Closeable {
     }
 }
 
-function generateConfig(config?: MetricConfig) {
-    const { attributes = {}, unit = '1', valueType = ValueType.DOUBLE, ...options } = config ?? {};
+function generateConfig(config?: MetricConfig): { options: MetricOptions; attributes: Attributes } {
+    const { attributes = {}, unit = '1', valueType = ValueType.DOUBLE, description, advice } = config ?? {};
     return {
-        options: { unit, valueType, ...options },
+        options: { unit, valueType, description, advice },
         attributes: generateAttr(attributes),
     };
 }
