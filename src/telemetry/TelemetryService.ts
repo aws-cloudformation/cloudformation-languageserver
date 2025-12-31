@@ -4,7 +4,6 @@ import { NodeSDK } from '@opentelemetry/sdk-node';
 import { v4 } from 'uuid';
 import { AwsMetadata, ClientInfo } from '../server/InitParams';
 import { Closeable } from '../utils/Closeable';
-import { extractLocationFromStack } from '../utils/Errors';
 import { LoggerFactory } from './LoggerFactory';
 import { otelSdk } from './OTELInstrumentation';
 import { ScopedTelemetry } from './ScopedTelemetry';
@@ -152,26 +151,12 @@ export class TelemetryService implements Closeable {
 
     private registerErrorHandlers(telemetry: ScopedTelemetry): void {
         process.on('unhandledRejection', (reason, _promise) => {
-            const location = reason instanceof Error ? extractLocationFromStack(reason.stack) : {};
-            telemetry.count('process.promise.unhandled', 1, {
-                attributes: {
-                    'error.type': reason instanceof Error ? reason.name : typeof reason,
-                    ...location,
-                },
-            });
-
+            telemetry.error('process.promise.unhandled', reason);
             void this.metricsReader?.forceFlush();
         });
 
         process.on('uncaughtException', (error, origin) => {
-            telemetry.count('process.exception.uncaught', 1, {
-                attributes: {
-                    'error.type': error.name,
-                    'error.origin': origin,
-                    ...extractLocationFromStack(error.stack),
-                },
-            });
-
+            telemetry.error('process.exception.uncaught', error, origin);
             void this.metricsReader?.forceFlush();
         });
     }
