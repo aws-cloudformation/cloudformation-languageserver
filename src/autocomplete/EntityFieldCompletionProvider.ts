@@ -2,12 +2,14 @@ import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-lan
 import { Context } from '../context/Context';
 import { Entity } from '../context/semantic/Entity';
 import { EntityType } from '../context/semantic/SemanticTypes';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { FuzzySearchFunction, getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';
 import { createCompletionItem } from './CompletionUtils';
 
 /* eslint-disable no-restricted-syntax -- Entire class depends on Entity */
 export class EntityFieldCompletionProvider<T extends Entity> implements CompletionProvider {
+    @Measure({ name: 'getCompletions' })
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] {
         // Extract the actual entity (handle both regular and ForEach resources)
         let entity;
