@@ -5,6 +5,7 @@ import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
 import { CompletionFormatter, ExtendedCompletionItem } from './CompletionFormatter';
@@ -23,6 +24,7 @@ export class ResourceEntityCompletionProvider implements CompletionProvider {
         this.entityFieldProvider = new EntityFieldCompletionProvider<Resource>();
     }
 
+    @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
         const entityCompletions = this.entityFieldProvider.getCompletions(context, params);
 
