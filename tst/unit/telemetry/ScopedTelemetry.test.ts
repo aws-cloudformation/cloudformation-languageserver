@@ -168,4 +168,145 @@ describe('ScopedTelemetry', () => {
             expect(scopedTelemetry['histograms'].size).toBe(0);
         });
     });
+
+    describe('error', () => {
+        let mockAdd: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+            mockAdd = vi.fn();
+            mockMeter.createCounter = vi.fn(() => ({ add: mockAdd }));
+        });
+
+        it('should record error with default origin Unknown when not provided', () => {
+            const error = new Error('test error');
+            error.stack = 'Error: test error\n    at func (file.ts:10:5)';
+
+            scopedTelemetry.error('test.error', error);
+
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.error', {
+                unit: '1',
+                valueType: 1,
+                description: undefined,
+                advice: undefined,
+            });
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+                'error.type': 'Error',
+                'error.origin': 'Unknown',
+                'error.message': 'Error: test error',
+                'error.stack': 'at func (file.ts:10:5)',
+            });
+        });
+
+        it('should record error with uncaughtException origin', () => {
+            const error = new TypeError('type error');
+            error.stack = 'TypeError: type error\n    at test (test.ts:1:1)';
+
+            scopedTelemetry.error('test.error', error, 'uncaughtException');
+
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+                'error.type': 'TypeError',
+                'error.origin': 'uncaughtException',
+                'error.message': 'TypeError: type error',
+                'error.stack': 'at test (test.ts:1:1)',
+            });
+        });
+
+        it('should record error with unhandledRejection origin', () => {
+            const error = new Error('rejection');
+            error.stack = 'Error: rejection\n    at promise (p.ts:5:10)';
+
+            scopedTelemetry.error('test.error', error, 'unhandledRejection');
+
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+                'error.type': 'Error',
+                'error.origin': 'unhandledRejection',
+                'error.message': 'Error: rejection',
+                'error.stack': 'at promise (p.ts:5:10)',
+            });
+        });
+
+        it('should merge config attributes with error attributes', () => {
+            const error = new Error('test');
+            error.stack = 'Error: test\n    at x (x.ts:1:1)';
+
+            scopedTelemetry.error('test.error', error, undefined, {
+                attributes: { custom: 'value', region: 'us-east-1' },
+            });
+
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+                custom: 'value',
+                region: 'us-east-1',
+                'error.type': 'Error',
+                'error.origin': 'Unknown',
+                'error.message': 'Error: test',
+                'error.stack': 'at x (x.ts:1:1)',
+            });
+        });
+
+        it('should pass config options to counter', () => {
+            const error = new Error('test');
+            error.stack = 'Error: test\n    at x (x.ts:1:1)';
+
+            scopedTelemetry.error('test.error', error, undefined, {
+                unit: 'errors',
+                description: 'Error counter',
+            });
+
+            expect(mockMeter.createCounter).toHaveBeenCalledWith('test.error', {
+                unit: 'errors',
+                valueType: 1,
+                description: 'Error counter',
+                advice: undefined,
+            });
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+                'error.type': 'Error',
+                'error.origin': 'Unknown',
+                'error.message': 'Error: test',
+                'error.stack': 'at x (x.ts:1:1)',
+            });
+        });
+
+        it('should handle non-Error string value', () => {
+            scopedTelemetry.error('test.error', 'string error');
+
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+                'error.type': 'string',
+                'error.origin': 'Unknown',
+            });
+        });
+
+        it('should handle non-Error null value', () => {
+            scopedTelemetry.error('test.error', null);
+
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+                'error.type': 'object',
+                'error.origin': 'Unknown',
+            });
+        });
+
+        it('should handle non-Error undefined value', () => {
+            scopedTelemetry.error('test.error', undefined);
+
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+                'error.type': 'undefined',
+                'error.origin': 'Unknown',
+            });
+        });
+    });
 });
