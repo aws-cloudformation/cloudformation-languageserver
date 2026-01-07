@@ -1087,9 +1087,8 @@ Resources:`,
                         verification: {
                             position: { line: 239, character: 30 },
                             expectation: HoverExpectationBuilder.create()
-                                .expectStartsWith('**Resource:** LaunchTemplate')
+                                .expectStartsWith('```typescript\n(resource) LaunchTemplate')
                                 .expectContainsText(['LaunchTemplate', 'AWS::EC2::LaunchTemplate'])
-                                .todo(`Returns nothing`)
                                 .build(),
                         },
                     },
@@ -3242,9 +3241,8 @@ Resources:
                         verification: {
                             position: { line: 299, character: 42 },
                             expectation: HoverExpectationBuilder.create()
-                                .expectStartsWith('**Resource:** LaunchTemplate')
+                                .expectStartsWith('```typescript\n(resource) LaunchTemplate')
                                 .expectContainsText(['LaunchTemplate', 'AWS::EC2::LaunchTemplate'])
-                                .todo('Hover returns nothing')
                                 .build(),
                         },
                     },
@@ -3269,8 +3267,7 @@ Resources:
                             position: { line: 303, character: 23 },
                             expectation: HoverExpectationBuilder.create()
                                 .expectStartsWith('**Condition:** HasMultipleAZs')
-                                .expectContainsText(['HasMultipleAZs', '!Not', '!Equals', '!Select'])
-                                .todo('Hover returns nothing')
+                                .expectContainsText(['HasMultipleAZs', 'Fn::Not', 'Fn::Equals', 'Fn::Select'])
                                 .build(),
                         },
                     },
