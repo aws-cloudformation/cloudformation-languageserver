@@ -853,19 +853,12 @@ Resources:
                         content: `Version: !GetAtt L`,
                         position: { line: 239, character: 8 },
                         description:
-                            'Suggest resource logical id when using Fn::GetAtt. Omit the resource being authored',
+                            'Suggest resource logical ids matching L when using Fn::GetAtt. Omit the resource being authored',
                         verification: {
                             position: { line: 239, character: 26 },
                             expectation: CompletionExpectationBuilder.create()
-                                .expectContainsItems([
-                                    'LaunchTemplate',
-                                    'PublicSubnet',
-                                    'WebSecurityGroup',
-                                    'BastionSecurityGroup',
-                                    'VPC',
-                                ])
+                                .expectContainsItems(['LaunchTemplate', 'PublicSubnet'])
                                 .expectExcludesItems(['AutoScalingGroup'])
-                                .todo(`support autocomplete for Fn::GetAtt`)
                                 .build(),
                         },
                     },
@@ -1544,13 +1537,8 @@ O`,
                         position: { line: 471, character: 64 },
                         description: 'suggest substitution variable in second arg of Fn::Sub based on first arg',
                         verification: {
-                            position: { line: 474, character: 14 },
-                            expectation: CompletionExpectationBuilder.create()
-                                .expectItems(['Third'])
-                                .todo(
-                                    `feature to suggest variables authored in Fn::Sub first arg while typing second arg`,
-                                )
-                                .build(),
+                            position: { line: 473, character: 14 },
+                            expectation: CompletionExpectationBuilder.create().expectItems(['Third']).build(),
                         },
                     },
                 ],
@@ -3018,7 +3006,6 @@ Resources:
                                     'IsProductionOrStaging',
                                 ])
                                 .expectExcludesItems(['ComplexCondition', 'HasMultipleAZs'])
-                                .todo('Not returning anything')
                                 .build(),
                         },
                     },

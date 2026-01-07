@@ -148,6 +148,13 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         params: CompletionParams,
         syntaxTree: SyntaxTree,
     ): CompletionItem[] | undefined {
+        const intrinsicFunction = context.intrinsicContext.intrinsicFunction();
+
+        // Check if we're typing a key in the second argument (variable mapping object)
+        if (intrinsicFunction !== undefined && this.isInSubVariableMappingKey(context)) {
+            return this.getSubVariableCompletions(intrinsicFunction.args, context);
+        }
+
         const parametersAndResourcesCompletions = this.getParametersAndResourcesAsCompletionItems(
             context,
             params,
@@ -177,6 +184,44 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         return this.applyFuzzySearch(baseItems, context.text);
+    }
+
+    private isInSubVariableMappingKey(context: Context): boolean {
+        // Fn::Sub with array syntax: ["template ${Var}", {Var: value}]
+        // Check if propertyPath indicates we're in the second argument (index 1) as a key
+        const path = context.propertyPath;
+        const subIndex = path.indexOf(IntrinsicFunction.Sub);
+        if (subIndex === -1) {
+            return false;
+        }
+
+        // Path should be [..., 'Fn::Sub', 1, 'KeyName'] for typing a key in second arg
+        // Also require non-empty text to avoid false positives when position is invalid
+        return path[subIndex + 1] === 1 && path.length === subIndex + 3 && context.text.length > 0;
+    }
+
+    private getSubVariableCompletions(args: unknown, context: Context): CompletionItem[] {
+        if (!Array.isArray(args) || args.length === 0 || typeof args[0] !== 'string') {
+            return [];
+        }
+
+        const templateString = args[0];
+        const existingVars = args[1] && typeof args[1] === 'object' ? Object.keys(args[1] as object) : [];
+
+        // Extract ${VarName} patterns from template string
+        const varPattern = /\$\{([^}!.]+)}/g;
+        const variables = new Set<string>();
+        let match;
+        while ((match = varPattern.exec(templateString)) !== null) {
+            variables.add(match[1]);
+        }
+
+        // Filter out already defined variables and apply fuzzy search
+        const items = [...variables]
+            .filter((v) => !existingVars.includes(v))
+            .map((v) => createCompletionItem(v, CompletionItemKind.Variable, { context }));
+
+        return context.text.length > 0 ? this.fuzzySearch(items, context.text) : items;
     }
 
     private getParametersAndResourcesAsCompletionItems(

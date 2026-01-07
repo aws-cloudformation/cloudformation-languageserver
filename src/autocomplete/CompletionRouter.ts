@@ -196,7 +196,16 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         }
 
         // Output Condition attribute: ['Outputs', 'LogicalId', 'Condition']
-        return context.matchPathWithLogicalId(TopLevelSection.Outputs, EntitySection.Condition);
+        if (context.matchPathWithLogicalId(TopLevelSection.Outputs, EntitySection.Condition)) {
+            return true;
+        }
+
+        // Condition key inside Properties: ['Resources', 'LogicalId', 'Properties', ..., 'Condition']
+        if (context.matchPathWithLogicalId(TopLevelSection.Resources, EntitySection.Properties)) {
+            return context.propertyPath.at(-1) === EntitySection.Condition;
+        }
+
+        return false;
     }
 
     private conditionUsageWithinIntrinsic(context: Context): boolean {

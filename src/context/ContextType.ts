@@ -52,6 +52,7 @@ export enum IntrinsicShortForms {
 
 export enum EntitySection {
     Condition = 'Condition',
+    Properties = 'Properties',
 }
 
 export const IntrinsicsUsingConditionKeyword: ReadonlyArray<IntrinsicFunction> = [
