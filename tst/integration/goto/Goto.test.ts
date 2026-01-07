@@ -696,7 +696,7 @@ Outputs:
                             position: { line: 51, character: 27 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
-                                .expectDefinitionPosition({ line: 4, character: 5 })
+                                .expectDefinitionPosition({ line: 4, character: 4 })
                                 .build(),
                         },
                     },
@@ -709,7 +709,7 @@ Outputs:
                             position: { line: 57, character: 30 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsProduction')
-                                .expectDefinitionPosition({ line: 49, character: 5 })
+                                .expectDefinitionPosition({ line: 49, character: 4 })
                                 .build(),
                         },
                     },
@@ -722,7 +722,7 @@ Outputs:
                             position: { line: 62, character: 30 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsProduction')
-                                .expectDefinitionPosition({ line: 49, character: 5 })
+                                .expectDefinitionPosition({ line: 49, character: 4 })
                                 .build(),
                         },
                     },
@@ -735,7 +735,7 @@ Outputs:
                             position: { line: 76, character: 35 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsNotProduction')
-                                .expectDefinitionPosition({ line: 55, character: 5 })
+                                .expectDefinitionPosition({ line: 55, character: 4 })
                                 .build(),
                         },
                     },
@@ -754,7 +754,7 @@ Outputs:
                             position: { line: 85, character: 30 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('VpcCidr')
-                                .expectDefinitionPosition({ line: 8, character: 5 })
+                                .expectDefinitionPosition({ line: 8, character: 4 })
                                 .build(),
                         },
                     },
@@ -789,7 +789,7 @@ Outputs:
                             position: { line: 96, character: 46 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
-                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .expectDefinitionPosition({ line: 4, character: 4 })
                                 .build(),
                         },
                     },
@@ -802,7 +802,7 @@ Outputs:
                             position: { line: 104, character: 37 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('environmentname')
-                                .expectDefinitionPosition({ line: 23, character: 5 })
+                                .expectDefinitionPosition({ line: 23, character: 4 })
                                 .build(),
                         },
                     },
@@ -854,7 +854,7 @@ Outputs:
                             position: { line: 111, character: 22 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('VPC')
-                                .expectDefinitionPosition({ line: 89, character: 5 })
+                                .expectDefinitionPosition({ line: 89, character: 4 })
                                 .build(),
                         },
                     },
@@ -867,7 +867,7 @@ Outputs:
                             position: { line: 118, character: 27 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('SubnetCidrs')
-                                .expectDefinitionPosition({ line: 12, character: 5 })
+                                .expectDefinitionPosition({ line: 12, character: 4 })
                                 .build(),
                         },
                     },
@@ -880,7 +880,7 @@ Outputs:
                             position: { line: 138, character: 40 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('AvailabilityZones')
-                                .expectDefinitionPosition({ line: 20, character: 5 })
+                                .expectDefinitionPosition({ line: 20, character: 4 })
                                 .build(),
                         },
                     },
@@ -919,7 +919,7 @@ Outputs:
                             position: { line: 157, character: 54 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('BastionSecurityGroup')
-                                .expectDefinitionPosition({ line: 168, character: 5 })
+                                .expectDefinitionPosition({ line: 168, character: 4 })
                                 .build(),
                         },
                     },
@@ -941,7 +941,7 @@ Outputs:
                             position: { line: 179, character: 47 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('RegionMap')
-                                .expectDefinitionPosition({ line: 29, character: 5 })
+                                .expectDefinitionPosition({ line: 29, character: 4 })
                                 .build(),
                         },
                     },
@@ -956,7 +956,7 @@ Outputs:
                             position: { line: 181, character: 47 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('WebSecurityGroup')
-                                .expectDefinitionPosition({ line: 148, character: 5 })
+                                .expectDefinitionPosition({ line: 148, character: 4 })
                                 .build(),
                         },
                     },
@@ -1025,7 +1025,7 @@ Outputs:
                             position: { line: 223, character: 30 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('DatabaseSecurityGroup')
-                                .expectDefinitionPosition({ line: 227, character: 5 })
+                                .expectDefinitionPosition({ line: 227, character: 4 })
                                 .build(),
                         },
                     },
@@ -1145,7 +1145,7 @@ Outputs:
                             position: { line: 310, character: 35 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('Database')
-                                .expectDefinitionPosition({ line: 204, character: 5 })
+                                .expectDefinitionPosition({ line: 204, character: 4 })
                                 .build(),
                         },
                     },
@@ -1158,7 +1158,7 @@ Outputs:
                             position: { line: 313, character: 40 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('SNSTopic')
-                                .expectDefinitionPosition({ line: 316, character: 5 })
+                                .expectDefinitionPosition({ line: 316, character: 4 })
                                 .build(),
                         },
                     },
@@ -1181,7 +1181,7 @@ Outputs:
                             position: { line: 305, character: 25 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsProduction')
-                                .expectDefinitionPosition({ line: 49, character: 5 })
+                                .expectDefinitionPosition({ line: 49, character: 4 })
                                 .build(),
                         },
                     },
@@ -1220,7 +1220,7 @@ Outputs:
                             position: { line: 333, character: 38 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('EnvironmentName')
-                                .expectDefinitionPosition({ line: 4, character: 2 })
+                                .expectDefinitionPosition({ line: 4, character: 4 })
                                 .build(),
                         },
                     },
@@ -1248,7 +1248,7 @@ Outputs:
                             position: { line: 341, character: 27 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('VPC')
-                                .expectDefinitionPosition({ line: 89, character: 5 })
+                                .expectDefinitionPosition({ line: 89, character: 4 })
                                 .build(),
                         },
                     },
@@ -1261,7 +1261,7 @@ Outputs:
                             position: { line: 350, character: 26 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsProductionOrStaging')
-                                .expectDefinitionPosition({ line: 60, character: 5 })
+                                .expectDefinitionPosition({ line: 60, character: 4 })
                                 .build(),
                         },
                     },
@@ -1310,7 +1310,7 @@ Outputs:
                             position: { line: 370, character: 16 },
                             expectation: GotoExpectationBuilder.create()
                                 .expectDefinition('IsProduction')
-                                .expectDefinitionPosition({ line: 49, character: 5 })
+                                .expectDefinitionPosition({ line: 49, character: 4 })
                                 .build(),
                         },
                     },

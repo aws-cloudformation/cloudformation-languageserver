@@ -432,19 +432,7 @@ export class TemplateBuilder {
 
         const actualLabels = completions.items.map((item) => item.label);
         if (expected.items) {
-            // Check if all expected items are present
-            for (const expectedItem of expected.items) {
-                if (!actualLabels.includes(expectedItem)) {
-                    throw new Error(
-                        `Completion items mismatch${desc} at ${position.line}:${position.character}: missing expected item ${JSON.stringify(expectedItem)} and got ${JSON.stringify(actualLabels)}`,
-                    );
-                }
-            }
-            expectAt(
-                actualLabels.length,
-                position,
-                `Completion items count mismatch${desc}: got ${JSON.stringify(actualLabels)}`,
-            ).toBe(expected.items.length);
+            expectAt(actualLabels.sort(), position, `Completion items mismatch${desc}`).toEqual(expected.items.sort());
         }
 
         if (expected.minItems !== undefined) {
@@ -690,6 +678,13 @@ export class TemplateBuilder {
                         expected.targetLogicalId,
                     );
                 }
+            }
+
+            if (expected.targetPosition !== undefined) {
+                const firstDef = definitionArray[0];
+                expectAt(firstDef.range.start, position, `Target position mismatch${desc}`).toEqual(
+                    expected.targetPosition,
+                );
             }
         }
     }
