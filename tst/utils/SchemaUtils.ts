@@ -137,6 +137,12 @@ export const Schemas = {
             return loadSchema('aws-wafv2-webacl.json');
         },
     },
+    WAFv2IPSet: {
+        fileName: 'file://aws-wafv2-ipset.json',
+        get contents() {
+            return loadSchema('aws-wafv2-ipset.json');
+        },
+    },
 };
 
 export const SamSchemaFiles = {

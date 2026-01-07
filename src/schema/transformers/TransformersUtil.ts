@@ -5,6 +5,7 @@ import { RemoveReadonlyPropertiesTransformer } from './RemoveReadonlyPropertiesT
 import { RemoveRequiredXorPropertiesTransformer } from './RemoveRequiredXorPropertiesTransformer';
 import { RemoveSystemTagsTransformer } from './RemoveSystemTagsTransformer';
 import { ReplacePrimaryIdentifierTransformer } from './ReplacePrimaryIdentifierTransformer';
+import { ResourceEdgeCaseTransformer } from './ResourceEdgeCaseTransformer';
 import type { ResourceTemplateTransformer } from './ResourceTemplateTransformer';
 
 export class TransformersUtil {
@@ -16,6 +17,7 @@ export class TransformersUtil {
                 new RemoveSystemTagsTransformer(),
                 new RemoveRequiredXorPropertiesTransformer(),
                 new AddWriteOnlyRequiredPropertiesTransformer(),
+                new ResourceEdgeCaseTransformer(),
             ];
         } else if (purpose === ResourceStatePurpose.CLONE) {
             return [
@@ -25,6 +27,7 @@ export class TransformersUtil {
                 new ReplacePrimaryIdentifierTransformer(),
                 new RemoveRequiredXorPropertiesTransformer(),
                 new AddWriteOnlyRequiredPropertiesTransformer(),
+                new ResourceEdgeCaseTransformer(),
             ];
         }
         return [];
