@@ -131,6 +131,12 @@ export const Schemas = {
             return loadSchema('aws-synthetics-canary.json');
         },
     },
+    WAFv2WebACL: {
+        fileName: 'file://aws-wafv2-webacl.json',
+        get contents() {
+            return loadSchema('aws-wafv2-webacl.json');
+        },
+    },
 };
 
 export const SamSchemaFiles = {

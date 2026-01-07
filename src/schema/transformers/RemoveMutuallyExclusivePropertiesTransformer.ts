@@ -56,8 +56,15 @@ export class RemoveMutuallyExclusivePropertiesTransformer implements ResourceTem
             return;
         }
         visited.add(resourceProperty);
-        // Schema refs are already resolved by ResourceSchema
-        const resolvedSchema = rawSchema;
+
+        // Resolve $ref if present
+        let resolvedSchema = rawSchema;
+        if (rawSchema.$ref && resourceSchema) {
+            const resolved = resourceSchema.resolveRef(rawSchema.$ref);
+            if (resolved) {
+                resolvedSchema = resolved;
+            }
+        }
 
         // If this object has mutually exclusive properties, remove keys in current object
         const meResources = this.getMEResources(resolvedSchema, resourceSchema);
@@ -92,7 +99,7 @@ export class RemoveMutuallyExclusivePropertiesTransformer implements ResourceTem
         const staticKeyList = Object.keys(resourceProperty);
         for (const key of staticKeyList) {
             const newPath = `${path}${this.PATH_SEPARATOR}${key}`;
-            const subschema = this.getSubSchema(resolvedSchema, key, newPath);
+            const subschema = this.getSubSchema(resolvedSchema, key, newPath, resourceSchema);
 
             if (subschema && resourceProperty[key] !== undefined) {
                 const value = resourceProperty[key];
@@ -102,7 +109,7 @@ export class RemoveMutuallyExclusivePropertiesTransformer implements ResourceTem
                         value,
                         subschema,
                         newPath,
-                        undefined,
+                        resourceSchema,
                         depth + 1,
                         visited,
                     );
@@ -116,13 +123,18 @@ export class RemoveMutuallyExclusivePropertiesTransformer implements ResourceTem
                         const itemPath = `${newPath}${this.PATH_SEPARATOR}${i}`;
 
                         if (this.isObject(item)) {
-                            const arraySchemaItem = this.getSubSchema(arraySubschema, this.UNINDEXED_PATH, itemPath);
+                            const arraySchemaItem = this.getSubSchema(
+                                arraySubschema,
+                                this.UNINDEXED_PATH,
+                                itemPath,
+                                resourceSchema,
+                            );
                             if (arraySchemaItem) {
                                 this.traverseResourcePropertiesAndRemoveMutuallyExclusiveProperties(
                                     item,
                                     arraySchemaItem,
                                     itemPath,
-                                    undefined,
+                                    resourceSchema,
                                     depth + 1,
                                     visited,
                                 );
@@ -232,16 +244,30 @@ export class RemoveMutuallyExclusivePropertiesTransformer implements ResourceTem
         return arraySchema ?? schema;
     }
 
-    private getSubSchema(schema: PropertyType, id: string, path: string): PropertyType | undefined {
+    private getSubSchema(
+        schema: PropertyType,
+        id: string,
+        path: string,
+        resourceSchema?: ResourceSchema,
+    ): PropertyType | undefined {
         try {
-            // Simplified implementation - in a real scenario, this would use a schema helper
+            let result: PropertyType | undefined;
+
             if (schema.properties?.[id]) {
-                return schema.properties[id];
+                result = schema.properties[id];
+            } else if (schema.items && id === this.UNINDEXED_PATH) {
+                result = schema.items;
             }
-            if (schema.items && id === this.UNINDEXED_PATH) {
-                return schema.items;
+
+            // Resolve $ref if present
+            if (result?.$ref && resourceSchema) {
+                const resolved = resourceSchema.resolveRef(result.$ref);
+                if (resolved) {
+                    return resolved;
+                }
             }
-            return;
+
+            return result;
         } catch {
             if (id !== this.REF_ID && id !== this.GETATT_ID) {
                 logger.info(`Unable to find schema at path ${path}`);

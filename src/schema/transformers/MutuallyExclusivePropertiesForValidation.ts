@@ -66,6 +66,11 @@ function getDependentExcludedMap() {
         HealthCheckCustomConfig: ['HealthCheckConfig'],
     });
 
+    dependentExcludedMap.set('AWS::WAFv2::WebACL', {
+        SearchString: ['SearchStringBase64'],
+        SearchStringBase64: ['SearchString'],
+    });
+
     return dependentExcludedMap as ReadonlyMap<string, DependentExcluded>;
 }
 
