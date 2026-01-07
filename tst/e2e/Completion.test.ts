@@ -1921,6 +1921,47 @@ Resources:
 
                 await client.closeDocument({ textDocument: { uri } });
             });
+
+            it('should exclude Fn::ForEach resources from !Ref completions', async () => {
+                const template = getSimpleYamlTemplateText();
+                const updatedTemplate = `AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::LanguageExtensions
+Resources:
+  FirstBucket:
+    Type: AWS::S3::Bucket
+  Fn::ForEach::LoopBuckets:
+    - BucketName
+    - - Alpha
+      - Beta
+    - Bucket\${BucketName}:
+        Type: AWS::S3::Bucket
+  AnotherResource:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref F`;
+                const uri = await client.openYamlTemplate(template);
+
+                await client.changeDocument({
+                    textDocument: { uri, version: 2 },
+                    contentChanges: [{ text: updatedTemplate }],
+                });
+
+                const completions: any = await client.completion({
+                    textDocument: { uri },
+                    position: { line: 14, character: 23 },
+                });
+
+                expect(completions).toBeDefined();
+                expect(completions?.items).toBeDefined();
+
+                const labels = completions.items.map((item: any) => item.label);
+                // Should include regular resources
+                expect(labels).toContain('FirstBucket');
+                // Should NOT include Fn::ForEach resources
+                expect(labels).not.toContain('Fn::ForEach::LoopBuckets');
+
+                await client.closeDocument({ textDocument: { uri } });
+            });
         });
 
         describe('Value Completions', () => {
