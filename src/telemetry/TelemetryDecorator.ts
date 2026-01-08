@@ -7,6 +7,7 @@ type ScopeDecoratorOptions = {
 };
 type ScopedMetricsDecoratorOptions = {
     name: string;
+    extractContextAttributes?: boolean;
 } & MetricConfig &
     ScopeDecoratorOptions;
 
@@ -53,12 +54,40 @@ function createTelemetryMethodDecorator(methodNames: MethodNames) {
             descriptor.value = function (this: any, ...args: any[]) {
                 const telemetry = TelemetryService.instance.get(scopeName(target, decoratorOptions.scope));
 
+                // Extract Context attributes from arguments if enabled
+                let enhancedConfig = decoratorOptions;
+                if (decoratorOptions.extractContextAttributes) {
+                    const contextArg = args.find(
+                        (arg) =>
+                            arg?.constructor?.name === 'Context' ||
+                            arg?.constructor?.name === 'ContextWithRelatedEntities',
+                    );
+                    if (contextArg) {
+                        const contextAttributes: Record<string, string> = {};
+                        try {
+                            contextAttributes['entity.type'] = contextArg.getEntityType();
+                            contextAttributes['resource.type'] = contextArg.getResourceEntity()?.Type ?? 'unknown';
+                            contextAttributes['property.path'] = contextArg.propertyPath?.join('.') ?? 'unknown';
+                        } catch {
+                            // Ignore errors extracting context attributes
+                        }
+
+                        enhancedConfig = {
+                            ...decoratorOptions,
+                            attributes: {
+                                ...decoratorOptions.attributes,
+                                ...contextAttributes,
+                            },
+                        };
+                    }
+                }
+
                 if (isAsyncFunction(originalMethod)) {
                     const asyncMethod = telemetry[methodNames.async].bind(telemetry);
-                    return asyncMethod(metricName, () => originalMethod.apply(this, args), decoratorOptions);
+                    return asyncMethod(metricName, () => originalMethod.apply(this, args), enhancedConfig);
                 } else {
                     const syncMethod = telemetry[methodNames.sync].bind(telemetry);
-                    return syncMethod(metricName, () => originalMethod.apply(this, args), decoratorOptions);
+                    return syncMethod(metricName, () => originalMethod.apply(this, args), enhancedConfig);
                 }
             };
 

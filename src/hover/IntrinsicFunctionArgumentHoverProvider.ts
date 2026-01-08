@@ -18,7 +18,7 @@ import { HoverProvider } from './HoverProvider';
 export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
     constructor(private readonly schemaRetriever: SchemaRetriever) {}
 
-    @Measure({ name: 'getInformation' })
+    @Measure({ name: 'getInformation', extractContextAttributes: true })
     getInformation(context: Context, position?: Position): string | undefined {
         // Only handle contexts that are inside intrinsic functions
         if (!context.intrinsicContext.inIntrinsic() || context.isIntrinsicFunc) {
