@@ -29,16 +29,17 @@ export function getInsertPosition(resourcesSection: SyntaxNode | undefined, docu
                     ? { line: resourcesSection.endPosition.row, character: 0 }
                     : { line: resourcesSection.endPosition.row + 1, character: 0 };
         } else {
+            const lineCount = document.lineCount ?? 1;
             position =
-                document.getLine(document.lineCount - 1)?.trim().length === 0
-                    ? { line: document.lineCount - 1, character: 0 }
-                    : { line: document.lineCount, character: 0 };
+                document.getLine(lineCount - 1)?.trim().length === 0
+                    ? { line: lineCount - 1, character: 0 }
+                    : { line: lineCount, character: 0 };
         }
         return { position, commaPrefixNeeded: false, newLineSuffixNeeded: false };
     }
 
     // JSON handling
-    let line = resourcesSection ? resourcesSection.endPosition.row : document.lineCount - 1;
+    let line = resourcesSection ? resourcesSection.endPosition.row : (document.lineCount ?? 1) - 1;
     while (line > 0) {
         const previousLine = document.getLine(line - 1);
         if (previousLine === undefined) {
@@ -61,7 +62,7 @@ export function getInsertPosition(resourcesSection: SyntaxNode | undefined, docu
     }
     // malformed case, allow import to end of document
     return {
-        position: { line: document.lineCount, character: 0 },
+        position: { line: document.lineCount ?? 0, character: 0 },
         commaPrefixNeeded: false,
         newLineSuffixNeeded: false,
     };

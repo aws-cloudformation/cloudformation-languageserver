@@ -96,12 +96,12 @@ export function getTemplateArtifactsHandler(
                 throw new Error(`Cannot retrieve file with uri: ${params}`);
             }
 
-            const template = new ArtifactExporter(
-                components.s3Service,
-                document.documentType,
-                document.uri,
-                document.contents(),
-            );
+            const content = document.contents();
+            if (content === undefined) {
+                throw new Error(`Cannot retrieve content for file: ${params}`);
+            }
+
+            const template = new ArtifactExporter(components.s3Service, document.documentType, document.uri, content);
             const artifacts = template.getTemplateArtifacts();
             return { artifacts };
         } catch (error) {
