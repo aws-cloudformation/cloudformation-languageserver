@@ -23,6 +23,11 @@ export function expectThrow(actual: any, message: string) {
                 throw new Error(`${message}: expected ${actual} to be >= ${expected}`);
             }
         },
+        toBeGreaterThan(expected: number) {
+            if (actual <= expected) {
+                throw new Error(`${message}: expected ${actual} to be > ${expected}`);
+            }
+        },
         toBeLessThanOrEqual(expected: number) {
             if (actual > expected) {
                 throw new Error(`${message}: expected ${actual} to be <= ${expected}`);
