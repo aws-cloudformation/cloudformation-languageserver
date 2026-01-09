@@ -111,8 +111,8 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
     private ensureValidEnv(): void {
         if (process.pid !== this.openPid) {
-            this.telemetry.count('process.fork', 1);
-            this.log.warn({ oldPid: this.openPid, newPid: process.pid }, 'Process fork detected');
+            this.telemetry.count('process.forked', 1);
+            this.log.warn({ oldPid: this.openPid, newPid: process.pid }, 'Process fork detected, reopening LMDB');
             this.reopenEnv();
 
             // Update all stores with new handles
@@ -123,8 +123,8 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private recoverFromFork(): void {
-        this.telemetry.count('forked', 1);
-        this.log.warn({ oldPid: this.openPid, newPid: process.pid }, 'Fork detected, reopening LMDB');
+        this.telemetry.count('forked.recover', 1);
+        this.log.warn({ oldPid: this.openPid, newPid: process.pid }, 'Process fork detected, reopening LMDB');
         this.reopenEnv();
         this.recreateStores();
     }
@@ -137,6 +137,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private reopenEnv(): void {
+        this.telemetry.count('env.reopen', 1);
         this.env = createEnv(this.lmdbDir).env;
         this.openPid = process.pid;
         this.log.warn('Recreated LMDB environment');

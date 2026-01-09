@@ -35,11 +35,11 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             getSamSchemas,
         ),
     ) {
-        this.telemetry.registerGaugeProvider('schema.public.maxAge', () => this.schemaStore.getPublicSchemasMaxAge(), {
+        this.telemetry.registerGaugeProvider('public.age.max', () => this.schemaStore.getPublicSchemasMaxAge(), {
             unit: 'ms',
         });
 
-        this.telemetry.registerGaugeProvider('schema.sam.maxAge', () => this.schemaStore.getSamSchemaAge(), {
+        this.telemetry.registerGaugeProvider('sam.age.max', () => this.schemaStore.getSamSchemaAge(), {
             unit: 'ms',
         });
 
@@ -80,26 +80,31 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             const existingValue = this.schemaStore.getPublicSchemas(region);
 
             if (existingValue === undefined) {
+                this.telemetry.count('schema.public.missing', 1);
                 this.schemaTaskManager.addTask(region);
+            } else {
+                this.telemetry.count('schema.public.cached', 1);
             }
         }
     }
 
     private getRegionalSchemasIfStale() {
         for (const key of this.schemaStore.getPublicSchemaRegions()) {
-            const lastModifiedMs = this.schemaStore.getPublicSchemas(key)?.lastModifiedMs;
+            const storedSchema = this.schemaStore.getPublicSchemas(key);
 
-            if (lastModifiedMs === undefined) {
+            if (storedSchema === undefined) {
+                this.telemetry.count('schema.public.stale.fault', 1);
                 this.log.error(`Something went wrong, cannot find existing region ${key}`);
                 return;
             }
 
             const now = DateTime.now();
-            const lastModified = DateTime.fromMillis(lastModifiedMs);
+            const lastModified = DateTime.fromMillis(storedSchema.lastModifiedMs);
             const isStale = now.diff(lastModified, 'days').days >= StaleDaysThreshold;
 
             if (isStale) {
-                this.schemaTaskManager.addTask(key);
+                this.telemetry.count('schema.public.stale', 1);
+                this.schemaTaskManager.addTask(key, storedSchema.firstCreatedMs);
             }
         }
     }
@@ -108,16 +113,19 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         const existingValue = this.schemaStore.getSamSchemas();
 
         if (existingValue === undefined) {
+            this.telemetry.count('schema.sam.missing', 1);
             this.schemaTaskManager.runSamTask();
             return;
         }
 
+        this.telemetry.count('schema.sam.cached', 1);
         const now = DateTime.now();
         const lastModified = DateTime.fromMillis(existingValue.lastModifiedMs);
         const isStale = now.diff(lastModified, 'days').days >= StaleDaysThreshold;
 
         if (isStale) {
-            this.schemaTaskManager.runSamTask();
+            this.telemetry.count('schema.sam.stale', 1);
+            this.schemaTaskManager.runSamTask(existingValue.firstCreatedMs);
         }
     }
 
