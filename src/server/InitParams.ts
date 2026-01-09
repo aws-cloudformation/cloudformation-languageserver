@@ -14,6 +14,7 @@ export type AwsMetadata = {
     };
     telemetryEnabled?: boolean;
     logLevel?: LevelWithSilent;
+    storageDir?: string;
     cloudformation?: {
         endpoint?: string;
     };

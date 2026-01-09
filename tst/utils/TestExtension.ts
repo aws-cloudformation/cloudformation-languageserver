@@ -99,7 +99,6 @@ export class TestExtension implements Closeable {
 
     constructor(config: TestExtensionConfig = {}) {
         const id = config.id ?? v4();
-        const rootDir = join(process.cwd(), 'node_modules', '.cache', 'e2e-tests', id);
 
         this.awsMetadata = {
             clientInfo: {
@@ -113,6 +112,7 @@ export class TestExtension implements Closeable {
                 key: randomBytes(32).toString('base64'),
                 mode: 'JWT',
             },
+            storageDir: join(process.cwd(), 'node_modules', '.cache', 'e2e-tests', id),
         };
         this.initializeParams = {
             processId: process.pid,
@@ -133,7 +133,7 @@ export class TestExtension implements Closeable {
                     const lsp = this.serverConnection.components;
                     LoggerFactory.reconfigure('warn');
 
-                    const dataStoreFactory = new MultiDataStoreFactoryProvider(rootDir);
+                    const dataStoreFactory = new MultiDataStoreFactoryProvider();
                     this.core = new CfnInfraCore(lsp, params, {
                         dataStoreFactory,
                     });

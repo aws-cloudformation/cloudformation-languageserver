@@ -4,9 +4,9 @@ import { readdir, stat, unlink, writeFile, readFile } from 'fs/promises'; // esl
 import { join } from 'path';
 import { DateTime } from 'luxon';
 import pino, { LevelWithSilent, Logger } from 'pino';
-import { pathToArtifact } from '../utils/ArtifactsDir';
 import { Closeable } from '../utils/Closeable';
 import { ExtensionId, ExtensionName } from '../utils/ExtensionConfig';
+import { pathToStorage } from '../utils/Storage';
 import { TelemetrySettings } from './TelemetryConfig';
 
 export class LoggerFactory implements Closeable {
@@ -137,16 +137,16 @@ export class LoggerFactory implements Closeable {
 
     static getLogger(clazz: string | Function): Logger {
         if (LoggerFactory._instance === undefined) {
-            LoggerFactory.initialize();
+            throw new Error('Logger not configured');
         }
         return LoggerFactory._instance.getLogger(clazz);
     }
 
-    static initialize(logLevel?: LevelWithSilent, rootDir: string = pathToArtifact()) {
+    static initialize(logLevel?: LevelWithSilent) {
         if (LoggerFactory._instance !== undefined) {
             throw new Error('Logger was already configured');
         }
-        LoggerFactory._instance = new LoggerFactory(rootDir, logLevel ?? TelemetrySettings.logLevel);
+        LoggerFactory._instance = new LoggerFactory(pathToStorage(), logLevel ?? TelemetrySettings.logLevel);
     }
 
     static reconfigure(newLevel: LevelWithSilent) {

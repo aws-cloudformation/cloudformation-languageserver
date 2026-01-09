@@ -182,6 +182,12 @@ export default tseslint.config([
                             message: 'Use methods in File.ts',
                         },
                     ],
+                    patterns: [
+                        {
+                            group: ['**/ArtifactsDir'],
+                            message: 'Use Storage.ts instead. ArtifactsDir is deprecated.',
+                        },
+                    ],
                 },
             ],
         },

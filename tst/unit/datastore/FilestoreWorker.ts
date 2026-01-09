@@ -4,9 +4,11 @@ import { EncryptedFileStore } from '../../../src/datastore/file/EncryptedFileSto
 import { encryptionKey } from '../../../src/datastore/file/Encryption';
 import { LoggerFactory } from '../../../src/telemetry/LoggerFactory';
 import { TelemetryService } from '../../../src/telemetry/TelemetryService';
+import { Storage } from '../../../src/utils/Storage';
 
 // Worker script for multiprocess FileStore testing
-LoggerFactory.initialize('silent', join(process.cwd(), 'node_modules', '.cache', 'filedb-worker', v4()));
+Storage.initialize(join(process.cwd(), 'node_modules', '.cache', 'filedb-worker', v4()));
+LoggerFactory.initialize('silent');
 TelemetryService.initialize(undefined, { telemetryEnabled: false });
 
 const [encTestDir, workerId, numWrites] = process.argv.slice(2);
