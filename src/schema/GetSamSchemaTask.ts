@@ -9,7 +9,10 @@ import { CloudFormationResourceSchema, SamSchema, SamSchemaTransformer } from '.
 export class GetSamSchemaTask extends GetSchemaTask {
     private readonly logger = LoggerFactory.getLogger(GetSamSchemaTask);
 
-    constructor(private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>) {
+    constructor(
+        private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
+        private readonly firstCreatedMs?: number,
+    ) {
         super();
     }
 
@@ -28,7 +31,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
             const samSchemasData: SamSchemasType = {
                 version: SamSchemas.V1,
                 schemas: schemas,
-                firstCreatedMs: Date.now(),
+                firstCreatedMs: this.firstCreatedMs ?? Date.now(),
                 lastModifiedMs: Date.now(),
             };
 

@@ -11,6 +11,8 @@ export class GetSchemaTaskManager {
     private readonly processedRegions = new Set<AwsRegion>();
     private readonly tasks: GetPublicSchemaTask[] = [];
     private readonly privateTask: GetPrivateSchemasTask;
+
+    private didSamTaskRun = false;
     private readonly samTask: GetSamSchemaTask;
     private readonly log = LoggerFactory.getLogger(GetSchemaTaskManager);
     private isRunning = false;
@@ -19,7 +21,7 @@ export class GetSchemaTaskManager {
         private readonly schemas: SchemaStore,
         private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
         getPrivateResources: () => Promise<DescribeTypeOutput[]>,
-        getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
+        private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
     ) {
         this.privateTask = new GetPrivateSchemasTask(getPrivateResources);
         this.samTask = new GetSamSchemaTask(getSamSchemas);
@@ -64,10 +66,13 @@ export class GetSchemaTaskManager {
             .catch(this.log.error);
     }
 
-    runSamTask() {
-        this.samTask
-            .run(this.schemas.samSchemas)
-            .then(() => this.schemas.invalidate())
-            .catch(this.log.error);
+    runSamTask(firstCreatedMs?: number) {
+        if (!this.didSamTaskRun) {
+            new GetSamSchemaTask(this.getSamSchemas, firstCreatedMs)
+                .run(this.schemas.samSchemas)
+                .then(() => this.schemas.invalidate())
+                .catch(this.log.error);
+        }
+        this.didSamTaskRun = true;
     }
 }

@@ -50,11 +50,10 @@ export class SchemaStore {
             }
         }
 
-        this.telemetry.countBoolean('rebuild', rebuild);
-
         // Rebuild combined schemas only when necessary (region changed or no cache exists)
         // Private and SAM schemas are fetched fresh each time since they can change independently
         if (!this.combined || rebuild) {
+            this.telemetry.count('rebuild', 1);
             this.combined = this.createCombinedSchemas(
                 this.regionalSchemas,
                 this.getPrivateSchemas(),
@@ -70,6 +69,9 @@ export class SchemaStore {
                 },
                 'Combined schemas',
             );
+
+            this.telemetry.histogram('public.size', this.combined.regionalSchemas?.schemas.size ?? 0);
+            this.telemetry.histogram('sam.size', this.combined.samSchemas?.schemas.size ?? 0);
         }
 
         return this.combined;
@@ -124,6 +126,7 @@ export class SchemaStore {
     }
 
     invalidate() {
+        this.telemetry.count('invalidate', 1);
         this.combined = undefined;
     }
 }
