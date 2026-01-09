@@ -1,6 +1,6 @@
-import { pathToArtifact } from '../utils/ArtifactsDir';
 import { Closeable } from '../utils/Closeable';
 import { isWindows } from '../utils/Environment';
+import { pathToStorage } from '../utils/Storage';
 import { FileStoreFactory } from './FileStore';
 import { LMDBStoreFactory } from './LMDB';
 import { MemoryStoreFactory } from './MemoryStore';
@@ -62,11 +62,11 @@ export class MultiDataStoreFactoryProvider implements DataStoreFactoryProvider {
     private readonly memoryStoreFactory: MemoryStoreFactory;
     private readonly persistedStore: DataStoreFactory;
 
-    constructor(rootDir: string = pathToArtifact()) {
+    constructor() {
         if (isWindows) {
-            this.persistedStore = new FileStoreFactory(rootDir);
+            this.persistedStore = new FileStoreFactory(pathToStorage());
         } else {
-            this.persistedStore = new LMDBStoreFactory(rootDir);
+            this.persistedStore = new LMDBStoreFactory(pathToStorage());
         }
 
         this.memoryStoreFactory = new MemoryStoreFactory();

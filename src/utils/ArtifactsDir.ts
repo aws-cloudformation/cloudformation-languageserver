@@ -29,6 +29,6 @@ function getOrCreateAbsolutePath(artifactDir: string | undefined = undefined): s
  * Specify a subdirectory of the root artifacts directory, or undefined to create artifacts in root
  * @param artifactDir
  */
-export function pathToArtifact(artifactDir: string | undefined = undefined): string {
+export function legacyPathToArtifact(artifactDir: string | undefined = undefined): string {
     return getOrCreateAbsolutePath(artifactDir);
 }

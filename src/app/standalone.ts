@@ -8,6 +8,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { AwsEnv, NodeEnv, ProcessPlatform } from '../utils/Environment';
 import { ExtensionId, ExtensionName, ExtensionVersion } from '../utils/ExtensionConfig';
+import { Storage } from '../utils/Storage';
 
 let server: unknown;
 
@@ -15,6 +16,7 @@ let server: unknown;
 async function onInitialize(params: ExtendedInitializeParams) {
     const ClientInfo = params.clientInfo;
     const AwsMetadata = params.initializationOptions?.['aws'];
+    Storage.initialize(AwsMetadata?.storageDir);
     LoggerFactory.initialize(AwsMetadata?.logLevel);
 
     getLogger().info(

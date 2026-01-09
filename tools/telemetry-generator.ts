@@ -4,10 +4,13 @@ import { readdirSync } from 'fs';
 import { join, extname, resolve } from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { Storage } from '../src/utils/Storage';
+import { ExtendedInitializeParams } from '../src/server/InitParams';
 import { LoggerFactory } from '../src/telemetry/LoggerFactory';
 import { TelemetryService } from '../src/telemetry/TelemetryService';
 
 const id = v4();
+const rootDir = join(process.cwd(), 'node_modules', '.cache', 'telemetry-generator', id);
 const initParams: ExtendedInitializeParams = {
     capabilities: {},
     processId: 1,
@@ -23,12 +26,13 @@ const initParams: ExtendedInitializeParams = {
                 clientId: id,
             },
             logLevel: 'warn',
+            storageDir: rootDir,
         },
     },
 };
 
-const rootDir = join(process.cwd(), 'node_modules', '.cache', 'telemetry-generator', id);
-LoggerFactory.initialize('warn', rootDir);
+Storage.initialize(rootDir);
+LoggerFactory.initialize('warn');
 TelemetryService.initialize(
     initParams?.initializationOptions?.aws?.clientInfo?.extension,
     initParams?.initializationOptions?.aws,
@@ -64,7 +68,6 @@ import { LspStackHandlers } from '../src/protocol/LspStackHandlers';
 import { LspResourceHandlers } from '../src/protocol/LspResourceHandlers';
 import { LspRelatedResourcesHandlers } from '../src/protocol/LspRelatedResourcesHandlers';
 import { LspS3Handlers } from '../src/protocol/LspS3Handlers';
-import { ExtendedInitializeParams } from '../src/server/InitParams';
 import { RelationshipSchemaService } from '../src/services/RelationshipSchemaService';
 import { LspCfnEnvironmentHandlers } from '../src/protocol/LspCfnEnvironmentHandlers';
 import { FeatureFlagProvider, getFromGitHub } from '../src/featureFlag/FeatureFlagProvider';
@@ -189,7 +192,7 @@ function main() {
         stubInterface<LspS3Handlers>(),
     );
 
-    const dataStoreFactory = new MultiDataStoreFactoryProvider(rootDir);
+    const dataStoreFactory = new MultiDataStoreFactoryProvider();
     const core = new CfnInfraCore(lsp, initParams, {
         dataStoreFactory,
         documentManager: new DocumentManager(textDocuments),
