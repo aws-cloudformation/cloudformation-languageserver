@@ -72,6 +72,19 @@ The language server accepts initialization options via the LSP `initialize` requ
 | `aws.clientInfo.extension.version` | string            | Your editor/client version |
 | `aws.clientInfo.clientId` | string (optional) | Unique identifier for the client instance |
 | `aws.telemetryEnabled` | boolean           | Enable anonymous usage metrics (default: `false`) |
+| `aws.storageDir` | string (optional) | Custom directory for logs, caches, and databases. Defaults to platform-specific location (see below) |
+
+#### Default Storage Locations
+
+If `aws.storageDir` is not specified, the server uses platform-specific defaults:
+
+| Platform | Default Location |
+|----------|------------------|
+| macOS | `~/Library/Application Support/aws-cloudformation-languageserver` |
+| Linux | `$XDG_STATE_HOME/aws-cloudformation-languageserver` (or `~/.local/state/...`) |
+| Windows | `%LOCALAPPDATA%\aws-cloudformation-languageserver` |
+
+You can also set the `CFN_LSP_STORAGE_DIR` environment variable to override the default location.
 
 See [Telemetry](src/telemetry/README.md) for details on collected metrics.
 
