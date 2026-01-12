@@ -12,11 +12,11 @@ import { ContextManager } from '../src/context/ContextManager';
 import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
 import { join, extname, resolve, dirname } from 'path';
-import { EntityType } from '../src/context/semantic/SemanticTypes';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { discoverTemplateFiles, generatePositions, TestPosition } from './utils';
 import { DocumentType } from '../src/document/Document';
+import { EntityType } from '../src/context/CloudFormationEnums';
 
 /**
  * This script benchmarks the performance of context resolution for CloudFormation templates,

@@ -1,7 +1,8 @@
 import { stringToBoolean } from '../../utils/String';
 import { toNumber } from '../../utils/TypeConverters';
-import { coerceParameterToTypedValues, ParameterType, ParameterValueType } from './parameter/ParameterType';
-import { CfnIntrinsicFunction, CfnValue, EntityType, MappingValueType } from './SemanticTypes';
+import { EntityType } from '../CloudFormationEnums';
+import { CfnIntrinsicFunction, CfnValue, MappingValueType } from './CloudFormationTypes';
+import { coerceParameterToTypedValues, ParameterType, ParameterValueType } from './ParameterType';
 
 export abstract class Entity {
     private _keys!: ReadonlyArray<string>;

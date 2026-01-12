@@ -8,8 +8,8 @@ import {
 } from 'vscode-languageserver';
 import { stringify as yamlStringify } from 'yaml';
 import { Context } from '../context/Context';
+import { CfnValue } from '../context/semantic/CloudFormationTypes';
 import { Resource } from '../context/semantic/Entity';
-import { CfnValue } from '../context/semantic/SemanticTypes';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { ResourceStateManager } from '../resourceState/ResourceStateManager';

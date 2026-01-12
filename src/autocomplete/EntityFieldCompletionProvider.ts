@@ -1,7 +1,7 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
+import { EntityType } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
 import { Entity } from '../context/semantic/Entity';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { FuzzySearchFunction, getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
 import { CompletionProvider } from './CompletionProvider';

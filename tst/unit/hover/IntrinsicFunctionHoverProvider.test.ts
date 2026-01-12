@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { intrinsicFunctionsDocsMap } from '../../../src/artifacts/IntrinsicFunctionsDocs';
-import { IntrinsicFunction } from '../../../src/context/ContextType';
+import { IntrinsicFunction } from '../../../src/context/CloudFormationEnums';
 import { IntrinsicFunctionHoverProvider } from '../../../src/hover/IntrinsicFunctionHoverProvider';
 import { createMockContext as mockContext } from '../../utils/MockContext';
 

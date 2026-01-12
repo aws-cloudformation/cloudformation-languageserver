@@ -1,7 +1,5 @@
 import { SyntaxNode } from 'tree-sitter';
 import { CompletionItem, CompletionParams } from 'vscode-languageserver';
-import { Context } from '../context/Context';
-import { ContextManager } from '../context/ContextManager';
 import {
     EntitySection,
     IntrinsicFunction,
@@ -9,10 +7,12 @@ import {
     IntrinsicsUsingConditionKeyword,
     ResourceAttribute,
     TopLevelSection,
-} from '../context/ContextType';
+    EntityType,
+} from '../context/CloudFormationEnums';
+import { Context } from '../context/Context';
+import { ContextManager } from '../context/ContextManager';
 import { isCondition } from '../context/ContextUtils';
 import { Entity, Output, Parameter } from '../context/semantic/Entity';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { SchemaRetriever } from '../schema/SchemaRetriever';

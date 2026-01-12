@@ -13,7 +13,19 @@ export enum TopLevelSection {
     Description = 'Description',
 }
 
-export type SectionType = TopLevelSection | 'Unknown';
+export enum EntityType {
+    Metadata = 'Metadata',
+    Output = 'Output',
+    Resource = 'Resource',
+    Transform = 'Transform',
+    Rule = 'Rule',
+    Condition = 'Condition',
+    Mapping = 'Mapping',
+    Parameter = 'Parameter',
+    Constant = 'Constant',
+    Unknown = 'Unknown',
+    ForEachResource = 'ForEachResource',
+}
 
 export enum IntrinsicFunction {
     Base64 = 'Fn::Base64',

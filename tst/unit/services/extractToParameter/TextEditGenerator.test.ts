@@ -1,10 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Range } from 'vscode-languageserver';
+import { ParameterType } from '../../../../src/context/semantic/ParameterType';
 import { DocumentType } from '../../../../src/document/Document';
-import {
-    ParameterDefinition,
-    ParameterType,
-} from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
+import { ParameterDefinition } from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
 import { TextEditGenerator } from '../../../../src/services/extractToParameter/TextEditGenerator';
 import { EditorSettings } from '../../../../src/settings/Settings';
 
@@ -25,7 +23,7 @@ describe('TextEditGenerator', () => {
         it('should generate parameter insertion edit for JSON template with existing Parameters section', () => {
             const parameterName = 'InstanceTypeParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 't2.micro',
                 Description: '',
             };
@@ -56,7 +54,7 @@ describe('TextEditGenerator', () => {
         it('should generate parameter insertion edit for JSON template without existing Parameters section', () => {
             const parameterName = 'InstanceTypeParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 't2.micro',
                 Description: '',
             };
@@ -89,7 +87,7 @@ describe('TextEditGenerator', () => {
         it('should generate parameter insertion edit for YAML template with existing Parameters section', () => {
             const parameterName = 'InstanceTypeParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 't2.micro',
                 Description: '',
             };
@@ -120,7 +118,7 @@ describe('TextEditGenerator', () => {
         it('should generate parameter insertion edit for YAML template without existing Parameters section', () => {
             const parameterName = 'InstanceTypeParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 't2.micro',
                 Description: '',
             };
@@ -151,7 +149,7 @@ describe('TextEditGenerator', () => {
         it('should handle boolean parameter with AllowedValues in JSON', () => {
             const parameterName = 'EnableFeature';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'true',
                 Description: '',
                 AllowedValues: ['true', 'false'],
@@ -176,7 +174,7 @@ describe('TextEditGenerator', () => {
         it('should handle boolean parameter with AllowedValues in YAML', () => {
             const parameterName = 'EnableFeature';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'true',
                 Description: '',
                 AllowedValues: ['true', 'false'],
@@ -203,7 +201,7 @@ describe('TextEditGenerator', () => {
         it('should handle numeric parameter in JSON', () => {
             const parameterName = 'MaxSize';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.NUMBER,
+                Type: ParameterType.Number,
                 Default: 10,
                 Description: '',
             };
@@ -228,7 +226,7 @@ describe('TextEditGenerator', () => {
         it('should handle array parameter in YAML', () => {
             const parameterName = 'SubnetIds';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.COMMA_DELIMITED_LIST,
+                Type: ParameterType.CommaDelimitedList,
                 Default: ['subnet-123', 'subnet-456'],
                 Description: '',
             };
@@ -333,7 +331,7 @@ describe('TextEditGenerator', () => {
         it('should handle complex default values in JSON', () => {
             const parameterName = 'ComplexParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'value with "quotes" and \n newlines',
                 Description: '',
             };
@@ -359,7 +357,7 @@ describe('TextEditGenerator', () => {
         it('should handle complex default values in YAML', () => {
             const parameterName = 'ComplexParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'value with "quotes" and \n newlines',
                 Description: '',
             };
@@ -386,7 +384,7 @@ describe('TextEditGenerator', () => {
         it('should maintain proper JSON indentation for nested parameter', () => {
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'test',
                 Description: '',
             };
@@ -413,7 +411,7 @@ describe('TextEditGenerator', () => {
         it('should maintain proper YAML indentation for nested parameter', () => {
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'test',
                 Description: '',
             };
@@ -440,7 +438,7 @@ describe('TextEditGenerator', () => {
         it('should add proper newlines for JSON parameter insertion', () => {
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'test',
                 Description: '',
             };
@@ -466,7 +464,7 @@ describe('TextEditGenerator', () => {
         it('should add proper newlines for YAML parameter insertion', () => {
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'test',
                 Description: '',
             };
@@ -498,7 +496,7 @@ describe('TextEditGenerator', () => {
             };
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'test',
                 Description: '',
             };
@@ -529,7 +527,7 @@ describe('TextEditGenerator', () => {
             };
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'test',
                 Description: '',
             };
@@ -560,7 +558,7 @@ describe('TextEditGenerator', () => {
             };
             const parameterName = 'TestParam';
             const parameterDefinition: ParameterDefinition = {
-                Type: ParameterType.STRING,
+                Type: ParameterType.String,
                 Default: 'test',
                 Description: '',
             };

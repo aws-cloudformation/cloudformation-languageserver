@@ -5,7 +5,7 @@ import { Position } from 'vscode-languageserver-textdocument';
 import { DocumentType } from '../../document/Document';
 import { createEdit } from '../../document/DocumentUtils';
 import { Measure } from '../../telemetry/TelemetryDecorator';
-import { TopLevelSection, TopLevelSections, IntrinsicsSet } from '../ContextType';
+import { TopLevelSection, TopLevelSections, IntrinsicsSet } from '../CloudFormationEnums';
 import { normalizeIntrinsicFunction } from '../semantic/Intrinsics';
 import { extractEntityFromNodeTextYaml } from './utils/NodeParse';
 import { NodeSearch } from './utils/NodeSearch';

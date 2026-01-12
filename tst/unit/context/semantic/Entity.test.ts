@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { Parameter } from '../../../../src/context/semantic/Entity';
-import { ParameterType } from '../../../../src/context/semantic/parameter/ParameterType';
+import { ParameterType } from '../../../../src/context/semantic/ParameterType';
 
 describe('Entity', () => {
     describe('Parameter.from', () => {

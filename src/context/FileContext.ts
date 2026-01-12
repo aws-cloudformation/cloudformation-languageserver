@@ -2,7 +2,7 @@ import { DocumentType } from '../document/Document';
 import { parseJson } from '../document/JsonParser';
 import { parseYaml } from '../document/YamlParser';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { TopLevelSection } from './ContextType';
+import { TopLevelSection } from './CloudFormationEnums';
 import { Entity } from './semantic/Entity';
 import { createEntityFromObject } from './semantic/EntityBuilder';
 import { parseObject } from './syntaxtree/utils/NodeParse';

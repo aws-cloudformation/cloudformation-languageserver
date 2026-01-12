@@ -1,5 +1,5 @@
 import { TextDocument, Position, Range, DocumentUri } from 'vscode-languageserver-textdocument';
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { DocumentMetadata } from './DocumentProtocol';

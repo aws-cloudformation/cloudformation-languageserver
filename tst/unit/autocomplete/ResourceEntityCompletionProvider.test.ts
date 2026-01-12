@@ -1,7 +1,7 @@
 import { describe, expect, test, beforeEach } from 'vitest';
 import { CompletionParams, CompletionItemKind, CompletionItem, InsertTextFormat } from 'vscode-languageserver';
 import { ResourceEntityCompletionProvider } from '../../../src/autocomplete/ResourceEntityCompletionProvider';
-import { ResourceAttribute } from '../../../src/context/ContextType';
+import { ResourceAttribute } from '../../../src/context/CloudFormationEnums';
 import { YamlNodeTypes } from '../../../src/context/syntaxtree/utils/TreeSitterTypes';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';

@@ -1,13 +1,13 @@
 import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Range, WorkspaceEdit } from 'vscode-languageserver';
+import { TopLevelSection } from '../../../../src/context/CloudFormationEnums';
 import { Context } from '../../../../src/context/Context';
-import { TopLevelSection } from '../../../../src/context/ContextType';
+import { ParameterType } from '../../../../src/context/semantic/ParameterType';
 import { SyntaxTree } from '../../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../../../../src/document/Document';
 import { ExtractToParameterProvider } from '../../../../src/services/extractToParameter/ExtractToParameterProvider';
-import { ParameterType } from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
 import { EditorSettings } from '../../../../src/settings/Settings';
 
 describe('ExtractToParameterProvider', () => {
@@ -187,7 +187,7 @@ describe('ExtractToParameterProvider', () => {
 
             expect(result).toBeDefined();
             expect(result?.parameterName).toBe('MyResourceInstanceType');
-            expect(result?.parameterDefinition.Type).toBe(ParameterType.STRING);
+            expect(result?.parameterDefinition.Type).toBe(ParameterType.String);
             expect(result?.parameterDefinition.Default).toBe('t2.micro');
             expect(result?.parameterDefinition.Description).toBe('');
             expect(result?.replacementEdit.newText).toBe('{"Ref": "MyResourceInstanceType"}');
@@ -217,7 +217,7 @@ describe('ExtractToParameterProvider', () => {
             const result = provider.generateExtraction(mockContext, mockRange, mockEditorSettings);
 
             expect(result).toBeDefined();
-            expect(result?.parameterDefinition.Type).toBe(ParameterType.NUMBER);
+            expect(result?.parameterDefinition.Type).toBe(ParameterType.Number);
             expect(result?.parameterDefinition.Default).toBe(42);
         });
 
@@ -245,7 +245,7 @@ describe('ExtractToParameterProvider', () => {
             const result = provider.generateExtraction(mockContext, mockRange, mockEditorSettings);
 
             expect(result).toBeDefined();
-            expect(result?.parameterDefinition.Type).toBe(ParameterType.STRING);
+            expect(result?.parameterDefinition.Type).toBe(ParameterType.String);
             expect(result?.parameterDefinition.Default).toBe('true');
             expect(result?.parameterDefinition.AllowedValues).toEqual(['true', 'false']);
         });
@@ -278,7 +278,7 @@ describe('ExtractToParameterProvider', () => {
             const result = provider.generateExtraction(mockContext, mockRange, mockEditorSettings);
 
             expect(result).toBeDefined();
-            expect(result?.parameterDefinition.Type).toBe(ParameterType.COMMA_DELIMITED_LIST);
+            expect(result?.parameterDefinition.Type).toBe(ParameterType.CommaDelimitedList);
             expect(result?.parameterDefinition.Default).toBe('item1,item2');
         });
 
@@ -841,7 +841,7 @@ Resources:
 
             expect(result).toBeDefined();
             expect(result?.parameterName).toBe('MyResourceInstanceType');
-            expect(result?.parameterDefinition.Type).toBe(ParameterType.STRING);
+            expect(result?.parameterDefinition.Type).toBe(ParameterType.String);
             expect(result?.parameterDefinition.Default).toBe('my-bucket');
             expect(result?.replacementEdits).toBeDefined();
             expect(result?.replacementEdits.length).toBeGreaterThan(0);

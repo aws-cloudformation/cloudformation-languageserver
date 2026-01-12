@@ -4,19 +4,19 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { removeQuotes } from '../utils/String';
 import {
+    EntityType,
     IntrinsicsSet,
     PseudoParametersSet,
     ResourceAttributesSet,
-    SectionType,
     TopLevelSection,
     TopLevelSectionsSet,
     TopLevelSectionsWithLogicalIdsSet,
-} from './ContextType';
+} from './CloudFormationEnums';
 import { IntrinsicContext } from './IntrinsicContext';
+import { SectionType } from './semantic/CloudFormationTypes';
 import { Entity, ForEachResource, Resource } from './semantic/Entity';
 import { entityTypeFromSection, nodeToEntity } from './semantic/EntityBuilder';
 import { normalizeIntrinsicFunction } from './semantic/Intrinsics';
-import { EntityType } from './semantic/SemanticTypes';
 import { PropertyPath } from './syntaxtree/SyntaxTree';
 import { NodeType } from './syntaxtree/utils/NodeType';
 import { YamlNodeTypes, CommonNodeTypes } from './syntaxtree/utils/TreeSitterTypes';

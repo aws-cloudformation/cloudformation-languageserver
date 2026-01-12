@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { LiteralValueType, ParameterType } from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
+import { ParameterType } from '../../../../src/context/semantic/ParameterType';
+import { LiteralValueType } from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
 import { ParameterTypeInferrer } from '../../../../src/services/extractToParameter/ParameterTypeInferrer';
 
 describe('ParameterTypeInferrer', () => {
@@ -13,7 +14,7 @@ describe('ParameterTypeInferrer', () => {
         it('should map string literals to String parameter type', () => {
             const result = inferrer.inferParameterType(LiteralValueType.STRING, 'hello world');
 
-            expect(result.Type).toBe(ParameterType.STRING);
+            expect(result.Type).toBe(ParameterType.String);
             expect(result.Default).toBe('hello world');
             expect(result.Description).toBe('');
             expect(result.AllowedValues).toBeUndefined();
@@ -22,7 +23,7 @@ describe('ParameterTypeInferrer', () => {
         it('should map number literals to Number parameter type', () => {
             const result = inferrer.inferParameterType(LiteralValueType.NUMBER, 42);
 
-            expect(result.Type).toBe(ParameterType.NUMBER);
+            expect(result.Type).toBe(ParameterType.Number);
             expect(result.Default).toBe(42);
             expect(result.Description).toBe('');
             expect(result.AllowedValues).toBeUndefined();
@@ -31,7 +32,7 @@ describe('ParameterTypeInferrer', () => {
         it('should map boolean literals to String parameter type with AllowedValues', () => {
             const result = inferrer.inferParameterType(LiteralValueType.BOOLEAN, true);
 
-            expect(result.Type).toBe(ParameterType.STRING);
+            expect(result.Type).toBe(ParameterType.String);
             expect(result.Default).toBe('true');
             expect(result.Description).toBe('');
             expect(result.AllowedValues).toEqual(['true', 'false']);
@@ -40,7 +41,7 @@ describe('ParameterTypeInferrer', () => {
         it('should map array literals to CommaDelimitedList parameter type', () => {
             const result = inferrer.inferParameterType(LiteralValueType.ARRAY, ['item1', 'item2']);
 
-            expect(result.Type).toBe(ParameterType.COMMA_DELIMITED_LIST);
+            expect(result.Type).toBe(ParameterType.CommaDelimitedList);
             expect(result.Default).toBe('item1,item2');
             expect(result.Description).toBe('');
             expect(result.AllowedValues).toBeUndefined();
@@ -51,7 +52,7 @@ describe('ParameterTypeInferrer', () => {
         it('should handle empty string literals', () => {
             const result = inferrer.inferParameterType(LiteralValueType.STRING, '');
 
-            expect(result.Type).toBe(ParameterType.STRING);
+            expect(result.Type).toBe(ParameterType.String);
             expect(result.Default).toBe('');
             expect(result.Description).toBe('');
         });
@@ -59,28 +60,28 @@ describe('ParameterTypeInferrer', () => {
         it('should handle zero number literals', () => {
             const result = inferrer.inferParameterType(LiteralValueType.NUMBER, 0);
 
-            expect(result.Type).toBe(ParameterType.NUMBER);
+            expect(result.Type).toBe(ParameterType.Number);
             expect(result.Default).toBe(0);
         });
 
         it('should handle negative number literals', () => {
             const result = inferrer.inferParameterType(LiteralValueType.NUMBER, -42);
 
-            expect(result.Type).toBe(ParameterType.NUMBER);
+            expect(result.Type).toBe(ParameterType.Number);
             expect(result.Default).toBe(-42);
         });
 
         it('should handle decimal number literals', () => {
             const result = inferrer.inferParameterType(LiteralValueType.NUMBER, 3.14);
 
-            expect(result.Type).toBe(ParameterType.NUMBER);
+            expect(result.Type).toBe(ParameterType.Number);
             expect(result.Default).toBe(3.14);
         });
 
         it('should handle false boolean literals', () => {
             const result = inferrer.inferParameterType(LiteralValueType.BOOLEAN, false);
 
-            expect(result.Type).toBe(ParameterType.STRING);
+            expect(result.Type).toBe(ParameterType.String);
             expect(result.Default).toBe('false');
             expect(result.AllowedValues).toEqual(['true', 'false']);
         });
@@ -88,21 +89,21 @@ describe('ParameterTypeInferrer', () => {
         it('should handle empty array literals', () => {
             const result = inferrer.inferParameterType(LiteralValueType.ARRAY, []);
 
-            expect(result.Type).toBe(ParameterType.COMMA_DELIMITED_LIST);
+            expect(result.Type).toBe(ParameterType.CommaDelimitedList);
             expect(result.Default).toBe('');
         });
 
         it('should handle single-item array literals', () => {
             const result = inferrer.inferParameterType(LiteralValueType.ARRAY, ['single-item']);
 
-            expect(result.Type).toBe(ParameterType.COMMA_DELIMITED_LIST);
+            expect(result.Type).toBe(ParameterType.CommaDelimitedList);
             expect(result.Default).toBe('single-item');
         });
 
         it('should handle array literals with mixed types', () => {
             const result = inferrer.inferParameterType(LiteralValueType.ARRAY, ['string', 42, true]);
 
-            expect(result.Type).toBe(ParameterType.COMMA_DELIMITED_LIST);
+            expect(result.Type).toBe(ParameterType.CommaDelimitedList);
             expect(result.Default).toBe('string,42,true');
         });
 
@@ -112,7 +113,7 @@ describe('ParameterTypeInferrer', () => {
                 'item with spaces',
             ]);
 
-            expect(result.Type).toBe(ParameterType.COMMA_DELIMITED_LIST);
+            expect(result.Type).toBe(ParameterType.CommaDelimitedList);
             expect(result.Default).toBe('item,with,commas,item with spaces');
         });
     });

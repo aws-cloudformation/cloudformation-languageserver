@@ -1,9 +1,8 @@
 import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { updateReplacePolicyValueDocsMap } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
+import { ResourceAttribute, EntityType } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { ResourceAttribute } from '../context/ContextType';
 import { Condition, Constant, Entity, Mapping, Parameter, Resource } from '../context/semantic/Entity';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { PropertyType } from '../schema/ResourceSchema';
 
 /**

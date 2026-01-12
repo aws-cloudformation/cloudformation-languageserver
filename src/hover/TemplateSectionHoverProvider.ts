@@ -1,6 +1,6 @@
 import { templateSectionDocsMap } from '../artifacts/TemplateSectionDocs';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { TopLevelSection } from '../context/ContextType';
 import { FeatureFlag } from '../featureFlag/FeatureFlagI';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { HoverProvider } from './HoverProvider';

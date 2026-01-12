@@ -3,7 +3,7 @@ import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CompletionParams, TextDocumentIdentifier } from 'vscode-languageserver';
 import { IntrinsicFunctionArgumentCompletionProvider } from '../../../src/autocomplete/IntrinsicFunctionArgumentCompletionProvider';
-import { IntrinsicFunction, TopLevelSection } from '../../../src/context/ContextType';
+import { IntrinsicFunction, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DocumentType } from '../../../src/document/Document';

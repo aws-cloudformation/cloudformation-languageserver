@@ -1,7 +1,6 @@
 import { CompletionItem, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
+import { ResourceAttributesSet, EntityType } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { ResourceAttributesSet } from '../context/ContextType';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { CfnExternal } from '../server/CfnExternal';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CfnLspProviders } from '../server/CfnLspProviders';

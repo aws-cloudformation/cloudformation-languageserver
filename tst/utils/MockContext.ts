@@ -1,8 +1,9 @@
 import { Point, SyntaxNode } from 'tree-sitter';
 import { Position } from 'vscode-languageserver';
+import { TopLevelSection } from '../../src/context/CloudFormationEnums';
 import { Context } from '../../src/context/Context';
-import { SectionType, TopLevelSection } from '../../src/context/ContextType';
 import { ContextWithRelatedEntities } from '../../src/context/ContextWithRelatedEntities';
+import { SectionType } from '../../src/context/semantic/CloudFormationTypes';
 import {
     Condition,
     Constant,

@@ -1,6 +1,6 @@
 import { intrinsicFunctionsDocsMap } from '../artifacts/IntrinsicFunctionsDocs';
+import { IntrinsicFunction } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { IntrinsicFunction } from '../context/ContextType';
 import { normalizeIntrinsicFunction } from '../context/semantic/Intrinsics';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { HoverProvider } from './HoverProvider';

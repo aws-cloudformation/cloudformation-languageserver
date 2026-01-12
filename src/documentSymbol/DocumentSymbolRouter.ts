@@ -1,9 +1,9 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentSymbol, SymbolKind, DocumentSymbolParams, Range, Position } from 'vscode-languageserver';
+import { TopLevelSection, EntityType } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { SectionType, TopLevelSection } from '../context/ContextType';
 import { contextEntitiesInSections } from '../context/SectionContextBuilder';
-import { EntityType } from '../context/semantic/SemanticTypes';
+import { SectionType } from '../context/semantic/CloudFormationTypes';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { FieldNames } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { LoggerFactory } from '../telemetry/LoggerFactory';

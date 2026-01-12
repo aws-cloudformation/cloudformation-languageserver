@@ -6,9 +6,10 @@ import {
 } from 'vscode-languageserver-protocol/lib/common/protocol';
 import { Position, Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { CompletionRouter, createCompletionProviders } from '../../src/autocomplete/CompletionRouter';
+import { TopLevelSection } from '../../src/context/CloudFormationEnums';
 import { Context } from '../../src/context/Context';
 import { ContextManager } from '../../src/context/ContextManager';
-import { SectionType, TopLevelSection } from '../../src/context/ContextType';
+import { SectionType } from '../../src/context/semantic/CloudFormationTypes';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
 import { DocumentType, Document } from '../../src/document/Document';

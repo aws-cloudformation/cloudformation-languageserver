@@ -1,4 +1,5 @@
-import { LiteralValueType, ParameterType, ParameterDefinition } from './ExtractToParameterTypes';
+import { ParameterType } from '../../context/semantic/ParameterType';
+import { LiteralValueType, ParameterDefinition } from './ExtractToParameterTypes';
 
 /**
  * Infers CloudFormation parameter types and definitions from JavaScript literal values.
@@ -45,7 +46,7 @@ export class ParameterTypeInferrer {
      */
     private createStringParameter(value: string): ParameterDefinition {
         return {
-            Type: ParameterType.STRING,
+            Type: ParameterType.String,
             Default: value,
             Description: '',
         };
@@ -57,7 +58,7 @@ export class ParameterTypeInferrer {
      */
     private createNumberParameter(value: number): ParameterDefinition {
         return {
-            Type: ParameterType.NUMBER,
+            Type: ParameterType.Number,
             Default: value,
             Description: '',
         };
@@ -69,7 +70,7 @@ export class ParameterTypeInferrer {
      */
     private createBooleanParameter(value: boolean): ParameterDefinition {
         return {
-            Type: ParameterType.STRING,
+            Type: ParameterType.String,
             Default: String(value),
             Description: '',
             AllowedValues: ['true', 'false'],
@@ -85,7 +86,7 @@ export class ParameterTypeInferrer {
         const defaultValue = value.map(String).join(',');
 
         return {
-            Type: ParameterType.COMMA_DELIMITED_LIST,
+            Type: ParameterType.CommaDelimitedList,
             Default: defaultValue,
             Description: '',
         };

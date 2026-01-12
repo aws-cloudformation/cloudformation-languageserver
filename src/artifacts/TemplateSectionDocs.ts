@@ -1,4 +1,4 @@
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 
 export const templateSectionDocsMap: ReadonlyMap<TopLevelSection, string> = getTemplateSectionDocsMap();
 

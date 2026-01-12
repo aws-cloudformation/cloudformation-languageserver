@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, InsertTextFormat, Position, Range, TextEdit } from 'vscode-languageserver';
 import { stringify as yamlStringify } from 'yaml';
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';

@@ -3,10 +3,9 @@ import { creationPolicyPropertyDocsMap } from '../artifacts/resourceAttributes/C
 import { deletionPolicyValueDocsMap } from '../artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { updatePolicyPropertyDocsMap } from '../artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
 import { updateReplacePolicyValueDocsMap } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
+import { ResourceAttribute, EntityType } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { ResourceAttribute } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { ResourceSchema } from '../schema/ResourceSchema';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { Measure } from '../telemetry/TelemetryDecorator';

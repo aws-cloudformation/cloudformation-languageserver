@@ -1,16 +1,16 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, Position, TextEdit } from 'vscode-languageserver';
 import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
-import { Context } from '../context/Context';
 import {
     IntrinsicFunction,
     IntrinsicShortForms,
     PseudoParameter,
     PseudoParametersSet,
     TopLevelSection,
-} from '../context/ContextType';
+    EntityType,
+} from '../context/CloudFormationEnums';
+import { Context } from '../context/Context';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Constant, Mapping, Parameter, Resource } from '../context/semantic/Entity';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../document/DocumentManager';

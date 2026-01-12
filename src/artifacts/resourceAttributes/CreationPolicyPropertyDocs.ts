@@ -3,7 +3,7 @@ import {
     CreationPolicyProperty,
     ResourceSignalProperty,
     AutoScalingCreationPolicyProperty,
-} from '../../context/ContextType';
+} from '../../context/CloudFormationEnums';
 
 export const creationPolicyPropertyDocsMap: ReadonlyMap<string, string> = getCreationPolicyPropertyDocsMap();
 

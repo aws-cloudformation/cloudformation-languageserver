@@ -1,5 +1,5 @@
-import { isStringABoolean, stringToBoolean } from '../../../utils/String';
-import { toNumber, toNumberList } from '../../../utils/TypeConverters';
+import { isStringABoolean, stringToBoolean } from '../../utils/String';
+import { toNumber, toNumberList } from '../../utils/TypeConverters';
 
 /**
  * CloudFormation parameter types

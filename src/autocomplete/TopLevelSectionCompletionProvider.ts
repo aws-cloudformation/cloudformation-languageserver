@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, InsertTextFormat } from 'vscode-languageserver';
+import { TopLevelSection, TopLevelSections, TopLevelSectionsWithLogicalIdsSet } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { TopLevelSection, TopLevelSections, TopLevelSectionsWithLogicalIdsSet } from '../context/ContextType';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';

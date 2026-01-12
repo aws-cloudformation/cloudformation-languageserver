@@ -1,5 +1,5 @@
 import { RequestHandler } from 'vscode-languageserver';
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Resource } from '../context/semantic/Entity';
 import {

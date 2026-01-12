@@ -1,8 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-    coerceParameterToTypedValues,
-    ParameterType,
-} from '../../../../../src/context/semantic/parameter/ParameterType';
+import { coerceParameterToTypedValues, ParameterType } from '../../../../src/context/semantic/ParameterType';
 
 describe('ParameterType', () => {
     describe('coerceParameterToTypedValues', () => {

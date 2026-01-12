@@ -1,8 +1,9 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../document/Document';
+import { TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from './CloudFormationEnums';
 import { Context, logicalIdAndSection } from './Context';
-import { SectionType, TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from './ContextType';
 import { contextEntitiesInSections } from './SectionContextBuilder';
+import { SectionType } from './semantic/CloudFormationTypes';
 import { Entity } from './semantic/Entity';
 import { referencedLogicalIds, selectText } from './semantic/LogicalIdReferenceFinder';
 import { PropertyPath, SyntaxTree } from './syntaxtree/SyntaxTree';

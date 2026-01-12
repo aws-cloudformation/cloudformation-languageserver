@@ -1,7 +1,7 @@
 import { StubbedInstance } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
+import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { ContextManager } from '../../../src/context/ContextManager';
-import { TopLevelSection } from '../../../src/context/ContextType';
 import { Parameter } from '../../../src/context/semantic/Entity';
 import { ConditionHoverProvider } from '../../../src/hover/ConditionHoverProvider';
 import { HoverRouter } from '../../../src/hover/HoverRouter';

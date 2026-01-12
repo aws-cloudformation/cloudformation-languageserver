@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach, afterAll } from 'vitest';
 import { Hover, MarkupContent, MarkupKind } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { templateSectionDocsMap } from '../../src/artifacts/TemplateSectionDocs';
-import { TopLevelSection } from '../../src/context/ContextType';
+import { TopLevelSection } from '../../src/context/CloudFormationEnums';
 import { getSimpleYamlTemplateText } from '../utils/TemplateUtils';
 import { TestExtension } from '../utils/TestExtension';
 import { WaitFor } from '../utils/Utils';

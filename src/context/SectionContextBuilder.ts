@@ -1,8 +1,9 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../document/Document';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from './CloudFormationEnums';
 import { Context } from './Context';
-import { SectionType, TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from './ContextType';
+import { SectionType } from './semantic/CloudFormationTypes';
 import { SyntaxTree } from './syntaxtree/SyntaxTree';
 import { NodeType } from './syntaxtree/utils/NodeType';
 import { FieldNames, YamlNodeTypes } from './syntaxtree/utils/TreeSitterTypes';

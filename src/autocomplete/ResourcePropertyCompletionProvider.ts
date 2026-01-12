@@ -19,10 +19,10 @@ import {
     UPDATE_REPLACE_POLICY_VALUES,
     supportsSnapshotOnReplace,
 } from '../artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
+import { ResourceAttribute, TopLevelSection, ResourceAttributesSet, EntityType } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { ResourceAttribute, TopLevelSection, ResourceAttributesSet } from '../context/ContextType';
+import { CfnValue } from '../context/semantic/CloudFormationTypes';
 import { Resource } from '../context/semantic/Entity';
-import { CfnValue, EntityType } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../context/syntaxtree/utils/TreeSitterTypes';
 import { propertyTypesToMarkdown } from '../hover/HoverFormatter';

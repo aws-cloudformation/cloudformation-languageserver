@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test } from 'vitest';
 import { CompletionItemKind, CompletionParams } from 'vscode-languageserver';
 import { ParameterTypeValueCompletionProvider } from '../../../src/autocomplete/ParameterTypeValueCompletionProvider';
-import { TopLevelSection } from '../../../src/context/ContextType';
-import { PARAMETER_TYPES } from '../../../src/context/semantic/parameter/ParameterType';
+import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
+import { PARAMETER_TYPES } from '../../../src/context/semantic/ParameterType';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createMockContext } from '../../utils/MockContext';
 

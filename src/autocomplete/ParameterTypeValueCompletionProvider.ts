@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
 import { Context } from '../context/Context';
-import { PARAMETER_TYPES } from '../context/semantic/parameter/ParameterType';
+import { PARAMETER_TYPES } from '../context/semantic/ParameterType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';

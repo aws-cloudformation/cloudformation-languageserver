@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { Context } from '../../../src/context/Context';
 import { ContextManager } from '../../../src/context/ContextManager';
-import { TopLevelSection } from '../../../src/context/ContextType';
 import {
     Parameter,
     Resource,

@@ -1,7 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Position } from 'vscode-languageserver';
 import { stringify as yamlStringify } from 'yaml';
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
 import { Document, DocumentType } from '../document/Document';

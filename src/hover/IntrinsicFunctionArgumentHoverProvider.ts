@@ -1,9 +1,14 @@
 import { Position } from 'vscode-languageserver-protocol';
+import {
+    IntrinsicFunction,
+    ResourceAttribute,
+    ResourceAttributesSet,
+    TopLevelSection,
+    EntityType,
+} from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { IntrinsicFunction, ResourceAttribute, ResourceAttributesSet, TopLevelSection } from '../context/ContextType';
 import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntities';
 import { Resource } from '../context/semantic/Entity';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import {
