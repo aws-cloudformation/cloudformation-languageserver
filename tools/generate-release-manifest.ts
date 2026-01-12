@@ -35,7 +35,6 @@ type Version = {
 };
 
 const ENVIRONMENTS = ['alpha', 'beta', 'prod'];
-const RELEASES_PER_ENV = 2;
 
 function getEnvFromTag(tag: string): string {
     for (const env of ENVIRONMENTS) {
@@ -103,7 +102,7 @@ function generateManifest() {
     };
 
     for (const env of ENVIRONMENTS) {
-        const envVersions = envReleases[env]?.slice(0, RELEASES_PER_ENV) || [];
+        const envVersions = envReleases[env] || [];
         const versions: Version[] = [];
 
         for (const [i, release] of envVersions.entries()) {
