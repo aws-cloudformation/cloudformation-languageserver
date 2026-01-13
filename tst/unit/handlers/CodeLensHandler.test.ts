@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CodeLensParams, CancellationToken } from 'vscode-languageserver-protocol';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CodeLensProvider } from '../../../src/codeLens/CodeLensProvider';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
-import { Document } from '../../../src/document/Document';
 import { codeLensHandler } from '../../../src/handlers/CodeLensHandler';
 import {
     createMockComponents,
@@ -11,6 +9,7 @@ import {
     createMockManagedResourceCodeLens,
     createMockSyntaxTreeManager,
 } from '../../utils/MockServerComponents';
+import { createTestDocument } from '../../utils/Utils';
 
 vi.mock('../../../src/context/SectionContextBuilder', () => ({
     getEntityMap: vi.fn(),
@@ -49,8 +48,11 @@ describe('CodeLensHandler', () => {
     });
 
     it('should return stack actions and managed resource code lenses for valid CFN template', async () => {
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         docManager.get.returns(document);
@@ -84,7 +86,7 @@ describe('CodeLensHandler', () => {
     });
 
     it('should not return stack actions for empty files', async () => {
-        const document = new Document(TextDocument.create('file:///test.yaml', 'yaml', 1, ''));
+        const document = createTestDocument('file:///test.yaml', 'yaml', 1, '');
 
         docManager.get.returns(document);
         managedCodeLens.getCodeLenses.returns([]);
@@ -99,9 +101,7 @@ describe('CodeLensHandler', () => {
     });
 
     it('should not return stack actions for non-CFN files', async () => {
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, 'some: random\nyaml: content'),
-        );
+        const document = createTestDocument('file:///test.yaml', 'yaml', 1, 'some: random\nyaml: content');
 
         docManager.get.returns(document);
         managedCodeLens.getCodeLenses.returns([]);
@@ -116,13 +116,11 @@ describe('CodeLensHandler', () => {
     });
 
     it('should not return stack actions when Resources section is missing', async () => {
-        const document = new Document(
-            TextDocument.create(
-                'file:///test.yaml',
-                'yaml',
-                1,
-                'AWSTemplateFormatVersion: "2010-09-09"\nDescription: Test',
-            ),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'AWSTemplateFormatVersion: "2010-09-09"\nDescription: Test',
         );
 
         docManager.get.returns(document);
@@ -140,8 +138,11 @@ describe('CodeLensHandler', () => {
     });
 
     it('should pass correct arguments to stack action commands', async () => {
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         docManager.get.returns(document);
