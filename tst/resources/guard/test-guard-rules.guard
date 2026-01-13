@@ -1,0 +1,18 @@
+# Test Guard Rules for E2E Testing
+# Simple rules that will trigger on common CloudFormation patterns
+
+rule test_bucket_must_have_encryption {
+    Resources.*[ Type == "AWS::S3::Bucket" ] {
+        Properties.BucketEncryption exists <<
+            S3 buckets must have encryption configured
+        >>
+    }
+}
+
+rule test_bucket_name_required {
+    Resources.*[ Type == "AWS::S3::Bucket" ] {
+        Properties.BucketName exists <<
+            S3 buckets must have a BucketName specified
+        >>
+    }
+}

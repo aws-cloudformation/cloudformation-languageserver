@@ -81,6 +81,8 @@ type TestExtensionConfig = {
 export class TestExtension implements Closeable {
     private readonly awsMetadata: AwsMetadata;
     private readonly initializeParams: ExtendedInitializeParams;
+    private readonly diagnosticsReceived: any[] = [];
+    private readonly mockWorkspaceConfig: Record<string, unknown> = {};
 
     private readonly readStream = new PassThrough();
     private readonly writeStream = new PassThrough();
@@ -179,8 +181,12 @@ export class TestExtension implements Closeable {
         );
 
         // Handle workspace/configuration requests from the server
-        this.clientConnection.onRequest('workspace/configuration', () => {
-            return config.workspaceConfig ?? [{}];
+        this.clientConnection.onRequest('workspace/configuration', (params: any) => {
+            // Handle both array and single section requests
+            if (Array.isArray(params)) {
+                return params.map((item: any) => this.mockWorkspaceConfig[item.section] ?? {});
+            }
+            return [this.mockWorkspaceConfig];
         });
 
         this.serverConnection.listen();
@@ -203,6 +209,11 @@ export class TestExtension implements Closeable {
         if (!this.isReady) {
             await this.clientConnection.sendRequest(InitializeRequest.type, this.initializeParams);
             await this.clientConnection.sendNotification(InitializedNotification.type, {});
+
+            // Set up diagnostic listener
+            this.clientConnection.onNotification('textDocument/publishDiagnostics', (params: any) => {
+                this.diagnosticsReceived.push(params);
+            });
 
             await WaitFor.waitFor(() => {
                 const store = this.external.schemaStore;
@@ -229,6 +240,7 @@ export class TestExtension implements Closeable {
         this.core.awsCredentials.handleIamCredentialsDelete();
         this.core.usageTracker.clear();
         this.core.validationManager.clear();
+        this.diagnosticsReceived.length = 0;
     }
 
     async send(method: string, params: any) {
@@ -342,11 +354,19 @@ export class TestExtension implements Closeable {
     }
 
     changeConfiguration(params: DidChangeConfigurationParams) {
+        // Update mock workspace config and notify
+        if (params.settings) {
+            Object.assign(this.mockWorkspaceConfig, params.settings);
+        }
         return this.notify(DidChangeConfigurationNotification.method, params);
     }
 
     changeWorkspaceFolders(params: DidChangeWorkspaceFoldersParams) {
         return this.notify(DidChangeWorkspaceFoldersNotification.method, params);
+    }
+
+    get receivedDiagnostics() {
+        return this.diagnosticsReceived;
     }
 
     updateIamCredentials(params: UpdateCredentialsParams) {
