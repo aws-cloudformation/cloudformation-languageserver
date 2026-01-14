@@ -1,6 +1,6 @@
 import { pseudoParameterDocsMap } from '../artifacts/PseudoParameterDocs';
+import { PseudoParameter } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { PseudoParameter } from '../context/ContextType';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { HoverProvider } from './HoverProvider';
 

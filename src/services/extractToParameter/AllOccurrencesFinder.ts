@@ -1,6 +1,6 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
-import { TopLevelSection } from '../../context/ContextType';
+import { TopLevelSection } from '../../context/CloudFormationEnums';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';

@@ -2,10 +2,16 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../../document/Document';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { IntrinsicFunction, SectionType, TopLevelSection, TopLevelSectionsWithLogicalIdsSet } from '../ContextType';
+import {
+    EntityType,
+    IntrinsicFunction,
+    TopLevelSection,
+    TopLevelSectionsWithLogicalIdsSet,
+} from '../CloudFormationEnums';
 import { nodeToObject, parseSyntheticNode } from '../syntaxtree/utils/NodeParse';
 import { NodeType } from '../syntaxtree/utils/NodeType';
 import { CommonNodeTypes } from '../syntaxtree/utils/TreeSitterTypes';
+import { SectionType } from './CloudFormationTypes';
 import {
     Condition,
     ForEachResource,
@@ -19,7 +25,6 @@ import {
     Transform,
     Unknown,
 } from './Entity';
-import { EntityType } from './SemanticTypes';
 
 const log = LoggerFactory.getLogger('EntityBuilder');
 

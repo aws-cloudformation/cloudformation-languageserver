@@ -1,4 +1,4 @@
-import { IntrinsicFunction } from '../context/ContextType';
+import { IntrinsicFunction } from '../context/CloudFormationEnums';
 
 export const intrinsicFunctionsDocsMap: ReadonlyMap<IntrinsicFunction, string> = getIntrinsicFunctionsDocsMap();
 

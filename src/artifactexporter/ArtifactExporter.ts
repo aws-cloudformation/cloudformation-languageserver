@@ -1,6 +1,6 @@
 import { resolve, dirname, isAbsolute } from 'path';
 import { fileURLToPath } from 'url';
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 import { normalizeIntrinsicFunctionAndCondition } from '../context/semantic/Intrinsics';
 import { DocumentType } from '../document/Document';
 import { parseDocumentContent } from '../document/DocumentUtils';

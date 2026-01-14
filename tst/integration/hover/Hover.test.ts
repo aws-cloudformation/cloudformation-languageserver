@@ -16,7 +16,7 @@ import {
     ResourceSignalProperty,
     UpdatePolicyProperty,
     AutoScalingRollingUpdateProperty,
-} from '../../../src/context/ContextType';
+} from '../../../src/context/CloudFormationEnums';
 import { DocumentType } from '../../../src/document/Document';
 import { HoverExpectationBuilder, TemplateBuilder, TemplateScenario } from '../../utils/TemplateBuilder';
 

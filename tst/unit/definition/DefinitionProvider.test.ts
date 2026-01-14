@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DefinitionParams, Location } from 'vscode-languageserver';
-import { TopLevelSection } from '../../../src/context/ContextType';
+import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { DefinitionProvider } from '../../../src/definition/DefinitionProvider';
 import { createResourceContext } from '../../utils/MockContext';
 import { createMockComponents } from '../../utils/MockServerComponents';

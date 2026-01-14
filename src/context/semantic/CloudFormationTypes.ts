@@ -1,20 +1,7 @@
+import { TopLevelSection } from '../CloudFormationEnums';
 import { Condition } from './Entity';
 
 /* eslint-disable no-restricted-syntax -- enum definitions */
-export enum EntityType {
-    Metadata = 'Metadata',
-    Output = 'Output',
-    Resource = 'Resource',
-    Transform = 'Transform',
-    Rule = 'Rule',
-    Condition = 'Condition',
-    Mapping = 'Mapping',
-    Parameter = 'Parameter',
-    Constant = 'Constant',
-    Unknown = 'Unknown',
-    ForEachResource = 'ForEachResource',
-}
-
 type Ref = { Ref: string };
 type FnBase64 = { 'Fn::Base64': CfnValue };
 type FnCidr = { 'Fn::Cidr': [CfnValue<string>, CfnValue<number>, CfnValue<string>] };
@@ -60,3 +47,4 @@ export type CfnIntrinsicFunction =
 
 export type CfnValue<T = string | number | boolean> = T | CfnIntrinsicFunction;
 export type MappingValueType = string | number | string[];
+export type SectionType = TopLevelSection | 'Unknown';

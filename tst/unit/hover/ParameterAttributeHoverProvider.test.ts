@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { TopLevelSection } from '../../../src/context/ContextType';
+import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { ParameterAttributeHoverProvider } from '../../../src/hover/ParameterAttributeHoverProvider';
 import { createMockContext } from '../../utils/MockContext';
 

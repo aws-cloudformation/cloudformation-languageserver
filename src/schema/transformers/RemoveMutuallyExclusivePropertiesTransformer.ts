@@ -1,4 +1,4 @@
-import { IntrinsicFunction } from '../../context/ContextType';
+import { IntrinsicFunction } from '../../context/CloudFormationEnums';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { PropertyType, ResourceSchema } from '../ResourceSchema';
 import { dependentExcludedMap } from './MutuallyExclusivePropertiesForValidation';

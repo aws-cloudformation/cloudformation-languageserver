@@ -1,9 +1,8 @@
 import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
+import { TopLevelSection, IntrinsicFunction, EntityType } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';
-import { TopLevelSection, IntrinsicFunction } from '../context/ContextType';
 import { ContextWithRelatedEntities } from '../context/ContextWithRelatedEntities';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { FeatureFlag } from '../featureFlag/FeatureFlagI';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';

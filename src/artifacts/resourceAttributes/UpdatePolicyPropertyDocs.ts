@@ -5,7 +5,7 @@ import {
     AutoScalingReplacingUpdateProperty,
     AutoScalingScheduledActionProperty,
     CodeDeployLambdaAliasUpdateProperty,
-} from '../../context/ContextType';
+} from '../../context/CloudFormationEnums';
 
 export const updatePolicyPropertyDocsMap: ReadonlyMap<string, string> = getUpdatePolicyPropertyDocsMap();
 

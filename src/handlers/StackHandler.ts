@@ -1,6 +1,6 @@
 import { ErrorCodes, RequestHandler, ResponseError } from 'vscode-languageserver';
 import { ArtifactExporter } from '../artifactexporter/ArtifactExporter';
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Parameter, Resource } from '../context/semantic/Entity';
 import { parseIdentifiable } from '../protocol/LspParser';

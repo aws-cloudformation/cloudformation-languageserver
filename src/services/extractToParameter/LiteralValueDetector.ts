@@ -1,6 +1,6 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
-import { IntrinsicFunction, TopLevelSection } from '../../context/ContextType';
+import { IntrinsicFunction, TopLevelSection } from '../../context/CloudFormationEnums';
 import { PropertyPath } from '../../context/syntaxtree/SyntaxTree';
 import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
 

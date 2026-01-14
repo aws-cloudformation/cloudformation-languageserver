@@ -1,6 +1,6 @@
 import { Range, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
+import { TopLevelSection } from '../../context/CloudFormationEnums';
 import { Context } from '../../context/Context';
-import { TopLevelSection } from '../../context/ContextType';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { EditorSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';

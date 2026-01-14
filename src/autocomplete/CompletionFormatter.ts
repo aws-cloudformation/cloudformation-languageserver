@@ -7,10 +7,14 @@ import {
     Position,
     TextEdit,
 } from 'vscode-languageserver';
+import {
+    ResourceAttributesSet,
+    TopLevelSection,
+    TopLevelSectionsSet,
+    EntityType,
+} from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { ResourceAttributesSet, TopLevelSection, TopLevelSectionsSet } from '../context/ContextType';
 import { Resource } from '../context/semantic/Entity';
-import { EntityType } from '../context/semantic/SemanticTypes';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentType } from '../document/Document';
 import { SchemaRetriever } from '../schema/SchemaRetriever';

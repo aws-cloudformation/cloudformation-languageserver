@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ResourceAttribute } from '../../../src/context/ContextType';
+import { ResourceAttribute } from '../../../src/context/CloudFormationEnums';
 import { propertyTypesToMarkdown, getResourceAttributeValueDoc } from '../../../src/hover/HoverFormatter';
 import { PropertyType } from '../../../src/schema/ResourceSchema';
 

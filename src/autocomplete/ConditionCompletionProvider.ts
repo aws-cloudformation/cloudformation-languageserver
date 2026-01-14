@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
+import { IntrinsicShortForms, TopLevelSection } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { IntrinsicShortForms, TopLevelSection } from '../context/ContextType';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';

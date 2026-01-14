@@ -1,6 +1,5 @@
 import { describe, it } from 'vitest';
-import { TopLevelSection } from '../../../src/context/ContextType';
-import { EntityType } from '../../../src/context/semantic/SemanticTypes';
+import { EntityType, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { DocumentType } from '../../../src/document/Document';
 import { ContextExpectationBuilder, TemplateBuilder, TemplateScenario } from '../../utils/TemplateBuilder';
 

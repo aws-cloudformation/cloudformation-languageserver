@@ -1,6 +1,6 @@
 import { CompletionItem, CompletionItemKind, CompletionParams, TextEdit } from 'vscode-languageserver';
+import { Intrinsics } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
-import { Intrinsics } from '../context/ContextType';
 import { DocumentType } from '../document/Document';
 import { Measure } from '../telemetry/TelemetryDecorator';
 import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';

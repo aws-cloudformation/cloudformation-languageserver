@@ -1,4 +1,4 @@
-import { PseudoParameter } from '../context/ContextType';
+import { PseudoParameter } from '../context/CloudFormationEnums';
 
 export const pseudoParameterDocsMap: ReadonlyMap<PseudoParameter, string> = getPseudoParameterDocsMap();
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
-import { IntrinsicFunction, TopLevelSection } from '../../../src/context/ContextType';
+import { IntrinsicFunction, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { IntrinsicFunctionArgumentHoverProvider } from '../../../src/hover/IntrinsicFunctionArgumentHoverProvider';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { createResourceContext, createParameterContext, createConstantContext } from '../../utils/MockContext';

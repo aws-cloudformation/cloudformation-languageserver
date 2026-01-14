@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { IntrinsicFunction } from '../../../src/context/CloudFormationEnums';
 import { ContextManager } from '../../../src/context/ContextManager';
-import { IntrinsicFunction } from '../../../src/context/ContextType';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
 

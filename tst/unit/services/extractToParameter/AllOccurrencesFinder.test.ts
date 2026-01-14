@@ -1,6 +1,6 @@
 import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TopLevelSection } from '../../../../src/context/ContextType';
+import { TopLevelSection } from '../../../../src/context/CloudFormationEnums';
 import { SyntaxTree } from '../../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { AllOccurrencesFinder } from '../../../../src/services/extractToParameter/AllOccurrencesFinder';

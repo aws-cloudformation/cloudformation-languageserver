@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { templateSectionDocsMap } from '../../../src/artifacts/TemplateSectionDocs';
-import { TopLevelSection } from '../../../src/context/ContextType';
+import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { TemplateSectionHoverProvider } from '../../../src/hover/TemplateSectionHoverProvider';
 import { createTopLevelContext as topLevelContext } from '../../utils/MockContext';
 

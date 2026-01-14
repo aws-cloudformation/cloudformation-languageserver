@@ -5,8 +5,8 @@ import {
     createCompletionProviders,
     createEntityFieldProviders,
 } from '../../../src/autocomplete/CompletionRouter';
+import { EntityType } from '../../../src/context/CloudFormationEnums';
 import { ContextManager } from '../../../src/context/ContextManager';
-import { EntityType } from '../../../src/context/semantic/SemanticTypes';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../../../src/document/Document';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';

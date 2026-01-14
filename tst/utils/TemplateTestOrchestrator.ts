@@ -1,9 +1,8 @@
 /* eslint-disable security/detect-non-literal-regexp, unicorn/prefer-string-slice */
 import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
+import { EntityType, TopLevelSections, TopLevelSectionsWithLogicalIds } from '../../src/context/CloudFormationEnums';
 import { ContextManager } from '../../src/context/ContextManager';
-import { TopLevelSections, TopLevelSectionsWithLogicalIds } from '../../src/context/ContextType';
 import { Condition, Mapping, Metadata, Transform } from '../../src/context/semantic/Entity';
-import { EntityType } from '../../src/context/semantic/SemanticTypes';
 import { SyntaxTree } from '../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { parseJson } from '../../src/document/JsonParser';

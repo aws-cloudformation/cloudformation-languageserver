@@ -1,4 +1,4 @@
-import { IntrinsicFunction } from '../ContextType';
+import { IntrinsicFunction } from '../CloudFormationEnums';
 
 export function normalizeIntrinsicFunction(text: string): string {
     if (text.startsWith('!')) {

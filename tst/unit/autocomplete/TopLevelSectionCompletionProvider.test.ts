@@ -2,7 +2,7 @@ import { describe, expect, test, beforeEach, vi } from 'vitest';
 import { CompletionItemKind, CompletionParams, InsertTextFormat } from 'vscode-languageserver';
 import * as CompletionUtils from '../../../src/autocomplete/CompletionUtils';
 import { TopLevelSectionCompletionProvider } from '../../../src/autocomplete/TopLevelSectionCompletionProvider';
-import { TopLevelSection } from '../../../src/context/ContextType';
+import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { DocumentType } from '../../../src/document/Document';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createTopLevelContext } from '../../utils/MockContext';

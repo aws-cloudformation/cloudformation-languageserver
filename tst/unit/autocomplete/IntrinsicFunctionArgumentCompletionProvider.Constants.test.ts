@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CompletionItemKind, CompletionParams, TextDocumentIdentifier } from 'vscode-languageserver';
 import { IntrinsicFunctionArgumentCompletionProvider } from '../../../src/autocomplete/IntrinsicFunctionArgumentCompletionProvider';
-import { IntrinsicFunction, TopLevelSection } from '../../../src/context/ContextType';
+import { IntrinsicFunction, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
 import { Constant } from '../../../src/context/semantic/Entity';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';

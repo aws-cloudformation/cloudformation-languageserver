@@ -1,4 +1,4 @@
-import { IntrinsicFunction, IntrinsicsSet } from '../context/ContextType';
+import { IntrinsicFunction, IntrinsicsSet } from '../context/CloudFormationEnums';
 
 /**
  * Convert CloudFormation template path to JSON Pointer path format

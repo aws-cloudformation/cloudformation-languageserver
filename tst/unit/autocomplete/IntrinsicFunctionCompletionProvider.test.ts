@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CompletionItemKind, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import { IntrinsicFunctionCompletionProvider } from '../../../src/autocomplete/IntrinsicFunctionCompletionProvider';
-import { Intrinsics } from '../../../src/context/ContextType';
+import { Intrinsics } from '../../../src/context/CloudFormationEnums';
 import { DocumentType } from '../../../src/document/Document';
 import { createMockContext } from '../../utils/MockContext';
 

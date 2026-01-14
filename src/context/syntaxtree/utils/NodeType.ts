@@ -1,7 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../../../document/Document';
 import { removeQuotes } from '../../../utils/String';
-import { TopLevelSections } from '../../ContextType';
+import { TopLevelSections } from '../../CloudFormationEnums';
 import { CommonNodeTypes, FieldNames, JSON_NODE_SETS, LARGE_NODE_TYPES, YAML_NODE_SETS } from './TreeSitterTypes';
 
 export class NodeType {

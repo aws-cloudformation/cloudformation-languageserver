@@ -1,4 +1,4 @@
-import { TopLevelSection } from '../../context/ContextType';
+import { TopLevelSection } from '../../context/CloudFormationEnums';
 import { JsonSyntaxTree } from '../../context/syntaxtree/JsonSyntaxTree';
 import { SyntaxTree } from '../../context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';

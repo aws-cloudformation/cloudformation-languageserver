@@ -1,9 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorkspaceEdit, TextEdit } from 'vscode-languageserver';
-import {
-    ExtractToParameterResult,
-    ParameterType,
-} from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
+import { ParameterType } from '../../../../src/context/semantic/ParameterType';
+import { ExtractToParameterResult } from '../../../../src/services/extractToParameter/ExtractToParameterTypes';
 import { WorkspaceEditBuilder } from '../../../../src/services/extractToParameter/WorkspaceEditBuilder';
 
 describe('WorkspaceEditBuilder', () => {
@@ -19,7 +17,7 @@ describe('WorkspaceEditBuilder', () => {
             const extractionResult: ExtractToParameterResult = {
                 parameterName: 'InstanceTypeParam',
                 parameterDefinition: {
-                    Type: ParameterType.STRING,
+                    Type: ParameterType.String,
                     Default: 't2.micro',
                     Description: '',
                 },
@@ -53,7 +51,7 @@ describe('WorkspaceEditBuilder', () => {
             const extractionResult: ExtractToParameterResult = {
                 parameterName: 'EnableFeature',
                 parameterDefinition: {
-                    Type: ParameterType.STRING,
+                    Type: ParameterType.String,
                     Default: 'true',
                     Description: '',
                     AllowedValues: ['true', 'false'],
@@ -664,7 +662,7 @@ describe('WorkspaceEditBuilder', () => {
             const extractionResult: ExtractToParameterResult = {
                 parameterName: 'ComplexParam',
                 parameterDefinition: {
-                    Type: ParameterType.COMMA_DELIMITED_LIST,
+                    Type: ParameterType.CommaDelimitedList,
                     Default: ['value1', 'value2', 'value3'],
                     Description: '',
                     AllowedValues: undefined,
@@ -698,7 +696,7 @@ describe('WorkspaceEditBuilder', () => {
             const extractionResult: ExtractToParameterResult = {
                 parameterName: 'LargeParam',
                 parameterDefinition: {
-                    Type: ParameterType.STRING,
+                    Type: ParameterType.String,
                     Default: largeText,
                     Description: '',
                 },
@@ -751,7 +749,7 @@ describe('WorkspaceEditBuilder', () => {
             const extractionResult: ExtractToParameterResult = {
                 parameterName: 'UnicodeParam',
                 parameterDefinition: {
-                    Type: ParameterType.STRING,
+                    Type: ParameterType.String,
                     Default: unicodeText,
                     Description: '',
                 },

@@ -1,5 +1,5 @@
 import { describe, expect, test, afterAll } from 'vitest';
-import { TopLevelSection, TopLevelSections } from '../../../src/context/ContextType';
+import { TopLevelSection, TopLevelSections } from '../../../src/context/CloudFormationEnums';
 import { contextEntitiesInSections, getEntityMap } from '../../../src/context/SectionContextBuilder';
 import { getJsonTemplate, getYamlTemplate } from '../../utils/TemplateUtils';
 import { createJsonTree, createYamlTree } from '../../utils/TestTree';

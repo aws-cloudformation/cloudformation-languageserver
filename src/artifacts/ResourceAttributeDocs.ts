@@ -1,4 +1,4 @@
-import { ResourceAttribute } from '../context/ContextType';
+import { ResourceAttribute } from '../context/CloudFormationEnums';
 
 export const resourceAttributeDocsMap: ReadonlyMap<ResourceAttribute, string> = getResourceAttributeDocsMap();
 

@@ -1,5 +1,5 @@
 import { CodeLens, Position, Range } from 'vscode-languageserver';
-import { TopLevelSection } from '../context/ContextType';
+import { TopLevelSection } from '../context/CloudFormationEnums';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { Document } from '../document/Document';

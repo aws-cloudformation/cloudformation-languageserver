@@ -1,6 +1,6 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../document/Document';
-import { IntrinsicFunction, IntrinsicsSet } from './ContextType';
+import { IntrinsicFunction, IntrinsicsSet } from './CloudFormationEnums';
 import { normalizeIntrinsicFunction } from './semantic/Intrinsics';
 import { isLogicalIdCandidate } from './semantic/LogicalIdReferenceFinder';
 import { nodeToObject } from './syntaxtree/utils/NodeParse';

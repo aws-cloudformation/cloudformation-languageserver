@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CompletionParams } from 'vscode-languageserver';
 import { IntrinsicFunctionArgumentCompletionProvider } from '../../../src/autocomplete/IntrinsicFunctionArgumentCompletionProvider';
-import { IntrinsicFunction } from '../../../src/context/ContextType';
+import { IntrinsicFunction } from '../../../src/context/CloudFormationEnums';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';

@@ -1,5 +1,5 @@
 import { describe, afterAll, it } from 'vitest';
-import { TopLevelSectionsWithLogicalIds } from '../../../src/context/ContextType';
+import { TopLevelSectionsWithLogicalIds } from '../../../src/context/CloudFormationEnums';
 import { toString } from '../../../src/utils/String';
 import { TemplateTestOrchestrator } from '../../utils/TemplateTestOrchestrator';
 import { Templates } from '../../utils/TemplateUtils';

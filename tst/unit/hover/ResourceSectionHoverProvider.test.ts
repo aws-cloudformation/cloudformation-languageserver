@@ -3,8 +3,6 @@ import { creationPolicyPropertyDocsMap } from '../../../src/artifacts/resourceAt
 import { deletionPolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/DeletionPolicyPropertyDocs';
 import { updatePolicyPropertyDocsMap } from '../../../src/artifacts/resourceAttributes/UpdatePolicyPropertyDocs';
 import { updateReplacePolicyValueDocsMap } from '../../../src/artifacts/resourceAttributes/UpdateReplacePolicyPropertyDocs-1';
-import { Context } from '../../../src/context/Context';
-import { ContextManager } from '../../../src/context/ContextManager';
 import {
     TopLevelSection,
     ResourceAttribute,
@@ -12,7 +10,9 @@ import {
     ResourceSignalProperty,
     UpdatePolicyProperty,
     AutoScalingRollingUpdateProperty,
-} from '../../../src/context/ContextType';
+} from '../../../src/context/CloudFormationEnums';
+import { Context } from '../../../src/context/Context';
+import { ContextManager } from '../../../src/context/ContextManager';
 import { ForEachResource, Resource } from '../../../src/context/semantic/Entity';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { ResourceSectionHoverProvider } from '../../../src/hover/ResourceSectionHoverProvider';

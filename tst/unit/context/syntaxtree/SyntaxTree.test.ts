@@ -1,5 +1,5 @@
 import { describe, it, expect, afterAll } from 'vitest';
-import { TopLevelSection, TopLevelSections } from '../../../../src/context/ContextType';
+import { TopLevelSection, TopLevelSections } from '../../../../src/context/CloudFormationEnums';
 import { SyntaxTree } from '../../../../src/context/syntaxtree/SyntaxTree';
 import { CommonNodeTypes } from '../../../../src/context/syntaxtree/utils/TreeSitterTypes';
 import { DocumentType } from '../../../../src/document/Document';

@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { TopLevelSection } from '../../../src/context/ContextType';
+import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { FileContext } from '../../../src/context/FileContext';
+import { CfnValue } from '../../../src/context/semantic/CloudFormationTypes';
 import {
     Resource,
     Parameter,
@@ -11,8 +12,7 @@ import {
     Metadata,
     Transform,
 } from '../../../src/context/semantic/Entity';
-import { ParameterType } from '../../../src/context/semantic/parameter/ParameterType';
-import { CfnValue } from '../../../src/context/semantic/SemanticTypes';
+import { ParameterType } from '../../../src/context/semantic/ParameterType';
 import { DocumentType } from '../../../src/document/Document';
 import { Templates } from '../../utils/TemplateUtils';
 

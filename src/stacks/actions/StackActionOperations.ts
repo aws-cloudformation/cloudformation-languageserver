@@ -13,7 +13,7 @@ import { DateTime } from 'luxon';
 import { v4 as uuidv4 } from 'uuid';
 import { ResponseError, ErrorCodes, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { ArtifactExporter } from '../../artifactexporter/ArtifactExporter';
-import { TopLevelSection } from '../../context/ContextType';
+import { TopLevelSection } from '../../context/CloudFormationEnums';
 import { getEntityMap } from '../../context/SectionContextBuilder';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../../document/Document';

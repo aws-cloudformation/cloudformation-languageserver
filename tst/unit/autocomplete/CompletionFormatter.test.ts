@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { CompletionItemKind, CompletionList } from 'vscode-languageserver';
 import { CompletionFormatter } from '../../../src/autocomplete/CompletionFormatter';
-import { ResourceAttribute, TopLevelSection } from '../../../src/context/ContextType';
+import { ResourceAttribute, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { DocumentType } from '../../../src/document/Document';
 import { CombinedSchemas } from '../../../src/schema/CombinedSchemas';
 import { ResourceSchema } from '../../../src/schema/ResourceSchema';

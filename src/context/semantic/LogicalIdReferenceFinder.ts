@@ -1,6 +1,6 @@
 import { SyntaxNode } from 'tree-sitter';
 import { DocumentType } from '../../document/Document';
-import { PseudoParametersSet, ResourceAttributes } from '../ContextType';
+import { PseudoParametersSet, ResourceAttributes } from '../CloudFormationEnums';
 
 /* eslint-disable no-restricted-syntax, security/detect-unsafe-regex */
 export function selectText(specificNode: SyntaxNode, fullEntitySearch: boolean, rootNode?: SyntaxNode): string {

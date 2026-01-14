@@ -1,6 +1,5 @@
 import { Range, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { Context } from '../../context/Context';
-import { DocumentType } from '../../document/Document';
 import { EditorSettings } from '../../settings/Settings';
 
 /**
@@ -75,16 +74,6 @@ export type ParameterDefinition = {
 };
 
 /**
- * CloudFormation parameter types that support literal value extraction.
- * Limited subset to ensure reliable type inference and parameter generation.
- */
-export enum ParameterType {
-    STRING = 'String',
-    NUMBER = 'Number',
-    COMMA_DELIMITED_LIST = 'CommaDelimitedList',
-}
-
-/**
  * JavaScript literal types detectable in CloudFormation templates.
  * Maps to syntax tree node types for consistent detection across JSON/YAML.
  */
@@ -96,27 +85,6 @@ export enum LiteralValueType {
 }
 
 /**
- * Type inference configuration. Enables consistent mapping from JavaScript
- * literals to CloudFormation parameter types across different template formats.
- */
-export type ParameterTypeMapping = {
-    literalType: LiteralValueType;
-    parameterType: ParameterType;
-    /** Required for boolean types to constrain values to "true"/"false" */
-    allowedValues?: string[];
-};
-
-/**
- * Name generation strategy to create meaningful, conflict-free parameter names.
- * Prioritizes context-aware naming over generic fallbacks for better readability.
- */
-export type ParameterNameConfig = {
-    baseName: string;
-    existingNames: Set<string>;
-    fallbackPrefix: string;
-};
-
-/**
  * Literal detection result. Includes reference check to prevent extraction
  * of values that are already parameterized or use intrinsic functions.
  */
@@ -124,15 +92,4 @@ export type LiteralValueInfo = {
     value: string | number | boolean | unknown[];
     type: LiteralValueType;
     range: Range;
-};
-
-/**
- * Template analysis result for parameter insertion. Handles both existing
- * Parameters sections and creation of new sections with proper formatting.
- */
-export type TemplateStructureInfo = {
-    hasParametersSection: boolean;
-    parametersSectionRange?: Range;
-    parameterInsertionPoint: Range;
-    documentType: DocumentType;
 };
