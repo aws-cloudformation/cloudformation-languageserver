@@ -413,6 +413,40 @@ describe('ResourceStateCompletionProvider', () => {
 
         expect(result.length).toBe(0);
     });
+
+    test('should return undefined when identifier contains intrinsic function', async () => {
+        const getResourceSpy = vi.fn();
+        mockComponents.resourceStateManager.getResource.callsFake(getResourceSpy);
+
+        const context = createResourceContext('MyResource', {
+            text: '',
+            data: {
+                Type: 'AWS::Logs::LogGroup',
+                Properties: {
+                    LogGroupName: { Ref: 'SomeParameter' },
+                },
+            },
+        });
+
+        const logGroupSchema = new ResourceSchema(
+            JSON.stringify({
+                typeName: 'AWS::Logs::LogGroup',
+                description: 'Test',
+                properties: { LogGroupName: { type: 'string' } },
+                primaryIdentifier: ['/properties/LogGroupName'],
+                additionalProperties: false,
+            }),
+        );
+
+        emptySchemas.schemas.set('AWS::Logs::LogGroup', logGroupSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
+
+        const result = await provider.getCompletions(context, mockYamlParams);
+
+        // Should not call getResource with [object Object]
+        expect(getResourceSpy).not.toHaveBeenCalled();
+        expect(result.length).toBe(0);
+    });
 });
 
 const defaultSchemas = combinedSchemas();
