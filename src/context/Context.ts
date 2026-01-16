@@ -367,7 +367,8 @@ export function logicalIdAndSection(propertyPath: PropertyPath) {
     let logicalId: string | undefined;
 
     if (propertyPath.length > 1 && section !== 'Unknown' && TopLevelSectionsWithLogicalIdsSet.has(section)) {
-        logicalId = propertyPath[1] as string;
+        const pathElement = propertyPath[1];
+        logicalId = typeof pathElement === 'string' ? pathElement : undefined;
     }
 
     return {
