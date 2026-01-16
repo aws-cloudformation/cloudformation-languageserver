@@ -117,7 +117,11 @@ export class ResourceStateCompletionProvider implements CompletionProvider {
             if (!value) {
                 return;
             }
-            identifierValues.push(value as string);
+            // Only accept primitive values as identifiers, not intrinsic functions or objects
+            if (typeof value === 'object') {
+                return;
+            }
+            identifierValues.push(String(value));
         }
 
         return identifierValues.join('|');
