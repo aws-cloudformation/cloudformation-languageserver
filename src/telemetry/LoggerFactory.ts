@@ -20,12 +20,14 @@ export class LoggerFactory implements Closeable {
     private readonly loggers = new Map<string, Logger>();
     private readonly interval: NodeJS.Timeout;
     private readonly timeout: NodeJS.Timeout;
+    private shuttingDown: boolean;
 
     private constructor(
         rootDir: string,
         private readonly logLevel: LevelWithSilent,
     ) {
         this.logsDirectory = join(rootDir, 'logs');
+        this.shuttingDown = false;
 
         this.baseLogger = pino({
             name: ExtensionName,
@@ -53,10 +55,26 @@ export class LoggerFactory implements Closeable {
         });
 
         // Handle stream errors to prevent uncaught exceptions when worker thread exits
+        // ThreadStream emits errors asynchronously via setImmediate, so try-catch won't catch them
         const stream = (this.baseLogger as unknown as Record<symbol, NodeJS.EventEmitter>)[pino.symbols.streamSym];
-        stream?.on?.('error', () => {
-            // Silently ignore - worker thread has exited during shutdown
-        });
+        if (stream?.on) {
+            stream.on('error', (err: Error) => {
+                // Suppress expected worker exit errors during shutdown
+                if (err.message === 'the worker has exited' || err.message === 'the worker thread exited') {
+                    if (this.shuttingDown) {
+                        // Expected during shutdown, silently ignore to prevent cascade
+                        return;
+                    }
+                    // Worker crashed during normal operation - log to console
+                    // eslint-disable-next-line no-console
+                    console.error('Pino worker thread crashed unexpectedly:', err.message);
+                    return;
+                }
+                // Log other unexpected stream errors to console
+                // eslint-disable-next-line no-console
+                console.error('Unexpected pino stream error:', err);
+            });
+        }
 
         this.timeout = setTimeout(() => {
             void this.cleanOldLogs();
@@ -131,6 +149,7 @@ export class LoggerFactory implements Closeable {
     }
 
     close() {
+        this.shuttingDown = true;
         clearTimeout(this.timeout);
         clearInterval(this.interval);
     }
