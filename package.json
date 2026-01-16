@@ -92,6 +92,7 @@
     "pyodide": "0.28.2",
     "tree-sitter": "0.22.4",
     "tree-sitter-json": "0.24.8",
+    "web-tree-sitter": "0.22.4",
     "ts-essentials": "10.1.1",
     "vscode-languageserver": "9.0.1",
     "vscode-languageserver-textdocument": "1.0.12",
