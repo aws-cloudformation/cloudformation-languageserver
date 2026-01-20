@@ -188,7 +188,7 @@ describe('extractLocationFromStack - sensitive data sanitization', () => {
     });
 
     test('sanitizes multiple ARNs in same message', () => {
-        const stack = 'User arn:aws:iam::111111111111:user/alice cannot access arn:aws:iam::222222222222:role/target';
+        const stack = 'User arn:aws:iam::111111111111:user/user-a cannot access arn:aws:iam::222222222222:role/role-b';
         const result = extractLocationFromStack(stack);
         expect(result['error.message']).toBe('User arn:aws:<REDACTED> cannot access arn:aws:<REDACTED>');
     });
@@ -200,6 +200,42 @@ describe('extractLocationFromStack - sensitive data sanitization', () => {
         expect(result['error.message']).not.toMatch(/\d{12}/);
         expect(result['error.message']).toContain('AccessDenied');
         expect(result['error.message']).toContain('arn:aws:<REDACTED>');
+    });
+
+    test('sanitizes regionalized EC2 ARN', () => {
+        const stack = 'Error: arn:aws:ec2:us-east-1:123456789012:instance/i-0abcdef1234567890';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
+    });
+
+    test('sanitizes aws-cn partition ARN', () => {
+        const stack = 'Error: arn:aws-cn:lambda:cn-north-1:123456789012:function:my-func';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
+    });
+
+    test('sanitizes aws-us-gov partition ARN', () => {
+        const stack = 'Error: arn:aws-us-gov:rds:us-gov-west-1:123456789012:db:my-db';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
+    });
+
+    test('sanitizes aws-iso partition ARN', () => {
+        const stack = 'Error: arn:aws-iso:ec2:us-iso-east-1:123456789012:instance/i-abc';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
+    });
+
+    test('sanitizes global IAM ARN from aws-cn partition', () => {
+        const stack = 'Error: arn:aws-cn:iam::123456789012:user/test-user';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
+    });
+
+    test('sanitizes CloudFront distribution ARN (global service)', () => {
+        const stack = 'Error: arn:aws:cloudfront::123456789012:distribution/EDFDVBD632BHDS';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
     });
 });
 
