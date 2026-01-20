@@ -99,6 +99,12 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
             this.logger.info(`${schemas.length} private schemas retrieved`);
         } catch (error) {
             const { category, httpStatus } = classifyAwsError(error);
+
+            if (category === 'permissions') {
+                this.logger.info('User lacks permission for private schemas, skipping');
+                return;
+            }
+
             this.telemetry.count('getSchemas.error', 1, {
                 attributes: { category, httpStatus },
             });

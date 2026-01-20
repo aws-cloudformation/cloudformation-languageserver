@@ -75,7 +75,7 @@ export function classifyAwsError(error: unknown): { category: AwsErrorCategory; 
     if (isNetworkError(error)) {
         return { category: 'network', httpStatus };
     }
-    if (error.name === 'AccessDeniedException' || httpStatus === 403) {
+    if (error.name === 'AccessDeniedException' || error.name === 'AccessDenied' || httpStatus === 403) {
         return { category: 'permissions', httpStatus };
     }
     if (error.name === 'ThrottlingException' || httpStatus === 429) {
