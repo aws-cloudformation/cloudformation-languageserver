@@ -47,9 +47,15 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
     }
 
     const result: Record<string, string> = {};
-    result['error.message'] = lines[0];
+    result['error.message'] = sanitizeErrorMessage(lines[0]);
     result['error.stack'] = lines.slice(1).join('\n');
     return result;
+}
+
+function sanitizeErrorMessage(message: string): string {
+    return message
+        .replaceAll(/arn:aws[^:\s]*:\S+\d{12}\S*/gi, 'arn:aws:<REDACTED>')
+        .replaceAll(/\b\d{12}\b/g, '<ACCOUNT_ID>');
 }
 
 export function errorAttributes(error: unknown, origin?: 'uncaughtException' | 'unhandledRejection'): Attributes {

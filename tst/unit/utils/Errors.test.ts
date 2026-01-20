@@ -150,6 +150,59 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
     });
 });
 
+describe('extractLocationFromStack - sensitive data sanitization', () => {
+    test('sanitizes IAM user ARN with account ID', () => {
+        const stack = 'AccessDenied: User: arn:aws:iam::123456789012:user/test-user is not authorized';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('AccessDenied: User: arn:aws:<REDACTED> is not authorized');
+        expect(result['error.message']).not.toContain('123456789012');
+        expect(result['error.message']).not.toContain('test-user');
+    });
+
+    test('sanitizes STS assumed role ARN', () => {
+        const stack = 'arn:aws:sts::123456789012:assumed-role/MyRole/session-name';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('arn:aws:<REDACTED>');
+        expect(result['error.message']).not.toContain('123456789012');
+        expect(result['error.message']).not.toContain('MyRole');
+    });
+
+    test('sanitizes IAM role ARN', () => {
+        const stack = 'arn:aws:iam::111122223333:role/AdminRole not found';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('arn:aws:<REDACTED> not found');
+        expect(result['error.message']).not.toContain('111122223333');
+        expect(result['error.message']).not.toContain('AdminRole');
+    });
+
+    test('sanitizes standalone 12-digit account ID', () => {
+        const stack = 'Account 123456789012 not found';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('Account <ACCOUNT_ID> not found');
+    });
+
+    test('does not sanitize S3 ARN without account ID', () => {
+        const stack = 'arn:aws:s3:::my-bucket';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('arn:aws:s3:::my-bucket');
+    });
+
+    test('sanitizes multiple ARNs in same message', () => {
+        const stack = 'User arn:aws:iam::111111111111:user/alice cannot access arn:aws:iam::222222222222:role/target';
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).toBe('User arn:aws:<REDACTED> cannot access arn:aws:<REDACTED>');
+    });
+
+    test('sanitizes real AWS AccessDenied error message format', () => {
+        const stack = `AccessDenied: User: arn:aws:iam::123456789012:user/some-user is not authorized to perform: cloudformation:ListTypes because no identity-based policy allows the cloudformation:ListTypes action
+    at ProtocolLib.getErrorSchemaOrThrowBaseException (webpack://aws/cloudformation-languageserver/node_modules/@aws-sdk/client-cloudformation/node_modules/@aws-sdk/core/dist-es/submodules/protocols/ProtocolLib.js:60:1)`;
+        const result = extractLocationFromStack(stack);
+        expect(result['error.message']).not.toMatch(/\d{12}/);
+        expect(result['error.message']).toContain('AccessDenied');
+        expect(result['error.message']).toContain('arn:aws:<REDACTED>');
+    });
+});
+
 describe('errorAttributes', () => {
     test('returns attributes for Error with stack and default origin', () => {
         const error = new Error('test message');
