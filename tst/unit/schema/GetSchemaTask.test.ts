@@ -128,5 +128,21 @@ describe('GetSchemaTask', () => {
 
             await expect(task.run(mockDataStore)).rejects.toThrow('Schema retrieval failed');
         });
+
+        it('should handle permission errors gracefully without throwing', async () => {
+            const error = { name: 'AccessDenied', $metadata: { httpStatusCode: 403 } };
+            const mockGetSchemas = vi.fn().mockRejectedValue(error);
+            const task = new GetPrivateSchemasTask(mockGetSchemas);
+
+            await expect(task.run(mockDataStore)).resolves.not.toThrow();
+        });
+
+        it('should handle credential errors gracefully without throwing', async () => {
+            const error = { name: 'InvalidClientTokenId', $metadata: { httpStatusCode: 403 } };
+            const mockGetSchemas = vi.fn().mockRejectedValue(error);
+            const task = new GetPrivateSchemasTask(mockGetSchemas);
+
+            await expect(task.run(mockDataStore)).resolves.not.toThrow();
+        });
     });
 });

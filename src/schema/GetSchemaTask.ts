@@ -100,8 +100,8 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
         } catch (error) {
             const { category, httpStatus } = classifyAwsError(error);
 
-            if (category === 'permissions') {
-                this.logger.info('User lacks permission for private schemas, skipping');
+            if (category === 'permissions' || category === 'credentials') {
+                this.logger.info(`Skipping private schemas due to ${category} issue`);
                 return;
             }
 
