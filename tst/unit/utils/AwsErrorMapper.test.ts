@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { mapAwsErrorToLspError } from '../../../src/utils/AwsErrorMapper';
+import { classifyAwsError, mapAwsErrorToLspError } from '../../../src/utils/AwsErrorMapper';
 import { OnlineFeatureErrorCode } from '../../../src/utils/OnlineFeatureError';
 
 describe('mapAwsErrorToLspError', () => {
@@ -67,5 +67,19 @@ describe('mapAwsErrorToLspError', () => {
         const result = mapAwsErrorToLspError(error);
         expect(result.code).toBe(OnlineFeatureErrorCode.AwsServiceError);
         expect(result.message).toContain('Unknown error');
+    });
+});
+
+describe('classifyAwsError', () => {
+    it('should classify AccessDenied as permissions', () => {
+        const error = { name: 'AccessDenied', $metadata: { httpStatusCode: 403 } };
+        const result = classifyAwsError(error);
+        expect(result.category).toBe('permissions');
+    });
+
+    it('should classify AccessDeniedException as permissions', () => {
+        const error = { name: 'AccessDeniedException', $metadata: { httpStatusCode: 403 } };
+        const result = classifyAwsError(error);
+        expect(result.category).toBe('permissions');
     });
 });
