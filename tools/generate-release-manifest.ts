@@ -36,6 +36,8 @@ type Version = {
 
 const ENVIRONMENTS = ['alpha', 'beta', 'prod'];
 
+const DELISTED_VERSIONS = new Set(['1.3.0', '1.3.0-beta']);
+
 function getEnvFromTag(tag: string): string {
     for (const env of ENVIRONMENTS) {
         if (tag.includes(`-${env}`)) return env;
@@ -136,7 +138,7 @@ function generateManifest() {
             versions.push({
                 serverVersion: release.tag_name.replace('v', ''),
                 latest: i === 0,
-                isDelisted: false,
+                isDelisted: DELISTED_VERSIONS.has(release.tag_name.replace('v', '')),
                 targets,
             });
         }
