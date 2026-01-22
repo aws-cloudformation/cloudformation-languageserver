@@ -174,7 +174,7 @@ export function discoverTemplateFiles(paths: string[]): TemplateFile[] {
             const content = readFileSync(path, 'utf8');
             const { extension, type } = detectDocumentType(path, content);
             const textDocument = TextDocument.create(path, type === DocumentType.JSON ? 'json' : 'yaml', 1, content);
-            const document = new Document(textDocument);
+            const document = new Document(textDocument.uri, () => textDocument);
 
             return {
                 name: uriToPath(path).base,

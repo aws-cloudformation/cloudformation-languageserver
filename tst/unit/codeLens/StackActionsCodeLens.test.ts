@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { TextDocument } from 'vscode-languageserver-textdocument';
 import { getStackActionsCodeLenses } from '../../../src/codeLens/StackActionsCodeLens';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
-import { Document } from '../../../src/document/Document';
 import { createMockSyntaxTreeManager } from '../../utils/MockServerComponents';
+import { createTestDocument } from '../../utils/Utils';
 
 vi.mock('../../../src/context/SectionContextBuilder', () => ({
     getEntityMap: vi.fn(),
@@ -22,8 +21,11 @@ describe('StackActionsCodeLens', () => {
     it('should return empty array when syntax tree is not found', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns(undefined);
 
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -35,9 +37,7 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(undefined);
 
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, 'AWSTemplateFormatVersion: "2010-09-09"'),
-        );
+        const document = createTestDocument('file:///test.yaml', 'yaml', 1, 'AWSTemplateFormatVersion: "2010-09-09"');
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
 
@@ -48,7 +48,7 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map());
 
-        const document = new Document(TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources: {}'));
+        const document = createTestDocument('file:///test.yaml', 'yaml', 1, 'Resources: {}');
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
 
@@ -59,9 +59,7 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, 'some: random\nyaml: content'),
-        );
+        const document = createTestDocument('file:///test.yaml', 'yaml', 1, 'some: random\nyaml: content');
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
 
@@ -72,8 +70,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -88,8 +89,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -102,8 +106,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create('file:///test.yaml', 'yaml', 1, '\n\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket'),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            '\n\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -115,13 +122,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create(
-                'file:///test.yaml',
-                'yaml',
-                1,
-                '# This is a comment\n# Another comment\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
-            ),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            '# This is a comment\n# Another comment\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -133,13 +138,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create(
-                'file:///test.yaml',
-                'yaml',
-                1,
-                '\n# Comment\n\n# Another comment\n\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
-            ),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            '\n# Comment\n\n# Another comment\n\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -151,13 +154,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create(
-                'file:///test.yaml',
-                'yaml',
-                1,
-                'AWSTemplateFormatVersion: "2010-09-09"\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
-            ),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'AWSTemplateFormatVersion: "2010-09-09"\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -170,13 +171,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Function', {}]]));
 
-        const document = new Document(
-            TextDocument.create(
-                'file:///test.yaml',
-                'yaml',
-                1,
-                'Transform: AWS::Serverless-2016-10-31\nResources:\n  Function:\n    Type: AWS::Serverless::Function',
-            ),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'Transform: AWS::Serverless-2016-10-31\nResources:\n  Function:\n    Type: AWS::Serverless::Function',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -188,8 +187,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create('file:///test.json', 'json', 1, '{"Resources":{"Bucket":{"Type":"AWS::S3::Bucket"}}}'),
+        const document = createTestDocument(
+            'file:///test.json',
+            'json',
+            1,
+            '{"Resources":{"Bucket":{"Type":"AWS::S3::Bucket"}}}',
         );
 
         const result = getStackActionsCodeLenses('file:///test.json', document, mockSyntaxTreeManager);
@@ -207,13 +209,11 @@ describe('StackActionsCodeLens', () => {
             ]),
         );
 
-        const document = new Document(
-            TextDocument.create(
-                'file:///test.yaml',
-                'yaml',
-                1,
-                'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket\n  Table:\n    Type: AWS::DynamoDB::Table',
-            ),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket\n  Table:\n    Type: AWS::DynamoDB::Table',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);
@@ -225,13 +225,11 @@ describe('StackActionsCodeLens', () => {
         mockSyntaxTreeManager.getSyntaxTree.returns({ rootNode: {} } as any);
         mockGetEntityMap.mockReturnValue(new Map([['Bucket', {}]]));
 
-        const document = new Document(
-            TextDocument.create(
-                'file:///test.yaml',
-                'yaml',
-                1,
-                '   \n\t\n  \nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
-            ),
+        const document = createTestDocument(
+            'file:///test.yaml',
+            'yaml',
+            1,
+            '   \n\t\n  \nResources:\n  Bucket:\n    Type: AWS::S3::Bucket',
         );
 
         const result = getStackActionsCodeLenses('file:///test.yaml', document, mockSyntaxTreeManager);

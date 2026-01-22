@@ -97,6 +97,9 @@ export async function processChangeSet(
         throw new ResponseError(ErrorCodes.InvalidParams, `Document not found: ${params.uri}`);
     }
     let templateBody = document.contents();
+    if (!templateBody) {
+        throw new ResponseError(ErrorCodes.InvalidParams, `Document content is undefined: ${params.uri}`);
+    }
     let templateS3Url: string | undefined;
     let expectedETag: string | undefined;
     try {
@@ -104,7 +107,7 @@ export async function processChangeSet(
             const s3KeyPrefix = params.s3Key?.includes('/')
                 ? params.s3Key.slice(0, params.s3Key.lastIndexOf('/'))
                 : undefined;
-            const template = new ArtifactExporter(s3Service, document.documentType, document.uri, document.contents());
+            const template = new ArtifactExporter(s3Service, document.documentType, document.uri, templateBody);
 
             const exportedTemplate = await template.export(params.s3Bucket, s3KeyPrefix);
 

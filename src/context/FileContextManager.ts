@@ -22,8 +22,13 @@ export class FileContextManager {
             return undefined;
         }
 
+        const content = document.contents();
+        if (!content) {
+            return undefined;
+        }
+
         try {
-            return new FileContext(uri, document.documentType, document.contents());
+            return new FileContext(uri, document.documentType, content);
         } catch (error) {
             this.log.error(error, `Failed to create file context ${uri}`);
             return undefined;

@@ -12,7 +12,7 @@ import { ContextManager } from '../../src/context/ContextManager';
 import { SectionType } from '../../src/context/semantic/CloudFormationTypes';
 import { SyntaxTreeManager } from '../../src/context/syntaxtree/SyntaxTreeManager';
 import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
-import { DocumentType, Document } from '../../src/document/Document';
+import { DocumentType } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
@@ -25,6 +25,7 @@ import {
     createMockSchemaRetriever,
 } from './MockServerComponents';
 import { combinedSchemas } from './SchemaUtils';
+import { createDocument } from './Utils';
 
 function expectAt(actual: any, position: Position, description?: string) {
     const positionStr = `${position.line}:${position.character}`;
@@ -203,8 +204,13 @@ export class TemplateBuilder {
         (this.textDocuments as any)._syncedDocuments.set(this.uri, textDocument);
 
         // Create syntax tree using proper document detection (like real LSP)
-        const document = new Document(textDocument);
-        this.syntaxTreeManager.addWithTypes(this.uri, document.contents(), document.documentType, document.cfnFileType);
+        const document = createDocument(textDocument);
+        this.syntaxTreeManager.addWithTypes(
+            this.uri,
+            document.contents() ?? '',
+            document.documentType,
+            document.cfnFileType,
+        );
     }
 
     typeAt(position: Position, text: string): void {

@@ -17,15 +17,15 @@ export class Document {
     private cachedParsedContent: unknown;
 
     constructor(
-        private readonly textDocument: TextDocument,
+        public readonly uri: DocumentUri,
+        private readonly textDocument: (uri: string) => TextDocument | undefined,
         detectIndentation: boolean = true,
         fallbackTabSize: number = DefaultSettings.editor.tabSize,
-        public readonly uri: DocumentUri = textDocument.uri,
-        public readonly languageId: string = textDocument.languageId,
-        public readonly version: number = textDocument.version,
-        public readonly lineCount: number = textDocument.lineCount,
     ) {
-        const { extension, type } = detectDocumentType(textDocument.uri, textDocument.getText());
+        const doc = this.getTextDocument();
+        const { extension, type } = doc
+            ? detectDocumentType(doc.uri, doc.getText())
+            : { extension: '', type: DocumentType.YAML };
 
         this.extension = extension;
         this.documentType = type;
@@ -37,12 +37,28 @@ export class Document {
         this.processIndentation(detectIndentation, fallbackTabSize);
     }
 
+    private getTextDocument(): TextDocument | undefined {
+        return this.textDocument(this.uri);
+    }
+
+    public get languageId(): string | undefined {
+        return this.getTextDocument()?.languageId;
+    }
+
+    public get version(): number | undefined {
+        return this.getTextDocument()?.version;
+    }
+
+    public get lineCount(): number | undefined {
+        return this.getTextDocument()?.lineCount;
+    }
+
     public get cfnFileType(): CloudFormationFileType {
         return this._cfnFileType;
     }
 
     public updateCfnFileType(): void {
-        const content = this.textDocument.getText();
+        const content = this.getTextDocument()?.getText() ?? '';
         if (!content.trim()) {
             this._cfnFileType = CloudFormationFileType.Empty;
             this.cachedParsedContent = undefined;
@@ -55,14 +71,12 @@ export class Document {
         } catch {
             // If parsing fails, leave cfnFileType unchanged and clear cache
             this.cachedParsedContent = undefined;
-            this.log.debug(
-                `Failed to parse document ${this.textDocument.uri}, keeping cfnFileType as ${this._cfnFileType}`,
-            );
+            this.log.debug(`Failed to parse document ${this.uri}, keeping cfnFileType as ${this._cfnFileType}`);
         }
     }
 
     private parseContent(): unknown {
-        const content = this.textDocument.getText();
+        const content = this.getTextDocument()?.getText() ?? '';
         if (this.documentType === DocumentType.JSON) {
             return JSON.parse(content);
         }
@@ -125,19 +139,19 @@ export class Document {
     }
 
     public getText(range?: Range) {
-        return this.textDocument.getText(range);
+        return this.getTextDocument()?.getText(range);
     }
 
-    public getLines(): string[] {
-        return this.getText().split('\n');
+    public getLines(): string[] | undefined {
+        return this.getText()?.split('\n');
     }
 
     public positionAt(offset: number) {
-        return this.textDocument.positionAt(offset);
+        return this.getTextDocument()?.positionAt(offset);
     }
 
     public offsetAt(position: Position) {
-        return this.textDocument.offsetAt(position);
+        return this.getTextDocument()?.offsetAt(position);
     }
 
     public isTemplate() {
@@ -145,7 +159,7 @@ export class Document {
     }
 
     public contents() {
-        return this.textDocument.getText();
+        return this.getTextDocument()?.getText();
     }
 
     public metadata(): DocumentMetadata {
@@ -155,9 +169,9 @@ export class Document {
             ext: this.extension,
             type: this.documentType,
             cfnType: this.cfnFileType,
-            languageId: this.languageId,
-            version: this.version,
-            lineCount: this.lineCount,
+            languageId: this.languageId ?? '',
+            version: this.version ?? 0,
+            lineCount: this.lineCount ?? 0,
         };
     }
 
@@ -193,6 +207,9 @@ export class Document {
 
     private detectIndentationFromContent(): number | undefined {
         const content = this.contents();
+        if (!content) {
+            return undefined;
+        }
         const lines = content.split('\n');
 
         const maxLinesToAnalyze = Math.min(lines.length, 30);

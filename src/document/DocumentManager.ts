@@ -46,17 +46,22 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
     }
 
     get(uri: string) {
-        let document = this.documentMap.get(uri);
-        if (document) {
-            return document;
-        }
-
         const textDocument = this.documents.get(uri);
         if (!textDocument) {
             return;
         }
 
-        document = new Document(textDocument, this.editorSettings.detectIndentation, this.editorSettings.tabSize);
+        let document = this.documentMap.get(uri);
+        if (document) {
+            return document;
+        }
+
+        document = new Document(
+            uri,
+            (u) => this.documents.get(u),
+            this.editorSettings.detectIndentation,
+            this.editorSettings.tabSize,
+        );
         this.documentMap.set(uri, document);
         return document;
     }
@@ -73,7 +78,12 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
         for (const textDoc of this.documents.all()) {
             let document = this.documentMap.get(textDoc.uri);
             if (!document) {
-                document = new Document(textDoc, this.editorSettings.detectIndentation, this.editorSettings.tabSize);
+                document = new Document(
+                    textDoc.uri,
+                    (u) => this.documents.get(u),
+                    this.editorSettings.detectIndentation,
+                    this.editorSettings.tabSize,
+                );
                 this.documentMap.set(textDoc.uri, document);
             }
             allDocs.push(document);
@@ -166,7 +176,10 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
     private emitDocSizeMetrics() {
         for (const doc of this.documentMap.values()) {
             if (doc.isTemplate()) {
-                this.telemetry.histogram('documents.template.size.bytes', byteSize(doc.contents()), { unit: 'By' });
+                const content = doc.contents();
+                if (content) {
+                    this.telemetry.histogram('documents.template.size.bytes', byteSize(content), { unit: 'By' });
+                }
             }
         }
     }
