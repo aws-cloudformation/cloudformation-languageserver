@@ -6,6 +6,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { classifyAwsError } from '../utils/AwsErrorMapper';
+import { isClientNetworkError } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { downloadFile } from '../utils/RemoteDownload';
 import { PrivateSchemas, PrivateSchemasType, PrivateStoreKey } from './PrivateSchemas';
@@ -57,17 +58,26 @@ export class GetPublicSchemaTask extends GetSchemaTask {
 
         this.attempts++;
         this.telemetry.count(`getSchemas.${this.region}`, 1);
-        const schemas = await this.getSchemas(this.region);
-        const value: RegionalSchemasType = {
-            version: RegionalSchemas.V1,
-            region: this.region,
-            schemas: schemas,
-            firstCreatedMs: this.firstCreatedMs ?? Date.now(),
-            lastModifiedMs: Date.now(),
-        };
 
-        await dataStore.put<RegionalSchemasType>(this.region, value);
-        this.logger.info(`${schemas.length} public schemas downloaded for ${this.region} and saved`);
+        try {
+            const schemas = await this.getSchemas(this.region);
+            const value: RegionalSchemasType = {
+                version: RegionalSchemas.V1,
+                region: this.region,
+                schemas: schemas,
+                firstCreatedMs: this.firstCreatedMs ?? Date.now(),
+                lastModifiedMs: Date.now(),
+            };
+
+            await dataStore.put<RegionalSchemasType>(this.region, value);
+            this.logger.info(`${schemas.length} public schemas downloaded for ${this.region} and saved`);
+        } catch (error) {
+            if (isClientNetworkError(error)) {
+                this.logger.info(`Skipping public schemas for ${this.region} due to client network error`);
+                return;
+            }
+            throw error;
+        }
     }
 }
 

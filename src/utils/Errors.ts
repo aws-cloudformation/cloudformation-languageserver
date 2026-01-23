@@ -3,6 +3,32 @@ import { ErrorCodes, ResponseError } from 'vscode-languageserver';
 import { determineSensitiveInfo } from './ErrorStackInfo';
 import { toString } from './String';
 
+const CLIENT_NETWORK_ERROR_PATTERNS = [
+    'unable to get local issuer certificate',
+    'self signed certificate',
+    'unable to verify the first certificate',
+    'certificate has expired',
+    'does not match certificate',
+    'WRONG_VERSION_NUMBER',
+    'ECONNRESET',
+    'ETIMEDOUT',
+    'ECONNREFUSED',
+    'ENOTFOUND',
+    'EAI_AGAIN',
+    'ECONNABORTED',
+    'EBADF',
+    'socket hang up',
+    'network socket disconnected',
+    'TOO_MANY_REDIRECTS',
+    'Parse Error: Expected HTTP',
+    'status code 407',
+];
+
+export function isClientNetworkError(error: unknown): boolean {
+    const message = error instanceof Error ? error.message : String(error);
+    return CLIENT_NETWORK_ERROR_PATTERNS.some((pattern) => message.toLowerCase().includes(pattern.toLowerCase()));
+}
+
 export function extractErrorMessage(error: unknown) {
     if (error instanceof Error) {
         const prefix = error.name === 'Error' ? '' : `${error.name}: `;
