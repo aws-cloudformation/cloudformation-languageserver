@@ -5,6 +5,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
+import { isClientNetworkError } from '../utils/Errors';
 import { readFileIfExists } from '../utils/File';
 import { downloadJson } from '../utils/RemoteDownload';
 import { FeatureFlagConfigSchema } from './FeatureFlagBuilder';
@@ -78,7 +79,16 @@ export class FeatureFlagProvider implements Closeable {
 
     @Measure({ name: 'getFeatureFlags' })
     private async getFeatureFlags(env: string): Promise<unknown> {
-        return await this.getLatestFeatureFlags(env);
+        try {
+            return await this.getLatestFeatureFlags(env);
+        } catch (error) {
+            if (isClientNetworkError(error)) {
+                this.telemetry.count('getFeatureFlags.clientNetworkError', 1);
+                log.info('Skipping feature flag refresh due to client network error');
+                return this.config;
+            }
+            throw error;
+        }
     }
 
     private log() {

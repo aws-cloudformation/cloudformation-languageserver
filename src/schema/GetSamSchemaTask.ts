@@ -1,6 +1,7 @@
 import { DataStore } from '../datastore/DataStore';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { Measure } from '../telemetry/TelemetryDecorator';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { isClientNetworkError } from '../utils/Errors';
 import { downloadJson } from '../utils/RemoteDownload';
 import { GetSchemaTask } from './GetSchemaTask';
@@ -9,6 +10,9 @@ import { CloudFormationResourceSchema, SamSchema, SamSchemaTransformer } from '.
 
 export class GetSamSchemaTask extends GetSchemaTask {
     private readonly logger = LoggerFactory.getLogger(GetSamSchemaTask);
+
+    @Telemetry()
+    private readonly telemetry!: ScopedTelemetry;
 
     constructor(
         private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
@@ -41,6 +45,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
             this.logger.info(`${resourceSchemas.size} SAM schemas downloaded and saved`);
         } catch (error) {
             if (isClientNetworkError(error)) {
+                this.telemetry.count('getSchemas.clientNetworkError', 1);
                 this.logger.info('Skipping SAM schemas due to client network error');
                 return;
             }
