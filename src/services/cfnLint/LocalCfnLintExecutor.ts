@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { writeFile, unlink } from 'fs/promises';
-import { join } from 'path';
 import { tmpdir } from 'os';
+import { join } from 'path';
 import { PublishDiagnosticsParams, DiagnosticSeverity } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
@@ -34,10 +34,17 @@ export class LocalCfnLintExecutor {
 
     constructor(private readonly cfnLintPath: string) {}
 
-    async lintTemplate(content: string, uri: string, fileType: CloudFormationFileType): Promise<PublishDiagnosticsParams[]> {
+    async lintTemplate(
+        content: string,
+        uri: string,
+        fileType: CloudFormationFileType,
+    ): Promise<PublishDiagnosticsParams[]> {
         // Write content to temporary file
-        const tempFile = join(tmpdir(), `cfn-lint-${Date.now()}.${fileType === CloudFormationFileType.Template ? 'yaml' : 'json'}`);
-        
+        const tempFile = join(
+            tmpdir(),
+            `cfn-lint-${Date.now()}.${fileType === CloudFormationFileType.Template ? 'yaml' : 'json'}`,
+        );
+
         try {
             await writeFile(tempFile, content, 'utf8');
             return await this.lintFile(tempFile, uri, fileType);
@@ -50,34 +57,42 @@ export class LocalCfnLintExecutor {
         }
     }
 
-    async lintFile(filePath: string, uri: string, fileType: CloudFormationFileType, workspaceRoot?: string): Promise<PublishDiagnosticsParams[]> {
+    async lintFile(
+        filePath: string,
+        uri: string,
+        fileType: CloudFormationFileType,
+        workspaceRoot?: string,
+    ): Promise<PublishDiagnosticsParams[]> {
         const rawDiagnostics = await this.executeCfnLint(filePath, workspaceRoot);
         return this.convertToLspFormat(rawDiagnostics, uri);
     }
 
     private async executeCfnLint(filePath: string, workspaceRoot?: string): Promise<CfnLintDiagnostic[]> {
-        return new Promise((resolve, reject) => {
+        return await new Promise((resolve, reject) => {
             const args = ['--format', 'json', filePath];
             const child = spawn(this.cfnLintPath, args, {
                 stdio: ['ignore', 'pipe', 'pipe'],
-                cwd: workspaceRoot
+                cwd: workspaceRoot,
             });
 
             let stdout = '';
             let stderr = '';
 
-            child.stdout?.on('data', (data) => {
+            child.stdout?.on('data', (data: Buffer) => {
                 stdout += data.toString();
             });
 
-            child.stderr?.on('data', (data) => {
+            child.stderr?.on('data', (data: Buffer) => {
                 stderr += data.toString();
             });
 
             child.on('close', (code) => {
                 try {
-                    if (code === 0 || code === 2) { // 0 = no issues, 2 = issues found
-                        const diagnostics = stdout.trim() ? JSON.parse(stdout) : [];
+                    if (code === 0 || code === 2) {
+                        // 0 = no issues, 2 = issues found
+                        const diagnostics: CfnLintDiagnostic[] = stdout.trim()
+                            ? (JSON.parse(stdout) as CfnLintDiagnostic[])
+                            : [];
                         resolve(diagnostics);
                     } else {
                         reject(new Error(`cfn-lint exited with code ${code}: ${stderr}`));
@@ -120,14 +135,18 @@ export class LocalCfnLintExecutor {
 
     private convertSeverity(level: string): DiagnosticSeverity {
         switch (level) {
-            case 'Error':
+            case 'Error': {
                 return DiagnosticSeverity.Error;
-            case 'Warning':
+            }
+            case 'Warning': {
                 return DiagnosticSeverity.Warning;
-            case 'Info':
+            }
+            case 'Info': {
                 return DiagnosticSeverity.Information;
-            default:
+            }
+            default: {
                 return DiagnosticSeverity.Information;
+            }
         }
     }
 }

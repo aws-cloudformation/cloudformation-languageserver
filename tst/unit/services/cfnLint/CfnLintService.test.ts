@@ -1512,7 +1512,7 @@ describe('CfnLintService', () => {
             } as any);
 
             service.configure(settingsManager);
-            
+
             // First set path
             const callback = settingsManager.subscribe.getCall(0).args[1];
             callback({

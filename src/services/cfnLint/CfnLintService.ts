@@ -95,6 +95,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         } else {
             this.localExecutor = undefined;
             if (!this.workerManager) {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
                 (this as any).workerManager = new PyodideWorkerManager(this.settings.initialization, this.settings);
             }
         }
@@ -124,7 +125,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         if (this.workerManager) {
             this.workerManager.updateSettings(newSettings);
         }
-        
+
         if (pathChanged) {
             this.updateExecutor();
         }
