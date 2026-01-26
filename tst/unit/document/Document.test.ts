@@ -401,4 +401,62 @@ describe('Document', () => {
             expect(doc.getTabSize(false)).toBe(8);
         });
     });
+
+    describe('getTemplateSizeCategory', () => {
+        it('should return "small" for templates < 10KB', () => {
+            const content = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.getTemplateSizeCategory()).toBe('small');
+        });
+
+        it('should return "medium" for templates >= 10KB and < 100KB', () => {
+            const content = 'x'.repeat(15_000); // 15KB
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.getTemplateSizeCategory()).toBe('medium');
+        });
+
+        it('should return "large" for templates >= 100KB and < 500KB', () => {
+            const content = 'x'.repeat(150_000); // 150KB
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.getTemplateSizeCategory()).toBe('large');
+        });
+
+        it('should return "xlarge" for templates >= 500KB', () => {
+            const content = 'x'.repeat(600_000); // 600KB
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.getTemplateSizeCategory()).toBe('xlarge');
+        });
+
+        it('should handle boundary at 10KB', () => {
+            const content = 'x'.repeat(10_000); // exactly 10KB
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.getTemplateSizeCategory()).toBe('medium');
+        });
+
+        it('should handle boundary at 100KB', () => {
+            const content = 'x'.repeat(100_000); // exactly 100KB
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.getTemplateSizeCategory()).toBe('large');
+        });
+
+        it('should handle boundary at 500KB', () => {
+            const content = 'x'.repeat(500_000); // exactly 500KB
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.getTemplateSizeCategory()).toBe('xlarge');
+        });
+    });
 });
