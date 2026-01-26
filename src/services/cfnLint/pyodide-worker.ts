@@ -24,6 +24,7 @@ interface WorkerMessage {
 
 interface InitializeResult {
     status: 'initialized' | 'already-initialized' | 'already-initializing';
+    installSource?: string;
 }
 
 interface MountResult {
@@ -69,6 +70,10 @@ if (parentPort) {
                 }
                 case 'mountFolder': {
                     result = mountFolder(payload.fsDir as string, payload.mountDir as string);
+                    break;
+                }
+                case 'getVersion': {
+                    result = await getVersion();
                     break;
                 }
                 default: {
@@ -144,12 +149,14 @@ async function initializePyodide(): Promise<InitializeResult> {
         }
 
         // Install cfn-lint with local wheel fallback
-        await pyodide.runPythonAsync(`
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const installResult = await pyodide.runPythonAsync(`
       import micropip
       import os
       from pathlib import Path
       
       cfn_lint_installed = False
+      install_source = None
       
       # Debug: Check current working directory and available paths
       print(f'Current working directory: {os.getcwd()}')
@@ -159,6 +166,7 @@ async function initializePyodide(): Promise<InitializeResult> {
       try:
           await micropip.install('cfn-lint')
           cfn_lint_installed = True
+          install_source = 'pypi'
           print('Installed cfn-lint from PyPI')
       except Exception as e:
           print(f'Failed to install cfn-lint from PyPI: {e}')
@@ -180,6 +188,7 @@ async function initializePyodide(): Promise<InitializeResult> {
                           print(f'Installing: {wheel_file.name}')
                           await micropip.install(wheel_url, deps=False)
                       cfn_lint_installed = True
+                      install_source = 'wheels'
                       print(f'Installed cfn-lint and dependencies from local wheels ({len(wheel_files)} packages)')
                   except Exception as e:
                       print(f'Failed to install from local wheels: {e}')
@@ -190,6 +199,8 @@ async function initializePyodide(): Promise<InitializeResult> {
           
           if not cfn_lint_installed:
               raise Exception('Failed to install cfn-lint from both PyPI and local wheels')
+      
+      install_source
     `);
 
         // Setup Python functions for linting
@@ -316,8 +327,8 @@ async function initializePyodide(): Promise<InitializeResult> {
           return match_to_diagnostics(lint_by_config(ManualArgs(**config)), uri)
     `);
 
-        // Create result object first
-        const result = { status: 'initialized' as const };
+        // Create result object with installation source
+        const result = { status: 'initialized' as const, installSource: installResult as string };
 
         // eslint-disable-next-line require-atomic-updates
         initialized = true;
@@ -330,6 +341,20 @@ async function initializePyodide(): Promise<InitializeResult> {
         initializing = false;
         throw error;
     }
+}
+
+async function getVersion(): Promise<string> {
+    if (!pyodide) {
+        throw new Error('Pyodide not initialized');
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const result = await pyodide.runPythonAsync(`
+        from cfnlint.version import __version__
+        __version__
+    `);
+
+    return result as string;
 }
 
 function convertPythonResultToDiagnostics(result: unknown): PublishDiagnosticsParams[] {

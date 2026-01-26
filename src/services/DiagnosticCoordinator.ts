@@ -1,3 +1,4 @@
+import { performance } from 'perf_hooks';
 import { Diagnostic, PublishDiagnosticsParams, Range } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
@@ -6,6 +7,7 @@ import { LspDiagnostics } from '../protocol/LspDiagnostics';
 import { ValidationManager } from '../stacks/actions/ValidationManager';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { CancellationError, Delayer } from '../utils/Delayer';
 
 type SourceToDiagnostics = Map<string, Diagnostic[]>;
@@ -19,6 +21,7 @@ type SourceToDiagnostics = Map<string, Diagnostic[]>;
 export class DiagnosticCoordinator {
     private readonly urisToDiagnostics = new Map<string, SourceToDiagnostics>();
     private readonly log = LoggerFactory.getLogger(DiagnosticCoordinator);
+    private readonly telemetry = new ScopedTelemetry('DiagnosticCoordinator');
     private readonly delayer: Delayer<void>;
 
     constructor(
@@ -41,6 +44,12 @@ export class DiagnosticCoordinator {
      */
     async publishDiagnostics(source: string, uri: string, diagnostics: Diagnostic[]): Promise<void> {
         try {
+            // Track diagnostics by source
+            this.telemetry.histogram(`diagnostics.${source}.count`, diagnostics.length, { unit: '1' });
+
+            // Track severity breakdown by source
+            this.trackSeverityBreakdown(source, diagnostics);
+
             // Get or create collection for this URI
             let collection = this.urisToDiagnostics.get(uri);
             if (!collection) {
@@ -72,8 +81,19 @@ export class DiagnosticCoordinator {
             return;
         }
 
+        const startTime = performance.now();
+
         // Merge all diagnostics from all sources
         const mergedDiagnostics = this.mergeDiagnostics(collection);
+
+        // Track merge duration
+        this.telemetry.histogram('coordinator.merge.duration', performance.now() - startTime, { unit: 'ms' });
+
+        // Track total merged diagnostics
+        this.telemetry.histogram('diagnostics.merged.count', mergedDiagnostics.length, { unit: '1' });
+
+        // Track active sources
+        this.telemetry.countUpDown('coordinator.sources.active', collection.size, { unit: '1' });
 
         // Publish merged diagnostics to LSP client
         const params: PublishDiagnosticsParams = {
@@ -81,7 +101,13 @@ export class DiagnosticCoordinator {
             diagnostics: mergedDiagnostics,
         };
 
-        await this.lspDiagnostics.publishDiagnostics(params);
+        try {
+            await this.lspDiagnostics.publishDiagnostics(params);
+            this.telemetry.count('coordinator.publish.success', 1);
+        } catch (error) {
+            this.telemetry.count('coordinator.publish.error', 1);
+            throw error;
+        }
     }
 
     /**
@@ -92,6 +118,7 @@ export class DiagnosticCoordinator {
      */
     async clearDiagnosticsForUri(uri: string): Promise<void> {
         try {
+            this.telemetry.count('coordinator.clear.count', 1);
             const collection = this.urisToDiagnostics.get(uri);
             if (!collection) {
                 // No diagnostics exist for this URI
@@ -225,5 +252,50 @@ export class DiagnosticCoordinator {
         }
 
         return undefined;
+    }
+
+    private trackSeverityBreakdown(source: string, diagnostics: Diagnostic[]): void {
+        let errorCount = 0;
+        let warningCount = 0;
+        let informationCount = 0;
+        let hintCount = 0;
+
+        for (const diagnostic of diagnostics) {
+            switch (diagnostic.severity) {
+                case 1: {
+                    // DiagnosticSeverity.Error
+                    errorCount++;
+                    break;
+                }
+                case 2: {
+                    // DiagnosticSeverity.Warning
+                    warningCount++;
+                    break;
+                }
+                case 3: {
+                    // DiagnosticSeverity.Information
+                    informationCount++;
+                    break;
+                }
+                case 4: {
+                    // DiagnosticSeverity.Hint
+                    hintCount++;
+                    break;
+                }
+            }
+        }
+
+        if (errorCount > 0) {
+            this.telemetry.count(`${source}.severity.error`, errorCount);
+        }
+        if (warningCount > 0) {
+            this.telemetry.count(`${source}.severity.warning`, warningCount);
+        }
+        if (informationCount > 0) {
+            this.telemetry.count(`${source}.severity.information`, informationCount);
+        }
+        if (hintCount > 0) {
+            this.telemetry.count(`${source}.severity.hint`, hintCount);
+        }
     }
 }

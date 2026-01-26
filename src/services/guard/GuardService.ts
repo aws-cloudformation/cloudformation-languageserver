@@ -194,6 +194,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
         this.telemetry.count(`validate.file.${CloudFormationFileType.Template}`, 1);
 
         const startTime = performance.now();
+        const doc = this.documentManager.get(uri);
+        const sizeCategory = doc?.getTemplateSizeCategory() ?? 'unknown';
+
         try {
             // Validate rule configuration against available packs
             const availablePacks = getAvailableRulePacks();
@@ -211,14 +214,21 @@ export class GuardService implements SettingsConfigurable, Closeable {
                 return;
             }
 
+            // Track rules being evaluated
+            this.telemetry.histogram('validate.rules.count', this.enabledRules.length, { unit: '1' });
+
             // Execute Guard validation with queuing for concurrent requests
             const violations = await this.queueValidation(uri, content, this.enabledRules);
+
+            // Track violations
+            this.telemetry.histogram('validate.violations.count', violations.length, { unit: '1' });
 
             // Convert violations to LSP diagnostics
             const diagnostics = this.convertViolationsToDiagnostics(uri, violations);
 
             // Publish diagnostics
             this.publishDiagnostics(uri, diagnostics);
+            this.telemetry.count('validate.success', 1, { attributes: { fileType } });
         } catch (error) {
             const errorMessage = extractErrorMessage(error);
 
@@ -227,14 +237,32 @@ export class GuardService implements SettingsConfigurable, Closeable {
             if (errorMessage.includes('Parser Error') || errorMessage.includes('parsing data file')) {
                 // Publish empty diagnostics to clear any previous Guard diagnostics
                 this.publishDiagnostics(uri, []);
+                this.telemetry.count('parser.error', 1, { attributes: { errorType: 'ParseError' } });
+                this.telemetry.count('validate.error', 1, { attributes: { fileType, errorType: 'ParseError' } });
                 return;
+            }
+
+            // Check for WASM errors
+            if (errorMessage.includes('WASM') || errorMessage.includes('wasm')) {
+                this.telemetry.count('wasm.error', 1, { attributes: { errorType: 'WasmError' } });
+            }
+
+            // Check for memory errors
+            if (
+                errorMessage.includes('memory') ||
+                errorMessage.includes('Memory') ||
+                errorMessage.includes('out of memory')
+            ) {
+                this.telemetry.count('memory.threshold.exceeded', 1);
             }
 
             // For other errors (WASM issues, timeouts, etc.), log as error and show diagnostic
             this.publishErrorDiagnostics(uri, errorMessage);
+            this.telemetry.count('validate.error', 1, { attributes: { fileType, errorType: 'Unknown' } });
         } finally {
             this.telemetry.histogram('validate.duration', (performance.now() - startTime) / byteSize(content), {
                 unit: 'ms/byte',
+                attributes: { sizeCategory },
             });
         }
     }
@@ -453,10 +481,16 @@ export class GuardService implements SettingsConfigurable, Closeable {
             this.activeValidations.delete(uri);
         }
 
+        // Track concurrent validations
+        this.telemetry.countUpDown('validate.concurrent', this.activeValidations.size, { unit: '1' });
+
         // If we're under the concurrent limit, execute immediately
         if (this.activeValidations.size < this.settings.maxConcurrentValidations) {
             return await this.executeValidation(uri, content, rules);
         }
+
+        // Track when we hit max concurrency
+        this.telemetry.count('validate.concurrent.max', 1);
 
         // Otherwise, queue the request
         return await new Promise<GuardViolation[]>((resolve, reject) => {
@@ -468,6 +502,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
             }
 
             if (this.validationQueue.length >= this.settings.maxQueueSize) {
+                this.telemetry.count('validate.queue.rejected', 1);
                 reject(new Error('Validation queue is full. Please try again later.'));
                 return;
             }
@@ -479,6 +514,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
                 resolve,
                 reject,
             });
+
+            this.telemetry.count('validate.queue.enqueued', 1);
+            this.telemetry.countUpDown('validate.queue.depth', this.validationQueue.length, { unit: '1' });
 
             // Process queue if not already processing
             void this.processValidationQueue();
@@ -601,8 +639,10 @@ export class GuardService implements SettingsConfigurable, Closeable {
             try {
                 const customRules = await this.loadRulesFromFile(this.settings.rulesFile);
                 enabledRules.push(...customRules);
+                this.telemetry.count('rules.custom.loaded', customRules.length);
                 this.log.info(`Loaded ${customRules.length} rules from custom file: ${this.settings.rulesFile}`);
             } catch (error) {
+                this.telemetry.count('rules.load.error', 1, { attributes: { errorType: 'CustomFile' } });
                 this.log.error(
                     `Failed to load rules from file '${this.settings.rulesFile}': ${extractErrorMessage(error)}`,
                 );
@@ -614,8 +654,15 @@ export class GuardService implements SettingsConfigurable, Closeable {
             this.log.info(`Loading rules from ${enabledPackNames.length} rule packs: ${enabledPackNames.join(', ')}`);
 
             for (const packName of enabledPackNames) {
+                const packStartTime = performance.now();
                 try {
                     const packRules = getRulesForPack(packName);
+                    this.telemetry.count('rules.loaded', packRules.length, { attributes: { pack: packName } });
+                    this.telemetry.histogram('rules.load.duration', performance.now() - packStartTime, {
+                        unit: 'ms',
+                        attributes: { pack: packName },
+                    });
+
                     for (const ruleData of packRules) {
                         // Track which packs this rule belongs to
                         if (!this.ruleToPacksMap.has(ruleData.name)) {
@@ -631,10 +678,16 @@ export class GuardService implements SettingsConfigurable, Closeable {
                         enabledRules.push(this.convertRuleDataToGuardRule(ruleData));
                     }
                 } catch (error) {
+                    this.telemetry.count('rules.load.error', 1, {
+                        attributes: { pack: packName, errorType: 'PackLoad' },
+                    });
                     this.log.error(`Failed to get rules for pack '${packName}': ${extractErrorMessage(error)}`);
                 }
             }
         }
+
+        // Track total enabled rules
+        this.telemetry.countUpDown('rules.enabled.count', enabledRules.length, { unit: '1' });
 
         return enabledRules;
     }

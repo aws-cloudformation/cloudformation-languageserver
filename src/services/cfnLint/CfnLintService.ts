@@ -62,6 +62,28 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         this.log.error(error, `Error ${operation}`);
     }
 
+    private classifyLintError(error: unknown): string {
+        if (error instanceof WorkerNotInitializedError) {
+            return 'WorkerNotInitialized';
+        }
+        const errorMessage = extractErrorMessage(error);
+        if (errorMessage.includes('timeout')) {
+            return 'Timeout';
+        }
+        if (errorMessage.includes('Worker') || errorMessage.includes('worker')) {
+            return 'WorkerCrash';
+        }
+        if (errorMessage.includes('Python') || errorMessage.includes('Pyodide')) {
+            // Track Python-specific errors
+            this.telemetry.count('python.error', 1, { attributes: { errorType: 'PythonError' } });
+            return 'PythonError';
+        }
+        if (errorMessage.includes('parse') || errorMessage.includes('Parse')) {
+            return 'ParseError';
+        }
+        return 'Unknown';
+    }
+
     // Request queue for handling requests during initialization
     private readonly requestQueue = new Map<
         string,
@@ -125,6 +147,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
 
         this.status = STATUS.Initializing;
 
+        const startTime = performance.now();
         try {
             // Initialize the worker manager
             await this.workerManager.initialize();
@@ -135,6 +158,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                     try {
                         const fsDir = URI.parse(folder.uri).fsPath;
                         await this.workerManager.mountFolder(fsDir, mountDir);
+                        this.telemetry.count('mount.remount', 1);
                     } catch (error) {
                         this.logError(`remounting folder ${mountDir}`, error);
                     }
@@ -142,10 +166,21 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             }
 
             this.status = STATUS.Initialized;
-            this.telemetry.count('initialized', 1);
+            this.telemetry.count('init.success', 1);
+            this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
+
+            // Get and track cfn-lint version
+            try {
+                const version = await this.workerManager.getCfnLintVersion();
+                this.telemetry.count('init.version', 1, { attributes: { version } });
+                this.log.info(`cfn-lint version: ${version}`);
+            } catch (error) {
+                this.log.warn(`Failed to get cfn-lint version: ${extractErrorMessage(error)}`);
+            }
         } catch (error) {
             this.status = STATUS.Uninitialized;
-            this.telemetry.count('uninitialized', 1);
+            this.telemetry.count('init.fault', 1);
+            this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
             throw new Error(`Failed to initialize Pyodide worker: ${extractErrorMessage(error)}`);
         }
     }
@@ -171,9 +206,12 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         }
 
         try {
+            const startTime = performance.now();
             await this.workerManager.mountFolder(fsDir, mountDir);
             this.mountedFolders.set(mountDir, folder);
             this.telemetry.count('mount.success', 1);
+            this.telemetry.histogram('mount.duration', performance.now() - startTime, { unit: 'ms' });
+            this.telemetry.countUpDown('mount.active', 1);
         } catch (error) {
             this.logError('mounting folder', error);
             this.telemetry.count('mount.fault', 1);
@@ -275,6 +313,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     @Count({ name: 'lint.standaloneFile' })
     private async lintStandaloneFile(content: string, uri: string, fileType: CloudFormationFileType): Promise<void> {
         const startTime = performance.now();
+        const doc = this.documentManager.get(uri);
+        const sizeCategory = doc?.getTemplateSizeCategory() ?? 'unknown';
+
         try {
             // Use worker to lint template
             const diagnosticPayloads = await this.workerManager.lintTemplate(content, uri, fileType);
@@ -292,16 +333,24 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                         });
                 }
             }
+            this.telemetry.count('lint.success', 1, { attributes: { fileType } });
         } catch (error) {
             this.status = STATUS.Uninitialized;
             this.logError(`linting ${fileType} by string`, error);
             this.publishErrorDiagnostics(uri, error);
+            this.telemetry.error('lint.error', error, undefined, {
+                attributes: {
+                    fileType,
+                    errorType: this.classifyLintError(error),
+                },
+            });
         } finally {
             this.telemetry.histogram(
                 'lint.standaloneFile.duration',
                 (performance.now() - startTime) / byteSize(content),
                 {
                     unit: 'ms/byte',
+                    attributes: { sizeCategory },
                 },
             );
         }
@@ -375,10 +424,17 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                         });
                 }
             }
+            this.telemetry.count('lint.success', 1, { attributes: { fileType } });
         } catch (error) {
             this.status = STATUS.Uninitialized;
             this.logError(`linting ${fileType} by file`, error);
             this.publishErrorDiagnostics(uri, error);
+            this.telemetry.error('lint.error', error, undefined, {
+                attributes: {
+                    fileType,
+                    errorType: this.classifyLintError(error),
+                },
+            });
         } finally {
             this.telemetry.histogram(
                 'lint.workspaceFile.duration',
@@ -425,6 +481,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             return;
         }
 
+        // Track file type being linted
+        this.telemetry.count(`lint.file.${fileType}`, 1);
+
         // Wait for initialization with timeout and exponential backoff
         try {
             await this.waitForInitialization();
@@ -444,8 +503,6 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         if (folder === undefined || folder === null || forceUseContent) {
             // GitSync deployment files require workspace context to resolve relative template paths
             if (fileType === CloudFormationFileType.GitSyncDeployment) {
-                this.telemetry.count(`lint.file.${CloudFormationFileType.GitSyncDeployment}`, 1);
-
                 this.logError(
                     `processing GitSync deployment file ${uri}`,
                     new Error('cannot be processed outside of a workspace context'),
@@ -454,7 +511,6 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                 return;
             }
 
-            this.telemetry.count(`lint.file.${CloudFormationFileType.Template}`, 1);
             // Standalone file (not in workspace) or forced to use content - lint as string
             await this.lintStandaloneFile(content, uri, fileType);
         } else {
@@ -554,6 +610,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             return;
         }
 
+        this.telemetry.count('lint.queue.processed', this.requestQueue.size);
+
         // Process each queued request through the delayer
         for (const [uri, request] of this.requestQueue.entries()) {
             // Use delayer for queued requests too, to maintain debouncing behavior
@@ -630,6 +688,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                     reject,
                 });
 
+                this.telemetry.count('lint.queue.enqueued', 1);
+                this.telemetry.countUpDown('lint.queue.depth', this.requestQueue.size, { unit: '1' });
+
                 // Trigger initialization if needed (but don't await it here)
                 this.ensureInitialized().catch((error) => {
                     this.logError('ensuring initialization', error);
@@ -649,6 +710,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         } catch (error) {
             // Suppress cancellation errors as they are expected behavior
             if (error instanceof CancellationError) {
+                this.telemetry.count('lint.cancelled', 1);
                 return;
             }
             throw error;

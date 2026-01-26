@@ -117,6 +117,15 @@ export class Document {
         }
     }
 
+    public getTemplateSizeCategory(): string {
+        const content = this.textDocument.getText();
+        const size = Buffer.byteLength(content, 'utf8');
+        if (size < 10_000) return 'small';
+        if (size < 100_000) return 'medium';
+        if (size < 500_000) return 'large';
+        return 'xlarge';
+    }
+
     public getLine(lineNumber: number): string | undefined {
         return this.getText({
             start: { line: lineNumber, character: 0 },
