@@ -7,6 +7,7 @@ import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
 import { readFileIfExists } from '../utils/File';
 import { downloadJson } from '../utils/RemoteDownload';
+import { FeatureFlagConfigSchema } from './FeatureFlagBuilder';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 import { FeatureFlagSupplier, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey } from './FeatureFlagSupplier';
 
@@ -64,6 +65,11 @@ export class FeatureFlagProvider implements Closeable {
 
     private async refresh() {
         const newConfig = await this.getFeatureFlags(AwsEnv);
+        const parsed = FeatureFlagConfigSchema.safeParse(newConfig);
+        if (!parsed.success) {
+            log.warn(parsed.error, 'Invalid feature flag config from remote, keeping current config');
+            return;
+        }
         this.config = newConfig;
         writeFileSync(this.localFile, JSON.stringify(newConfig, undefined, 2));
 
@@ -107,5 +113,10 @@ export function getFromGitHub(env: string): Promise<unknown> {
 }
 
 function defaultConfig(configFile: string): unknown {
-    return JSON.parse(readFileIfExists(configFile, 'utf8'));
+    try {
+        return JSON.parse(readFileIfExists(configFile, 'utf8'));
+    } catch (err) {
+        log.error(err, 'Failed to read config file, using empty config');
+        return { version: 1, description: 'Default empty config', features: {} };
+    }
 }

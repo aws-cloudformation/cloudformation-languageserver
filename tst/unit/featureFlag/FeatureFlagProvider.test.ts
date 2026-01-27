@@ -18,6 +18,30 @@ describe('FeatureFlagProvider', () => {
         });
     });
 
+    it('handles missing config file gracefully', () => {
+        const provider = new FeatureFlagProvider(
+            () => Promise.resolve({ version: 1, description: 'test', features: {} }),
+            '/nonexistent/path/config.json',
+        );
+
+        expect(provider).toBeDefined();
+        provider.close();
+    });
+
+    it('rejects invalid remote config during refresh', async () => {
+        const provider = new FeatureFlagProvider(
+            () => Promise.resolve('invalid string response'),
+            join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+        );
+
+        // Trigger refresh manually
+        await (provider as any).refresh();
+
+        // Should still have valid config from initial load
+        expect(provider.get('Constants')).toBeDefined();
+        provider.close();
+    });
+
     describe('gauge registration', () => {
         let provider: FeatureFlagProvider;
         let registerGaugeProviderSpy: ReturnType<typeof vi.spyOn>;
