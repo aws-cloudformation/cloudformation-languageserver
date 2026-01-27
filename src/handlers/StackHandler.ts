@@ -118,6 +118,13 @@ export function createValidationHandler(
             components.usageTracker.track(EventType.DidValidation);
             try {
                 const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
+
+                // Check if template has errors
+                const diagnostics = components.diagnosticCoordinator.getDiagnostics(params.uri);
+                if (diagnostics && diagnostics.length > 0) {
+                    TelemetryService.instance.get('StackHandler').count('validation.withErrors', 1);
+                }
+
                 return await components.validationWorkflowService.start(params);
             } catch (error) {
                 handleLspError(error, 'Failed to start validation workflow');

@@ -4,6 +4,7 @@ import { PublishDiagnosticsParams } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
 import { CfnLintInitializationSettings, CfnLintSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { WorkerNotInitializedError } from './CfnLintErrors';
 
@@ -30,12 +31,15 @@ export class PyodideWorkerManager {
     private readonly tasks = new Map<string, WorkerTask>();
     private initialized = false;
     private initializationPromise: Promise<void> | undefined = undefined;
+    private readonly telemetry: ScopedTelemetry;
 
     constructor(
         private readonly retryConfig: CfnLintInitializationSettings,
         private cfnLintSettings: CfnLintSettings,
         private readonly log = LoggerFactory.getLogger(PyodideWorkerManager),
-    ) {}
+    ) {
+        this.telemetry = new ScopedTelemetry('PyodideWorkerManager');
+    }
 
     public async initialize(): Promise<void> {
         if (this.initialized) {
@@ -51,8 +55,13 @@ export class PyodideWorkerManager {
     }
 
     private async initializeWithRetry(): Promise<void> {
+        let attemptCount = 0;
         return await retryWithExponentialBackoff(
             async () => {
+                if (attemptCount > 0) {
+                    this.telemetry.count('worker.restart', 1, { attributes: { attempt: attemptCount.toString() } });
+                }
+                attemptCount++;
                 return await this.initializeWorker();
             },
             {
@@ -81,6 +90,7 @@ export class PyodideWorkerManager {
                 this.worker.on('exit', (code) => {
                     if (code !== 0) {
                         this.log.error(`Worker exited unexpectedly with code ${code}`);
+                        this.telemetry.count('worker.crash', 1, { attributes: { exitCode: code.toString() } });
                         this.initialized = false;
                         this.worker = undefined;
 
@@ -104,17 +114,41 @@ export class PyodideWorkerManager {
                 // Initialize Pyodide in the worker
                 const taskId = this.nextTaskId.toString();
                 this.nextTaskId++;
+                const pyodideStartTime = performance.now();
 
                 const task: WorkerTask = {
                     id: taskId,
                     action: 'initialize',
                     payload: {},
-                    resolve: () => {
+                    resolve: (result: unknown) => {
                         this.initialized = true;
+                        this.telemetry.histogram('pyodide.init.duration', performance.now() - pyodideStartTime, {
+                            unit: 'ms',
+                        });
+                        this.telemetry.count('pyodide.init.success', 1);
+
+                        // Track installation source
+                        const initResult = result as { status: string; installSource?: string };
+                        if (initResult.installSource === 'pypi') {
+                            this.telemetry.count('init.pypi.success', 1);
+                        } else if (initResult.installSource === 'wheels') {
+                            this.telemetry.count('init.wheels.success', 1);
+                        }
+
                         resolve();
                     },
                     reject: (reason: Error) => {
                         this.worker = undefined;
+                        this.telemetry.count('pyodide.init.fault', 1);
+
+                        // Try to determine if it was a PyPI or wheels failure
+                        const errorMessage = reason.message || '';
+                        if (errorMessage.includes('PyPI')) {
+                            this.telemetry.count('init.pypi.fault', 1);
+                        } else if (errorMessage.includes('wheels') || errorMessage.includes('wheel')) {
+                            this.telemetry.count('init.wheels.fault', 1);
+                        }
+
                         reject(reason);
                     },
                 };
@@ -178,6 +212,10 @@ export class PyodideWorkerManager {
         });
     }
 
+    public async getCfnLintVersion(): Promise<string> {
+        return await this.executeTask<string>('getVersion', {});
+    }
+
     public async lintFile(
         path: string,
         uri: string,
@@ -208,6 +246,11 @@ export class PyodideWorkerManager {
             throw new WorkerNotInitializedError();
         }
 
+        // Track queue depth
+        this.telemetry.countUpDown('worker.queue.depth', this.tasks.size, { unit: '1' });
+
+        const startTime = performance.now();
+
         return await new Promise<T>((resolve, reject) => {
             const taskId = this.nextTaskId.toString();
             this.nextTaskId++;
@@ -216,8 +259,14 @@ export class PyodideWorkerManager {
                 id: taskId,
                 action,
                 payload,
-                resolve: (result: unknown) => resolve(result as T),
-                reject,
+                resolve: (result: unknown) => {
+                    this.telemetry.histogram('worker.response.time', performance.now() - startTime, { unit: 'ms' });
+                    resolve(result as T);
+                },
+                reject: (error: Error) => {
+                    this.telemetry.histogram('worker.response.time', performance.now() - startTime, { unit: 'ms' });
+                    reject(error);
+                },
             };
 
             this.tasks.set(taskId, task);
