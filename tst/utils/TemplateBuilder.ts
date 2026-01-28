@@ -1,4 +1,4 @@
-import { CompletionParams, Location, DefinitionParams } from 'vscode-languageserver';
+import { CompletionParams, Location, DefinitionParams, Diagnostic } from 'vscode-languageserver';
 import { TextDocuments } from 'vscode-languageserver/node';
 import {
     TextDocumentContentChangeEvent,
@@ -16,6 +16,7 @@ import { DocumentType, Document } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
+import { GuardService } from '../../src/services/guard/GuardService';
 import { UsageTracker } from '../../src/usageTracker/UsageTracker';
 import { extractErrorMessage } from '../../src/utils/Errors';
 import { expectThrow } from './Expect';
@@ -123,8 +124,12 @@ export class TemplateBuilder {
     private readonly completionRouter: CompletionRouter;
     private readonly hoverRouter: HoverRouter;
     private readonly definitionProvider: DefinitionProvider;
+    private readonly guardService: GuardService;
+    private readonly mockComponents: any;
     private readonly uri: string;
     private version: number = 0;
+
+    private diagnostics: Diagnostic[] = [];
 
     constructor(format: DocumentType, startingContent: string = '') {
         this.uri = `file:///test-template.${format}`;
@@ -142,9 +147,38 @@ export class TemplateBuilder {
             resourceStateManager: createMockResourceStateManager(),
         });
 
-        const { core, external, providers } = createMockComponents(mockTestComponents);
+        this.mockComponents = createMockComponents(mockTestComponents);
+
+        const { core, external, providers } = this.mockComponents;
 
         external.featureFlags.get.returns({ isEnabled: () => false, describe: () => 'mock' });
+
+        // Configure Guard settings with enabled rule packs for testing
+        const guardSettings = {
+            enabled: true,
+            delayMs: 0, // No delay for tests
+            validateOnChange: true,
+            enabledRulePacks: ['cis-aws-benchmark-level-1'], // Use a real rule pack
+            timeout: 30000,
+            maxConcurrentValidations: 3,
+            maxQueueSize: 10,
+            memoryCleanupInterval: 60000,
+            maxMemoryUsage: 100 * 1024 * 1024,
+            defaultSeverity: 'information' as const,
+        };
+
+        // Mock settings manager to return our Guard configuration
+        core.settingsManager.getCurrentSettings.returns({
+            profile: { region: 'us-east-1', profile: 'default' },
+            hover: { enabled: true },
+            completion: { enabled: true, maxCompletions: 100 },
+            diagnostics: {
+                cfnLint: { enabled: false } as any, // Disable cfnLint for Guard-only tests
+                cfnGuard: guardSettings,
+            },
+            editor: { tabSize: 2, insertSpaces: true, detectIndentation: true },
+            awsClient: {} as any,
+        });
 
         const completionProviders = createCompletionProviders(core, external, providers);
 
@@ -158,6 +192,20 @@ export class TemplateBuilder {
         );
         const mockFeatureFlag = { isEnabled: () => true, describe: () => 'Constants feature flag' };
         this.hoverRouter = new HoverRouter(this.contextManager, this.schemaRetriever, mockFeatureFlag);
+
+        // Create real GuardService for integration testing
+        this.guardService = GuardService.create(mockTestComponents);
+
+        // Mock the diagnostic coordinator to capture diagnostics
+        mockTestComponents.core.diagnosticCoordinator.publishDiagnostics.callsFake(
+            (source: string, uri: string, diagnostics: Diagnostic[]) => {
+                if (source === 'cfn-guard' && uri === this.uri) {
+                    this.diagnostics = diagnostics;
+                }
+                return Promise.resolve();
+            },
+        );
+
         this.initialize(startingContent);
     }
 
@@ -281,6 +329,12 @@ export class TemplateBuilder {
             );
         } else if (step.verification?.expectation instanceof GotoExpectation) {
             this.verifyDefinitionsAt(
+                step.verification.position,
+                step.verification.expectation,
+                step.verification.description,
+            );
+        } else if (step.verification?.expectation instanceof DiagnosticExpectation) {
+            await this.verifyDiagnosticsAt(
                 step.verification.position,
                 step.verification.expectation,
                 step.verification.description,
@@ -589,6 +643,78 @@ export class TemplateBuilder {
                 ).toMatch(new RegExp(expected.endsWith.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'));
             }
         }
+    }
+
+    async verifyDiagnosticsAt(position: Position, expected: DiagnosticExpectation, description?: string) {
+        // Trigger Guard validation to get real diagnostics
+        const document = this.textDocuments.get(this.uri);
+        if (document) {
+            await this.guardService.validate(document.getText(), this.uri);
+        }
+
+        const diagnostics = this.diagnostics;
+        const desc = description ? ` (${description})` : '';
+
+        if (expected.noDiagnostics) {
+            expectAt(diagnostics.length, position, `Expected no diagnostics${desc}`).toBe(0);
+            return;
+        }
+
+        if (expected.source) {
+            const sourceDiagnostics = diagnostics.filter((d) => d.source === expected.source);
+            if (expected.exactCount !== undefined) {
+                expectAt(
+                    sourceDiagnostics.length,
+                    position,
+                    `Diagnostic count mismatch for source ${expected.source}${desc}`,
+                ).toBe(expected.exactCount);
+            }
+            if (expected.minCount !== undefined) {
+                expectAt(
+                    sourceDiagnostics.length,
+                    position,
+                    `Too few diagnostics for source ${expected.source}${desc}`,
+                ).toBeGreaterThanOrEqual(expected.minCount);
+            }
+            if (expected.maxCount !== undefined) {
+                expectAt(
+                    sourceDiagnostics.length,
+                    position,
+                    `Too many diagnostics for source ${expected.source}${desc}`,
+                ).toBeLessThanOrEqual(expected.maxCount);
+            }
+        }
+
+        if (expected.messagePattern) {
+            const matchingDiagnostics = diagnostics.filter((d) => expected.messagePattern!.test(d.message));
+            expectAt(
+                matchingDiagnostics.length,
+                position,
+                `No diagnostics match pattern ${expected.messagePattern}${desc}`,
+            ).toBeGreaterThan(0);
+        }
+
+        if (expected.severity !== undefined) {
+            const severityDiagnostics = diagnostics.filter((d) => d.severity === expected.severity);
+            expectAt(
+                severityDiagnostics.length,
+                position,
+                `No diagnostics with severity ${expected.severity}${desc}`,
+            ).toBeGreaterThan(0);
+        }
+    }
+
+    async getDiagnosticsAt(_position: Position) {
+        const document = this.textDocuments.get(this.uri);
+        if (!document) {
+            return [];
+        }
+
+        // Trigger Guard validation to populate diagnostics
+        await this.guardService.validate(document.getText(), this.uri);
+
+        // Return the actual diagnostics captured from Guard validation
+        return this.diagnostics;
     }
 
     getCurrentContent() {
@@ -1016,6 +1142,63 @@ export class GotoExpectationBuilder {
     }
 
     build(): GotoExpectation {
+        return this.expectation;
+    }
+}
+
+class DiagnosticExpectation extends Expectation {
+    source?: string;
+    messagePattern?: RegExp;
+    severity?: number;
+    minCount?: number;
+    maxCount?: number;
+    exactCount?: number;
+    noDiagnostics?: boolean;
+}
+
+export class DiagnosticExpectationBuilder {
+    private readonly expectation: DiagnosticExpectation = new DiagnosticExpectation();
+
+    static create(): DiagnosticExpectationBuilder {
+        return new DiagnosticExpectationBuilder();
+    }
+
+    expectSource(source: string): DiagnosticExpectationBuilder {
+        this.expectation.source = source;
+        return this;
+    }
+
+    expectMessage(pattern: RegExp): DiagnosticExpectationBuilder {
+        this.expectation.messagePattern = pattern;
+        return this;
+    }
+
+    expectSeverity(severity: number): DiagnosticExpectationBuilder {
+        this.expectation.severity = severity;
+        return this;
+    }
+
+    expectMinCount(count: number): DiagnosticExpectationBuilder {
+        this.expectation.minCount = count;
+        return this;
+    }
+
+    expectMaxCount(count: number): DiagnosticExpectationBuilder {
+        this.expectation.maxCount = count;
+        return this;
+    }
+
+    expectExactCount(count: number): DiagnosticExpectationBuilder {
+        this.expectation.exactCount = count;
+        return this;
+    }
+
+    expectNoDiagnostics(): DiagnosticExpectationBuilder {
+        this.expectation.noDiagnostics = true;
+        return this;
+    }
+
+    build(): DiagnosticExpectation {
         return this.expectation;
     }
 }
