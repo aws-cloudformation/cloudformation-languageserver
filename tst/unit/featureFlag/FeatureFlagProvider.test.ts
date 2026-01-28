@@ -79,4 +79,38 @@ describe('FeatureFlagProvider', () => {
             expect(gaugeProvider()).toBe(0);
         });
     });
+
+    describe('client network error handling', () => {
+        let provider: FeatureFlagProvider;
+        let countSpy: ReturnType<typeof vi.spyOn>;
+
+        beforeEach(() => {
+            countSpy = vi.spyOn(ScopedTelemetry.prototype, 'count');
+        });
+
+        afterEach(() => {
+            provider?.close();
+            vi.restoreAllMocks();
+        });
+
+        it('handles client network errors gracefully without throwing', async () => {
+            provider = new FeatureFlagProvider(
+                () => Promise.reject(new Error('self signed certificate in certificate chain')),
+                join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+            );
+
+            // Trigger refresh by accessing internal method
+            await expect((provider as any).getFeatureFlags('alpha')).resolves.not.toThrow();
+            expect(countSpy).toHaveBeenCalledWith('getFeatureFlags.clientNetworkError', 1);
+        });
+
+        it('rethrows non-client network errors', async () => {
+            provider = new FeatureFlagProvider(
+                () => Promise.reject(new Error('Request failed with status code 500')),
+                join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+            );
+
+            await expect((provider as any).getFeatureFlags('alpha')).rejects.toThrow('status code 500');
+        });
+    });
 });

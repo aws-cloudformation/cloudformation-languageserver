@@ -86,6 +86,20 @@ describe('GetSchemaTask', () => {
             const storedValue = mockDataStore.get(AwsRegion.US_EAST_1);
             expect(storedValue).toBeUndefined();
         });
+
+        it('should handle client network errors gracefully without throwing', async () => {
+            const mockGetSchemas = vi.fn().mockRejectedValue(new Error('self signed certificate in certificate chain'));
+            const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, mockGetSchemas, undefined);
+
+            await expect(task.run(mockDataStore)).resolves.not.toThrow();
+        });
+
+        it('should rethrow non-client network errors', async () => {
+            const mockGetSchemas = vi.fn().mockRejectedValue(new Error('Request failed with status code 500'));
+            const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, mockGetSchemas, undefined);
+
+            await expect(task.run(mockDataStore)).rejects.toThrow('Request failed with status code 500');
+        });
     });
 
     describe('GetPrivateSchemasTask', () => {

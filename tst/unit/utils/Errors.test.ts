@@ -1,5 +1,52 @@
 import { describe, test, expect } from 'vitest';
-import { errorAttributes, extractLocationFromStack } from '../../../src/utils/Errors';
+import { errorAttributes, extractLocationFromStack, isClientNetworkError } from '../../../src/utils/Errors';
+
+describe('isClientNetworkError', () => {
+    test('returns true for SSL certificate errors', () => {
+        expect(isClientNetworkError(new Error('unable to get local issuer certificate'))).toBe(true);
+        expect(isClientNetworkError(new Error('self signed certificate in certificate chain'))).toBe(true);
+        expect(isClientNetworkError(new Error('unable to verify the first certificate'))).toBe(true);
+        expect(isClientNetworkError(new Error('certificate has expired'))).toBe(true);
+        expect(isClientNetworkError(new Error('Hostname does not match certificate altnames'))).toBe(true);
+        expect(isClientNetworkError(new Error('WRONG_VERSION_NUMBER'))).toBe(true);
+    });
+
+    test('returns true for network connectivity errors', () => {
+        expect(isClientNetworkError(new Error('read ECONNRESET'))).toBe(true);
+        expect(isClientNetworkError(new Error('connect ETIMEDOUT'))).toBe(true);
+        expect(isClientNetworkError(new Error('connect ECONNREFUSED'))).toBe(true);
+        expect(isClientNetworkError(new Error('getaddrinfo ENOTFOUND'))).toBe(true);
+        expect(isClientNetworkError(new Error('getaddrinfo EAI_AGAIN'))).toBe(true);
+        expect(isClientNetworkError(new Error('read ECONNABORTED'))).toBe(true);
+        expect(isClientNetworkError(new Error('connect EBADF'))).toBe(true);
+        expect(isClientNetworkError(new Error('socket hang up'))).toBe(true);
+        expect(isClientNetworkError(new Error('network socket disconnected'))).toBe(true);
+        expect(isClientNetworkError(new Error('TOO_MANY_REDIRECTS'))).toBe(true);
+        expect(isClientNetworkError(new Error('Parse Error: Expected HTTP/'))).toBe(true);
+    });
+
+    test('returns true for proxy authentication errors', () => {
+        expect(isClientNetworkError(new Error('Request failed with status code 407'))).toBe(true);
+    });
+
+    test('returns false for server-side errors', () => {
+        expect(isClientNetworkError(new Error('Request failed with status code 500'))).toBe(false);
+        expect(isClientNetworkError(new Error('Request failed with status code 503'))).toBe(false);
+        expect(isClientNetworkError(new Error('Internal server error'))).toBe(false);
+    });
+
+    test('returns false for non-network errors', () => {
+        expect(isClientNetworkError(new Error('Unexpected token'))).toBe(false);
+        expect(isClientNetworkError(new Error('Cannot read property of undefined'))).toBe(false);
+    });
+
+    test('handles non-Error values', () => {
+        expect(isClientNetworkError('ECONNRESET')).toBe(true);
+        expect(isClientNetworkError('random string')).toBe(false);
+        expect(isClientNetworkError(null)).toBe(false);
+        expect(isClientNetworkError(undefined)).toBe(false);
+    });
+});
 
 describe('extractLocationFromStack', () => {
     test('returns empty object when stack is undefined', () => {
