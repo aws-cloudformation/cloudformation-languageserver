@@ -77,6 +77,18 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                     to: 'assets',
                 },
                 {
+                    from: 'node_modules/@tree-sitter-grammars/tree-sitter-yaml/tree-sitter-yaml.wasm',
+                    to: 'wasm/tree-sitter-yaml.wasm',
+                },
+                {
+                    from: 'node_modules/tree-sitter-json/tree-sitter-json.wasm',
+                    to: 'wasm/tree-sitter-json.wasm',
+                },
+                {
+                    from: 'node_modules/web-tree-sitter/tree-sitter.wasm',
+                    to: 'tree-sitter.wasm',
+                },
+                {
                     from: 'vendor/cfn-guard/guard_bg.wasm',
                     to: 'guard_bg.wasm',
                 },
@@ -263,6 +275,13 @@ const baseConfig = {
                     options: {
                         name: '[name].[ext]',
                     },
+                },
+            },
+            {
+                test: /\.wasm$/,
+                type: 'asset/resource',
+                generator: {
+                    filename: '[name][ext]',
                 },
             },
         ],
