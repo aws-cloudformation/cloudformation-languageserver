@@ -15,6 +15,7 @@ export const FeatureFlagConfigSchema = z.object({
     features: z.record(z.string(), FeatureFlagSchema),
 });
 export type FeatureFlagConfigType = z.infer<typeof FeatureFlagSchema>;
+export type FeatureFlagSchemaType = z.infer<typeof FeatureFlagConfigSchema>;
 
 export type FeatureFlagBuilderType = (name: string, config?: FeatureFlagConfigType) => FeatureFlag;
 export type TargetedFeatureFlagBuilderType<T> = (

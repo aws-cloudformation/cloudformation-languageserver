@@ -66,6 +66,9 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
             }
 
             return newLine.replaceAll('\\\\', '/').replaceAll('\\', '/');
+        })
+        .map((line) => {
+            return sanitizeErrorMessage(line);
         });
 
     if (lines.length === 0) {
@@ -73,7 +76,7 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
     }
 
     const result: Record<string, string> = {};
-    result['error.message'] = sanitizeErrorMessage(lines[0]);
+    result['error.message'] = lines[0];
     result['error.stack'] = lines.slice(1).join('\n');
     return result;
 }

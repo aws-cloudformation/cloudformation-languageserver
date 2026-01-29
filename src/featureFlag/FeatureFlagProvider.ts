@@ -8,7 +8,7 @@ import { AwsEnv } from '../utils/Environment';
 import { isClientNetworkError } from '../utils/Errors';
 import { readFileIfExists } from '../utils/File';
 import { downloadJson } from '../utils/RemoteDownload';
-import { FeatureFlagConfigSchema } from './FeatureFlagBuilder';
+import { FeatureFlagConfigSchema, FeatureFlagSchemaType } from './FeatureFlagBuilder';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 import { FeatureFlagSupplier, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey } from './FeatureFlagSupplier';
 
@@ -27,14 +27,14 @@ export class FeatureFlagProvider implements Closeable {
         private readonly getLatestFeatureFlags: (env: string) => Promise<unknown>,
         private readonly localFile = join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`),
     ) {
-        this.config = defaultConfig(localFile);
+        this.config = defaultConfig(localFile, this.telemetry);
 
         this.supplier = new FeatureFlagSupplier(
             () => {
                 return this.config;
             },
             () => {
-                return defaultConfig(localFile);
+                return defaultConfig(localFile, this.telemetry);
             },
         );
 
@@ -68,12 +68,13 @@ export class FeatureFlagProvider implements Closeable {
         const newConfig = await this.getFeatureFlags(AwsEnv);
         const parsed = FeatureFlagConfigSchema.safeParse(newConfig);
         if (!parsed.success) {
+            this.telemetry.count('refresh.parse.error', 1);
             log.warn(parsed.error, 'Invalid feature flag config from remote, keeping current config');
             return;
         }
         this.config = newConfig;
         writeFileSync(this.localFile, JSON.stringify(newConfig, undefined, 2));
-
+        this.telemetry.count('refresh.local.update', 1);
         this.log();
     }
 
@@ -116,16 +117,17 @@ export class FeatureFlagProvider implements Closeable {
     }
 }
 
-export function getFromGitHub(env: string): Promise<unknown> {
-    return downloadJson(
+export function getFromGitHub(env: string): Promise<FeatureFlagSchemaType> {
+    return downloadJson<FeatureFlagSchemaType>(
         `https://raw.githubusercontent.com/aws-cloudformation/cloudformation-languageserver/refs/heads/main/assets/featureFlag/${env.toLowerCase()}.json`,
     );
 }
 
-function defaultConfig(configFile: string): unknown {
+function defaultConfig(configFile: string, telemetry: ScopedTelemetry): FeatureFlagSchemaType {
     try {
-        return JSON.parse(readFileIfExists(configFile, 'utf8'));
+        return JSON.parse(readFileIfExists(configFile, 'utf8')) as FeatureFlagSchemaType;
     } catch (err) {
+        telemetry.count('parse.default.error', 1);
         log.error(err, 'Failed to read config file, using empty config');
         return { version: 1, description: 'Default empty config', features: {} };
     }
