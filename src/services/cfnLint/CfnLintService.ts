@@ -338,7 +338,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             this.status = STATUS.Uninitialized;
             this.logError(`linting ${fileType} by string`, error);
             this.publishErrorDiagnostics(uri, error);
-            this.telemetry.error('lint.error', error, undefined, {
+            this.telemetry.count('lint.error', 1, {
                 attributes: {
                     fileType,
                     errorType: this.classifyLintError(error),
@@ -429,7 +429,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             this.status = STATUS.Uninitialized;
             this.logError(`linting ${fileType} by file`, error);
             this.publishErrorDiagnostics(uri, error);
-            this.telemetry.error('lint.error', error, undefined, {
+            this.telemetry.count('lint.error', 1, {
                 attributes: {
                     fileType,
                     errorType: this.classifyLintError(error),

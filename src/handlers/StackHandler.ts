@@ -119,10 +119,21 @@ export function createValidationHandler(
             try {
                 const params = parseWithPrettyError(parseCreateValidationParams, rawParams);
 
-                // Check if template has errors
+                // Track diagnostics by severity and source
                 const diagnostics = components.diagnosticCoordinator.getDiagnostics(params.uri);
-                if (diagnostics && diagnostics.length > 0) {
-                    TelemetryService.instance.get('StackHandler').count('validation.withErrors', 1);
+                const cfnLintDiagnostics = diagnostics.filter((d) => d.source === 'cfn-lint');
+                const errorCount = cfnLintDiagnostics.filter((d) => d.severity === 1).length;
+                const warningCount = cfnLintDiagnostics.filter((d) => d.severity === 2).length;
+                const infoCount = cfnLintDiagnostics.filter((d) => d.severity === 3).length;
+
+                if (errorCount > 0) {
+                    TelemetryService.instance.get('StackHandler').count('validation.cfnLint.errors', errorCount);
+                }
+                if (warningCount > 0) {
+                    TelemetryService.instance.get('StackHandler').count('validation.cfnLint.warnings', warningCount);
+                }
+                if (infoCount > 0) {
+                    TelemetryService.instance.get('StackHandler').count('validation.cfnLint.info', infoCount);
                 }
 
                 return await components.validationWorkflowService.start(params);
