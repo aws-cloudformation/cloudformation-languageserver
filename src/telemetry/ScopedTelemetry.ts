@@ -18,6 +18,7 @@ import { TelemetryContext } from './TelemetryContext';
 export interface MetricConfig extends MetricOptions {
     trackObjectKey?: string;
     attributes?: Attributes;
+    captureErrorAttributes?: boolean;
 }
 
 export class ScopedTelemetry implements Closeable {
@@ -53,10 +54,8 @@ export class ScopedTelemetry implements Closeable {
     }
 
     error(name: string, error: unknown, origin?: 'uncaughtException' | 'unhandledRejection', config?: MetricConfig) {
-        if (config === undefined) {
-            this.count(name, 1, {
-                attributes: errorAttributes(error, origin),
-            });
+        if (config === undefined || config?.captureErrorAttributes !== true) {
+            this.count(name, 1, config);
         } else {
             config.attributes = {
                 ...config.attributes,

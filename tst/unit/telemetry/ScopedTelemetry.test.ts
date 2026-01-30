@@ -75,12 +75,42 @@ describe('ScopedTelemetry', () => {
                 throw new TypeError('test error');
             });
 
-            expect(() => scopedTelemetry.measure('test', fn)).toThrow('test error');
+            expect(() => scopedTelemetry.measure('test', fn, { captureErrorAttributes: true })).toThrow('test error');
             expect(mockCounter.add).toHaveBeenCalledWith(
                 1,
                 expect.objectContaining({
                     'error.type': 'TypeError',
                 }),
+            );
+        });
+
+        it('should not capture error attributes on fault when config is undefined', () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => {
+                throw new Error('test error');
+            });
+
+            expect(() => scopedTelemetry.measure('test', fn)).toThrow('test error');
+            expect(mockCounter.add).not.toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ 'error.type': expect.any(String) }),
+            );
+        });
+
+        it('should not capture error attributes on fault when captureErrorAttributes is false', () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => {
+                throw new Error('test error');
+            });
+
+            expect(() => scopedTelemetry.measure('test', fn, { captureErrorAttributes: false })).toThrow('test error');
+            expect(mockCounter.add).not.toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ 'error.type': expect.any(String) }),
             );
         });
     });
@@ -116,12 +146,42 @@ describe('ScopedTelemetry', () => {
                 return Promise.reject(new ReferenceError('test error'));
             });
 
-            await expect(scopedTelemetry.measureAsync('test', fn)).rejects.toThrow('test error');
+            await expect(scopedTelemetry.measureAsync('test', fn, { captureErrorAttributes: true })).rejects.toThrow(
+                'test error',
+            );
             expect(mockCounter.add).toHaveBeenCalledWith(
                 1,
                 expect.objectContaining({
                     'error.type': 'ReferenceError',
                 }),
+            );
+        });
+
+        it('should not capture error attributes on async fault when config is undefined', async () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => Promise.reject(new Error('test error')));
+
+            await expect(scopedTelemetry.measureAsync('test', fn)).rejects.toThrow('test error');
+            expect(mockCounter.add).not.toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ 'error.type': expect.any(String) }),
+            );
+        });
+
+        it('should not capture error attributes on async fault when captureErrorAttributes is false', async () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => Promise.reject(new Error('test error')));
+
+            await expect(scopedTelemetry.measureAsync('test', fn, { captureErrorAttributes: false })).rejects.toThrow(
+                'test error',
+            );
+            expect(mockCounter.add).not.toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ 'error.type': expect.any(String) }),
             );
         });
     });
@@ -177,6 +237,38 @@ describe('ScopedTelemetry', () => {
 
             expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.undefined', expect.any(Object));
         });
+
+        it('should not capture error attributes on fault when config is undefined', () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => {
+                throw new Error('test error');
+            });
+
+            expect(() => scopedTelemetry.trackExecution('test', fn)).toThrow('test error');
+            expect(mockCounter.add).not.toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ 'error.type': expect.any(String) }),
+            );
+        });
+
+        it('should not capture error attributes on fault when captureErrorAttributes is false', () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => {
+                throw new Error('test error');
+            });
+
+            expect(() => scopedTelemetry.trackExecution('test', fn, { captureErrorAttributes: false })).toThrow(
+                'test error',
+            );
+            expect(mockCounter.add).not.toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ 'error.type': expect.any(String) }),
+            );
+        });
     });
 
     describe('trackExecutionAsync', () => {
@@ -190,6 +282,34 @@ describe('ScopedTelemetry', () => {
 
             expect(result).toBe('result');
             expect(mockMeter.createCounter).toHaveBeenCalledWith('test.response.type.string', expect.any(Object));
+        });
+
+        it('should not capture error attributes on async fault when config is undefined', async () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => Promise.reject(new Error('test error')));
+
+            await expect(scopedTelemetry.trackExecutionAsync('test', fn)).rejects.toThrow('test error');
+            expect(mockCounter.add).not.toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ 'error.type': expect.any(String) }),
+            );
+        });
+
+        it('should not capture error attributes on async fault when captureErrorAttributes is false', async () => {
+            const mockCounter = { add: vi.fn() };
+            mockMeter.createCounter.mockReturnValue(mockCounter);
+
+            const fn = vi.fn(() => Promise.reject(new Error('test error')));
+
+            await expect(
+                scopedTelemetry.trackExecutionAsync('test', fn, { captureErrorAttributes: false }),
+            ).rejects.toThrow('test error');
+            expect(mockCounter.add).not.toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({ 'error.type': expect.any(String) }),
+            );
         });
     });
 
@@ -211,11 +331,33 @@ describe('ScopedTelemetry', () => {
             mockMeter.createCounter = vi.fn(() => ({ add: mockAdd }));
         });
 
+        it('should not capture error attributes when config is undefined', () => {
+            const error = new Error('test error');
+
+            scopedTelemetry.error('test.error', error);
+
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+            });
+        });
+
+        it('should not capture error attributes when captureErrorAttributes is false', () => {
+            const error = new Error('test error');
+
+            scopedTelemetry.error('test.error', error, undefined, { captureErrorAttributes: false });
+
+            expect(mockAdd).toHaveBeenCalledWith(1, {
+                HandlerSource: 'Unknown',
+                'aws.emf.storage_resolution': 1,
+            });
+        });
+
         it('should record error with default origin Unknown when not provided', () => {
             const error = new Error('test error');
             error.stack = 'Error: test error\n    at func (file.ts:10:5)';
 
-            scopedTelemetry.error('test.error', error);
+            scopedTelemetry.error('test.error', error, undefined, { captureErrorAttributes: true });
 
             expect(mockMeter.createCounter).toHaveBeenCalledWith('test.error', {
                 unit: '1',
@@ -237,7 +379,7 @@ describe('ScopedTelemetry', () => {
             const error = new TypeError('type error');
             error.stack = 'TypeError: type error\n    at test (test.ts:1:1)';
 
-            scopedTelemetry.error('test.error', error, 'uncaughtException');
+            scopedTelemetry.error('test.error', error, 'uncaughtException', { captureErrorAttributes: true });
 
             expect(mockAdd).toHaveBeenCalledWith(1, {
                 HandlerSource: 'Unknown',
@@ -253,7 +395,7 @@ describe('ScopedTelemetry', () => {
             const error = new Error('rejection');
             error.stack = 'Error: rejection\n    at promise (p.ts:5:10)';
 
-            scopedTelemetry.error('test.error', error, 'unhandledRejection');
+            scopedTelemetry.error('test.error', error, 'unhandledRejection', { captureErrorAttributes: true });
 
             expect(mockAdd).toHaveBeenCalledWith(1, {
                 HandlerSource: 'Unknown',
@@ -271,6 +413,7 @@ describe('ScopedTelemetry', () => {
 
             scopedTelemetry.error('test.error', error, undefined, {
                 attributes: { custom: 'value', region: 'us-east-1' },
+                captureErrorAttributes: true,
             });
 
             expect(mockAdd).toHaveBeenCalledWith(1, {
@@ -292,6 +435,7 @@ describe('ScopedTelemetry', () => {
             scopedTelemetry.error('test.error', error, undefined, {
                 unit: 'errors',
                 description: 'Error counter',
+                captureErrorAttributes: true,
             });
 
             expect(mockMeter.createCounter).toHaveBeenCalledWith('test.error', {
@@ -311,7 +455,7 @@ describe('ScopedTelemetry', () => {
         });
 
         it('should handle non-Error string value', () => {
-            scopedTelemetry.error('test.error', 'string error');
+            scopedTelemetry.error('test.error', 'string error', undefined, { captureErrorAttributes: true });
 
             expect(mockAdd).toHaveBeenCalledWith(1, {
                 HandlerSource: 'Unknown',
@@ -322,7 +466,7 @@ describe('ScopedTelemetry', () => {
         });
 
         it('should handle non-Error null value', () => {
-            scopedTelemetry.error('test.error', null);
+            scopedTelemetry.error('test.error', null, undefined, { captureErrorAttributes: true });
 
             expect(mockAdd).toHaveBeenCalledWith(1, {
                 HandlerSource: 'Unknown',
@@ -333,7 +477,7 @@ describe('ScopedTelemetry', () => {
         });
 
         it('should handle non-Error undefined value', () => {
-            scopedTelemetry.error('test.error', undefined);
+            scopedTelemetry.error('test.error', undefined, undefined, { captureErrorAttributes: true });
 
             expect(mockAdd).toHaveBeenCalledWith(1, {
                 HandlerSource: 'Unknown',
