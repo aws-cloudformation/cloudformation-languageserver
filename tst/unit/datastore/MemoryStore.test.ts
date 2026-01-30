@@ -205,4 +205,76 @@ describe('MemoryStore', () => {
             await memoryFactory.close();
         });
     });
+
+    describe('factory behavior', () => {
+        it('should create new store on first access', () => {
+            const newFactory = new MemoryStoreFactory();
+            const store = newFactory.get(StoreName.public_schemas);
+            expect(store).toBeDefined();
+        });
+
+        it('should return same store instance for same store name', () => {
+            const store1 = memoryFactory.get(StoreName.public_schemas);
+            const store2 = memoryFactory.get(StoreName.public_schemas);
+            expect(store1).toBe(store2);
+        });
+
+        it('should return store names for created stores', () => {
+            memoryFactory.get(StoreName.public_schemas);
+            memoryFactory.get(StoreName.sam_schemas);
+
+            const names = memoryFactory.storeNames;
+            expect(names).toContain(StoreName.public_schemas);
+            expect(names).toContain(StoreName.sam_schemas);
+        });
+    });
+
+    describe('size tracking', () => {
+        it('should track store size correctly', async () => {
+            const store = memoryFactory.get(StoreName.public_schemas) as any;
+
+            expect(store.size()).toBe(0);
+
+            await store.put('key1', 'value1');
+            expect(store.size()).toBe(1);
+
+            await store.put('key2', 'value2');
+            expect(store.size()).toBe(2);
+
+            await store.remove('key1');
+            expect(store.size()).toBe(1);
+
+            await store.clear();
+            expect(store.size()).toBe(0);
+        });
+    });
+
+    describe('edge cases', () => {
+        it('should handle empty string as key', async () => {
+            await memoryStore.put('', 'empty-key-value');
+            expect(memoryStore.get<string>('')).toBe('empty-key-value');
+        });
+
+        it('should handle complex nested objects', async () => {
+            const complex = {
+                nested: { deep: { value: 'test' } },
+                array: [1, 2, { inner: 'value' }],
+                null: null,
+                boolean: true,
+                number: 42,
+            };
+
+            await memoryStore.put('complex', complex);
+            expect(memoryStore.get('complex')).toEqual(complex);
+        });
+
+        it('should return empty array for keys on empty store', () => {
+            const keys = memoryStore.keys(10);
+            expect(keys).toEqual([]);
+        });
+
+        it('should handle clear on empty store', async () => {
+            await expect(memoryStore.clear()).resolves.not.toThrow();
+        });
+    });
 });

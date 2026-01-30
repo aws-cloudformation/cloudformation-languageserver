@@ -220,4 +220,48 @@ describe('LMDB', () => {
             expect(storeStats.entries).toBeGreaterThanOrEqual(0);
         });
     });
+
+    describe('factory behavior', () => {
+        it('should throw error when getting non-existent store', () => {
+            expect(() => lmdbFactory.get('non-existent-store' as StoreName)).toThrow(
+                /Store non-existent-store not found/,
+            );
+        });
+
+        it('should return same store instance for same store name', () => {
+            const store1 = lmdbFactory.get(StoreName.public_schemas);
+            const store2 = lmdbFactory.get(StoreName.public_schemas);
+            expect(store1).toBe(store2);
+        });
+
+        it('should handle double close gracefully', async () => {
+            await lmdbFactory.close();
+            await expect(lmdbFactory.close()).resolves.not.toThrow();
+        });
+    });
+
+    describe('edge cases', () => {
+        it('should handle empty string as key', async () => {
+            await lmdbStore.put('', 'empty-key-value');
+            expect(lmdbStore.get<string>('')).toBe('empty-key-value');
+        });
+
+        it('should handle complex nested objects', async () => {
+            const complex = {
+                nested: { deep: { value: 'test' } },
+                array: [1, 2, { inner: 'value' }],
+                null: null,
+                boolean: true,
+                number: 42,
+            };
+
+            await lmdbStore.put('complex', complex);
+            expect(lmdbStore.get('complex')).toEqual(complex);
+        });
+
+        it('should return empty array for keys on empty store', () => {
+            const keys = lmdbStore.keys(10);
+            expect(keys).toEqual([]);
+        });
+    });
 });

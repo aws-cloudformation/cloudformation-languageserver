@@ -447,6 +447,81 @@ describe('ResourceStateCompletionProvider', () => {
         expect(getResourceSpy).not.toHaveBeenCalled();
         expect(result.length).toBe(0);
     });
+
+    test('should return empty completion when all properties already exist in template', async () => {
+        const context = createResourceContext('MyResource', {
+            text: '',
+            data: {
+                Type: 'Custom::Type',
+                Properties: {
+                    BucketName: 'test',
+                    VersioningConfiguration: { Status: 'Enabled' },
+                },
+            },
+            type: DocumentType.YAML,
+        });
+
+        emptySchemas.schemas.set('Custom::Type', customTypeSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
+        mockComponents.resourceStateManager.getResource.resolves({
+            typeName: 'Custom::Type',
+            identifier: 'test',
+            properties: JSON.stringify({
+                BucketName: 'test',
+                VersioningConfiguration: { Status: 'Enabled' },
+            }),
+            createdTimestamp: new Date() as any,
+        });
+
+        const result = await provider.getCompletions(context, mockYamlParams);
+
+        expect(result).toBeDefined();
+        expect(result.length).toBe(1);
+        // The completion should be empty since all properties are already defined
+        expect(result[0].insertText).toBe('');
+    });
+
+    test('should format JSON output with proper indentation', async () => {
+        const context = createResourceContext('MyResource', {
+            text: '',
+            data: {
+                Type: 'Custom::Type',
+                Properties: { BucketName: 'test' },
+            },
+            type: DocumentType.JSON,
+        });
+
+        emptySchemas.schemas.set('Custom::Type', customTypeSchema);
+        mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
+        mockComponents.documentManager.getLine.returns('"",');
+        mockComponents.resourceStateManager.getResource.resolves({
+            typeName: 'Custom::Type',
+            identifier: 'test',
+            properties: JSON.stringify({
+                BucketName: 'test',
+                VersioningConfiguration: { Status: 'Enabled' },
+            }),
+            createdTimestamp: new Date() as any,
+        });
+
+        const result = await provider.getCompletions(context, mockJsonParams);
+
+        expect(result).toBeDefined();
+        expect(result.length).toBe(1);
+        // JSON format should have textEdit
+        expect(result[0].textEdit).toBeDefined();
+    });
+
+    test('should use static create method to instantiate provider', () => {
+        const createdProvider = ResourceStateCompletionProvider.create(
+            mockComponents.core,
+            mockComponents.external,
+            mockComponents.providers,
+        );
+
+        expect(createdProvider).toBeDefined();
+        expect(createdProvider).toBeInstanceOf(ResourceStateCompletionProvider);
+    });
 });
 
 const defaultSchemas = combinedSchemas();

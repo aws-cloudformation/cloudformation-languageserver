@@ -229,4 +229,59 @@ describe('ReplacePrimaryIdentifierTransformer', () => {
             expect(resourceProperties.ImageId).toBe('ami-12345678');
         });
     });
+
+    describe('edge cases', () => {
+        it('should handle empty primaryIdentifier array', () => {
+            const schema = { primaryIdentifier: [], required: [] } as any;
+            const resourceProperties = { Prop: 'value' };
+
+            transformer.transform(resourceProperties, schema, testLogicalId);
+
+            expect(resourceProperties).toEqual({ Prop: 'value' });
+        });
+
+        it('should handle undefined primaryIdentifier', () => {
+            const schema = { required: [] } as any;
+            const resourceProperties = { Prop: 'value' };
+
+            transformer.transform(resourceProperties, schema, testLogicalId);
+
+            expect(resourceProperties).toEqual({ Prop: 'value' });
+        });
+
+        it('should handle nested property path that does not exist', () => {
+            const schema = {
+                primaryIdentifier: ['/properties/Nested/DeepProp'],
+                required: ['DeepProp'],
+            } as any;
+            const resourceProperties = { OtherProp: 'value' };
+
+            transformer.transform(resourceProperties, schema, testLogicalId);
+
+            expect(resourceProperties).toEqual({ OtherProp: 'value' });
+        });
+
+        it('should handle path with only /properties/', () => {
+            const schema = {
+                primaryIdentifier: ['/properties/'],
+                required: [],
+            } as any;
+            const resourceProperties = { Prop: 'value' };
+
+            transformer.transform(resourceProperties, schema, testLogicalId);
+
+            expect(resourceProperties).toEqual({ Prop: 'value' });
+        });
+
+        it('should handle transform without logicalId for non-required identifier', () => {
+            const schema = schemas.schemas.get('AWS::S3::Bucket')!;
+            const resourceProperties = {
+                BucketName: 'my-bucket',
+            };
+
+            transformer.transform(resourceProperties, schema);
+
+            expect(resourceProperties).not.toHaveProperty('BucketName');
+        });
+    });
 });

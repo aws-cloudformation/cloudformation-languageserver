@@ -146,4 +146,63 @@ describe('LspWorkspace', () => {
             expect(lspWorkspace.getAllWorkspaceFolders()).toEqual(newFolders);
         });
     });
+
+    describe('onWorkspaceFolderChanges', () => {
+        it('should call handler when workspace folders change', () => {
+            lspWorkspace = new LspWorkspace(connection);
+            const handler = vi.fn();
+
+            lspWorkspace.onWorkspaceFolderChanges(handler);
+            lspWorkspace.initialize();
+
+            expect(handler).toHaveBeenCalledWith([]);
+        });
+
+        it('should call handler with initial folders on initialize', () => {
+            const folders: WorkspaceFolder[] = [{ uri: 'file:///workspace', name: 'workspace' }];
+            lspWorkspace = new LspWorkspace(connection, folders);
+            const handler = vi.fn();
+
+            lspWorkspace.onWorkspaceFolderChanges(handler);
+            lspWorkspace.initialize();
+
+            expect(handler).toHaveBeenCalledWith(folders);
+        });
+    });
+
+    describe('error handling', () => {
+        it('should log error when workspace folder registration fails', async () => {
+            lspWorkspace = new LspWorkspace(connection);
+            const error = new Error('Registration failed');
+            connection.client.register = vi.fn().mockRejectedValue(error);
+            connection.console.error = vi.fn();
+
+            const capabilities: ClientCapabilities = {
+                workspace: { workspaceFolders: true },
+            };
+
+            lspWorkspace.initialize(capabilities);
+
+            await vi.waitFor(() => {
+                expect(connection.console.error).toHaveBeenCalled();
+            });
+        });
+
+        it('should log error when configuration registration fails', async () => {
+            lspWorkspace = new LspWorkspace(connection);
+            const error = new Error('Config registration failed');
+            connection.client.register = vi.fn().mockRejectedValue(error);
+            connection.console.error = vi.fn();
+
+            const capabilities: ClientCapabilities = {
+                workspace: { configuration: true },
+            };
+
+            lspWorkspace.initialize(capabilities);
+
+            await vi.waitFor(() => {
+                expect(connection.console.error).toHaveBeenCalled();
+            });
+        });
+    });
 });

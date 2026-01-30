@@ -372,4 +372,18 @@ describe('FileStore', () => {
             }
         });
     });
+
+    describe('factory behavior', () => {
+        it('should throw error when getting non-existent store', () => {
+            expect(() => fileFactory.get('non-existent-store' as StoreName)).toThrow(
+                /Store non-existent-store not found/,
+            );
+        });
+
+        it('should return same store instance for same store name', () => {
+            const store1 = fileFactory.get(StoreName.public_schemas);
+            const store2 = fileFactory.get(StoreName.public_schemas);
+            expect(store1).toBe(store2);
+        });
+    });
 });
