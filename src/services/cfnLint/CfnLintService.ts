@@ -310,7 +310,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
      * @param uri The document URI
      * @param fileType The CloudFormation file type
      */
-    @Count({ name: 'lint.standaloneFile' })
+    @Count({ name: 'lint.standaloneFile', captureErrorAttributes: true })
     private async lintStandaloneFile(content: string, uri: string, fileType: CloudFormationFileType): Promise<void> {
         const startTime = performance.now();
         const doc = this.documentManager.get(uri);
@@ -382,7 +382,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
      * @param fileType The CloudFormation file type
      * @param content The document content (used for GitSync deployment files)
      */
-    @Count({ name: 'lint.workspaceFile' })
+    @Count({ name: 'lint.workspaceFile', captureErrorAttributes: true })
     private async lintWorkspaceFile(
         uri: string,
         folder: WorkspaceFolder,

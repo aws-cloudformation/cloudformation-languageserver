@@ -58,7 +58,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
         this.settings = settings;
     }
 
-    @Track({ name: 'getHoverDoc' })
+    @Track({ name: 'getHoverDoc', captureErrorAttributes: true })
     getHoverDoc(textDocPosParams: TextDocumentPositionParams) {
         if (!this.settings.enabled) {
             return;

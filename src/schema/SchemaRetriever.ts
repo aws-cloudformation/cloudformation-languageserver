@@ -70,7 +70,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         return this.get(this.settings.region, this.settings.profile);
     }
 
-    @Measure({ name: 'getSchemas' })
+    @Measure({ name: 'getSchemas', captureErrorAttributes: true })
     get(region: AwsRegion, profile: string): CombinedSchemas {
         return this.schemaStore.get(region, profile);
     }

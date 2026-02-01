@@ -168,7 +168,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
      * @param uri The document URI
      * @param forceUseContent If true, always use the provided content (for consistency with CfnLintService)
      */
-    @Count({ name: 'validate' })
+    @Count({ name: 'validate', captureErrorAttributes: true })
     async validate(content: string, uri: string, _forceUseContent?: boolean): Promise<void> {
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 

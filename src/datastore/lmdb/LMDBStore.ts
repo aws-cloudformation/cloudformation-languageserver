@@ -23,27 +23,35 @@ export class LMDBStore implements DataStore {
     }
 
     private exec<T>(op: string, fn: () => T): T {
-        return this.telemetry.measure(op, () => {
-            try {
-                this.validateDatabase?.();
-                return fn();
-            } catch (e) {
-                this.onError?.(e);
-                throw e;
-            }
-        });
+        return this.telemetry.measure(
+            op,
+            () => {
+                try {
+                    this.validateDatabase?.();
+                    return fn();
+                } catch (e) {
+                    this.onError?.(e);
+                    throw e;
+                }
+            },
+            { captureErrorAttributes: true },
+        );
     }
 
     private async execAsync<T>(op: string, fn: () => Promise<T>): Promise<T> {
-        return await this.telemetry.measureAsync(op, async () => {
-            try {
-                this.validateDatabase?.();
-                return await fn();
-            } catch (e) {
-                this.onError?.(e);
-                throw e;
-            }
-        });
+        return await this.telemetry.measureAsync(
+            op,
+            async () => {
+                try {
+                    this.validateDatabase?.();
+                    return await fn();
+                } catch (e) {
+                    this.onError?.(e);
+                    throw e;
+                }
+            },
+            { captureErrorAttributes: true },
+        );
     }
 
     get<T>(key: string): T | undefined {

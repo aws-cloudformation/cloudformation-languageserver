@@ -55,7 +55,7 @@ export abstract class SyntaxTree {
         return this._lines;
     }
 
-    @Measure({ name: 'updateWithEdit' })
+    @Measure({ name: 'updateWithEdit', captureErrorAttributes: true })
     public updateWithEdit(content: string, edit: Edit) {
         this._lines = undefined; // Invalidate cache
         this.rawContent = content; // Update raw content
@@ -63,13 +63,13 @@ export abstract class SyntaxTree {
         this.tree = this.parser.parse(content, this.tree);
     }
 
-    @Measure({ name: 'update' })
+    @Measure({ name: 'update', captureErrorAttributes: true })
     public update(textToInsert: string, start: Point, end: Point) {
         const { newContent, edit } = createEdit(this.content(), textToInsert, start, end);
         this.updateWithEdit(newContent, edit);
     }
 
-    @Measure({ name: 'getNodeAtPosition' })
+    @Measure({ name: 'getNodeAtPosition', captureErrorAttributes: true })
     public getNodeAtPosition(position: Position): SyntaxNode {
         const point: Point = {
             row: position.line,
@@ -423,7 +423,7 @@ export abstract class SyntaxTree {
      * Analyzes a node to determine its semantic path within the document.
      * It walks up the tree from the given node, building a property path and identifying the entity root.
      */
-    @Measure({ name: 'getPathAndEntityInfo' })
+    @Measure({ name: 'getPathAndEntityInfo', captureErrorAttributes: true })
     public getPathAndEntityInfo(node: SyntaxNode): PathAndEntity {
         if (!node) {
             return {
@@ -849,7 +849,7 @@ export abstract class SyntaxTree {
      * @param pathSegments Array like ["Resources", "MyBucket", "Properties", "BucketName"] or ["Resources", "MyBucket", "Properties", 0]
      * @returns Object with the node and whether the full path was resolved
      */
-    @Measure({ name: 'getNodeByPath' })
+    @Measure({ name: 'getNodeByPath', captureErrorAttributes: true })
     getNodeByPath(pathSegments: ReadonlyArray<string | number>): {
         node: SyntaxNode | undefined;
         fullyResolved: boolean;

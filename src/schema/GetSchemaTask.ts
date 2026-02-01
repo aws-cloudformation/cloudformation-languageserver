@@ -38,7 +38,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
         super();
     }
 
-    @Measure({ name: 'getSchemas' })
+    @Measure({ name: 'getSchemas', captureErrorAttributes: true })
     protected override async runImpl(dataStore: DataStore) {
         this.telemetry.count(`getSchemas.maxAttempt.fault`, 0, {
             attributes: {
@@ -92,7 +92,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
         super();
     }
 
-    @Measure({ name: 'getSchemas' })
+    @Measure({ name: 'getSchemas', captureErrorAttributes: true })
     protected override async runImpl(dataStore: DataStore) {
         try {
             const schemas: DescribeTypeOutput[] = await this.getSchemas();

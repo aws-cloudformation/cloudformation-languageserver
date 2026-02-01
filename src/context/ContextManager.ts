@@ -13,7 +13,7 @@ export class ContextManager {
 
     constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
-    @Track({ name: 'getContext' })
+    @Track({ name: 'getContext', captureErrorAttributes: true })
     public getContext(params: TextDocumentPositionParams): Context | undefined {
         const contextParams = this.getContextParams(params);
         if (!contextParams) {
@@ -35,7 +35,7 @@ export class ContextManager {
         return undefined;
     }
 
-    @Track({ name: 'getContextWithEntities' })
+    @Track({ name: 'getContextWithEntities', captureErrorAttributes: true })
     public getContextAndRelatedEntities(
         params: TextDocumentPositionParams,
         fullEntitySearch: boolean = true,

@@ -162,7 +162,7 @@ export class ResourceSchema {
      * @param path - JSON pointer to the property (e.g., "/properties/BucketName")
      * @returns The property definition or undefined if not found
      */
-    @Measure({ name: 'path' })
+    @Measure({ name: 'path', captureErrorAttributes: true })
     public getByPath<T = any>(path: string): T | undefined {
         // Remove leading slash if present
         if (path.startsWith('/')) {
@@ -187,7 +187,7 @@ export class ResourceSchema {
         return undefined;
     }
 
-    @Measure({ name: 'resolveRef' })
+    @Measure({ name: 'resolveRef', captureErrorAttributes: true })
     public resolveRef(refValue: string): PropertyType | undefined {
         if (refValue.startsWith('#')) {
             refValue = refValue.slice(1);
@@ -336,7 +336,7 @@ export class ResourceSchema {
      * @param options.excludeReadOnly - Whether to filter out read-only properties from results
      * @returns Array of all possible schema definitions that match the path
      */
-    @Measure({ name: 'resolveJsonPointer' })
+    @Measure({ name: 'resolveJsonPointer', captureErrorAttributes: true })
     public resolveJsonPointerPath(jsonPointerPath: string, options?: PathNavigationOptions): PropertyType[] {
         const resolvedOptions: PathNavigationOptions = {
             excludeReadOnly: options?.excludeReadOnly ?? false,

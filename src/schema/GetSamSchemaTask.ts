@@ -21,7 +21,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
         super();
     }
 
-    @Measure({ name: 'getSchemas' })
+    @Measure({ name: 'getSchemas', captureErrorAttributes: true })
     protected override async runImpl(dataStore: DataStore): Promise<void> {
         try {
             const resourceSchemas = await this.getSamSchemas();

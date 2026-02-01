@@ -57,7 +57,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
         private readonly usageTracker: UsageTracker,
     ) {}
 
-    @Track({ name: 'getCompletions', trackObjectKey: 'items' })
+    @Track({ name: 'getCompletions', trackObjectKey: 'items', captureErrorAttributes: true })
     async getCompletions(params: CompletionParams) {
         if (!this.completionSettings.enabled) return;
 

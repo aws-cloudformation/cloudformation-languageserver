@@ -47,7 +47,9 @@ export class EncryptedFileStore implements DataStore {
     }
 
     get<T>(key: string): T | undefined {
-        return this.telemetry.countExecution('get', () => this.content[key] as T | undefined);
+        return this.telemetry.countExecution('get', () => this.content[key] as T | undefined, {
+            captureErrorAttributes: true,
+        });
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
@@ -78,7 +80,9 @@ export class EncryptedFileStore implements DataStore {
     }
 
     keys(limit: number): ReadonlyArray<string> {
-        return this.telemetry.countExecution('keys', () => Object.keys(this.content).slice(0, limit));
+        return this.telemetry.countExecution('keys', () => Object.keys(this.content).slice(0, limit), {
+            captureErrorAttributes: true,
+        });
     }
 
     stats(): FileStoreStats {
@@ -89,15 +93,19 @@ export class EncryptedFileStore implements DataStore {
     }
 
     private async withLock<T>(operation: string, fn: () => Promise<T>): Promise<T> {
-        return await this.telemetry.measureAsync(operation, async () => {
-            const release = await lock(this.file, LOCK_OPTIONS);
-            try {
-                this.content = this.readFile();
-                return await fn();
-            } finally {
-                await release();
-            }
-        });
+        return await this.telemetry.measureAsync(
+            operation,
+            async () => {
+                const release = await lock(this.file, LOCK_OPTIONS);
+                try {
+                    this.content = this.readFile();
+                    return await fn();
+                } finally {
+                    await release();
+                }
+            },
+            { captureErrorAttributes: true },
+        );
     }
 
     private readFile(): Record<string, unknown> {

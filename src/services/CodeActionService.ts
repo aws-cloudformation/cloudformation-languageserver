@@ -54,7 +54,7 @@ export class CodeActionService {
     /**
      * Process diagnostics and generate code actions with fixes
      */
-    @Track({ name: 'generateCodeActions' })
+    @Track({ name: 'generateCodeActions', captureErrorAttributes: true })
     public generateCodeActions(params: CodeActionParams) {
         const codeActions: CodeAction[] = [];
 

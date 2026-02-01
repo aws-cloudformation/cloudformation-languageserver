@@ -46,6 +46,7 @@ export class SettingsManager implements ISettingsSubscriber {
      * Sync configuration from LSP workspace
      * Maintains existing behavior while adding notification support
      */
+    @Measure({ name: 'syncConfiguration', captureErrorAttributes: true })
     async syncConfiguration(): Promise<void> {
         try {
             // Get CloudFormation-specific settings
@@ -85,7 +86,7 @@ export class SettingsManager implements ISettingsSubscriber {
      * Validate and update settings with notification support
      * Maintains all existing validation logic from SettingsManager
      */
-    @Measure({ name: 'settingsUpdate' })
+    @Measure({ name: 'settingsUpdate', captureErrorAttributes: true })
     private validateAndUpdate(newSettings: Settings): void {
         const oldSettings = this.settingsState.toSettings();
 

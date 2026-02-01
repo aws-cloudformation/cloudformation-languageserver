@@ -26,8 +26,10 @@ export class ContextWithRelatedEntities extends Context {
     }
 
     public get relatedEntities(): Map<SectionType, Map<string, Context>> {
-        this._relatedEntities ??= this.telemetry.measure('create.relatedEntities', () =>
-            this.relatedEntitiesProvider(),
+        this._relatedEntities ??= this.telemetry.measure(
+            'create.relatedEntities',
+            () => this.relatedEntitiesProvider(),
+            { captureErrorAttributes: true },
         );
         return this._relatedEntities;
     }

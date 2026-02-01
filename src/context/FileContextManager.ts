@@ -11,7 +11,7 @@ export class FileContextManager {
 
     constructor(private readonly documentManager: DocumentManager) {}
 
-    @Track({ name: 'getFileContext' })
+    @Track({ name: 'getFileContext', captureErrorAttributes: true })
     public getFileContext(uri: string): FileContext | undefined {
         const document = this.documentManager.get(uri);
         if (!document) {

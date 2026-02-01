@@ -66,8 +66,10 @@ export class Context {
     }
 
     public get entity(): Entity {
-        this._entity ??= this.telemetry.measure('create.entity', () =>
-            nodeToEntity(this.documentType, this.entityRootNode, this.section, this.logicalId),
+        this._entity ??= this.telemetry.measure(
+            'create.entity',
+            () => nodeToEntity(this.documentType, this.entityRootNode, this.section, this.logicalId),
+            { captureErrorAttributes: true },
         );
         return this._entity;
     }
@@ -92,18 +94,23 @@ export class Context {
         this._intrinsicContext ??= this.telemetry.measure(
             'create.intrinsicContext',
             () => new IntrinsicContext(this.pathToRoot, this.documentType),
+            { captureErrorAttributes: true },
         );
         return this._intrinsicContext;
     }
 
     public get transformContext(): TransformContext {
-        this._transformContext ??= this.telemetry.measure('create.transformContext', () => {
-            let rootNode = this.node;
-            while (rootNode.parent) {
-                rootNode = rootNode.parent;
-            }
-            return new TransformContext(rootNode, this.documentType);
-        });
+        this._transformContext ??= this.telemetry.measure(
+            'create.transformContext',
+            () => {
+                let rootNode = this.node;
+                while (rootNode.parent) {
+                    rootNode = rootNode.parent;
+                }
+                return new TransformContext(rootNode, this.documentType);
+            },
+            { captureErrorAttributes: true },
+        );
         return this._transformContext;
     }
 

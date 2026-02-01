@@ -29,7 +29,7 @@ export class SchemaStore {
 
     constructor(private readonly dataStoreFactory: DataStoreFactoryProvider) {}
 
-    @Measure({ name: 'get' })
+    @Measure({ name: 'get', captureErrorAttributes: true })
     get(region: AwsRegion, _profile: string): CombinedSchemas {
         let rebuild = false;
 

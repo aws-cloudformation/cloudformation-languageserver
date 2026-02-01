@@ -9,7 +9,7 @@ export class DefinitionProvider {
 
     constructor(private readonly contextManager: ContextManager) {}
 
-    @Track({ name: 'getDefinitions' })
+    @Track({ name: 'getDefinitions', captureErrorAttributes: true })
     getDefinitions(params: DefinitionParams) {
         const context = this.contextManager.getContextAndRelatedEntities(params);
         if (!context) {

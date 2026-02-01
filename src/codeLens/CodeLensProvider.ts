@@ -11,7 +11,7 @@ export class CodeLensProvider {
         private readonly managedResource: ManagedResourceCodeLens = new ManagedResourceCodeLens(syntaxTreeManager),
     ) {}
 
-    @Track({ name: 'getCodeLenses' })
+    @Track({ name: 'getCodeLenses', captureErrorAttributes: true })
     getCodeLenses(uri: string) {
         const doc = this.documentManager.get(uri);
         if (!doc) {

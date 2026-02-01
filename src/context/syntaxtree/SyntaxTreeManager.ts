@@ -34,7 +34,7 @@ export class SyntaxTreeManager {
         }
     }
 
-    @Measure({ name: 'createTree' })
+    @Measure({ name: 'createTree', captureErrorAttributes: true })
     private createTree(uri: string, content: string, type: DocumentType, cfnFileType: CloudFormationFileType) {
         if (cfnFileType !== CloudFormationFileType.Template && cfnFileType !== CloudFormationFileType.Empty) {
             throw new Error('Syntax tree can only be created for CloudFormation templates');

@@ -12,35 +12,55 @@ export class MemoryStore implements DataStore {
     }
 
     get<T>(key: string): T | undefined {
-        return this.telemetry.countExecution('get', () => {
-            return this.store.get(key) as T | undefined;
-        });
+        return this.telemetry.countExecution(
+            'get',
+            () => {
+                return this.store.get(key) as T | undefined;
+            },
+            { captureErrorAttributes: true },
+        );
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
-        return this.telemetry.countExecutionAsync('put', () => {
-            this.store.set(key, value);
-            return Promise.resolve(true);
-        });
+        return this.telemetry.countExecutionAsync(
+            'put',
+            () => {
+                this.store.set(key, value);
+                return Promise.resolve(true);
+            },
+            { captureErrorAttributes: true },
+        );
     }
 
     remove(key: string): Promise<boolean> {
-        return this.telemetry.countExecutionAsync('remove', () => {
-            return Promise.resolve(this.store.delete(key));
-        });
+        return this.telemetry.countExecutionAsync(
+            'remove',
+            () => {
+                return Promise.resolve(this.store.delete(key));
+            },
+            { captureErrorAttributes: true },
+        );
     }
 
     clear(): Promise<void> {
-        return this.telemetry.countExecutionAsync('clear', () => {
-            this.store.clear();
-            return Promise.resolve();
-        });
+        return this.telemetry.countExecutionAsync(
+            'clear',
+            () => {
+                this.store.clear();
+                return Promise.resolve();
+            },
+            { captureErrorAttributes: true },
+        );
     }
 
     keys(limit: number): ReadonlyArray<string> {
-        return this.telemetry.countExecution('keys', () => {
-            return [...this.store.keys()].slice(0, limit);
-        });
+        return this.telemetry.countExecution(
+            'keys',
+            () => {
+                return [...this.store.keys()].slice(0, limit);
+            },
+            { captureErrorAttributes: true },
+        );
     }
 
     size() {

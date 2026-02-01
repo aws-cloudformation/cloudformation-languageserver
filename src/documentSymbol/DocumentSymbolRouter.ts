@@ -96,7 +96,7 @@ export class DocumentSymbolRouter {
 
     constructor(private readonly syntaxTreeManager: SyntaxTreeManager) {}
 
-    @Track({ name: 'getDocumentSymbols' })
+    @Track({ name: 'getDocumentSymbols', captureErrorAttributes: true })
     getDocumentSymbols(params: DocumentSymbolParams) {
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(params.textDocument.uri);
         if (!syntaxTree) {
