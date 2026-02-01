@@ -31,6 +31,8 @@ export class Storage {
      */
     static initialize(storageDir?: string): void {
         this.root = storageDir ?? this.getDefaultStorageRoot();
+        // eslint-disable-next-line no-console
+        console.info(`Initializing storage at ${this.root}`);
         this.cleanupLegacyStorage();
     }
 
