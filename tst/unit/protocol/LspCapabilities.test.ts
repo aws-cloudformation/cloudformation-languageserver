@@ -1,12 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { TextDocumentSyncKind, CodeActionKind } from 'vscode-languageserver';
-import {
-    DESCRIBE_TEMPLATE,
-    OPTIMIZE_TEMPLATE,
-    CLEAR_DIAGNOSTIC,
-    GENERATE_TEMPLATE,
-    ANALYZE_DIAGNOSTIC,
-} from '../../../src/handlers/ExecutionHandler';
+import { CLEAR_DIAGNOSTIC, TRACK_CODE_ACTION_ACCEPTED } from '../../../src/handlers/ExecutionHandler';
 import { LspCapabilities } from '../../../src/protocol/LspCapabilities';
 import { ExtensionName, ExtensionVersion } from '../../../src/utils/ExtensionConfig';
 
@@ -62,13 +56,7 @@ describe('LspCapabilities', () => {
         it('should configure execute command provider with correct commands', () => {
             const executeCommandProvider = LspCapabilities.capabilities.executeCommandProvider;
             expect(executeCommandProvider).toBeDefined();
-            expect((executeCommandProvider as any).commands).toEqual([
-                CLEAR_DIAGNOSTIC,
-                OPTIMIZE_TEMPLATE,
-                DESCRIBE_TEMPLATE,
-                GENERATE_TEMPLATE,
-                ANALYZE_DIAGNOSTIC,
-            ]);
+            expect((executeCommandProvider as any).commands).toEqual([CLEAR_DIAGNOSTIC, TRACK_CODE_ACTION_ACCEPTED]);
         });
 
         it('should configure workspace capabilities', () => {

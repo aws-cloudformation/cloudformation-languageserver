@@ -1,4 +1,3 @@
-import { CfnAI } from '../ai/CfnAI';
 import { CompletionRouter } from '../autocomplete/CompletionRouter';
 import { CodeLensProvider } from '../codeLens/CodeLensProvider';
 import { DefinitionProvider } from '../definition/DefinitionProvider';
@@ -52,9 +51,6 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly documentSymbolRouter: DocumentSymbolRouter;
     readonly codeLensProvider: CodeLensProvider;
 
-    // AI
-    readonly cfnAI: CfnAI;
-
     constructor(core: CfnInfraCore, external: CfnExternal, overrides: Partial<CfnLspProviders> = {}) {
         this.stackManagementInfoProvider =
             overrides.stackManagementInfoProvider ?? new StackManagementInfoProvider(external.cfnService);
@@ -85,16 +81,13 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.documentSymbolRouter = overrides.documentSymbolRouter ?? new DocumentSymbolRouter(core.syntaxTreeManager);
         this.codeLensProvider =
             overrides.codeLensProvider ?? new CodeLensProvider(core.syntaxTreeManager, core.documentManager);
-
-        this.cfnAI =
-            overrides.cfnAI ?? new CfnAI(core.documentManager, external.awsClient, this.relationshipSchemaService);
     }
 
     configurables(): Configurable[] {
-        return [this.resourceStateManager, this.hoverRouter, this.completionRouter, this.cfnAI];
+        return [this.resourceStateManager, this.hoverRouter, this.completionRouter];
     }
 
     async close() {
-        return await closeSafely(this.cfnAI, this.resourceStateManager, this.hoverRouter, this.completionRouter);
+        return await closeSafely(this.resourceStateManager, this.hoverRouter, this.completionRouter);
     }
 }

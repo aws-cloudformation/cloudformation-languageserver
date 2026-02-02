@@ -1,11 +1,5 @@
 import { InitializeResult, TextDocumentSyncKind, CodeActionKind } from 'vscode-languageserver';
-import {
-    ANALYZE_DIAGNOSTIC,
-    CLEAR_DIAGNOSTIC,
-    DESCRIBE_TEMPLATE,
-    GENERATE_TEMPLATE,
-    OPTIMIZE_TEMPLATE,
-} from '../handlers/ExecutionHandler';
+import { CLEAR_DIAGNOSTIC, TRACK_CODE_ACTION_ACCEPTED } from '../handlers/ExecutionHandler';
 import { ExtensionName, ExtensionVersion } from '../utils/ExtensionConfig';
 
 export const LspCapabilities: InitializeResult = {
@@ -33,7 +27,7 @@ export const LspCapabilities: InitializeResult = {
         definitionProvider: true,
         documentSymbolProvider: true,
         executeCommandProvider: {
-            commands: [CLEAR_DIAGNOSTIC, OPTIMIZE_TEMPLATE, DESCRIBE_TEMPLATE, GENERATE_TEMPLATE, ANALYZE_DIAGNOSTIC],
+            commands: [CLEAR_DIAGNOSTIC, TRACK_CODE_ACTION_ACCEPTED],
         },
         workspace: {
             workspaceFolders: {

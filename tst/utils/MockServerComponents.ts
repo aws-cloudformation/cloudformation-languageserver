@@ -2,7 +2,6 @@ import { Logger } from 'pino';
 import { SinonStub, stub } from 'sinon';
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { RemoteConsole } from 'vscode-languageserver/node';
-import { CfnAI } from '../../src/ai/CfnAI';
 import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { CompletionRouter } from '../../src/autocomplete/CompletionRouter';
 import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';
@@ -308,10 +307,6 @@ export function mockLogger() {
     return stubInterface<Logger>();
 }
 
-export function mockCfnAi() {
-    return stubInterface<CfnAI>();
-}
-
 export function createMockOnlineFeatureGuard() {
     const mock = stubInterface<any>();
     mock.check.returns(undefined);
@@ -415,7 +410,6 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
         documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
         codeLensProvider: overrides.codeLensProvider ?? stubInterface<CodeLensProvider>(),
-        cfnAI: overrides.cfnAI ?? mockCfnAi(),
         close: () => Promise.resolve(),
         configurables: () => [],
     };
