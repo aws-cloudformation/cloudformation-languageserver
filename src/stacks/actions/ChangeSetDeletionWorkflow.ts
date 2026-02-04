@@ -19,9 +19,10 @@ import {
 } from './StackActionRequestType';
 import { StackActionWorkflow, StackActionWorkflowState } from './StackActionWorkflowType';
 
-export class ChangeSetDeletionWorkflow
-    implements StackActionWorkflow<DeleteChangeSetParams, DescribeDeletionStatusResult>
-{
+export class ChangeSetDeletionWorkflow implements StackActionWorkflow<
+    DeleteChangeSetParams,
+    DescribeDeletionStatusResult
+> {
     protected readonly workflows = new Map<string, StackActionWorkflowState>();
     protected readonly log = LoggerFactory.getLogger(ChangeSetDeletionWorkflow);
 

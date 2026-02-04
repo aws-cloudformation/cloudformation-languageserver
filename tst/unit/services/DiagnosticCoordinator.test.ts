@@ -1,7 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { stubInterface } from 'ts-sinon';
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { Diagnostic, DiagnosticSeverity, Range, Position } from 'vscode-languageserver';
+import { describe, it, expect, beforeEach, afterEach, vi, Mock } from 'vitest';
+import { Diagnostic, DiagnosticSeverity, Range, Position, PublishDiagnosticsParams } from 'vscode-languageserver';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DiagnosticCoordinator } from '../../../src/services/DiagnosticCoordinator';
 import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
@@ -28,7 +28,7 @@ class MockDelayer<T> extends Delayer<T> {
 
 describe('DiagnosticCoordinator', () => {
     let coordinator: DiagnosticCoordinator;
-    let mockPublishDiagnostics: ReturnType<typeof vi.fn>;
+    let mockPublishDiagnostics: Mock<(params: PublishDiagnosticsParams) => Promise<void>>;
     let mockSyntaxTreeManager: ReturnType<typeof createMockSyntaxTreeManager>;
 
     const testUri = 'file:///test/template.yaml';

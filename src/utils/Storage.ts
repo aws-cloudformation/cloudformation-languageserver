@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, rmSync } from 'fs';
 import { homedir, platform } from 'os';
 import { join } from 'path';
 import { legacyPathToArtifact } from './ArtifactsDir'; // eslint-disable-line no-restricted-imports
+import { isTest } from './Environment';
 import { ExtensionId } from './ExtensionConfig';
 
 const AppName = ExtensionId;
@@ -31,8 +32,9 @@ export class Storage {
      */
     static initialize(storageDir?: string): void {
         this.root = storageDir ?? this.getDefaultStorageRoot();
-        // eslint-disable-next-line no-console
-        console.info(`Initializing storage at ${this.root}`);
+        if (!isTest) {
+            console.info(`Initializing storage at ${this.root}`); // eslint-disable-line no-console
+        }
         this.cleanupLegacyStorage();
     }
 

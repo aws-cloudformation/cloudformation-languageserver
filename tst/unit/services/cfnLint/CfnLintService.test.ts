@@ -750,7 +750,7 @@ describe('CfnLintService', () => {
                 // Mock initialize to never resolve (simulating a hang)
                 const initializeSpy = vi
                     .spyOn(uninitializedService as any, 'initialize')
-                    .mockImplementation(() => new Promise(() => {})); // Never resolves
+                    .mockReturnValue(new Promise(() => {})); // Never resolves
 
                 // Use a very short timeout
                 await expect(async () => {

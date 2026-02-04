@@ -106,7 +106,7 @@ export class PyodideWorkerManager {
                 this.worker.on('message', this.handleWorkerMessage.bind(this));
 
                 // Set up error handler
-                this.worker.on('error', (error) => {
+                this.worker.on('error', (error: Error) => {
                     this.log.error(error, 'Worker error');
                     reject(new Error(`Worker error: ${error.message}`));
                 });

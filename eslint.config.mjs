@@ -42,6 +42,13 @@ export default tseslint.config([
                 tsconfigRootDir: import.meta.dirname,
             },
         },
+        settings: {
+            'import/resolver': {
+                typescript: {
+                    project: 'tsconfig.json',
+                },
+            },
+        },
         rules: {
             // --- General Code Quality & Best Practices ---
             'no-console': 'error',
