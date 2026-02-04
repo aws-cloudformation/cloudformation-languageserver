@@ -1543,7 +1543,7 @@ describe('ResourceSchema', () => {
                 expect(results[1].required).toContain('OutputFormat');
 
                 // One result should have no additional requirements, the other should require both filters
-                const resultRequiredLengths = results.map((r) => r.required?.length ?? 0).sort();
+                const resultRequiredLengths = results.map((r) => r.required?.length ?? 0).toSorted();
                 expect(resultRequiredLengths).toEqual([3, 5]); // 3 base + 0 additional, 3 base + 2 additional
             });
 
@@ -1624,7 +1624,7 @@ describe('ResourceSchema', () => {
                 }
 
                 // One result should have 3 required fields, the other should have 5
-                const requiredCounts = results.map((r) => r.required?.length ?? 0).sort();
+                const requiredCounts = results.map((r) => r.required?.length ?? 0).toSorted();
                 expect(requiredCounts).toEqual([3, 5]);
             });
         });

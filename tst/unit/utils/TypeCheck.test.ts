@@ -22,7 +22,7 @@ describe('TypeCheck', () => {
         });
 
         it('should identify bigint', () => {
-            expect(typeOf(BigInt(123))).toEqual({ type: 'bigint' });
+            expect(typeOf(123n)).toEqual({ type: 'bigint' });
             expect(typeOf(123n)).toEqual({ type: 'bigint' });
         });
 

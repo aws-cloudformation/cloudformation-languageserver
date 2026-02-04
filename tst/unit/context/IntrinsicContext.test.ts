@@ -81,7 +81,7 @@ describe('IntrinsicContext', () => {
 
     function expectSortedAndUniqueLogicalIds(functionInfo: any) {
         const logicalIds = functionInfo!.logicalIds;
-        const sortedIds = [...logicalIds].sort();
+        const sortedIds = [...logicalIds].toSorted();
         const uniqueIds = [...new Set(logicalIds)];
         expect(logicalIds).toEqual(sortedIds);
         expect(logicalIds).toEqual(uniqueIds);

@@ -1005,7 +1005,7 @@ export abstract class SyntaxTree {
                     const child = node.child(i);
                     if (child && NodeType.isNodeType(child, YamlNodeTypes.BLOCK_MAPPING_PAIR)) {
                         const key = child.childForFieldName('key');
-                        if (key && key.startPosition.column === point.column) {
+                        if (key?.startPosition.column === point.column) {
                             return node;
                         }
                     }

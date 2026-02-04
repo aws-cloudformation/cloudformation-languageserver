@@ -10,7 +10,7 @@ import { TextEdit } from 'vscode-languageserver';
  */
 export function applyWorkspaceEdit(content: string, edits: TextEdit[]): string {
     // Sort edits in reverse order to apply from end to start
-    const sortedEdits = [...edits].sort((a, b) => {
+    const sortedEdits = [...edits].toSorted((a, b) => {
         if (a.range.start.line !== b.range.start.line) {
             return b.range.start.line - a.range.start.line;
         }

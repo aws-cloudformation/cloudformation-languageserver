@@ -104,7 +104,7 @@ export class NodeStructure {
 
         // Check if next sibling is a colon - indicates this flow_node is a key
         const nextSibling = node.nextSibling;
-        if (!nextSibling || nextSibling.type !== ':') return false;
+        if (nextSibling?.type !== ':') return false;
 
         // Create unique identifier and add if not seen before
         const uniqueKey = `${text}-${node.startPosition.row}-${node.startPosition.column}`;

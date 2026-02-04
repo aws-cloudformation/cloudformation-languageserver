@@ -133,7 +133,7 @@ export class IntrinsicFunctionArgumentHoverProvider implements HoverProvider {
         }
 
         const resourceContext = resourcesSection.get(resourceLogicalId);
-        if (!resourceContext || resourceContext.getEntityType() !== EntityType.Resource) {
+        if (resourceContext?.getEntityType() !== EntityType.Resource) {
             return undefined;
         }
 

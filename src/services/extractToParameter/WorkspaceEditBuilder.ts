@@ -1,4 +1,4 @@
-import { WorkspaceEdit, TextEdit, Range } from 'vscode-languageserver';
+import { Range, TextEdit, WorkspaceEdit } from 'vscode-languageserver';
 import { ExtractToParameterResult } from './ExtractToParameterTypes';
 
 /**
@@ -12,13 +12,11 @@ export class WorkspaceEditBuilder {
      * Combines parameter insertion and literal replacement into a single atomic operation.
      */
     createWorkspaceEdit(documentUri: string, extractionResult: ExtractToParameterResult): WorkspaceEdit {
-        const workspaceEdit: WorkspaceEdit = {
+        return {
             changes: {
                 [documentUri]: [extractionResult.parameterInsertionEdit, extractionResult.replacementEdit],
             },
         };
-
-        return workspaceEdit;
     }
 
     /**
@@ -51,7 +49,7 @@ export class WorkspaceEditBuilder {
         }
 
         // Sort edits by start position for overlap checking
-        const sortedEdits = [...edits].sort((a, b) => {
+        const sortedEdits = [...edits].toSorted((a, b) => {
             const lineCompare = a.range.start.line - b.range.start.line;
             if (lineCompare !== 0) {
                 return lineCompare;
@@ -80,7 +78,7 @@ export class WorkspaceEditBuilder {
      * position shifts from affecting subsequent edits.
      */
     private sortEditsForApplication(edits: TextEdit[]): TextEdit[] {
-        return [...edits].sort((a, b) => {
+        return [...edits].toSorted((a, b) => {
             // Sort by line in descending order (bottom to top)
             const lineCompare = b.range.start.line - a.range.start.line;
             if (lineCompare !== 0) {

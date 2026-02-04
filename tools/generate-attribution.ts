@@ -16,7 +16,7 @@ type SbomJsonPackage = {
 
 const packages = (sbomJson.packages as SbomJsonPackage[])
     .filter((pkg) => pkg.name !== LspPackageName)
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .toSorted((a, b) => a.name.localeCompare(b.name))
     // eslint-disable-next-line unicorn/no-array-reduce
     .reduce((unique, pkg) => {
         if (
@@ -49,7 +49,7 @@ execSync('generate-attribution', { cwd: join(__dirname, '..') });
 
 const attribution = readFileSync(join(__dirname, '..', 'oss-attribution', 'attribution.txt'), 'utf8');
 const sections = attribution.split('\n\n** ').slice(1);
-const sorted = sections.sort((a, b) => {
+const sorted = sections.toSorted((a, b) => {
     const nameA = a.split(';')[0];
     const nameB = b.split(';')[0];
     return nameA.localeCompare(nameB);

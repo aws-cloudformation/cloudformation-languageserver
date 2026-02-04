@@ -520,7 +520,7 @@ export class TemplateTestOrchestrator {
         }
 
         // Convert set to sorted array and create TextDocumentPositionParams
-        const sortedPositions = [...positionSet].sort((a, b) => a - b);
+        const sortedPositions = [...positionSet].toSorted((a, b) => a - b);
         return sortedPositions.map((pos) => docPosition(this.fileName, lineIndex, pos));
     }
 

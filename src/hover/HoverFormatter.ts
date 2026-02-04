@@ -16,7 +16,7 @@ function sortPropertiesByRequirement(
     properties: Record<string, PropertyType>,
     requiredProps: Set<string>,
 ): [string, PropertyType][] {
-    return Object.entries(properties).sort(([nameA], [nameB]) => {
+    return Object.entries(properties).toSorted(([nameA], [nameB]) => {
         const isRequiredA = requiredProps.has(nameA);
         const isRequiredB = requiredProps.has(nameB);
 
@@ -41,7 +41,7 @@ function sortPropertiesByMultiSchemaRequirement(
     properties: Record<string, PropertyType>,
     propertyRequirementStatus: Map<string, 'always' | 'sometimes' | 'never'>,
 ): [string, PropertyType][] {
-    return Object.entries(properties).sort(([nameA], [nameB]) => {
+    return Object.entries(properties).toSorted(([nameA], [nameB]) => {
         const statusA = propertyRequirementStatus.get(nameA) ?? 'never';
         const statusB = propertyRequirementStatus.get(nameB) ?? 'never';
 

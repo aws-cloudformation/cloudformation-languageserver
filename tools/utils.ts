@@ -119,7 +119,7 @@ export function generatePositions(content: string, iterations: number): TestPosi
 
     // Generate test positions with deterministic, balanced depth distribution
     const testPositions: TestPosition[] = [];
-    const depths = [...positionsByDepth.keys()].sort((a, b) => b - a); // Deepest first
+    const depths = [...positionsByDepth.keys()].toSorted((a, b) => b - a); // Deepest first
 
     // Calculate weights for each depth (deeper positions get higher weight)
     const depthWeights = new Map<number, number>();
@@ -186,5 +186,5 @@ export function discoverTemplateFiles(paths: string[]): TemplateFile[] {
                 size: statSync(path).size,
             };
         })
-        .sort((a, b) => a.size - b.size);
+        .toSorted((a, b) => a.size - b.size);
 }

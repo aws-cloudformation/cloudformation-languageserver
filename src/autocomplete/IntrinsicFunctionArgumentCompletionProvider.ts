@@ -715,7 +715,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
     private getMappingEntity(mappingsEntities: Map<string, Context>, mappingName: string): Mapping | undefined {
         try {
             const mappingContext = mappingsEntities.get(mappingName);
-            if (!mappingContext || mappingContext.getEntityType() !== EntityType.Mapping) {
+            if (mappingContext?.getEntityType() !== EntityType.Mapping) {
                 return undefined;
             }
             return mappingContext.entity as Mapping;
@@ -769,7 +769,7 @@ export class IntrinsicFunctionArgumentCompletionProvider implements CompletionPr
         }
 
         const resourceContext = resourceEntities.get(resourceLogicalId);
-        if (!resourceContext || resourceContext.getEntityType() !== EntityType.Resource) {
+        if (resourceContext?.getEntityType() !== EntityType.Resource) {
             return undefined;
         }
 

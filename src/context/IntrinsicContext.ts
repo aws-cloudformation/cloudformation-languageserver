@@ -145,7 +145,7 @@ class IntrinsicFunctionInfo {
         };
 
         traverse(args);
-        return [...new Set(variables)].sort();
+        return [...new Set(variables)].toSorted();
     }
 
     private findLogicalIds(args: unknown): readonly string[] {
@@ -183,7 +183,7 @@ class IntrinsicFunctionInfo {
         };
 
         traverse(args, false);
-        return [...new Set(potentialIds)].sort();
+        return [...new Set(potentialIds)].toSorted();
     }
 
     private containsNestedIntrinsics(args: unknown): boolean {

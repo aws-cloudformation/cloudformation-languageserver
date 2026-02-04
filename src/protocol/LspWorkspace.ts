@@ -77,7 +77,9 @@ export class LspWorkspace {
 
     getWorkspaceFolder(uri: string) {
         const matchingFolders = this.workspaceFolders.filter((folder) => uri.startsWith(folder.uri));
-        return matchingFolders.length > 0 ? matchingFolders.sort((a, b) => b.uri.length - a.uri.length)[0] : undefined;
+        return matchingFolders.length > 0
+            ? matchingFolders.toSorted((a, b) => b.uri.length - a.uri.length)[0]
+            : undefined;
     }
 
     getAllWorkspaceFolders() {

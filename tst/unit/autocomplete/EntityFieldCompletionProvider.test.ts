@@ -81,8 +81,8 @@ describe('EntityFieldCompletionProvider', () => {
 
             expect(result?.at(0)?.label).equal('Type');
 
-            const resultLabels = result?.map((item) => item.label).sort();
-            expect(resultLabels).toEqual(expectedFields.sort());
+            const resultLabels = result?.map((item) => item.label).toSorted();
+            expect(resultLabels).toEqual(expectedFields.toSorted());
         });
 
         test('should suggest only remaining fields when some are already defined', () => {
@@ -110,8 +110,8 @@ describe('EntityFieldCompletionProvider', () => {
             ];
             expect(result?.length).equal(expectedFields.length);
 
-            const resultLabels = result?.map((item) => item.label).sort();
-            expect(resultLabels).toEqual(expectedFields.sort());
+            const resultLabels = result?.map((item) => item.label).toSorted();
+            expect(resultLabels).toEqual(expectedFields.toSorted());
         });
     });
 

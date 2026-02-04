@@ -311,9 +311,9 @@ class DebugTreeTool {
         }
 
         // Remove duplicates and sort
-        const uniquePositions = [...new Map(strategicPositions.map((p) => [`${p.line},${p.column}`, p])).values()].sort(
-            (a, b) => a.line - b.line || a.column - b.column,
-        );
+        const uniquePositions = [
+            ...new Map(strategicPositions.map((p) => [`${p.line},${p.column}`, p])).values(),
+        ].toSorted((a, b) => a.line - b.line || a.column - b.column);
 
         console.log(`🎯 Testing ${uniquePositions.length} strategic positions...`);
 
@@ -485,7 +485,7 @@ class DebugTreeTool {
         markdown += `**Has Errors:** ${results.syntaxTree.hasErrors}\n\n`;
 
         markdown += `## Node Type Distribution\n\n`;
-        const sortedNodeTypes = Object.entries(results.summary.nodeTypeDistribution).sort(([, a], [, b]) => b - a);
+        const sortedNodeTypes = Object.entries(results.summary.nodeTypeDistribution).toSorted(([, a], [, b]) => b - a);
 
         for (const [nodeType, count] of sortedNodeTypes) {
             markdown += `- **${nodeType}**: ${count}\n`;
@@ -512,14 +512,16 @@ class DebugTreeTool {
         markdown += `**Total Positions Tested:** ${results.contexts.length}\n\n`;
 
         markdown += `## Section Distribution\n\n`;
-        const sortedSections = Object.entries(results.summary.sectionDistribution).sort(([, a], [, b]) => b - a);
+        const sortedSections = Object.entries(results.summary.sectionDistribution).toSorted(([, a], [, b]) => b - a);
 
         for (const [section, count] of sortedSections) {
             markdown += `- **${section}**: ${count}\n`;
         }
 
         markdown += `\n## Entity Type Distribution\n\n`;
-        const sortedEntityTypes = Object.entries(results.summary.entityTypeDistribution).sort(([, a], [, b]) => b - a);
+        const sortedEntityTypes = Object.entries(results.summary.entityTypeDistribution).toSorted(
+            ([, a], [, b]) => b - a,
+        );
 
         for (const [entityType, count] of sortedEntityTypes) {
             markdown += `- **${entityType}**: ${count}\n`;

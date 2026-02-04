@@ -183,7 +183,7 @@ export class ChangeSetDeletionWorkflow implements StackActionWorkflow<
 
             const updatedWorkflow = this.workflows.get(workflowId);
 
-            if (updatedWorkflow && updatedWorkflow.state === StackActionState.IN_PROGRESS) {
+            if (updatedWorkflow?.state === StackActionState.IN_PROGRESS) {
                 existingWorkflow = processWorkflowUpdates(this.workflows, updatedWorkflow, {
                     phase: StackActionPhase.DELETION_FAILED,
                     state: StackActionState.FAILED,

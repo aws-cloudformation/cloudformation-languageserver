@@ -36,7 +36,7 @@ export async function getFilteredScannedResources(
             return undefined;
         }
 
-        const latestScan = completedScans.sort((a, b) => {
+        const latestScan = completedScans.toSorted((a, b) => {
             const timeA = a.StartTime?.getTime() ?? 0;
             const timeB = b.StartTime?.getTime() ?? 0;
             return timeB - timeA;

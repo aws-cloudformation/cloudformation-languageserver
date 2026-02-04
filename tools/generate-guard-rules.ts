@@ -471,7 +471,7 @@ async function main() {
         }
 
         // Convert map to array and sort by rule name for consistent ordering
-        const allRules = [...allRulesMap.values()].sort((a, b) => a.name.localeCompare(b.name));
+        const allRules = [...allRulesMap.values()].toSorted((a, b) => a.name.localeCompare(b.name));
         console.log(`🔍 Found ${allRules.length} unique rules across all packs`);
 
         // Sort rule packs by name for consistent ordering

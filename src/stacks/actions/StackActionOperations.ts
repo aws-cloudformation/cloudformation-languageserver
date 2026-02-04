@@ -411,7 +411,7 @@ export async function publishValidationDiagnostics(
 export async function isStackInReview(stackName: string, cfnService: CfnService): Promise<boolean> {
     const describeStacksResult = await cfnService.describeStacks({ StackName: stackName });
 
-    const stackResult = describeStacksResult.Stacks?.filter((stack) => stack.StackName === stackName)[0];
+    const stackResult = describeStacksResult.Stacks?.find((stack) => stack.StackName === stackName);
 
     if (!stackResult) {
         throw new Error(`Stack not found: ${stackName}`);

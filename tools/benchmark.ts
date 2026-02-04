@@ -263,7 +263,7 @@ function calculatePercentiles(latencies: number[]): Percentiles {
         };
     }
 
-    const sorted = [...latencies].sort((a, b) => a - b);
+    const sorted = [...latencies].toSorted((a, b) => a - b);
     const len = sorted.length;
 
     // Use proper percentile calculation with interpolation for edge cases
@@ -487,7 +487,7 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
         } else if (context === undefined) {
             // getContext returned undefined - context not found
             contextNotFoundCount++;
-        } else if (context?.entity && context.entity.entityType === EntityType.Unknown) {
+        } else if (context?.entity?.entityType === EntityType.Unknown) {
             // getContext returned a valid context but entity is Unknown
             contextUnknownCount++;
         }
@@ -675,7 +675,7 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
     );
 
     // Sort results by file size (smallest first)
-    const sortedResults = [...results].sort((a, b) => {
+    const sortedResults = [...results].toSorted((a, b) => {
         const aContent = templates.get(a.templateName);
         const bContent = templates.get(b.templateName);
         if (!aContent || !bContent) return 0;

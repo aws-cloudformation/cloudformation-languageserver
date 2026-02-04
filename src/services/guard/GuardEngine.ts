@@ -209,7 +209,7 @@ export class GuardEngine {
         }
 
         for (const [, group] of violationGroups) {
-            const ruleNamesList = [...group.ruleNames].sort();
+            const ruleNamesList = [...group.ruleNames].toSorted();
             const combinedRuleName = ruleNamesList.join(', ');
 
             // Use the first available rule message, or create a generic one
@@ -301,7 +301,7 @@ export class GuardEngine {
 
                 // Convert groups to violations with consolidated rule names
                 for (const [, group] of violationGroups) {
-                    const ruleNamesList = [...group.ruleNames].sort();
+                    const ruleNamesList = [...group.ruleNames].toSorted();
                     const combinedRuleName = ruleNamesList.join(', ');
 
                     let message = group.message;

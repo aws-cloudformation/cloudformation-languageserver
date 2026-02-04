@@ -52,7 +52,7 @@ function downloadWheels(): void {
             console.warn(`⚠️  Found ${platformSpecificCount} platform-specific wheels that may not work in Pyodide`);
         }
 
-        for (const wheel of finalWheels.sort()) {
+        for (const wheel of finalWheels.toSorted()) {
             console.log(`  - ${wheel}`);
         }
     } catch (error) {

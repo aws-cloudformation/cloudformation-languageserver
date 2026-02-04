@@ -313,7 +313,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
 
         for (const group of violationGroups.values()) {
             // Combine rule names with commas
-            const combinedRuleName = [...group.ruleNames].sort().join(', ');
+            const combinedRuleName = [...group.ruleNames].toSorted().join(', ');
 
             // Try to get precise location from CloudFormation path if available
             const range = this.getViolationRange(uri, group.violations[0]);

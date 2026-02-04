@@ -433,7 +433,9 @@ export class TemplateBuilder {
 
         const actualLabels = completions.items.map((item) => item.label);
         if (expected.items) {
-            expectAt(actualLabels.sort(), position, `Completion items mismatch${desc}`).toEqual(expected.items.sort());
+            expectAt(actualLabels.toSorted(), position, `Completion items mismatch${desc}`).toEqual(
+                expected.items.toSorted(),
+            );
         }
 
         if (expected.minItems !== undefined) {
