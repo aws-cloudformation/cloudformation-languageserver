@@ -41,7 +41,7 @@
         "generate-release-manifest": "tsx tools/generate-release-manifest.ts",
         "benchmark": "cross-env NODE_ENV=test AWS_ENV=alpha node --max-old-space-size=16384 --expose-gc -r ts-node/register tools/benchmark.ts",
         "generate-metrics": "cross-env NODE_ENV=development AWS_ENV=alpha node --max-old-space-size=16384 -r ts-node/register tools/telemetry-generator.ts",
-        "debug-tree": "node -r ts-node/register tools/debug_tree.ts",
+        "debug-tree": "cross-env NODE_ENV=test AWS_ENV=alpha node -r ts-node/register tools/debug_tree.ts",
         "generate:guard-rules": "node -r ts-node/register tools/generate-guard-rules.ts",
         "generate-attributions": "tsx tools/generate-attribution.ts",
         "check:duplicates": "jscpd",

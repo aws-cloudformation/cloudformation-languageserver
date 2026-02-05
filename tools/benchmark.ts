@@ -1,5 +1,6 @@
 #!/usr/bin/env node --expose-gc
 import { v4 } from 'uuid';
+import { join, extname, resolve, dirname } from 'path';
 import { Storage } from '../src/utils/Storage';
 import { TelemetryService } from '../src/telemetry/TelemetryService';
 import { LoggerFactory } from '../src/telemetry/LoggerFactory';
@@ -13,7 +14,6 @@ TelemetryService.initialize(undefined, {
 import { ContextManager } from '../src/context/ContextManager';
 import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
-import { join, extname, resolve, dirname } from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { discoverTemplateFiles, generatePositions, TestPosition } from './utils';
