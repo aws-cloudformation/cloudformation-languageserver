@@ -1,11 +1,7 @@
 import { PseudoParameter } from '../context/CloudFormationEnums';
 
-export const pseudoParameterDocsMap: ReadonlyMap<PseudoParameter, string> = getPseudoParameterDocsMap();
-
-function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
-    const pseudoParameterDocsMap = new Map<PseudoParameter, string>();
-
-    pseudoParameterDocsMap.set(
+export const pseudoParameterDocsMap: ReadonlyMap<PseudoParameter, string> = new Map<PseudoParameter, string>([
+    [
         PseudoParameter.AWSAccountId,
         [
             '**AWS::AccountId**',
@@ -16,9 +12,8 @@ function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html)',
         ].join('\n'),
-    );
-
-    pseudoParameterDocsMap.set(
+    ],
+    [
         PseudoParameter.AWSRegion,
         [
             '**AWS::Region**',
@@ -29,9 +24,8 @@ function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html)',
         ].join('\n'),
-    );
-
-    pseudoParameterDocsMap.set(
+    ],
+    [
         PseudoParameter.AWSStackId,
         [
             '**AWS::StackId**',
@@ -41,9 +35,8 @@ function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html)',
         ].join('\n'),
-    );
-
-    pseudoParameterDocsMap.set(
+    ],
+    [
         PseudoParameter.AWSStackName,
         [
             '**AWS::StackName**',
@@ -54,9 +47,8 @@ function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html)',
         ].join('\n'),
-    );
-
-    pseudoParameterDocsMap.set(
+    ],
+    [
         PseudoParameter.AWSNotificationARNs,
         [
             '**AWS::NotificationARNs**',
@@ -69,9 +61,8 @@ function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/pseudo-parameter-reference.html)',
         ].join('\n'),
-    );
-
-    pseudoParameterDocsMap.set(
+    ],
+    [
         PseudoParameter.AWSNoValue,
         [
             '**AWS::NoValue**',
@@ -83,9 +74,8 @@ function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/pseudo-parameter-reference.html)',
         ].join('\n'),
-    );
-
-    pseudoParameterDocsMap.set(
+    ],
+    [
         PseudoParameter.AWSPartition,
         [
             '**AWS::Partition**',
@@ -99,9 +89,8 @@ function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/pseudo-parameter-reference.html)',
         ].join('\n'),
-    );
-
-    pseudoParameterDocsMap.set(
+    ],
+    [
         PseudoParameter.AWSURLSuffix,
         [
             '**AWS::URLSuffix**',
@@ -113,7 +102,5 @@ function getPseudoParameterDocsMap(): Map<PseudoParameter, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/pseudo-parameter-reference.html)',
         ].join('\n'),
-    );
-
-    return pseudoParameterDocsMap;
-}
+    ],
+]);

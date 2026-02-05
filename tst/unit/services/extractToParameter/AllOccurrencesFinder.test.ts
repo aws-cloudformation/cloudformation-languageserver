@@ -48,8 +48,7 @@ describe('AllOccurrencesFinder', () => {
             };
 
             // Setup mock to return Resources section
-            const sectionsMap = new Map();
-            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            const sectionsMap = new Map([[TopLevelSection.Resources, mockResourcesSection as any]]);
 
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
@@ -104,9 +103,10 @@ describe('AllOccurrencesFinder', () => {
                 ],
             };
 
-            const sectionsMap = new Map();
-            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
-            sectionsMap.set(TopLevelSection.Outputs, mockOutputsSection as any);
+            const sectionsMap = new Map([
+                [TopLevelSection.Resources, mockResourcesSection as any],
+                [TopLevelSection.Outputs, mockOutputsSection as any],
+            ]);
 
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
@@ -137,8 +137,7 @@ describe('AllOccurrencesFinder', () => {
                 ],
             };
 
-            const sectionsMap = new Map();
-            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            const sectionsMap = new Map([[TopLevelSection.Resources, mockResourcesSection as any]]);
 
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
@@ -174,8 +173,7 @@ describe('AllOccurrencesFinder', () => {
                 ],
             };
 
-            const sectionsMap = new Map();
-            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            const sectionsMap = new Map([[TopLevelSection.Resources, mockResourcesSection as any]]);
 
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);

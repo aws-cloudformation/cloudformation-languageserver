@@ -1,9 +1,5 @@
-export const outputSectionFieldDocsMap: ReadonlyMap<string, string> = getOutputSectionFieldDocsMap();
-
-function getOutputSectionFieldDocsMap(): Map<string, string> {
-    const outputSectionFieldDocsMap = new Map<string, string>();
-
-    outputSectionFieldDocsMap.set(
+export const outputSectionFieldDocsMap: ReadonlyMap<string, string> = new Map<string, string>([
+    [
         'Description',
         [
             '**Description (optional)**',
@@ -15,9 +11,8 @@ function getOutputSectionFieldDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html)',
         ].join('\n'),
-    );
-
-    outputSectionFieldDocsMap.set(
+    ],
+    [
         'Value',
         [
             '**Value (required)**',
@@ -28,9 +23,8 @@ function getOutputSectionFieldDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html)',
         ].join('\n'),
-    );
-
-    outputSectionFieldDocsMap.set(
+    ],
+    [
         'Export',
         [
             '**Export (optional)**',
@@ -44,7 +38,5 @@ function getOutputSectionFieldDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html)',
         ].join('\n'),
-    );
-
-    return outputSectionFieldDocsMap;
-}
+    ],
+]);

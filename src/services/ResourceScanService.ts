@@ -105,8 +105,7 @@ export function formatScannedResourcesForAI(filteredResourcesInfo: FilteredResou
         return 'No related resources found in your AWS account.';
     }
 
-    const lines: string[] = [];
-    lines.push(`**Found ${totalCount} related resources in your AWS account:**\n`);
+    const lines: string[] = [`**Found ${totalCount} related resources in your AWS account:**\n`];
 
     const resourcesByType = new Map<string, ScannedResource[]>();
     for (const resource of resources) {

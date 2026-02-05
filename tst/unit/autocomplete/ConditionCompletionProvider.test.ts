@@ -75,8 +75,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should return undefined when getEntityMap returns no conditions', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -90,8 +89,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should return undefined when no condition keys are found', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -104,8 +102,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should return all condition completions when context text is empty', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -136,8 +133,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should return filtered condition completions when context text has partial match', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -168,8 +164,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should return filtered condition completions for "Should" prefix', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -198,8 +193,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should return filtered condition completions for "Enable" prefix', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -232,8 +226,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should return empty array when no conditions match partial text', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -253,8 +246,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should return fuzzy matched results for partial condition names', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -282,8 +274,7 @@ describe('ConditionCompletionProvider', () => {
         });
 
         test('should handle case-insensitive fuzzy matching', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -311,8 +302,7 @@ describe('ConditionCompletionProvider', () => {
             }
         });
         test('should filter out condition logical name of conditon being authored', () => {
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Conditions, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Conditions, {} as SyntaxNode]]);
 
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);

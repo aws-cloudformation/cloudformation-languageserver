@@ -1,11 +1,7 @@
 import { ResourceAttribute } from '../context/CloudFormationEnums';
 
-export const resourceAttributeDocsMap: ReadonlyMap<ResourceAttribute, string> = getResourceAttributeDocsMap();
-
-function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
-    const resourceAttributeDocsMap = new Map<ResourceAttribute, string>();
-
-    resourceAttributeDocsMap.set(
+export const resourceAttributeDocsMap: ReadonlyMap<ResourceAttribute, string> = new Map<ResourceAttribute, string>([
+    [
         ResourceAttribute.CreationPolicy,
         [
             '**CreationPolicy**',
@@ -16,9 +12,8 @@ function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html)',
         ].join('\n'),
-    );
-
-    resourceAttributeDocsMap.set(
+    ],
+    [
         ResourceAttribute.DeletionPolicy,
         [
             '**DeletionPolicy**',
@@ -29,9 +24,8 @@ function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html)',
         ].join('\n'),
-    );
-
-    resourceAttributeDocsMap.set(
+    ],
+    [
         ResourceAttribute.UpdatePolicy,
         [
             '**UpdatePolicy**',
@@ -42,9 +36,8 @@ function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html)',
         ].join('\n'),
-    );
-
-    resourceAttributeDocsMap.set(
+    ],
+    [
         ResourceAttribute.UpdateReplacePolicy,
         [
             '**UpdateReplacePolicy**',
@@ -55,9 +48,8 @@ function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatereplacepolicy.html)',
         ].join('\n'),
-    );
-
-    resourceAttributeDocsMap.set(
+    ],
+    [
         ResourceAttribute.Condition,
         [
             '**Condition**',
@@ -69,9 +61,8 @@ function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/conditions-section-structure.html#environment-based-resource-creation)',
         ].join('\n'),
-    );
-
-    resourceAttributeDocsMap.set(
+    ],
+    [
         ResourceAttribute.DependsOn,
         [
             '**DependsOn**',
@@ -82,9 +73,8 @@ function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-dependson.html)',
         ].join('\n'),
-    );
-
-    resourceAttributeDocsMap.set(
+    ],
+    [
         ResourceAttribute.Metadata,
         [
             '**Metadata**',
@@ -95,7 +85,5 @@ function getResourceAttributeDocsMap(): Map<ResourceAttribute, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-metadata.html)',
         ].join('\n'),
-    );
-
-    return resourceAttributeDocsMap;
-}
+    ],
+]);

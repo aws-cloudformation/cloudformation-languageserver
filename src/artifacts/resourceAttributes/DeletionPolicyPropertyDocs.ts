@@ -1,9 +1,5 @@
-export const deletionPolicyValueDocsMap: ReadonlyMap<string, string> = getDeletionPolicyValueDocsMap();
-
-function getDeletionPolicyValueDocsMap(): Map<string, string> {
-    const docsMap = new Map<string, string>();
-
-    docsMap.set(
+export const deletionPolicyValueDocsMap: ReadonlyMap<string, string> = new Map<string, string>([
+    [
         'Delete',
         [
             '**Delete**',
@@ -21,9 +17,8 @@ function getDeletionPolicyValueDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         'Retain',
         [
             '**Retain**',
@@ -40,9 +35,8 @@ function getDeletionPolicyValueDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         'RetainExceptOnCreate',
         [
             '**RetainExceptOnCreate**',
@@ -56,9 +50,8 @@ function getDeletionPolicyValueDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         'Snapshot',
         [
             '**Snapshot**',
@@ -79,10 +72,8 @@ function getDeletionPolicyValueDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-deletionpolicy.html)',
         ].join('\n'),
-    );
-
-    return docsMap;
-}
+    ],
+]);
 
 export const SNAPSHOT_SUPPORTED_RESOURCE_TYPES: ReadonlyArray<string> = [
     'AWS::DocDB::DBCluster',

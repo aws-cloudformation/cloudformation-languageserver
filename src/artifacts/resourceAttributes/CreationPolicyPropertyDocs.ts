@@ -5,13 +5,9 @@ import {
     AutoScalingCreationPolicyProperty,
 } from '../../context/CloudFormationEnums';
 
-export const creationPolicyPropertyDocsMap: ReadonlyMap<string, string> = getCreationPolicyPropertyDocsMap();
-
-function getCreationPolicyPropertyDocsMap(): Map<string, string> {
-    const docsMap = new Map<string, string>();
-
+export const creationPolicyPropertyDocsMap: ReadonlyMap<string, string> = new Map<string, string>([
     // ResourceSignal properties (universal - all 4 resource types)
-    docsMap.set(
+    [
         `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.ResourceSignal}`,
         [
             '**ResourceSignal**',
@@ -21,9 +17,8 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.ResourceSignal}.${ResourceSignalProperty.Count}`,
         [
             '**Count**',
@@ -40,9 +35,8 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.ResourceSignal}.${ResourceSignalProperty.Timeout}`,
         [
             '**Timeout**',
@@ -60,10 +54,9 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-resourcesignal)',
         ].join('\n'),
-    );
-
+    ],
     // AutoScalingCreationPolicy properties (AutoScaling Groups and EC2 Instances only)
-    docsMap.set(
+    [
         `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.AutoScalingCreationPolicy}`,
         [
             '**AutoScalingCreationPolicy**',
@@ -73,9 +66,8 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-autoscalingcreationpolicy)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.AutoScalingCreationPolicy}.${AutoScalingCreationPolicyProperty.MinSuccessfulInstancesPercent}`,
         [
             '**MinSuccessfulInstancesPercent**',
@@ -95,10 +87,9 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html#aws-attribute-creationpolicy-autoscalingcreationpolicy)',
         ].join('\n'),
-    );
-
+    ],
     // AppStream Fleet properties (AWS::AppStream::Fleet only)
-    docsMap.set(
+    [
         `${ResourceAttribute.CreationPolicy}.${CreationPolicyProperty.StartFleet}`,
         [
             '**StartFleet**',
@@ -110,10 +101,8 @@ function getCreationPolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-creationpolicy.html)',
         ].join('\n'),
-    );
-
-    return docsMap;
-}
+    ],
+]);
 
 export const CREATION_POLICY_SUPPORTED_RESOURCE_TYPES: ReadonlyArray<string> = [
     'AWS::AutoScaling::AutoScalingGroup',

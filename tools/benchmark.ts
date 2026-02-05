@@ -662,10 +662,8 @@ ${hasValidData ? '' : '⚠️ **No successful measurements - all metrics show N/
 }
 
 function generateAndSaveReport(results: BenchmarkResult[]): void {
-    const report: string[] = [];
-
     // Header
-    report.push(
+    const report = [
         '# Context Resolution Benchmark Results\n',
         `**Generated:** ${new Date().toISOString()} at ${process.cwd()}`,
         `**Iterations per template:** ${formatNumber(ITERATIONS)}`,
@@ -674,7 +672,7 @@ function generateAndSaveReport(results: BenchmarkResult[]): void {
         '## Performance Comparison\n',
         '| Template | Format | Size (KB) | Data Points | Success Rates | Related Entities (P50/P90/P99) | Syntax Tree P50/P99.9 (μs) | Context P50/P99.9 (μs) | Context+Entities P50/P99.9 (μs) | Total P50/P99.9 (μs) | Memory P50 (MB) |',
         '|----------|--------|-----------|-------------|---------------|-------------------------------|----------------------------|------------------------|--------------------------------|----------------------|-----------------|',
-    );
+    ];
 
     // Sort results by file size (smallest first)
     const sortedResults = [...results].toSorted((a, b) => {

@@ -103,8 +103,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
 
     // Helper function to setup resource entities
     function setupResourceEntities(resourceData: Record<string, any>) {
-        const mockSectionNodeMap = new Map();
-        mockSectionNodeMap.set(TopLevelSection.Resources, {} as SyntaxNode);
+        const mockSectionNodeMap = new Map([[TopLevelSection.Resources, {} as SyntaxNode]]);
 
         const mockSyntaxTree = stubInterface<SyntaxTree>();
         mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -122,8 +121,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
 
     // Helper function to setup resource entities with schema
     function setupResourceEntitiesWithSchema(resourceData: Record<string, any>) {
-        const mockSectionNodeMap = new Map();
-        mockSectionNodeMap.set(TopLevelSection.Resources, {} as SyntaxNode);
+        const mockSectionNodeMap = new Map([[TopLevelSection.Resources, {} as SyntaxNode]]);
 
         const mockSyntaxTree = stubInterface<SyntaxTree>();
         mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -358,8 +356,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - GetAtt Function', () => 
 
         it('should return undefined when no resource entities found', () => {
             const mockContext = createMockGetAttContext('MyVPC');
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Resources, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Resources, {} as SyntaxNode]]);
 
             const mockSyntaxTree = stubInterface<SyntaxTree>();
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);

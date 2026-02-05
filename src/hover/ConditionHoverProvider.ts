@@ -11,8 +11,7 @@ export class ConditionHoverProvider implements HoverProvider {
         if (!condition) {
             return undefined;
         }
-        const doc: Array<string> = [];
-        doc.push(`**Condition:** ${condition.name}`, '\n', '---', `\`\`\`js\n${toString(condition.value)}\n\`\`\``);
+        const doc = [`**Condition:** ${condition.name}`, '\n', '---', `\`\`\`js\n${toString(condition.value)}\n\`\`\``];
 
         return doc.join('\n');
     }

@@ -71,7 +71,7 @@ function getObjectTypeString(property: PropertyType): string {
     // For objects with properties, show the structure inline but simplify nested objects
     if (property.properties && Object.keys(property.properties).length > 0) {
         const props: string[] = [];
-        const required = new Set(property.required ?? []);
+        const required = new Set(property.required);
 
         for (const [propName, propDef] of Object.entries(property.properties)) {
             // Use simplified type string for nested properties
@@ -198,7 +198,7 @@ function buildSingleTypeSignature(
         return `type ${propertyName}${suffix} = ${type}`;
     }
 
-    const requiredProps = new Set(property.required ?? []);
+    const requiredProps = new Set(property.required);
     const params: string[] = [];
 
     // Add regular properties - sort with required first, then optional, both alphabetized
@@ -516,13 +516,13 @@ function buildMultipleSchemaPropertyDocumentation(
 function buildPropertyDocumentation(property: PropertyType): string[] {
     let properties = property.properties;
     let patternProperties = property.patternProperties;
-    let requiredProps = new Set(property.required ?? []);
+    let requiredProps = new Set(property.required);
 
     // If this is an array type, show the properties of the array items
     if (!properties && !patternProperties && property.items && !Array.isArray(property.items)) {
         properties = property.items.properties;
         patternProperties = property.items.patternProperties;
-        requiredProps = new Set(property.items.required ?? []);
+        requiredProps = new Set(property.items.required);
     }
 
     if (!properties && !patternProperties) {
@@ -1054,12 +1054,10 @@ function mapSingleAwsType(awsType: string): { templateType: string; format: stri
  * Formats hover information for a parameter entity
  */
 export function formatParameterHover(parameter: Parameter): string {
-    const doc: string[] = [];
-
-    doc.push(
+    const doc = [
         `\`\`\`typescript\n(parameter) ${parameter.name}: ${mapParameterTypeToTypeScript(parameter.Type ?? 'String')}\n\`\`\``,
         '---',
-    );
+    ];
 
     if (parameter.Description) {
         doc.push(parameter.Description);
@@ -1131,12 +1129,10 @@ export function formatConstantHover(constant: Constant): string {
  * Formats hover information for a resource entity
  */
 export function formatResourceHover(resource: Resource): string {
-    const doc: string[] = [];
-
-    doc.push(
+    const doc = [
         `\`\`\`typescript\n(resource) ${resource.name}: ${getIntrinsicReturnType('Ref', resource)}\n\`\`\``,
         '---',
-    );
+    ];
 
     if (resource.Type) {
         doc.push(`**Type:** ${resource.Type}`);

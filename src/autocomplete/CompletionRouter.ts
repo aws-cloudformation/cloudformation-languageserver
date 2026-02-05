@@ -349,37 +349,36 @@ export function createCompletionProviders(
     external: CfnExternal,
     providers: CfnLspProviders,
 ): Map<CompletionProviderType, CompletionProvider> {
-    const completionProviderMap = new Map<CompletionProviderType, CompletionProvider>();
-    completionProviderMap.set(
-        'TopLevelSection',
-        new TopLevelSectionCompletionProvider(
-            core.syntaxTreeManager,
-            core.documentManager,
-            external.featureFlags.get('Constants'),
-        ),
-    );
-    completionProviderMap.set(EntityType.Resource, new ResourceSectionCompletionProvider(core, external, providers));
-    completionProviderMap.set(EntityType.Condition, new ConditionCompletionProvider(core.syntaxTreeManager));
-    completionProviderMap.set('IntrinsicFunction', new IntrinsicFunctionCompletionProvider());
-    completionProviderMap.set(
-        'IntrinsicFunctionArgument',
-        new IntrinsicFunctionArgumentCompletionProvider(
-            core.syntaxTreeManager,
-            external.schemaRetriever,
-            core.documentManager,
-            external.featureFlags.get('Constants'),
-        ),
-    );
-    completionProviderMap.set('ParameterTypeValue', new ParameterTypeValueCompletionProvider());
-
-    return completionProviderMap;
+    return new Map<CompletionProviderType, CompletionProvider>([
+        [
+            'TopLevelSection',
+            new TopLevelSectionCompletionProvider(
+                core.syntaxTreeManager,
+                core.documentManager,
+                external.featureFlags.get('Constants'),
+            ),
+        ],
+        [EntityType.Resource, new ResourceSectionCompletionProvider(core, external, providers)],
+        [EntityType.Condition, new ConditionCompletionProvider(core.syntaxTreeManager)],
+        ['IntrinsicFunction', new IntrinsicFunctionCompletionProvider()],
+        [
+            'IntrinsicFunctionArgument',
+            new IntrinsicFunctionArgumentCompletionProvider(
+                core.syntaxTreeManager,
+                external.schemaRetriever,
+                core.documentManager,
+                external.featureFlags.get('Constants'),
+            ),
+        ],
+        ['ParameterTypeValue', new ParameterTypeValueCompletionProvider()],
+    ]);
 }
 
 export function createEntityFieldProviders() {
-    const entityFieldProviderMap = new Map<EntityType, EntityFieldCompletionProvider<Entity>>();
-    entityFieldProviderMap.set(EntityType.Parameter, new EntityFieldCompletionProvider<Parameter>());
-    entityFieldProviderMap.set(EntityType.Output, new EntityFieldCompletionProvider<Output>());
-    return entityFieldProviderMap;
+    return new Map<EntityType, EntityFieldCompletionProvider<Entity>>([
+        [EntityType.Parameter, new EntityFieldCompletionProvider<Parameter>()],
+        [EntityType.Output, new EntityFieldCompletionProvider<Output>()],
+    ]);
 }
 
 function trackCompletion(

@@ -354,8 +354,7 @@ describe('ResourcePropertyCompletionProvider', () => {
                 ],
             } as unknown as ResourceSchema;
 
-            const mockSchemas = new Map<string, ResourceSchema>();
-            mockSchemas.set('AWS::S3::Bucket', modifiedSchema);
+            const mockSchemas = new Map<string, ResourceSchema>([['AWS::S3::Bucket', modifiedSchema]]);
 
             const schemas = emptySchemas;
             for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
@@ -494,8 +493,7 @@ describe('ResourcePropertyCompletionProvider', () => {
                 ],
             } as unknown as ResourceSchema;
 
-            const mockSchemas = new Map<string, ResourceSchema>();
-            mockSchemas.set('AWS::S3::Bucket', modifiedSchema);
+            const mockSchemas = new Map<string, ResourceSchema>([['AWS::S3::Bucket', modifiedSchema]]);
 
             const schemas = emptySchemas;
             for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
@@ -579,8 +577,7 @@ describe('ResourcePropertyCompletionProvider', () => {
             },
         } as unknown as ResourceSchema;
 
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
+        const mockSchemas = new Map<string, ResourceSchema>([['AWS::S3::Bucket', mockSchema]]);
 
         const schemas = emptySchemas;
         for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
@@ -655,8 +652,7 @@ describe('ResourcePropertyCompletionProvider', () => {
             },
         } as unknown as ResourceSchema;
 
-        const mockSchemas = new Map<string, ResourceSchema>();
-        mockSchemas.set('AWS::S3::Bucket', mockSchema);
+        const mockSchemas = new Map<string, ResourceSchema>([['AWS::S3::Bucket', mockSchema]]);
 
         const schemas = emptySchemas;
         for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
@@ -785,8 +781,7 @@ describe('ResourcePropertyCompletionProvider', () => {
                 },
             } as unknown as ResourceSchema;
 
-            const mockSchemas = new Map<string, ResourceSchema>();
-            mockSchemas.set('AWS::S3::Bucket', mockSchema);
+            const mockSchemas = new Map<string, ResourceSchema>([['AWS::S3::Bucket', mockSchema]]);
 
             const schemas = emptySchemas;
             for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);
@@ -1708,8 +1703,7 @@ describe('ResourcePropertyCompletionProvider', () => {
                 },
             } as unknown as ResourceSchema;
 
-            const mockSchemas = new Map<string, ResourceSchema>();
-            mockSchemas.set('AWS::S3::Bucket', mockSchema);
+            const mockSchemas = new Map<string, ResourceSchema>([['AWS::S3::Bucket', mockSchema]]);
 
             const schemas = emptySchemas;
             for (const [k, v] of mockSchemas.entries()) schemas.schemas.set(k, v);

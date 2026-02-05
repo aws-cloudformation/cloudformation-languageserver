@@ -1,9 +1,5 @@
-export const parameterAttributeDocsMap: ReadonlyMap<string, string> = getParameterAttributeDocsMap();
-
-function getParameterAttributeDocsMap(): Map<string, string> {
-    const parameterAttributeDocsMap = new Map<string, string>();
-
-    parameterAttributeDocsMap.set(
+export const parameterAttributeDocsMap: ReadonlyMap<string, string> = new Map<string, string>([
+    [
         'Type',
         [
             '**Type**',
@@ -51,9 +47,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'Default',
         [
             '**Default**',
@@ -66,9 +61,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'Description',
         [
             '**Description**',
@@ -80,9 +74,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'AllowedValues',
         [
             '**AllowedValues**',
@@ -96,9 +89,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'AllowedPattern',
         [
             '**AllowedPattern**',
@@ -112,9 +104,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'MinLength',
         [
             '**MinLength**',
@@ -126,9 +117,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'MaxLength',
         [
             '**MaxLength**',
@@ -140,9 +130,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'MinValue',
         [
             '**MinValue**',
@@ -154,9 +143,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'MaxValue',
         [
             '**MaxValue**',
@@ -168,9 +156,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'NoEcho',
         [
             '**NoEcho**',
@@ -187,9 +174,8 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    parameterAttributeDocsMap.set(
+    ],
+    [
         'ConstraintDescription',
         [
             '**ConstraintDescription**',
@@ -208,7 +194,5 @@ function getParameterAttributeDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-
-    return parameterAttributeDocsMap;
-}
+    ],
+]);

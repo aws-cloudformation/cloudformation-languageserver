@@ -49,14 +49,14 @@ export function generatePositions(content: string, iterations: number): TestPosi
         }
 
         // Generate multiple positions per line for better coverage
-        const linePositions: TestPosition[] = [];
-
         // Position 1: At the start of content (after indentation)
-        linePositions.push({
-            line: i,
-            character: indentLevel,
-            depth,
-        });
+        const linePositions: TestPosition[] = [
+            {
+                line: i,
+                character: indentLevel,
+                depth,
+            },
+        ];
 
         // Position 2: After colon (for key-value pairs)
         const colonIndex = line.indexOf(':');

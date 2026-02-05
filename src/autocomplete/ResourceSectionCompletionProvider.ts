@@ -97,23 +97,20 @@ export function createResourceCompletionProviders(
     external: CfnExternal,
     providers: CfnLspProviders,
 ): Map<ResourceCompletionType, CompletionProvider> {
-    const resourceProviderMap = new Map<ResourceCompletionType, CompletionProvider>();
-    resourceProviderMap.set(
-        ResourceCompletionType.Entity,
-        new ResourceEntityCompletionProvider(external.schemaRetriever, core.documentManager),
-    );
-    resourceProviderMap.set(ResourceCompletionType.Type, new ResourceTypeCompletionProvider(external.schemaRetriever));
-    resourceProviderMap.set(
-        ResourceCompletionType.Property,
-        new ResourcePropertyCompletionProvider(external.schemaRetriever),
-    );
-    resourceProviderMap.set(
-        ResourceCompletionType.State,
-        new ResourceStateCompletionProvider(
-            providers.resourceStateManager,
-            core.documentManager,
-            external.schemaRetriever,
-        ),
-    );
-    return resourceProviderMap;
+    return new Map<ResourceCompletionType, CompletionProvider>([
+        [
+            ResourceCompletionType.Entity,
+            new ResourceEntityCompletionProvider(external.schemaRetriever, core.documentManager),
+        ],
+        [ResourceCompletionType.Type, new ResourceTypeCompletionProvider(external.schemaRetriever)],
+        [ResourceCompletionType.Property, new ResourcePropertyCompletionProvider(external.schemaRetriever)],
+        [
+            ResourceCompletionType.State,
+            new ResourceStateCompletionProvider(
+                providers.resourceStateManager,
+                core.documentManager,
+                external.schemaRetriever,
+            ),
+        ],
+    ]);
 }

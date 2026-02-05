@@ -1,11 +1,8 @@
 import { IntrinsicFunction } from '../context/CloudFormationEnums';
 
-export const intrinsicFunctionsDocsMap: ReadonlyMap<IntrinsicFunction, string> = getIntrinsicFunctionsDocsMap();
-
-function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
-    const intrinsicFunctionsDocsMap = new Map<IntrinsicFunction, string>();
-    intrinsicFunctionsDocsMap.set(
-        //Intrinsic Functions
+export const intrinsicFunctionsDocsMap: ReadonlyMap<IntrinsicFunction, string> = new Map<IntrinsicFunction, string>([
+    //Intrinsic Functions
+    [
         IntrinsicFunction.Base64,
         [
             '**Fn::Base64**',
@@ -16,8 +13,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-base64.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Cidr,
         [
             '**Fn::Cidr**',
@@ -28,8 +25,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-cidr.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.FindInMap,
         [
             '**Fn::FindInMap**',
@@ -39,8 +36,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-findinmap.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.GetAtt,
         [
             '**Fn::GetAtt**',
@@ -50,8 +47,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-getatt.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.GetAZs,
         [
             '**Fn::GetAZs**',
@@ -63,8 +60,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-getavailabilityzones.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.ImportValue,
         [
             '**Fn::ImportValue**',
@@ -76,8 +73,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-importvalue.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Join,
         [
             '**Fn::Join**',
@@ -88,8 +85,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-join.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Select,
         [
             '**Fn::Select**',
@@ -99,8 +96,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-select.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Split,
         [
             '**Fn::Split**',
@@ -115,8 +112,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-split.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Sub,
         [
             '**Fn::Sub**',
@@ -127,8 +124,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-sub.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Transform,
         [
             '**Fn::Transform**',
@@ -142,8 +139,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-transform.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Ref,
         [
             '**Ref**',
@@ -154,9 +151,9 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-ref.html)',
         ].join('\n'),
-    );
+    ],
     //Condition and Rule Functions
-    intrinsicFunctionsDocsMap.set(
+    [
         IntrinsicFunction.And,
         [
             '**Fn::And**',
@@ -168,8 +165,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-conditions.html#intrinsic-function-reference-conditions-and)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.ForEach,
         [
             '**Fn::ForEach**',
@@ -183,8 +180,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-foreach.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Length,
         [
             '**Fn::Length**',
@@ -195,8 +192,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-length.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.ToJsonString,
         [
             '**Fn::ToJsonString**',
@@ -207,8 +204,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-ToJsonString.html)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Equals,
         [
             '**Fn::Equals**',
@@ -219,8 +216,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-conditions.html#intrinsic-function-reference-conditions-equals)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.If,
         [
             '**Fn::If**',
@@ -232,8 +229,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-conditions.html#intrinsic-function-reference-conditions-if)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Not,
         [
             '**Fn::Not**',
@@ -244,8 +241,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-conditions.html#intrinsic-function-reference-conditions-not)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Or,
         [
             '**Fn::Or**',
@@ -257,8 +254,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-conditions.html#intrinsic-function-reference-conditions-or)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.Contains,
         [
             '**Fn::Contains**',
@@ -268,8 +265,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-rules.html#fn-contains)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.EachMemberEquals,
         [
             '**Fn::EachMemberEquals**',
@@ -279,8 +276,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-rules.html#fn-eachmemberequals)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.EachMemberIn,
         [
             '**Fn::EachMemberIn**',
@@ -290,8 +287,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-rules.html#fn-eachmemberin)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.RefAll,
         [
             '**Fn::RefAll**',
@@ -301,8 +298,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-rules.html#fn-refall)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.ValueOf,
         [
             '**Fn::ValueOf**',
@@ -312,8 +309,8 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-rules.html#fn-valueof)',
         ].join('\n'),
-    );
-    intrinsicFunctionsDocsMap.set(
+    ],
+    [
         IntrinsicFunction.ValueOfAll,
         [
             '**Fn::ValueOfAll**',
@@ -323,6 +320,5 @@ function getIntrinsicFunctionsDocsMap(): Map<IntrinsicFunction, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/intrinsic-function-reference-rules.html#fn-valueofall)',
         ].join('\n'),
-    );
-    return intrinsicFunctionsDocsMap;
-}
+    ],
+]);

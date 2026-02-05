@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DefinitionParams, Location } from 'vscode-languageserver';
 import { TopLevelSection } from '../../../src/context/CloudFormationEnums';
+import { Context } from '../../../src/context/Context';
 import { DefinitionProvider } from '../../../src/definition/DefinitionProvider';
 import { createResourceContext } from '../../utils/MockContext';
 import { createMockComponents } from '../../utils/MockServerComponents';
@@ -44,9 +45,8 @@ describe('DefinitionProvider', () => {
             const mockRelatedContext = {
                 startPosition: { row: 5, column: 10 },
                 endPosition: { row: 5, column: 20 },
-            };
-            const mockSection = new Map();
-            mockSection.set('MyResource', mockRelatedContext);
+            } as Context;
+            const mockSection = new Map([['MyResource', mockRelatedContext]]);
             const relatedEntities = new Map([[TopLevelSection.Parameters, mockSection]]);
             const mockContext = createResourceContext('MyResourceId', { text: 'MyResource' }, relatedEntities);
 
@@ -66,9 +66,8 @@ describe('DefinitionProvider', () => {
             const mockRelatedContext = {
                 startPosition: { row: 2, column: 5 },
                 endPosition: { row: 2, column: 15 },
-            };
-            const mockSection = new Map();
-            mockSection.set('MyVpc', mockRelatedContext);
+            } as Context;
+            const mockSection = new Map([['MyVpc', mockRelatedContext]]);
             const relatedEntities = new Map([[TopLevelSection.Resources, mockSection]]);
             // Context text contains the full GetAtt expression "MyVpc.VpcId"
             const mockContext = createResourceContext('MySubnet', { text: 'MyVpc.VpcId' }, relatedEntities);
@@ -90,15 +89,13 @@ describe('DefinitionProvider', () => {
             const mockRelatedContext1 = {
                 startPosition: { row: 5, column: 10 },
                 endPosition: { row: 5, column: 20 },
-            };
+            } as Context;
             const mockRelatedContext2 = {
                 startPosition: { row: 10, column: 15 },
                 endPosition: { row: 10, column: 25 },
-            };
-            const mockSection1 = new Map();
-            mockSection1.set(logicalId, mockRelatedContext1);
-            const mockSection2 = new Map();
-            mockSection2.set(logicalId, mockRelatedContext2);
+            } as Context;
+            const mockSection1 = new Map([[logicalId, mockRelatedContext1]]);
+            const mockSection2 = new Map([[logicalId, mockRelatedContext2]]);
 
             const relatedEntities = new Map([
                 [TopLevelSection.Parameters, mockSection1],

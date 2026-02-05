@@ -1,9 +1,5 @@
-export const updateReplacePolicyValueDocsMap: ReadonlyMap<string, string> = getUpdateReplacePolicyValueDocsMap();
-
-function getUpdateReplacePolicyValueDocsMap(): Map<string, string> {
-    const docsMap = new Map<string, string>();
-
-    docsMap.set(
+export const updateReplacePolicyValueDocsMap: ReadonlyMap<string, string> = new Map<string, string>([
+    [
         'Delete',
         [
             '**Delete**',
@@ -18,9 +14,8 @@ function getUpdateReplacePolicyValueDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatereplacepolicy.html)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         'Retain',
         [
             '**Retain**',
@@ -34,9 +29,8 @@ function getUpdateReplacePolicyValueDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatereplacepolicy.html)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         'Snapshot',
         [
             '**Snapshot**',
@@ -59,10 +53,8 @@ function getUpdateReplacePolicyValueDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatereplacepolicy.html)',
         ].join('\n'),
-    );
-
-    return docsMap;
-}
+    ],
+]);
 
 export const UPDATE_REPLACE_POLICY_SNAPSHOT_SUPPORTED_RESOURCE_TYPES: ReadonlyArray<string> = [
     'AWS::EC2::Volume',

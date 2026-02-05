@@ -27,9 +27,8 @@ vi.mock('pino', () => {
             error: vi.fn(),
             child: vi.fn(() => mockLogger),
             level: 'info',
+            [streamSym]: mockStream,
         };
-
-        mockLogger[streamSym] = mockStream;
 
         return mockLogger;
     });

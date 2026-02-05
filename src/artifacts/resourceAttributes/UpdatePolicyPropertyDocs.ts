@@ -7,13 +7,9 @@ import {
     CodeDeployLambdaAliasUpdateProperty,
 } from '../../context/CloudFormationEnums';
 
-export const updatePolicyPropertyDocsMap: ReadonlyMap<string, string> = getUpdatePolicyPropertyDocsMap();
-
-function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
-    const docsMap = new Map<string, string>();
-
+export const updatePolicyPropertyDocsMap: ReadonlyMap<string, string> = new Map<string, string>([
     // AutoScalingRollingUpdate policy and properties
-    docsMap.set(
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}`,
         [
             '**AutoScalingRollingUpdate**',
@@ -24,9 +20,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.MaxBatchSize}`,
         [
             '**MaxBatchSize**',
@@ -44,9 +39,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.MinActiveInstancesPercent}`,
         [
             '**MinActiveInstancesPercent**',
@@ -68,9 +62,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.MinInstancesInService}`,
         [
             '**MinInstancesInService**',
@@ -87,9 +80,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.MinSuccessfulInstancesPercent}`,
         [
             '**MinSuccessfulInstancesPercent**',
@@ -113,9 +105,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.PauseTime}`,
         [
             '**PauseTime**',
@@ -134,9 +125,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.SuspendProcesses}`,
         [
             '**SuspendProcesses**',
@@ -154,9 +144,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingRollingUpdate}.${AutoScalingRollingUpdateProperty.WaitOnResourceSignals}`,
         [
             '**WaitOnResourceSignals**',
@@ -177,10 +166,9 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-rollingupdate)',
         ].join('\n'),
-    );
-
+    ],
     // AutoScalingReplacingUpdate policy and properties
-    docsMap.set(
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingReplacingUpdate}`,
         [
             '**AutoScalingReplacingUpdate**',
@@ -192,9 +180,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-replacingupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingReplacingUpdate}.${AutoScalingReplacingUpdateProperty.WillReplace}`,
         [
             '**WillReplace**',
@@ -216,10 +203,9 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-replacingupdate)',
         ].join('\n'),
-    );
-
+    ],
     // AutoScalingScheduledAction policy and properties
-    docsMap.set(
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingScheduledAction}`,
         [
             '**AutoScalingScheduledAction**',
@@ -234,9 +220,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-scheduledactions)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.AutoScalingScheduledAction}.${AutoScalingScheduledActionProperty.IgnoreUnmodifiedGroupSizeProperties}`,
         [
             '**IgnoreUnmodifiedGroupSizeProperties**',
@@ -253,10 +238,9 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-scheduledactions)',
         ].join('\n'),
-    );
-
+    ],
     // UseOnlineResharding policy (ElastiCache)
-    docsMap.set(
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.UseOnlineResharding}`,
         [
             '**UseOnlineResharding**',
@@ -271,10 +255,9 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-useonlineresharding)',
         ].join('\n'),
-    );
-
+    ],
     // EnableVersionUpgrade policy (OpenSearch/Elasticsearch)
-    docsMap.set(
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.EnableVersionUpgrade}`,
         [
             '**EnableVersionUpgrade**',
@@ -291,10 +274,9 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-upgradeopensearchdomain)',
         ].join('\n'),
-    );
-
+    ],
     // CodeDeployLambdaAliasUpdate policy and properties
-    docsMap.set(
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.CodeDeployLambdaAliasUpdate}`,
         [
             '**CodeDeployLambdaAliasUpdate**',
@@ -304,9 +286,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-codedeploylambdaaliasupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.CodeDeployLambdaAliasUpdate}.${CodeDeployLambdaAliasUpdateProperty.ApplicationName}`,
         [
             '**ApplicationName**',
@@ -320,9 +301,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-codedeploylambdaaliasupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.CodeDeployLambdaAliasUpdate}.${CodeDeployLambdaAliasUpdateProperty.DeploymentGroupName}`,
         [
             '**DeploymentGroupName**',
@@ -337,9 +317,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-codedeploylambdaaliasupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.CodeDeployLambdaAliasUpdate}.${CodeDeployLambdaAliasUpdateProperty.BeforeAllowTrafficHook}`,
         [
             '**BeforeAllowTrafficHook**',
@@ -353,9 +332,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-codedeploylambdaaliasupdate)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.CodeDeployLambdaAliasUpdate}.${CodeDeployLambdaAliasUpdateProperty.AfterAllowTrafficHook}`,
         [
             '**AfterAllowTrafficHook**',
@@ -369,10 +347,9 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-codedeploylambdaaliasupdate)',
         ].join('\n'),
-    );
-
+    ],
     // AppStream 2.0 Update Policies
-    docsMap.set(
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.StopBeforeUpdate}`,
         [
             '**StopBeforeUpdate**',
@@ -384,9 +361,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-appstream)',
         ].join('\n'),
-    );
-
-    docsMap.set(
+    ],
+    [
         `${ResourceAttribute.UpdatePolicy}.${UpdatePolicyProperty.StartAfterUpdate}`,
         [
             '**StartAfterUpdate**',
@@ -397,10 +373,8 @@ function getUpdatePolicyPropertyDocsMap(): Map<string, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/TemplateReference/aws-attribute-updatepolicy.html#cfn-attributes-updatepolicy-appstream)',
         ].join('\n'),
-    );
-
-    return docsMap;
-}
+    ],
+]);
 
 export const UPDATE_POLICY_SUPPORTED_RESOURCE_TYPES: ReadonlyArray<string> = [
     'AWS::AutoScaling::AutoScalingGroup',

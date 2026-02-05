@@ -134,22 +134,19 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
     }
 
     private createHoverProviders(schemaRetriever: SchemaRetriever): Map<HoverType, HoverProvider> {
-        const hoverProviderMap = new Map<HoverType, HoverProvider>();
-        hoverProviderMap.set(HoverType.TopLevelSection, new TemplateSectionHoverProvider(this.constantsFeatureFlag));
-        hoverProviderMap.set(HoverType.ResourceSection, new ResourceSectionHoverProvider(schemaRetriever));
-        hoverProviderMap.set(HoverType.Parameter, new ParameterHoverProvider());
-        hoverProviderMap.set(HoverType.ParameterAttribute, new ParameterAttributeHoverProvider());
-        hoverProviderMap.set(HoverType.OutputSectionField, new OutputSectionFieldHoverProvider());
-        hoverProviderMap.set(HoverType.PseudoParameter, new PseudoParameterHoverProvider());
-        hoverProviderMap.set(HoverType.Condition, new ConditionHoverProvider());
-        hoverProviderMap.set(HoverType.Mapping, new MappingHoverProvider());
-        hoverProviderMap.set(HoverType.Constant, new ConstantHoverProvider());
-        hoverProviderMap.set(HoverType.IntrinsicFunction, new IntrinsicFunctionHoverProvider());
-        hoverProviderMap.set(
-            HoverType.IntrinsicFunctionArgument,
-            new IntrinsicFunctionArgumentHoverProvider(schemaRetriever),
-        );
-        return hoverProviderMap;
+        return new Map<HoverType, HoverProvider>([
+            [HoverType.TopLevelSection, new TemplateSectionHoverProvider(this.constantsFeatureFlag)],
+            [HoverType.ResourceSection, new ResourceSectionHoverProvider(schemaRetriever)],
+            [HoverType.Parameter, new ParameterHoverProvider()],
+            [HoverType.ParameterAttribute, new ParameterAttributeHoverProvider()],
+            [HoverType.OutputSectionField, new OutputSectionFieldHoverProvider()],
+            [HoverType.PseudoParameter, new PseudoParameterHoverProvider()],
+            [HoverType.Condition, new ConditionHoverProvider()],
+            [HoverType.Mapping, new MappingHoverProvider()],
+            [HoverType.Constant, new ConstantHoverProvider()],
+            [HoverType.IntrinsicFunction, new IntrinsicFunctionHoverProvider()],
+            [HoverType.IntrinsicFunctionArgument, new IntrinsicFunctionArgumentHoverProvider(schemaRetriever)],
+        ]);
     }
 
     private isParameterAttribute(context: Context): boolean {

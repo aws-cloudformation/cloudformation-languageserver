@@ -1,10 +1,7 @@
 import { TopLevelSection } from '../context/CloudFormationEnums';
 
-export const templateSectionDocsMap: ReadonlyMap<TopLevelSection, string> = getTemplateSectionDocsMap();
-
-function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
-    const templateSectionDocsMap = new Map<TopLevelSection, string>();
-    templateSectionDocsMap.set(
+export const templateSectionDocsMap: ReadonlyMap<TopLevelSection, string> = new Map<TopLevelSection, string>([
+    [
         TopLevelSection.Resources,
         [
             '**Resources**',
@@ -15,8 +12,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/resources-section-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.Parameters,
         [
             '**Parameters**',
@@ -30,8 +27,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/parameters-section-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.Outputs,
         [
             '**Outputs**',
@@ -49,8 +46,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.Mappings,
         [
             '**Mappings**',
@@ -64,8 +61,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/mappings-section-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.Metadata,
         [
             '**Metadata**',
@@ -92,8 +89,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/metadata-section-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.Rules,
         [
             '**Rules**',
@@ -105,8 +102,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/rules-section-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.Conditions,
         [
             '**Conditions**',
@@ -140,8 +137,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/conditions-section-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.Transform,
         [
             '**Transform**',
@@ -153,8 +150,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/transform-section-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.AWSTemplateFormatVersion,
         [
             '**AWSTemplateFormatVersion**',
@@ -179,8 +176,8 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '```',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/format-version-structure.html)',
         ].join('\n'),
-    );
-    templateSectionDocsMap.set(
+    ],
+    [
         TopLevelSection.Description,
         [
             '**Description**',
@@ -205,9 +202,9 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '```',
             '[Source Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/template-description-structure.html)',
         ].join('\n'),
-    );
+    ],
     // TODO: Update with official AWS documentation when available
-    templateSectionDocsMap.set(
+    [
         TopLevelSection.Constants,
         [
             '**Constants**',
@@ -221,6 +218,5 @@ function getTemplateSectionDocsMap(): Map<TopLevelSection, string> {
             '\n',
             '[Source Documentation](https://docs.aws.amazon.com/)',
         ].join('\n'),
-    );
-    return templateSectionDocsMap;
-}
+    ],
+]);

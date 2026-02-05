@@ -102,8 +102,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
     }
 
     function setupMappingEntities(mappingData: Record<string, Record<string, Record<string, any>>>) {
-        const mockSectionNodeMap = new Map();
-        mockSectionNodeMap.set(TopLevelSection.Mappings, {} as SyntaxNode);
+        const mockSectionNodeMap = new Map([[TopLevelSection.Mappings, {} as SyntaxNode]]);
 
         const mockSyntaxTree = stubInterface<SyntaxTree>();
         mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);
@@ -143,8 +142,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
 
         it('should return undefined when no mapping entities found', () => {
             const mockContext = createMockFindInMapContext('RegionMap');
-            const mockSectionNodeMap = new Map();
-            mockSectionNodeMap.set(TopLevelSection.Mappings, {} as SyntaxNode);
+            const mockSectionNodeMap = new Map([[TopLevelSection.Mappings, {} as SyntaxNode]]);
 
             const mockSyntaxTree = stubInterface<SyntaxTree>();
             mockSyntaxTree.findTopLevelSections.returns(mockSectionNodeMap);

@@ -298,10 +298,7 @@ export class TemplateTestOrchestrator {
     }
 
     private generateLinePositions(line: string, lineIndex: number): TextDocumentPositionParams[] {
-        const positionSet = new Set<number>();
-
-        // Add position at start of line (column 0)
-        positionSet.add(0);
+        const positionSet = new Set<number>([0]); // Add position at start of line (column 0)
 
         // Add position at start of meaningful content (skip leading whitespace)
         const firstNonWhitespace = line.search(/\S/);

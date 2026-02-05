@@ -57,8 +57,7 @@ export class ResourceSectionHoverProvider implements HoverProvider {
     }
 
     private getFormattedSchemaDoc(schema: ResourceSchema): string {
-        const doc: Array<string> = [];
-        doc.push(`### ${schema.typeName}`, '\n', schema.description, '\n');
+        const doc: Array<string> = [`### ${schema.typeName}`, '\n', schema.description, '\n'];
         if (schema.required !== undefined && schema.required?.length > 0) {
             doc.push('#### Required Properties:');
             for (const property of schema.required) {

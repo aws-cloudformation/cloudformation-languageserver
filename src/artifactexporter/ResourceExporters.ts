@@ -188,9 +188,10 @@ export abstract class ResourceWithS3UrlDict extends Resource {
 
             const result = await this.s3Service.putObject(uploadPath, s3Url);
 
-            const s3Record: Record<string, string> = {};
-            s3Record[this.bucketNameProperty] = bucketName;
-            s3Record[this.objectKeyProperty] = key;
+            const s3Record: Record<string, string> = {
+                [this.bucketNameProperty]: bucketName,
+                [this.objectKeyProperty]: key,
+            };
             if (result.VersionId && this.versionProperty) {
                 s3Record[this.versionProperty] = result.VersionId;
             }

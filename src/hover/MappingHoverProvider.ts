@@ -10,8 +10,7 @@ export class MappingHoverProvider implements HoverProvider {
         if (!mapping) {
             return undefined;
         }
-        const doc: Array<string> = [];
-        doc.push(`**Mapping:** ${mapping.name}`, '\n', '---');
+        const doc: Array<string> = [`**Mapping:** ${mapping.name}`, '\n', '---'];
 
         const topLevelKeys = mapping.getTopLevelKeys();
         if (topLevelKeys.length > 0) {

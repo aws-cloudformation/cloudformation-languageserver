@@ -41,8 +41,7 @@ describe('AllOccurrencesFinder - YAML', () => {
             };
 
             // Setup mock to return Resources section
-            const sectionsMap = new Map();
-            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            const sectionsMap = new Map([[TopLevelSection.Resources, mockResourcesSection as any]]);
 
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
@@ -73,8 +72,7 @@ describe('AllOccurrencesFinder - YAML', () => {
                 ],
             };
 
-            const sectionsMap = new Map();
-            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            const sectionsMap = new Map([[TopLevelSection.Resources, mockResourcesSection as any]]);
 
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);

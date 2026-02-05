@@ -75,10 +75,10 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
         return {};
     }
 
-    const result: Record<string, string> = {};
-    result['error.message'] = lines[0];
-    result['error.stack'] = lines.slice(1).join('\n');
-    return result;
+    return {
+        ['error.message']: lines[0],
+        ['error.stack']: lines.slice(1).join('\n'),
+    };
 }
 
 function sanitizeErrorMessage(message: string): string {

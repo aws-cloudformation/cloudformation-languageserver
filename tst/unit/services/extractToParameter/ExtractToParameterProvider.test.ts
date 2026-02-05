@@ -676,8 +676,7 @@ Resources:
                 ],
             };
 
-            const sectionsMap = new Map();
-            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            const sectionsMap = new Map([[TopLevelSection.Resources, mockResourcesSection as any]]);
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
 
@@ -827,8 +826,7 @@ Resources:
                 ],
             };
 
-            const sectionsMap = new Map();
-            sectionsMap.set(TopLevelSection.Resources, mockResourcesSection as any);
+            const sectionsMap = new Map([[TopLevelSection.Resources, mockResourcesSection as any]]);
             mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
             mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
 
