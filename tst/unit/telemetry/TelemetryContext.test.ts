@@ -96,11 +96,11 @@ describe('TelemetryContext', () => {
     });
 
     it('should propagate async exceptions', async () => {
-        await expect(async () => {
-            await TelemetryContext.run('TestHandler', () => {
+        await expect(
+            TelemetryContext.run('TestHandler', () => {
                 return Promise.reject(new Error('Async test error'));
-            });
-        }).rejects.toThrow('Async test error');
+            }),
+        ).rejects.toThrow('Async test error');
     });
 
     describe('withTelemetryContext', () => {

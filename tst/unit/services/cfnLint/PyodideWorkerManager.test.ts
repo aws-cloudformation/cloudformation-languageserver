@@ -11,7 +11,7 @@ import { mockLogger } from '../../../utils/MockServerComponents';
 // Mock Worker class
 vi.mock('worker_threads', () => {
     return {
-        Worker: vi.fn(),
+        Worker: vi.fn(function () {}),
     };
 });
 
@@ -100,7 +100,9 @@ describe('PyodideWorkerManager', () => {
 
         // Setup Worker constructor mock
         workerConstructor = Worker as unknown as Mock;
-        workerConstructor.mockReturnValue(mockWorker);
+        workerConstructor.mockImplementation(function () {
+            return mockWorker;
+        });
 
         mockLogging = mockLogger();
         // Create the worker manager
@@ -177,7 +179,7 @@ describe('PyodideWorkerManager', () => {
 
         test('should handle worker creation error', async () => {
             // Setup mock to simulate worker creation error
-            workerConstructor.mockImplementationOnce(() => {
+            workerConstructor.mockImplementationOnce(function () {
                 throw new Error('Worker creation failed');
             });
 
@@ -662,7 +664,7 @@ describe('PyodideWorkerManager', () => {
             );
 
             let attemptCount = 0;
-            workerConstructor.mockImplementation(() => {
+            workerConstructor.mockImplementation(function () {
                 attemptCount++;
                 if (attemptCount <= 2) {
                     throw new Error(`Worker creation failed attempt ${attemptCount}`);
@@ -707,7 +709,7 @@ describe('PyodideWorkerManager', () => {
             );
 
             // Always fail worker creation
-            workerConstructor.mockImplementation(() => {
+            workerConstructor.mockImplementation(function () {
                 throw new Error('Worker creation always fails');
             });
 
@@ -737,7 +739,7 @@ describe('PyodideWorkerManager', () => {
                 mockLogging,
             );
 
-            workerConstructor.mockImplementation(() => {
+            workerConstructor.mockImplementation(function () {
                 throw new Error('fail');
             });
 

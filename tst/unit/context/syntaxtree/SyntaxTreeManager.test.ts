@@ -6,8 +6,12 @@ import { YamlSyntaxTree } from '../../../../src/context/syntaxtree/YamlSyntaxTre
 import { DocumentType, CloudFormationFileType } from '../../../../src/document/Document';
 import { point } from '../../../utils/TemplateUtils';
 
-vi.mock('../../../../src/context/syntaxtree/JsonSyntaxTree');
-vi.mock('../../../../src/context/syntaxtree/YamlSyntaxTree');
+vi.mock('../../../../src/context/syntaxtree/JsonSyntaxTree', () => ({
+    JsonSyntaxTree: vi.fn(function () {}),
+}));
+vi.mock('../../../../src/context/syntaxtree/YamlSyntaxTree', () => ({
+    YamlSyntaxTree: vi.fn(function () {}),
+}));
 
 describe('SyntaxTreeManager', () => {
     let syntaxTreeManager: SyntaxTreeManager;
@@ -34,8 +38,12 @@ describe('SyntaxTreeManager', () => {
             cleanup: vi.fn(),
         } as any;
 
-        MockedJsonSyntaxTree.mockImplementation(() => mockJsonTree);
-        MockedYamlSyntaxTree.mockImplementation(() => mockYamlTree);
+        MockedJsonSyntaxTree.mockImplementation(function () {
+            return mockJsonTree;
+        });
+        MockedYamlSyntaxTree.mockImplementation(function () {
+            return mockYamlTree;
+        });
 
         syntaxTreeManager = new SyntaxTreeManager();
     });

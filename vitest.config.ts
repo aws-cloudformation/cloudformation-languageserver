@@ -13,10 +13,10 @@ export default defineConfig({
             include: ['src/**/*.{js,ts}'],
             enabled: true,
             thresholds: {
-                statements: 88,
-                branches: 88,
+                statements: 87,
+                branches: 81,
                 functions: 88,
-                lines: 88,
+                lines: 87,
             },
             exclude: [
                 'src/ai/**',

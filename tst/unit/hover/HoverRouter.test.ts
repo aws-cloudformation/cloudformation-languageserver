@@ -21,11 +21,21 @@ import {
 import { createMockComponents } from '../../utils/MockServerComponents';
 import { docPosition } from '../../utils/TemplateUtils';
 
-vi.mock('../../../src/hover/TemplateSectionHoverProvider');
-vi.mock('../../../src/hover/ResourceSectionHoverProvider');
-vi.mock('../../../src/hover/ParameterHoverProvider');
-vi.mock('../../../src/hover/ConditionHoverProvider');
-vi.mock('../../../src/hover/MappingHoverProvider');
+vi.mock('../../../src/hover/TemplateSectionHoverProvider', () => ({
+    TemplateSectionHoverProvider: vi.fn(function () {}),
+}));
+vi.mock('../../../src/hover/ResourceSectionHoverProvider', () => ({
+    ResourceSectionHoverProvider: vi.fn(function () {}),
+}));
+vi.mock('../../../src/hover/ParameterHoverProvider', () => ({
+    ParameterHoverProvider: vi.fn(function () {}),
+}));
+vi.mock('../../../src/hover/ConditionHoverProvider', () => ({
+    ConditionHoverProvider: vi.fn(function () {}),
+}));
+vi.mock('../../../src/hover/MappingHoverProvider', () => ({
+    MappingHoverProvider: vi.fn(function () {}),
+}));
 
 describe('HoverRouter', () => {
     let hoverRouter: HoverRouter;
@@ -38,25 +48,35 @@ describe('HoverRouter', () => {
         vi.clearAllMocks();
 
         // Mock the implementations
-        (TemplateSectionHoverProvider as Mock).mockImplementation(() => ({
-            getInformation: vi.fn().mockReturnValue('Template Section Documentation'),
-        }));
+        (TemplateSectionHoverProvider as Mock).mockImplementation(function () {
+            return {
+                getInformation: vi.fn().mockReturnValue('Template Section Documentation'),
+            };
+        });
 
-        (ResourceSectionHoverProvider as Mock).mockImplementation(() => ({
-            getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
-        }));
+        (ResourceSectionHoverProvider as Mock).mockImplementation(function () {
+            return {
+                getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
+            };
+        });
 
-        (ParameterHoverProvider as Mock).mockImplementation(() => ({
-            getInformation: vi.fn().mockReturnValue('Parameter'),
-        }));
+        (ParameterHoverProvider as Mock).mockImplementation(function () {
+            return {
+                getInformation: vi.fn().mockReturnValue('Parameter'),
+            };
+        });
 
-        (ConditionHoverProvider as Mock).mockImplementation(() => ({
-            getInformation: vi.fn().mockReturnValue('Condition'),
-        }));
+        (ConditionHoverProvider as Mock).mockImplementation(function () {
+            return {
+                getInformation: vi.fn().mockReturnValue('Condition'),
+            };
+        });
 
-        (MappingHoverProvider as Mock).mockImplementation(() => ({
-            getInformation: vi.fn().mockReturnValue('Mapping'),
-        }));
+        (MappingHoverProvider as Mock).mockImplementation(function () {
+            return {
+                getInformation: vi.fn().mockReturnValue('Mapping'),
+            };
+        });
 
         const mockComponents = createMockComponents();
         hoverRouter = new HoverRouter(
@@ -102,9 +122,11 @@ describe('HoverRouter', () => {
         let routerWithMockedProvider: HoverRouter;
 
         beforeEach(() => {
-            (ResourceSectionHoverProvider as Mock).mockImplementation(() => ({
-                getInformation: vi.fn().mockReturnValue(undefined),
-            }));
+            (ResourceSectionHoverProvider as Mock).mockImplementation(function () {
+                return {
+                    getInformation: vi.fn().mockReturnValue(undefined),
+                };
+            });
             const mockComponents = createMockComponents();
             routerWithMockedProvider = new HoverRouter(
                 mockComponents.core.contextManager,
@@ -115,9 +137,11 @@ describe('HoverRouter', () => {
         });
 
         it('should return resource documentation when available and not check references', () => {
-            (ResourceSectionHoverProvider as Mock).mockImplementation(() => ({
-                getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
-            }));
+            (ResourceSectionHoverProvider as Mock).mockImplementation(function () {
+                return {
+                    getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
+                };
+            });
             const mockComponents = createMockComponents();
             const routerWithResourceDoc = new HoverRouter(
                 mockComponents.core.contextManager,
@@ -182,9 +206,11 @@ describe('HoverRouter', () => {
 
         it('should return resource information for resource references', () => {
             // Override the mock to return the expected value for this test
-            (ResourceSectionHoverProvider as Mock).mockImplementation(() => ({
-                getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
-            }));
+            (ResourceSectionHoverProvider as Mock).mockImplementation(function () {
+                return {
+                    getInformation: vi.fn().mockReturnValue('Resource Type Documentation'),
+                };
+            });
             const mockComponents = createMockComponents();
             const routerWithResourceDoc = new HoverRouter(
                 mockComponents.core.contextManager,

@@ -227,6 +227,7 @@ export default tseslint.config([
             'import/first': 'off',
             'unicorn/switch-case-braces': 'off',
             '@typescript-eslint/no-unsafe-return': 'off',
+            'vitest/no-conditional-expect': 'off',
         },
     },
     {

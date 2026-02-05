@@ -12,6 +12,7 @@ import { DateTime } from 'luxon';
 import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ResponseError } from 'vscode-languageserver';
+import { ArtifactExporter } from '../../../src/artifactexporter/ArtifactExporter';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 import { CfnService } from '../../../src/services/CfnService';
@@ -48,9 +49,7 @@ vi.mock('../../../src/context/SectionContextBuilder', () => ({
 }));
 
 vi.mock('../../../src/artifactexporter/ArtifactExporter', () => ({
-    ArtifactExporter: vi.fn().mockImplementation(() => ({
-        export: vi.fn().mockResolvedValue({ Resources: {} }),
-    })),
+    ArtifactExporter: vi.fn(function () {}),
 }));
 
 describe('StackActionWorkflowOperations', () => {
@@ -123,11 +122,18 @@ describe('StackActionWorkflowOperations', () => {
             const mockDocument = {
                 contents: () => 'template content',
                 documentType: 'YAML',
+                uri: 'file:///test.yaml',
             };
             (mockDocumentManager.get as any).mockReturnValue(mockDocument);
 
             (mockCfnService.createChangeSet as any).mockResolvedValue({
                 Id: 'changeset-123',
+            });
+
+            vi.mocked(ArtifactExporter).mockImplementation(function () {
+                return {
+                    export: vi.fn().mockResolvedValue({ Resources: {} }),
+                } as any;
             });
 
             mockS3Service.putObjectContent = vi.fn().mockResolvedValue({ ETag: '"test-etag"' });
@@ -166,8 +172,15 @@ describe('StackActionWorkflowOperations', () => {
             const mockDocument = {
                 contents: () => 'template content',
                 documentType: 'YAML',
+                uri: 'file:///test.yaml',
             };
             (mockDocumentManager.get as any).mockReturnValue(mockDocument);
+
+            vi.mocked(ArtifactExporter).mockImplementation(function () {
+                return {
+                    export: vi.fn().mockResolvedValue({ Resources: {} }),
+                } as any;
+            });
 
             mockS3Service.putObjectContent = vi.fn().mockResolvedValue({ ETag: '"original-etag"' });
             mockS3Service.getHeadObject = vi.fn().mockResolvedValue({ ETag: '"different-etag"' });

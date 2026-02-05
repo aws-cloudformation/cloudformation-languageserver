@@ -9,7 +9,9 @@ import { createMockSyntaxTreeManager } from '../../utils/MockServerComponents';
 import { docPosition } from '../../utils/TemplateUtils';
 import { createMockYamlSyntaxTree } from '../../utils/TestTree';
 
-vi.mock('../../../src/context/Context');
+vi.mock('../../../src/context/Context', () => ({
+    Context: vi.fn(function () {}),
+}));
 
 describe('ContextManager', () => {
     let contextManager: ContextManager;
@@ -87,7 +89,7 @@ describe('ContextManager', () => {
 
             mockSyntaxTree.getNodeAtPosition.returns(mockNode);
             mockSyntaxTree.getPathAndEntityInfo.returns(mockPathInfo);
-            mockedContext.mockImplementationOnce(() => {
+            mockedContext.mockImplementationOnce(function () {
                 throw new Error('Context creation failed');
             });
 
@@ -120,7 +122,9 @@ describe('ContextManager', () => {
                 fullyResolved: true,
             });
             mockSyntaxTree.getPathAndEntityInfo.returns(mockPathInfo);
-            mockedContext.mockImplementationOnce(() => mockContext);
+            mockedContext.mockImplementationOnce(function () {
+                return mockContext;
+            });
 
             const result = contextManager.getContextFromPath(uri, ['Resources', 'MyBucket']);
 
@@ -198,7 +202,9 @@ describe('ContextManager', () => {
                 fullyResolved: true,
             });
             mockSyntaxTree.getPathAndEntityInfo.returns(mockPathInfo);
-            mockedContext.mockImplementationOnce(() => mockContext);
+            mockedContext.mockImplementationOnce(function () {
+                return mockContext;
+            });
 
             const result = contextManager.getContextFromPath(uri, []);
 
@@ -227,7 +233,9 @@ describe('ContextManager', () => {
                 fullyResolved: true,
             });
             mockSyntaxTree.getPathAndEntityInfo.returns(mockPathInfo);
-            mockedContext.mockImplementationOnce(() => mockContext);
+            mockedContext.mockImplementationOnce(function () {
+                return mockContext;
+            });
 
             const result = contextManager.getContextFromPath(uri, ['Resources', 'MyBucket', 'Properties', 'Tags', 0]);
 
@@ -251,7 +259,7 @@ describe('ContextManager', () => {
                 fullyResolved: true,
             });
             mockSyntaxTree.getPathAndEntityInfo.returns(mockPathInfo);
-            mockedContext.mockImplementationOnce(() => {
+            mockedContext.mockImplementationOnce(function () {
                 throw new Error('Context creation failed');
             });
 

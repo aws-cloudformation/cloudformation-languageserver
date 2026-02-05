@@ -6,7 +6,7 @@ import { createMockDocumentManager, createMockComponents } from '../../utils/Moc
 
 // Mock the FileContext class
 vi.mock('../../../src/context/FileContext', () => ({
-    FileContext: vi.fn(),
+    FileContext: vi.fn(function () {}),
 }));
 
 const MockedFileContext = vi.mocked(FileContext);
@@ -38,7 +38,9 @@ describe('FileContextManager', () => {
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => mockFileContext);
+            MockedFileContext.mockImplementation(function () {
+                return mockFileContext;
+            });
 
             const result = fileContextManager.getFileContext(testUri);
 
@@ -61,7 +63,9 @@ describe('FileContextManager', () => {
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => mockFileContext);
+            MockedFileContext.mockImplementation(function () {
+                return mockFileContext;
+            });
 
             const result = fileContextManager.getFileContext(testUri);
 
@@ -109,7 +113,7 @@ describe('FileContextManager', () => {
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => {
+            MockedFileContext.mockImplementation(function () {
                 throw new Error('FileContext creation failed');
             });
 
@@ -136,7 +140,9 @@ describe('FileContextManager', () => {
             // Test YAML document
             mockDocumentManager.get.returns(yamlDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => ({}) as FileContext);
+            MockedFileContext.mockImplementation(function () {
+                return {} as FileContext;
+            });
 
             fileContextManager.getFileContext('file:///test.yaml');
 
@@ -152,7 +158,9 @@ describe('FileContextManager', () => {
             // Test JSON document
             mockDocumentManager.get.returns(jsonDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => ({}) as FileContext);
+            MockedFileContext.mockImplementation(function () {
+                return {} as FileContext;
+            });
 
             fileContextManager.getFileContext('file:///test.json');
 
@@ -172,7 +180,9 @@ describe('FileContextManager', () => {
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => mockFileContext);
+            MockedFileContext.mockImplementation(function () {
+                return mockFileContext;
+            });
 
             const result = fileContextManager.getFileContext(testUri);
 
@@ -208,7 +218,9 @@ Outputs:
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => mockFileContext);
+            MockedFileContext.mockImplementation(function () {
+                return mockFileContext;
+            });
 
             const result = fileContextManager.getFileContext(testUri);
 
@@ -235,7 +247,9 @@ Outputs:
 
             mockComponents.documentManager.get.returns(mockDocument as any);
             mockComponents.documentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => ({}) as FileContext);
+            MockedFileContext.mockImplementation(function () {
+                return {} as FileContext;
+            });
 
             const manager = new FileContextManager(mockComponents.documentManager);
             const result = manager.getFileContext(testUri);
@@ -263,7 +277,9 @@ Outputs:
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => ({}) as FileContext);
+            MockedFileContext.mockImplementation(function () {
+                return {} as FileContext;
+            });
 
             const result = fileContextManager.getFileContext(testUri);
 
@@ -305,7 +321,9 @@ Outputs:
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => ({}) as FileContext);
+            MockedFileContext.mockImplementation(function () {
+                return {} as FileContext;
+            });
 
             for (const uri of uris) {
                 const result = fileContextManager.getFileContext(uri);
@@ -332,7 +350,7 @@ Outputs:
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => {
+            MockedFileContext.mockImplementation(function () {
                 throw new Error('Malformed template');
             });
 
@@ -351,7 +369,9 @@ Outputs:
 
             mockDocumentManager.get.returns(mockDocument as any);
             mockDocumentManager.isTemplate.returns(true);
-            MockedFileContext.mockImplementation(() => ({}) as FileContext);
+            MockedFileContext.mockImplementation(function () {
+                return {} as FileContext;
+            });
 
             fileContextManager.getFileContext(testUri);
 

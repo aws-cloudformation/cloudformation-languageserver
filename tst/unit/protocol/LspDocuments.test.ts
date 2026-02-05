@@ -5,17 +5,15 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LspDocuments } from '../../../src/protocol/LspDocuments';
 import { ProxyConnection } from '../../../src/protocol/ProxyConnection';
 
-vi.mock('../../../src/protocol/ProxyConnection');
+vi.mock('../../../src/protocol/ProxyConnection', () => ({
+    ProxyConnection: vi.fn(function () {}),
+}));
 
 vi.mock('vscode-languageserver/node', async () => {
     const actual = await vi.importActual('vscode-languageserver/node');
     return {
         ...actual,
-        TextDocuments: vi.fn(() => ({
-            listen: vi.fn(),
-            get: vi.fn(),
-            all: vi.fn(),
-        })),
+        TextDocuments: vi.fn(function () {}),
     };
 });
 
@@ -43,8 +41,12 @@ describe('LspDocuments', () => {
             addHandler: vi.fn().mockReturnValue({ dispose: vi.fn() }),
         };
 
-        (TextDocuments as any).mockImplementation(() => mockTextDocuments);
-        (ProxyConnection as any).mockImplementation(() => mockProxyConnection);
+        (TextDocuments as any).mockImplementation(function () {
+            return mockTextDocuments;
+        });
+        (ProxyConnection as any).mockImplementation(function () {
+            return mockProxyConnection;
+        });
 
         lspDocuments = new LspDocuments(mockConnection);
     });

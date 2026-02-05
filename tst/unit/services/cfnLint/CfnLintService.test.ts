@@ -736,9 +736,9 @@ describe('CfnLintService', () => {
                     .spyOn(uninitializedService as any, 'initialize')
                     .mockRejectedValueOnce(new Error('Initialization failed'));
 
-                await expect(async () => {
-                    await (uninitializedService as any).ensureInitialized();
-                }).rejects.toThrow('Initialization failed');
+                await expect((uninitializedService as any).ensureInitialized()).rejects.toThrow(
+                    'Initialization failed',
+                );
 
                 initializeSpy.mockRestore();
             });
@@ -753,9 +753,9 @@ describe('CfnLintService', () => {
                     .mockReturnValue(new Promise(() => {})); // Never resolves
 
                 // Use a very short timeout
-                await expect(async () => {
-                    await (uninitializedService as any).ensureInitialized(10);
-                }).rejects.toThrow('Initialization timeout');
+                await expect((uninitializedService as any).ensureInitialized(10)).rejects.toThrow(
+                    'Initialization timeout',
+                );
 
                 initializeSpy.mockRestore();
             });
@@ -917,9 +917,9 @@ describe('CfnLintService', () => {
                 // Set the main service to uninitialized state
                 (service as any).status = 0; // STATUS.Uninitialized
 
-                await expect(async () => {
-                    await (service as any).waitForInitialization();
-                }).rejects.toThrow('CfnLintService is not initialized and not being initialized');
+                await expect((service as any).waitForInitialization()).rejects.toThrow(
+                    'CfnLintService is not initialized and not being initialized',
+                );
             });
 
             test('should wait and resolve when initialization completes', async () => {
@@ -999,9 +999,9 @@ describe('CfnLintService', () => {
                     .mockReturnValueOnce(mockCurrentTime)
                     .mockReturnValueOnce(mockCurrentTime);
 
-                await expect(async () => {
-                    await (initializingService as any).waitForInitialization(100, 5, 10);
-                }).rejects.toThrow('CfnLintService initialization timeout');
+                await expect((initializingService as any).waitForInitialization(100, 5, 10)).rejects.toThrow(
+                    'CfnLintService initialization timeout',
+                );
             });
         });
 
@@ -1071,9 +1071,9 @@ describe('CfnLintService', () => {
                     .mockReturnValueOnce(mockCurrentTime)
                     .mockReturnValueOnce(mockCurrentTime);
 
-                await expect(async () => {
-                    await (initializingService as any).pollForInitialization(100);
-                }).rejects.toThrow('Initialization polling timeout');
+                await expect((initializingService as any).pollForInitialization(100)).rejects.toThrow(
+                    'Initialization polling timeout',
+                );
             });
 
             test('should throw if initialization fails', async () => {
@@ -1105,9 +1105,9 @@ describe('CfnLintService', () => {
                     (initializingService as any).status = 0; // STATUS.Uninitialized (failed)
                 }, 10);
 
-                await expect(async () => {
-                    await (initializingService as any).pollForInitialization(100);
-                }).rejects.toThrow('Initialization failed');
+                await expect((initializingService as any).pollForInitialization(100)).rejects.toThrow(
+                    'Initialization failed',
+                );
             });
         });
 

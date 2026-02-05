@@ -66,9 +66,7 @@ vi.mock('../../../src/context/SectionContextBuilder', () => ({
 }));
 
 vi.mock('../../../src/artifactexporter/ArtifactExporter', () => ({
-    ArtifactExporter: vi.fn().mockImplementation(() => ({
-        getTemplateArtifacts: vi.fn().mockReturnValue([]),
-    })),
+    ArtifactExporter: vi.fn(function () {}),
 }));
 
 // Mock the parsers
@@ -186,7 +184,9 @@ describe('StackActionHandler', () => {
             const mockTemplateInstance = {
                 getTemplateArtifacts: vi.fn().mockReturnValue(mockArtifacts),
             };
-            vi.mocked(ArtifactExporter).mockImplementation(() => mockTemplateInstance as any);
+            vi.mocked(ArtifactExporter).mockImplementation(function () {
+                return mockTemplateInstance as any;
+            });
 
             const handler = getTemplateArtifactsHandler(mockComponents);
             const result = handler(templateUri, mockToken) as GetTemplateArtifactsResult;

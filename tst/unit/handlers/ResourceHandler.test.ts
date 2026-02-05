@@ -188,9 +188,7 @@ describe('ResourceHandler - importResourceStateHandler', () => {
     it('should throw error if document not found', async () => {
         mockComponents.documentManager.get.returns(undefined);
 
-        await expect(async () => {
-            await handler(params, CancellationToken.None);
-        }).rejects.toThrow('Import failed: docUri not found');
+        await expect(handler(params, CancellationToken.None)).rejects.toThrow('Import failed: docUri not found');
     });
 
     it('should throw error if document is not a valid CloudFormation template', async () => {
@@ -199,8 +197,8 @@ describe('ResourceHandler - importResourceStateHandler', () => {
         Object.defineProperty(mockDoc, 'cfnFileType', { value: CloudFormationFileType.Other });
         mockComponents.documentManager.get.returns(mockDoc);
 
-        await expect(async () => {
-            await handler(params, CancellationToken.None);
-        }).rejects.toThrow('Import failed: docUri is not a valid CloudFormation template');
+        await expect(handler(params, CancellationToken.None)).rejects.toThrow(
+            'Import failed: docUri is not a valid CloudFormation template',
+        );
     });
 });

@@ -8,6 +8,7 @@ describe('ScopedTelemetry with TelemetryContext', () => {
     let telemetry: ScopedTelemetry;
 
     beforeEach(() => {
+        vi.clearAllMocks();
         meter = metrics.getMeter('test-meter');
         telemetry = new ScopedTelemetry('TestScope', meter);
     });

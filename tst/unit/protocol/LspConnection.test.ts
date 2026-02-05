@@ -3,13 +3,23 @@ import { InitializeParams, InitializeResult } from 'vscode-languageserver/node';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspConnection } from '../../../src/protocol/LspConnection';
 
+vi.mock('../../../src/protocol/LspDocuments', () => ({
+    LspDocuments: vi.fn(function () {
+        return {
+            listen: vi.fn(),
+            get: vi.fn(),
+            all: vi.fn(),
+        };
+    }),
+}));
+
 vi.mock('vscode-languageserver/node', async () => {
     const actual = await vi.importActual('vscode-languageserver/node');
     return {
         ...actual,
         createConnection: vi.fn(() => mockConnection),
         ProposedFeatures: { all: {} },
-        TextDocuments: vi.fn(() => ({ listen: vi.fn(), get: vi.fn(), all: vi.fn() })),
+        TextDocuments: vi.fn(function () {}),
     };
 });
 

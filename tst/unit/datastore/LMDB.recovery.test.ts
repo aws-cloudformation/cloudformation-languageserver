@@ -157,9 +157,7 @@ describe('LMDB fork detection and recovery', () => {
 
             const newFactory = new LMDBStoreFactory(testDir);
 
-            expect(async () => {
-                await newFactory.close();
-            }).not.toThrow();
+            await expect(newFactory.close()).resolves.not.toThrow();
         });
 
         it('should cleanup old version directories', async () => {

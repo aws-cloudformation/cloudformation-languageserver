@@ -47,7 +47,9 @@ describe('SchemaRetriever', () => {
             getSamSchemasStub,
             taskManagerStub,
         );
+    });
 
+    it('should add task for default region on construction', () => {
         expect(taskManagerStub.addTask.calledWith(DefaultSettings.profile.region)).toBe(true);
         expect(taskManagerStub.runPrivateTask.called).toBe(false);
         expect(taskManagerStub.runSamTask.called).toBe(false);
