@@ -1,8 +1,10 @@
 #!/usr/bin/env node --expose-gc
-
+import { v4 } from 'uuid';
+import { Storage } from '../src/utils/Storage';
 import { TelemetryService } from '../src/telemetry/TelemetryService';
 import { LoggerFactory } from '../src/telemetry/LoggerFactory';
 
+Storage.initialize(join(process.cwd(), 'node_modules', '.cache', 'benchmark', v4()));
 LoggerFactory.initialize('silent');
 TelemetryService.initialize(undefined, {
     telemetryEnabled: false,

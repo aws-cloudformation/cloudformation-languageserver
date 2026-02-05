@@ -72,9 +72,10 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         try {
             output = await this.ccapiService.getResource(typeName, identifier);
         } catch (error) {
-            log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
             if (error instanceof ResourceNotFoundException) {
                 log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
+            } else {
+                log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
                 this.telemetry.count('state.fault', 1);
             }
             return;
