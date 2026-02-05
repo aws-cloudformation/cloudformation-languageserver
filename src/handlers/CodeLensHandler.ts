@@ -1,5 +1,4 @@
-import { CodeLens, CodeLensParams } from 'vscode-languageserver';
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { CodeLens, CodeLensParams, ServerRequestHandler } from 'vscode-languageserver';
 import { ServerComponents } from '../server/ServerComponents';
 import { TelemetryService } from '../telemetry/TelemetryService';
 

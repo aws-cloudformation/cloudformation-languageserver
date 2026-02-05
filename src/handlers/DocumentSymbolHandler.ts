@@ -1,5 +1,4 @@
-import { DocumentSymbol, DocumentSymbolParams } from 'vscode-languageserver';
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { DocumentSymbol, DocumentSymbolParams, ServerRequestHandler } from 'vscode-languageserver';
 import { ServerComponents } from '../server/ServerComponents';
 import { TelemetryService } from '../telemetry/TelemetryService';
 

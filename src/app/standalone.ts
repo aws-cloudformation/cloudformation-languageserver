@@ -1,5 +1,5 @@
 import { arch, machine, platform, release, type } from 'os';
-import { createConnection, ProposedFeatures } from 'vscode-languageserver/node';
+import { createConnection, ProposedFeatures } from 'vscode-languageserver/node'; // eslint-disable-line no-restricted-imports
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';

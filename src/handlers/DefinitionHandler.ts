@@ -1,5 +1,4 @@
-import { DefinitionParams, Location, Definition, DefinitionLink } from 'vscode-languageserver';
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { DefinitionParams, Location, Definition, DefinitionLink, ServerRequestHandler } from 'vscode-languageserver';
 import { ServerComponents } from '../server/ServerComponents';
 import { TelemetryService } from '../telemetry/TelemetryService';
 

@@ -1,4 +1,4 @@
-import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
+import { TextDocumentPositionParams } from 'vscode-languageserver-protocol';
 import { TopLevelSection, IntrinsicFunction, EntityType } from '../context/CloudFormationEnums';
 import { Context } from '../context/Context';
 import { ContextManager } from '../context/ContextManager';

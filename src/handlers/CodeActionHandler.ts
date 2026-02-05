@@ -1,5 +1,4 @@
-import { CodeActionParams, CodeAction, Command } from 'vscode-languageserver';
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { CodeActionParams, CodeAction, Command, ServerRequestHandler } from 'vscode-languageserver';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';

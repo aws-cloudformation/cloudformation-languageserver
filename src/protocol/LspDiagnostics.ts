@@ -1,4 +1,4 @@
-import { Connection, PublishDiagnosticsParams } from 'vscode-languageserver/node';
+import { Connection, PublishDiagnosticsParams } from 'vscode-languageserver';
 
 export class LspDiagnostics {
     constructor(private readonly connection: Connection) {}

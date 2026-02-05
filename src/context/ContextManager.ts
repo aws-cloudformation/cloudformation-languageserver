@@ -1,5 +1,5 @@
 import { SyntaxNode } from 'tree-sitter';
-import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
+import { TextDocumentPositionParams } from 'vscode-languageserver-protocol';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Track } from '../telemetry/TelemetryDecorator';
 import { toString } from '../utils/String';

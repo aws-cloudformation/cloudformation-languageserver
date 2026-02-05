@@ -1,5 +1,4 @@
-import { ExecuteCommandParams } from 'vscode-languageserver';
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { ExecuteCommandParams, ServerRequestHandler } from 'vscode-languageserver';
 import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';

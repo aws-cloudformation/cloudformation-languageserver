@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
-import { ResponseError, ServerRequestHandler } from 'vscode-languageserver';
-import { RequestHandler } from 'vscode-languageserver/node';
+import { RequestHandler, ResponseError, ServerRequestHandler } from 'vscode-languageserver';
 import { TopLevelSection } from '../context/CloudFormationEnums';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { CloudFormationFileType } from '../document/Document';

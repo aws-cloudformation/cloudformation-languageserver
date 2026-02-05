@@ -1,5 +1,4 @@
-import { Hover, HoverParams, MarkupKind } from 'vscode-languageserver';
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { Hover, HoverParams, MarkupKind, ServerRequestHandler } from 'vscode-languageserver';
 import { ServerComponents } from '../server/ServerComponents';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { EventType } from '../usageTracker/UsageTracker';

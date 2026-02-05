@@ -1,5 +1,4 @@
-import { CompletionParams, CompletionList, CompletionItem } from 'vscode-languageserver';
-import { ServerRequestHandler } from 'vscode-languageserver/lib/common/server';
+import { CompletionParams, CompletionList, CompletionItem, ServerRequestHandler } from 'vscode-languageserver';
 import { ServerComponents } from '../server/ServerComponents';
 import { TelemetryService } from '../telemetry/TelemetryService';
 

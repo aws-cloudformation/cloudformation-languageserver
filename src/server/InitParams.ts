@@ -1,5 +1,5 @@
 import { LevelWithSilent } from 'pino';
-import { InitializeParams } from 'vscode-languageserver/node';
+import { InitializeParams } from 'vscode-languageserver';
 import { _InitializeParams } from 'vscode-languageserver-protocol';
 
 export type ClientInfo = _InitializeParams['clientInfo'];

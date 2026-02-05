@@ -1,10 +1,4 @@
-import {
-    InitializeParams,
-    InitializeResult,
-    Connection,
-    createConnection,
-    ProposedFeatures,
-} from 'vscode-languageserver/node';
+import { Connection, InitializeParams, InitializeResult } from 'vscode-languageserver';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { ExtensionName } from '../utils/ExtensionConfig';
 import { LspAuthHandlers } from './LspAuthHandlers';
@@ -44,7 +38,7 @@ export class LspConnection {
     private initializeParams?: InitializeParams;
 
     constructor(
-        private readonly connection: Connection = createConnection(ProposedFeatures.all),
+        private readonly connection: Connection,
         handlers: LspConnectionHandlers = {},
     ) {
         const {

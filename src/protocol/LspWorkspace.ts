@@ -1,10 +1,10 @@
-import { DidChangeWorkspaceFoldersNotification } from 'vscode-languageserver';
 import {
-    Connection,
-    WorkspaceFolder,
     ClientCapabilities,
+    Connection,
     DidChangeConfigurationNotification,
-} from 'vscode-languageserver/node';
+    DidChangeWorkspaceFoldersNotification,
+    WorkspaceFolder,
+} from 'vscode-languageserver';
 import { NotificationHandler } from 'vscode-languageserver-protocol';
 import { extractErrorMessage } from '../utils/Errors';
 

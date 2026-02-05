@@ -1,4 +1,4 @@
-import { RequestHandler } from 'vscode-languageserver/node';
+import { RequestHandler } from 'vscode-languageserver';
 import { NotificationHandler } from 'vscode-languageserver-protocol';
 import { UpdateCredentialsParams, UpdateCredentialsResult } from '../auth/AwsLspAuthTypes';
 import { ServerComponents } from '../server/ServerComponents';

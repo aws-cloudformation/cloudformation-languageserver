@@ -1,6 +1,5 @@
 import { Point } from 'tree-sitter';
-import { DidChangeTextDocumentParams } from 'vscode-languageserver';
-import { TextDocumentChangeEvent } from 'vscode-languageserver/lib/common/textDocuments';
+import { DidChangeTextDocumentParams, TextDocumentChangeEvent } from 'vscode-languageserver';
 import { NotificationHandler } from 'vscode-languageserver-protocol';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CloudFormationFileType, Document } from '../document/Document';

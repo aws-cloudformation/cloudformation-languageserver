@@ -194,6 +194,10 @@ export default tseslint.config([
                             group: ['**/ArtifactsDir'],
                             message: 'Use Storage.ts instead. ArtifactsDir is deprecated.',
                         },
+                        {
+                            group: ['vscode-languageserver/*', 'vscode-languageserver-protocol/*', 'vscode-languageserver-textdocument/*'],
+                            message: 'Import from main package only, not subpaths.',
+                        },
                     ],
                 },
             ],

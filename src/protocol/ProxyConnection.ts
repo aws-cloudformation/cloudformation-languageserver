@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-function-type */
-import { Connection } from 'vscode-languageserver/node';
+import { Connection } from 'vscode-languageserver';
 import { NotificationHandler } from 'vscode-languageserver-protocol';
 import { extractErrorMessage } from '../utils/Errors';
 

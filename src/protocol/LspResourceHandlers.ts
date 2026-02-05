@@ -1,5 +1,4 @@
-import { Connection, ServerRequestHandler } from 'vscode-languageserver';
-import { RequestHandler } from 'vscode-languageserver/node';
+import { Connection, RequestHandler, ServerRequestHandler } from 'vscode-languageserver';
 import {
     ResourceTypesResult,
     ResourceTypesRequest,
