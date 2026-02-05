@@ -1,6 +1,6 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Connection, TextDocuments } from 'vscode-languageserver/node';
+import { Connection, TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { LspDocuments } from '../../../src/protocol/LspDocuments';
 import { ProxyConnection } from '../../../src/protocol/ProxyConnection';
@@ -9,8 +9,8 @@ vi.mock('../../../src/protocol/ProxyConnection', () => ({
     ProxyConnection: vi.fn(function () {}),
 }));
 
-vi.mock('vscode-languageserver/node', async () => {
-    const actual = await vi.importActual('vscode-languageserver/node');
+vi.mock('vscode-languageserver', async () => {
+    const actual = await vi.importActual('vscode-languageserver');
     return {
         ...actual,
         TextDocuments: vi.fn(function () {}),
@@ -24,7 +24,6 @@ describe('LspDocuments', () => {
     let mockProxyConnection: any;
 
     beforeEach(() => {
-        vi.clearAllMocks();
         mockConnection = stubInterface<Connection>();
 
         mockTextDocuments = {
