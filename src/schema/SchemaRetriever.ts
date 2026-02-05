@@ -34,6 +34,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
             getPrivateResources,
             getSamSchemas,
         ),
+        private readonly staleDaysThreshold: number = StaleDaysThreshold,
     ) {
         this.telemetry.registerGaugeProvider('public.age.max', () => this.schemaStore.getPublicSchemasMaxAge(), {
             unit: 'ms',
@@ -100,7 +101,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
 
             const now = DateTime.now();
             const lastModified = DateTime.fromMillis(storedSchema.lastModifiedMs);
-            const isStale = now.diff(lastModified, 'days').days >= StaleDaysThreshold;
+            const isStale = now.diff(lastModified, 'days').days >= this.staleDaysThreshold;
 
             if (isStale) {
                 this.telemetry.count('schema.public.stale', 1);
@@ -121,7 +122,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         this.telemetry.count('schema.sam.cached', 1);
         const now = DateTime.now();
         const lastModified = DateTime.fromMillis(existingValue.lastModifiedMs);
-        const isStale = now.diff(lastModified, 'days').days >= StaleDaysThreshold;
+        const isStale = now.diff(lastModified, 'days').days >= this.staleDaysThreshold;
 
         if (isStale) {
             this.telemetry.count('schema.sam.stale', 1);

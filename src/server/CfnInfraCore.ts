@@ -15,7 +15,7 @@ import { UsageTracker } from '../usageTracker/UsageTracker';
 import { UsageTrackerMetrics } from '../usageTracker/UsageTrackerMetrics';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
-import { ExtendedInitializeParams } from './InitParams';
+import { AwsMetadata, ExtendedInitializeParams } from './InitParams';
 
 /**
  * Core Infrastructure
@@ -23,6 +23,7 @@ import { ExtendedInitializeParams } from './InitParams';
  * LSP cannot function without these components
  */
 export class CfnInfraCore implements Configurables, Closeable {
+    readonly awsMetadata?: AwsMetadata;
     readonly dataStoreFactory: DataStoreFactoryProvider;
     readonly clientMessage: ClientMessage;
     readonly settingsManager: SettingsManager;
@@ -35,7 +36,6 @@ export class CfnInfraCore implements Configurables, Closeable {
     readonly awsCredentials: AwsCredentials;
     readonly validationManager: ValidationManager;
     readonly diagnosticCoordinator: DiagnosticCoordinator;
-    readonly cloudformationEndpoint?: string;
     readonly usageTracker: UsageTracker;
     readonly usageTrackerMetrics: UsageTrackerMetrics;
 
@@ -44,6 +44,7 @@ export class CfnInfraCore implements Configurables, Closeable {
         initializeParams: ExtendedInitializeParams,
         overrides: Partial<CfnInfraCore> = {},
     ) {
+        this.awsMetadata = initializeParams.initializationOptions?.aws;
         this.dataStoreFactory = overrides.dataStoreFactory ?? new MultiDataStoreFactoryProvider();
         this.clientMessage = overrides.clientMessage ?? new ClientMessage(lspComponents.communication);
         this.settingsManager = overrides.settingsManager ?? new SettingsManager(lspComponents.workspace);
@@ -56,8 +57,6 @@ export class CfnInfraCore implements Configurables, Closeable {
             });
         this.contextManager = overrides.contextManager ?? new ContextManager(this.syntaxTreeManager);
         this.fileContextManager = overrides.fileContextManager ?? new FileContextManager(this.documentManager);
-
-        this.cloudformationEndpoint = initializeParams.initializationOptions?.aws?.cloudformation?.endpoint;
 
         this.awsCredentials =
             overrides.awsCredentials ??

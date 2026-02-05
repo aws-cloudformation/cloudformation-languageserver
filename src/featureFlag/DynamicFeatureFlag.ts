@@ -2,6 +2,8 @@ import { Closeable } from '../utils/Closeable';
 import { FeatureFlagBuilderType, FeatureFlagConfigType, TargetedFeatureFlagBuilderType } from './FeatureFlagBuilder';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 
+export const DynamicRefreshIntervalMs = 60 * 1000;
+
 export class DynamicFeatureFlag implements FeatureFlag, Closeable {
     private flag: FeatureFlag;
     private readonly interval: NodeJS.Timeout;
@@ -10,7 +12,7 @@ export class DynamicFeatureFlag implements FeatureFlag, Closeable {
         private readonly name: string,
         private readonly configSupplier: () => FeatureFlagConfigType | undefined,
         private readonly builder: FeatureFlagBuilderType,
-        refreshMs: number = 60 * 1000,
+        refreshMs: number = DynamicRefreshIntervalMs,
     ) {
         this.flag = this.builder(this.name, this.configSupplier());
         this.interval = setInterval(() => {
@@ -39,7 +41,7 @@ export class DynamicTargetedFeatureFlag<T> implements TargetedFeatureFlag<T>, Cl
         private readonly name: string,
         private readonly configSupplier: () => FeatureFlagConfigType | undefined,
         private readonly builder: TargetedFeatureFlagBuilderType<T>,
-        refreshMs: number = 60 * 1000,
+        refreshMs: number = DynamicRefreshIntervalMs,
     ) {
         this.flag = this.builder(this.name, this.configSupplier());
         this.interval = setInterval(() => {

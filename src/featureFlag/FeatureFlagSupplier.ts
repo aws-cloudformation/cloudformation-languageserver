@@ -4,7 +4,7 @@ import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { toString } from '../utils/String';
 import { CompoundFeatureFlag } from './CombinedFeatureFlags';
-import { DynamicFeatureFlag, DynamicTargetedFeatureFlag } from './DynamicFeatureFlag';
+import { DynamicFeatureFlag, DynamicTargetedFeatureFlag, DynamicRefreshIntervalMs } from './DynamicFeatureFlag';
 import {
     buildLocalHost,
     buildRegional,
@@ -28,12 +28,17 @@ export class FeatureFlagSupplier implements Closeable {
         TargetedFeatureFlag<unknown> | DynamicTargetedFeatureFlag<unknown>
     >();
 
-    constructor(configSupplier: () => unknown, defaultConfig: () => unknown) {
+    constructor(
+        configSupplier: () => unknown,
+        defaultConfig: () => unknown,
+        dynamicRefreshIntervalMs: number = DynamicRefreshIntervalMs,
+    ) {
         for (const [key, builder] of Object.entries(FeatureBuilders)) {
             const ff = new DynamicFeatureFlag(
                 key,
                 () => featureConfigSupplier(key, configSupplier, defaultConfig, this.telemetry),
                 builder,
+                dynamicRefreshIntervalMs,
             );
             this._featureFlags.set(key, ff);
         }
@@ -43,6 +48,7 @@ export class FeatureFlagSupplier implements Closeable {
                 key,
                 () => featureConfigSupplier(key, configSupplier, defaultConfig, this.telemetry),
                 builder,
+                dynamicRefreshIntervalMs,
             );
             this._targetedFeatureFlags.set(key, ff);
         }

@@ -1,7 +1,16 @@
 #!/usr/bin/env node
 
+import { v4 } from 'uuid';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { extname, resolve, join } from 'path';
+import { Storage } from '../src/utils/Storage';
+import { LoggerFactory } from '../src/telemetry/LoggerFactory';
+import { TelemetryService } from '../src/telemetry/TelemetryService';
+
+Storage.initialize(join(process.cwd(), 'node_modules', '.cache', 'debug-tree', v4()));
+LoggerFactory.initialize('silent');
+TelemetryService.initialize(undefined, { telemetryEnabled: false });
+
 import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
 import { ContextManager } from '../src/context/ContextManager';
 import { SyntaxTree } from '../src/context/syntaxtree/SyntaxTree';
@@ -11,7 +20,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { DocumentManager } from '../src/document/DocumentManager';
 import { TextDocuments } from 'vscode-languageserver/node';
-import { TextDocument } from 'vscode-languageserver-textdocument/lib/esm/main';
+import { TextDocument } from 'vscode-languageserver-textdocument';
 
 /**
  * Debug Tree Script

@@ -8,11 +8,14 @@ import { AwsEnv } from '../utils/Environment';
 import { isClientNetworkError } from '../utils/Errors';
 import { readFileIfExists } from '../utils/File';
 import { downloadJson } from '../utils/RemoteDownload';
+import { DynamicRefreshIntervalMs } from './DynamicFeatureFlag';
 import { FeatureFlagConfigSchema, FeatureFlagSchemaType } from './FeatureFlagBuilder';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 import { FeatureFlagSupplier, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey } from './FeatureFlagSupplier';
 
 const log = LoggerFactory.getLogger('FeatureFlagProvider');
+
+const RefreshIntervalMs = 5 * 60 * 1000;
 
 export class FeatureFlagProvider implements Closeable {
     @Telemetry()
@@ -26,6 +29,8 @@ export class FeatureFlagProvider implements Closeable {
     constructor(
         private readonly getLatestFeatureFlags: (env: string) => Promise<unknown>,
         private readonly localFile = join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`),
+        refreshIntervalMs: number = RefreshIntervalMs,
+        dynamicRefreshIntervalMs: number = DynamicRefreshIntervalMs,
     ) {
         this.config = defaultConfig(localFile, this.telemetry);
 
@@ -36,19 +41,17 @@ export class FeatureFlagProvider implements Closeable {
             () => {
                 return defaultConfig(localFile, this.telemetry);
             },
+            dynamicRefreshIntervalMs,
         );
 
         // https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api?apiVersion=2022-11-28#primary-rate-limit-for-unauthenticated-users
         // GitHub rate limits unauthenticated users to 60 requests per minute, so our refresh cycle has to be less than that
         // Using 5 mins i.e. 12 requests in 1 hour
-        this.timeout = setInterval(
-            () => {
-                this.refresh().catch((err) => {
-                    log.error(err, `Failed to sync feature flags from remote`);
-                });
-            },
-            5 * 60 * 1000,
-        );
+        this.timeout = setInterval(() => {
+            this.refresh().catch((err) => {
+                log.error(err, `Failed to sync feature flags from remote`);
+            });
+        }, refreshIntervalMs);
 
         this.registerGauges();
         this.log();

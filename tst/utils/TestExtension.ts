@@ -45,6 +45,7 @@ import {
     DidChangeWorkspaceFoldersParams,
     CodeLensParams,
     CodeLensRequest,
+    InitializeParams,
 } from 'vscode-languageserver';
 import { createConnection } from 'vscode-languageserver/node';
 import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '../../src/auth/AuthProtocol';
@@ -60,7 +61,7 @@ import { CfnExternal } from '../../src/server/CfnExternal';
 import { CfnInfraCore } from '../../src/server/CfnInfraCore';
 import { CfnLspProviders } from '../../src/server/CfnLspProviders';
 import { CfnServer } from '../../src/server/CfnServer';
-import { AwsMetadata, ExtendedInitializeParams } from '../../src/server/InitParams';
+import { AwsMetadata } from '../../src/server/InitParams';
 import { AwsClient } from '../../src/services/AwsClient';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { DefaultSettings } from '../../src/settings/Settings';
@@ -73,14 +74,14 @@ import { flushAllPromises, WaitFor } from './Utils';
 
 type TestExtensionConfig = {
     id?: string;
-    initializeParams?: Partial<ExtendedInitializeParams>;
+    initializeParams?: Partial<InitializeParams>;
     workspaceConfig?: Record<string, unknown>[];
     awsClientFactory?: (credentials: AwsCredentials, endpoint?: string) => AwsClient;
 };
 
 export class TestExtension implements Closeable {
     private readonly awsMetadata: AwsMetadata;
-    private readonly initializeParams: ExtendedInitializeParams;
+    private readonly initializeParams: InitializeParams;
 
     private readonly readStream = new PassThrough();
     private readonly writeStream = new PassThrough();
@@ -160,7 +161,7 @@ export class TestExtension implements Closeable {
                         }, ffFile),
                         awsClient: config.awsClientFactory?.(
                             this.core.awsCredentials,
-                            this.core.cloudformationEndpoint,
+                            this.core.awsMetadata?.cloudformation?.endpoint,
                         ),
                     });
 
