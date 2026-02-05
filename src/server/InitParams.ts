@@ -1,10 +1,11 @@
 import { LevelWithSilent } from 'pino';
-import { InitializeParams } from 'vscode-languageserver/node';
+import { DeepReadonly } from 'ts-essentials';
+import { InitializeParams } from 'vscode-languageserver';
 import { _InitializeParams } from 'vscode-languageserver-protocol';
 
-export type ClientInfo = _InitializeParams['clientInfo'];
+export type ClientInfo = DeepReadonly<_InitializeParams['clientInfo']>;
 
-export type AwsMetadata = {
+type _AwsMetadata = {
     clientInfo?: {
         extension: {
             name: string;
@@ -22,11 +23,20 @@ export type AwsMetadata = {
         key: string;
         mode: string;
     };
+    featureFlags?: {
+        refreshIntervalMs?: number;
+        dynamicRefreshIntervalMs?: number;
+    };
+    schema?: {
+        staleDaysThreshold?: number;
+    };
 };
+export type AwsMetadata = DeepReadonly<_AwsMetadata>;
 
-export interface ExtendedInitializeParams extends InitializeParams {
+interface _ExtendedInitializeParams extends InitializeParams {
     initializationOptions?: {
         aws?: AwsMetadata;
         [key: string]: unknown;
     };
 }
+export type ExtendedInitializeParams = DeepReadonly<_ExtendedInitializeParams>;

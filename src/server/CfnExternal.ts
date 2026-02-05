@@ -14,6 +14,7 @@ import { OnlineStatus } from '../services/OnlineStatus';
 import { S3Service } from '../services/S3Service';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
+import { validatePositiveOrUndefined } from '../utils/Number';
 import { OnlineFeatureGuard } from '../utils/OnlineFeatureGuard';
 import { CfnInfraCore } from './CfnInfraCore';
 
@@ -39,7 +40,8 @@ export class CfnExternal implements Configurables, Closeable {
     readonly onlineFeatureGuard: OnlineFeatureGuard;
 
     constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Partial<CfnExternal> = {}) {
-        this.awsClient = overrides.awsClient ?? new AwsClient(core.awsCredentials, core.cloudformationEndpoint);
+        this.awsClient =
+            overrides.awsClient ?? new AwsClient(core.awsCredentials, core.awsMetadata?.cloudformation?.endpoint);
 
         this.cfnService = overrides.cfnService ?? new CfnService(this.awsClient);
         this.ccapiService = overrides.ccapiService ?? new CcapiService(this.awsClient);
@@ -54,6 +56,8 @@ export class CfnExternal implements Configurables, Closeable {
                 getRemotePublicSchemas,
                 () => getRemotePrivateSchemas(core.awsCredentials, this.cfnService),
                 getSamSchemas,
+                undefined,
+                validatePositiveOrUndefined(core.awsMetadata?.schema?.staleDaysThreshold),
             );
 
         this.cfnLintService =
@@ -64,7 +68,14 @@ export class CfnExternal implements Configurables, Closeable {
             new GuardService(core.documentManager, core.diagnosticCoordinator, core.syntaxTreeManager);
 
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus();
-        this.featureFlags = overrides.featureFlags ?? new FeatureFlagProvider(getFromGitHub);
+        this.featureFlags =
+            overrides.featureFlags ??
+            new FeatureFlagProvider(
+                getFromGitHub,
+                undefined,
+                validatePositiveOrUndefined(core.awsMetadata?.featureFlags?.refreshIntervalMs),
+                validatePositiveOrUndefined(core.awsMetadata?.featureFlags?.dynamicRefreshIntervalMs),
+            );
         this.onlineFeatureGuard = overrides.onlineFeatureGuard ?? new OnlineFeatureGuard(core.awsCredentials);
     }
 
