@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "@aws/cloudformation-languageserver@1.4.0",
-  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.4.0-dda22f2b-623a-4070-be1e-3701042f904e",
+  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.4.0-431fda1c-7605-4794-9437-9cccce2402ac",
   "creationInfo": {
-    "created": "2026-02-04T19:23:12.065Z",
+    "created": "2026-02-05T16:09:46.671Z",
     "creators": [
       "Tool: npm/cli-10.9.2"
     ]
@@ -410,11 +410,11 @@
     },
     {
       "name": "@aws-sdk/client-cloudcontrol",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
-      "versionInfo": "3.982.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
+      "versionInfo": "3.983.0",
       "packageFileName": "node_modules/@aws-sdk/client-cloudcontrol",
       "description": "AWS SDK for JavaScript Cloudcontrol Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-cloudcontrol/-/client-cloudcontrol-3.982.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-cloudcontrol/-/client-cloudcontrol-3.983.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-cloudcontrol",
       "licenseDeclared": "Apache-2.0",
@@ -422,23 +422,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-cloudcontrol@3.982.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-cloudcontrol@3.983.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "a612236d4dbbcf647ac9d530d61df3e6e8f6ea2aad2dcd7fcde308b168134ea823d2c782ea43201f71e59f2e378ba32b27612e1ab496a62a02d50b06502ce25a"
+          "checksumValue": "25dd65d0d5b807c99bd632699695a2e5609ce92564e8dd038d25202ef131f9f385e4e2c833cb32b4478346569633c74a7730b6640601243677ebd1938a372d3c"
         }
       ]
     },
     {
       "name": "@aws-sdk/client-cloudformation",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
-      "versionInfo": "3.982.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
+      "versionInfo": "3.983.0",
       "packageFileName": "node_modules/@aws-sdk/client-cloudformation",
       "description": "AWS SDK for JavaScript Cloudformation Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-cloudformation/-/client-cloudformation-3.982.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-cloudformation/-/client-cloudformation-3.983.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-cloudformation",
       "licenseDeclared": "Apache-2.0",
@@ -446,23 +446,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-cloudformation@3.982.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-cloudformation@3.983.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "29135c525f6b0bc20771cc25cffd12897b0c6d3d551af36bcb8249db2ce31e45a02185c96fbb62e1ed38257fbd6a39752cd1875fe66ddbc1b38778152bd9e503"
+          "checksumValue": "cc5761914db876a98550bfdf33e3e17d0f1e5b388c095c87390a85789d4aaf6d18a2f97f874099a33b4d91d1d59066979dd31e1dc329b2f6ffa45d5f0265bf6a"
         }
       ]
     },
     {
       "name": "@aws-sdk/client-iam",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
-      "versionInfo": "3.982.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
+      "versionInfo": "3.983.0",
       "packageFileName": "node_modules/@aws-sdk/client-iam",
       "description": "AWS SDK for JavaScript Iam Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-iam/-/client-iam-3.982.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-iam/-/client-iam-3.983.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-iam",
       "licenseDeclared": "Apache-2.0",
@@ -470,23 +470,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-iam@3.982.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-iam@3.983.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "cb02b9e73e8eaabd14b2a4c619798cd0034f84c3fadc3785ea6d3bc7e455a709b4b002a3bbd9cfcd44fea8cf75755fc9f1b663da27cecc4799a7fd4f8e94a736"
+          "checksumValue": "2683339a87e0da66f4ea4281a13430f2e390f6f4de4a5389d884f1d41d046b8c224d765d54f888fc18e5c5c0baea2f225a67f302bf2a43c2d47ae4f5b6a24f5b"
         }
       ]
     },
     {
       "name": "@aws-sdk/client-s3",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
-      "versionInfo": "3.982.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
+      "versionInfo": "3.983.0",
       "packageFileName": "node_modules/@aws-sdk/client-s3",
       "description": "AWS SDK for JavaScript S3 Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-s3/-/client-s3-3.982.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-s3/-/client-s3-3.983.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-s3",
       "licenseDeclared": "Apache-2.0",
@@ -494,13 +494,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-s3@3.982.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-s3@3.983.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "93400d600b4f88e37d0702d77038095e49a6080184b92936a593afacc7a3da4361b37c535e83ec848511e543020fd6a96225ad5c925f5cc65281a304fa258d69"
+          "checksumValue": "578d0f4f68ab3e1de58fe67de6d648e9b6ad56b8da4eb58439744d541ba8652829337024d63884f595f054b90c71b6fdfc61f8c55a41dc4b0633b81bc668052d"
         }
       ]
     },
@@ -529,12 +529,36 @@
       ]
     },
     {
-      "name": "@aws-sdk/client-sts",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "name": "@aws-sdk/util-endpoints",
+      "SPDXID": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
       "versionInfo": "3.982.0",
+      "packageFileName": "node_modules/@aws-sdk/client-sso/node_modules/@aws-sdk/util-endpoints",
+      "description": "Utilities to help with endpoint resolution",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/util-endpoints/-/util-endpoints-3.982.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/util-endpoints",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40aws-sdk/util-endpoints@3.982.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "336eeef0524feced0e7fd84c597e5d8a9a7fffc8a096657d8ebed1f1247c46f794f99e74ffc4ea1faf13bbac1458118c7d78f36d5c27d4834800ee6566b9715d"
+        }
+      ]
+    },
+    {
+      "name": "@aws-sdk/client-sts",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
+      "versionInfo": "3.983.0",
       "packageFileName": "node_modules/@aws-sdk/client-sts",
       "description": "AWS SDK for JavaScript Sts Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-sts/-/client-sts-3.982.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-sts/-/client-sts-3.983.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-sts",
       "licenseDeclared": "Apache-2.0",
@@ -542,13 +566,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-sts@3.982.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-sts@3.983.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "948854dbbd75a4f2d847ea9d2dc0b22f1bc1db679036b90635f30180c7d3aa8d95037546e29ac6fa419c79e9aaf9009350712f8674cbb2e4485aca6ea451ef40"
+          "checksumValue": "2cb39b2372f2af3d1d7c6317ea9fdb934b9c927a7430983677f7fa86d75f679f10ddd56c8a1f4ded82ae825b776387b99b864f2dc2c891ed9e725258a1d0f521"
         }
       ]
     },
@@ -1023,6 +1047,30 @@
       ]
     },
     {
+      "name": "@aws-sdk/util-endpoints",
+      "SPDXID": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "versionInfo": "3.982.0",
+      "packageFileName": "node_modules/@aws-sdk/middleware-user-agent/node_modules/@aws-sdk/util-endpoints",
+      "description": "Utilities to help with endpoint resolution",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/util-endpoints/-/util-endpoints-3.982.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/util-endpoints",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40aws-sdk/util-endpoints@3.982.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "336eeef0524feced0e7fd84c597e5d8a9a7fffc8a096657d8ebed1f1247c46f794f99e74ffc4ea1faf13bbac1458118c7d78f36d5c27d4834800ee6566b9715d"
+        }
+      ]
+    },
+    {
       "name": "@aws-sdk/nested-clients",
       "SPDXID": "SPDXRef-Package-aws-sdk.nested-clients-3.982.0",
       "versionInfo": "3.982.0",
@@ -1043,6 +1091,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "55591a1f6edd8a0ac97dd56b4fae2b8e4965bcea78a11899bae26faf294b5c02a5d7cba34e8251ec0aa90e574bfcb4badd15677b7416229932808ca6c45b6589"
+        }
+      ]
+    },
+    {
+      "name": "@aws-sdk/util-endpoints",
+      "SPDXID": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "versionInfo": "3.982.0",
+      "packageFileName": "node_modules/@aws-sdk/nested-clients/node_modules/@aws-sdk/util-endpoints",
+      "description": "Utilities to help with endpoint resolution",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/util-endpoints/-/util-endpoints-3.982.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/util-endpoints",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40aws-sdk/util-endpoints@3.982.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "336eeef0524feced0e7fd84c597e5d8a9a7fffc8a096657d8ebed1f1247c46f794f99e74ffc4ea1faf13bbac1458118c7d78f36d5c27d4834800ee6566b9715d"
         }
       ]
     },
@@ -1071,10 +1143,10 @@
     },
     {
       "name": "@aws-sdk/signature-v4-multi-region",
-      "SPDXID": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.982.0",
-      "versionInfo": "3.982.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.983.0",
+      "versionInfo": "3.983.0",
       "packageFileName": "node_modules/@aws-sdk/signature-v4-multi-region",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/signature-v4-multi-region/-/signature-v4-multi-region-3.982.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/signature-v4-multi-region/-/signature-v4-multi-region-3.983.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/signature-v4-multi-region",
       "licenseDeclared": "Apache-2.0",
@@ -1082,13 +1154,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/signature-v4-multi-region@3.982.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/signature-v4-multi-region@3.983.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "016aa33001fce3c68dc272c2b4828cdd63b4d1e1ee5286157d030fe1c72b50786711db863aeb1581d1d0e662cd41964d673444b81c273cf8483f9e5ccb48054a"
+          "checksumValue": "d7514273123f58a46e7ca0dd3e028f5edae18c302b86438f6f899febaac80995273c7943f026fb7236594bf7850be8aec281c1a2caf1a34858b2f2b7b3b0f11b"
         }
       ]
     },
@@ -1142,11 +1214,11 @@
     },
     {
       "name": "@aws-sdk/util-endpoints",
-      "SPDXID": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
-      "versionInfo": "3.982.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.util-endpoints-3.983.0",
+      "versionInfo": "3.983.0",
       "packageFileName": "node_modules/@aws-sdk/util-endpoints",
       "description": "Utilities to help with endpoint resolution",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/util-endpoints/-/util-endpoints-3.982.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/util-endpoints/-/util-endpoints-3.983.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/util-endpoints",
       "licenseDeclared": "Apache-2.0",
@@ -1154,13 +1226,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/util-endpoints@3.982.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/util-endpoints@3.983.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "336eeef0524feced0e7fd84c597e5d8a9a7fffc8a096657d8ebed1f1247c46f794f99e74ffc4ea1faf13bbac1458118c7d78f36d5c27d4834800ee6566b9715d"
+          "checksumValue": "b7f55b2f65f782f0c48c2e2077248e78514e64640404ac1adb7a511de07b8412c1675d7d041ff638416d4c558aca9ddb9cc420c697957864bbfe1c64eb0a4a27"
         }
       ]
     },
@@ -1546,6 +1618,30 @@
       ]
     },
     {
+      "name": "@isaacs/cliui",
+      "SPDXID": "SPDXRef-Package-isaacs.cliui-8.0.2",
+      "versionInfo": "8.0.2",
+      "packageFileName": "node_modules/@isaacs/cliui",
+      "description": "easily create complex multi-column command-line-interfaces",
+      "downloadLocation": "https://registry.npmjs.org/@isaacs/cliui/-/cliui-8.0.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/yargs/cliui#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40isaacs/cliui@8.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3bc8dc8da6d76a578e1bd0d0d3e0115d66414df9cfe16340ab3ba224aee5978e009b118abff2763384cf8f18d8df39c109fbc15c5cee726d6dc1dc85c9b16a10"
+        }
+      ]
+    },
+    {
       "name": "@js-sdsl/ordered-map",
       "SPDXID": "SPDXRef-Package-js-sdsl.ordered-map-4.4.2",
       "versionInfo": "4.4.2",
@@ -1614,30 +1710,6 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "4191ed95581b01dcb6cc0a8d03d1aed54a48b88f17bec775bfc89ce81da96667859c570c5a23cb7d65e1ed3570e1e18467f0bd4c7dbcd4ac2156879050a6f28f"
-        }
-      ]
-    },
-    {
-      "name": "@opentelemetry/api",
-      "SPDXID": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "versionInfo": "1.9.0",
-      "packageFileName": "node_modules/@opentelemetry/api",
-      "description": "Public API for OpenTelemetry",
-      "downloadLocation": "https://registry.npmjs.org/@opentelemetry/api/-/api-1.9.0.tgz",
-      "filesAnalyzed": false,
-      "homepage": "https://github.com/open-telemetry/opentelemetry-js/tree/main/api",
-      "licenseDeclared": "Apache-2.0",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40opentelemetry/api@1.9.0"
-        }
-      ],
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "de0880390bd9887e45f5b325322bfcf8648f31eaa0d1d6da7a8e7cff44a503db314aa6619d4b71cd7f7fd85cf2852f6c5907f94b418913400a06b16a8e979872"
         }
       ]
     },
@@ -4018,6 +4090,30 @@
       ]
     },
     {
+      "name": "@pkgjs/parseargs",
+      "SPDXID": "SPDXRef-Package-pkgjs.parseargs-0.11.0",
+      "versionInfo": "0.11.0",
+      "packageFileName": "node_modules/@pkgjs/parseargs",
+      "description": "Polyfill of future proposal for `util.parseArgs()`",
+      "downloadLocation": "https://registry.npmjs.org/@pkgjs/parseargs/-/parseargs-0.11.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/pkgjs/parseargs#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40pkgjs/parseargs@0.11.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "fb55648dd0f44012cfa1d1ab2547aa6ab1fc54022f40e0c86f087d5e93f94b28ac7fb628420b0928f345a2aa8b425bbe550fed552b21311ea5a0f327f14f9d3e"
+        }
+      ]
+    },
+    {
       "name": "@protobufjs/aspromise",
       "SPDXID": "SPDXRef-Package-protobufjs.aspromise-1.1.2",
       "versionInfo": "1.1.2",
@@ -6315,6 +6411,54 @@
       ]
     },
     {
+      "name": "eastasianwidth",
+      "SPDXID": "SPDXRef-Package-eastasianwidth-0.2.0",
+      "versionInfo": "0.2.0",
+      "packageFileName": "node_modules/eastasianwidth",
+      "description": "Get East Asian Width from a character.",
+      "downloadLocation": "https://registry.npmjs.org/eastasianwidth/-/eastasianwidth-0.2.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/komagata/eastasianwidth#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/eastasianwidth@0.2.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "23cf1361959cf578981d1438ff7739ae38df8248e12f25b696e18885e18445b350e8e63bc93c9b6a74a90d765af32ed550ff589837186be7b2ab871aee22ea58"
+        }
+      ]
+    },
+    {
+      "name": "emoji-regex",
+      "SPDXID": "SPDXRef-Package-emoji-regex-9.2.2",
+      "versionInfo": "9.2.2",
+      "packageFileName": "node_modules/emoji-regex",
+      "description": "A regular expression to match all Emoji-only symbols as per the Unicode Standard.",
+      "downloadLocation": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-9.2.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://mths.be/emoji-regex",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/emoji-regex@9.2.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "2f5f03689b17494936fb8da9bfc98bb398c94f686a164144e23db5c0e9a06d4aac67684bef636c514efce60f515e0a37b3464d815978d93887a7766d3affd5ca"
+        }
+      ]
+    },
+    {
       "name": "event-target-shim",
       "SPDXID": "SPDXRef-Package-event-target-shim-5.0.1",
       "versionInfo": "5.0.1",
@@ -6531,6 +6675,30 @@
       ]
     },
     {
+      "name": "foreground-child",
+      "SPDXID": "SPDXRef-Package-foreground-child-3.3.1",
+      "versionInfo": "3.3.1",
+      "packageFileName": "node_modules/foreground-child",
+      "description": "Run a child as if it's the foreground process. Give it stdio. Exit when it exits.",
+      "downloadLocation": "https://registry.npmjs.org/foreground-child/-/foreground-child-3.3.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/tapjs/foreground-child#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/foreground-child@3.3.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "8085e32aab45b96120cc544903d58241e4892d90e380950e302333c6dbc5abfdfb2a88ccd41146b9faac0b2d2be2a4909982ec65831ec91ab321638cba9d37b3"
+        }
+      ]
+    },
+    {
       "name": "form-data",
       "SPDXID": "SPDXRef-Package-form-data-4.0.5",
       "versionInfo": "4.0.5",
@@ -6671,6 +6839,78 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "6b8b62abb134ff97d38f13c0687e23a63912bffb82694da9e4a0ba1d51abbe5d1c0e303c88166fe2fbf5832ce598ad1950aab0a4ec9030acd941ede54e2b7bec"
+        }
+      ]
+    },
+    {
+      "name": "glob",
+      "SPDXID": "SPDXRef-Package-glob-10.5.0",
+      "versionInfo": "10.5.0",
+      "packageFileName": "node_modules/glob",
+      "description": "the most correct and second fastest glob implementation in JavaScript",
+      "downloadLocation": "https://registry.npmjs.org/glob/-/glob-10.5.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/node-glob#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/glob@10.5.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "0df5cdf037e127b347dce7bb7059aedcd0aed7029b911789f13a2bcd20056d22ab94d69048a7c8cea62a558f3395bb3634b05b5a9462539d865f63db68154d92"
+        }
+      ]
+    },
+    {
+      "name": "brace-expansion",
+      "SPDXID": "SPDXRef-Package-brace-expansion-2.0.2",
+      "versionInfo": "2.0.2",
+      "packageFileName": "node_modules/glob/node_modules/brace-expansion",
+      "description": "Brace expansion as known from sh/bash",
+      "downloadLocation": "https://registry.npmjs.org/brace-expansion/-/brace-expansion-2.0.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/juliangruber/brace-expansion",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/brace-expansion@2.0.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "26dd2f1f233e8e6501aa88c1ec4d4d21869db74bc8d10c63c5dd9312b5bde300f3f84d8b026e6f28c5d7c20e996414c73ee5250e0407297be318175f705d590d"
+        }
+      ]
+    },
+    {
+      "name": "minimatch",
+      "SPDXID": "SPDXRef-Package-minimatch-9.0.5",
+      "versionInfo": "9.0.5",
+      "packageFileName": "node_modules/glob/node_modules/minimatch",
+      "description": "a glob matcher in javascript",
+      "downloadLocation": "https://registry.npmjs.org/minimatch/-/minimatch-9.0.5.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/minimatch#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/minimatch@9.0.5"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1ba4f4657e3cc60a33c7be7cee4a1e5fd62cd8d632e869affff3fcf6c12d7bd57dc2121aa4c345e2274ac675b642d09c2e24d695bff07c269b02d0055a1841a3"
         }
       ]
     },
@@ -6839,6 +7079,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "f8dd278293b77bb711516389012eeac3421921573a5cfad6e0c94505d0f4eba1762f89352fa91eaf784ba92abb897c54e6d812e161a42141255a7e6fa200049f"
+        }
+      ]
+    },
+    {
+      "name": "jackspeak",
+      "SPDXID": "SPDXRef-Package-jackspeak-3.4.3",
+      "versionInfo": "3.4.3",
+      "packageFileName": "node_modules/jackspeak",
+      "description": "A very strict and proper argument parser.",
+      "downloadLocation": "https://registry.npmjs.org/jackspeak/-/jackspeak-3.4.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/jackspeak#readme",
+      "licenseDeclared": "BlueOak-1.0.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/jackspeak@3.4.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "386959429cf6c9f6a103f45dd58f0277d48812caaf5e42d5a12c3f720c219e114c0dbb1015e658a0927b6c86414bd05c6a6516f7a6acabf9e93d6ba033e45007"
         }
       ]
     },
@@ -7155,6 +7419,30 @@
       ]
     },
     {
+      "name": "lru-cache",
+      "SPDXID": "SPDXRef-Package-lru-cache-10.4.3",
+      "versionInfo": "10.4.3",
+      "packageFileName": "node_modules/lru-cache",
+      "description": "A cache object that deletes the least-recently-used items.",
+      "downloadLocation": "https://registry.npmjs.org/lru-cache/-/lru-cache-10.4.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/node-lru-cache#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/lru-cache@10.4.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "24d03365c5eb0ade365462ee633d337c0cc37c0bc9596e807d8943050c835790c2948da6e6c0262be3883bbb39f577ec46c587a74da3009ad169d3d1193b7a49"
+        }
+      ]
+    },
+    {
       "name": "luxon",
       "SPDXID": "SPDXRef-Package-luxon-3.7.1",
       "versionInfo": "3.7.1",
@@ -7175,6 +7463,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "4644568c0f76e9c4efcf9ac06f506ac9690a6db8f30867210d420a30252f362d7b8fa7fa8fcb8718357cd80a9caadcddfa272862910b986de4b201a214d35c36"
+        }
+      ]
+    },
+    {
+      "name": "minipass",
+      "SPDXID": "SPDXRef-Package-minipass-7.1.2",
+      "versionInfo": "7.1.2",
+      "packageFileName": "node_modules/minipass",
+      "description": "minimal implementation of a PassThrough stream",
+      "downloadLocation": "https://registry.npmjs.org/minipass/-/minipass-7.1.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/minipass#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/minipass@7.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "a8e3b34b57014d6605e011fc7d578f0c138ef62a6d327194119c0d73f70c5a74d5da754b67b56835610f1e461ccd9034a5da00edd97a7bb14beb9f675fd4b66b"
         }
       ]
     },
@@ -7395,6 +7707,30 @@
       ]
     },
     {
+      "name": "package-json-from-dist",
+      "SPDXID": "SPDXRef-Package-package-json-from-dist-1.0.1",
+      "versionInfo": "1.0.1",
+      "packageFileName": "node_modules/package-json-from-dist",
+      "description": "Load the local package.json from either src or dist folder",
+      "downloadLocation": "https://registry.npmjs.org/package-json-from-dist/-/package-json-from-dist-1.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/package-json-from-dist#readme",
+      "licenseDeclared": "BlueOak-1.0.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/package-json-from-dist@1.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5046484b7fdbcb8382f2f2f73f67535d1113a5e6cb236362239bc8ae3683ff952dae4157fed35bc234d2440182ffeec2028da921c05a4605a670104772c68223"
+        }
+      ]
+    },
+    {
       "name": "partial-json",
       "SPDXID": "SPDXRef-Package-partial-json-0.1.7",
       "versionInfo": "0.1.7",
@@ -7415,6 +7751,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "363bffe7d8476a891bfe14548dc7b71ddbf5db077ad0cb4cf59e4e9669fe9de85ed100c0b11b516c93ef27467dd53bac1744ae65122f9ccf92e25e8420ff2578"
+        }
+      ]
+    },
+    {
+      "name": "path-scurry",
+      "SPDXID": "SPDXRef-Package-path-scurry-1.11.1",
+      "versionInfo": "1.11.1",
+      "packageFileName": "node_modules/path-scurry",
+      "description": "walk paths fast and efficiently",
+      "downloadLocation": "https://registry.npmjs.org/path-scurry/-/path-scurry-1.11.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/isaacs/path-scurry#readme",
+      "licenseDeclared": "BlueOak-1.0.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/path-scurry@1.11.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "5dae0dc35ec54bd02940527dba62e2252e28ac68e6ed9cf052bc1a99c190b874b30f2b61f5ba0a0dac9c61d0dc643baa6004d7c381c55e06aa59372d5bfbf51c"
         }
       ]
     },
@@ -8163,6 +8523,30 @@
       ]
     },
     {
+      "name": "signal-exit",
+      "SPDXID": "SPDXRef-Package-signal-exit-4.1.0",
+      "versionInfo": "4.1.0",
+      "packageFileName": "node_modules/signal-exit",
+      "description": "when you want to fire an event no matter how a process exits.",
+      "downloadLocation": "https://registry.npmjs.org/signal-exit/-/signal-exit-4.1.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/tapjs/signal-exit#readme",
+      "licenseDeclared": "ISC",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/signal-exit@4.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6f3c99d5ef3cc3d3b588d25b2a73a5bd84eb58f0e5e3a3b56c6d03dd7227bfef6d90faf1acdf235144e21650e4926296827d4ce827c8035dd2b86a8e6bd2a8af"
+        }
+      ]
+    },
+    {
       "name": "sonic-boom",
       "SPDXID": "SPDXRef-Package-sonic-boom-4.2.0",
       "versionInfo": "4.2.0",
@@ -8255,6 +8639,174 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "864457f14d568c915df0bb03276c90ff0596c5aa2912c0015355df90cf00fa3d3ef392401a9a6dd7a72bd56860e8a21b6f8a2453a32a97a04e8febaea7fc0a78"
+        }
+      ]
+    },
+    {
+      "name": "string-width",
+      "SPDXID": "SPDXRef-Package-string-width-5.1.2",
+      "versionInfo": "5.1.2",
+      "packageFileName": "node_modules/string-width",
+      "description": "Get the visual width of a string - the number of columns required to display it",
+      "downloadLocation": "https://registry.npmjs.org/string-width/-/string-width-5.1.2.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/sindresorhus/string-width#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/string-width@5.1.2"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "1e72ce091def8dc63c6dea0d2ed723679fe7c67d9a7e6304ea586b0eb79ba24a8c6a9f976de5bc9fd4d7a4f0cea9d18ae6a708de84f418a4d6eb00bb10c895a8"
+        }
+      ]
+    },
+    {
+      "name": "string-width",
+      "SPDXID": "SPDXRef-Package-string-width-4.2.3",
+      "versionInfo": "4.2.3",
+      "packageFileName": "node_modules/string-width-cjs",
+      "description": "Get the visual width of a string - the number of columns required to display it",
+      "downloadLocation": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/sindresorhus/string-width#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/string-width@4.2.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c0ac90450a63274b08a7ad84ad265d1ac8cc256b1aa79a1136284786ee86ec954effd8c807a5327af2feb57b8eaab9e0f23fdcc4a4d6c96530bd24eb8a2673fe"
+        }
+      ]
+    },
+    {
+      "name": "ansi-regex",
+      "SPDXID": "SPDXRef-Package-ansi-regex-5.0.1",
+      "versionInfo": "5.0.1",
+      "packageFileName": "node_modules/string-width-cjs/node_modules/ansi-regex",
+      "description": "Regular expression for matching ANSI escape codes",
+      "downloadLocation": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/ansi-regex#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ansi-regex@5.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "aae2505e54d25062f62c7f52517a3c570b18e2ca1a9e1828e8b3529bce04d4b05c13cb373b4c29762473c91f73fd9649325316bf7eea38e6fda5d26531410a15"
+        }
+      ]
+    },
+    {
+      "name": "emoji-regex",
+      "SPDXID": "SPDXRef-Package-emoji-regex-8.0.0",
+      "versionInfo": "8.0.0",
+      "packageFileName": "node_modules/string-width-cjs/node_modules/emoji-regex",
+      "description": "A regular expression to match all Emoji-only symbols as per the Unicode Standard.",
+      "downloadLocation": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://mths.be/emoji-regex",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/emoji-regex@8.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3128d8cdc58d380d1ec001e9cf4331a5816fc20eb28f2d4d1b7c6d7a8ab3eb8e150a8fd13e09ebd7f186b7e89cde2253cd0f04bb74dd335e126b09d5526184e8"
+        }
+      ]
+    },
+    {
+      "name": "strip-ansi",
+      "SPDXID": "SPDXRef-Package-strip-ansi-6.0.1",
+      "versionInfo": "6.0.1",
+      "packageFileName": "node_modules/string-width-cjs/node_modules/strip-ansi",
+      "description": "Strip ANSI escape codes from a string",
+      "downloadLocation": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/strip-ansi#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/strip-ansi@6.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "637f153d21dcaa416b0a916743dbee4979aabaebf9a1738aa46793e9a1abaf7a3719cf409556ba2417d448e0a76f1186645fbfd28a08ecaacfb944b3b54754e4"
+        }
+      ]
+    },
+    {
+      "name": "strip-ansi",
+      "SPDXID": "SPDXRef-Package-strip-ansi-6.0.1",
+      "versionInfo": "6.0.1",
+      "packageFileName": "node_modules/strip-ansi-cjs",
+      "description": "Strip ANSI escape codes from a string",
+      "downloadLocation": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/strip-ansi#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/strip-ansi@6.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "637f153d21dcaa416b0a916743dbee4979aabaebf9a1738aa46793e9a1abaf7a3719cf409556ba2417d448e0a76f1186645fbfd28a08ecaacfb944b3b54754e4"
+        }
+      ]
+    },
+    {
+      "name": "ansi-regex",
+      "SPDXID": "SPDXRef-Package-ansi-regex-5.0.1",
+      "versionInfo": "5.0.1",
+      "packageFileName": "node_modules/strip-ansi-cjs/node_modules/ansi-regex",
+      "description": "Regular expression for matching ANSI escape codes",
+      "downloadLocation": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/ansi-regex#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ansi-regex@5.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "aae2505e54d25062f62c7f52517a3c570b18e2ca1a9e1828e8b3529bce04d4b05c13cb373b4c29762473c91f73fd9649325316bf7eea38e6fda5d26531410a15"
         }
       ]
     },
@@ -8715,6 +9267,174 @@
       ]
     },
     {
+      "name": "wrap-ansi",
+      "SPDXID": "SPDXRef-Package-wrap-ansi-8.1.0",
+      "versionInfo": "8.1.0",
+      "packageFileName": "node_modules/wrap-ansi",
+      "description": "Wordwrap a string with ANSI escape codes",
+      "downloadLocation": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-8.1.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/wrap-ansi#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/wrap-ansi@8.1.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b22ed0588eb350cab9e9b11216f6a0b66ccc7463ada317d1f927b3d753286df73bb66f9591472493d6d6d9479f7d319551b3a4b31992c34000da0b3c83bd4d09"
+        }
+      ]
+    },
+    {
+      "name": "wrap-ansi",
+      "SPDXID": "SPDXRef-Package-wrap-ansi-7.0.0",
+      "versionInfo": "7.0.0",
+      "packageFileName": "node_modules/wrap-ansi-cjs",
+      "description": "Wordwrap a string with ANSI escape codes",
+      "downloadLocation": "https://registry.npmjs.org/wrap-ansi/-/wrap-ansi-7.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/wrap-ansi#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/wrap-ansi@7.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "6151888f691a98b493c70e8db198e80717d2c2c9f4c9c75eb26738a7e436d5ce733ee675a65f8d7f155dc4fb5d1ef98d54e43a5d2606e0052dcadfc58bb0f5e9"
+        }
+      ]
+    },
+    {
+      "name": "ansi-regex",
+      "SPDXID": "SPDXRef-Package-ansi-regex-5.0.1",
+      "versionInfo": "5.0.1",
+      "packageFileName": "node_modules/wrap-ansi-cjs/node_modules/ansi-regex",
+      "description": "Regular expression for matching ANSI escape codes",
+      "downloadLocation": "https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/ansi-regex#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ansi-regex@5.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "aae2505e54d25062f62c7f52517a3c570b18e2ca1a9e1828e8b3529bce04d4b05c13cb373b4c29762473c91f73fd9649325316bf7eea38e6fda5d26531410a15"
+        }
+      ]
+    },
+    {
+      "name": "emoji-regex",
+      "SPDXID": "SPDXRef-Package-emoji-regex-8.0.0",
+      "versionInfo": "8.0.0",
+      "packageFileName": "node_modules/wrap-ansi-cjs/node_modules/emoji-regex",
+      "description": "A regular expression to match all Emoji-only symbols as per the Unicode Standard.",
+      "downloadLocation": "https://registry.npmjs.org/emoji-regex/-/emoji-regex-8.0.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://mths.be/emoji-regex",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/emoji-regex@8.0.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "3128d8cdc58d380d1ec001e9cf4331a5816fc20eb28f2d4d1b7c6d7a8ab3eb8e150a8fd13e09ebd7f186b7e89cde2253cd0f04bb74dd335e126b09d5526184e8"
+        }
+      ]
+    },
+    {
+      "name": "string-width",
+      "SPDXID": "SPDXRef-Package-string-width-4.2.3",
+      "versionInfo": "4.2.3",
+      "packageFileName": "node_modules/wrap-ansi-cjs/node_modules/string-width",
+      "description": "Get the visual width of a string - the number of columns required to display it",
+      "downloadLocation": "https://registry.npmjs.org/string-width/-/string-width-4.2.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/sindresorhus/string-width#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/string-width@4.2.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "c0ac90450a63274b08a7ad84ad265d1ac8cc256b1aa79a1136284786ee86ec954effd8c807a5327af2feb57b8eaab9e0f23fdcc4a4d6c96530bd24eb8a2673fe"
+        }
+      ]
+    },
+    {
+      "name": "strip-ansi",
+      "SPDXID": "SPDXRef-Package-strip-ansi-6.0.1",
+      "versionInfo": "6.0.1",
+      "packageFileName": "node_modules/wrap-ansi-cjs/node_modules/strip-ansi",
+      "description": "Strip ANSI escape codes from a string",
+      "downloadLocation": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/strip-ansi#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/strip-ansi@6.0.1"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "637f153d21dcaa416b0a916743dbee4979aabaebf9a1738aa46793e9a1abaf7a3719cf409556ba2417d448e0a76f1186645fbfd28a08ecaacfb944b3b54754e4"
+        }
+      ]
+    },
+    {
+      "name": "ansi-styles",
+      "SPDXID": "SPDXRef-Package-ansi-styles-6.2.3",
+      "versionInfo": "6.2.3",
+      "packageFileName": "node_modules/wrap-ansi/node_modules/ansi-styles",
+      "description": "ANSI escape codes for styling strings in the terminal",
+      "downloadLocation": "https://registry.npmjs.org/ansi-styles/-/ansi-styles-6.2.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/chalk/ansi-styles#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/ansi-styles@6.2.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "e038fa336f0907ea001fc9059132d4a3e6b68f038592ea9bdf2b9c53408035c45151bc52d1c3f49d96021a371cdc1357c1122c5159831a0cdac267bbcef247be"
+        }
+      ]
+    },
+    {
       "name": "xtend",
       "SPDXID": "SPDXRef-Package-xtend-4.0.2",
       "versionInfo": "4.0.2",
@@ -8860,27 +9580,27 @@
       "relationshipType": "DESCRIBES"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.4.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.4.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.4.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.4.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.4.0",
       "relationshipType": "DEPENDENCY_OF"
     },
@@ -8891,11 +9611,6 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-base2.pretty-print-object-1.0.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.4.0",
-      "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.4.0",
       "relationshipType": "DEPENDENCY_OF"
     },
@@ -9156,817 +9871,817 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.983.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.972.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.22.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.30",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.4.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.11.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.29",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.32",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-waiter-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.983.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.972.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.22.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.30",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.4.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.11.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.29",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.32",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-waiter-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.983.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.972.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.22.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.30",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.4.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.11.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.29",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.32",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-waiter-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha1-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-bucket-endpoint-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-expect-continue-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.972.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-location-constraint-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-ssec-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.982.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.983.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.983.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.972.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.22.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.eventstream-serde-browser-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.eventstream-serde-config-resolver-4.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.eventstream-serde-node-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-blob-browser-4.2.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-stream-node-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.md5-js-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.30",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.4.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.11.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.29",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.32",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-stream-4.5.11",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-waiter-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -10145,183 +10860,193 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.983.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.972.4",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.22.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.30",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.4.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.11.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.29",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.32",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -10775,6 +11500,16 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
       "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.982.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -10950,6 +11685,16 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.6",
       "relatedSpdxElement": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.3",
       "relationshipType": "DEPENDENCY_OF"
@@ -10961,17 +11706,17 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.signature-v4-5.3.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -10996,12 +11741,12 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.2.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.982.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-endpoints-3.983.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -11115,14 +11860,29 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
+      "spdxElementId": "SPDXRef-Package-string-width-5.1.2",
+      "relatedSpdxElement": "SPDXRef-Package-isaacs.cliui-8.0.2",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.auto-instrumentations-node-0.62.1",
-      "relationshipType": "PREREQUISITE_FOR"
+      "spdxElementId": "SPDXRef-Package-string-width-4.2.3",
+      "relatedSpdxElement": "SPDXRef-Package-isaacs.cliui-8.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-strip-ansi-6.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-isaacs.cliui-8.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-wrap-ansi-8.1.0",
+      "relatedSpdxElement": "SPDXRef-Package-isaacs.cliui-8.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-wrap-ansi-7.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-isaacs.cliui-8.0.2",
+      "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -11370,24 +12130,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.context-async-hooks-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.5.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-logs-otlp-grpc-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-grpc.grpc-js-1.14.3",
@@ -11420,19 +12165,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-logs-otlp-http-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
@@ -11460,19 +12195,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-logs-otlp-proto-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
@@ -11510,19 +12235,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-metrics-otlp-grpc-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-grpc.grpc-js-1.14.3",
@@ -11565,19 +12280,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-metrics-otlp-http-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -11605,19 +12310,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-metrics-otlp-proto-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -11650,19 +12345,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-prometheus-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -11680,19 +12365,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-trace-otlp-grpc-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-grpc.grpc-js-1.14.3",
@@ -11730,19 +12405,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-trace-otlp-http-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -11770,19 +12435,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-trace-otlp-proto-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -11810,19 +12465,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.exporter-zipkin-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -11845,19 +12490,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
@@ -11875,11 +12510,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-amqplib-0.50.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-amqplib-0.50.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -11895,11 +12525,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-aws-lambda-0.54.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-aws-lambda-0.54.1",
       "relationshipType": "DEPENDENCY_OF"
@@ -11913,11 +12538,6 @@
       "spdxElementId": "SPDXRef-Package-types.aws-lambda-8.10.152",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-aws-lambda-0.54.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-aws-sdk-0.57.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -11940,11 +12560,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-bunyan-0.49.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-bunyan-0.49.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -11960,11 +12575,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-cassandra-driver-0.49.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-cassandra-driver-0.49.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -11973,11 +12583,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-cassandra-driver-0.49.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-connect-0.47.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -12000,11 +12605,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-cucumber-0.18.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-cucumber-0.18.1",
       "relationshipType": "DEPENDENCY_OF"
@@ -12013,11 +12613,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-cucumber-0.18.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-dataloader-0.21.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12025,19 +12620,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-dns-0.47.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-dns-0.47.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-express-0.52.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -12055,11 +12640,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-fastify-0.48.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-fastify-0.48.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12075,11 +12655,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-fs-0.23.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-fs-0.23.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12088,11 +12663,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-fs-0.23.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-generic-pool-0.47.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12100,19 +12670,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-graphql-0.51.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-graphql-0.51.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-grpc-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12123,11 +12683,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-grpc-0.203.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-hapi-0.50.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -12143,11 +12698,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-hapi-0.50.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-http-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -12170,19 +12720,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-ioredis-0.51.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12200,11 +12740,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-kafkajs-0.13.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-kafkajs-0.13.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12215,11 +12750,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-knex-0.48.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-knex-0.48.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12228,11 +12758,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-knex-0.48.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-koa-0.51.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -12250,19 +12775,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-lru-memoizer-0.48.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-lru-memoizer-0.48.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-memcached-0.47.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12280,11 +12795,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-mongodb-0.56.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-mongodb-0.56.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12293,11 +12803,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-mongodb-0.56.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-mongoose-0.50.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -12315,11 +12820,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-mysql-0.49.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-mysql-0.49.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12333,11 +12833,6 @@
       "spdxElementId": "SPDXRef-Package-types.mysql-2.15.27",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-mysql-0.49.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-mysql2-0.50.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12355,11 +12850,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-nestjs-core-0.49.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-nestjs-core-0.49.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12370,11 +12860,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-net-0.47.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-net-0.47.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12383,11 +12868,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-net-0.47.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-oracledb-0.29.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12403,11 +12883,6 @@
       "spdxElementId": "SPDXRef-Package-types.oracledb-6.5.2",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-oracledb-0.29.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-pg-0.56.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -12440,11 +12915,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-pino-0.50.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-pino-0.50.1",
       "relationshipType": "DEPENDENCY_OF"
@@ -12458,11 +12928,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-pino-0.50.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-redis-0.51.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12480,11 +12945,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-restify-0.49.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-restify-0.49.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12500,11 +12960,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-router-0.48.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-router-0.48.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12515,19 +12970,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-runtime-node-0.17.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-runtime-node-0.17.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-socket.io-0.50.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12538,11 +12983,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-socket.io-0.50.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-tedious-0.22.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
@@ -12560,11 +13000,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-undici-0.14.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-undici-0.14.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12573,11 +13008,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.instrumentation-0.203.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-undici-0.14.0",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.instrumentation-winston-0.48.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
@@ -12590,11 +13020,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.otlp-exporter-base-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.otlp-exporter-base-0.203.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12605,19 +13030,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.otlp-grpc-exporter-base-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-grpc.grpc-js-1.14.3",
@@ -12640,19 +13055,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.otlp-transformer-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
@@ -12690,24 +13095,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.propagation-utils-0.31.14",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.propagator-b3-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -12715,19 +13105,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.propagator-jaeger-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -12735,21 +13115,11 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-alibaba-cloud-0.31.11",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-alibaba-cloud-0.31.11",
       "relationshipType": "DEPENDENCY_OF"
@@ -12758,11 +13128,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.resources-2.0.1",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-alibaba-cloud-0.31.11",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-aws-2.11.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -12780,11 +13145,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-azure-0.10.0",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-azure-0.10.0",
       "relationshipType": "DEPENDENCY_OF"
@@ -12800,11 +13160,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-container-0.7.11",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-container-0.7.11",
       "relationshipType": "DEPENDENCY_OF"
@@ -12813,11 +13168,6 @@
       "spdxElementId": "SPDXRef-Package-opentelemetry.resources-2.0.1",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-container-0.7.11",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resource-detector-gcp-0.37.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -12840,11 +13190,6 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resources-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.resources-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
@@ -12855,19 +13200,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.sdk-logs-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
@@ -12885,19 +13220,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.sdk-metrics-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -12910,19 +13235,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.sdk-node-0.203.0",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.api-logs-0.203.0",
@@ -13035,19 +13350,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.sdk-trace-base-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.0.1",
@@ -13065,19 +13370,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.sdk-trace-node-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.context-async-hooks-2.0.1",
@@ -13095,19 +13390,9 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
-      "relationshipType": "PREREQUISITE_FOR"
-    },
-    {
       "spdxElementId": "SPDXRef-Package-opentelemetry.semantic-conventions-1.39.0",
       "relatedSpdxElement": "SPDXRef-Package-opentelemetry.core-2.0.1",
       "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-opentelemetry.api-1.9.0",
-      "relatedSpdxElement": "SPDXRef-Package-opentelemetry.sql-common-0.41.2",
-      "relationshipType": "PREREQUISITE_FOR"
     },
     {
       "spdxElementId": "SPDXRef-Package-opentelemetry.core-2.5.0",
@@ -13610,6 +13895,11 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-glob-10.5.0",
+      "relatedSpdxElement": "SPDXRef-Package-archiver-utils-5.0.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-lazystream-1.0.1",
       "relatedSpdxElement": "SPDXRef-Package-archiver-utils-5.0.2",
       "relationshipType": "DEPENDENCY_OF"
@@ -13690,6 +13980,11 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-signal-exit-4.1.0",
+      "relatedSpdxElement": "SPDXRef-Package-foreground-child-3.3.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-asynckit-0.4.0",
       "relatedSpdxElement": "SPDXRef-Package-form-data-4.0.5",
       "relationshipType": "DEPENDENCY_OF"
@@ -13735,6 +14030,41 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-foreground-child-3.3.1",
+      "relatedSpdxElement": "SPDXRef-Package-glob-10.5.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-jackspeak-3.4.3",
+      "relatedSpdxElement": "SPDXRef-Package-glob-10.5.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-minimatch-9.0.5",
+      "relatedSpdxElement": "SPDXRef-Package-glob-10.5.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-minipass-7.1.2",
+      "relatedSpdxElement": "SPDXRef-Package-glob-10.5.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-package-json-from-dist-1.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-glob-10.5.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-path-scurry-1.11.1",
+      "relatedSpdxElement": "SPDXRef-Package-glob-10.5.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-brace-expansion-2.0.2",
+      "relatedSpdxElement": "SPDXRef-Package-minimatch-9.0.5",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-agent-base-7.1.4",
       "relatedSpdxElement": "SPDXRef-Package-https-proxy-agent-7.0.6",
       "relationshipType": "DEPENDENCY_OF"
@@ -13753,6 +14083,16 @@
       "spdxElementId": "SPDXRef-Package-module-details-from-path-1.0.4",
       "relatedSpdxElement": "SPDXRef-Package-import-in-the-middle-1.15.0",
       "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-isaacs.cliui-8.0.2",
+      "relatedSpdxElement": "SPDXRef-Package-jackspeak-3.4.3",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-pkgjs.parseargs-0.11.0",
+      "relatedSpdxElement": "SPDXRef-Package-jackspeak-3.4.3",
+      "relationshipType": "OPTIONAL_DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-bignumber.js-9.3.1",
@@ -13857,6 +14197,16 @@
     {
       "spdxElementId": "SPDXRef-Package-detect-libc-2.1.2",
       "relatedSpdxElement": "SPDXRef-Package-node-gyp-build-optional-packages-5.2.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-lru-cache-10.4.3",
+      "relatedSpdxElement": "SPDXRef-Package-path-scurry-1.11.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-minipass-7.1.2",
+      "relatedSpdxElement": "SPDXRef-Package-path-scurry-1.11.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -14115,6 +14465,36 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-eastasianwidth-0.2.0",
+      "relatedSpdxElement": "SPDXRef-Package-string-width-5.1.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-emoji-regex-9.2.2",
+      "relatedSpdxElement": "SPDXRef-Package-string-width-5.1.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-emoji-regex-8.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-string-width-4.2.3",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-strip-ansi-6.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-string-width-4.2.3",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ansi-regex-5.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-strip-ansi-6.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ansi-regex-5.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-strip-ansi-6.0.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-b4a-1.7.3",
       "relatedSpdxElement": "SPDXRef-Package-tar-stream-3.1.7",
       "relationshipType": "DEPENDENCY_OF"
@@ -14187,6 +14567,41 @@
     {
       "spdxElementId": "SPDXRef-Package-webidl-conversions-3.0.1",
       "relatedSpdxElement": "SPDXRef-Package-whatwg-url-5.0.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ansi-styles-6.2.3",
+      "relatedSpdxElement": "SPDXRef-Package-wrap-ansi-8.1.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-string-width-5.1.2",
+      "relatedSpdxElement": "SPDXRef-Package-wrap-ansi-8.1.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-string-width-4.2.3",
+      "relatedSpdxElement": "SPDXRef-Package-wrap-ansi-7.0.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-strip-ansi-6.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-wrap-ansi-7.0.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-emoji-regex-8.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-string-width-4.2.3",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-strip-ansi-6.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-string-width-4.2.3",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-ansi-regex-5.0.1",
+      "relatedSpdxElement": "SPDXRef-Package-strip-ansi-6.0.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
