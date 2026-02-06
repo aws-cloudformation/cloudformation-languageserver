@@ -241,9 +241,6 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Core Functionality', () 
 
         it('should handle malformed intrinsic context gracefully', () => {
             const context = createMockContext('Resources', 'MyResource');
-            Object.defineProperty(context, 'intrinsicContext', {
-                value: null,
-            });
             const params = {
                 textDocument: {
                     uri: 'file:///test.yaml',

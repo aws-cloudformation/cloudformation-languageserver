@@ -1778,4 +1778,182 @@ describe('ResourcePropertyCompletionProvider', () => {
             expect(snapshotItem).toBeDefined();
         });
     });
+
+    describe('Boolean type completions', () => {
+        test('should return true and false for boolean property types', () => {
+            // Use a schema with a known boolean property
+            const mockSchema = {
+                typeName: 'AWS::Custom::Resource',
+                resolveJsonPointerPath: (path: string) => {
+                    if (path === '/properties/Enabled') {
+                        return [{ type: 'boolean' }];
+                    }
+                    if (path === '/properties') {
+                        return [{ type: 'object', properties: { Enabled: { type: 'boolean' } } }];
+                    }
+                    return [];
+                },
+                resolveRef: () => undefined,
+            } as unknown as ResourceSchema;
+
+            const schemas = combinedSchemas([]);
+            schemas.schemas.set('AWS::Custom::Resource', mockSchema);
+            mockComponents.schemaRetriever.getDefault.returns(schemas);
+
+            const mockContext = createResourceContext('MyResource', {
+                text: '',
+                propertyPath: ['Resources', 'MyResource', 'Properties', 'Enabled'],
+                data: {
+                    Type: 'AWS::Custom::Resource',
+                    Properties: { Enabled: '' },
+                },
+                nodeType: 'plain_scalar',
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            const trueItem = result?.find((item) => item.label === 'true');
+            const falseItem = result?.find((item) => item.label === 'false');
+            expect(trueItem).toBeDefined();
+            expect(falseItem).toBeDefined();
+            expect(trueItem!.kind).toBe(CompletionItemKind.EnumMember);
+        });
+    });
+
+    describe('CreationPolicy completions', () => {
+        test('should return CreationPolicy properties for AutoScaling resources', () => {
+            const context = createContextFromYamlContentAndPath(
+                `Resources:
+  MyASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    CreationPolicy:
+      
+`,
+                { line: 4, character: 6 },
+            );
+
+            const result = provider.getCompletions(context, mockParams);
+
+            expect(result).toBeDefined();
+            const resourceSignalItem = result?.find((item) => item.label === 'ResourceSignal');
+            expect(resourceSignalItem).toBeDefined();
+        });
+
+        test('should not return CreationPolicy properties for unsupported resources', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                text: '',
+                propertyPath: ['Resources', 'MyBucket', 'CreationPolicy'],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    CreationPolicy: {},
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.length).toBe(0);
+        });
+    });
+
+    describe('UpdatePolicy completions', () => {
+        test('should return UpdatePolicy properties for AutoScaling resources', () => {
+            const context = createContextFromYamlContentAndPath(
+                `Resources:
+  MyASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    UpdatePolicy:
+      
+`,
+                { line: 4, character: 6 },
+            );
+
+            const result = provider.getCompletions(context, mockParams);
+
+            expect(result).toBeDefined();
+            const rollingUpdateItem = result?.find((item) => item.label === 'AutoScalingRollingUpdate');
+            expect(rollingUpdateItem).toBeDefined();
+        });
+    });
+
+    describe('DeletionPolicy completions', () => {
+        test('should return Delete, Retain, and Snapshot for resources supporting snapshot', () => {
+            const context = createContextFromYamlContentAndPath(
+                `Resources:
+  MyDB:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: 
+`,
+                { line: 3, character: 20 },
+            );
+
+            const result = provider.getCompletions(context, mockParams);
+
+            expect(result).toBeDefined();
+            const deleteItem = result?.find((item) => item.label === 'Delete');
+            const retainItem = result?.find((item) => item.label === 'Retain');
+            const snapshotItem = result?.find((item) => item.label === 'Snapshot');
+            expect(deleteItem).toBeDefined();
+            expect(retainItem).toBeDefined();
+            expect(snapshotItem).toBeDefined();
+        });
+
+        test('should not return Snapshot for resources not supporting it', () => {
+            const context = createContextFromYamlContentAndPath(
+                `Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: 
+`,
+                { line: 3, character: 20 },
+            );
+
+            const result = provider.getCompletions(context, mockParams);
+
+            expect(result).toBeDefined();
+            const snapshotItem = result?.find((item) => item.label === 'Snapshot');
+            expect(snapshotItem).toBeUndefined();
+        });
+    });
+
+    describe('Property type detection', () => {
+        test('should mark object properties with type object in data', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                text: 'Cors',
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'Cors'],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {},
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            const corsConfigItem = result?.find((item) => item.label === 'CorsConfiguration');
+            expect(corsConfigItem).toBeDefined();
+            expect(corsConfigItem!.data).toBeDefined();
+            expect(corsConfigItem!.data.type).toBe('object');
+        });
+
+        test('should mark array properties with type array in data', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                text: 'Tag',
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'Tag'],
+                data: {
+                    Type: 'AWS::S3::Bucket',
+                    Properties: {},
+                },
+            });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            expect(result).toBeDefined();
+            const tagsItem = result?.find((item) => item.label === 'Tags');
+            expect(tagsItem).toBeDefined();
+            expect(tagsItem!.data).toBeDefined();
+            expect(tagsItem!.data.type).toBe('array');
+        });
+    });
 });

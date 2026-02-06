@@ -22,6 +22,10 @@ import {
     waitUntilChangeSetCreateComplete,
     waitUntilStackUpdateComplete,
     waitUntilStackCreateComplete,
+    waitUntilStackImportComplete,
+    waitUntilStackDeleteComplete,
+    ValidateTemplateCommand,
+    ListChangeSetsCommand,
     OnFailure,
     EventType,
 } from '@aws-sdk/client-cloudformation';
@@ -40,6 +44,8 @@ vi.mock('@aws-sdk/client-cloudformation', async () => {
         waitUntilChangeSetCreateComplete: vi.fn(),
         waitUntilStackUpdateComplete: vi.fn(),
         waitUntilStackCreateComplete: vi.fn(),
+        waitUntilStackImportComplete: vi.fn(),
+        waitUntilStackDeleteComplete: vi.fn(),
     };
 });
 
@@ -728,6 +734,91 @@ describe('CfnService', () => {
                 params,
             );
             expect(result).toBe(mockWaiterResult);
+        });
+    });
+
+    describe('waitUntilStackImportComplete', () => {
+        it('should wait for stack import to complete', async () => {
+            const params = { StackName: 'test-stack' };
+            const mockWaiterResult = { state: WaiterState.SUCCESS };
+
+            vi.mocked(waitUntilStackImportComplete).mockResolvedValue(mockWaiterResult);
+
+            const result = await service.waitUntilStackImportComplete(params);
+
+            expect(waitUntilStackImportComplete).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    client: expect.any(Object),
+                    maxWaitTime: 1800,
+                }),
+                params,
+            );
+            expect(result).toBe(mockWaiterResult);
+        });
+    });
+
+    describe('waitUntilStackDeleteComplete', () => {
+        it('should wait for stack deletion to complete', async () => {
+            const params = { StackName: 'test-stack' };
+            const mockWaiterResult = { state: WaiterState.SUCCESS };
+
+            vi.mocked(waitUntilStackDeleteComplete).mockResolvedValue(mockWaiterResult);
+
+            const result = await service.waitUntilStackDeleteComplete(params);
+
+            expect(waitUntilStackDeleteComplete).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    client: expect.any(Object),
+                    maxWaitTime: 1800,
+                }),
+                params,
+            );
+            expect(result).toBe(mockWaiterResult);
+        });
+    });
+
+    describe('validateTemplate', () => {
+        it('should validate template and return response', async () => {
+            const mockResponse = { Parameters: [], Description: 'Test template' };
+            cloudFormationMock.on(ValidateTemplateCommand).resolves(mockResponse);
+
+            const result = await service.validateTemplate({ TemplateBody: '{}' });
+
+            expect(result).toEqual(mockResponse);
+        });
+    });
+
+    describe('listChangeSets', () => {
+        it('should list change sets for a stack', async () => {
+            const mockResponse = {
+                Summaries: [{ ChangeSetName: 'cs1' }, { ChangeSetName: 'cs2' }],
+                NextToken: 'token',
+            };
+            cloudFormationMock.on(ListChangeSetsCommand).resolves(mockResponse);
+
+            const result = await service.listChangeSets('test-stack');
+
+            expect(result.changeSets).toHaveLength(2);
+            expect(result.nextToken).toBe('token');
+        });
+
+        it('should return empty array on error', async () => {
+            cloudFormationMock.on(ListChangeSetsCommand).rejects(new Error('API error'));
+
+            const result = await service.listChangeSets('test-stack');
+
+            expect(result.changeSets).toEqual([]);
+        });
+
+        it('should pass nextToken when provided', async () => {
+            cloudFormationMock.on(ListChangeSetsCommand).resolves({ Summaries: [] });
+
+            await service.listChangeSets('test-stack', 'next-token');
+
+            expect(cloudFormationMock.commandCalls(ListChangeSetsCommand)[0].args[0].input).toEqual({
+                StackName: 'test-stack',
+                NextToken: 'next-token',
+            });
         });
     });
 

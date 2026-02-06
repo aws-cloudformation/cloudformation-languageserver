@@ -6,6 +6,8 @@ import { FeatureFlagProvider } from '../../../src/featureFlag/FeatureFlagProvide
 import { ScopedTelemetry } from '../../../src/telemetry/ScopedTelemetry';
 
 describe('FeatureFlagProvider', () => {
+    const alphaConfigPath = join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json');
+
     it('can parse feature flags', () => {
         [
             join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
@@ -29,10 +31,7 @@ describe('FeatureFlagProvider', () => {
     });
 
     it('rejects invalid remote config during refresh', async () => {
-        const provider = new FeatureFlagProvider(
-            () => Promise.resolve('invalid string response'),
-            join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
-        );
+        const provider = new FeatureFlagProvider(() => Promise.resolve('invalid string response'), alphaConfigPath);
 
         // Trigger refresh manually
         await (provider as any).refresh();
@@ -40,6 +39,37 @@ describe('FeatureFlagProvider', () => {
         // Should still have valid config from initial load
         expect(provider.get('Constants')).toBeDefined();
         provider.close();
+    });
+
+    describe('get', () => {
+        let provider: FeatureFlagProvider;
+
+        afterEach(() => {
+            provider?.close();
+        });
+
+        it('returns feature flag by key', () => {
+            provider = new FeatureFlagProvider(() => Promise.resolve({}), alphaConfigPath);
+
+            const flag = provider.get('Constants');
+            expect(flag).toBeDefined();
+            expect(typeof flag.isEnabled()).toBe('boolean');
+        });
+    });
+
+    describe('getTargeted', () => {
+        let provider: FeatureFlagProvider;
+
+        afterEach(() => {
+            provider.close();
+        });
+
+        it('returns targeted feature flag by key', () => {
+            provider = new FeatureFlagProvider(() => Promise.resolve({}), alphaConfigPath);
+
+            const flag = provider.getTargeted('EnhancedDryRun');
+            expect(flag).toBeDefined();
+        });
     });
 
     describe('gauge registration', () => {
@@ -58,7 +88,7 @@ describe('FeatureFlagProvider', () => {
         it('registers gauges for each feature flag', () => {
             provider = new FeatureFlagProvider(
                 () => Promise.resolve({ features: { Constants: { enabled: true } } }),
-                join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+                alphaConfigPath,
             );
 
             expect(registerGaugeProviderSpy).toHaveBeenCalledWith(
@@ -71,7 +101,7 @@ describe('FeatureFlagProvider', () => {
         it('gauge provider reflects current flag state', () => {
             provider = new FeatureFlagProvider(
                 () => Promise.resolve({ features: { Constants: { enabled: false } } }),
-                join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+                alphaConfigPath,
             );
 
             const gaugeProvider = registerGaugeProviderSpy.mock.calls[0][1] as () => number;

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { CompletionItemKind, CompletionList } from 'vscode-languageserver';
+import { CompletionItemKind, CompletionList, InsertTextFormat } from 'vscode-languageserver';
 import { CompletionFormatter } from '../../../src/autocomplete/CompletionFormatter';
 import { ResourceAttribute, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { DocumentType } from '../../../src/document/Document';
@@ -675,6 +675,198 @@ describe('CompletionFormatAdapter', () => {
             const newText = result.items[0].textEdit?.newText ?? '';
             // Should maintain the 8-space indentation
             expect(newText).toMatch(/^ {8}"/);
+        });
+    });
+
+    describe('getIndentPlaceholder', () => {
+        test('should return {INDENT1} for single indent level', () => {
+            expect(CompletionFormatter.getIndentPlaceholder(1)).toBe('{INDENT1}');
+        });
+
+        test('should return {INDENT2} for double indent level', () => {
+            expect(CompletionFormatter.getIndentPlaceholder(2)).toBe('{INDENT2}');
+        });
+
+        test('should return {INDENT5} for five indent levels', () => {
+            expect(CompletionFormatter.getIndentPlaceholder(5)).toBe('{INDENT5}');
+        });
+    });
+
+    describe('YAML intrinsic function formatting', () => {
+        test('should not add colon to intrinsic function items', () => {
+            const mockContext = createTopLevelContext('Resources', { type: DocumentType.YAML });
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: '!Ref',
+                        kind: CompletionItemKind.Function,
+                        data: { isIntrinsicFunction: true },
+                    },
+                    {
+                        label: '!Sub',
+                        kind: CompletionItemKind.Function,
+                        data: { isIntrinsicFunction: true },
+                    },
+                ],
+            };
+
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
+
+            expect(result.items[0].insertText).toBe('!Ref');
+            expect(result.items[1].insertText).toBe('!Sub');
+        });
+
+        test('should not add colon to Constant kind items', () => {
+            const mockContext = createTopLevelContext('Resources', { type: DocumentType.YAML });
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [{ label: 'MyConstant', kind: CompletionItemKind.Constant }],
+            };
+
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
+
+            expect(result.items[0].insertText).toBe('MyConstant');
+        });
+
+        test('should not add colon to Event kind items', () => {
+            const mockContext = createTopLevelContext('Resources', { type: DocumentType.YAML });
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [{ label: 'MyEvent', kind: CompletionItemKind.Event }],
+            };
+
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
+
+            expect(result.items[0].insertText).toBe('MyEvent');
+        });
+
+        test('should format Properties label with colon and newline indent', () => {
+            const mockContext = createTopLevelContext('Resources', { type: DocumentType.YAML });
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [{ label: 'Properties', kind: CompletionItemKind.Property }],
+            };
+
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
+
+            expect(result.items[0].insertText).toBe('Properties:\n  ');
+        });
+    });
+
+    describe('snippet format preservation', () => {
+        test('should skip formatting for items with InsertTextFormat.Snippet', () => {
+            const mockContext = createTopLevelContext('Resources', { type: DocumentType.YAML });
+            const snippetText = 'MySnippet:\n  Key: ${1:value}';
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'MySnippet',
+                        kind: CompletionItemKind.Snippet,
+                        insertText: snippetText,
+                        insertTextFormat: InsertTextFormat.Snippet,
+                    },
+                ],
+            };
+
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
+
+            expect(result.items[0].insertText).toBe(snippetText);
+            expect(result.items[0].insertTextFormat).toBe(InsertTextFormat.Snippet);
+        });
+    });
+
+    describe('JSON filterText handling', () => {
+        test('should set filterText with quotes when in JSON string context', () => {
+            const mockContext = createTopLevelContext('Resources', {
+                type: DocumentType.JSON,
+                nodeType: 'string',
+                text: 'Res',
+            });
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [{ label: 'Resources', kind: CompletionItemKind.Property }],
+            };
+
+            const result = formatter.format(completions, mockContext, defaultEditorSettings);
+
+            expect(result.items[0].filterText).toBe('"Res"');
+        });
+    });
+
+    describe('JSON Description formatting', () => {
+        test('should format Description as string type in JSON', () => {
+            const mockContext = createResourceContext('MyResource', {
+                type: DocumentType.JSON,
+                text: 'Description',
+                propertyPath: ['Description'],
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [{ label: 'Description', kind: CompletionItemKind.Property }],
+            };
+
+            const lineContent = '  "Description"';
+            const result = formatter.format(completions, mockContext, defaultEditorSettings, lineContent);
+
+            expect(result.items[0].textEdit).toBeDefined();
+            expect(result.items[0].textEdit?.newText).toContain('"Description": "$0"');
+        });
+    });
+
+    describe('schema type array handling', () => {
+        let mockSchemaRetriever: SchemaRetriever;
+        let mockCombinedSchemas: CombinedSchemas;
+        let mockResourceSchema: ResourceSchema;
+
+        beforeEach(() => {
+            mockResourceSchema = {
+                resolveJsonPointerPath: vi.fn((path: string) => {
+                    if (path === '/properties/MultiTypeProperty') {
+                        return [{ type: ['string', 'number'] }];
+                    }
+                    return [];
+                }),
+            } as unknown as ResourceSchema;
+
+            mockCombinedSchemas = {
+                schemas: new Map([['AWS::Custom::Resource', mockResourceSchema]]),
+            } as CombinedSchemas;
+
+            mockSchemaRetriever = {
+                getDefault: vi.fn(() => mockCombinedSchemas),
+            } as unknown as SchemaRetriever;
+        });
+
+        test('should use first type from array type definition', () => {
+            const mockContext = createResourceContext('MyResource', {
+                type: DocumentType.JSON,
+                text: 'MultiTypeProperty',
+                propertyPath: ['Resources', 'MyResource', 'Properties', 'MultiTypeProperty'],
+                data: { Type: 'AWS::Custom::Resource' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [{ label: 'MultiTypeProperty', kind: CompletionItemKind.Property }],
+            };
+
+            const lineContent = '        "MultiTypeProperty"';
+            const result = formatter.format(
+                completions,
+                mockContext,
+                defaultEditorSettings,
+                lineContent,
+                mockSchemaRetriever,
+            );
+
+            expect(result.items[0].textEdit).toBeDefined();
+            // First type is 'string', so should format as string
+            expect(result.items[0].textEdit?.newText).toContain('"MultiTypeProperty": "$0"');
         });
     });
 });

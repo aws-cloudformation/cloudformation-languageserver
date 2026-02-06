@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, test, vi } from 'vitest';
 import { CompletionItemKind, CompletionParams, CompletionTriggerKind } from 'vscode-languageserver';
 import {
     CompletionRouter,
@@ -21,21 +21,25 @@ import {
 } from '../../utils/MockServerComponents';
 import { docPosition, Templates } from '../../utils/TemplateUtils';
 
-/* eslint-disable vitest/expect-expect */
 describe('CompletionRouter', () => {
     const mockComponents = createMockComponents();
 
     mockComponents.external.featureFlags.get.returns({ isEnabled: () => true, describe: () => 'mock feature flags' });
 
-    const completionRouter = CompletionRouter.create(
-        mockComponents.core,
-        mockComponents.external,
-        mockComponents.providers,
-    );
+    let completionRouter: CompletionRouter;
+
     const mockParams: CompletionParams = {
         textDocument: { uri: 'file:///test.yaml' },
         position: { line: 0, character: 0 },
     };
+
+    beforeEach(() => {
+        completionRouter = CompletionRouter.create(
+            mockComponents.core,
+            mockComponents.external,
+            mockComponents.providers,
+        );
+    });
 
     test('should return completion list with fuzzy search results when context exists', async () => {
         const mockContext = createTopLevelContext('Unknown', { text: 'Res' });
@@ -220,6 +224,7 @@ describe('CompletionRouter', () => {
         expect(result?.items.length).toBeGreaterThan(0);
     });
 
+    /* eslint-disable vitest/expect-expect */
     describe('Reference in template', () => {
         const mockDocumentManager = createMockDocumentManager();
         const mockResourceStateManager = createMockResourceStateManager();
@@ -837,6 +842,7 @@ describe('CompletionRouter', () => {
             });
         });
     });
+    /* eslint-enable vitest/expect-expect */
 
     describe('isIncomplete handling', () => {
         test('should set isIncomplete to true when results exceed maxCompletions', async () => {
@@ -877,6 +883,142 @@ describe('CompletionRouter', () => {
             expect(result).toBeDefined();
             expect(result!.isIncomplete).toBe(false);
             expect(result!.items.length).toBe(50);
+        });
+    });
+
+    describe('configure and close', () => {
+        test('should subscribe to completion settings changes via configure', () => {
+            const mockSettingsManager = {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
+            };
+
+            completionRouter.configure(mockSettingsManager as any);
+
+            expect(mockSettingsManager.subscribe).toHaveBeenCalledWith('completion', expect.any(Function));
+        });
+
+        test('should unsubscribe existing subscription when configure is called again', () => {
+            const unsubscribeMock = vi.fn();
+            const mockSettingsManager = {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: unsubscribeMock }),
+            };
+
+            completionRouter.configure(mockSettingsManager as any);
+            completionRouter.configure(mockSettingsManager as any);
+
+            expect(unsubscribeMock).toHaveBeenCalledTimes(1);
+        });
+
+        test('should unsubscribe and clear subscription on close', () => {
+            const unsubscribeMock = vi.fn();
+            const mockSettingsManager = {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: unsubscribeMock }),
+            };
+
+            completionRouter.configure(mockSettingsManager as any);
+            completionRouter.close();
+
+            expect(unsubscribeMock).toHaveBeenCalled();
+        });
+
+        test('should handle close when no subscription exists', () => {
+            const newRouter = CompletionRouter.create(
+                mockComponents.core,
+                mockComponents.external,
+                mockComponents.providers,
+            );
+
+            expect(() => newRouter.close()).not.toThrow();
+        });
+    });
+
+    describe('nested intrinsic function detection', () => {
+        test('should return intrinsic functions for nested YAML short form like "!Base64 !Re"', async () => {
+            const mockContext = createTopLevelContext('Resources', {
+                text: '!Base64 !Re',
+                type: DocumentType.YAML,
+            });
+            mockComponents.contextManager.getContext.returns(mockContext);
+
+            const result = await completionRouter.getCompletions(mockParams);
+
+            expect(result).toBeDefined();
+            expect(result?.items.length).toBeGreaterThan(0);
+            // Intrinsic functions in YAML use short form labels like !Ref, !Sub, etc.
+            const hasIntrinsicFunctions = result?.items.some(
+                (item) => item.label.startsWith('!') || item.label.startsWith('Fn::'),
+            );
+            expect(hasIntrinsicFunctions).toBe(true);
+        });
+
+        test('should not return intrinsic functions when text after space does not start with !', async () => {
+            const mockContext = createTopLevelContext('Resources', {
+                text: '!Sub some-value',
+                type: DocumentType.YAML,
+            });
+
+            const mockIntrinsicContext = {
+                inIntrinsic: () => true,
+                intrinsicFunction: () => ({ type: 'Fn::Sub', args: 'some-value' }),
+                record: () => ({ isInsideIntrinsic: true }),
+            };
+            vi.spyOn(mockContext, 'intrinsicContext', 'get').mockReturnValue(mockIntrinsicContext as any);
+
+            mockComponents.contextManager.getContext.returns(mockContext);
+
+            const result = await completionRouter.getCompletions(mockParams);
+
+            expect(result).toBeDefined();
+            // Should get argument completions, not function completions
+            const fnBase64 = result?.items.find((item) => item.label === '!Base64');
+            expect(fnBase64).toBeUndefined();
+        });
+    });
+
+    describe('completion disabled', () => {
+        test('should return undefined when completion is disabled', async () => {
+            const originalSettings = completionRouter['completionSettings'];
+            completionRouter['completionSettings'] = { ...originalSettings, enabled: false };
+
+            const mockContext = createTopLevelContext('Unknown', { text: 'Res' });
+            mockComponents.contextManager.getContext.returns(mockContext);
+
+            const result = await completionRouter.getCompletions(mockParams);
+
+            expect(result).toBeUndefined();
+        });
+    });
+
+    describe('createEntityFieldProviders', () => {
+        test('should create providers for Parameter and Output entity types', () => {
+            const providers = createEntityFieldProviders();
+
+            expect(providers.size).toBe(2);
+            expect(providers.has(EntityType.Parameter)).toBe(true);
+            expect(providers.has(EntityType.Output)).toBe(true);
+        });
+    });
+
+    describe('async provider handling', () => {
+        test('should handle async completion providers correctly', async () => {
+            const asyncCompletions = [
+                { label: 'AsyncItem1', kind: CompletionItemKind.Property },
+                { label: 'AsyncItem2', kind: CompletionItemKind.Property },
+            ];
+            const mockAsyncProvider = {
+                getCompletions: vi.fn().mockResolvedValue(asyncCompletions),
+            };
+
+            completionRouter['completionProviderMap'].set('TopLevelSection', mockAsyncProvider);
+
+            const mockContext = createTopLevelContext('Unknown', { text: '' });
+            mockComponents.contextManager.getContext.returns(mockContext);
+
+            const result = await completionRouter.getCompletions(mockParams);
+
+            expect(result).toBeDefined();
+            expect(result!.items.length).toBe(2);
+            expect(result!.items[0].label).toBe('AsyncItem1');
         });
     });
 });
