@@ -36,7 +36,7 @@ type Version = {
 
 const ENVIRONMENTS = ['alpha', 'beta', 'prod'];
 
-const DELISTED_VERSIONS = new Set(['1.3.0', '1.3.0-beta']);
+const DELISTED_VERSIONS = new Set(['1.3.0', '1.3.0-beta', '1.3.1', '1.3.1-beta']);
 
 function getEnvFromTag(tag: string): string {
     for (const env of ENVIRONMENTS) {
