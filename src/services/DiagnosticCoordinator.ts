@@ -8,6 +8,7 @@ import { ValidationManager } from '../stacks/actions/ValidationManager';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { CancellationError, Delayer } from '../utils/Delayer';
 
 type SourceToDiagnostics = Map<string, Diagnostic[]>;
@@ -21,8 +22,9 @@ type SourceToDiagnostics = Map<string, Diagnostic[]>;
 export class DiagnosticCoordinator {
     private readonly urisToDiagnostics = new Map<string, SourceToDiagnostics>();
     private readonly log = LoggerFactory.getLogger(DiagnosticCoordinator);
-    private readonly telemetry = new ScopedTelemetry('DiagnosticCoordinator');
     private readonly delayer: Delayer<void>;
+
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
     constructor(
         private readonly lspDiagnostics: LspDiagnostics,

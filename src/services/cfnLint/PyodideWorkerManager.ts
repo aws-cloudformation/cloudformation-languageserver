@@ -5,6 +5,7 @@ import { CloudFormationFileType } from '../../document/Document';
 import { CfnLintInitializationSettings, CfnLintSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
+import { Telemetry } from '../../telemetry/TelemetryDecorator';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { WorkerNotInitializedError } from './CfnLintErrors';
 
@@ -31,15 +32,14 @@ export class PyodideWorkerManager {
     private readonly tasks = new Map<string, WorkerTask>();
     private initialized = false;
     private initializationPromise: Promise<void> | undefined = undefined;
-    private readonly telemetry: ScopedTelemetry;
+
+    @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
     constructor(
         private readonly retryConfig: CfnLintInitializationSettings,
         private cfnLintSettings: CfnLintSettings,
         private readonly log = LoggerFactory.getLogger(PyodideWorkerManager),
-    ) {
-        this.telemetry = new ScopedTelemetry('PyodideWorkerManager');
-    }
+    ) {}
 
     public async initialize(): Promise<void> {
         if (this.initialized) {
