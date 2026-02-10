@@ -403,7 +403,16 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         const startTime = performance.now();
         try {
             // Ensure folder is mounted before linting
-            await this.mountFolder(folder);
+            try {
+                await this.mountFolder(folder);
+            } catch (error) {
+                // If mounting fails and this isn't a GitSync file, fall back to linting by content
+                if (error instanceof MountError && fileType !== CloudFormationFileType.GitSyncDeployment) {
+                    this.log.warn(`Mount failed, falling back to lint by content for ${uri}`);
+                    return await this.lintStandaloneFile(content, uri, fileType);
+                }
+                throw error;
+            }
 
             const relativePath = uri.replace(folder.uri, '/'.concat(folder.name));
 
