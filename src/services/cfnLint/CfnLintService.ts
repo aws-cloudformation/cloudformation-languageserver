@@ -16,7 +16,7 @@ import { CancellationError, Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
-import { WorkerNotInitializedError } from './CfnLintErrors';
+import { WorkerNotInitializedError, MountError } from './CfnLintErrors';
 import { PyodideWorkerManager } from './PyodideWorkerManager';
 
 export enum LintTrigger {
@@ -66,6 +66,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         if (error instanceof WorkerNotInitializedError) {
             return 'WorkerNotInitialized';
         }
+        if (error instanceof MountError) {
+            return 'MountError';
+        }
         const errorMessage = extractErrorMessage(error);
         if (errorMessage.includes('timeout')) {
             return 'Timeout';
@@ -83,7 +86,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     }
 
     private isInfrastructureError(errorType: string): boolean {
-        return errorType === 'WorkerNotInitialized' || errorType === 'WorkerCrash';
+        return errorType === 'WorkerNotInitialized' || errorType === 'WorkerCrash' || errorType === 'MountError';
     }
 
     // Request queue for handling requests during initialization
@@ -216,8 +219,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             this.telemetry.countUpDown('mount.active', 1);
         } catch (error) {
             this.logError('mounting folder', error);
-            this.telemetry.count('mount.fault', 1);
-            throw error; // Re-throw to notify caller
+            const errorType = this.classifyLintError(error);
+            this.telemetry.count('mount.fault', 1, { attributes: { errorType } });
+            throw new MountError(`Failed to mount folder ${mountDir}`, error instanceof Error ? error : undefined);
         }
     }
 
