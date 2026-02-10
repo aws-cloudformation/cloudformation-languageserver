@@ -23,6 +23,12 @@ import { PseudoParameterHoverProvider } from './PseudoParameterHoverProvider';
 import { ResourceSectionHoverProvider } from './ResourceSectionHoverProvider';
 import { TemplateSectionHoverProvider } from './TemplateSectionHoverProvider';
 
+class CustomError extends Error {
+    constructor(message?: string) {
+        super(message);
+    }
+}
+
 export class HoverRouter implements SettingsConfigurable, Closeable {
     private readonly hoverProviderMap: Map<HoverType, HoverProvider>;
     private readonly log = LoggerFactory.getLogger(HoverRouter);
@@ -60,6 +66,10 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
 
     @Track({ name: 'getHoverDoc', captureErrorAttributes: true })
     getHoverDoc(textDocPosParams: TextDocumentPositionParams) {
+        const val = Math.random();
+        if (val < 0.2) {
+            throw new CustomError(`Error val ${val}`);
+        }
         if (!this.settings.enabled) {
             return;
         }

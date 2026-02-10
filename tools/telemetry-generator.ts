@@ -23,7 +23,7 @@ const initParams: ExtendedInitializeParams = {
                     name: 'Test Telemetry Generator',
                     version: '0.0.0',
                 },
-                clientId: id,
+                clientId: 'hello2',
             },
             logLevel: 'warn',
             storageDir: rootDir,
