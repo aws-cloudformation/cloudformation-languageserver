@@ -36,7 +36,16 @@ type Version = {
 
 const ENVIRONMENTS = ['alpha', 'beta', 'prod'];
 
-const DELISTED_VERSIONS = new Set(['1.3.0', '1.3.0-beta', '1.3.1', '1.3.1-beta']);
+const DELISTED_VERSIONS = new Set([
+    'v1.0.0',
+    'v1.0.0-beta',
+    'v1.1.0',
+    'v1.1.0-beta',
+    'v1.3.0',
+    'v1.3.0-beta',
+    'v1.3.1',
+    'v1.3.1-beta',
+]);
 
 function getEnvFromTag(tag: string): string {
     for (const env of ENVIRONMENTS) {
@@ -83,6 +92,10 @@ function generateManifest() {
     const envReleases: Record<string, GHRelease[]> = {};
 
     for (const release of releases) {
+        if (DELISTED_VERSIONS.has(release.tag_name)) {
+            continue;
+        }
+
         const env = getEnvFromTag(release.tag_name);
         if (env) {
             envReleases[env] = envReleases[env] || [];
@@ -138,7 +151,7 @@ function generateManifest() {
             versions.push({
                 serverVersion: release.tag_name.replace('v', ''),
                 latest: i === 0,
-                isDelisted: DELISTED_VERSIONS.has(release.tag_name.replace('v', '')),
+                isDelisted: false,
                 targets,
             });
         }
