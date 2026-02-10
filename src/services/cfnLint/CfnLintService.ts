@@ -74,14 +74,16 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             return 'WorkerCrash';
         }
         if (errorMessage.includes('Python') || errorMessage.includes('Pyodide')) {
-            // Track Python-specific errors
-            this.telemetry.count('python.error', 1, { attributes: { errorType: 'PythonError' } });
             return 'PythonError';
         }
         if (errorMessage.includes('parse') || errorMessage.includes('Parse')) {
             return 'ParseError';
         }
         return 'Unknown';
+    }
+
+    private isInfrastructureError(errorType: string): boolean {
+        return errorType === 'WorkerNotInitialized' || errorType === 'WorkerCrash';
     }
 
     // Request queue for handling requests during initialization
@@ -338,12 +340,17 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             this.status = STATUS.Uninitialized;
             this.logError(`linting ${fileType} by string`, error);
             this.publishErrorDiagnostics(uri, error);
-            this.telemetry.count('lint.error', 1, {
-                attributes: {
-                    fileType,
-                    errorType: this.classifyLintError(error),
-                },
-            });
+
+            const errorType = this.classifyLintError(error);
+            // Only count as lint.error if it's a cfn-lint failure, not infrastructure issues
+            if (!this.isInfrastructureError(errorType)) {
+                this.telemetry.count('lint.error', 1, {
+                    attributes: {
+                        fileType,
+                        errorType,
+                    },
+                });
+            }
         } finally {
             this.telemetry.histogram(
                 'lint.standaloneFile.duration',
@@ -429,12 +436,17 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             this.status = STATUS.Uninitialized;
             this.logError(`linting ${fileType} by file`, error);
             this.publishErrorDiagnostics(uri, error);
-            this.telemetry.count('lint.error', 1, {
-                attributes: {
-                    fileType,
-                    errorType: this.classifyLintError(error),
-                },
-            });
+
+            const errorType = this.classifyLintError(error);
+            // Only count as lint.error if it's a cfn-lint failure, not infrastructure issues
+            if (!this.isInfrastructureError(errorType)) {
+                this.telemetry.count('lint.error', 1, {
+                    attributes: {
+                        fileType,
+                        errorType,
+                    },
+                });
+            }
         } finally {
             this.telemetry.histogram(
                 'lint.workspaceFile.duration',

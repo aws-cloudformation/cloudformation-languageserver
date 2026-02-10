@@ -238,7 +238,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
                 // Publish empty diagnostics to clear any previous Guard diagnostics
                 this.publishDiagnostics(uri, []);
                 this.telemetry.count('parser.error', 1, { attributes: { errorType: 'ParseError' } });
-                this.telemetry.count('validate.error', 1, { attributes: { fileType, errorType: 'ParseError' } });
+                // Parse errors are developer issues, not service availability issues
                 return;
             }
 
