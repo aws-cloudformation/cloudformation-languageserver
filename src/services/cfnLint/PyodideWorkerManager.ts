@@ -139,14 +139,18 @@ export class PyodideWorkerManager {
                     },
                     reject: (reason: Error) => {
                         this.worker = undefined;
-                        this.telemetry.count('pyodide.init.fault', 1);
+                        this.telemetry.error('pyodide.init.fault', reason, undefined, { captureErrorAttributes: true });
 
                         // Try to determine if it was a PyPI or wheels failure
                         const errorMessage = reason.message || '';
                         if (errorMessage.includes('PyPI')) {
-                            this.telemetry.count('init.pypi.fault', 1);
+                            this.telemetry.error('init.pypi.fault', reason, undefined, {
+                                captureErrorAttributes: true,
+                            });
                         } else if (errorMessage.includes('wheels') || errorMessage.includes('wheel')) {
-                            this.telemetry.count('init.wheels.fault', 1);
+                            this.telemetry.error('init.wheels.fault', reason, undefined, {
+                                captureErrorAttributes: true,
+                            });
                         }
 
                         reject(reason);

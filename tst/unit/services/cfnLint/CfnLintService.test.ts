@@ -300,7 +300,7 @@ describe('CfnLintService', () => {
             await service.initialize();
             mockWorkerManager.mountFolder.rejects(new Error('Failed to mount directory'));
 
-            await expect(service.mountFolder(mockWorkspaceFolder)).rejects.toThrow('Failed to mount directory');
+            await expect(service.mountFolder(mockWorkspaceFolder)).rejects.toThrow('Failed to mount folder');
         });
 
         test('should not mount folder twice', async () => {

@@ -184,7 +184,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             }
         } catch (error) {
             this.status = STATUS.Uninitialized;
-            this.telemetry.count('init.fault', 1);
+            this.telemetry.error('init.fault', error, undefined, { captureErrorAttributes: true });
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
             throw new Error(`Failed to initialize Pyodide worker: ${extractErrorMessage(error)}`);
         }
@@ -220,7 +220,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         } catch (error) {
             this.logError('mounting folder', error);
             const errorType = this.classifyLintError(error);
-            this.telemetry.count('mount.fault', 1, { attributes: { errorType } });
+            this.telemetry.error('mount.fault', error, undefined, {
+                captureErrorAttributes: true,
+                attributes: { errorType },
+            });
             throw new MountError(`Failed to mount folder ${mountDir}`, error instanceof Error ? error : undefined);
         }
     }
@@ -348,7 +351,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             const errorType = this.classifyLintError(error);
             // Only count as lint.error if it's a cfn-lint failure, not infrastructure issues
             if (!this.isInfrastructureError(errorType)) {
-                this.telemetry.count('lint.error', 1, {
+                this.telemetry.error('lint.error', error, undefined, {
+                    captureErrorAttributes: true,
                     attributes: {
                         fileType,
                         errorType,
@@ -453,7 +457,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             const errorType = this.classifyLintError(error);
             // Only count as lint.error if it's a cfn-lint failure, not infrastructure issues
             if (!this.isInfrastructureError(errorType)) {
-                this.telemetry.count('lint.error', 1, {
+                this.telemetry.error('lint.error', error, undefined, {
+                    captureErrorAttributes: true,
                     attributes: {
                         fileType,
                         errorType,
