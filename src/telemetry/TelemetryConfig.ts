@@ -1,6 +1,6 @@
-import { isAlpha, IsAppEnvironment } from '../utils/Environment';
+import { isAlpha, isTest } from '../utils/Environment';
 
 export const TelemetrySettings = Object.freeze({
     isEnabled: isAlpha,
-    logLevel: IsAppEnvironment ? 'info' : 'silent',
+    logLevel: isTest ? 'silent' : 'info',
 });

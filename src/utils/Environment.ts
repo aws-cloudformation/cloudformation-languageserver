@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { ExtensionId, ExtensionVersion } from './ExtensionConfig';
+
 const AwsEnvironment = Object.freeze({
-    ALPHA: 'alpha',
-    BETA: 'beta',
-    PROD: 'prod',
+    alpha: 'alpha',
+    beta: 'beta',
+    prod: 'prod',
 } as const);
 
 const NodeEnvironment = Object.freeze({
@@ -10,46 +13,53 @@ const NodeEnvironment = Object.freeze({
     test: 'test',
 } as const);
 
+const processAwsEnv = process.env.AWS_ENV;
+const processNodeEnv = process.env.NODE_ENV;
+
+// @ts-expect-error
+if (processAwsEnv && !Object.values(AwsEnvironment).includes(processAwsEnv)) {
+    throw new Error(`Unknown AWS_ENV=${processAwsEnv} and NODE_ENV=${processNodeEnv}`);
+}
+
+// @ts-expect-error
+if (processNodeEnv && !Object.values(NodeEnvironment).includes(processNodeEnv)) {
+    throw new Error(`Unknown AWS_ENV=${processAwsEnv} and NODE_ENV=${processNodeEnv}`);
+}
+
 export const AwsEnv = getAwsEnv();
-export const NodeEnv = getNodeEnv();
 
 export const isTest = getNodeEnv() === NodeEnvironment.test;
-export const isProd = getAwsEnv() === AwsEnvironment.PROD;
-export const isBeta = getAwsEnv() === AwsEnvironment.BETA;
-export const isAlpha = getAwsEnv() === AwsEnvironment.ALPHA;
-
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-export const IsAppEnvironment = Object.values(AwsEnvironment).includes(AwsEnv);
-export const IsAlphaApp = isAlpha && IsAppEnvironment;
+export const isProd = getAwsEnv() === AwsEnvironment.prod;
+export const isBeta = getAwsEnv() === AwsEnvironment.beta;
+export const isAlpha = getAwsEnv() === AwsEnvironment.alpha;
 
 function getAwsEnv() {
     if (getNodeEnv() === NodeEnvironment.test) {
-        return process.env.AWS_ENV ?? NodeEnvironment.test;
+        return processAwsEnv ?? AwsEnvironment.alpha;
     }
 
-    if (process.env.NODE_ENV === NodeEnvironment.development) {
-        return AwsEnvironment.ALPHA;
+    if (getNodeEnv() === NodeEnvironment.development) {
+        return processAwsEnv ?? AwsEnvironment.alpha;
     }
 
-    switch (process.env.AWS_ENV) {
-        case AwsEnvironment.ALPHA: {
-            return AwsEnvironment.ALPHA;
+    switch (processAwsEnv) {
+        case AwsEnvironment.alpha: {
+            return AwsEnvironment.alpha;
         }
-        case AwsEnvironment.BETA: {
-            return AwsEnvironment.BETA;
+        case AwsEnvironment.beta: {
+            return AwsEnvironment.beta;
         }
-        case AwsEnvironment.PROD: {
-            return AwsEnvironment.PROD;
+        case AwsEnvironment.prod: {
+            return AwsEnvironment.prod;
         }
         default: {
-            throw new Error(`Unknown AWS_ENV=${process.env.AWS_ENV} and NODE_ENV=${process.env.NODE_ENV}`);
+            throw new Error(`Unknown AWS_ENV=${processAwsEnv} and NODE_ENV=${processNodeEnv}`);
         }
     }
 }
 
 function getNodeEnv() {
-    switch (process.env.NODE_ENV) {
+    switch (processNodeEnv) {
         case NodeEnvironment.development: {
             return NodeEnvironment.development;
         }
@@ -60,7 +70,7 @@ function getNodeEnv() {
             return NodeEnvironment.test;
         }
         default: {
-            throw new Error(`Unknown AWS_ENV=${process.env.AWS_ENV} and NODE_ENV=${process.env.NODE_ENV}`);
+            throw new Error(`Unknown AWS_ENV=${processAwsEnv} and NODE_ENV=${processNodeEnv}`);
         }
     }
 }
@@ -69,4 +79,6 @@ export const isWindows = process.platform === 'win32';
 export const isMac = process.platform === 'darwin';
 export const isLinux = process.platform === 'linux';
 
-export const ProcessPlatform = `${process.platform}${process.env.BUILD_TARGET ? `-${process.env.BUILD_TARGET}` : ''}`;
+export const ProcessType = `${process.platform}${process.env.BUILD_TARGET ? `-${process.env.BUILD_TARGET}` : ''}-${process.arch}`;
+export const ServiceEnv = `${getNodeEnv()}-${getAwsEnv()}`;
+export const Service = `${ExtensionId}-${ExtensionVersion}`;
