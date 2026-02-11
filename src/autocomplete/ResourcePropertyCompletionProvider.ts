@@ -1,4 +1,4 @@
-import { CompletionItem, CompletionItemKind, CompletionParams } from 'vscode-languageserver';
+import { CompletionItem, CompletionItemKind, CompletionParams, MarkupContent } from 'vscode-languageserver';
 import {
     supportsCreationPolicy,
     CREATION_POLICY_SCHEMA,
@@ -362,7 +362,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
             const itemData = this.getPropertyType(schema, propertyDef);
 
             // Generate rich markdown documentation for the property
-            let documentation;
+            let documentation: string | MarkupContent | undefined;
             if (propertyDef.description || propertyDef.properties || propertyDef.type) {
                 // Use the rich markdown formatter from hover system
                 const markdownDoc = propertyTypesToMarkdown(propertyName, [propertyDef]);
@@ -389,7 +389,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
     }
 
     private getPropertyType(schema: ResourceSchema, propertyDef?: PropertyType): CompletionItemData {
-        const itemData: CompletionItemData = {};
+        const itemData: CompletionItemData = { location: 'key' };
 
         if (propertyDef?.type === 'object' || (propertyDef?.$ref && this.isRefToObjectType(schema, propertyDef.$ref))) {
             itemData.type = 'object';

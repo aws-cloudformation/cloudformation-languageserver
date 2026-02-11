@@ -12,7 +12,7 @@ export class EntityFieldCompletionProvider<T extends Entity> implements Completi
     @Measure({ name: 'getCompletions' })
     public getCompletions(context: Context, _: CompletionParams): CompletionItem[] {
         // Extract the actual entity (handle both regular and ForEach resources)
-        let entity;
+        let entity: T | undefined;
         if (context.getEntityType() === EntityType.ForEachResource) {
             entity = context.getResourceEntity() as unknown as T;
         } else {

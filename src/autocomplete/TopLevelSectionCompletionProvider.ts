@@ -120,13 +120,16 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
             }
             return true;
         }).map((section) => {
-            const shouldBeObject = TopLevelSectionsWithLogicalIdsSet.has(section);
+            let type: string;
 
-            const options = shouldBeObject
-                ? {
-                      data: { type: 'object' },
-                  }
-                : undefined;
+            if (section === String(TopLevelSection.Description)) {
+              type = 'string';
+            } else if (section === String(TopLevelSection.Transform)) {
+              type = 'array';
+            } else {
+              type = 'object';
+            }
+            const options = { data: { type } };
 
             return createCompletionItem(section, CompletionItemKind.Class, options);
         });

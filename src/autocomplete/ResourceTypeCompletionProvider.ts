@@ -26,19 +26,10 @@ export class ResourceTypeCompletionProvider implements CompletionProvider {
             resourceTypes = resourceTypes.filter((type) => !type.startsWith('AWS::Serverless::'));
         }
 
-        return resourceTypes.map((resourceType) => {
-            const item: CompletionItem = createCompletionItem(resourceType, CompletionItemKind.Class);
-
-            // Add textEdit if we have context with position information
-            if (context && context.text.length > 0) {
-                const range = createReplacementRange(context);
-                if (range) {
-                    item.textEdit = TextEdit.replace(range, resourceType);
-                    delete item.insertText;
-                }
-            }
-
-            return item;
-        });
+        return resourceTypes.map((resourceType) => createCompletionItem(
+          resourceType,
+          CompletionItemKind.Class,
+          { data: { location: 'value', keyForValue: 'Type' } },
+        ));
     }
 }

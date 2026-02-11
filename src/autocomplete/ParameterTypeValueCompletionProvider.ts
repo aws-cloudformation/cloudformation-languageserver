@@ -30,6 +30,10 @@ export class ParameterTypeValueCompletionProvider implements CompletionProvider 
     }
 
     private getParameterTypesAsCompletionItems(): CompletionItem[] {
-        return PARAMETER_TYPES.map((type) => createCompletionItem(type, CompletionItemKind.Value));
+        return PARAMETER_TYPES.map((type) => createCompletionItem(
+          type,
+          CompletionItemKind.Value,
+          { data: { location: 'value', keyForValue: 'Type' }},
+        ));
     }
 }

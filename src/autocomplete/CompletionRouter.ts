@@ -108,7 +108,6 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                     context,
                     editorSettings,
                     lineContent,
-                    this.schemaRetriever,
                 );
             });
         } else if (completions) {
@@ -118,7 +117,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
                 items: completions.slice(0, this.completionSettings.maxCompletions),
             };
 
-            return this.formatter.format(completionList, context, editorSettings, lineContent, this.schemaRetriever);
+            return this.formatter.format(completionList, context, editorSettings, lineContent);
         }
         return;
     }
