@@ -1,14 +1,12 @@
 #!/usr/bin/env node --expose-gc
 import { v4 } from 'uuid';
 import { join, extname, resolve, dirname } from 'path';
-import { Storage } from '../src/utils/Storage';
-import { TelemetryService } from '../src/telemetry/TelemetryService';
-import { LoggerFactory } from '../src/telemetry/LoggerFactory';
+import { staticInitialize } from '../src/app/initialize';
 
-Storage.initialize(join(process.cwd(), 'node_modules', '.cache', 'benchmark', v4()));
-LoggerFactory.initialize('silent');
-TelemetryService.initialize(undefined, {
+staticInitialize(undefined, {
     telemetryEnabled: false,
+    logLevel: 'silent',
+    storageDir: join(process.cwd(), 'node_modules', '.cache', 'benchmark', v4()),
 });
 
 import { ContextManager } from '../src/context/ContextManager';

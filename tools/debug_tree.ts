@@ -3,13 +3,13 @@
 import { v4 } from 'uuid';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { extname, resolve, join } from 'path';
-import { Storage } from '../src/utils/Storage';
-import { LoggerFactory } from '../src/telemetry/LoggerFactory';
-import { TelemetryService } from '../src/telemetry/TelemetryService';
+import { staticInitialize } from '../src/app/initialize';
 
-Storage.initialize(join(process.cwd(), 'node_modules', '.cache', 'debug-tree', v4()));
-LoggerFactory.initialize('silent');
-TelemetryService.initialize(undefined, { telemetryEnabled: false });
+staticInitialize(undefined, {
+    telemetryEnabled: false,
+    logLevel: 'silent',
+    storageDir: join(process.cwd(), 'node_modules', '.cache', 'debug-tree', v4()),
+});
 
 import { SyntaxTreeManager } from '../src/context/syntaxtree/SyntaxTreeManager';
 import { ContextManager } from '../src/context/ContextManager';

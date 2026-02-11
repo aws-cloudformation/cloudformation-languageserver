@@ -1,15 +1,15 @@
 import { join } from 'path';
 import { v4 } from 'uuid';
+import { staticInitialize } from '../../../src/app/initialize';
 import { EncryptedFileStore } from '../../../src/datastore/file/EncryptedFileStore';
 import { encryptionKey } from '../../../src/datastore/file/Encryption';
-import { LoggerFactory } from '../../../src/telemetry/LoggerFactory';
-import { TelemetryService } from '../../../src/telemetry/TelemetryService';
-import { Storage } from '../../../src/utils/Storage';
 
 // Worker script for multiprocess FileStore testing
-Storage.initialize(join(process.cwd(), 'node_modules', '.cache', 'filedb-worker', v4()));
-LoggerFactory.initialize('silent');
-TelemetryService.initialize(undefined, { telemetryEnabled: false });
+staticInitialize(undefined, {
+    telemetryEnabled: false,
+    logLevel: 'silent',
+    storageDir: join(process.cwd(), 'node_modules', '.cache', 'filedb-worker', v4()),
+});
 
 const [encTestDir, workerId, numWrites] = process.argv.slice(2);
 const key = encryptionKey(2);

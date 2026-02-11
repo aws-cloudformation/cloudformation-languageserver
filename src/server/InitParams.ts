@@ -7,10 +7,7 @@ export type ClientInfo = DeepReadonly<_InitializeParams['clientInfo']>;
 
 type _AwsMetadata = {
     clientInfo?: {
-        extension: {
-            name: string;
-            version: string;
-        };
+        extension: ClientInfo;
         clientId: string;
     };
     telemetryEnabled?: boolean;
