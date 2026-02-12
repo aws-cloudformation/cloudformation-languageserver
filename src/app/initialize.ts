@@ -5,12 +5,12 @@ import { TelemetryService } from '../telemetry/TelemetryService';
 import { ProcessType, Service, ServiceEnv } from '../utils/Environment';
 import { ExtensionName } from '../utils/ExtensionConfig';
 import { Storage } from '../utils/Storage';
+import { toString } from '../utils/String';
 
 export function staticInitialize(ClientInfo?: ClientInfo, AwsMetadata?: AwsMetadata) {
-    Storage.initialize(AwsMetadata?.storageDir);
-    LoggerFactory.initialize(AwsMetadata?.logLevel);
-    LoggerFactory.getLogger('Init').info(
-        {
+    // eslint-disable-next-line no-console
+    console.info(
+        toString({
             Service: Service,
             Environment: ServiceEnv,
             Process: ProcessType,
@@ -22,10 +22,14 @@ export function staticInitialize(ClientInfo?: ClientInfo, AwsMetadata?: AwsMetad
                 telemetryEnabled: AwsMetadata?.telemetryEnabled,
                 logLevel: AwsMetadata?.logLevel,
                 cloudformation: AwsMetadata?.cloudformation,
+                featureFlags: AwsMetadata?.featureFlags,
+                schema: AwsMetadata?.schema,
             },
-        },
+        }),
         `${ExtensionName} initializing...`,
     );
 
+    Storage.initialize(AwsMetadata?.storageDir);
+    LoggerFactory.initialize(AwsMetadata?.logLevel);
     TelemetryService.initialize(ClientInfo, AwsMetadata);
 }

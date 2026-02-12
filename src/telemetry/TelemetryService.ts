@@ -24,7 +24,7 @@ export class TelemetryService implements Closeable {
 
         if (this.enabled) {
             const id = metadata?.clientInfo?.clientId ?? v4();
-            const { metricsReader, sdk } = otelSdk(id, client);
+            const { metricsReader, sdk } = otelSdk(id, client, metadata?.clientInfo?.extension);
 
             this.metricsReader = metricsReader;
             this.sdk = sdk;

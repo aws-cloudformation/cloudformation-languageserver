@@ -15,7 +15,7 @@ import { isBeta, isAlpha, isProd, isTest, ServiceEnv, ProcessType, Service } fro
 
 const ExportIntervalSeconds = 60;
 
-export function otelSdk(clientId: string, client?: ClientInfo) {
+export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: ClientInfo) {
     configureDiagnostics();
     const telemetryUrl = telemetryBaseUrl();
 
@@ -33,6 +33,7 @@ export function otelSdk(clientId: string, client?: ClientInfo) {
             ['service.env']: ServiceEnv,
             ['client.id']: clientId,
             ['client.type']: `${client?.name ?? 'Unknown'}-${client?.version ?? 'Unknown'}`,
+            ['aws.client.type']: `${awsClientInfo?.name ?? 'Unknown'}-${awsClientInfo?.version ?? 'Unknown'}`,
             ['machine.type']: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
             ['process.type']: ProcessType,
             ['process.version']: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
