@@ -31,6 +31,16 @@ export function isClientNetworkError(error: unknown): boolean {
 
 export function extractErrorMessage(error: unknown) {
     if (error instanceof Error) {
+        // Try to extract StatusReason from waiter error JSON
+        try {
+            const parsed = JSON.parse(error.message) as { reason?: { StatusReason?: string } };
+            if (parsed?.reason?.StatusReason) {
+                return parsed.reason.StatusReason;
+            }
+        } catch {
+            // Not JSON, continue with normal error handling
+        }
+
         const prefix = error.name === 'Error' ? '' : `${error.name}: `;
         return `${prefix}${error.message}`;
     }

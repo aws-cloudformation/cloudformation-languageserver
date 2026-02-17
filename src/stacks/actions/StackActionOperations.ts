@@ -194,11 +194,14 @@ export async function waitForChangeSetValidation(
                 nextToken: response.NextToken,
             };
         } else {
+            const failureReason =
+                (result.reason as { StatusReason?: string } | undefined)?.StatusReason ??
+                (result.reason ? String(result.reason) : undefined);
             logger.warn(result, 'Validation failed');
             return {
                 phase: StackActionPhase.VALIDATION_FAILED,
                 state: StackActionState.FAILED,
-                failureReason: result.reason ? toString(result.reason) : undefined,
+                failureReason,
             };
         }
     } catch (error) {
@@ -350,7 +353,22 @@ export function parseValidationEvents(events: OperationEvent[], validationName: 
         Message: [event.ValidationName, event.ValidationStatusReason].filter(Boolean).join(': '),
         Severity: event.ValidationFailureMode === HookFailureMode.FAIL ? 'ERROR' : 'INFO',
         ResourcePropertyPath: event.ValidationPath,
+        ValidationStatusReason: event.ValidationStatusReason,
     }));
+}
+
+export function formatValidationDetailsMessage(details: ValidationDetail[]): string {
+    if (!details || details.length === 0) {
+        return '';
+    }
+
+    return details
+        .map((detail) => {
+            const parts = [detail.LogicalId, detail.Message].filter(Boolean);
+            return parts.join(': ');
+        })
+        .filter(Boolean)
+        .join('\n');
 }
 
 export async function publishValidationDiagnostics(

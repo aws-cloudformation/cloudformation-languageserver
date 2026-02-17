@@ -413,7 +413,24 @@ describe('StackActionWorkflowOperations', () => {
         it('should return failed result when changeset creation fails', async () => {
             (mockCfnService.waitUntilChangeSetCreateComplete as any).mockResolvedValue({
                 state: WaiterState.FAILURE,
-                reason: 'Test failure',
+                reason: {
+                    $metadata: {
+                        httpStatusCode: 200,
+                        requestId: 'bcc06655-484f-4b5d-92ca-7a5d67eba404',
+                        attempts: 1,
+                        totalRetryDelay: 0,
+                    },
+                    ChangeSetName: 'test-changeset',
+                    StackName: 'test-stack',
+                    Status: 'FAILED',
+                    StatusReason: 'Test failure',
+                    CreationTime: new Date(),
+                    ExecutionStatus: 'UNAVAILABLE',
+                    NotificationARNs: [],
+                    RollbackConfiguration: {},
+                    Capabilities: [],
+                    Changes: [],
+                },
             });
 
             const result = await waitForChangeSetValidation(mockCfnService, 'test-changeset', 'test-stack');
@@ -421,6 +438,74 @@ describe('StackActionWorkflowOperations', () => {
             expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
             expect(result.state).toBe(StackActionState.FAILED);
             expect(result.failureReason).toBe('Test failure');
+        });
+
+        it('should extract StatusReason from SAM transform failure', async () => {
+            const samError =
+                'Transform AWS::Serverless-2016-10-31 failed with: Invalid Serverless Application Specification document. Number of errors found: 1. Resource with id [InvalidFunction] is invalid.';
+
+            const mockReason = {
+                $metadata: {
+                    httpStatusCode: 200,
+                    requestId: '17a11b56-60aa-4d7e-b1bc-68ef34655e7b',
+                    attempts: 1,
+                    totalRetryDelay: 0,
+                },
+                ChangeSetName: 'test-changeset',
+                ChangeSetId: 'arn:aws:cloudformation:us-east-1:123456789:changeSet/test/abc',
+                StackId: 'arn:aws:cloudformation:us-east-1:123456789:stack/test/xyz',
+                StackName: 'test-stack',
+                CreationTime: new Date('2026-02-27T16:22:19.410Z'),
+                ExecutionStatus: 'UNAVAILABLE',
+                Status: 'FAILED',
+                StatusReason: samError,
+            };
+
+            (mockCfnService.waitUntilChangeSetCreateComplete as any).mockResolvedValue({
+                state: WaiterState.FAILURE,
+                reason: mockReason,
+            });
+
+            const result = await waitForChangeSetValidation(mockCfnService, 'test-changeset', 'test-stack');
+
+            expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
+            expect(result.state).toBe(StackActionState.FAILED);
+            expect(result.failureReason).toBe(samError);
+            expect(result.failureReason).not.toContain('$metadata');
+            expect(result.failureReason).not.toContain('ChangeSetName');
+        });
+
+        it('should extract StatusReason when waiter throws exception', async () => {
+            const samError =
+                'Transform AWS::Serverless-2016-10-31 failed with: Invalid Serverless Application Specification document.';
+
+            // Simulate waiter throwing an Error with JSON message (like in production)
+            const waiterException = new Error(
+                JSON.stringify({
+                    state: 'FAILURE',
+                    reason: {
+                        $metadata: {
+                            httpStatusCode: 200,
+                            requestId: '62d7c2d9-445a-4f8c-9d3c-4376430dee7e',
+                            attempts: 1,
+                            totalRetryDelay: 0,
+                        },
+                        ChangeSetName: 'test-changeset',
+                        Status: 'FAILED',
+                        StatusReason: samError,
+                    },
+                }),
+            );
+
+            (mockCfnService.waitUntilChangeSetCreateComplete as any).mockRejectedValue(waiterException);
+
+            const result = await waitForChangeSetValidation(mockCfnService, 'test-changeset', 'test-stack');
+
+            expect(result.phase).toBe(StackActionPhase.VALIDATION_FAILED);
+            expect(result.state).toBe(StackActionState.FAILED);
+            expect(result.failureReason).toBe(samError);
+            expect(result.failureReason).not.toContain('$metadata');
+            expect(result.failureReason).not.toContain('state');
         });
 
         it('should handle exceptions with error message', async () => {
@@ -486,6 +571,7 @@ describe('StackActionWorkflowOperations', () => {
                 Message: 'S3BucketValidation: Bucket name must be globally unique',
                 Severity: 'ERROR',
                 ResourcePropertyPath: '/Resources/MyS3Bucket/Properties/BucketName',
+                ValidationStatusReason: 'Bucket name must be globally unique',
             });
 
             expect(result[1]).toEqual({
@@ -495,6 +581,7 @@ describe('StackActionWorkflowOperations', () => {
                 Message: 'LambdaValidation: Runtime version is deprecated',
                 Severity: 'INFO',
                 ResourcePropertyPath: undefined,
+                ValidationStatusReason: 'Runtime version is deprecated',
             });
         });
 

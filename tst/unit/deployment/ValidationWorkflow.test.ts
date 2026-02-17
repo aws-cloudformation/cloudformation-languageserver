@@ -232,7 +232,24 @@ describe('ValidationWorkflow', () => {
         mockComponents.cfnService.createChangeSet.resolves({ Id: 'test-changeset', $metadata: {} });
         mockComponents.cfnService.waitUntilChangeSetCreateComplete.resolves({
             state: WaiterState.FAILURE,
-            reason: 'Template validation failed',
+            reason: {
+                $metadata: {
+                    httpStatusCode: 200,
+                    requestId: 'bcc06655-484f-4b5d-92ca-7a5d67eba404',
+                    attempts: 1,
+                    totalRetryDelay: 0,
+                },
+                ChangeSetName: 'test-changeset',
+                StackName: 'test-stack',
+                Status: 'FAILED',
+                StatusReason: 'Template validation failed',
+                CreationTime: new Date(),
+                ExecutionStatus: 'UNAVAILABLE',
+                NotificationARNs: [],
+                RollbackConfiguration: {},
+                Capabilities: [],
+                Changes: [],
+            },
         });
         mockComponents.cfnService.describeChangeSet.resolves({
             Status: 'FAILED',
@@ -258,7 +275,7 @@ describe('ValidationWorkflow', () => {
         const status = validationWorkflow.describeStatus({ id: 'test-validation-2' });
         expect(status.phase).toBe(StackActionPhase.VALIDATION_FAILED);
         expect(status.state).toBe(StackActionState.FAILED);
-        expect(status.FailureReason).toContain('Template validation failed');
+        expect(status.FailureReason).toBe('Template validation failed');
     });
 
     it('should handle S3 etag mismatch', async () => {
