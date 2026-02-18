@@ -46,6 +46,8 @@ describe('LMDB corruption recovery', () => {
 
     afterEach(async () => {
         await factory.close();
+        // Small delay to ensure Windows releases file locks
+        await new Promise((resolve) => setTimeout(resolve, 100));
         if (fs.existsSync(testDir)) {
             fs.rmSync(testDir, { recursive: true, force: true });
         }
@@ -53,37 +55,45 @@ describe('LMDB corruption recovery', () => {
 
     it('should call recoverFromCorruption for MDB_CORRUPTED errors', () => {
         const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+        const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
 
         expect(recoverSpy).toHaveBeenCalled();
+        reopenSpy.mockRestore();
     });
 
     it('should call recoverFromCorruption for MDB_PAGE_NOTFOUND errors', () => {
         const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+        const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_PAGE_NOTFOUND: Requested page not found'));
 
         expect(recoverSpy).toHaveBeenCalled();
+        reopenSpy.mockRestore();
     });
 
     it('should call recoverFromCorruption for MDB_PANIC errors', () => {
         const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+        const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_PANIC: Update of meta page failed'));
 
         expect(recoverSpy).toHaveBeenCalled();
+        reopenSpy.mockRestore();
     });
 
     it('should NOT call recoverFromCorruption for non-corruption errors', () => {
         const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+        const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_BAD_TXN: Transaction must abort'));
 
         expect(recoverSpy).not.toHaveBeenCalled();
+        reopenSpy.mockRestore();
     });
 });
