@@ -97,15 +97,10 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
         if (msg.includes('MDB_BAD_RSLOT') || msg.includes("doesn't match env pid")) {
             this.recoverFromFork();
-        } else if (
-            msg.includes('MDB_CURSOR_FULL') ||
-            msg.includes('MDB_CORRUPTED') ||
-            msg.includes('MDB_PAGE_NOTFOUND') ||
-            msg.includes('MDB_BAD_TXN') ||
-            msg.includes('Commit failed') ||
-            msg.includes('closed database')
-        ) {
+        } else if (isCorruptionError(error)) {
             this.recoverFromCorruption();
+        } else if (isRecoverableError(error)) {
+            this.recoverFromTransientError();
         }
     }
 
@@ -131,7 +126,19 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
     private recoverFromCorruption(): void {
         this.telemetry.count('corrupted', 1);
-        this.log.warn('Corruption detected, reopening LMDB');
+        this.log.warn('Corruption detected, deleting and reopening LMDB');
+        try {
+            rmSync(join(this.lmdbDir, Version), { recursive: true, force: true });
+        } catch (error) {
+            this.log.error(error, 'Failed to delete corrupted LMDB');
+        }
+        this.reopenEnv();
+        this.recreateStores();
+    }
+
+    private recoverFromTransientError(): void {
+        this.telemetry.count('transient', 1);
+        this.log.warn('Transient error detected, reopening LMDB');
         this.reopenEnv();
         this.recreateStores();
     }
@@ -219,9 +226,25 @@ const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
 const TotalMaxDbSize = 250 * 1024 * 1024; // 250MB max size
 
+function isCorruptionError(error: unknown): boolean {
+    const msg = extractErrorMessage(error);
+    return msg.includes('MDB_CORRUPTED') || msg.includes('MDB_PAGE_NOTFOUND') || msg.includes('MDB_PANIC');
+}
+
+function isRecoverableError(error: unknown): boolean {
+    const msg = extractErrorMessage(error);
+    return (
+        msg.includes('MDB_CURSOR_FULL') ||
+        msg.includes('MDB_BAD_TXN') ||
+        msg.includes('Commit failed') ||
+        msg.includes('closed database')
+    );
+}
+
 function createEnv(lmdbDir: string) {
+    const dbPath = join(lmdbDir, Version);
     const config: RootDatabaseOptionsWithPath = {
-        path: join(lmdbDir, Version),
+        path: dbPath,
         maxDbs: 10,
         mapSize: TotalMaxDbSize,
         encoding: Encoding,
@@ -233,10 +256,21 @@ function createEnv(lmdbDir: string) {
         config.overlappingSync = false;
     }
 
-    return {
-        config,
-        env: open(config),
-    };
+    try {
+        return {
+            config,
+            env: open(config),
+        };
+    } catch (error) {
+        if (isCorruptionError(error)) {
+            rmSync(dbPath, { recursive: true, force: true });
+            return {
+                config,
+                env: open(config),
+            };
+        }
+        throw error;
+    }
 }
 
 function createDB(env: RootDatabase, name: string) {
