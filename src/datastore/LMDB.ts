@@ -105,7 +105,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
             msg.includes('Commit failed') ||
             msg.includes('closed database')
         ) {
-            this.recoverFromCorruption();
+            this.telemetry.count('transient', 1);
+            this.log.warn('Transient error detected, reopening LMDB');
+            this.reopenEnv();
         }
     }
 

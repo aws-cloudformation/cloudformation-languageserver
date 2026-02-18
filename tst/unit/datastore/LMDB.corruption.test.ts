@@ -1,15 +1,9 @@
 import fs from 'fs';
 import { join } from 'path';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
 
-// Import the isCorruptionError function by testing the module's behavior
 describe('LMDB corruption error detection', () => {
-    // We can't test actual corruption recovery because:
-    // 1. Severe corruption causes LMDB to crash the process (uncatchable)
-    // 2. Runtime corruption recovery requires reopening LMDB in the same process which hangs tests
-    //
-    // Instead, we verify the error detection logic is correct
-
     it('should identify MDB_CORRUPTED error message', () => {
         const errorMessage = 'MDB_CORRUPTED: Located page was wrong type';
         expect(errorMessage.includes('MDB_CORRUPTED')).toBe(true);
@@ -40,25 +34,56 @@ describe('LMDB corruption error detection', () => {
     });
 });
 
-describe('LMDB corruption recovery behavior', () => {
-    it('should delete database directory when recovering from corruption', () => {
-        // This tests the logic without actually triggering corruption
-        const testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-recovery-behavior-test');
-        const dbPath = join(testDir, 'lmdb', 'v5');
+describe('LMDB corruption recovery', () => {
+    let testDir: string;
+    let factory: LMDBStoreFactory;
 
-        // Create a fake database directory
-        fs.mkdirSync(dbPath, { recursive: true });
-        fs.writeFileSync(join(dbPath, 'data.mdb'), 'fake data');
-        fs.writeFileSync(join(dbPath, 'lock.mdb'), 'fake lock');
+    beforeEach(() => {
+        testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-corruption-recovery-test', `test-${Date.now()}`);
+        fs.mkdirSync(testDir, { recursive: true });
+        factory = new LMDBStoreFactory(testDir);
+    });
 
-        expect(fs.existsSync(dbPath)).toBe(true);
+    afterEach(async () => {
+        await factory.close();
+        if (fs.existsSync(testDir)) {
+            fs.rmSync(testDir, { recursive: true, force: true });
+        }
+    });
 
-        // Simulate what recoverFromCorruption does
-        fs.rmSync(dbPath, { recursive: true, force: true });
+    it('should call recoverFromCorruption for MDB_CORRUPTED errors', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
 
-        expect(fs.existsSync(dbPath)).toBe(false);
+        const handleError = (factory as any).handleError.bind(factory);
+        handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
 
-        // Cleanup
-        fs.rmSync(testDir, { recursive: true, force: true });
+        expect(recoverSpy).toHaveBeenCalled();
+    });
+
+    it('should call recoverFromCorruption for MDB_PAGE_NOTFOUND errors', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+
+        const handleError = (factory as any).handleError.bind(factory);
+        handleError(new Error('MDB_PAGE_NOTFOUND: Requested page not found'));
+
+        expect(recoverSpy).toHaveBeenCalled();
+    });
+
+    it('should call recoverFromCorruption for MDB_PANIC errors', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+
+        const handleError = (factory as any).handleError.bind(factory);
+        handleError(new Error('MDB_PANIC: Update of meta page failed'));
+
+        expect(recoverSpy).toHaveBeenCalled();
+    });
+
+    it('should NOT call recoverFromCorruption for non-corruption errors', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+
+        const handleError = (factory as any).handleError.bind(factory);
+        handleError(new Error('MDB_BAD_TXN: Transaction must abort'));
+
+        expect(recoverSpy).not.toHaveBeenCalled();
     });
 });
