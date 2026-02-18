@@ -99,8 +99,13 @@ export class LMDBStoreFactory implements DataStoreFactory {
             this.recoverFromFork();
         } else if (isCorruptionError(error)) {
             this.recoverFromCorruption();
-        } else if (isRecoverableError(error)) {
-            this.recoverFromTransientError();
+        } else if (
+            msg.includes('MDB_CURSOR_FULL') ||
+            msg.includes('MDB_BAD_TXN') ||
+            msg.includes('Commit failed') ||
+            msg.includes('closed database')
+        ) {
+            this.recoverFromCorruption();
         }
     }
 
@@ -126,19 +131,13 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
     private recoverFromCorruption(): void {
         this.telemetry.count('corrupted', 1);
-        this.log.warn('Corruption detected, deleting and reopening LMDB');
+        this.log.warn('Corruption detected, reopening LMDB');
+        // Delete corrupted database before reopening
         try {
             rmSync(join(this.lmdbDir, Version), { recursive: true, force: true });
         } catch (error) {
             this.log.error(error, 'Failed to delete corrupted LMDB');
         }
-        this.reopenEnv();
-        this.recreateStores();
-    }
-
-    private recoverFromTransientError(): void {
-        this.telemetry.count('transient', 1);
-        this.log.warn('Transient error detected, reopening LMDB');
         this.reopenEnv();
         this.recreateStores();
     }
@@ -231,20 +230,9 @@ function isCorruptionError(error: unknown): boolean {
     return msg.includes('MDB_CORRUPTED') || msg.includes('MDB_PAGE_NOTFOUND') || msg.includes('MDB_PANIC');
 }
 
-function isRecoverableError(error: unknown): boolean {
-    const msg = extractErrorMessage(error);
-    return (
-        msg.includes('MDB_CURSOR_FULL') ||
-        msg.includes('MDB_BAD_TXN') ||
-        msg.includes('Commit failed') ||
-        msg.includes('closed database')
-    );
-}
-
 function createEnv(lmdbDir: string) {
-    const dbPath = join(lmdbDir, Version);
     const config: RootDatabaseOptionsWithPath = {
-        path: dbPath,
+        path: join(lmdbDir, Version),
         maxDbs: 10,
         mapSize: TotalMaxDbSize,
         encoding: Encoding,
@@ -256,21 +244,10 @@ function createEnv(lmdbDir: string) {
         config.overlappingSync = false;
     }
 
-    try {
-        return {
-            config,
-            env: open(config),
-        };
-    } catch (error) {
-        if (isCorruptionError(error)) {
-            rmSync(dbPath, { recursive: true, force: true });
-            return {
-                config,
-                env: open(config),
-            };
-        }
-        throw error;
-    }
+    return {
+        config,
+        env: open(config),
+    };
 }
 
 function createDB(env: RootDatabase, name: string) {
