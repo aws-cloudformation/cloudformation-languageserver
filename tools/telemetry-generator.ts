@@ -6,6 +6,7 @@ import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { AwsMetadata } from '../src/server/InitParams';
 import { staticInitialize } from '../src/app/initialize';
+import { randomBytes } from 'crypto';
 
 const argv = yargs(hideBin(process.argv))
     .option('templates', {
@@ -39,7 +40,7 @@ const argv = yargs(hideBin(process.argv))
     })
     .option('extension-version', {
         type: 'string',
-        default: '0.0.0',
+        default: '0.0.0 (canary)',
         description: 'Extension version for telemetry metadata',
     })
     .option('interval', {
@@ -79,6 +80,10 @@ const awsMetadata: AwsMetadata = {
     },
     logLevel: isDebug ? 'info' : 'warn',
     storageDir: join(process.cwd(), 'node_modules', '.cache', 'telemetry-generator', id),
+    encryption: {
+        key: randomBytes(32).toString('base64'),
+        mode: 'JWT',
+    },
 };
 staticInitialize(awsMetadata?.clientInfo?.extension, awsMetadata);
 
