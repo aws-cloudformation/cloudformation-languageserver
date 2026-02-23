@@ -18,23 +18,9 @@ describe('LMDB corruption error detection', () => {
         const errorMessage = 'MDB_PANIC: Update of meta page failed';
         expect(errorMessage.includes('MDB_PANIC')).toBe(true);
     });
-
-    it('should not identify MDB_BAD_TXN as corruption', () => {
-        const errorMessage = 'MDB_BAD_TXN: Transaction must abort';
-        expect(errorMessage.includes('MDB_CORRUPTED')).toBe(false);
-        expect(errorMessage.includes('MDB_PAGE_NOTFOUND')).toBe(false);
-        expect(errorMessage.includes('MDB_PANIC')).toBe(false);
-    });
-
-    it('should not identify MDB_CURSOR_FULL as corruption', () => {
-        const errorMessage = 'MDB_CURSOR_FULL: Cursor stack too deep';
-        expect(errorMessage.includes('MDB_CORRUPTED')).toBe(false);
-        expect(errorMessage.includes('MDB_PAGE_NOTFOUND')).toBe(false);
-        expect(errorMessage.includes('MDB_PANIC')).toBe(false);
-    });
 });
 
-describe('LMDB corruption recovery', () => {
+describe('LMDB error recovery', () => {
     let testDir: string;
     let factory: LMDBStoreFactory;
 
@@ -53,47 +39,55 @@ describe('LMDB corruption recovery', () => {
         }
     });
 
-    it('should call recoverFromCorruption for MDB_CORRUPTED errors', () => {
-        const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+    it('should call recoverFromError for MDB_CORRUPTED errors', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromError');
         const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
+        const recreateSpy = vi.spyOn(factory as any, 'recreateStores').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
 
         expect(recoverSpy).toHaveBeenCalled();
         reopenSpy.mockRestore();
+        recreateSpy.mockRestore();
     });
 
-    it('should call recoverFromCorruption for MDB_PAGE_NOTFOUND errors', () => {
-        const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+    it('should call recoverFromError for MDB_PAGE_NOTFOUND errors', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromError');
         const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
+        const recreateSpy = vi.spyOn(factory as any, 'recreateStores').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_PAGE_NOTFOUND: Requested page not found'));
 
         expect(recoverSpy).toHaveBeenCalled();
         reopenSpy.mockRestore();
+        recreateSpy.mockRestore();
     });
 
-    it('should call recoverFromCorruption for MDB_PANIC errors', () => {
-        const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+    it('should call recoverFromError for MDB_PANIC errors', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromError');
         const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
+        const recreateSpy = vi.spyOn(factory as any, 'recreateStores').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_PANIC: Update of meta page failed'));
 
         expect(recoverSpy).toHaveBeenCalled();
         reopenSpy.mockRestore();
+        recreateSpy.mockRestore();
     });
 
-    it('should NOT call recoverFromCorruption for non-corruption errors', () => {
-        const recoverSpy = vi.spyOn(factory as any, 'recoverFromCorruption');
+    it('should call recoverFromError for transient errors', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromError');
         const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
+        const recreateSpy = vi.spyOn(factory as any, 'recreateStores').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_BAD_TXN: Transaction must abort'));
 
-        expect(recoverSpy).not.toHaveBeenCalled();
+        expect(recoverSpy).toHaveBeenCalled();
         reopenSpy.mockRestore();
+        recreateSpy.mockRestore();
     });
 });

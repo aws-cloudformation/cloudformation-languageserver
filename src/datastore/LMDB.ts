@@ -97,17 +97,8 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
         if (msg.includes('MDB_BAD_RSLOT') || msg.includes("doesn't match env pid")) {
             this.recoverFromFork();
-        } else if (isCorruptionError(error)) {
-            this.recoverFromCorruption();
-        } else if (
-            msg.includes('MDB_CURSOR_FULL') ||
-            msg.includes('MDB_BAD_TXN') ||
-            msg.includes('Commit failed') ||
-            msg.includes('closed database')
-        ) {
-            this.telemetry.count('transient', 1);
-            this.log.warn('Transient error detected, reopening LMDB');
-            this.reopenEnv();
+        } else {
+            this.recoverFromError();
         }
     }
 
@@ -131,17 +122,24 @@ export class LMDBStoreFactory implements DataStoreFactory {
         this.recreateStores();
     }
 
-    private recoverFromCorruption(): void {
-        this.telemetry.count('corrupted', 1);
-        this.log.warn('Corruption detected, reopening LMDB');
-        // Delete corrupted database before reopening
+    private recoverFromError(): void {
+        this.telemetry.count('error.recover', 1);
+        this.log.warn('Error detected, attempting to reopen LMDB');
+
         try {
-            rmSync(join(this.lmdbDir, Version), { recursive: true, force: true });
-        } catch (error) {
-            this.log.error(error, 'Failed to delete corrupted LMDB');
+            this.reopenEnv();
+            this.recreateStores();
+            this.log.info('Successfully recovered by reopening LMDB');
+        } catch {
+            this.log.warn('Reopen failed, deleting database');
+            try {
+                rmSync(join(this.lmdbDir, Version), { recursive: true, force: true });
+            } catch (deleteError) {
+                this.log.error(deleteError, 'Failed to delete LMDB');
+            }
+            this.reopenEnv();
+            this.recreateStores();
         }
-        this.reopenEnv();
-        this.recreateStores();
     }
 
     private reopenEnv(): void {
@@ -226,11 +224,6 @@ const VersionNumber = 5;
 const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
 const TotalMaxDbSize = 250 * 1024 * 1024; // 250MB max size
-
-function isCorruptionError(error: unknown): boolean {
-    const msg = extractErrorMessage(error);
-    return msg.includes('MDB_CORRUPTED') || msg.includes('MDB_PAGE_NOTFOUND') || msg.includes('MDB_PANIC');
-}
 
 function createEnv(lmdbDir: string) {
     const config: RootDatabaseOptionsWithPath = {
