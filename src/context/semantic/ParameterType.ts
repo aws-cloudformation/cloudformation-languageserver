@@ -62,10 +62,7 @@ export enum ParameterType {
 export const PARAMETER_TYPES = Object.values(ParameterType);
 
 function isNumericType(type?: ParameterType): boolean {
-    if (!type) {
-        return false;
-    }
-    return type.includes('Number');
+    return type === ParameterType.Number;
 }
 
 export type ParameterValueType = string | number | boolean;
@@ -74,17 +71,24 @@ export function coerceParameterToTypedValues(
     object: Record<string, string | number | boolean | ParameterType | undefined | unknown[]>,
 ) {
     const Type = object['Type'] as ParameterType | undefined;
-    const Default = object['Default'] as string | number | undefined;
-    const AllowedValues = object['AllowedValues'] as (string | number)[] | undefined;
+    const rawDefault = object['Default'];
+    const Default =
+        typeof rawDefault === 'string' || typeof rawDefault === 'number' || typeof rawDefault === 'boolean'
+            ? rawDefault
+            : undefined;
+    const AllowedValues = Array.isArray(object['AllowedValues'])
+        ? object['AllowedValues'].filter(
+              (x): x is string | number | boolean =>
+                  typeof x === 'string' || typeof x === 'number' || typeof x === 'boolean',
+          )
+        : undefined;
 
-    let isBoolean = false;
-    if (Default !== undefined) {
-        isBoolean = isStringABoolean(String(Default));
-    }
-
-    if (AllowedValues !== undefined && AllowedValues.length > 0) {
-        isBoolean = AllowedValues.every((x) => isStringABoolean(String(x)));
-    }
+    const defaultIsBoolean = Default !== undefined && isStringABoolean(String(Default));
+    const allowedAreBoolean =
+        AllowedValues !== undefined &&
+        AllowedValues.length > 0 &&
+        AllowedValues.every((x) => isStringABoolean(String(x)));
+    const isBoolean = AllowedValues === undefined ? defaultIsBoolean : allowedAreBoolean;
 
     if (isBoolean) {
         return {

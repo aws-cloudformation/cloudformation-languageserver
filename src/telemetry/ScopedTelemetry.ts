@@ -27,7 +27,7 @@ export class ScopedTelemetry implements Closeable {
     private readonly histograms = new Map<string, Histogram>();
     private readonly gauges = new Map<string, ObservableGauge>();
 
-    constructor(
+    private constructor(
         readonly scope: string,
         private readonly meter?: Meter,
         private readonly tracer?: Tracer,
@@ -202,10 +202,11 @@ export class ScopedTelemetry implements Closeable {
             return undefined;
         }
 
-        let counter = this.upDownCounters.get(name);
+        const sanitized = sanitizeMetricName(name);
+        let counter = this.upDownCounters.get(sanitized);
         if (!counter) {
-            counter = this.meter.createUpDownCounter(name, options);
-            this.upDownCounters.set(name, counter);
+            counter = this.meter.createUpDownCounter(sanitized, options);
+            this.upDownCounters.set(sanitized, counter);
         }
         return counter;
     }
@@ -215,10 +216,11 @@ export class ScopedTelemetry implements Closeable {
             return undefined;
         }
 
-        let counter = this.counters.get(name);
+        const sanitized = sanitizeMetricName(name);
+        let counter = this.counters.get(sanitized);
         if (!counter) {
-            counter = this.meter.createCounter(name, options);
-            this.counters.set(name, counter);
+            counter = this.meter.createCounter(sanitized, options);
+            this.counters.set(sanitized, counter);
         }
         return counter;
     }
@@ -228,10 +230,11 @@ export class ScopedTelemetry implements Closeable {
             return undefined;
         }
 
-        let histogram = this.histograms.get(name);
+        const sanitized = sanitizeMetricName(name);
+        let histogram = this.histograms.get(sanitized);
         if (!histogram) {
-            histogram = this.meter.createHistogram(name, options);
-            this.histograms.set(name, histogram);
+            histogram = this.meter.createHistogram(sanitized, options);
+            this.histograms.set(sanitized, histogram);
         }
         return histogram;
     }
@@ -241,10 +244,11 @@ export class ScopedTelemetry implements Closeable {
             return undefined;
         }
 
-        let gauge = this.gauges.get(name);
+        const sanitized = sanitizeMetricName(name);
+        let gauge = this.gauges.get(sanitized);
         if (!gauge) {
-            gauge = this.meter.createObservableGauge(name, options);
-            this.gauges.set(name, gauge);
+            gauge = this.meter.createObservableGauge(sanitized, options);
+            this.gauges.set(sanitized, gauge);
         }
 
         return gauge;
@@ -256,6 +260,15 @@ export class ScopedTelemetry implements Closeable {
         this.histograms.clear();
         this.gauges.clear();
     }
+}
+
+/**
+ * Sanitizes a metric name to comply with OpenTelemetry naming rules.
+ * Valid names must match: /^[a-z][a-z0-9_.\-/]{0,254}$/i
+ * - https://github.com/open-telemetry/opentelemetry-js/blob/f7cd6ab6e2bc6224738b1e7dc78e53794cf64668/packages/sdk-metrics/src/InstrumentDescriptor.ts#L97
+ */
+function sanitizeMetricName(name: string): string {
+    return name.replaceAll(/[^a-zA-Z0-9._-]/g, '_').slice(0, 255);
 }
 
 function generateConfig(config?: MetricConfig): { options: MetricOptions; attributes: Attributes } {

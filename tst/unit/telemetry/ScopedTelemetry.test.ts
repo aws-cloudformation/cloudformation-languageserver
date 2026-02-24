@@ -13,6 +13,7 @@ describe('ScopedTelemetry', () => {
             createGauge: vi.fn(() => ({ record: vi.fn() })),
             createObservableGauge: vi.fn(() => ({})),
         };
+        // @ts-expect-error - bypassing private constructor for testing
         scopedTelemetry = new ScopedTelemetry('test-scope', mockMeter);
     });
 

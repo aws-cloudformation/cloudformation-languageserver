@@ -10,6 +10,7 @@ describe('ScopedTelemetry with TelemetryContext', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         meter = metrics.getMeter('test-meter');
+        // @ts-expect-error - bypassing private constructor for testing
         telemetry = new ScopedTelemetry('TestScope', meter);
     });
 
