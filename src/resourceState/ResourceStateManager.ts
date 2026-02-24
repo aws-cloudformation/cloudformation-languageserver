@@ -17,6 +17,7 @@ import { isClientError } from '../utils/AwsErrorMapper';
 import { Closeable } from '../utils/Closeable';
 import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
+import { cached } from 'zod/v4/core/util.cjs';
 
 const log = LoggerFactory.getLogger('ResourceStateManager');
 
@@ -59,13 +60,14 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         this.initializeCounters();
     }
 
-    @Measure({ name: 'getResource', captureErrorType: true })
-    public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<ResourceState | undefined> {
+    @Measure({ name: 'getResource' })
+    public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<ResourceState> {
         const cachedResources = this.getResourceState(typeName, identifier);
         if (cachedResources) {
             this.telemetry.count('state.hit', 1);
             return cachedResources;
         }
+
         this.telemetry.count('state.miss', 1);
 
         let output: GetResourceCommandOutput | undefined = undefined;
@@ -75,20 +77,18 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         } catch (error) {
             if (error instanceof ResourceNotFoundException) {
                 log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
-                return;
-            }
-            if (isClientError(error)) {
+            } else if (isClientError(error)) {
                 log.info(`Client error for type ${typeName} and identifier "${identifier}"`);
-                return;
+            } else {
+                log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
             }
             throw error;
         }
 
         if (!output?.TypeName || !output?.ResourceDescription?.Identifier || !output?.ResourceDescription?.Properties) {
-            log.error(
+            throw new Error (
                 `GetResource output is missing required fields for type ${typeName} with identifier "${identifier}"`,
             );
-            return;
         }
 
         const value: ResourceState = {
@@ -136,11 +136,12 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         typeName: string,
         identifier: string,
     ): Promise<{ found: boolean; resourceList?: ResourceList }> {
-        const resource = await this.getResource(typeName, identifier);
-        if (!resource) {
+        try {
+            await this.getResource(typeName, identifier);
+        } catch {
             return { found: false };
         }
-
+      
         // Add to cache
         const cached = this.resourceListMap.get(typeName);
         if (cached && !cached.resourceIdentifiers.includes(identifier)) {

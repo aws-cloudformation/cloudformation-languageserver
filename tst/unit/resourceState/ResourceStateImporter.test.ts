@@ -92,7 +92,7 @@ describe('ResourceStateImporter', () => {
                         },
                     ];
 
-                    mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+                    mockResourceStateManager.getResource.mockResolvedValue({ resource: mockResource });
 
                     const params: ResourceStateParams = {
                         resourceSelections,
@@ -136,7 +136,7 @@ describe('ResourceStateImporter', () => {
                         },
                     ];
 
-                    mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+                    mockResourceStateManager.getResource.mockResolvedValue({ resource: mockResource });
 
                     const params: ResourceStateParams = {
                         resourceSelections,
@@ -230,7 +230,7 @@ describe('ResourceStateImporter', () => {
             });
 
             const mockResource = createMockResourceState('AWS::S3::Bucket');
-            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+            mockResourceStateManager.getResource.mockResolvedValue({ resource: mockResource });
 
             const params: ResourceStateParams = {
                 resourceSelections: [
@@ -264,7 +264,7 @@ describe('ResourceStateImporter', () => {
             });
 
             const mockResource = createMockResourceState('AWS::S3::Bucket');
-            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+            mockResourceStateManager.getResource.mockResolvedValue({ resource: mockResource });
 
             const params: ResourceStateParams = {
                 resourceSelections: [
@@ -294,7 +294,7 @@ describe('ResourceStateImporter', () => {
             });
 
             const mockResource = createMockResourceState('AWS::S3::Bucket');
-            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+            mockResourceStateManager.getResource.mockResolvedValue({ resource: mockResource });
 
             const params: ResourceStateParams = {
                 resourceSelections: [
@@ -344,7 +344,7 @@ describe('ResourceStateImporter', () => {
                 },
             ];
 
-            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+            mockResourceStateManager.getResource.mockResolvedValue({ resource: mockResource });
 
             const params: ResourceStateParams = {
                 resourceSelections,
@@ -383,7 +383,10 @@ describe('ResourceStateImporter', () => {
                 },
             ];
 
-            mockResourceStateManager.getResource.mockResolvedValue(mockResource1);
+            mockResourceStateManager.getResource
+                .mockResolvedValueOnce({ resource: mockResource1 })
+                .mockResolvedValueOnce({ resource: mockResource2 })
+                .mockResolvedValueOnce({ resource: mockResource3 });
 
             const params: ResourceStateParams = {
                 resourceSelections,

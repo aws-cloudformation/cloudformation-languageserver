@@ -47,7 +47,7 @@ describe('ResourceStateManager', () => {
 
             const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');
 
-            expect(result?.properties).toEqual('{"BucketName": "my-bucket"}');
+            expect(result.resource?.properties).toEqual('{"BucketName": "my-bucket"}');
             await manager.getResource('AWS::S3::Bucket', 'my-bucket');
             expect(mockCcapiService.getResource).toHaveBeenCalledOnce();
         });
@@ -66,10 +66,12 @@ describe('ResourceStateManager', () => {
             const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');
 
             expect(result).toEqual({
-                typeName: 'AWS::S3::Bucket',
-                identifier: 'my-bucket',
-                properties: '{"BucketName": "my-bucket"}',
-                createdTimestamp: expect.any(DateTime),
+                resource: {
+                    typeName: 'AWS::S3::Bucket',
+                    identifier: 'my-bucket',
+                    properties: '{"BucketName": "my-bucket"}',
+                    createdTimestamp: expect.any(DateTime),
+                },
             });
         });
 
@@ -82,7 +84,7 @@ describe('ResourceStateManager', () => {
 
             const result = await manager.getResource('AWS::S3::Bucket', 'nonexistent');
 
-            expect(result).toBeUndefined();
+            expect(result.error).toBe('Resource not found');
         });
 
         it('should throw on server errors', async () => {
@@ -98,7 +100,19 @@ describe('ResourceStateManager', () => {
 
             const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');
 
-            expect(result).toBeUndefined();
+            expect(result.error).toBe('Service error');
+        });
+
+        it('should handle AccessDeniedException with user-friendly message', async () => {
+            const error = new Error(
+                'User: arn:aws:sts::123456789012:assumed-role/Limited/user is not authorized to perform: cloudformation:GetResource on resource: arn:aws:cloudformation:us-east-1:123456789012:resource/*',
+            );
+            error.name = 'AccessDeniedException';
+            vi.mocked(mockCcapiService.getResource).mockRejectedValue(error);
+
+            const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');
+
+            expect(result.error).toBe(error.message);
         });
 
         it('should handle missing required fields in output', async () => {
@@ -114,7 +128,7 @@ describe('ResourceStateManager', () => {
 
             const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');
 
-            expect(result).toBeUndefined();
+            expect(result.error).toBe('GetResource output is missing required fields');
         });
     });
 
