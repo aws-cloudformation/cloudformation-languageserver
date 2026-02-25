@@ -324,7 +324,6 @@ export class GuardService implements SettingsConfigurable, Closeable {
             // Combine rule names with commas
             const combinedRuleName = [...group.ruleNames].toSorted().join(', ');
 
-            // Try to get precise location from CloudFormation path if available
             const range = this.getViolationRange(uri, group.violations[0]);
 
             const diagnostic: Diagnostic = {
@@ -336,12 +335,10 @@ export class GuardService implements SettingsConfigurable, Closeable {
             };
 
             const firstViolation = group.violations[0];
-            if (firstViolation.location.path || firstViolation.context) {
-                diagnostic.data = {
-                    path: firstViolation.location.path,
-                    context: firstViolation.context,
-                };
-            }
+            const diagnosticId =
+                firstViolation.context ?? `guard-${firstViolation.location.line}-${firstViolation.location.column}`;
+
+            diagnostic.data = diagnosticId;
 
             diagnostics.push(diagnostic);
         }
@@ -350,23 +347,30 @@ export class GuardService implements SettingsConfigurable, Closeable {
     }
 
     /**
-     * Get precise range for a violation using CloudFormation path resolution
+     * Get precise range for a violation using syntax tree
      */
     private getViolationRange(uri: string, violation: GuardViolation): Range {
-        // If we have a CloudFormation path, try to resolve it to precise location
-        if (violation.location.path && uri) {
-            // Try to get just the key part of the key/value pair using syntax tree directly
-            const keyRange = this.diagnosticCoordinator.getKeyRangeFromPath(uri, violation.location.path);
-            if (keyRange) {
-                return keyRange;
-            }
+        // Use syntax tree to get node range
+        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);
+        if (syntaxTree) {
+            const startLine = Math.max(0, violation.location.line - 1);
+            const startCharacter = Math.max(0, violation.location.column - 1);
+
+            const node = syntaxTree.getNodeAtPosition({
+                line: startLine,
+                character: startCharacter,
+            });
+
+            return {
+                start: { line: node.startPosition.row, character: node.startPosition.column },
+                end: { line: node.endPosition.row, character: node.endPosition.column },
+            };
         }
 
-        // Fallback to Guard's provided line/column
+        // Fallback: return zero-width range
         const startLine = Math.max(0, violation.location.line - 1);
         const startCharacter = Math.max(0, violation.location.column - 1);
 
-        // Create single-point range as fallback
         return {
             start: { line: startLine, character: startCharacter },
             end: { line: startLine, character: startCharacter },

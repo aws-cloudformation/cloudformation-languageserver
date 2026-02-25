@@ -159,6 +159,16 @@ describe('GuardService', () => {
             });
             mockComponents.documentManager.get.returns(mockFile);
 
+            // Mock syntax tree to return a node with proper range
+            const mockNode = {
+                startPosition: { row: 4, column: 8 },
+                endPosition: { row: 4, column: 20 },
+            };
+            const mockSyntaxTree = {
+                getNodeAtPosition: stub().returns(mockNode),
+            };
+            mockComponents.syntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree as any);
+
             // Mock the rule loading to return test rules
             const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
             stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(mockRules);
@@ -176,6 +186,8 @@ describe('GuardService', () => {
             await guardService.validate('content', 'file:///template.yaml');
 
             expect(mockGuardEngine.validateTemplate.called).toBe(true);
+            expect(mockComponents.syntaxTreeManager.getSyntaxTree.calledWith('file:///template.yaml')).toBe(true);
+            expect(mockSyntaxTree.getNodeAtPosition.calledWith({ line: 4, character: 9 })).toBe(true);
             expect(
                 mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
                     'cfn-guard',
@@ -184,12 +196,13 @@ describe('GuardService', () => {
                         {
                             severity: 1, // Error
                             range: {
-                                start: { line: 4, character: 9 }, // 0-based
-                                end: { line: 4, character: 9 },
+                                start: { line: 4, character: 8 }, // From syntax tree node
+                                end: { line: 4, character: 20 }, // From syntax tree node
                             },
                             message: 'Test violation',
                             source: 'cfn-guard',
                             code: 'test-rule',
+                            data: 'guard-5-10', // Generated diagnostic ID
                         },
                     ],
                 ),
@@ -253,12 +266,7 @@ describe('GuardService', () => {
             ).toBe(true);
         });
 
-        it('should fallback to Guard line/column when context path resolution fails', async () => {
-            // Reset mocks
-            mockComponents.diagnosticCoordinator.publishDiagnostics.resetHistory();
-            mockComponents.contextManager.getContextFromPath.resetHistory();
-            mockGuardEngine.validateTemplate.resetHistory();
-
+        it('should fallback to zero-width range when syntax tree is unavailable', async () => {
             const mockFile = stubInterface<Document>();
             Object.defineProperty(mockFile, 'cfnFileType', {
                 value: CloudFormationFileType.Template,
@@ -266,46 +274,102 @@ describe('GuardService', () => {
             });
             mockComponents.documentManager.get.returns(mockFile);
 
+            // Mock syntax tree manager to return undefined (no syntax tree available)
+            mockComponents.syntaxTreeManager.getSyntaxTree.returns(undefined);
+
             // Mock the rule loading to return test rules
             const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
             stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(mockRules);
 
-            // Mock violation with CloudFormation path
             const mockViolations: GuardViolation[] = [
                 {
-                    ruleName: 'S3_BUCKET_ENCRYPTION',
-                    message: 'S3 bucket must have encryption enabled',
+                    ruleName: 'test-rule',
+                    message: 'Test violation',
                     severity: DiagnosticSeverity.Error,
-                    location: {
-                        line: 10,
-                        column: 5,
-                        path: '/Resources/NonExistent/Properties', // Path that won't resolve
-                    },
+                    location: { line: 5, column: 10 },
                 },
             ];
-
-            // Mock context manager to return no context (path resolution failed)
-            mockComponents.contextManager.getContextFromPath.returns({
-                context: undefined,
-                fullyResolved: false,
-            });
-
-            mockGuardEngine.validateTemplate.returns(mockViolations);
+            mockGuardEngine.validateTemplate.resolves(mockViolations);
 
             await guardService.validate('content', 'file:///template.yaml');
 
-            // Verify diagnostic was published with fallback range (Guard's line/column)
-            expect(mockComponents.diagnosticCoordinator.publishDiagnostics.called).toBe(true);
-            const publishCall = mockComponents.diagnosticCoordinator.publishDiagnostics.getCall(0);
-            expect(publishCall).toBeTruthy();
+            expect(mockGuardEngine.validateTemplate.called).toBe(true);
+            expect(mockComponents.syntaxTreeManager.getSyntaxTree.calledWith('file:///template.yaml')).toBe(true);
+            expect(
+                mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
+                    'cfn-guard',
+                    'file:///template.yaml',
+                    [
+                        {
+                            severity: 1, // Error
+                            range: {
+                                start: { line: 4, character: 9 }, // Fallback zero-width range
+                                end: { line: 4, character: 9 },
+                            },
+                            message: 'Test violation',
+                            source: 'cfn-guard',
+                            code: 'test-rule',
+                            data: 'guard-5-10', // Generated diagnostic ID
+                        },
+                    ],
+                ),
+            ).toBe(true);
+        });
 
-            const diagnostics = publishCall.args[2];
-            expect(diagnostics).toHaveLength(1);
-            // Guard uses 1-based line numbers, LSP uses 0-based
-            expect(diagnostics[0].range).toEqual({
-                start: { line: 9, character: 4 },
-                end: { line: 9, character: 4 },
+        it('should use context as diagnostic ID when available', async () => {
+            const mockFile = stubInterface<Document>();
+            Object.defineProperty(mockFile, 'cfnFileType', {
+                value: CloudFormationFileType.Template,
+                writable: true,
             });
+            mockComponents.documentManager.get.returns(mockFile);
+
+            // Mock syntax tree to return a node with proper range
+            const mockNode = {
+                startPosition: { row: 4, column: 8 },
+                endPosition: { row: 4, column: 20 },
+            };
+            const mockSyntaxTree = {
+                getNodeAtPosition: stub().returns(mockNode),
+            };
+            mockComponents.syntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree as any);
+
+            // Mock the rule loading to return test rules
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(mockRules);
+
+            const mockViolations: GuardViolation[] = [
+                {
+                    ruleName: 'test-rule',
+                    message: 'Test violation',
+                    severity: DiagnosticSeverity.Error,
+                    location: { line: 5, column: 10 },
+                    context: 'custom-context-id',
+                },
+            ];
+            mockGuardEngine.validateTemplate.resolves(mockViolations);
+
+            await guardService.validate('content', 'file:///template.yaml');
+
+            expect(
+                mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
+                    'cfn-guard',
+                    'file:///template.yaml',
+                    [
+                        {
+                            severity: 1, // Error
+                            range: {
+                                start: { line: 4, character: 8 },
+                                end: { line: 4, character: 20 },
+                            },
+                            message: 'Test violation',
+                            source: 'cfn-guard',
+                            code: 'test-rule',
+                            data: 'custom-context-id', // Uses context as diagnostic ID
+                        },
+                    ],
+                ),
+            ).toBe(true);
         });
     });
 
