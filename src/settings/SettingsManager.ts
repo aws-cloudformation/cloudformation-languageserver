@@ -1,4 +1,5 @@
 import { diff } from 'deep-object-diff';
+import { DeepReadonly } from 'ts-essentials';
 import { LspWorkspace } from '../protocol/LspWorkspace';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
@@ -18,7 +19,10 @@ export class SettingsManager implements ISettingsSubscriber {
     private readonly settingsState = new SettingsState();
     private readonly subscriptionManager = new SubscriptionManager<Settings>();
 
-    constructor(private readonly workspace: LspWorkspace) {
+    constructor(
+        private readonly workspace: LspWorkspace,
+        private readonly initSettings?: DeepReadonly<Partial<Settings>>,
+    ) {
         this.registerSettingsGauges();
     }
 
@@ -55,10 +59,18 @@ export class SettingsManager implements ISettingsSubscriber {
             // Get editor settings
             const editorConfig: unknown = await this.workspace.getConfiguration('editor');
 
-            const mergedConfig = structuredClone({
-                ...(cfnConfig as Record<string, unknown>),
-                editor: editorConfig,
-            });
+            // Some editors return null for unconfigured sections.
+            // Initialization settings serve as a base layer, workspace config overrides them.
+            /* eslint-disable unicorn/no-useless-fallback-in-spread */
+            const mergedConfig = {
+                ...(this.initSettings ?? {}),
+                ...(cfnConfig ?? {}),
+                editor: {
+                    ...(this.initSettings?.editor ?? {}),
+                    ...(editorConfig ?? {}),
+                },
+            };
+            /* eslint-enable unicorn/no-useless-fallback-in-spread */
 
             const settings = parseWithPrettyError(parseSettings, mergedConfig, this.getCurrentSettings());
             this.validateAndUpdate(settings);

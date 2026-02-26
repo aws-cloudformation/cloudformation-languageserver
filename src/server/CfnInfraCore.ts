@@ -47,7 +47,8 @@ export class CfnInfraCore implements Configurables, Closeable {
         this.awsMetadata = initializeParams.initializationOptions?.aws;
         this.dataStoreFactory = overrides.dataStoreFactory ?? new MultiDataStoreFactoryProvider();
         this.clientMessage = overrides.clientMessage ?? new ClientMessage(lspComponents.communication);
-        this.settingsManager = overrides.settingsManager ?? new SettingsManager(lspComponents.workspace);
+        this.settingsManager =
+            overrides.settingsManager ?? new SettingsManager(lspComponents.workspace, this.awsMetadata?.settings);
 
         this.syntaxTreeManager = overrides.syntaxTreeManager ?? new SyntaxTreeManager();
         this.documentManager =

@@ -1,4 +1,5 @@
 import { describe, expect, test, beforeEach, vi } from 'vitest';
+import { DefaultSettings } from '../../../src/settings/Settings';
 import { SettingsManager } from '../../../src/settings/SettingsManager';
 import { AwsRegion } from '../../../src/utils/Region';
 import { createMockLspWorkspace } from '../../utils/MockServerComponents';
@@ -329,6 +330,163 @@ describe('SettingsManager', () => {
             expect(settings.diagnostics.cfnGuard.validateOnChange).toBe(false);
             expect(settings.diagnostics.cfnGuard.enabledRulePacks).toEqual(['custom-pack-1', 'custom-pack-2']);
             expect(settings.diagnostics.cfnGuard.timeout).toBe(60000);
+        });
+    });
+
+    describe('null configuration handling', () => {
+        test('should apply defaults when editor config is null', async () => {
+            mockWorkspace.getConfiguration.withArgs('aws.cloudformation').resolves({});
+            mockWorkspace.getConfiguration.withArgs('editor').resolves(null);
+
+            await manager.syncConfiguration();
+
+            const settings = manager.getCurrentSettings();
+            expect(settings.editor.tabSize).toBe(DefaultSettings.editor.tabSize);
+            expect(settings.editor.insertSpaces).toBe(DefaultSettings.editor.insertSpaces);
+            expect(settings.editor.detectIndentation).toBe(DefaultSettings.editor.detectIndentation);
+        });
+
+        test('should apply defaults when cfn config is null', async () => {
+            mockWorkspace.getConfiguration.withArgs('aws.cloudformation').resolves(null);
+            mockWorkspace.getConfiguration.withArgs('editor').resolves(null);
+
+            await manager.syncConfiguration();
+
+            const settings = manager.getCurrentSettings();
+            expect(settings.hover.enabled).toBe(DefaultSettings.hover.enabled);
+            expect(settings.completion.enabled).toBe(DefaultSettings.completion.enabled);
+            expect(settings.diagnostics.cfnGuard.enabledRulePacks).toEqual(
+                DefaultSettings.diagnostics.cfnGuard.enabledRulePacks,
+            );
+        });
+
+        test('should apply cfn settings when only editor config is null', async () => {
+            mockWorkspace.getConfiguration.withArgs('aws.cloudformation').resolves({
+                diagnostics: {
+                    cfnGuard: {
+                        enabledRulePacks: ['wa-Reliability-Pillar'],
+                    },
+                },
+            });
+            mockWorkspace.getConfiguration.withArgs('editor').resolves(null);
+
+            await manager.syncConfiguration();
+
+            const settings = manager.getCurrentSettings();
+            expect(settings.diagnostics.cfnGuard.enabledRulePacks).toEqual(['wa-Reliability-Pillar']);
+            expect(settings.editor.tabSize).toBe(DefaultSettings.editor.tabSize);
+        });
+    });
+
+    describe('initialization settings', () => {
+        test('should apply init settings when workspace returns null', async () => {
+            const initSettings = {
+                diagnostics: {
+                    cfnLint: { ...DefaultSettings.diagnostics.cfnLint },
+                    cfnGuard: {
+                        ...DefaultSettings.diagnostics.cfnGuard,
+                        enabledRulePacks: ['wa-Reliability-Pillar', 'wa-Performance-Efficiency-Pillar'],
+                    },
+                },
+            };
+
+            manager = new SettingsManager(mockWorkspace, initSettings);
+            mockWorkspace.getConfiguration.withArgs('aws.cloudformation').resolves(null);
+            mockWorkspace.getConfiguration.withArgs('editor').resolves(null);
+
+            await manager.syncConfiguration();
+
+            const settings = manager.getCurrentSettings();
+            expect(settings.diagnostics.cfnGuard.enabledRulePacks).toEqual([
+                'wa-Reliability-Pillar',
+                'wa-Performance-Efficiency-Pillar',
+            ]);
+        });
+
+        test('should let workspace config override init settings', async () => {
+            const initSettings = {
+                diagnostics: {
+                    cfnLint: { ...DefaultSettings.diagnostics.cfnLint },
+                    cfnGuard: {
+                        ...DefaultSettings.diagnostics.cfnGuard,
+                        enabledRulePacks: ['init-pack'],
+                    },
+                },
+            };
+
+            manager = new SettingsManager(mockWorkspace, initSettings);
+            mockWorkspace.getConfiguration.withArgs('aws.cloudformation').resolves({
+                diagnostics: {
+                    cfnGuard: {
+                        enabledRulePacks: ['workspace-pack'],
+                    },
+                },
+            });
+            mockWorkspace.getConfiguration.withArgs('editor').resolves(null);
+
+            await manager.syncConfiguration();
+
+            const settings = manager.getCurrentSettings();
+            expect(settings.diagnostics.cfnGuard.enabledRulePacks).toEqual(['workspace-pack']);
+        });
+
+        test('should merge init settings with defaults for unspecified fields', async () => {
+            const initSettings = {
+                hover: { enabled: false },
+            };
+
+            manager = new SettingsManager(mockWorkspace, initSettings);
+            mockWorkspace.getConfiguration.withArgs('aws.cloudformation').resolves(null);
+            mockWorkspace.getConfiguration.withArgs('editor').resolves(null);
+
+            await manager.syncConfiguration();
+
+            const settings = manager.getCurrentSettings();
+            expect(settings.hover.enabled).toBe(false);
+            expect(settings.completion.enabled).toBe(DefaultSettings.completion.enabled);
+            expect(settings.diagnostics.cfnGuard.enabledRulePacks).toEqual(
+                DefaultSettings.diagnostics.cfnGuard.enabledRulePacks,
+            );
+        });
+
+        test('should work without init settings', async () => {
+            manager = new SettingsManager(mockWorkspace);
+            mockWorkspace.getConfiguration.withArgs('aws.cloudformation').resolves(null);
+            mockWorkspace.getConfiguration.withArgs('editor').resolves(null);
+
+            await manager.syncConfiguration();
+
+            const settings = manager.getCurrentSettings();
+            expect(settings.diagnostics.cfnGuard.enabledRulePacks).toEqual(
+                DefaultSettings.diagnostics.cfnGuard.enabledRulePacks,
+            );
+        });
+
+        test('should preserve init settings across subsequent syncs when workspace returns null', async () => {
+            const initSettings = {
+                diagnostics: {
+                    cfnLint: { ...DefaultSettings.diagnostics.cfnLint },
+                    cfnGuard: {
+                        ...DefaultSettings.diagnostics.cfnGuard,
+                        enabledRulePacks: ['wa-Reliability-Pillar'],
+                    },
+                },
+            };
+
+            manager = new SettingsManager(mockWorkspace, initSettings);
+            mockWorkspace.getConfiguration.withArgs('aws.cloudformation').resolves(null);
+            mockWorkspace.getConfiguration.withArgs('editor').resolves(null);
+
+            await manager.syncConfiguration();
+            expect(manager.getCurrentSettings().diagnostics.cfnGuard.enabledRulePacks).toEqual([
+                'wa-Reliability-Pillar',
+            ]);
+
+            // Second sync — workspace still returns null
+            await manager.syncConfiguration();
+            expect(manager.getCurrentSettings().diagnostics.cfnGuard.enabledRulePacks).toEqual([
+                'wa-Reliability-Pillar',
+            ]);
         });
     });
 });

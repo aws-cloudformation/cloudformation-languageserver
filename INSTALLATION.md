@@ -73,8 +73,43 @@ The language server accepts initialization options via the LSP `initialize` requ
 | `aws.clientInfo.clientId` | string (optional) | Unique identifier for the client instance |
 | `aws.telemetryEnabled` | boolean           | Enable anonymous usage metrics (default: `false`) |
 | `aws.storageDir` | string (optional) | Custom directory for logs, caches, and databases. Defaults to platform-specific location (see below) |
+| `aws.settings` | object (optional) | Settings overrides applied before workspace configuration sync. Useful for editors that don't support `workspace/configuration` reliably. See [Settings](#settings) below. |
 
-#### Default Storage Locations
+For the full initialization options schema, see [`src/server/InitParams.ts`](src/server/InitParams.ts).
+
+### Settings
+
+The `aws.settings` object (and the `aws.cloudformation` workspace configuration) controls server behavior. All fields are optional with sensible defaults. For the complete schema and defaults, see [`src/settings/Settings.ts`](src/settings/Settings.ts).
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `profile.region` | string | `us-east-1` | AWS region for resource operations |
+| `profile.profile` | string | `default` | AWS credentials profile name |
+
+Example with profile and diagnostics customization:
+
+```json
+{
+  "aws": {
+    "settings": {
+      "profile": {
+        "region": "eu-west-1",
+        "profile": "my-profile"
+      },
+      "diagnostics": {
+        "cfnLint": {
+          "ignoreChecks": ["E3012"]
+        },
+        "cfnGuard": {
+          "enabledRulePacks": ["cis-aws-benchmark-level-1", "wa-Reliability-Pillar"]
+        }
+      }
+    }
+  }
+}
+```
+
+#### Storage
 
 If `aws.storageDir` is not specified, the server uses platform-specific defaults:
 
@@ -92,7 +127,7 @@ See [Telemetry](src/telemetry/README.md) for details on collected metrics.
 
 - `yaml` - YAML CloudFormation templates
 - `json` - JSON CloudFormation templates
-- `cfn`, `tempalte` - Custom CloudFormation template extensions
+- `cfn`, `template` - Custom CloudFormation template extensions
 
 ---
 
