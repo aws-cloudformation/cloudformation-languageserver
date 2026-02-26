@@ -10,7 +10,7 @@ import { toString } from '../utils/String';
 export function staticInitialize(ClientInfo?: ClientInfo, AwsMetadata?: AwsMetadata) {
     if (!isTest) {
         // eslint-disable-next-line no-console
-        console.info(
+        console.error(
             toString({
                 Service: Service,
                 Environment: ServiceEnv,

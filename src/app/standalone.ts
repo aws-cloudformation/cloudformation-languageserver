@@ -3,7 +3,6 @@ import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';
 import { ExtendedInitializeParams } from '../server/InitParams';
-import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ExtensionName } from '../utils/ExtensionConfig';
 import { staticInitialize } from './initialize';
 
@@ -24,16 +23,16 @@ async function onInitialize(params: ExtendedInitializeParams) {
 
 function onInitialized(params: InitializedParams) {
     (server as any).initialized(params);
-    getLogger().info(`${ExtensionName} initialized`);
+    console.error(`${ExtensionName} initialized`);
 }
 
 function onShutdown() {
-    console.info(`${ExtensionName} shutting down...`);
+    console.error(`${ExtensionName} shutting down...`);
     return (server as any).close();
 }
 
 function onExit() {
-    console.info(`${ExtensionName} exiting`);
+    console.error(`${ExtensionName} exiting`);
 }
 
 const lsp = new LspConnection(createConnection(ProposedFeatures.all), {
@@ -46,23 +45,8 @@ lsp.listen();
 
 process.on('unhandledRejection', (reason, _promise) => {
     console.error(reason, 'Unhandled promise rejection');
-
-    try {
-        getLogger().error(reason, 'Unhandled promise rejection');
-    } catch {
-        // do nothing
-    }
 });
 
 process.on('uncaughtException', (error, origin) => {
     console.error(error, `Unhandled exception ${origin}`);
-    try {
-        getLogger().error(error, `Uncaught exception ${origin}`);
-    } catch {
-        // do nothing
-    }
 });
-
-function getLogger() {
-    return LoggerFactory.getLogger('Init');
-}

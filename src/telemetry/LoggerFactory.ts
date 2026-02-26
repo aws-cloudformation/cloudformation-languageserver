@@ -37,6 +37,7 @@ export class LoggerFactory implements Closeable {
                     {
                         target: 'pino-pretty',
                         options: {
+                            destination: 2, // stderr — stdout is reserved for LSP JSON-RPC in --stdio mode
                             colorize: false,
                             translateTime: 'SYS:hh:MM:ss TT',
                             ignore: 'pid,hostname,name,clazz',
