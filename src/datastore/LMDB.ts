@@ -152,15 +152,20 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private recreateStores(): void {
         for (const name of this.storeNames) {
             const database = this.env.openDB<unknown, string>({ name, encoding: Encoding });
-            this.stores.set(
-                name,
-                new LMDBStore(
+            const existing = this.stores.get(name);
+            if (existing) {
+                existing.updateStore(database);
+            } else {
+                this.stores.set(
                     name,
-                    database,
-                    (e) => this.handleError(e),
-                    () => this.ensureValidEnv(),
-                ),
-            );
+                    new LMDBStore(
+                        name,
+                        database,
+                        (e) => this.handleError(e),
+                        () => this.ensureValidEnv(),
+                    ),
+                );
+            }
         }
     }
 

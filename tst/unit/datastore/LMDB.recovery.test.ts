@@ -117,6 +117,67 @@ describe('LMDB fork detection and recovery', () => {
         });
     });
 
+    describe('cached reference stability', () => {
+        it('should keep cached store references working after recoverFromFork', async () => {
+            // Simulate SchemaStore pattern: grab reference once, hold it
+            const cachedRef = factory.get(StoreName.public_schemas);
+            await cachedRef.put('before', 'fork');
+
+            // Trigger recoverFromFork via handleError with fork-style error
+            const handleError = (factory as any).handleError.bind(factory);
+            Object.defineProperty(process, 'pid', { value: originalPid + 1000, configurable: true });
+            handleError(new Error("doesn't match env pid"));
+
+            // The cached reference must still work — not be a dangling old object
+            expect(cachedRef.get('before')).toBe('fork');
+            await cachedRef.put('after', 'fork');
+            expect(cachedRef.get('after')).toBe('fork');
+        });
+
+        it('should keep cached store references working after recoverFromError', async () => {
+            const cachedRef = factory.get(StoreName.public_schemas);
+            await cachedRef.put('before', 'error');
+
+            // Trigger recoverFromError via handleError with a generic error
+            const reopenSpy = vi.spyOn(factory as any, 'reopenEnv');
+            const handleError = (factory as any).handleError.bind(factory);
+            handleError(new Error('MDB_CORRUPTED: some corruption'));
+
+            expect(reopenSpy).toHaveBeenCalled();
+
+            // The cached reference must still be the same object and functional
+            expect(factory.get(StoreName.public_schemas)).toBe(cachedRef);
+            await cachedRef.put('after', 'error');
+            expect(cachedRef.get('after')).toBe('error');
+
+            reopenSpy.mockRestore();
+        });
+
+        it('should preserve object identity of stores after recreateStores', () => {
+            const refBefore = factory.get(StoreName.public_schemas);
+            const samRefBefore = factory.get(StoreName.sam_schemas);
+
+            // Directly call recreateStores
+            (factory as any).recreateStores();
+
+            // factory.get() must return the exact same object
+            expect(factory.get(StoreName.public_schemas)).toBe(refBefore);
+            expect(factory.get(StoreName.sam_schemas)).toBe(samRefBefore);
+        });
+
+        it('should allow reads and writes on cached reference after recreateStores', async () => {
+            const cachedRef = factory.get(StoreName.public_schemas);
+            await cachedRef.put('key', 'value');
+
+            (factory as any).recreateStores();
+
+            // Cached ref should still read/write correctly
+            expect(cachedRef.get('key')).toBe('value');
+            await cachedRef.put('key2', 'value2');
+            expect(cachedRef.get('key2')).toBe('value2');
+        });
+    });
+
     describe('factory behavior', () => {
         it('should throw for unknown store name', () => {
             expect(() => factory.get('unknown-store' as StoreName)).toThrow('Store unknown-store not found');
