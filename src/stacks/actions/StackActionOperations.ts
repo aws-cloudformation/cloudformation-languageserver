@@ -24,6 +24,7 @@ import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
+import { toString } from '../../utils/String';
 import { pointToPosition } from '../../utils/TypeConverters';
 import {
     StackChange,
@@ -189,18 +190,15 @@ export async function waitForChangeSetValidation(
                 phase: StackActionPhase.VALIDATION_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
                 changes: mapChangesToStackChanges(response.Changes),
-                failureReason: result.reason ? String(result.reason) : undefined,
+                failureReason: result.reason ? toString(result.reason) : undefined,
                 nextToken: response.NextToken,
             };
         } else {
-            logger.warn(
-                { reason: result.reason ? String(result.reason) : 'Unknown validation failure' },
-                'Validation failed',
-            );
+            logger.warn(result, 'Validation failed');
             return {
                 phase: StackActionPhase.VALIDATION_FAILED,
                 state: StackActionState.FAILED,
-                failureReason: result.reason ? String(result.reason) : undefined,
+                failureReason: result.reason ? toString(result.reason) : undefined,
             };
         }
     } catch (error) {
@@ -236,17 +234,14 @@ export async function waitForDeployment(
             return {
                 phase: StackActionPhase.DEPLOYMENT_COMPLETE,
                 state: StackActionState.SUCCESSFUL,
-                failureReason: result.reason ? String(result.reason) : undefined,
+                failureReason: result.reason ? toString(result.reason) : undefined,
             };
         } else {
-            logger.warn(
-                { reason: result.reason ? String(result.reason) : 'Unknown deployment failure' },
-                'Deployment failed',
-            );
+            logger.warn(result, 'Deployment failed');
             return {
                 phase: StackActionPhase.DEPLOYMENT_FAILED,
                 state: StackActionState.FAILED,
-                failureReason: result.reason ? String(result.reason) : undefined,
+                failureReason: result.reason ? toString(result.reason) : undefined,
             };
         }
     } catch (error) {

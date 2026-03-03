@@ -1,4 +1,5 @@
 import { ZipFile, fromBuffer, Entry } from 'yauzl';
+import { extractErrorMessage } from '../utils/Errors';
 import { AwsRegion } from '../utils/Region';
 import { SchemaFileType } from './RegionalSchemas';
 
@@ -62,7 +63,7 @@ export async function unZipFile(buffer: Promise<Buffer>): Promise<SchemaFileType
                     });
 
                     zipFile.on('error', (err) => {
-                        return reject(new Error(String(err)));
+                        return reject(new Error(extractErrorMessage(err)));
                     });
 
                     zipFile.readEntry();
