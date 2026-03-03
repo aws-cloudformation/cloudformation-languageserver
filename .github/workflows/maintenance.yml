@@ -30,8 +30,8 @@ jobs:
 
       - name: Install git-secrets
         run: |
-          git clone https://github.com/awslabs/git-secrets.git
-          cd git-secrets
+          git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets
+          cd /tmp/git-secrets
           sudo make install
 
       - name: Run Maintenance Tasks
