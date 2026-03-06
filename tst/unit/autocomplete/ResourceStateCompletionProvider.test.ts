@@ -115,7 +115,7 @@ describe('ResourceStateCompletionProvider', () => {
         });
 
         mockComponents.schemaRetriever.getDefault.returns(s3Schemas);
-        mockComponents.resourceStateManager.getResource.resolves({});
+        mockComponents.resourceStateManager.getResource.resolves();
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -132,14 +132,7 @@ describe('ResourceStateCompletionProvider', () => {
         });
 
         mockComponents.schemaRetriever.getDefault.returns(s3Schemas);
-        mockComponents.resourceStateManager.getResource.resolves({
-            resource: {
-                typeName: 'AWS::S3::Bucket',
-                identifier: 'test',
-                properties: '',
-                createdTimestamp: new Date() as any,
-            },
-        });
+        mockComponents.resourceStateManager.getResource.rejects(new Error('Invalid resource state'));
 
         const result = await provider.getCompletions(context, mockYamlParams);
 
@@ -159,16 +152,14 @@ describe('ResourceStateCompletionProvider', () => {
         emptySchemas.schemas.set('Custom::Type', customTypeSchema);
         mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
         mockComponents.resourceStateManager.getResource.resolves({
-            resource: {
-                typeName: 'Custom::Type',
-                identifier: 'test',
-                properties: JSON.stringify({
-                    BucketName: 'test',
-                    VersioningConfiguration: { Status: 'Enabled' },
-                    ExistingProp: 'value',
-                }),
-                createdTimestamp: new Date() as any,
-            },
+            typeName: 'Custom::Type',
+            identifier: 'test',
+            properties: JSON.stringify({
+                BucketName: 'test',
+                VersioningConfiguration: { Status: 'Enabled' },
+                ExistingProp: 'value',
+            }),
+            createdTimestamp: new Date() as any,
         });
 
         const result = await provider.getCompletions(context, mockYamlParams);
@@ -196,15 +187,13 @@ describe('ResourceStateCompletionProvider', () => {
         emptySchemas.schemas.set('Custom::Type', customTypeSchema);
         mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
         mockComponents.resourceStateManager.getResource.resolves({
-            resource: {
-                typeName: 'Custom::Type',
-                identifier: 'test',
-                properties: JSON.stringify({
-                    BucketName: 'test',
-                    VersioningConfiguration: { Status: 'Enabled' },
-                }),
-                createdTimestamp: new Date() as any,
-            },
+            typeName: 'Custom::Type',
+            identifier: 'test',
+            properties: JSON.stringify({
+                BucketName: 'test',
+                VersioningConfiguration: { Status: 'Enabled' },
+            }),
+            createdTimestamp: new Date() as any,
         });
 
         const result = await provider.getCompletions(context, mockYamlParams);
@@ -279,12 +268,10 @@ describe('ResourceStateCompletionProvider', () => {
         });
 
         mockComponents.resourceStateManager.getResource.resolves({
-            resource: {
-                typeName: 'AWS::IAM::Role',
-                identifier: 'Admin',
-                properties: `{"Path":"/","ManagedPolicyArns":["arn:aws:iam::aws:policy/AdministratorAccess"],"MaxSessionDuration":43200,"RoleName":"Admin","AssumeRolePolicyDocument":{"Version":"2012-10-17","Statement":[{"Condition":{"StringEquals":{"sts:ExternalId":"IsengardExternalIdAKj8duTfSqL6"}},"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"AWS":"arn:aws:iam::727820809195:root"},"Sid":""}]},"Arn":"arn:aws:iam::783764615233:role/Admin","RoleId":"AROA3M7AC6BAWIZG2LLQY"}`,
-                createdTimestamp: DateTime.now(),
-            },
+            typeName: 'AWS::IAM::Role',
+            identifier: 'Admin',
+            properties: `{"Path":"/","ManagedPolicyArns":["arn:aws:iam::aws:policy/AdministratorAccess"],"MaxSessionDuration":43200,"RoleName":"Admin","AssumeRolePolicyDocument":{"Version":"2012-10-17","Statement":[{"Condition":{"StringEquals":{"sts:ExternalId":"IsengardExternalIdAKj8duTfSqL6"}},"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"AWS":"arn:aws:iam::727820809195:root"},"Sid":""}]},"Arn":"arn:aws:iam::783764615233:role/Admin","RoleId":"AROA3M7AC6BAWIZG2LLQY"}`,
+            createdTimestamp: DateTime.now(),
         });
 
         const result = await provider.getCompletions(context, mockJsonParams);
@@ -320,12 +307,10 @@ describe('ResourceStateCompletionProvider', () => {
         });
 
         mockComponents.resourceStateManager.getResource.resolves({
-            resource: {
-                typeName: 'AWS::IAM::Role',
-                identifier: 'Admin',
-                properties: `{"Path":"/","ManagedPolicyArns":["arn:aws:iam::aws:policy/AdministratorAccess"],"MaxSessionDuration":43200,"RoleName":"Admin","AssumeRolePolicyDocument":{"Version":"2012-10-17","Statement":[{"Condition":{"StringEquals":{"sts:ExternalId":"IsengardExternalIdAKj8duTfSqL6"}},"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"AWS":"arn:aws:iam::727820809195:root"},"Sid":""}]},"Arn":"arn:aws:iam::783764615233:role/Admin","RoleId":"AROA3M7AC6BAWIZG2LLQY"}`,
-                createdTimestamp: DateTime.now(),
-            },
+            typeName: 'AWS::IAM::Role',
+            identifier: 'Admin',
+            properties: `{"Path":"/","ManagedPolicyArns":["arn:aws:iam::aws:policy/AdministratorAccess"],"MaxSessionDuration":43200,"RoleName":"Admin","AssumeRolePolicyDocument":{"Version":"2012-10-17","Statement":[{"Condition":{"StringEquals":{"sts:ExternalId":"IsengardExternalIdAKj8duTfSqL6"}},"Action":"sts:AssumeRole","Effect":"Allow","Principal":{"AWS":"arn:aws:iam::727820809195:root"},"Sid":""}]},"Arn":"arn:aws:iam::783764615233:role/Admin","RoleId":"AROA3M7AC6BAWIZG2LLQY"}`,
+            createdTimestamp: DateTime.now(),
         });
 
         const result = await provider.getCompletions(context, mockYamlParams);
@@ -474,15 +459,13 @@ describe('ResourceStateCompletionProvider', () => {
         emptySchemas.schemas.set('Custom::Type', customTypeSchema);
         mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
         mockComponents.resourceStateManager.getResource.resolves({
-            resource: {
-                typeName: 'Custom::Type',
-                identifier: 'test',
-                properties: JSON.stringify({
-                    BucketName: 'test',
-                    VersioningConfiguration: { Status: 'Enabled' },
-                }),
-                createdTimestamp: new Date() as any,
-            },
+            typeName: 'Custom::Type',
+            identifier: 'test',
+            properties: JSON.stringify({
+                BucketName: 'test',
+                VersioningConfiguration: { Status: 'Enabled' },
+            }),
+            createdTimestamp: new Date() as any,
         });
 
         const result = await provider.getCompletions(context, mockYamlParams);
@@ -507,15 +490,13 @@ describe('ResourceStateCompletionProvider', () => {
         mockComponents.schemaRetriever.getDefault.returns(emptySchemas);
         mockComponents.documentManager.getLine.returns('"",');
         mockComponents.resourceStateManager.getResource.resolves({
-            resource: {
-                typeName: 'Custom::Type',
-                identifier: 'test',
-                properties: JSON.stringify({
-                    BucketName: 'test',
-                    VersioningConfiguration: { Status: 'Enabled' },
-                }),
-                createdTimestamp: new Date() as any,
-            },
+            typeName: 'Custom::Type',
+            identifier: 'test',
+            properties: JSON.stringify({
+                BucketName: 'test',
+                VersioningConfiguration: { Status: 'Enabled' },
+            }),
+            createdTimestamp: new Date() as any,
         });
 
         const result = await provider.getCompletions(context, mockJsonParams);

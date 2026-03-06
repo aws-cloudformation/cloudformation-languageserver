@@ -176,39 +176,25 @@ export class ResourceStateImporter {
             }
             for (const resourceIdentifier of resourceSelection.resourceIdentifiers) {
                 try {
-                    const result = await this.resourceStateManager.getResource(resourceType, resourceIdentifier);
-                    if (result.resource) {
-                        this.getOrCreate(importResult.successfulImports, resourceType, []).push(resourceIdentifier);
-                        const logicalId = this.generateUniqueLogicalId(
-                            resourceType,
-                            resourceIdentifier,
-                            syntaxTree,
-                            generatedLogicalIds,
-                            parentResourceType,
-                        );
-                        generatedLogicalIds.add(logicalId);
-                        fetchedResourceStates.push({
-                            [logicalId]: {
-                                Type: resourceType,
-                                DeletionPolicy:
-                                    purpose === ResourceStatePurpose.IMPORT ? DeletionPolicyOnImport : undefined,
-                                Properties: this.applyTransformations(
-                                    result.resource.properties,
-                                    schema,
-                                    purpose,
-                                    logicalId,
-                                ),
-                                Metadata: await this.createMetadata(resourceIdentifier, purpose),
-                            },
-                        });
-                    } else {
-                        this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
-                        if (result.error) {
-                            importResult.failureReasons ??= {};
-                            importResult.failureReasons[resourceType] ??= {};
-                            importResult.failureReasons[resourceType][resourceIdentifier] = result.error;
-                        }
-                    }
+                    const resourceState = await this.resourceStateManager.getResource(resourceType, resourceIdentifier);
+                    this.getOrCreate(importResult.successfulImports, resourceType, []).push(resourceIdentifier);
+                    const logicalId = this.generateUniqueLogicalId(
+                        resourceType,
+                        resourceIdentifier,
+                        syntaxTree,
+                        generatedLogicalIds,
+                        parentResourceType,
+                    );
+                    generatedLogicalIds.add(logicalId);
+                    fetchedResourceStates.push({
+                        [logicalId]: {
+                            Type: resourceType,
+                            DeletionPolicy:
+                                purpose === ResourceStatePurpose.IMPORT ? DeletionPolicyOnImport : undefined,
+                            Properties: this.applyTransformations(resourceState.properties, schema, purpose, logicalId),
+                            Metadata: await this.createMetadata(resourceIdentifier, purpose),
+                        },
+                    });
                 } catch (error) {
                     log.error(error, `Error importing resource state for ${resourceType} id: ${resourceIdentifier}`);
                     this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
