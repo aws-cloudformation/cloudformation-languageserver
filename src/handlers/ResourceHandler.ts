@@ -237,13 +237,16 @@ export function resourceExplorerSearchHandler(
             viewArn: params.viewArn,
         });
 
-        return {
-            resources:
-                response.Resources?.map((r) => {
-                    const arexType = r.ResourceType ?? '';
-                    const cfnType = arexTypeToCfnType(arexType) ?? arexType;
-                    const identifier = extractIdentifierFromArn(cfnType, r.Arn ?? '');
-                    return {
+        const resources =
+            response.Resources?.flatMap((r) => {
+                const arexType = r.ResourceType ?? '';
+                const cfnType = arexTypeToCfnType(arexType);
+                if (!cfnType) {
+                    return [];
+                }
+                const identifier = extractIdentifierFromArn(cfnType, r.Arn ?? '');
+                return [
+                    {
                         arn: r.Arn ?? '',
                         resourceType: cfnType,
                         region: r.Region ?? '',
@@ -251,8 +254,12 @@ export function resourceExplorerSearchHandler(
                         service: r.Service,
                         lastReportedAt: r.LastReportedAt?.toISOString(),
                         identifier,
-                    };
-                }) ?? [],
+                    },
+                ];
+            }) ?? [];
+
+        return {
+            resources,
             nextToken: response.NextToken,
             totalCount: response.Count?.TotalResources,
             isComplete: response.Count?.Complete,

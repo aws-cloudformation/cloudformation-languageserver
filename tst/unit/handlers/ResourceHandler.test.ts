@@ -298,6 +298,29 @@ describe('ResourceHandler - resourceExplorerSearchHandler', () => {
 
         expect(result.resources[0].identifier).toBe('my-bucket-name');
     });
+
+    it('should filter out resources with unknown AREX types', async () => {
+        mockComponents.resourceExplorerService.search.resolves({
+            $metadata: {},
+            Resources: [
+                {
+                    Arn: 'arn:aws:s3:::my-bucket',
+                    ResourceType: 's3:bucket',
+                    Region: 'us-east-1',
+                },
+                {
+                    Arn: 'arn:aws:unknown:us-east-1:123456789012:resource/id',
+                    ResourceType: 'unknown:resource',
+                    Region: 'us-east-1',
+                },
+            ],
+        });
+
+        const result = await handler({ queryString: 'test' }, CancellationToken.None);
+
+        expect(result.resources).toHaveLength(1);
+        expect(result.resources[0].resourceType).toBe('AWS::S3::Bucket');
+    });
 });
 
 describe('ResourceHandler - resourceExplorerListViewsHandler', () => {
