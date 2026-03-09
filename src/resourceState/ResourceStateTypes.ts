@@ -119,3 +119,56 @@ export interface ResourceTemplateFormat {
 export const StackMgmtInfoRequest = new RequestType<ResourceIdentifier, ResourceStackManagementResult, void>(
     'aws/cfn/resources/stackMgmtInfo',
 );
+
+// Resource Explorer types
+export type ResourceExplorerSearchParams = {
+    queryString: string;
+    maxResults?: number;
+    nextToken?: string;
+    viewArn?: string;
+};
+
+export type ResourceExplorerResource = {
+    arn: string;
+    resourceType: string;
+    region: string;
+    owningAccountId?: string;
+    service?: string;
+    lastReportedAt?: string;
+    identifier?: string;
+};
+
+export type ResourceExplorerSearchResult = {
+    resources: ResourceExplorerResource[];
+    nextToken?: string;
+    totalCount?: number;
+    isComplete?: boolean;
+    viewArn?: string;
+};
+
+export const ResourceExplorerSearchRequest = new RequestType<
+    ResourceExplorerSearchParams,
+    ResourceExplorerSearchResult,
+    void
+>('aws/cfn/resources/explorer/search');
+
+// Resource Explorer List Views
+export type ResourceExplorerListViewsResult = {
+    views: { arn: string; name: string }[];
+    message?: string;
+};
+
+export const ResourceExplorerListViewsRequest = new RequestType<void, ResourceExplorerListViewsResult, void>(
+    'aws/cfn/resources/explorer/listViews',
+);
+
+// Get supported resource types for Resource Explorer
+export type ResourceExplorerListSupportedTypesResult = {
+    types: string[];
+};
+
+export const ResourceExplorerListSupportedTypesRequest = new RequestType<
+    void,
+    ResourceExplorerListSupportedTypesResult,
+    void
+>('aws/cfn/resources/explorer/listSupportedTypes');

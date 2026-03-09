@@ -11,6 +11,7 @@ import { CfnService } from '../services/CfnService';
 import { GuardService } from '../services/guard/GuardService';
 import { IacGeneratorService } from '../services/IacGeneratorService';
 import { OnlineStatus } from '../services/OnlineStatus';
+import { ResourceExplorerService } from '../services/ResourceExplorerService';
 import { S3Service } from '../services/S3Service';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
@@ -28,6 +29,7 @@ export class CfnExternal implements Configurables, Closeable {
     readonly ccapiService: CcapiService;
     readonly iacGeneratorService: IacGeneratorService;
     readonly s3Service: S3Service;
+    readonly resourceExplorerService: ResourceExplorerService;
 
     readonly schemaStore: SchemaStore;
     readonly schemaRetriever: SchemaRetriever;
@@ -47,6 +49,7 @@ export class CfnExternal implements Configurables, Closeable {
         this.ccapiService = overrides.ccapiService ?? new CcapiService(this.awsClient);
         this.iacGeneratorService = overrides.iacGeneratorService ?? new IacGeneratorService(this.awsClient);
         this.s3Service = overrides.s3Service ?? new S3Service(this.awsClient);
+        this.resourceExplorerService = overrides.resourceExplorerService ?? new ResourceExplorerService(this.awsClient);
 
         this.schemaStore = overrides.schemaStore ?? new SchemaStore(core.dataStoreFactory);
         this.schemaRetriever =

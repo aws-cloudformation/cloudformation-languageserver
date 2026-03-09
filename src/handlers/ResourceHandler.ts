@@ -16,6 +16,10 @@ import {
     ResourceIdentifier,
     SearchResourceParams,
     SearchResourceResult,
+    ResourceExplorerSearchParams,
+    ResourceExplorerSearchResult,
+    ResourceExplorerListViewsResult,
+    ResourceExplorerListSupportedTypesResult,
 } from '../resourceState/ResourceStateTypes';
 import { ResourceStackManagementResult } from '../resourceState/StackManagementInfoProvider';
 import { ServerComponents } from '../server/ServerComponents';
@@ -211,5 +215,88 @@ export function getManagedResourceStackTemplateHandler(
                 throw error;
             }
         });
+    };
+}
+
+export function resourceExplorerSearchHandler(
+    components: ServerComponents,
+): ServerRequestHandler<ResourceExplorerSearchParams, ResourceExplorerSearchResult, never, void> {
+    return async (params: ResourceExplorerSearchParams): Promise<ResourceExplorerSearchResult> => {
+        const { arexTypeToCfnType, cfnTypeToArexType, extractIdentifierFromArn } =
+            await import('../resourceState/ArexToCfnTypeMap');
+
+        // Convert CFN types in query to AREX types
+        const queryString = params.queryString.replaceAll(
+            /resourcetype:([^\s]+)/gi,
+            (_, type: string) => `resourcetype:${cfnTypeToArexType(type) ?? type}`,
+        );
+
+        const response = await components.resourceExplorerService.search(queryString, {
+            maxResults: params.maxResults,
+            nextToken: params.nextToken,
+            viewArn: params.viewArn,
+        });
+
+        return {
+            resources:
+                response.Resources?.map((r) => {
+                    const arexType = r.ResourceType ?? '';
+                    const cfnType = arexTypeToCfnType(arexType) ?? arexType;
+                    const identifier = extractIdentifierFromArn(cfnType, r.Arn ?? '');
+                    return {
+                        arn: r.Arn ?? '',
+                        resourceType: cfnType,
+                        region: r.Region ?? '',
+                        owningAccountId: r.OwningAccountId,
+                        service: r.Service,
+                        lastReportedAt: r.LastReportedAt?.toISOString(),
+                        identifier,
+                    };
+                }) ?? [],
+            nextToken: response.NextToken,
+            totalCount: response.Count?.TotalResources,
+            isComplete: response.Count?.Complete,
+            viewArn: response.ViewArn,
+        };
+    };
+}
+
+export function resourceExplorerListViewsHandler(
+    components: ServerComponents,
+): ServerRequestHandler<void, ResourceExplorerListViewsResult, never, void> {
+    return async (): Promise<ResourceExplorerListViewsResult> => {
+        const views = await components.resourceExplorerService.listViews();
+
+        if (views.length === 0) {
+            // Try to create a default view
+            try {
+                const newView = await components.resourceExplorerService.createDefaultView();
+                if (newView) {
+                    return {
+                        views: [newView],
+                        message:
+                            'A Resource Explorer view was not found so one was created. Indexing may take minutes to hours \
+                            depending on the number of resources in your account. You may see partial results until full \
+                            inventory synchronization completes. Please try a search again later.',
+                    };
+                }
+            } catch {
+                // Fall through to return empty views
+            }
+        }
+
+        return { views };
+    };
+}
+
+export function resourceExplorerListSupportedTypesHandler(): ServerRequestHandler<
+    void,
+    ResourceExplorerListSupportedTypesResult,
+    never,
+    void
+> {
+    return async (): Promise<ResourceExplorerListSupportedTypesResult> => {
+        const { getSearchableResourceTypes } = await import('../resourceState/ArexToCfnTypeMap');
+        return { types: getSearchableResourceTypes() };
     };
 }

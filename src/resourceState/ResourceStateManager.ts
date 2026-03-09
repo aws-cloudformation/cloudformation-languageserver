@@ -14,6 +14,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure, Count } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
+import { parseArnToIdentifierMap, getArnMetadata } from './ArexToCfnTypeMap';
 import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
 
@@ -60,7 +61,10 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
 
     @Measure({ name: 'getResource' })
     public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<ResourceState | undefined> {
-        const cachedResources = this.getResourceState(typeName, identifier);
+        // Normalize identifier if it's an ARN
+        const normalizedId = this.normalizeIdentifier(typeName, identifier);
+
+        const cachedResources = this.getResourceState(typeName, normalizedId);
         if (cachedResources) {
             this.telemetry.count('state.hit', 1);
             return cachedResources;
@@ -70,12 +74,12 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         let output: GetResourceCommandOutput | undefined = undefined;
 
         try {
-            output = await this.ccapiService.getResource(typeName, identifier);
+            output = await this.ccapiService.getResource(typeName, normalizedId);
         } catch (error) {
             if (error instanceof ResourceNotFoundException) {
-                log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
+                log.info(`No resource found for type ${typeName} and identifier "${normalizedId}"`);
             } else {
-                log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
+                log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${normalizedId}"`);
                 this.telemetry.count('state.fault', 1);
             }
             return;
@@ -83,20 +87,73 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
 
         if (!output?.TypeName || !output?.ResourceDescription?.Identifier || !output?.ResourceDescription?.Properties) {
             log.error(
-                `GetResource output is missing required fields for type ${typeName} with identifier "${identifier}"`,
+                `GetResource output is missing required fields for type ${typeName} with identifier "${normalizedId}"`,
             );
             return;
         }
 
         const value: ResourceState = {
             typeName: typeName,
-            identifier: identifier,
+            identifier: normalizedId,
             properties: output.ResourceDescription.Properties,
             createdTimestamp: DateTime.now(),
         };
 
-        this.storeResourceState(typeName, identifier, value);
+        this.storeResourceState(typeName, normalizedId, value);
         return value;
+    }
+
+    /**
+     * Normalize identifier for Cloud Control API.
+     * Handles both ARNs and pipe-separated identifiers that may be in wrong order.
+     */
+    private normalizeIdentifier(typeName: string, identifier: string): string {
+        const schemas = this.schemaRetriever.getDefault()?.schemas;
+        const schema = schemas?.get(typeName);
+        if (!schema?.primaryIdentifier) {
+            return identifier;
+        }
+
+        // Extract property names from primaryIdentifier (e.g., "/properties/BucketName" -> "BucketName")
+        const primaryIdProps = schema.primaryIdentifier.map((p) => {
+            const parts = p.split('/');
+            return parts[parts.length - 1];
+        });
+
+        // If identifier is an ARN, parse it
+        if (identifier.startsWith('arn:')) {
+            const identifierMap = parseArnToIdentifierMap(identifier, typeName, primaryIdProps);
+            if (!identifierMap) {
+                return identifier;
+            }
+            const values = primaryIdProps.map((prop) => identifierMap[prop]).filter(Boolean);
+            return values.length > 0 ? values.join('|') : identifier;
+        }
+
+        // For pipe-separated identifiers, try to reorder based on ARN metadata
+        if (identifier.includes('|') && primaryIdProps.length > 1) {
+            const arnMetadata = getArnMetadata(typeName);
+            if (arnMetadata?.captureGroups) {
+                const parts = identifier.split('|');
+                const arnCaptureGroups = arnMetadata.captureGroups.filter(
+                    (g: string) => g !== 'AccountId' && g !== 'Account',
+                );
+
+                // If parts count matches capture groups, build a map and reorder
+                if (parts.length === arnCaptureGroups.length) {
+                    const identifierMap: Record<string, string> = {};
+                    for (const [i, group] of arnCaptureGroups.entries()) {
+                        identifierMap[group] = parts[i];
+                    }
+                    const values = primaryIdProps.map((prop) => identifierMap[prop]).filter(Boolean);
+                    if (values.length === primaryIdProps.length) {
+                        return values.join('|');
+                    }
+                }
+            }
+        }
+
+        return identifier;
     }
 
     @Measure({ name: 'listResources' })

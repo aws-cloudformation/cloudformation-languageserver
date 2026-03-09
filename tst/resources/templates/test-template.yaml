@@ -7,3 +7,116 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       DefinitionUri: ./api.yaml
+
+  BedrockKnowledgeBase:
+    Type: AWS::Bedrock::KnowledgeBase
+    Properties:
+      Description: Test knowledge base for Bedrock
+      KnowledgeBaseConfiguration:
+        Type: VECTOR
+        VectorKnowledgeBaseConfiguration:
+          EmbeddingModelArn: arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1
+      StorageConfiguration:
+        OpensearchServerlessConfiguration:
+          CollectionArn: arn:aws:aoss:us-east-1:495599744547:collection/rn7xa61ms8nixnpawtbb
+          VectorIndexName: kb-index
+          FieldMapping:
+            VectorField: vector
+            TextField: text
+            MetadataField: metadata
+        Type: OPENSEARCH_SERVERLESS
+      RoleArn: arn:aws:iam::495599744547:role/BedrockKBRole-bedrock-kb
+      Tags: {}
+      Name: TestKnowledgeBase
+    Metadata:
+      PrimaryIdentifier: <CLONE>JCP36XQV8G
+
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DeletionPolicy: Retain
+    Properties:
+      Description: Automatically created by the RestApi construct
+      RestApiId: 5hm2qt0sr3
+    Metadata:
+      PrimaryIdentifier: arn:aws:apigateway:us-east-1::/restapis/5hm2qt0sr3/deployments/9eqr1w
+      ManagedByStack: "false"
+
+  ApiGatewayDeployment1:
+    Type: AWS::ApiGateway::Deployment
+    DeletionPolicy: Retain
+    Properties:
+      Description: "RestApi deployment id: c21b9b9dc1c9e56972ba5f7929efcea77d181000"
+      RestApiId: 9qxgb54p1c
+    Metadata:
+      PrimaryIdentifier: 9qxgb54p1c|22a4m4
+      ManagedByStack: "false"
+
+  ApiGatewayRestApi:
+    Type: AWS::ApiGateway::RestApi
+    DeletionPolicy: Retain
+    Properties:
+      Policy: '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"AWS":"arn:aws:iam::495599744547:root"},"Action":"execute-api:Invoke","Resource":"arn:aws:execute-api:us-east-1:495599744547:9qxgb54p1c/*"}]}'
+      Description: |-
+        An example service, deployed with the Octane Service creator,
+        which will echo the string
+      SecurityPolicy: TLS_1_0
+      ApiKeySourceType: HEADER
+      EndpointConfiguration:
+        Types:
+          - EDGE
+      DisableExecuteApiEndpoint: false
+      Tags: []
+      Name: A beautiful and amazing CfnTemplateGenerationServiceLambda
+    Metadata:
+      PrimaryIdentifier: 9qxgb54p1c
+      ManagedByStack: "true"
+      StackName: tennakooCleStack
+      StackId: arn:aws:cloudformation:us-east-1:495599744547:stack/tennakooCleStack/c9a99030-cba5-11ef-981b-0e12b1742aa3
+
+  BedrockKnowledgeBase1:
+    Type: AWS::Bedrock::KnowledgeBase
+    Properties:
+      Description: Test knowledge base for Bedrock
+      KnowledgeBaseConfiguration:
+        Type: VECTOR
+        VectorKnowledgeBaseConfiguration:
+          EmbeddingModelArn: arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v1
+      StorageConfiguration:
+        OpensearchServerlessConfiguration:
+          CollectionArn: arn:aws:aoss:us-east-1:495599744547:collection/rn7xa61ms8nixnpawtbb
+          VectorIndexName: kb-index
+          FieldMapping:
+            VectorField: vector
+            TextField: text
+            MetadataField: metadata
+        Type: OPENSEARCH_SERVERLESS
+      RoleArn: arn:aws:iam::495599744547:role/BedrockKBRole-bedrock-kb
+      Tags: {}
+      Name: TestKnowledgeBase
+    Metadata:
+      PrimaryIdentifier: <CLONE>JCP36XQV8G
+
+  ApiGatewayRestApi1:
+    Type: AWS::ApiGateway::RestApi
+    DeletionPolicy: Retain
+    Properties:
+      Policy: '{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":["cloudformation.amazonaws.com","gamma.cloudformation.aws.internal"]},"Action":"execute-api:Invoke","Resource":"arn:aws:execute-api:us-east-1:495599744547:5hm2qt0sr3/*"}]}'
+      Description: |-
+        An example service, deployed with the Octane Service creator,
+        which will echo the string
+      SecurityPolicy: TLS_1_0
+      ApiKeySourceType: HEADER
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      DisableExecuteApiEndpoint: false
+      Tags: []
+      BinaryMediaTypes:
+        - application/vnd.amazon.eventstream
+        - application/cbor
+      Name: RestApi
+    Metadata:
+      PrimaryIdentifier: 5hm2qt0sr3
+      ManagedByStack: "true"
+      StackName: CFNResourcesScannerService-Service-personal
+      StackId: arn:aws:cloudformation:us-east-1:495599744547:stack/CFNResourcesScannerService-Service-personal/733a54c0-b9b0-11ef-b1ab-0ed9ace82adf

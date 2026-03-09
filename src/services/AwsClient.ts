@@ -1,5 +1,6 @@
 import { CloudControlClient } from '@aws-sdk/client-cloudcontrol';
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation';
+import { ResourceExplorer2Client } from '@aws-sdk/client-resource-explorer-2';
 import { S3Client } from '@aws-sdk/client-s3';
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { IamCredentials } from '../auth/AwsLspAuthTypes';
@@ -30,6 +31,10 @@ export class AwsClient {
 
     public getS3Client() {
         return new S3Client(this.iamClientConfig());
+    }
+
+    public getResourceExplorerClient() {
+        return new ResourceExplorer2Client(this.iamClientConfig());
     }
 
     private iamClientConfig(): IamClientConfig {

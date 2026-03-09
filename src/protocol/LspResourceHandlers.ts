@@ -17,6 +17,13 @@ import {
     SearchResourceParams,
     SearchResourceResult,
     RemoveResourceTypeRequest,
+    ResourceExplorerSearchRequest,
+    ResourceExplorerSearchParams,
+    ResourceExplorerSearchResult,
+    ResourceExplorerListViewsRequest,
+    ResourceExplorerListViewsResult,
+    ResourceExplorerListSupportedTypesRequest,
+    ResourceExplorerListSupportedTypesResult,
 } from '../resourceState/ResourceStateTypes';
 import { ResourceStackManagementResult } from '../resourceState/StackManagementInfoProvider';
 
@@ -49,5 +56,21 @@ export class LspResourceHandlers {
 
     onSearchResource(handler: ServerRequestHandler<SearchResourceParams, SearchResourceResult, never, void>) {
         this.connection.onRequest(SearchResourceRequest.method, handler);
+    }
+
+    onResourceExplorerSearch(
+        handler: ServerRequestHandler<ResourceExplorerSearchParams, ResourceExplorerSearchResult, never, void>,
+    ) {
+        this.connection.onRequest(ResourceExplorerSearchRequest.method, handler);
+    }
+
+    onResourceExplorerListViews(handler: ServerRequestHandler<void, ResourceExplorerListViewsResult, never, void>) {
+        this.connection.onRequest(ResourceExplorerListViewsRequest.method, handler);
+    }
+
+    onResourceExplorerListSupportedTypes(
+        handler: ServerRequestHandler<void, ResourceExplorerListSupportedTypesResult, never, void>,
+    ) {
+        this.connection.onRequest(ResourceExplorerListSupportedTypesRequest.method, handler);
     }
 }

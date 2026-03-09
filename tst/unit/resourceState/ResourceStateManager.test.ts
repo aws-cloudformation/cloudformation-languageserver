@@ -109,6 +109,126 @@ describe('ResourceStateManager', () => {
 
             expect(result).toBeUndefined();
         });
+
+        it('should normalize ARN identifier to Cloud Control format', async () => {
+            // Create manager with schema that has primaryIdentifier
+            const mockSchemas: CombinedSchemas = {
+                schemas: new Map([
+                    [
+                        'AWS::S3::Bucket',
+                        {
+                            typeName: 'AWS::S3::Bucket',
+                            primaryIdentifier: ['/properties/BucketName'],
+                            handlers: { list: {} },
+                        },
+                    ],
+                ]),
+            } as CombinedSchemas;
+            const managerWithSchema = new ResourceStateManager(
+                mockCcapiService,
+                createMockSchemaRetriever(mockSchemas),
+                mockS3Service,
+            );
+
+            const mockOutput: GetResourceCommandOutput = {
+                TypeName: 'AWS::S3::Bucket',
+                ResourceDescription: {
+                    Identifier: 'my-bucket',
+                    Properties: '{"BucketName": "my-bucket"}',
+                },
+                $metadata: {},
+            };
+            vi.mocked(mockCcapiService.getResource).mockResolvedValue(mockOutput);
+
+            // Pass ARN as identifier - should be normalized to bucket name
+            await managerWithSchema.getResource('AWS::S3::Bucket', 'arn:aws:s3:::my-bucket');
+
+            expect(mockCcapiService.getResource).toHaveBeenCalledWith('AWS::S3::Bucket', 'my-bucket');
+        });
+
+        it('should pass through non-ARN identifiers unchanged', async () => {
+            const mockOutput: GetResourceCommandOutput = {
+                TypeName: 'AWS::S3::Bucket',
+                ResourceDescription: {
+                    Identifier: 'my-bucket',
+                    Properties: '{"BucketName": "my-bucket"}',
+                },
+                $metadata: {},
+            };
+            vi.mocked(mockCcapiService.getResource).mockResolvedValue(mockOutput);
+
+            await manager.getResource('AWS::S3::Bucket', 'my-bucket');
+
+            expect(mockCcapiService.getResource).toHaveBeenCalledWith('AWS::S3::Bucket', 'my-bucket');
+        });
+
+        it('should pass through ARN if schema not found', async () => {
+            // Create manager with empty schemas
+            const mockSchemas: CombinedSchemas = {
+                schemas: new Map(),
+            } as CombinedSchemas;
+            const managerWithEmptySchema = new ResourceStateManager(
+                mockCcapiService,
+                createMockSchemaRetriever(mockSchemas),
+                mockS3Service,
+            );
+
+            const mockOutput: GetResourceCommandOutput = {
+                TypeName: 'AWS::Unknown::Type',
+                ResourceDescription: {
+                    Identifier: 'arn:aws:unknown:us-east-1:123456789012:resource/id',
+                    Properties: '{}',
+                },
+                $metadata: {},
+            };
+            vi.mocked(mockCcapiService.getResource).mockResolvedValue(mockOutput);
+
+            const arn = 'arn:aws:unknown:us-east-1:123456789012:resource/id';
+            await managerWithEmptySchema.getResource('AWS::Unknown::Type', arn);
+
+            expect(mockCcapiService.getResource).toHaveBeenCalledWith('AWS::Unknown::Type', arn);
+        });
+
+        it('should reorder pipe-separated identifier based on schema primaryIdentifier', async () => {
+            // API Gateway Deployment: ARN capture groups are [RestApiId, DeploymentId]
+            // but schema primaryIdentifier is [DeploymentId, RestApiId]
+            const mockSchemas: CombinedSchemas = {
+                schemas: new Map([
+                    [
+                        'AWS::ApiGateway::Deployment',
+                        {
+                            typeName: 'AWS::ApiGateway::Deployment',
+                            primaryIdentifier: ['/properties/DeploymentId', '/properties/RestApiId'],
+                            handlers: { list: {} },
+                        },
+                    ],
+                ]),
+            } as CombinedSchemas;
+            const managerWithSchema = new ResourceStateManager(
+                mockCcapiService,
+                createMockSchemaRetriever(mockSchemas),
+                mockS3Service,
+            );
+
+            const mockOutput: GetResourceCommandOutput = {
+                TypeName: 'AWS::ApiGateway::Deployment',
+                ResourceDescription: {
+                    Identifier: '9eqr1w|5hm2qt0sr3',
+                    Properties: '{}',
+                },
+                $metadata: {},
+            };
+            vi.mocked(mockCcapiService.getResource).mockResolvedValue(mockOutput);
+
+            // Input: RestApiId|DeploymentId (wrong order from extractIdentifierFromArn)
+            await managerWithSchema.getResource('AWS::ApiGateway::Deployment', '5hm2qt0sr3|9eqr1w');
+
+            // Should be reordered to DeploymentId|RestApiId
+            expect(mockCcapiService.getResource).toHaveBeenCalledWith(
+                'AWS::ApiGateway::Deployment',
+                '9eqr1w|5hm2qt0sr3',
+            );
+        });
     });
 
     describe('listResources()', () => {

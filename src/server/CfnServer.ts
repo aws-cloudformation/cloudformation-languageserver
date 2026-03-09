@@ -25,6 +25,9 @@ import {
     searchResourceHandler,
     getStackMgmtInfo,
     removeResourceTypeHandler,
+    resourceExplorerSearchHandler,
+    resourceExplorerListViewsHandler,
+    resourceExplorerListSupportedTypesHandler,
 } from '../handlers/ResourceHandler';
 import { uploadFileToS3Handler } from '../handlers/S3Handler';
 import {
@@ -285,6 +288,21 @@ export class CfnServer {
                 'Resource.Stack.Mgmt.Info',
                 withOnlineGuard(this.components.onlineFeatureGuard, getStackMgmtInfo(this.components)),
             ),
+        );
+        this.lsp.resourceHandlers.onResourceExplorerSearch(
+            withTelemetryContext(
+                'Resource.Explorer.Search',
+                withOnlineGuard(this.components.onlineFeatureGuard, resourceExplorerSearchHandler(this.components)),
+            ),
+        );
+        this.lsp.resourceHandlers.onResourceExplorerListViews(
+            withTelemetryContext(
+                'Resource.Explorer.ListViews',
+                withOnlineGuard(this.components.onlineFeatureGuard, resourceExplorerListViewsHandler(this.components)),
+            ),
+        );
+        this.lsp.resourceHandlers.onResourceExplorerListSupportedTypes(
+            withTelemetryContext('Resource.Explorer.ListSupportedTypes', resourceExplorerListSupportedTypesHandler()),
         );
 
         this.lsp.s3Handlers.onUploadFile(
