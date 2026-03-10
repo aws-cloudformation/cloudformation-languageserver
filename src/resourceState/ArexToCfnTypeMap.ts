@@ -3,7 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// Resource Explorer type to CloudFormation type mapping
+// Resource Explorer type to CloudFormation type mapping.
+// Note: Ambiguous types are not included.
 const arexToCfnTypeMap: Record<string, string> = {
     'access-analyzer:analyzer': 'AWS::AccessAnalyzer::Analyzer',
     'acm-pca:certificate-authority': 'AWS::ACMPCA::CertificateAuthority',
@@ -537,47 +538,23 @@ const arexToCfnTypeMap: Record<string, string> = {
     'workspaces:workspace': 'AWS::WorkSpaces::Workspace',
 };
 
-// ARN metadata for extracting identifiers
-interface ArnMetadata {
-    arnRegex: string;
-    captureGroups: string[];
-}
-
-const arnMetadataMap: Record<string, ArnMetadata> = {
+// ARN metadata for extracting identifiers.
+// Note: This is not an authoritative or complete dataset.
+const arnMetadataMap: Record<string, { arnRegex: string; captureGroups: string[] }> = {
     'AWS::ACMPCA::CertificateAuthority': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):acm-pca:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):certificate-authority/(?<CertificateAuthorityId>[^/:]+)',
         captureGroups: ['AccountId', 'CertificateAuthorityId'],
-    },
-    'AWS::AIOps::InvestigationGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):aiops:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):investigation-group/(?<InvestigationGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'InvestigationGroupId'],
-    },
-    'AWS::APS::AnomalyDetector': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):aps:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):anomalydetector/(?<WorkspaceId>[^:/]+)/(?<AnomalyDetectorId>[^:/]+)',
-        captureGroups: ['AccountId', 'WorkspaceId', 'AnomalyDetectorId'],
     },
     'AWS::APS::RuleGroupsNamespace': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):aps:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):rulegroupsnamespace/(?<WorkspaceId>[^/:]+)/(?<Namespace>[^/:]+)',
         captureGroups: ['AccountId', 'WorkspaceId', 'Namespace'],
     },
-    'AWS::APS::Scraper': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):aps:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):scraper/(?<ScraperId>[^:/]+)',
-        captureGroups: ['AccountId', 'ScraperId'],
-    },
     'AWS::APS::Workspace': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):aps:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workspace/(?<WorkspaceId>[^/:]+)',
         captureGroups: ['AccountId', 'WorkspaceId'],
-    },
-    'AWS::ARCRegionSwitch::Plan': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):arc-region-switch:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):plan/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
     },
     'AWS::AccessAnalyzer::Analyzer': {
         arnRegex:
@@ -609,91 +586,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):amplify:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apps/(?<AppId>[^:/]+)/domains/(?<DomainName>[^:/]+)',
         captureGroups: ['AccountId', 'AppId', 'DomainName'],
     },
-    'AWS::AmplifyUIBuilder::Component': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):amplifyuibuilder:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):app/(?<AppId>[^:/]+)/environment/(?<EnvironmentName>[^:/]+)/components/(?<Id>[^:/]+)',
-        captureGroups: ['AccountId', 'AppId', 'EnvironmentName', 'Id'],
-    },
-    'AWS::AmplifyUIBuilder::Form': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):amplifyuibuilder:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):app/(?<AppId>[^:/]+)/environment/(?<EnvironmentName>[^:/]+)/forms/(?<Id>[^:/]+)',
-        captureGroups: ['AccountId', 'AppId', 'EnvironmentName', 'Id'],
-    },
-    'AWS::AmplifyUIBuilder::Theme': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):amplifyuibuilder:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):app/(?<AppId>[^:/]+)/environment/(?<EnvironmentName>[^:/]+)/themes/(?<Id>[^:/]+)',
-        captureGroups: ['AccountId', 'AppId', 'EnvironmentName', 'Id'],
-    },
-    'AWS::ApiGateway::Account': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/account/(?<ApiGatewayAccountId>[^/:]+)',
-        captureGroups: ['ApiGatewayAccountId'],
-    },
-    'AWS::ApiGateway::ApiKey': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apikeys/(?<ApiKeyId>[^/:]+)',
-        captureGroups: ['ApiKeyId'],
-    },
-    'AWS::ApiGateway::Authorizer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^/:]+)/authorizers/(?<AuthorizerId>[^/:]+)',
-        captureGroups: ['RestApiId', 'AuthorizerId'],
-    },
-    'AWS::ApiGateway::BasePathMapping': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/domainnames/(?<DomainName>[^/:]+)/basepathmappings/(?<BasePath>[^/:]+)',
-        captureGroups: ['DomainName', 'BasePath'],
-    },
-    'AWS::ApiGateway::ClientCertificate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/clientcertificates/(?<ClientCertificateId>[^/:]+)',
-        captureGroups: ['ClientCertificateId'],
-    },
     'AWS::ApiGateway::Deployment': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^/:]+)/deployments/(?<DeploymentId>[^/:]+)',
         captureGroups: ['RestApiId', 'DeploymentId'],
     },
-    'AWS::ApiGateway::DocumentationPart': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^/:]+)/documentation/parts/(?<DocumentationPartId>[^/:]+)',
-        captureGroups: ['RestApiId', 'DocumentationPartId'],
-    },
-    'AWS::ApiGateway::DocumentationVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^/:]+)/documentation/versions/(?<DocumentationVersionId>[^/:]+)',
-        captureGroups: ['RestApiId', 'DocumentationVersionId'],
-    },
-    'AWS::ApiGateway::DomainName': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/domainnames/(?<DomainName>[^/:]+)',
-        captureGroups: ['DomainName'],
-    },
-    'AWS::ApiGateway::DomainNameAccessAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/domainnameaccessassociations',
-        captureGroups: ['AccountId'],
-    },
-    'AWS::ApiGateway::DomainNameV2': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/domainnames/(?<DomainName>[^/:]+)',
-        captureGroups: ['DomainName'],
-    },
-    'AWS::ApiGateway::GatewayResponse': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^/:]+)/gatewayresponses/(?<ResponseType>[^/:]+)',
-        captureGroups: ['RestApiId', 'ResponseType'],
-    },
     'AWS::ApiGateway::Method': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^/:]+)/resources/(?<ResourceId>[^/:]+)/methods/(?<HttpMethodType>[^/:]+)',
         captureGroups: ['RestApiId', 'ResourceId', 'HttpMethodType'],
-    },
-    'AWS::ApiGateway::Model': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^:/]+)/models/(?<ModelName>[^/:]+)',
-        captureGroups: ['RestApiId', 'ModelName'],
-    },
-    'AWS::ApiGateway::RequestValidator': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^/:]+)/requestvalidators/(?<RequestValidatorId>[^/:]+)',
-        captureGroups: ['RestApiId', 'RequestValidatorId'],
     },
     'AWS::ApiGateway::Resource': {
         arnRegex:
@@ -709,15 +610,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/restapis/(?<RestApiId>[^/:]+)/stages/(?<StageName>[^/:]+)',
         captureGroups: ['RestApiId', 'StageName'],
     },
-    'AWS::ApiGateway::UsagePlan': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/usageplans/(?<UsagePlanId>[^/:]+)',
-        captureGroups: ['UsagePlanId'],
-    },
-    'AWS::ApiGateway::UsagePlanKey': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/usageplans/(?<UsagePlanId>[^/:]+)/keys/(?<Id>[^/:]+)',
-        captureGroups: ['UsagePlanId', 'Id'],
-    },
     'AWS::ApiGateway::VpcLink': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/vpclinks/(?<VpcLinkId>[^/:]+)',
         captureGroups: ['VpcLinkId'],
@@ -726,74 +618,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex: 'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)',
         captureGroups: ['ApiId'],
     },
-    'AWS::ApiGatewayV2::ApiMapping': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/domainnames/(?<DomainName>[^/:]+)/apimappings/(?<ApiMappingId>[^/:]+)',
-        captureGroups: ['DomainName', 'ApiMappingId'],
-    },
-    'AWS::ApiGatewayV2::Authorizer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)/authorizers/(?<AuthorizerId>[^/:]+)',
-        captureGroups: ['ApiId', 'AuthorizerId'],
-    },
-    'AWS::ApiGatewayV2::Deployment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)/deployments/(?<DeploymentId>[^/:]+)',
-        captureGroups: ['ApiId', 'DeploymentId'],
-    },
-    'AWS::ApiGatewayV2::Integration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)/integrations/(?<IntegrationId>[^/:]+)',
-        captureGroups: ['ApiId', 'IntegrationId'],
-    },
-    'AWS::ApiGatewayV2::IntegrationResponse': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)/integrations/(?<IntegrationId>[^/:]+)/integrationresponses/(?<IntegrationResponseId>[^/:]+)',
-        captureGroups: ['ApiId', 'IntegrationId', 'IntegrationResponseId'],
-    },
-    'AWS::ApiGatewayV2::Model': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)/models/(?<ModelId>[^/:]+)',
-        captureGroups: ['ApiId', 'ModelId'],
-    },
     'AWS::ApiGatewayV2::Route': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)/routes/(?<RouteId>[^/:]+)',
         captureGroups: ['ApiId', 'RouteId'],
     },
-    'AWS::ApiGatewayV2::RouteResponse': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)/routes/(?<RouteId>[^/:]+)/routeresponses/(?<RouteResponseId>[^/:]+)',
-        captureGroups: ['ApiId', 'RouteId', 'RouteResponseId'],
-    },
-    'AWS::ApiGatewayV2::RoutingRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/domainnames/(?<DomainName>[^/:]+)/routingrules/(?<RoutingRuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainName', 'RoutingRuleId'],
-    },
-    'AWS::ApiGatewayV2::Stage': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/apis/(?<ApiId>[^/:]+)/stages/(?<StageName>[^/:]+)',
-        captureGroups: ['ApiId', 'StageName'],
-    },
-    'AWS::ApiGatewayV2::VpcLink': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):apigateway:(?<Region>[a-z0-9-]+)::/vpclinks/(?<VpcLinkId>[^/:]+)',
-        captureGroups: ['VpcLinkId'],
-    },
     'AWS::AppConfig::Application': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):appconfig:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)',
         captureGroups: ['AccountId', 'ApplicationId'],
-    },
-    'AWS::AppConfig::ConfigurationProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appconfig:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/configurationprofile/(?<ConfigurationProfileId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'ConfigurationProfileId'],
-    },
-    'AWS::AppConfig::Deployment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appconfig:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/environment/(?<EnvironmentId>[^/:]+)/deployment/(?<DeploymentNumber>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'EnvironmentId', 'DeploymentNumber'],
     },
     'AWS::AppConfig::DeploymentStrategy': {
         arnRegex:
@@ -805,30 +638,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):appconfig:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/environment/(?<EnvironmentId>[^/:]+)',
         captureGroups: ['AccountId', 'ApplicationId', 'EnvironmentId'],
     },
-    'AWS::AppConfig::Extension': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appconfig:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):extension/(?<ExtensionId>[^/:]+)/(?<ExtensionVersionNumber>[^/:]+)',
-        captureGroups: ['AccountId', 'ExtensionId', 'ExtensionVersionNumber'],
-    },
     'AWS::AppConfig::ExtensionAssociation': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):appconfig:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):extensionassociation/(?<ExtensionAssociationId>[^/:]+)',
         captureGroups: ['AccountId', 'ExtensionAssociationId'],
-    },
-    'AWS::AppConfig::HostedConfigurationVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appconfig:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^:/]+)/configurationprofile/(?<ConfigurationProfileId>[^:/]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'ConfigurationProfileId'],
-    },
-    'AWS::AppFlow::Connector': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appflow:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connector/(?<ConnectorLabel>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectorLabel'],
-    },
-    'AWS::AppFlow::ConnectorProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appflow:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):connectorprofile/(?<ProfileName>[^/:]+)',
-        captureGroups: ['Account', 'ProfileName'],
     },
     'AWS::AppFlow::Flow': {
         arnRegex:
@@ -839,11 +652,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):app-integrations:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)',
         captureGroups: ['AccountId', 'ApplicationId'],
-    },
-    'AWS::AppIntegrations::DataIntegration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):app-integrations:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):data-integration/(?<DataIntegrationId>[^/:]+)',
-        captureGroups: ['AccountId', 'DataIntegrationId'],
     },
     'AWS::AppIntegrations::EventIntegration': {
         arnRegex:
@@ -895,16 +703,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'AutoscalingConfigurationId',
         ],
     },
-    'AWS::AppRunner::ObservabilityConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apprunner:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):observabilityconfiguration/(?<ObservabilityConfigurationName>[^/:]+)/(?<ObservabilityConfigurationVersion>[^/:]+)/(?<ObservabilityConfigurationId>[^/:]+)',
-        captureGroups: [
-            'AccountId',
-            'ObservabilityConfigurationName',
-            'ObservabilityConfigurationVersion',
-            'ObservabilityConfigurationId',
-        ],
-    },
     'AWS::AppRunner::Service': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):apprunner:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):service/(?<ServiceName>[^/:]+)/(?<ServiceId>[^/:]+)',
@@ -915,20 +713,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):apprunner:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vpcconnector/(?<VpcConnectorName>[^/:]+)/(?<VpcConnectorVersion>[^/:]+)/(?<VpcConnectorId>[^/:]+)',
         captureGroups: ['AccountId', 'VpcConnectorName', 'VpcConnectorVersion', 'VpcConnectorId'],
     },
-    'AWS::AppRunner::VpcIngressConnection': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apprunner:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vpcingressconnection/(?<VpcIngressConnectionName>[^/:]+)/(?<VpcIngressConnectionId>[^/:]+)',
-        captureGroups: ['AccountId', 'VpcIngressConnectionName', 'VpcIngressConnectionId'],
-    },
     'AWS::AppStream::AppBlock': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):appstream:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):app-block/(?<AppBlockName>[^/:]+)',
         captureGroups: ['AccountId', 'AppBlockName'],
-    },
-    'AWS::AppStream::AppBlockBuilder': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appstream:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):app-block-builder/(?<AppBlockBuilderName>[^/:]+)',
-        captureGroups: ['AccountId', 'AppBlockBuilderName'],
     },
     'AWS::AppStream::Application': {
         arnRegex:
@@ -955,61 +743,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):appsync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apis/(?<ApiId>[^:/]+)',
         captureGroups: ['AccountId', 'ApiId'],
     },
-    'AWS::AppSync::ChannelNamespace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appsync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apis/(?<ApiId>[^/:]+)/channelNamespace/(?<ChannelNamespaceName>[^/:]+)',
-        captureGroups: ['AccountId', 'ApiId', 'ChannelNamespaceName'],
-    },
-    'AWS::AppSync::DataSource': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appsync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apis/(?<GraphQLAPIId>[^/:]+)/datasources/(?<DatasourceName>[^/:]+)',
-        captureGroups: ['AccountId', 'GraphQLAPIId', 'DatasourceName'],
-    },
-    'AWS::AppSync::DomainName': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appsync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domainnames/(?<DomainName>[^:/]+)',
-        captureGroups: ['AccountId', 'DomainName'],
-    },
-    'AWS::AppSync::FunctionConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appsync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apis/(?<GraphQLAPIId>[^:/]+)/functions/(?<FunctionId>[^:/]+)',
-        captureGroups: ['AccountId', 'GraphQLAPIId', 'FunctionId'],
-    },
-    'AWS::AppSync::GraphQLApi': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appsync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apis/(?<GraphQLAPIId>[^/:]+)',
-        captureGroups: ['AccountId', 'GraphQLAPIId'],
-    },
-    'AWS::AppSync::SourceApiAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):appsync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apis/(?<MergedGraphQLAPIId>[^/:]+)/sourceApiAssociations/(?<Associationid>[^/:]+)',
-        captureGroups: ['AccountId', 'MergedGraphQLAPIId', 'Associationid'],
-    },
-    'AWS::AppTest::TestCase': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):apptest:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):testcase/(?<TestCaseId>[^:/]+)',
-        captureGroups: ['AccountId', 'TestCaseId'],
-    },
-    'AWS::ApplicationAutoScaling::ScalableTarget': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):application-autoscaling:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):scalable-target/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::ApplicationInsights::Application': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):applicationinsights:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/resource-group/(?<ResourceGroupName>[^:/]+)',
-        captureGroups: ['AccountId', 'ResourceGroupName'],
-    },
-    'AWS::ApplicationSignals::ServiceLevelObjective': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):application-signals:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):slo/(?<SloName>[^:/]+)',
-        captureGroups: ['AccountId', 'SloName'],
-    },
-    'AWS::Athena::CapacityReservation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):athena:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):capacity-reservation/(?<CapacityReservationName>[^/:]+)',
-        captureGroups: ['AccountId', 'CapacityReservationName'],
-    },
     'AWS::Athena::DataCatalog': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):athena:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):datacatalog/(?<DataCatalogName>[^/:]+)',
@@ -1030,65 +763,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):autoscaling:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):autoScalingGroup:(?<GroupId>[^/:]+):autoScalingGroupName/(?<GroupFriendlyName>[^/:]+)',
         captureGroups: ['AccountId', 'GroupId', 'GroupFriendlyName'],
     },
-    'AWS::AutoScaling::LaunchConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):autoscaling:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):launchConfiguration:(?<Id>[^/:]+):launchConfigurationName/(?<LaunchConfigurationName>[^/:]+)',
-        captureGroups: ['AccountId', 'Id', 'LaunchConfigurationName'],
-    },
-    'AWS::B2BI::Capability': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):b2bi:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):capability/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::B2BI::Partnership': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):b2bi:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):partnership/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::B2BI::Profile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):b2bi:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):profile/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::B2BI::Transformer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):b2bi:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):transformer/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::BCMDataExports::Export': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bcm-data-exports:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):export/(?<Identifier>[^/:]+)',
-        captureGroups: ['AccountId', 'Identifier'],
-    },
     'AWS::Backup::BackupPlan': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):backup:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):backup-plan:(?<BackupPlanId>[^/:]+)',
         captureGroups: ['AccountId', 'BackupPlanId'],
     },
-    'AWS::Backup::Framework': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):backup:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):framework:(?<FrameworkName>[^/:]+)-(?<FrameworkId>[^/:]+)',
-        captureGroups: ['AccountId', 'FrameworkName', 'FrameworkId'],
-    },
-    'AWS::Backup::LogicallyAirGappedBackupVault': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):backup:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):backup-vault:(?<BackupVaultName>[^/:]+)',
-        captureGroups: ['AccountId', 'BackupVaultName'],
-    },
     'AWS::Backup::ReportPlan': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):backup:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):report-plan:(?<ReportPlanName>[^/:]+)-(?<ReportPlanId>[^/:]+)',
         captureGroups: ['AccountId', 'ReportPlanName', 'ReportPlanId'],
-    },
-    'AWS::Backup::RestoreTestingPlan': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):backup:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):restore-testing-plan:(?<RestoreTestingPlanName>[^/:]+)-(?<RestoreTestingPlanId>[^/:]+)',
-        captureGroups: ['AccountId', 'RestoreTestingPlanName', 'RestoreTestingPlanId'],
-    },
-    'AWS::Backup::TieringConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):backup:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):tiering-configuration:(?<TieringConfigurationName>[^:/]+)-(?<TieringConfigurationId>[^:/]+)',
-        captureGroups: ['AccountId', 'TieringConfigurationName', 'TieringConfigurationId'],
     },
     'AWS::BackupGateway::Hypervisor': {
         arnRegex:
@@ -1099,11 +782,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):batch:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):compute-environment/(?<ComputeEnvironmentName>[^/:]+)',
         captureGroups: ['AccountId', 'ComputeEnvironmentName'],
-    },
-    'AWS::Batch::ConsumableResource': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):batch:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):consumable-resource/(?<ConsumableResourceName>[^/:]+)',
-        captureGroups: ['AccountId', 'ConsumableResourceName'],
     },
     'AWS::Batch::JobDefinition': {
         arnRegex:
@@ -1120,11 +798,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):batch:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):scheduling-policy/(?<SchedulingPolicyName>[^/:]+)',
         captureGroups: ['AccountId', 'SchedulingPolicyName'],
     },
-    'AWS::Batch::ServiceEnvironment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):batch:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):service-environment/(?<ServiceEnvironmentName>[^/:]+)',
-        captureGroups: ['AccountId', 'ServiceEnvironmentName'],
-    },
     'AWS::Bedrock::Agent': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):agent/(?<AgentId>[^/:]+)',
@@ -1140,21 +813,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application-inference-profile/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
-    'AWS::Bedrock::AutomatedReasoningPolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):automated-reasoning-policy/(?<AutomatedReasoningPolicyId>[^/:]+)',
-        captureGroups: ['AccountId', 'AutomatedReasoningPolicyId'],
-    },
-    'AWS::Bedrock::AutomatedReasoningPolicyVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):automated-reasoning-policy/(?<AutomatedReasoningPolicyId>[^/:]+):(?<AutomatedReasoningPolicyVersion>[^/:]+)',
-        captureGroups: ['AccountId', 'AutomatedReasoningPolicyId', 'AutomatedReasoningPolicyVersion'],
-    },
-    'AWS::Bedrock::Blueprint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):blueprint/(?<BlueprintId>[^/:]+)',
-        captureGroups: ['AccountId', 'BlueprintId'],
-    },
     'AWS::Bedrock::DataAutomationProject': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):data-automation-project/(?<ProjectId>[^/:]+)',
@@ -1164,11 +822,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):flow/(?<FlowId>[^/:]+)',
         captureGroups: ['AccountId', 'FlowId'],
-    },
-    'AWS::Bedrock::FlowAlias': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):flow/(?<FlowId>[^/:]+)/alias/(?<FlowAliasId>[^/:]+)',
-        captureGroups: ['AccountId', 'FlowId', 'FlowAliasId'],
     },
     'AWS::Bedrock::Guardrail': {
         arnRegex:
@@ -1190,90 +843,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):prompt/(?<PromptId>[^/:]+)',
         captureGroups: ['AccountId', 'PromptId'],
     },
-    'AWS::Bedrock::PromptVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):prompt/(?<PromptId>[^/:]+):(?<PromptVersion>[^/:]+)',
-        captureGroups: ['AccountId', 'PromptId', 'PromptVersion'],
-    },
-    'AWS::BedrockAgentCore::BrowserCustom': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-agentcore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):browser-custom/(?<BrowserId>[^/:]+)',
-        captureGroups: ['AccountId', 'BrowserId'],
-    },
-    'AWS::BedrockAgentCore::BrowserProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-agentcore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):browser-profile/(?<BrowserProfileId>[^:/]+)',
-        captureGroups: ['AccountId', 'BrowserProfileId'],
-    },
-    'AWS::BedrockAgentCore::CodeInterpreterCustom': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-agentcore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):code-interpreter-custom/(?<CodeInterpreterId>[^/:]+)',
-        captureGroups: ['AccountId', 'CodeInterpreterId'],
-    },
-    'AWS::BedrockAgentCore::Gateway': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-agentcore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):gateway/(?<GatewayId>[^/:]+)',
-        captureGroups: ['AccountId', 'GatewayId'],
-    },
-    'AWS::BedrockAgentCore::Memory': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-agentcore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):memory/(?<MemoryId>[^/:]+)',
-        captureGroups: ['AccountId', 'MemoryId'],
-    },
-    'AWS::BedrockAgentCore::Runtime': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-agentcore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):runtime/(?<RuntimeId>[^/:]+)',
-        captureGroups: ['AccountId', 'RuntimeId'],
-    },
-    'AWS::BedrockAgentCore::RuntimeEndpoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-agentcore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):runtime/(?<RuntimeId>[^/:]+)/runtime-endpoint/(?<Name>[^/:]+)',
-        captureGroups: ['AccountId', 'RuntimeId', 'Name'],
-    },
-    'AWS::BedrockAgentCore::WorkloadIdentity': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-agentcore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workload-identity-directory/(?<DirectoryId>[^/:]+)/workload-identity/(?<WorkloadIdentityName>[^/:]+)',
-        captureGroups: ['AccountId', 'DirectoryId', 'WorkloadIdentityName'],
-    },
-    'AWS::BedrockMantle::Project': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):bedrock-mantle:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):project/(?<ResourceId>[^:/]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::Billing::BillingView': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):billing::(?<AccountId>[0-9]{12}):billingview/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::BillingConductor::BillingGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):billingconductor::(?<AccountId>[0-9]{12}):billinggroup/(?<BillingGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'BillingGroupId'],
-    },
-    'AWS::BillingConductor::CustomLineItem': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):billingconductor::(?<AccountId>[0-9]{12}):customlineitem/(?<CustomLineItemId>[^/:]+)',
-        captureGroups: ['AccountId', 'CustomLineItemId'],
-    },
-    'AWS::BillingConductor::PricingPlan': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):billingconductor::(?<AccountId>[0-9]{12}):pricingplan/(?<PricingPlanId>[^/:]+)',
-        captureGroups: ['AccountId', 'PricingPlanId'],
-    },
-    'AWS::BillingConductor::PricingRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):billingconductor::(?<AccountId>[0-9]{12}):pricingrule/(?<PricingRuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'PricingRuleId'],
-    },
-    'AWS::Budgets::Budget': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):budgets::(?<Account>[0-9]{12}):budget/(?<BudgetName>(?![^:]+/action/)[^:]+)',
-        captureGroups: ['Account', 'BudgetName'],
-    },
-    'AWS::Budgets::BudgetsAction': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):budgets::(?<AccountId>[0-9]{12}):budget/(?<BudgetName>[^:/]+)/action/(?<ActionId>[^:/]+)',
-        captureGroups: ['AccountId', 'BudgetName', 'ActionId'],
-    },
     'AWS::CE::AnomalyMonitor': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):ce::(?<AccountId>[0-9]{12}):anomalymonitor/(?<Identifier>[^/:]+)',
         captureGroups: ['AccountId', 'Identifier'],
@@ -1282,108 +851,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex: 'arn:(?<Partition>[a-z-]+):ce::(?<AccountId>[0-9]{12}):anomalysubscription/(?<Identifier>[^/:]+)',
         captureGroups: ['AccountId', 'Identifier'],
     },
-    'AWS::CE::CostCategory': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):ce::(?<AccountId>[0-9]{12}):costcategory/(?<Identifier>[^/:]+)',
-        captureGroups: ['AccountId', 'Identifier'],
-    },
-    'AWS::CUR::ReportDefinition': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cur:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):definition/(?<ReportName>[^:/]+)',
-        captureGroups: ['AccountId', 'ReportName'],
-    },
-    'AWS::Cases::CaseRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cases:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainId>[^/:]+)/case-rule/(?<CaseRuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainId', 'CaseRuleId'],
-    },
-    'AWS::Cases::Domain': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cases:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainId'],
-    },
-    'AWS::Cases::Field': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cases:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainId>[^/:]+)/field/(?<FieldId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainId', 'FieldId'],
-    },
-    'AWS::Cases::Layout': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cases:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainId>[^/:]+)/layout/(?<LayoutId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainId', 'LayoutId'],
-    },
-    'AWS::Cases::Template': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cases:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainId>[^/:]+)/template/(?<TemplateId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainId', 'TemplateId'],
-    },
-    'AWS::Cassandra::Keyspace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cassandra:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/keyspace/(?<KeyspaceName>[a-zA-Z0-9_-]{1,48})/',
-        captureGroups: ['AccountId', 'KeyspaceName'],
-    },
-    'AWS::Cassandra::Table': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cassandra:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/keyspace/(?<KeyspaceName>[a-zA-Z0-9_-]{1,48})/table/(?<TableName>[a-zA-Z0-9_-]{1,48})',
-        captureGroups: ['AccountId', 'KeyspaceName', 'TableName'],
-    },
     'AWS::CertificateManager::Certificate': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):acm:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):certificate/(?<CertificateId>[^/:]+)',
         captureGroups: ['AccountId', 'CertificateId'],
-    },
-    'AWS::Chatbot::CustomAction': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):chatbot::(?<AccountId>[0-9]{12}):custom-action/(?<ActionName>[^:/]+)',
-        captureGroups: ['AccountId', 'ActionName'],
-    },
-    'AWS::Chatbot::SlackChannelConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):chatbot::(?<AccountId>[0-9]{12}):chat-configuration/(?<ConfigurationType>[^:/]+)/(?<ChatbotConfigurationName>[^:/]+)',
-        captureGroups: ['AccountId', 'ConfigurationType', 'ChatbotConfigurationName'],
-    },
-    'AWS::CleanRooms::AnalysisTemplate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):membership/(?<MembershipId>[^/:]+)/analysistemplate/(?<AnalysisTemplateId>[^/:]+)',
-        captureGroups: ['AccountId', 'MembershipId', 'AnalysisTemplateId'],
-    },
-    'AWS::CleanRooms::Collaboration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):collaboration/(?<CollaborationId>[^/:]+)',
-        captureGroups: ['AccountId', 'CollaborationId'],
-    },
-    'AWS::CleanRooms::ConfiguredTable': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):configuredtable/(?<ConfiguredTableId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConfiguredTableId'],
-    },
-    'AWS::CleanRooms::ConfiguredTableAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):membership/(?<MembershipId>[^/:]+)/configuredtableassociation/(?<ConfiguredTableAssociationId>[^/:]+)',
-        captureGroups: ['AccountId', 'MembershipId', 'ConfiguredTableAssociationId'],
-    },
-    'AWS::CleanRooms::IdMappingTable': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):membership/(?<MembershipId>[^/:]+)/idmappingtable/(?<IdMappingTableId>[^/:]+)',
-        captureGroups: ['AccountId', 'MembershipId', 'IdMappingTableId'],
-    },
-    'AWS::CleanRooms::IdNamespaceAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):membership/(?<MembershipId>[^/:]+)/idnamespaceassociation/(?<IdNamespaceAssociationId>[^/:]+)',
-        captureGroups: ['AccountId', 'MembershipId', 'IdNamespaceAssociationId'],
-    },
-    'AWS::CleanRooms::Membership': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):membership/(?<MembershipId>[^/:]+)',
-        captureGroups: ['AccountId', 'MembershipId'],
-    },
-    'AWS::CleanRooms::PrivacyBudgetTemplate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):membership/(?<MembershipId>[^/:]+)/privacybudgettemplate/(?<PrivacyBudgetTemplateId>[^/:]+)',
-        captureGroups: ['AccountId', 'MembershipId', 'PrivacyBudgetTemplateId'],
-    },
-    'AWS::CleanRoomsML::TrainingDataset': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cleanrooms-ml:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):training-dataset/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
     },
     'AWS::Cloud9::EnvironmentEC2': {
         arnRegex:
@@ -1400,29 +871,12 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):cloudformation:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stackset/(?<StackSetName>[^/:]+):(?<Id>[^/:]+)',
         captureGroups: ['AccountId', 'StackSetName', 'Id'],
     },
-    'AWS::CloudFormation::TypeActivation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cloudformation:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):type/(?<TypeName>[a-z]+)/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'TypeName', 'Id'],
-    },
-    'AWS::CloudFront::AnycastIpList': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):anycast-ip-list/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
     'AWS::CloudFront::CachePolicy': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):cache-policy/(?<Id>[^/:]+)',
         captureGroups: ['AccountId', 'Id'],
     },
     'AWS::CloudFront::CloudFrontOriginAccessIdentity': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):origin-access-identity/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::CloudFront::ConnectionFunction': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):connection-function/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::CloudFront::ConnectionGroup': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):connection-group/(?<Id>[^/:]+)',
         captureGroups: ['AccountId', 'Id'],
     },
     'AWS::CloudFront::ContinuousDeploymentPolicy': {
@@ -1435,16 +889,8 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):distribution/(?<DistributionId>[^/:]+)',
         captureGroups: ['AccountId', 'DistributionId'],
     },
-    'AWS::CloudFront::DistributionTenant': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):distribution-tenant/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
     'AWS::CloudFront::Function': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):function/(?<Name>[^/:]+)',
-        captureGroups: ['AccountId', 'Name'],
-    },
-    'AWS::CloudFront::KeyValueStore': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):key-value-store/(?<Name>[^/:]+)',
         captureGroups: ['AccountId', 'Name'],
     },
     'AWS::CloudFront::OriginAccessControl': {
@@ -1461,19 +907,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
     },
     'AWS::CloudFront::ResponseHeadersPolicy': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):response-headers-policy/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::CloudFront::StreamingDistribution': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):streaming-distribution/(?<DistributionId>[^/:]+)',
-        captureGroups: ['AccountId', 'DistributionId'],
-    },
-    'AWS::CloudFront::TrustStore': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):trust-store/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::CloudFront::VpcOrigin': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):cloudfront::(?<AccountId>[0-9]{12}):vpcorigin/(?<Id>[^/:]+)',
         captureGroups: ['AccountId', 'Id'],
     },
     'AWS::CloudTrail::Channel': {
@@ -1501,11 +934,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):cloudwatch:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):alarm:(?<AlarmName>.+)',
         captureGroups: ['AccountId', 'AlarmName'],
     },
-    'AWS::CloudWatch::AlarmMuteRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):cloudwatch:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):alarm-mute-rule:(?<AlarmMuteRuleName>[^:/]+)',
-        captureGroups: ['AccountId', 'AlarmMuteRuleName'],
-    },
     'AWS::CloudWatch::Dashboard': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):cloudwatch::(?<AccountId>[0-9]{12}):dashboard/(?<DashboardName>[^/:]+)',
         captureGroups: ['AccountId', 'DashboardName'],
@@ -1525,30 +953,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):codeartifact:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainName>[^/:]+)',
         captureGroups: ['AccountId', 'DomainName'],
     },
-    'AWS::CodeArtifact::PackageGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):codeartifact:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):package-group/(?<DomainName>[^/:]+)(?<EncodedPackageGroupPattern>[^:]+)',
-        captureGroups: ['AccountId', 'DomainName', 'EncodedPackageGroupPattern'],
-    },
     'AWS::CodeArtifact::Repository': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):codeartifact:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):repository/(?<DomainName>[^/:]+)/(?<RepositoryName>[^/:]+)',
         captureGroups: ['AccountId', 'DomainName', 'RepositoryName'],
     },
-    'AWS::CodeBuild::Fleet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):codebuild:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):fleet/(?<FleetName>[^/:]+):(?<FleetId>[^/:]+)',
-        captureGroups: ['AccountId', 'FleetName', 'FleetId'],
-    },
     'AWS::CodeBuild::Project': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):codebuild:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):project/(?<ProjectName>[^/:]+)',
         captureGroups: ['AccountId', 'ProjectName'],
-    },
-    'AWS::CodeBuild::ReportGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):codebuild:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):report-group/(?<ReportGroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'ReportGroupName'],
     },
     'AWS::CodeCommit::Repository': {
         arnRegex:
@@ -1570,11 +983,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):codedeploy:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):deploymentconfig:(?<DeploymentConfigurationName>[^/:]+)',
         captureGroups: ['AccountId', 'DeploymentConfigurationName'],
     },
-    'AWS::CodeDeploy::DeploymentGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):codedeploy:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):deploymentgroup:(?<ApplicationName>[^/:]+)/(?<DeploymentGroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationName', 'DeploymentGroupName'],
-    },
     'AWS::CodeGuruProfiler::ProfilingGroup': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):codeguru-profiler:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):profilingGroup/(?<ProfilingGroupName>[^/:]+)',
@@ -1584,11 +992,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):codeguru-reviewer:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):association:(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::CodePipeline::CustomActionType': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):codepipeline:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):actiontype:(?<Owner>[^/:]+)/(?<Category>[^/:]+)/(?<Provider>[^/:]+)/(?<Version>[^/:]+)',
-        captureGroups: ['AccountId', 'Owner', 'Category', 'Provider', 'Version'],
     },
     'AWS::CodePipeline::Pipeline': {
         arnRegex:
@@ -1600,24 +1003,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):codepipeline:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):webhook:(?<WebhookName>[^/:]+)',
         captureGroups: ['AccountId', 'WebhookName'],
     },
-    'AWS::CodeStar::GitHubRepository': {
-        arnRegex: 'arn:(?<Partition>[^:/]+):codestar:(?<Region>[^:/]+):(?<Account>[^:/]+):project/(?<ProjectId>[^:/]+)',
-        captureGroups: ['Account', 'ProjectId'],
-    },
     'AWS::CodeStarConnections::Connection': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):codestar-connections:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connection/(?<ConnectionId>[^/:]+)',
         captureGroups: ['AccountId', 'ConnectionId'],
-    },
-    'AWS::CodeStarConnections::RepositoryLink': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):codestar-connections:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):repository-link/(?<RepositoryLinkId>[^/:]+)',
-        captureGroups: ['AccountId', 'RepositoryLinkId'],
-    },
-    'AWS::CodeStarNotifications::NotificationRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):codestar-notifications:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):notificationrule/(?<NotificationRuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'NotificationRuleId'],
     },
     'AWS::Cognito::IdentityPool': {
         arnRegex:
@@ -1639,80 +1028,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):comprehend:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):flywheel/(?<FlywheelName>[^/:]+)',
         captureGroups: ['AccountId', 'FlywheelName'],
     },
-    'AWS::Config::AggregationAuthorization': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):aggregation-authorization/(?<AggregatorAccount>[^/:]+)/(?<AggregatorRegion>[^/:]+)',
-        captureGroups: ['AccountId', 'AggregatorAccount', 'AggregatorRegion'],
-    },
     'AWS::Config::ConfigRule': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):config-rule/(?<ConfigRuleId>[^:]+)',
         captureGroups: ['AccountId', 'ConfigRuleId'],
-    },
-    'AWS::Config::ConfigurationAggregator': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):config-aggregator/(?<AggregatorId>[^:]+)',
-        captureGroups: ['AccountId', 'AggregatorId'],
-    },
-    'AWS::Config::ConfigurationRecorder': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):configuration-recorder/(?<RecorderName>[^/:]+)/(?<RecorderId>[^/:]+)',
-        captureGroups: ['AccountId', 'RecorderName', 'RecorderId'],
-    },
-    'AWS::Config::ConformancePack': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):conformance-pack/(?<ConformancePackName>[^/:]+)/(?<ConformancePackId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConformancePackName', 'ConformancePackId'],
-    },
-    'AWS::Config::OrganizationConfigRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):organization-config-rule/(?<OrganizationConfigRuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'OrganizationConfigRuleId'],
-    },
-    'AWS::Config::OrganizationConformancePack': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):organization-conformance-pack/(?<OrganizationConformancePackId>[^/:]+)',
-        captureGroups: ['AccountId', 'OrganizationConformancePackId'],
-    },
-    'AWS::Config::RemediationConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):remediation-configuration/(?<RemediationConfigurationId>[^/:]+)',
-        captureGroups: ['AccountId', 'RemediationConfigurationId'],
-    },
-    'AWS::Config::StoredQuery': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):config:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stored-query/(?<StoredQueryName>[^/:]+)/(?<StoredQueryId>[^/:]+)',
-        captureGroups: ['AccountId', 'StoredQueryName', 'StoredQueryId'],
-    },
-    'AWS::Connect::AgentStatus': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/agent-state/(?<AgentStatusId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'AgentStatusId'],
-    },
-    'AWS::Connect::ContactFlow': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/contact-flow/(?<ContactFlowId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'ContactFlowId'],
-    },
-    'AWS::Connect::ContactFlowModule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/flow-module/(?<ContactFlowModuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'ContactFlowModuleId'],
-    },
-    'AWS::Connect::DataTable': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/data-table/(?<DataTableId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'DataTableId'],
-    },
-    'AWS::Connect::EmailAddress': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/email-address/(?<EmailAddressId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'EmailAddressId'],
-    },
-    'AWS::Connect::EvaluationForm': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/evaluation-form/(?<FormId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'FormId'],
     },
     'AWS::Connect::HoursOfOperation': {
         arnRegex:
@@ -1724,120 +1043,35 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)',
         captureGroups: ['AccountId', 'InstanceId'],
     },
-    'AWS::Connect::IntegrationAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/integration-association/(?<IntegrationAssociationId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'IntegrationAssociationId'],
-    },
-    'AWS::Connect::Notification': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^:/]+)/notification/(?<NotificationId>[^:/]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'NotificationId'],
-    },
     'AWS::Connect::PhoneNumber': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):phone-number/(?<PhoneNumberId>[^/:]+)',
         captureGroups: ['AccountId', 'PhoneNumberId'],
-    },
-    'AWS::Connect::Prompt': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/prompt/(?<PromptId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'PromptId'],
-    },
-    'AWS::Connect::Queue': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/queue/(?<QueueId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'QueueId'],
     },
     'AWS::Connect::QuickConnect': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/transfer-destination/(?<QuickConnectId>[^/:]+)',
         captureGroups: ['AccountId', 'InstanceId', 'QuickConnectId'],
     },
-    'AWS::Connect::RoutingProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/routing-profile/(?<RoutingProfileId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'RoutingProfileId'],
-    },
     'AWS::Connect::Rule': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/rule/(?<RuleId>[^/:]+)',
         captureGroups: ['AccountId', 'InstanceId', 'RuleId'],
-    },
-    'AWS::Connect::SecurityProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/security-profile/(?<SecurityProfileId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'SecurityProfileId'],
     },
     'AWS::Connect::TaskTemplate': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/task-template/(?<TaskTemplateId>[^/:]+)',
         captureGroups: ['AccountId', 'InstanceId', 'TaskTemplateId'],
     },
-    'AWS::Connect::TrafficDistributionGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):traffic-distribution-group/(?<TrafficDistributionGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'TrafficDistributionGroupId'],
-    },
     'AWS::Connect::User': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/agent/(?<UserId>[^/:]+)',
         captureGroups: ['AccountId', 'InstanceId', 'UserId'],
     },
-    'AWS::Connect::UserHierarchyGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^:/]+)/agent-group/(?<HierarchyGroupId>[^:/]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'HierarchyGroupId'],
-    },
-    'AWS::Connect::View': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^:/]+)/view/(?<ViewId>[^:/]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'ViewId'],
-    },
-    'AWS::Connect::ViewVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^:/]+)/view/(?<ViewId>[^:/]+):(?<ViewVersion>[^:/]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'ViewId', 'ViewVersion'],
-    },
-    'AWS::Connect::Workspace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)/workspace/(?<WorkspaceId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'WorkspaceId'],
-    },
-    'AWS::ConnectCampaigns::Campaign': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):connect-campaigns:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):campaign/(?<CampaignId>[^/:]+)',
-        captureGroups: ['AccountId', 'CampaignId'],
-    },
-    'AWS::ControlTower::EnabledBaseline': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):controltower:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):enabledbaseline/(?<EnabledBaselineId>[^/:]+)',
-        captureGroups: ['AccountId', 'EnabledBaselineId'],
-    },
-    'AWS::ControlTower::EnabledControl': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):controltower:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):enabledcontrol/(?<EnabledControlId>[^/:]+)',
-        captureGroups: ['AccountId', 'EnabledControlId'],
-    },
-    'AWS::ControlTower::LandingZone': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):controltower:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):landingzone/(?<LandingZoneId>[^/:]+)',
-        captureGroups: ['AccountId', 'LandingZoneId'],
-    },
-    'AWS::CustomerProfiles::CalculatedAttributeDefinition': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):profile:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domains/(?<DomainName>[^:/]+)/calculated-attributes/(?<CalculatedAttributeName>[^:/]+)',
-        captureGroups: ['AccountId', 'DomainName', 'CalculatedAttributeName'],
-    },
     'AWS::CustomerProfiles::Domain': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):profile:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):domains/(?<DomainName>[a-zA-Z0-9_-]+)',
         captureGroups: ['Account', 'DomainName'],
-    },
-    'AWS::CustomerProfiles::EventStream': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):profile:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domains/(?<DomainName>[^:/]+)/event-streams/(?<EventStreamName>[^:/]+)',
-        captureGroups: ['AccountId', 'DomainName', 'EventStreamName'],
     },
     'AWS::CustomerProfiles::Integration': {
         arnRegex:
@@ -1854,25 +1088,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):dax:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cache/(?<ClusterName>[^:/]+)',
         captureGroups: ['AccountId', 'ClusterName'],
     },
-    'AWS::DLM::LifecyclePolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):dlm:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):policy/(?<PolicyId>[^/:]+)',
-        captureGroups: ['Account', 'PolicyId'],
-    },
     'AWS::DMS::Certificate': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):dms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cert:(?<CertificateId>[^/:]+)',
         captureGroups: ['AccountId', 'CertificateId'],
-    },
-    'AWS::DMS::DataMigration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):dms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):data-migration:(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::DMS::DataProvider': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):dms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):data-provider:(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
     },
     'AWS::DMS::Endpoint': {
         arnRegex:
@@ -1883,21 +1102,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):dms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):es:(?<SubscriptionName>[^/:]+)',
         captureGroups: ['AccountId', 'SubscriptionName'],
-    },
-    'AWS::DMS::InstanceProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):dms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance-profile:(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::DMS::MigrationProject': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):dms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):migration-project:(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::DMS::ReplicationConfig': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):dms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):replication-config:(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
     },
     'AWS::DMS::ReplicationInstance': {
         arnRegex:
@@ -1912,11 +1116,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
     'AWS::DMS::ReplicationTask': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):dms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):task:(?<TaskId>[^/:]+)',
         captureGroups: ['AccountId', 'TaskId'],
-    },
-    'AWS::DSQL::Cluster': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):dsql:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster/(?<Identifier>[^:/]+)',
-        captureGroups: ['AccountId', 'Identifier'],
     },
     'AWS::DataBrew::Dataset': {
         arnRegex:
@@ -1953,90 +1152,20 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):datapipeline:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):pipeline/(?<PipelineID>[^/:]+)',
         captureGroups: ['AccountId', 'PipelineID'],
     },
-    'AWS::DataSync::Agent': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):datasync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):agent/(?<AgentId>[^:/]+)',
-        captureGroups: ['AccountId', 'AgentId'],
-    },
-    'AWS::DataSync::LocationEFS': {
-        arnRegex:
-            'arn:(?<Partition>[^:/]+):datasync:(?<Region>[^:/]+):(?<AccountId>[^:/]+):location/(?<LocationId>[^:/]+)',
-        captureGroups: ['AccountId', 'LocationId'],
-    },
     'AWS::DataSync::Task': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):datasync:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):task/(?<TaskId>[^:/]+)',
         captureGroups: ['AccountId', 'TaskId'],
-    },
-    'AWS::DataZone::DataSource': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):datazonecontrol:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):data-source/(?<DomainId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainId'],
-    },
-    'AWS::DataZone::Domain': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):datazone:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainId>[^:/]+)',
-        captureGroups: ['AccountId', 'DomainId'],
-    },
-    'AWS::DataZone::Environment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):datazonecontrol:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainId'],
-    },
-    'AWS::Deadline::Farm': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):deadline:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):farm/(?<FarmId>[^/:]+)',
-        captureGroups: ['AccountId', 'FarmId'],
-    },
-    'AWS::Deadline::Fleet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):deadline:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):farm/(?<FarmId>[^/:]+)/fleet/(?<FleetId>[^/:]+)',
-        captureGroups: ['AccountId', 'FarmId', 'FleetId'],
-    },
-    'AWS::Deadline::LicenseEndpoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):deadline:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):license-endpoint/(?<LicenseEndpointId>[^/:]+)',
-        captureGroups: ['AccountId', 'LicenseEndpointId'],
-    },
-    'AWS::Deadline::Monitor': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):deadline:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):monitor/(?<MonitorId>[^/:]+)',
-        captureGroups: ['AccountId', 'MonitorId'],
-    },
-    'AWS::Deadline::Queue': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):deadline:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):farm/(?<FarmId>[^/:]+)/queue/(?<QueueId>[^/:]+)',
-        captureGroups: ['AccountId', 'FarmId', 'QueueId'],
     },
     'AWS::Detective::Graph': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):detective:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):graph:(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
-    'AWS::DevOpsAgent::AgentSpace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):aidevops:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):agentspace/(?<AgentSpaceId>[^:/]+)',
-        captureGroups: ['AccountId', 'AgentSpaceId'],
-    },
-    'AWS::DevOpsAgent::Association': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):aidevops:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):agentspace/(?<AgentSpaceId>[^:/]+)/associations/(?<AssociationId>[^:/]+)',
-        captureGroups: ['AccountId', 'AgentSpaceId', 'AssociationId'],
-    },
-    'AWS::DeviceFarm::DevicePool': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):devicefarm:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):devicepool:(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
     'AWS::DeviceFarm::InstanceProfile': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):devicefarm:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):instanceprofile:(?<InstanceProfileId>[^/:]+)',
         captureGroups: ['Account', 'InstanceProfileId'],
-    },
-    'AWS::DeviceFarm::NetworkProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):devicefarm:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12})?:networkprofile:((?<ProjectId>[^/:]+)/)?(?<NetworkProfileId>[^/:]+)',
-        captureGroups: ['Account', 'ProjectId', 'NetworkProfileId'],
     },
     'AWS::DeviceFarm::Project': {
         arnRegex:
@@ -2048,54 +1177,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):devicefarm:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):testgrid-project:(?<TestGridProjectId>[^/:]+)',
         captureGroups: ['Account', 'TestGridProjectId'],
     },
-    'AWS::DeviceFarm::VPCEConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):devicefarm:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):vpceconfiguration:(?<VpceConfigurationId>[^/:]+)',
-        captureGroups: ['Account', 'VpceConfigurationId'],
-    },
-    'AWS::DirectoryService::MicrosoftAD': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):directory/(?<DirectoryId>[^:/]+)',
-        captureGroups: ['AccountId', 'DirectoryId'],
-    },
     'AWS::DocDB::DBCluster': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster:(?<DbClusterInstanceName>[^/:]+)',
         captureGroups: ['AccountId', 'DbClusterInstanceName'],
     },
-    'AWS::DocDB::DBClusterParameterGroup': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):cluster-pg:(?<ClusterParameterGroupName>[^/:]+)',
-        captureGroups: ['Account', 'ClusterParameterGroupName'],
-    },
-    'AWS::DocDB::DBInstance': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):db:(?<DbInstanceName>[^/:]+)',
-        captureGroups: ['Account', 'DbInstanceName'],
-    },
-    'AWS::DocDB::DBSubnetGroup': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):subgrp:(?<SubnetGroupName>[^/:]+)',
-        captureGroups: ['Account', 'SubnetGroupName'],
-    },
-    'AWS::DocDBElastic::Cluster': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):docdb-elastic:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::DynamoDB::GlobalTable': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):dynamodb::(?<AccountId>[0-9]{12}):global-table/(?<GlobalTableName>[^/:]+)',
-        captureGroups: ['AccountId', 'GlobalTableName'],
-    },
     'AWS::DynamoDB::Table': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):dynamodb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):table/(?<TableName>[^/:]+)',
         captureGroups: ['AccountId', 'TableName'],
-    },
-    'AWS::EC2::CapacityManagerDataExport': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):capacity-manager-data-export/(?<CapacityManagerDataExportId>[^/:]+)',
-        captureGroups: ['AccountId', 'CapacityManagerDataExportId'],
     },
     'AWS::EC2::CapacityReservation': {
         arnRegex:
@@ -2160,11 +1250,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex: 'arn:(?<Partition>[a-z-]+):ec2::(?<Account>[0-9]{12}):ipam-pool/(?<IpamPoolId>[^/:]+)',
         captureGroups: ['Account', 'IpamPoolId'],
     },
-    'AWS::EC2::IPAMPrefixListResolver': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2::(?<AccountId>[0-9]{12}):ipam-prefix-list-resolver/(?<IpamPrefixListResolverId>[^:/]+)',
-        captureGroups: ['AccountId', 'IpamPrefixListResolverId'],
-    },
     'AWS::EC2::IPAMResourceDiscovery': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ec2::(?<AccountId>[0-9]{12}):ipam-resource-discovery/(?<IpamResourceDiscoveryId>[^/:]+)',
@@ -2184,11 +1269,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<InstanceId>[^/:]+)',
         captureGroups: ['AccountId', 'InstanceId'],
     },
-    'AWS::EC2::InstanceConnectEndpoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance-connect-endpoint/(?<InstanceConnectEndpointId>[^/:]+)',
-        captureGroups: ['AccountId', 'InstanceConnectEndpointId'],
-    },
     'AWS::EC2::InternetGateway': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):internet-gateway/(?<InternetGatewayId>[^/:]+)',
@@ -2203,31 +1283,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):launch-template/(?<LaunchTemplateId>[^/:]+)',
         captureGroups: ['AccountId', 'LaunchTemplateId'],
-    },
-    'AWS::EC2::LocalGatewayRouteTable': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):local-gateway-route-table/(?<LocalGatewayRoutetableId>[^/:]+)',
-        captureGroups: ['AccountId', 'LocalGatewayRoutetableId'],
-    },
-    'AWS::EC2::LocalGatewayRouteTableVPCAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):local-gateway-route-table-vpc-association/(?<LocalGatewayRouteTableVpcAssociationId>[^/:]+)',
-        captureGroups: ['AccountId', 'LocalGatewayRouteTableVpcAssociationId'],
-    },
-    'AWS::EC2::LocalGatewayRouteTableVirtualInterfaceGroupAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):local-gateway-route-table-virtual-interface-group-association/(?<LocalGatewayRouteTableVirtualInterfaceGroupAssociationId>[^/:]+)',
-        captureGroups: ['Account', 'LocalGatewayRouteTableVirtualInterfaceGroupAssociationId'],
-    },
-    'AWS::EC2::LocalGatewayVirtualInterface': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):local-gateway-virtual-interface/(?<LocalGatewayVirtualInterfaceId>[^/:]+)',
-        captureGroups: ['AccountId', 'LocalGatewayVirtualInterfaceId'],
-    },
-    'AWS::EC2::LocalGatewayVirtualInterfaceGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):local-gateway-virtual-interface-group/(?<LocalGatewayVirtualInterfaceGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'LocalGatewayVirtualInterfaceGroupId'],
     },
     'AWS::EC2::NatGateway': {
         arnRegex:
@@ -2274,21 +1329,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>aws|[0-9]{12}):prefix-list/(?<PrefixListId>[^/:]+)',
         captureGroups: ['AccountId', 'PrefixListId'],
     },
-    'AWS::EC2::RouteServer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):route-server/(?<RouteServerId>[^/:]+)',
-        captureGroups: ['AccountId', 'RouteServerId'],
-    },
-    'AWS::EC2::RouteServerEndpoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):route-server-endpoint/(?<RouteServerEndpointId>[^/:]+)',
-        captureGroups: ['AccountId', 'RouteServerEndpointId'],
-    },
-    'AWS::EC2::RouteServerPeer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):route-server-peer/(?<RouteServerPeerId>[^/:]+)',
-        captureGroups: ['AccountId', 'RouteServerPeerId'],
-    },
     'AWS::EC2::RouteTable': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):route-table/(?<RouteTableId>[^/:]+)',
@@ -2298,16 +1338,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):security-group/(?<SecurityGroupId>[^/:]+)',
         captureGroups: ['AccountId', 'SecurityGroupId'],
-    },
-    'AWS::EC2::SecurityGroupEgress': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):security-group-rule/(?<SecurityGroupRuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'SecurityGroupRuleId'],
-    },
-    'AWS::EC2::SecurityGroupIngress': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):security-group-rule/(?<SecurityGroupRuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'SecurityGroupRuleId'],
     },
     'AWS::EC2::SpotFleet': {
         arnRegex:
@@ -2344,20 +1374,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):transit-gateway/(?<TransitGatewayId>[^/:]+)',
         captureGroups: ['Account', 'TransitGatewayId'],
     },
-    'AWS::EC2::TransitGatewayAttachment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):transit-gateway-attachment/(?<TransitGatewayAttachmentId>[^/:]+)',
-        captureGroups: ['AccountId', 'TransitGatewayAttachmentId'],
-    },
     'AWS::EC2::TransitGatewayConnectPeer': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):transit-gateway-connect-peer/(?<TransitGatewayConnectPeerId>[^/:]+)',
         captureGroups: ['AccountId', 'TransitGatewayConnectPeerId'],
-    },
-    'AWS::EC2::TransitGatewayMeteringPolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):transit-gateway-metering-policy/(?<TransitGatewayMeteringPolicyId>[^/:]+)',
-        captureGroups: ['AccountId', 'TransitGatewayMeteringPolicyId'],
     },
     'AWS::EC2::TransitGatewayMulticastDomain': {
         arnRegex:
@@ -2373,40 +1393,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex: 'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vpc/(?<VpcId>[^/:]+)',
         captureGroups: ['AccountId', 'VpcId'],
     },
-    'AWS::EC2::VPCBlockPublicAccessExclusion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vpc-block-public-access-exclusion/(?<VpcBlockPublicAccessExclusionId>[^/:]+)',
-        captureGroups: ['AccountId', 'VpcBlockPublicAccessExclusionId'],
-    },
-    'AWS::EC2::VPCEncryptionControl': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vpc-encryption-control/(?<VpcEncryptionControlId>[^/:]+)',
-        captureGroups: ['AccountId', 'VpcEncryptionControlId'],
-    },
     'AWS::EC2::VPCEndpoint': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):vpc-endpoint/(?<VpcEndpointId>[^/:]+)',
         captureGroups: ['Account', 'VpcEndpointId'],
     },
-    'AWS::EC2::VPCEndpointService': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):vpc-endpoint-service/(?<VpcEndpointServiceId>[^/:]+)',
-        captureGroups: ['Account', 'VpcEndpointServiceId'],
-    },
-    'AWS::EC2::VPCEndpointServicePermissions': {
-        arnRegex:
-            'arn:(?<Partition>[^:/]+):ec2:(?<Region>[^:/]+):(?<Account>[^:/]+):vpc-endpoint-service-permission/(?<VpcEndpointServicePermissionId>[^:/]+)',
-        captureGroups: ['Account', 'VpcEndpointServicePermissionId'],
-    },
     'AWS::EC2::VPCPeeringConnection': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):vpc-peering-connection/(?<VpcPeeringConnectionId>[^/:]+)',
         captureGroups: ['Account', 'VpcPeeringConnectionId'],
-    },
-    'AWS::EC2::VPNConcentrator': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ec2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vpn-concentrator/(?<VpnConcentratorId>[^/:]+)',
-        captureGroups: ['AccountId', 'VpnConcentratorId'],
     },
     'AWS::EC2::VPNConnection': {
         arnRegex:
@@ -2487,47 +1482,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):elasticfilesystem:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):file-system/(?<FileSystemId>[^/:]+)',
         captureGroups: ['AccountId', 'FileSystemId'],
     },
-    'AWS::EKS::AccessEntry': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):eks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):access-entry/(?<ClusterName>[^/:]+)/(?<IamIdentityType>[^/:]+)/(?<IamIdentityAccountID>[^/:]+)/(?<IamIdentityName>[^/:]+)/(?<UUID>[^/:]+)',
-        captureGroups: [
-            'AccountId',
-            'ClusterName',
-            'IamIdentityType',
-            'IamIdentityAccountID',
-            'IamIdentityName',
-            'UUID',
-        ],
-    },
-    'AWS::EKS::Addon': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):eks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):addon/(?<ClusterName>[^/:]+)/(?<AddonName>[^/:]+)/(?<UUID>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterName', 'AddonName', 'UUID'],
-    },
-    'AWS::EKS::Capability': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):eks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):capability/(?<ClusterName>[^/:]+)/(?<CapabilityType>[^/:]+)/(?<CapabilityName>[^/:]+)/(?<UUID>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterName', 'CapabilityType', 'CapabilityName', 'UUID'],
-    },
     'AWS::EKS::Cluster': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):eks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster/(?<ClusterName>[^/:]+)',
         captureGroups: ['AccountId', 'ClusterName'],
-    },
-    'AWS::EKS::FargateProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):eks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):fargateprofile/(?<ClusterName>[^/:]+)/(?<FargateProfileName>[^/:]+)/(?<UUID>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterName', 'FargateProfileName', 'UUID'],
-    },
-    'AWS::EKS::IdentityProviderConfig': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):eks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):identityproviderconfig/(?<ClusterName>[^/:]+)/(?<IdentityProviderType>[^/:]+)/(?<IdentityProviderConfigName>[^/:]+)/(?<UUID>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterName', 'IdentityProviderType', 'IdentityProviderConfigName', 'UUID'],
-    },
-    'AWS::EKS::Nodegroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):eks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):nodegroup/(?<ClusterName>[^/:]+)/(?<NodegroupName>[^/:]+)/(?<UUID>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterName', 'NodegroupName', 'UUID'],
     },
     'AWS::EKS::PodIdentityAssociation': {
         arnRegex:
@@ -2538,11 +1496,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):elasticmapreduce:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster/(?<ClusterId>[^/:]+)',
         captureGroups: ['AccountId', 'ClusterId'],
-    },
-    'AWS::EMR::Studio': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):elasticmapreduce:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):studio/(?<StudioId>[^/:]+)',
-        captureGroups: ['AccountId', 'StudioId'],
     },
     'AWS::EMRContainers::Endpoint': {
         arnRegex:
@@ -2564,11 +1517,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):emr-serverless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/applications/(?<ApplicationId>[^/:]+)',
         captureGroups: ['AccountId', 'ApplicationId'],
     },
-    'AWS::EVS::Environment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):evs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):environment/(?<EnvironmentIdentifier>[^/:]+)',
-        captureGroups: ['AccountId', 'EnvironmentIdentifier'],
-    },
     'AWS::ElastiCache::CacheCluster': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):elasticache:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster:(?<CacheClusterId>[^/:]+)',
@@ -2588,16 +1536,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):elasticache:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):replicationgroup:(?<ReplicationGroupId>[^/:]+)',
         captureGroups: ['AccountId', 'ReplicationGroupId'],
-    },
-    'AWS::ElastiCache::SecurityGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):elasticache:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):securitygroup:(?<CacheSecurityGroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'CacheSecurityGroupName'],
-    },
-    'AWS::ElastiCache::ServerlessCache': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):elasticache:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):serverlesscache:(?<ServerlessCacheName>[^/:]+)',
-        captureGroups: ['AccountId', 'ServerlessCacheName'],
     },
     'AWS::ElastiCache::SubnetGroup': {
         arnRegex:
@@ -2659,50 +1597,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):elasticloadbalancing:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):targetgroup/(?<TargetGroupName>[^/:]+)/(?<TargetGroupId>[^/:]+)',
         captureGroups: ['AccountId', 'TargetGroupName', 'TargetGroupId'],
     },
-    'AWS::ElasticLoadBalancingV2::TrustStore': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):elasticloadbalancing:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):truststore/(?<TrustStoreName>[^/:]+)/(?<TrustStoreId>[^/:]+)',
-        captureGroups: ['AccountId', 'TrustStoreName', 'TrustStoreId'],
-    },
-    'AWS::Elasticsearch::Domain': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):es:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):domain/(?<DomainName>[^/:]+)',
-        captureGroups: ['Account', 'DomainName'],
-    },
-    'AWS::EntityResolution::IdMappingWorkflow': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):entityresolution:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):idmappingworkflow/(?<WorkflowName>[^/:]+)',
-        captureGroups: ['AccountId', 'WorkflowName'],
-    },
-    'AWS::EntityResolution::IdNamespace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):entityresolution:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):idnamespace/(?<IdNamespaceName>[^/:]+)',
-        captureGroups: ['AccountId', 'IdNamespaceName'],
-    },
-    'AWS::EntityResolution::MatchingWorkflow': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):entityresolution:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):matchingworkflow/(?<WorkflowName>[^/:]+)',
-        captureGroups: ['AccountId', 'WorkflowName'],
-    },
-    'AWS::EntityResolution::SchemaMapping': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):entityresolution:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):schemamapping/(?<SchemaName>[^/:]+)',
-        captureGroups: ['AccountId', 'SchemaName'],
-    },
     'AWS::EventSchemas::Discoverer': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):schemas:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):discoverer/(?<DiscovererId>[^/:]+)',
         captureGroups: ['AccountId', 'DiscovererId'],
-    },
-    'AWS::EventSchemas::Registry': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):schemas:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):registry/(?<RegistryName>[^/:]+)',
-        captureGroups: ['AccountId', 'RegistryName'],
-    },
-    'AWS::EventSchemas::Schema': {
-        arnRegex:
-            'arn:(?<Partition>[^:/]+):schemas:(?<Region>[^:/]+):(?<Account>[^:/]+):schema/(?<RegistryName>[^:/]+)/(?<SchemaName>[^:/]+)',
-        captureGroups: ['Account', 'RegistryName', 'SchemaName'],
     },
     'AWS::Events::ApiDestination': {
         arnRegex:
@@ -2734,70 +1632,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):events:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):rule/(?:(?<EventBusName>[^/:]+)/)?(?<RuleName>[^/:]+)',
         captureGroups: ['AccountId', 'EventBusName', 'RuleName'],
     },
-    'AWS::Evidently::Experiment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):evidently:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):project/(?<ProjectName>[-a-zA-Z0-9._]+)/experiment/(?<ExperimentName>[-a-zA-Z0-9._]+)',
-        captureGroups: ['AccountId', 'ProjectName', 'ExperimentName'],
-    },
-    'AWS::Evidently::Feature': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):evidently:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):project/(?<ProjectName>[-a-zA-Z0-9._]+)/feature/(?<FeatureName>[-a-zA-Z0-9._]*)',
-        captureGroups: ['AccountId', 'ProjectName', 'FeatureName'],
-    },
-    'AWS::Evidently::Launch': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):evidently:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):project/(?<ProjectName>[-a-zA-Z0-9._]+)/launch/(?<LaunchName>[-a-zA-Z0-9._]+)',
-        captureGroups: ['AccountId', 'ProjectName', 'LaunchName'],
-    },
-    'AWS::Evidently::Project': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):evidently:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):project/(?<ProjectName>[-a-zA-Z0-9._]+)',
-        captureGroups: ['AccountId', 'ProjectName'],
-    },
-    'AWS::Evidently::Segment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):evidently:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):segment/(?<SegmentName>[^/:]+)',
-        captureGroups: ['AccountId', 'SegmentName'],
-    },
     'AWS::FIS::ExperimentTemplate': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):fis:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):experiment-template/(?<Id>[^/:]+)',
         captureGroups: ['AccountId', 'Id'],
     },
-    'AWS::FMS::Policy': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):fms:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):policy/(?<PolicyId>[^/:]+)',
-        captureGroups: ['Account', 'PolicyId'],
-    },
-    'AWS::FMS::ResourceSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):fms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resource-set/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::FSx::DataRepositoryAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):fsx:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):association/(?<FileSystemIdOrFileCacheId>[^:/]+)/(?<DataRepositoryAssociationId>[^:/]+)',
-        captureGroups: ['AccountId', 'FileSystemIdOrFileCacheId', 'DataRepositoryAssociationId'],
-    },
     'AWS::FSx::FileSystem': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):fsx:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):file-system/(?<ResourcePath>[^/:]+)',
         captureGroups: ['AccountId', 'ResourcePath'],
-    },
-    'AWS::FSx::Snapshot': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):fsx:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):snapshot/(?<VolumeId>fsvol-[0-9a-f]{17,})/(?<SnapshotId>fsvolsnap-[0-9a-f]{8,})',
-        captureGroups: ['AccountId', 'VolumeId', 'SnapshotId'],
-    },
-    'AWS::FSx::StorageVirtualMachine': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):fsx:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):storage-virtual-machine/(?<FileSystemId>[^/:]+)/(?<StorageVirtualMachineId>[^/:]+)',
-        captureGroups: ['AccountId', 'FileSystemId', 'StorageVirtualMachineId'],
-    },
-    'AWS::FSx::Volume': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):fsx:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):volume/(?<FileSystemId>[^/:]+)/(?<VolumeId>[^/:]+)',
-        captureGroups: ['AccountId', 'FileSystemId', 'VolumeId'],
     },
     'AWS::FinSpace::Environment': {
         arnRegex:
@@ -2834,11 +1677,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):frauddetector:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):label/(?<ResourcePath>[^/:]+)',
         captureGroups: ['AccountId', 'ResourcePath'],
     },
-    'AWS::FraudDetector::List': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):frauddetector:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):list/(?<ResourcePath>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourcePath'],
-    },
     'AWS::FraudDetector::Outcome': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):frauddetector:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):outcome/(?<ResourcePath>[^/:]+)',
@@ -2857,26 +1695,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):gamelift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):build/(?<BuildId>[^/:]+)',
         captureGroups: ['AccountId', 'BuildId'],
-    },
-    'AWS::GameLift::ContainerFleet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):gamelift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):containerfleet/(?<FleetId>[^/:]+)',
-        captureGroups: ['AccountId', 'FleetId'],
-    },
-    'AWS::GameLift::ContainerGroupDefinition': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):gamelift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):containergroupdefinition/(?<Name>[^/:]+)',
-        captureGroups: ['AccountId', 'Name'],
-    },
-    'AWS::GameLift::Fleet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):gamelift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):fleet/(?<FleetId>[^/:]+)',
-        captureGroups: ['AccountId', 'FleetId'],
-    },
-    'AWS::GameLift::GameServerGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):gamelift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):gameservergroup/(?<GameServerGroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'GameServerGroupName'],
     },
     'AWS::GameLift::GameSessionQueue': {
         arnRegex:
@@ -2903,25 +1721,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):gamelift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):script/(?<ScriptId>[^/:]+)',
         captureGroups: ['AccountId', 'ScriptId'],
     },
-    'AWS::GameLiftStreams::Application': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):gameliftstreams:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId'],
-    },
-    'AWS::GameLiftStreams::StreamGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):gameliftstreams:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):streamgroup/(?<StreamGroupId>[^:/]+)',
-        captureGroups: ['AccountId', 'StreamGroupId'],
-    },
     'AWS::GlobalAccelerator::Accelerator': {
         arnRegex:
             '^arn:(?<Partition>[a-z-]+):globalaccelerator::(?<Account>[0-9]{12}):accelerator/(?<AcceleratorId>[^/:]+)',
         captureGroups: ['Account', 'AcceleratorId'],
-    },
-    'AWS::GlobalAccelerator::CrossAccountAttachment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):globalaccelerator::(?<AccountId>[0-9]{12}):attachment/(?<ResourceId>[^:/]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
     },
     'AWS::GlobalAccelerator::EndpointGroup': {
         arnRegex:
@@ -2933,20 +1736,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             '^arn:(?<Partition>[a-z-]+):globalaccelerator::(?<Account>[0-9]{12}):accelerator/(?<AcceleratorId>[^/:]+)/listener/(?<ListenerId>[^/:]+)',
         captureGroups: ['Account', 'AcceleratorId', 'ListenerId'],
     },
-    'AWS::Glue::Connection': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connection/(?<ConnectionName>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectionName'],
-    },
     'AWS::Glue::Crawler': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):crawler/(?<CrawlerName>.+)',
         captureGroups: ['AccountId', 'CrawlerName'],
-    },
-    'AWS::Glue::CustomEntityType': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):customEntityType/(?<CustomEntityTypeId>[^/:]+)',
-        captureGroups: ['AccountId', 'CustomEntityTypeId'],
     },
     'AWS::Glue::DataQualityRuleset': {
         arnRegex:
@@ -2958,21 +1751,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):database/(?<DatabaseName>.+)',
         captureGroups: ['AccountId', 'DatabaseName'],
     },
-    'AWS::Glue::DevEndpoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):devEndpoint/(?<DevEndpointName>[^/:]+)',
-        captureGroups: ['AccountId', 'DevEndpointName'],
-    },
-    'AWS::Glue::Integration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):integration:(?<IntegrationId>[^/:]+)',
-        captureGroups: ['AccountId', 'IntegrationId'],
-    },
-    'AWS::Glue::IntegrationResourceProperty': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):integrationresourceproperty/(?<ResourceType>[^:/]+)/(?<ResourceName>[^:/]+)',
-        captureGroups: ['AccountId', 'ResourceType', 'ResourceName'],
-    },
     'AWS::Glue::Job': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):job/(?<JobName>.+)',
         captureGroups: ['AccountId', 'JobName'],
@@ -2982,20 +1760,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):mlTransform/(?<TransformId>[^/:]+)',
         captureGroups: ['AccountId', 'TransformId'],
     },
-    'AWS::Glue::Partition': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):partition/(?<PartitionName>[^/:]+)',
-        captureGroups: ['AccountId', 'PartitionName'],
-    },
     'AWS::Glue::Registry': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):registry/(?<RegistryName>[^/:]+)',
         captureGroups: ['AccountId', 'RegistryName'],
-    },
-    'AWS::Glue::Schema': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):schema/(?<RegistryName>[^/:]+)/(?<SchemaName>[^/:]+)',
-        captureGroups: ['AccountId', 'RegistryName', 'SchemaName'],
     },
     'AWS::Glue::Table': {
         arnRegex:
@@ -3007,16 +1775,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):trigger/(?<TriggerName>.+)',
         captureGroups: ['AccountId', 'TriggerName'],
     },
-    'AWS::Glue::UsageProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):usageProfile/(?<UsageProfileId>[^/:]+)',
-        captureGroups: ['AccountId', 'UsageProfileId'],
-    },
-    'AWS::Glue::Workflow': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):glue:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workflow/(?<WorkflowName>[^/:]+)',
-        captureGroups: ['AccountId', 'WorkflowName'],
-    },
     'AWS::Grafana::Workspace': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):grafana:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/workspaces/(?<ResourceId>[^:/]+)',
@@ -3027,100 +1785,50 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/connectors/(?<ConnectorDefinitionId>[^/:]+)',
         captureGroups: ['AccountId', 'ConnectorDefinitionId'],
     },
-    'AWS::Greengrass::ConnectorDefinitionVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/connectors/(?<ConnectorDefinitionId>[^/:]+)/versions/(?<VersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectorDefinitionId', 'VersionId'],
-    },
     'AWS::Greengrass::CoreDefinition': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/cores/(?<CoreDefinitionId>[^/:]+)',
         captureGroups: ['AccountId', 'CoreDefinitionId'],
-    },
-    'AWS::Greengrass::CoreDefinitionVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/cores/(?<CoreDefinitionId>[^/:]+)/versions/(?<VersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'CoreDefinitionId', 'VersionId'],
     },
     'AWS::Greengrass::DeviceDefinition': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/devices/(?<DeviceDefinitionId>[^/:]+)',
         captureGroups: ['AccountId', 'DeviceDefinitionId'],
     },
-    'AWS::Greengrass::DeviceDefinitionVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/devices/(?<DeviceDefinitionId>[^/:]+)/versions/(?<VersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'DeviceDefinitionId', 'VersionId'],
-    },
     'AWS::Greengrass::FunctionDefinition': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/functions/(?<FunctionDefinitionId>[^/:]+)',
         captureGroups: ['AccountId', 'FunctionDefinitionId'],
-    },
-    'AWS::Greengrass::FunctionDefinitionVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/functions/(?<FunctionDefinitionId>[^/:]+)/versions/(?<VersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'FunctionDefinitionId', 'VersionId'],
     },
     'AWS::Greengrass::Group': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/groups/(?<GroupId>[^/:]+)',
         captureGroups: ['AccountId', 'GroupId'],
     },
-    'AWS::Greengrass::GroupVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/groups/(?<GroupId>[^/:]+)/versions/(?<VersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'GroupId', 'VersionId'],
-    },
     'AWS::Greengrass::LoggerDefinition': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/loggers/(?<LoggerDefinitionId>[^/:]+)',
         captureGroups: ['AccountId', 'LoggerDefinitionId'],
-    },
-    'AWS::Greengrass::LoggerDefinitionVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/loggers/(?<LoggerDefinitionId>[^/:]+)/versions/(?<VersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'LoggerDefinitionId', 'VersionId'],
     },
     'AWS::Greengrass::ResourceDefinition': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/resources/(?<ResourceDefinitionId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceDefinitionId'],
     },
-    'AWS::Greengrass::ResourceDefinitionVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/resources/(?<ResourceDefinitionId>[^/:]+)/versions/(?<VersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceDefinitionId', 'VersionId'],
-    },
     'AWS::Greengrass::SubscriptionDefinition': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/subscriptions/(?<SubscriptionDefinitionId>[^/:]+)',
         captureGroups: ['AccountId', 'SubscriptionDefinitionId'],
-    },
-    'AWS::Greengrass::SubscriptionDefinitionVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/greengrass/definition/subscriptions/(?<SubscriptionDefinitionId>[^/:]+)/versions/(?<VersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'SubscriptionDefinitionId', 'VersionId'],
     },
     'AWS::GreengrassV2::ComponentVersion': {
         arnRegex:
             '^arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):components:(?<ComponentName>[a-zA-Z0-9-_.]+):versions:(?<ComponentVersion>[0-9a-zA-Z-.+]+)',
         captureGroups: ['Account', 'ComponentName', 'ComponentVersion'],
     },
-    'AWS::GreengrassV2::Deployment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):greengrass:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):deployments:(?<DeploymentId>[^/:]+)',
-        captureGroups: ['AccountId', 'DeploymentId'],
-    },
     'AWS::GroundStation::Config': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):groundstation:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):config/(?<ConfigType>[^/:]+)/(?<ConfigId>[^/:]+)',
         captureGroups: ['AccountId', 'ConfigType', 'ConfigId'],
-    },
-    'AWS::GroundStation::DataflowEndpointGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):groundstation:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dataflow-endpoint-group/(?<DataflowEndpointGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'DataflowEndpointGroupId'],
     },
     'AWS::GroundStation::MissionProfile': {
         arnRegex:
@@ -3152,25 +1860,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):guardduty:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):detector/(?<DetectorId>[^/:]+)/publishingdestination/(?<PublishingDestinationId>[^/:]+)',
         captureGroups: ['AccountId', 'DetectorId', 'PublishingDestinationId'],
     },
-    'AWS::GuardDuty::ThreatEntitySet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):guardduty:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):detector/(?<DetectorId>[^/:]+)/threatentityset/(?<ThreatEntitySetId>[^/:]+)',
-        captureGroups: ['AccountId', 'DetectorId', 'ThreatEntitySetId'],
-    },
     'AWS::GuardDuty::ThreatIntelSet': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):guardduty:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):detector/(?<DetectorId>[^/:]+)/threatintelset/(?<ThreatIntelSetId>[^/:]+)',
         captureGroups: ['AccountId', 'DetectorId', 'ThreatIntelSetId'],
-    },
-    'AWS::GuardDuty::TrustedEntitySet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):guardduty:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):detector/(?<DetectorId>[^/:]+)/trustedentityset/(?<TrustedEntitySetId>[^/:]+)',
-        captureGroups: ['AccountId', 'DetectorId', 'TrustedEntitySetId'],
-    },
-    'AWS::HealthImaging::Datastore': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medical-imaging:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):datastore/(?<DatastoreId>[^:/]+)',
-        captureGroups: ['AccountId', 'DatastoreId'],
     },
     'AWS::HealthLake::FHIRDatastore': {
         arnRegex:
@@ -3189,10 +1882,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
     'AWS::IAM::OIDCProvider': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):iam::(?<AccountId>[0-9]{12}):oidc-provider/(?<OidcProviderName>[^:]+)',
         captureGroups: ['AccountId', 'OidcProviderName'],
-    },
-    'AWS::IAM::Policy': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):iam::(?<AccountId>aws|[0-9]{12}):policy/(?<PolicyNameWithPath>[^:]+)',
-        captureGroups: ['AccountId', 'PolicyNameWithPath'],
     },
     'AWS::IAM::Role': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):iam::(?<AccountId>[0-9]{12}):role/(?<RoleNameWithPath>[^:]+)',
@@ -3240,19 +1929,9 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):ivs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):playback-restriction-policy/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
-    'AWS::IVS::PublicKey': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ivs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):public-key/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
     'AWS::IVS::RecordingConfiguration': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ivs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):recording-configuration/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::IVS::Stage': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ivs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stage/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
     'AWS::IVS::StorageConfiguration': {
@@ -3274,14 +1953,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ivschat:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):room/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::IdentityStore::Group': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):identitystore:::group/(?<GroupId>[^/:]+)',
-        captureGroups: ['GroupId'],
-    },
-    'AWS::IdentityStore::GroupMembership': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):identitystore:::membership/(?<MembershipId>[^/:]+)',
-        captureGroups: ['MembershipId'],
     },
     'AWS::ImageBuilder::Component': {
         arnRegex:
@@ -3318,39 +1989,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):imagebuilder:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):infrastructure-configuration/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
-    'AWS::ImageBuilder::LifecyclePolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):imagebuilder:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):lifecycle-policy/(?<LifecyclePolicyName>[^/:]+)',
-        captureGroups: ['AccountId', 'LifecyclePolicyName'],
-    },
-    'AWS::ImageBuilder::Workflow': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):imagebuilder:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workflow/(?<WorkflowType>[^/:]+)/(?<WorkflowName>[^/:]+)/(?<WorkflowVersion>[^/:]+)/(?<WorkflowBuildVersion>[^/:]+)',
-        captureGroups: ['AccountId', 'WorkflowType', 'WorkflowName', 'WorkflowVersion', 'WorkflowBuildVersion'],
-    },
     'AWS::Inspector::AssessmentTemplate': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):inspector:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):target/(?<TargetID>[^/:]+)/template/(?<TemplateID>[^/:]+)',
         captureGroups: ['AccountId', 'TargetID', 'TemplateID'],
     },
-    'AWS::InspectorV2::CisScanConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):inspector2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):owner/(?<OwnerId>[^:/]+)/cis-configuration/(?<CISScanConfigurationId>[^:/]+)',
-        captureGroups: ['AccountId', 'OwnerId', 'CISScanConfigurationId'],
-    },
     'AWS::InspectorV2::Filter': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):inspector2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):owner/(?<OwnerId>[^:/]+)/filter/(?<FilterId>[^:/]+)',
         captureGroups: ['AccountId', 'OwnerId', 'FilterId'],
-    },
-    'AWS::InternetMonitor::Monitor': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):internetmonitor:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):monitor/(?<MonitorName>[^/:]+)',
-        captureGroups: ['AccountId', 'MonitorName'],
-    },
-    'AWS::Invoicing::InvoiceUnit': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):invoicing::(?<AccountId>[0-9]{12}):invoice-unit/(?<Identifier>[^/:]+)',
-        captureGroups: ['AccountId', 'Identifier'],
     },
     'AWS::IoT::Authorizer': {
         arnRegex:
@@ -3370,31 +2017,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cert/(?<CertificateId>(0x)?[a-fA-F0-9]{64})',
         captureGroups: ['AccountId', 'CertificateId'],
-    },
-    'AWS::IoT::CertificateProvider': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):certificateprovider/(?<CertificateProviderName>[^/:]+)',
-        captureGroups: ['AccountId', 'CertificateProviderName'],
-    },
-    'AWS::IoT::Command': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):command/(?<CommandId>[^/:]+)',
-        captureGroups: ['AccountId', 'CommandId'],
-    },
-    'AWS::IoT::CustomMetric': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):custommetric/(?<MetricName>[a-zA-Z0-9:_-]+)',
-        captureGroups: ['Account', 'MetricName'],
-    },
-    'AWS::IoT::Dimension': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):dimension/(?<DimensionName>[a-zA-Z0-9:_-]+)',
-        captureGroups: ['Account', 'DimensionName'],
-    },
-    'AWS::IoT::DomainConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domainconfiguration/(?<DomainConfigurationName>[^/:]+)/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainConfigurationName', 'Id'],
     },
     'AWS::IoT::FleetMetric': {
         arnRegex:
@@ -3436,16 +2058,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):securityprofile/(?<SecurityProfileName>[a-zA-Z0-9:_-]+)',
         captureGroups: ['Account', 'SecurityProfileName'],
     },
-    'AWS::IoT::SoftwarePackage': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):package/(?<PackageName>[^:/]+)',
-        captureGroups: ['AccountId', 'PackageName'],
-    },
-    'AWS::IoT::SoftwarePackageVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):package/(?<PackageName>[^:/]+)/version/(?<VersionName>[^:/]+)',
-        captureGroups: ['AccountId', 'PackageName', 'VersionName'],
-    },
     'AWS::IoT::Thing': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):thing/(?<ThingName>[a-zA-Z0-9-]+)',
@@ -3471,26 +2083,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):iot:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ruledestination/(?<DestinationType>(http|vpc))/(?<UUID>[^/:]+)',
         captureGroups: ['AccountId', 'DestinationType', 'UUID'],
     },
-    'AWS::IoTAnalytics::Channel': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotanalytics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):channel/(?<ChannelName>[^/:]+)',
-        captureGroups: ['AccountId', 'ChannelName'],
-    },
-    'AWS::IoTAnalytics::Dataset': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotanalytics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dataset/(?<DatasetName>[^/:]+)',
-        captureGroups: ['AccountId', 'DatasetName'],
-    },
-    'AWS::IoTAnalytics::Datastore': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotanalytics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):datastore/(?<DatastoreName>[^/:]+)',
-        captureGroups: ['AccountId', 'DatastoreName'],
-    },
-    'AWS::IoTAnalytics::Pipeline': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotanalytics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):pipeline/(?<PipelineName>[^/:]+)',
-        captureGroups: ['AccountId', 'PipelineName'],
-    },
     'AWS::IoTCoreDeviceAdvisor::SuiteDefinition': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iotdeviceadvisor:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):suitedefinition/(?<SuiteDefinitionId>[^/:]+)',
@@ -3511,20 +2103,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):iotevents:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):input/(?<InputName>[^/:]+)',
         captureGroups: ['AccountId', 'InputName'],
     },
-    'AWS::IoTFleetWise::Campaign': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotfleetwise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):campaign/(?<CampaignName>[^/:]+)',
-        captureGroups: ['AccountId', 'CampaignName'],
-    },
     'AWS::IoTFleetWise::DecoderManifest': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iotfleetwise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):decoder-manifest/(?<Name>[^/:]+)',
         captureGroups: ['AccountId', 'Name'],
-    },
-    'AWS::IoTFleetWise::Fleet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotfleetwise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):fleet/(?<FleetId>[^/:]+)',
-        captureGroups: ['AccountId', 'FleetId'],
     },
     'AWS::IoTFleetWise::ModelManifest': {
         arnRegex:
@@ -3536,30 +2118,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):iotfleetwise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):signal-catalog/(?<Name>[^/:]+)',
         captureGroups: ['AccountId', 'Name'],
     },
-    'AWS::IoTFleetWise::StateTemplate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotfleetwise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):state-template/(?<StateTemplateId>[^/:]+)',
-        captureGroups: ['AccountId', 'StateTemplateId'],
-    },
     'AWS::IoTFleetWise::Vehicle': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iotfleetwise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vehicle/(?<VehicleId>[^/:]+)',
         captureGroups: ['AccountId', 'VehicleId'],
-    },
-    'AWS::IoTManagedIntegrations::CredentialLocker': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotmanagedintegrations:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):credential-locker/(?<Identifier>[^:/]+)',
-        captureGroups: ['AccountId', 'Identifier'],
-    },
-    'AWS::IoTManagedIntegrations::ManagedThing': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotmanagedintegrations:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):managed-thing/(?<Identifier>[^:/]+)',
-        captureGroups: ['AccountId', 'Identifier'],
-    },
-    'AWS::IoTManagedIntegrations::ProvisioningProfile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotmanagedintegrations:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):provisioning-profile/(?<Identifier>[^:/]+)',
-        captureGroups: ['AccountId', 'Identifier'],
     },
     'AWS::IoTSiteWise::AccessPolicy': {
         arnRegex:
@@ -3576,20 +2138,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):iotsitewise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):asset-model/(?<AssetModelId>[^/:]+)',
         captureGroups: ['AccountId', 'AssetModelId'],
     },
-    'AWS::IoTSiteWise::ComputationModel': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotsitewise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):computation-model/(?<ComputationModelId>[^/:]+)',
-        captureGroups: ['AccountId', 'ComputationModelId'],
-    },
     'AWS::IoTSiteWise::Dashboard': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iotsitewise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dashboard/(?<DashboardId>[^/:]+)',
         captureGroups: ['AccountId', 'DashboardId'],
-    },
-    'AWS::IoTSiteWise::Dataset': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotsitewise:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dataset/(?<DatasetId>[^/:]+)',
-        captureGroups: ['AccountId', 'DatasetId'],
     },
     'AWS::IoTSiteWise::Gateway': {
         arnRegex:
@@ -3615,11 +2167,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iottwinmaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workspace/(?<WorkspaceId>[^/:]+)/entity/(?<EntityId>[^/:]+)',
         captureGroups: ['AccountId', 'WorkspaceId', 'EntityId'],
-    },
-    'AWS::IoTTwinMaker::Scene': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iottwinmaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workspace/(?<WorkspaceId>[^/:]+)/scene/(?<SceneId>[^/:]+)',
-        captureGroups: ['AccountId', 'WorkspaceId', 'SceneId'],
     },
     'AWS::IoTTwinMaker::SyncJob': {
         arnRegex:
@@ -3651,11 +2198,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):iotwireless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):MulticastGroup/(?<DeviceProfileId>[^/:]+)',
         captureGroups: ['AccountId', 'DeviceProfileId'],
     },
-    'AWS::IoTWireless::NetworkAnalyzerConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotwireless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):NetworkAnalyzerConfiguration/(?<NetworkAnalyzerConfigurationName>[^/:]+)',
-        captureGroups: ['AccountId', 'NetworkAnalyzerConfigurationName'],
-    },
     'AWS::IoTWireless::PartnerAccount': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iotwireless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):SidewalkAccount/(?<AmazonId>[^/:]+)',
@@ -3676,39 +2218,14 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):iotwireless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):WirelessDevice/(?<DeviceProfileId>[^/:]+)',
         captureGroups: ['AccountId', 'DeviceProfileId'],
     },
-    'AWS::IoTWireless::WirelessDeviceImportTask': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):iotwireless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ImportTask/(?<ImportTaskId>[^:/]+)',
-        captureGroups: ['AccountId', 'ImportTaskId'],
-    },
     'AWS::IoTWireless::WirelessGateway': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):iotwireless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):WirelessGateway/(?<DeviceProfileId>[^/:]+)',
         captureGroups: ['AccountId', 'DeviceProfileId'],
     },
-    'AWS::KMS::Alias': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):alias/(?<Alias>[-a-zA-Z0-9/_]+)',
-        captureGroups: ['AccountId', 'Alias'],
-    },
     'AWS::KMS::Key': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):kms:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):key/(?<KeyId>[^/:]+)',
         captureGroups: ['AccountId', 'KeyId'],
-    },
-    'AWS::KafkaConnect::Connector': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kafkaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connector/(?<ConnectorName>[^/:]+)/(?<UUID>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectorName', 'UUID'],
-    },
-    'AWS::KafkaConnect::CustomPlugin': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kafkaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):custom-plugin/(?<CustomPluginName>[^:/]+)/(?<UUID>[^:/]+)',
-        captureGroups: ['AccountId', 'CustomPluginName', 'UUID'],
-    },
-    'AWS::KafkaConnect::WorkerConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kafkaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):worker-configuration/(?<WorkerConfigurationName>[^:/]+)/(?<UUID>[^:/]+)',
-        captureGroups: ['AccountId', 'WorkerConfigurationName', 'UUID'],
     },
     'AWS::Kendra::DataSource': {
         arnRegex:
@@ -3725,27 +2242,12 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):kendra:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):index/(?<IndexId>[^/:]+)',
         captureGroups: ['AccountId', 'IndexId'],
     },
-    'AWS::KendraRanking::ExecutionPlan': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kendra-ranking:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):rescore-execution-plan/(?<RescoreExecutionPlanId>[^:/]+)',
-        captureGroups: ['AccountId', 'RescoreExecutionPlanId'],
-    },
     'AWS::Kinesis::Stream': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):kinesis:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stream/(?<StreamName>[^/:]+)',
         captureGroups: ['AccountId', 'StreamName'],
     },
-    'AWS::Kinesis::StreamConsumer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kinesis:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):(?<StreamType>[^:/]+)/(?<StreamName>[^:/]+)/consumer/(?<ConsumerName>[^:/]+):(?<ConsumerCreationTimpstamp>[^:/]+)',
-        captureGroups: ['AccountId', 'StreamType', 'StreamName', 'ConsumerName', 'ConsumerCreationTimpstamp'],
-    },
     'AWS::KinesisAnalytics::Application': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kinesisanalytics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationName>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationName'],
-    },
-    'AWS::KinesisAnalyticsV2::Application': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):kinesisanalytics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationName>[^/:]+)',
         captureGroups: ['AccountId', 'ApplicationName'],
@@ -3765,16 +2267,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):kinesisvideo:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stream/(?<StreamName>[^/:]+)/(?<CreationTime>[^/:]+)',
         captureGroups: ['AccountId', 'StreamName', 'CreationTime'],
     },
-    'AWS::Lambda::Alias': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lambda:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):function:(?<FunctionName>[^/:]+):(?<AliasName>(?![0-9].*$)([a-zA-Z0-9-_]+))',
-        captureGroups: ['AccountId', 'FunctionName', 'AliasName'],
-    },
-    'AWS::Lambda::CapacityProvider': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lambda:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):capacity-provider:(?<CapacityProviderName>[^/:]+)',
-        captureGroups: ['AccountId', 'CapacityProviderName'],
-    },
     'AWS::Lambda::CodeSigningConfig': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):lambda:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):code-signing-config:(?<CodeSigningConfigId>[^:/]+)',
@@ -3790,21 +2282,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):lambda:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):function:(?<FunctionName>[^/:]+)',
         captureGroups: ['AccountId', 'FunctionName'],
     },
-    'AWS::Lambda::LayerVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-zA-Z0-9-]+):lambda:(?<Region>[a-zA-Z0-9-]+):(?<Account>\\d{12}):layer:(?<LayerName>[a-zA-Z0-9-_]+):(?<LayerVersion>[0-9]+)',
-        captureGroups: ['Account', 'LayerName', 'LayerVersion'],
-    },
-    'AWS::Lambda::Version': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lambda:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):function:(?<FunctionName>[^\\/:]+):(?<VersionNumber>(\\$LATEST|[0-9]+))',
-        captureGroups: ['AccountId', 'FunctionName', 'VersionNumber'],
-    },
-    'AWS::LaunchWizard::Deployment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):launchwizard:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):deployment/(?<DeploymentId>[^/:]+)',
-        captureGroups: ['AccountId', 'DeploymentId'],
-    },
     'AWS::Lex::Bot': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):lex:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bot:(?<BotName>[^/:]+)',
         captureGroups: ['AccountId', 'BotName'],
@@ -3814,187 +2291,24 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[^:/]+):lex:(?<Region>[^:/]+):(?<Account>[^:/]+):bot-alias/(?<BotId>[^:/]+)/(?<BotAliasId>[^:/]+)',
         captureGroups: ['Account', 'BotId', 'BotAliasId'],
     },
-    'AWS::Lex::BotVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lex:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bot:(?<BotName>[^:/]+):(?<BotVersion>[^:/]+)',
-        captureGroups: ['AccountId', 'BotName', 'BotVersion'],
-    },
     'AWS::LicenseManager::Grant': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):license-manager::(?<AccountId>[0-9]{12}):grant:(?<GrantId>[^/:]+)',
         captureGroups: ['AccountId', 'GrantId'],
-    },
-    'AWS::LicenseManager::License': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):license-manager::(?<AccountId>[0-9]{12}):license:(?<LicenseId>[^/:]+)',
-        captureGroups: ['AccountId', 'LicenseId'],
-    },
-    'AWS::Lightsail::Alarm': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):Alarm/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::Bucket': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):Bucket/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::Certificate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):Certificate/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::Container': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ContainerService/(?<Id>[^:/]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::Database': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):RelationalDatabase/(?<Id>[^:/]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::Disk': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):Disk/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::DiskSnapshot': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):DiskSnapshot/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::Distribution': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):Distribution/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::Domain': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):Domain/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::Instance': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):Instance/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::InstanceSnapshot': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):InstanceSnapshot/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::LoadBalancer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):LoadBalancer/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::LoadBalancerTlsCertificate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):LoadBalancerTlsCertificate/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Lightsail::StaticIp': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lightsail:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):StaticIp/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Location::APIKey': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):geo:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):api-key/(?<KeyName>[^:/]+)',
-        captureGroups: ['AccountId', 'KeyName'],
-    },
-    'AWS::Location::GeofenceCollection': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):geo:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):geofence-collection/(?<CollectionName>[^/:]+)',
-        captureGroups: ['AccountId', 'CollectionName'],
-    },
-    'AWS::Location::Map': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):geo:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):map/(?<MapName>[^/:]+)',
-        captureGroups: ['AccountId', 'MapName'],
-    },
-    'AWS::Location::PlaceIndex': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):geo:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):place-index/(?<IndexName>[^/:]+)',
-        captureGroups: ['AccountId', 'IndexName'],
-    },
-    'AWS::Location::RouteCalculator': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):geo:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):route-calculator/(?<CalculatorName>[^/:]+)',
-        captureGroups: ['AccountId', 'CalculatorName'],
-    },
-    'AWS::Location::Tracker': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):geo:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):tracker/(?<TrackerName>[^/:]+)',
-        captureGroups: ['AccountId', 'TrackerName'],
-    },
-    'AWS::Logs::Delivery': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):logs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):delivery:(?<DeliveryName>[^/:]+)',
-        captureGroups: ['AccountId', 'DeliveryName'],
-    },
-    'AWS::Logs::DeliveryDestination': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):logs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):delivery-destination:(?<DeliveryDestinationName>[^/:]+)',
-        captureGroups: ['AccountId', 'DeliveryDestinationName'],
-    },
-    'AWS::Logs::DeliverySource': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):logs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):delivery-source:(?<DeliverySourceName>[^/:]+)',
-        captureGroups: ['AccountId', 'DeliverySourceName'],
     },
     'AWS::Logs::Destination': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):logs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):destination:(?<DestinationName>[^:*]+)',
         captureGroups: ['AccountId', 'DestinationName'],
     },
-    'AWS::Logs::LogAnomalyDetector': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):logs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):anomaly-detector:(?<DetectorId>[^:/]+)',
-        captureGroups: ['AccountId', 'DetectorId'],
-    },
     'AWS::Logs::LogGroup': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):logs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):log-group:(?<LogGroupName>[^:]+)',
         captureGroups: ['AccountId', 'LogGroupName'],
     },
-    'AWS::Logs::LogStream': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):logs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):log-group:(?<LogGroupName>[^/:]+):log-stream:(?<LogStreamName>[^/:]+)',
-        captureGroups: ['AccountId', 'LogGroupName', 'LogStreamName'],
-    },
-    'AWS::Logs::ScheduledQuery': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):logs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):scheduled-query:(?<ScheduledQueryId>[^:/]+)',
-        captureGroups: ['AccountId', 'ScheduledQueryId'],
-    },
-    'AWS::LookoutEquipment::InferenceScheduler': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lookoutequipment:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):inference-scheduler/(?<InferenceSchedulerName>[^/:]+)/(?<InferenceSchedulerId>[^/:]+)',
-        captureGroups: ['AccountId', 'InferenceSchedulerName', 'InferenceSchedulerId'],
-    },
-    'AWS::LookoutVision::Project': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):lookoutvision:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):project/(?<ProjectName>[^/:]+)',
-        captureGroups: ['AccountId', 'ProjectName'],
-    },
-    'AWS::M2::Application': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):m2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):app/(?<ApplicationId>[^:/]+)',
-        captureGroups: ['AccountId', 'ApplicationId'],
-    },
     'AWS::M2::Environment': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):m2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):env/(?<EnvironmentId>[^:/]+)',
         captureGroups: ['AccountId', 'EnvironmentId'],
-    },
-    'AWS::MPA::ApprovalTeam': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mpa:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):approval-team/(?<ApprovalTeamId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApprovalTeamId'],
-    },
-    'AWS::MPA::IdentitySource': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mpa:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):identity-source/(?<IdentitySourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'IdentitySourceId'],
     },
     'AWS::MSK::Cluster': {
         arnRegex:
@@ -4006,30 +2320,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[^:/]+):kafka:(?<Region>[^:/]+):(?<Account>[^:/]+):configuration/(?<ConfigurationName>[^:/]+)/(?<Uuid>[^:/]+)',
         captureGroups: ['Account', 'ConfigurationName', 'Uuid'],
     },
-    'AWS::MSK::Replicator': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kafka:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):replicator/(?<ReplicatorName>[^:/]+)/(?<Uuid>[^:/]+)',
-        captureGroups: ['AccountId', 'ReplicatorName', 'Uuid'],
-    },
-    'AWS::MSK::Topic': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kafka:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):topic/(?<ClusterName>[^:/]+)/(?<ClusterUuid>[^:/]+)/(?<TopicName>[^:/]+)',
-        captureGroups: ['AccountId', 'ClusterName', 'ClusterUuid', 'TopicName'],
-    },
-    'AWS::MSK::VpcConnection': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):kafka:(?<Region>[a-z0-9-]+):(?<VpcOwnerAccount>[^:/]+):vpc-connection/(?<ClusterOwnerAccount>[^:/]+)/(?<ClusterName>[^:/]+)/(?<Uuid>[^:/]+)',
-        captureGroups: ['VpcOwnerAccount', 'ClusterOwnerAccount', 'ClusterName', 'Uuid'],
-    },
     'AWS::MWAA::Environment': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):airflow:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):environment/(?<EnvironmentName>[^/:]+)',
         captureGroups: ['AccountId', 'EnvironmentName'],
-    },
-    'AWS::MWAAServerless::Workflow': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):airflow-serverless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workflow/(?<WorkflowId>[^:/]+)',
-        captureGroups: ['AccountId', 'WorkflowId'],
     },
     'AWS::Macie::AllowList': {
         arnRegex:
@@ -4050,141 +2344,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):managedblockchain:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):accessors/(?<AccessorId>[^/:]+)',
         captureGroups: ['AccountId', 'AccessorId'],
-    },
-    'AWS::ManagedBlockchain::Member': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):managedblockchain:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):members/(?<MemberId>[^/:]+)',
-        captureGroups: ['AccountId', 'MemberId'],
-    },
-    'AWS::ManagedBlockchain::Node': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):managedblockchain:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):nodes/(?<NodeId>[^/:]+)',
-        captureGroups: ['AccountId', 'NodeId'],
-    },
-    'AWS::MediaConnect::Bridge': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bridge:(?<BridgeId>[^/:]+):(?<BridgeName>[^/:]+)',
-        captureGroups: ['AccountId', 'BridgeId', 'BridgeName'],
-    },
-    'AWS::MediaConnect::Flow': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):flow:(?<FlowId>[^/:]+):(?<FlowName>[^/:]+)',
-        captureGroups: ['AccountId', 'FlowId', 'FlowName'],
-    },
-    'AWS::MediaConnect::FlowEntitlement': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):entitlement:(?<FlowId>[^/:]+):(?<EntitlementName>[^/:]+)',
-        captureGroups: ['AccountId', 'FlowId', 'EntitlementName'],
-    },
-    'AWS::MediaConnect::FlowOutput': {
-        arnRegex:
-            'arn:(?<Partition>[^:/]+):mediaconnect:(?<Region>[^:/]+):(?<Account>[^:/]+):output:(?<OutputId>[^:/]+):(?<OutputName>[^:/]+)',
-        captureGroups: ['Account', 'OutputId', 'OutputName'],
-    },
-    'AWS::MediaConnect::FlowSource': {
-        arnRegex:
-            'arn:(?<Partition>[^:/]+):mediaconnect:(?<Region>[^:/]+):(?<Account>[^:/]+):source:(?<SourceId>[^:/]+):(?<SourceName>[^:/]+)',
-        captureGroups: ['Account', 'SourceId', 'SourceName'],
-    },
-    'AWS::MediaConnect::Gateway': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):gateway:(?<GatewayId>[^/:]+):(?<GatewayName>[^/:]+)',
-        captureGroups: ['AccountId', 'GatewayId', 'GatewayName'],
-    },
-    'AWS::MediaConnect::RouterInput': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):routerInput:(?<RouterInputId>[^/:]+)',
-        captureGroups: ['AccountId', 'RouterInputId'],
-    },
-    'AWS::MediaConnect::RouterNetworkInterface': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):routerNetworkInterface:(?<RouterNetworkInterfaceId>[^/:]+)',
-        captureGroups: ['AccountId', 'RouterNetworkInterfaceId'],
-    },
-    'AWS::MediaConnect::RouterOutput': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconnect:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):routerOutput:(?<RouterOutputId>[^/:]+)',
-        captureGroups: ['AccountId', 'RouterOutputId'],
-    },
-    'AWS::MediaConvert::JobTemplate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconvert:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):jobTemplates/(?<JobTemplateName>[^/:]+)',
-        captureGroups: ['AccountId', 'JobTemplateName'],
-    },
-    'AWS::MediaConvert::Preset': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconvert:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):presets/(?<PresetName>[^/:]+)',
-        captureGroups: ['AccountId', 'PresetName'],
-    },
-    'AWS::MediaConvert::Queue': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediaconvert:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):queues/(?<QueueName>[^/:]+)',
-        captureGroups: ['AccountId', 'QueueName'],
-    },
-    'AWS::MediaLive::Channel': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):channel:(?<ChannelId>[^/:]+)',
-        captureGroups: ['AccountId', 'ChannelId'],
-    },
-    'AWS::MediaLive::ChannelPlacementGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):channelPlacementGroup:(?<ClusterId>[^/:]+)/(?<ChannelPlacementGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterId', 'ChannelPlacementGroupId'],
-    },
-    'AWS::MediaLive::CloudWatchAlarmTemplate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cloudwatch-alarm-template:(?<CloudWatchAlarmTemplateId>[^/:]+)',
-        captureGroups: ['AccountId', 'CloudWatchAlarmTemplateId'],
-    },
-    'AWS::MediaLive::CloudWatchAlarmTemplateGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cloudwatch-alarm-template-group:(?<CloudWatchAlarmTemplateGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'CloudWatchAlarmTemplateGroupId'],
-    },
-    'AWS::MediaLive::Cluster': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster:(?<ClusterId>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterId'],
-    },
-    'AWS::MediaLive::EventBridgeRuleTemplate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):eventbridge-rule-template:(?<EventBridgeRuleTemplateId>[^/:]+)',
-        captureGroups: ['AccountId', 'EventBridgeRuleTemplateId'],
-    },
-    'AWS::MediaLive::EventBridgeRuleTemplateGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):eventbridge-rule-template-group:(?<EventBridgeRuleTemplateGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'EventBridgeRuleTemplateGroupId'],
-    },
-    'AWS::MediaLive::Input': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):input:(?<InputId>[^/:]+)',
-        captureGroups: ['AccountId', 'InputId'],
-    },
-    'AWS::MediaLive::InputSecurityGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):inputSecurityGroup:(?<InputSecurityGroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'InputSecurityGroupId'],
-    },
-    'AWS::MediaLive::Multiplex': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):multiplex:(?<MultiplexId>[^/:]+)',
-        captureGroups: ['AccountId', 'MultiplexId'],
-    },
-    'AWS::MediaLive::Network': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):network:(?<NetworkId>[^/:]+)',
-        captureGroups: ['AccountId', 'NetworkId'],
-    },
-    'AWS::MediaLive::SdiSource': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):sdiSource:(?<SdiSourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'SdiSourceId'],
-    },
-    'AWS::MediaLive::SignalMap': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):medialive:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):signal-map:(?<SignalMapId>[^/:]+)',
-        captureGroups: ['AccountId', 'SignalMapId'],
     },
     'AWS::MediaPackage::Asset': {
         arnRegex:
@@ -4211,31 +2370,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):mediapackage-vod:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):packaging-groups/(?<PackagingGroupIdentifier>[^/:]+)',
         captureGroups: ['AccountId', 'PackagingGroupIdentifier'],
     },
-    'AWS::MediaPackageV2::Channel': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediapackagev2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):channelGroup/(?<ChannelGroupName>[^/:]+)/channel/(?<ChannelName>[^/:]+)',
-        captureGroups: ['AccountId', 'ChannelGroupName', 'ChannelName'],
-    },
-    'AWS::MediaPackageV2::ChannelGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediapackagev2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):channelGroup/(?<ChannelGroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'ChannelGroupName'],
-    },
-    'AWS::MediaPackageV2::ChannelPolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediapackagev2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):channelGroup/(?<ChannelGroupName>[^/:]+)/channel/(?<ChannelName>[^/:]+)',
-        captureGroups: ['AccountId', 'ChannelGroupName', 'ChannelName'],
-    },
-    'AWS::MediaPackageV2::OriginEndpoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediapackagev2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):channelGroup/(?<ChannelGroupName>[^/:]+)/channel/(?<ChannelName>[^/:]+)/originEndpoint/(?<OriginEndpointName>[^/:]+)',
-        captureGroups: ['AccountId', 'ChannelGroupName', 'ChannelName', 'OriginEndpointName'],
-    },
-    'AWS::MediaPackageV2::OriginEndpointPolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediapackagev2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):channelGroup/(?<ChannelGroupName>[^/:]+)/channel/(?<ChannelName>[^/:]+)/originEndpoint/(?<OriginEndpointName>[^/:]+)',
-        captureGroups: ['AccountId', 'ChannelGroupName', 'ChannelName', 'OriginEndpointName'],
-    },
     'AWS::MediaStore::Container': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):mediastore:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):container/(?<ContainerName>[^/:]+)',
@@ -4256,11 +2390,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):mediatailor:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):playbackConfiguration/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
-    'AWS::MediaTailor::SourceLocation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mediatailor:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):sourceLocation/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
     'AWS::MediaTailor::VodSource': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):mediatailor:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vodSource/(?<SourceLocationName>[^/:]+)/(?<VodSourceName>[^/:]+)',
@@ -4274,11 +2403,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
     'AWS::MemoryDB::Cluster': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):memorydb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster/(?<ClusterName>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterName'],
-    },
-    'AWS::MemoryDB::MultiRegionCluster': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):memorydb::(?<AccountId>[0-9]{12}):multiregioncluster/(?<ClusterName>[^/:]+)',
         captureGroups: ['AccountId', 'ClusterName'],
     },
     'AWS::MemoryDB::ParameterGroup': {
@@ -4296,18 +2420,9 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):memorydb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):user/(?<UserName>[^/:]+)',
         captureGroups: ['AccountId', 'UserName'],
     },
-    'AWS::Neptune::DBCluster': {
-        arnRegex: 'arn:aws:rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster:(?<DBClusterId>[^/:]+)',
-        captureGroups: ['AccountId', 'DBClusterId'],
-    },
     'AWS::Neptune::DBClusterParameterGroup': {
         arnRegex: 'arn:aws:rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster-pg:(?<ClusterPGName>[^/:]+)',
         captureGroups: ['AccountId', 'ClusterPGName'],
-    },
-    'AWS::Neptune::DBInstance': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):db:(?<DbInstanceName>[^:/]+)',
-        captureGroups: ['AccountId', 'DbInstanceName'],
     },
     'AWS::Neptune::DBParameterGroup': {
         arnRegex:
@@ -4318,11 +2433,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):subgrp:(?<SubnetGroupName>[^/:]+)',
         captureGroups: ['Account', 'SubnetGroupName'],
-    },
-    'AWS::NeptuneGraph::Graph': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):neptune-graph:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):graph/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
     },
     'AWS::NetworkFirewall::Firewall': {
         arnRegex:
@@ -4338,26 +2448,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):network-firewall:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stateful-rulegroup/(?<Name>[^/:]+)',
         captureGroups: ['AccountId', 'Name'],
-    },
-    'AWS::NetworkFirewall::TLSInspectionConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):network-firewall:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):tls-configuration/(?<Name>[^/:]+)',
-        captureGroups: ['AccountId', 'Name'],
-    },
-    'AWS::NetworkFirewall::VpcEndpointAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):network-firewall:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vpc-endpoint-association/(?<Name>[^/:]+)',
-        captureGroups: ['AccountId', 'Name'],
-    },
-    'AWS::NetworkManager::ConnectAttachment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):networkmanager::(?<AccountId>[0-9]{12}):attachment/(?<AttachmentId>[^/:]+)',
-        captureGroups: ['AccountId', 'AttachmentId'],
-    },
-    'AWS::NetworkManager::ConnectPeer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):networkmanager::(?<AccountId>[0-9]{12}):connect-peer/(?<ConnectPeerId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectPeerId'],
     },
     'AWS::NetworkManager::CoreNetwork': {
         arnRegex:
@@ -4379,104 +2469,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):networkmanager::(?<AccountId>[0-9]{12}):link/(?<GlobalNetworkId>[^/:]+)/(?<LinkId>[^/:]+)',
         captureGroups: ['AccountId', 'GlobalNetworkId', 'LinkId'],
     },
-    'AWS::NetworkManager::Site': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):networkmanager::(?<AccountId>[0-9]{12}):site/(?<GlobalNetworkId>[^/:]+)/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'GlobalNetworkId', 'ResourceId'],
-    },
-    'AWS::NetworkManager::TransitGatewayPeering': {
-        arnRegex: 'arn:(?<Partition>[^:/]+):networkmanager::(?<Account>[^:/]+):peering/(?<ResourceId>[^:/]+)',
-        captureGroups: ['Account', 'ResourceId'],
-    },
-    'AWS::NimbleStudio::Studio': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):nimble:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):studio/(?<StudioId>[^/:]+)',
-        captureGroups: ['AccountId', 'StudioId'],
-    },
-    'AWS::Notifications::EventRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):notifications::(?<AccountId>[0-9]{12}):configuration/(?<NotificationConfigurationId>[^:/]+)/rule/(?<EventRuleId>[^:/]+)',
-        captureGroups: ['AccountId', 'NotificationConfigurationId', 'EventRuleId'],
-    },
-    'AWS::Notifications::NotificationConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):notifications::(?<AccountId>[0-9]{12}):configuration/(?<NotificationConfigurationId>[^:/]+)',
-        captureGroups: ['AccountId', 'NotificationConfigurationId'],
-    },
-    'AWS::NotificationsContacts::EmailContact': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):notifications-contacts::(?<AccountId>[0-9]{12}):emailcontact/(?<EmailContactId>[^:/]+)',
-        captureGroups: ['AccountId', 'EmailContactId'],
-    },
-    'AWS::ODB::CloudAutonomousVmCluster': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):odb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cloud-autonomous-vm-cluster/(?<CloudAutonomousVmClusterId>[^/:]+)',
-        captureGroups: ['AccountId', 'CloudAutonomousVmClusterId'],
-    },
-    'AWS::ODB::CloudExadataInfrastructure': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):odb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cloud-exadata-infrastructure/(?<CloudExadataInfrastructureId>[^/:]+)',
-        captureGroups: ['AccountId', 'CloudExadataInfrastructureId'],
-    },
-    'AWS::ODB::CloudVmCluster': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):odb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cloud-vm-cluster/(?<CloudVmClusterId>[^/:]+)',
-        captureGroups: ['AccountId', 'CloudVmClusterId'],
-    },
-    'AWS::ODB::OdbNetwork': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):odb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):odb-network/(?<OdbNetworkId>[^/:]+)',
-        captureGroups: ['AccountId', 'OdbNetworkId'],
-    },
-    'AWS::ODB::OdbPeeringConnection': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):odb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):odb-peering-connection/(?<OdbPeeringConnectionId>[^/:]+)',
-        captureGroups: ['AccountId', 'OdbPeeringConnectionId'],
-    },
-    'AWS::OSIS::Pipeline': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):osis:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):pipeline/(?<PipelineName>[^/:]+)',
-        captureGroups: ['AccountId', 'PipelineName'],
-    },
-    'AWS::Oam::Link': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):oam:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):link/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
     'AWS::Oam::Sink': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):oam:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):sink/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::ObservabilityAdmin::OrganizationCentralizationRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):observabilityadmin:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):organization-centralization-rule/(?<CentralizationRuleName>[^/:]+)',
-        captureGroups: ['AccountId', 'CentralizationRuleName'],
-    },
-    'AWS::ObservabilityAdmin::OrganizationTelemetryRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):observabilityadmin:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):organization-telemetry-rule/(?<TelemetryRuleName>[^/:]+)',
-        captureGroups: ['AccountId', 'TelemetryRuleName'],
-    },
-    'AWS::ObservabilityAdmin::S3TableIntegration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):observabilityadmin:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):s3tableintegration/(?<S3TableIntegrationIdentifier>[^/:]+)',
-        captureGroups: ['AccountId', 'S3TableIntegrationIdentifier'],
-    },
-    'AWS::ObservabilityAdmin::TelemetryPipelines': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):observabilityadmin:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):telemetry-pipeline/(?<TelemetryPipelineIdentifier>[^:/]+)',
-        captureGroups: ['AccountId', 'TelemetryPipelineIdentifier'],
-    },
-    'AWS::ObservabilityAdmin::TelemetryRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):observabilityadmin:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):telemetry-rule/(?<TelemetryRuleName>[^/:]+)',
-        captureGroups: ['AccountId', 'TelemetryRuleName'],
-    },
-    'AWS::Omics::AnnotationStore': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):omics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):annotationStore/(?<AnnotationStoreName>[^/:]+)',
-        captureGroups: ['AccountId', 'AnnotationStoreName'],
     },
     'AWS::Omics::ReferenceStore': {
         arnRegex:
@@ -4488,140 +2484,20 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):omics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):runGroup/(?<Id>[^/:]+)',
         captureGroups: ['AccountId', 'Id'],
     },
-    'AWS::Omics::SequenceStore': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):omics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):sequenceStore/(?<SequenceStoreId>[^/:]+)',
-        captureGroups: ['AccountId', 'SequenceStoreId'],
-    },
-    'AWS::Omics::VariantStore': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):omics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):variantStore/(?<VariantStoreName>[^/:]+)',
-        captureGroups: ['AccountId', 'VariantStoreName'],
-    },
     'AWS::Omics::Workflow': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):omics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workflow/(?<Id>[^/:]+)',
         captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::Omics::WorkflowVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):omics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workflow/(?<Id>[^/:]+)/version/(?<VersionName>[^/:]+)',
-        captureGroups: ['AccountId', 'Id', 'VersionName'],
     },
     'AWS::OpenSearchServerless::Collection': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):aoss:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):collection/(?<CollectionId>[^:/]+)',
         captureGroups: ['AccountId', 'CollectionId'],
     },
-    'AWS::OpenSearchServerless::CollectionGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):aoss:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):collection-group/(?<CollectionGroupId>[^:/]+)',
-        captureGroups: ['AccountId', 'CollectionGroupId'],
-    },
-    'AWS::OpenSearchService::Domain': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):es:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):domain/(?<DomainName>[^/:]+)',
-        captureGroups: ['Account', 'DomainName'],
-    },
-    'AWS::OpsWorks::Instance': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):opsworks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):instance/(?<UUID>[^/:]+)',
-        captureGroups: ['AccountId', 'UUID'],
-    },
-    'AWS::OpsWorks::Layer': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):opsworks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):layer/(?<UUID>[^/:]+)',
-        captureGroups: ['AccountId', 'UUID'],
-    },
-    'AWS::OpsWorks::Stack': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):opsworks:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stack/(?<StackId>[^:]+)',
-        captureGroups: ['AccountId', 'StackId'],
-    },
-    'AWS::Organizations::Account': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):organizations::(?<AccountId>[0-9]{12}):account/(?<OrganizationId>o-[a-z0-9]+)/(?<MemberAccountId>[0-9]{12})',
-        captureGroups: ['AccountId', 'OrganizationId', 'MemberAccountId'],
-    },
-    'AWS::Organizations::Organization': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):organizations::(?<AccountId>[0-9]{12}):organization/(?<OrganizationId>o-[a-z0-9]+)',
-        captureGroups: ['AccountId', 'OrganizationId'],
-    },
-    'AWS::Organizations::OrganizationalUnit': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):organizations::(?<AccountId>[0-9]{12}):ou/(?<OrganizationId>o-[a-z0-9]+)/(?<OrganizationalUnitId>ou-[0-9a-z]{4,32}-[a-z0-9]{8,32})',
-        captureGroups: ['AccountId', 'OrganizationId', 'OrganizationalUnitId'],
-    },
-    'AWS::Organizations::Policy': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):organizations::(?<Account>[0-9]{12}):policy/o-(?<OrganizationId>[a-z0-9]+)/(?<PolicyType>[0-9a-z_]+)/p-(?<PolicyId>[a-z0-9]+)',
-        captureGroups: ['Account', 'OrganizationId', 'PolicyType', 'PolicyId'],
-    },
-    'AWS::Organizations::ResourcePolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):organizations::(?<AccountId>[0-9]{12}):resourcepolicy/o-(?<OrganizationId>[^/:]+)/rp-(?<ResourcePolicyId>[^/:]+)',
-        captureGroups: ['AccountId', 'OrganizationId', 'ResourcePolicyId'],
-    },
-    'AWS::PCAConnectorAD::Connector': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):pca-connector-ad:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connector/(?<ConnectorId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectorId'],
-    },
-    'AWS::PCAConnectorAD::DirectoryRegistration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):pca-connector-ad:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):directory-registration/(?<DirectoryId>[^/:]+)',
-        captureGroups: ['AccountId', 'DirectoryId'],
-    },
-    'AWS::PCAConnectorAD::Template': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):pca-connector-ad:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connector/(?<ConnectorId>[^/:]+)/template/(?<TemplateId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectorId', 'TemplateId'],
-    },
-    'AWS::PCAConnectorSCEP::Challenge': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):pca-connector-scep:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connector/(?<ConnectorId>[^/:]+)/challenge/(?<ChallengeId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectorId', 'ChallengeId'],
-    },
-    'AWS::PCAConnectorSCEP::Connector': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):pca-connector-scep:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connector/(?<ConnectorId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectorId'],
-    },
-    'AWS::PCS::Cluster': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):pcs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster/(?<ClusterIdentifier>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterIdentifier'],
-    },
-    'AWS::PCS::ComputeNodeGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):pcs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster/(?<ClusterIdentifier>[^/:]+)/computenodegroup/(?<ComputeNodeGroupIdentifier>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterIdentifier', 'ComputeNodeGroupIdentifier'],
-    },
-    'AWS::PCS::Queue': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):pcs:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster/(?<ClusterIdentifier>[^/:]+)/queue/(?<QueueIdentifier>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterIdentifier', 'QueueIdentifier'],
-    },
-    'AWS::Panorama::ApplicationInstance': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):panorama:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):applicationInstance/(?<ApplicationInstanceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationInstanceId'],
-    },
     'AWS::Panorama::Package': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):panorama:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):package/(?<PackageId>[^/:]+)',
         captureGroups: ['AccountId', 'PackageId'],
-    },
-    'AWS::PaymentCryptography::Alias': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):payment-cryptography:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):alias/(?<Alias>[^/:]+)',
-        captureGroups: ['AccountId', 'Alias'],
-    },
-    'AWS::PaymentCryptography::Key': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):payment-cryptography:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):key/(?<KeyId>[^/:]+)',
-        captureGroups: ['AccountId', 'KeyId'],
     },
     'AWS::Personalize::Dataset': {
         arnRegex:
@@ -4643,11 +2519,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):personalize:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):solution/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
-    'AWS::Pinpoint::App': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mobiletargeting:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apps/(?<AppId>[^/:]+)',
-        captureGroups: ['AccountId', 'AppId'],
-    },
     'AWS::Pinpoint::Campaign': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):mobiletargeting:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apps/(?<AppId>[^/:]+)/campaigns/(?<CampaignId>[^/:]+)',
@@ -4657,15 +2528,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):mobiletargeting:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):templates/(?<TemplateName>[^/:]+)/EMAIL',
         captureGroups: ['AccountId', 'TemplateName'],
-    },
-    'AWS::Pinpoint::EventStream': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):mobiletargeting:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):apps/(?<AppId>[^/:]+)/eventstream',
-        captureGroups: ['AccountId', 'AppId'],
-    },
-    'AWS::Pinpoint::InAppTemplate': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):mobiletargeting:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):templates',
-        captureGroups: ['AccountId'],
     },
     'AWS::Pinpoint::PushTemplate': {
         arnRegex:
@@ -4681,16 +2543,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):mobiletargeting:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):templates/(?<TemplateName>[^/:]+)/SMS',
         captureGroups: ['AccountId', 'TemplateName'],
-    },
-    'AWS::PinpointEmail::ConfigurationSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):configuration-set/(?<ConfigurationSetName>[^/:]+)',
-        captureGroups: ['AccountId', 'ConfigurationSetName'],
-    },
-    'AWS::PinpointEmail::DedicatedIpPool': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dedicated-ip-pool/(?<DedicatedIPPool>[^/:]+)',
-        captureGroups: ['AccountId', 'DedicatedIPPool'],
     },
     'AWS::Pipes::Pipe': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):pipes:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):pipe/(?<Name>[^/:]+)',
@@ -4711,71 +2563,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):proton:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):service-template/(?<Name>[^/:]+)',
         captureGroups: ['AccountId', 'Name'],
     },
-    'AWS::QBusiness::Application': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qbusiness:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId'],
-    },
-    'AWS::QBusiness::DataAccessor': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qbusiness:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/data-accessor/(?<DataAccessorId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'DataAccessorId'],
-    },
-    'AWS::QBusiness::DataSource': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qbusiness:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/index/(?<IndexId>[^/:]+)/data-source/(?<DataSourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'IndexId', 'DataSourceId'],
-    },
-    'AWS::QBusiness::Index': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qbusiness:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/index/(?<IndexId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'IndexId'],
-    },
-    'AWS::QBusiness::Plugin': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qbusiness:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/plugin/(?<PluginId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'PluginId'],
-    },
-    'AWS::QBusiness::Retriever': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qbusiness:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/retriever/(?<RetrieverId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'RetrieverId'],
-    },
-    'AWS::QBusiness::WebExperience': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qbusiness:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):application/(?<ApplicationId>[^/:]+)/web-experience/(?<WebExperienceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationId', 'WebExperienceId'],
-    },
-    'AWS::QLDB::Ledger': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qldb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ledger/(?<LedgerName>[A-Za-z0-9-]+)',
-        captureGroups: ['AccountId', 'LedgerName'],
-    },
-    'AWS::QLDB::Stream': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):qldb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stream/(?<LedgerName>[A-Za-z0-9-]+)/(?<StreamId>[A-Za-z0-9]+)',
-        captureGroups: ['AccountId', 'LedgerName', 'StreamId'],
-    },
-    'AWS::QuickSight::ActionConnector': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):action-connector/(?<ResourceId>[^:/]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::QuickSight::Analysis': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):analysis/(?<AnalysisId>[^/:]+)',
-        captureGroups: ['AccountId', 'AnalysisId'],
-    },
-    'AWS::QuickSight::CustomPermissions': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):custompermissions/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::QuickSight::Dashboard': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dashboard/(?<DashboardId>[^/:]+)',
-        captureGroups: ['AccountId', 'DashboardId'],
-    },
     'AWS::QuickSight::DataSet': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dataset/(?<ResourceId>[^/:]+)',
@@ -4785,16 +2572,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):datasource/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::QuickSight::Folder': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):folder/(?<FolderId>[^/:]+)',
-        captureGroups: ['AccountId', 'FolderId'],
-    },
-    'AWS::QuickSight::RefreshSchedule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dataset/(?<DatasetId>[^/:]+)/refresh-schedule/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'DatasetId', 'ResourceId'],
     },
     'AWS::QuickSight::Template': {
         arnRegex:
@@ -4806,21 +2583,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):theme/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
-    'AWS::QuickSight::Topic': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):topic/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::QuickSight::VPCConnection': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):quicksight:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):vpcConnection/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::RAM::Permission': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ram:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):permission/(?<ResourcePath>[^:/]+)',
-        captureGroups: ['AccountId', 'ResourcePath'],
-    },
     'AWS::RAM::ResourceShare': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ram:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resource-share/(?<ResourcePath>[^/:]+)',
@@ -4830,26 +2592,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cev:(?<Engine>[^/:]+)/(?<EngineVersion>[^/:]+)/(?<CustomDbEngineVersionId>[^/:]+)',
         captureGroups: ['AccountId', 'Engine', 'EngineVersion', 'CustomDbEngineVersionId'],
-    },
-    'AWS::RDS::DBCluster': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):cluster:(?<DbClusterInstanceName>[^/:]+)',
-        captureGroups: ['Account', 'DbClusterInstanceName'],
-    },
-    'AWS::RDS::DBClusterParameterGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):cluster-pg:(?<ClusterParameterGroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'ClusterParameterGroupName'],
-    },
-    'AWS::RDS::DBInstance': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):db:(?<DbInstanceName>[^/:]+)',
-        captureGroups: ['Account', 'DbInstanceName'],
-    },
-    'AWS::RDS::DBParameterGroup': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):pg:(?<ParameterGroupName>[^/:]+)',
-        captureGroups: ['Account', 'ParameterGroupName'],
     },
     'AWS::RDS::DBProxy': {
         arnRegex:
@@ -4861,74 +2603,20 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):db-proxy-endpoint:(?<DbProxyEndpointId>[^/:]+)',
         captureGroups: ['Account', 'DbProxyEndpointId'],
     },
-    'AWS::RDS::DBProxyTargetGroup': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):target-group:(?<TargetGroupId>[^/:]+)',
-        captureGroups: ['Account', 'TargetGroupId'],
-    },
     'AWS::RDS::DBSecurityGroup': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):secgrp:(?<SecurityGroupName>(?:default:)?[^/:]+)',
         captureGroups: ['AccountId', 'SecurityGroupName'],
-    },
-    'AWS::RDS::DBSubnetGroup': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):subgrp:(?<SubnetGroupName>[^/:]+)',
-        captureGroups: ['Account', 'SubnetGroupName'],
-    },
-    'AWS::RDS::EventSubscription': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):es:(?<SubscriptionName>[^/:]+)',
-        captureGroups: ['AccountId', 'SubscriptionName'],
-    },
-    'AWS::RDS::GlobalCluster': {
-        arnRegex: '^arn:(?<Partition>[a-z-]+):rds::(?<Account>[0-9]{12}):global-cluster:(?<GlobalCluster>[^/:]+)',
-        captureGroups: ['Account', 'GlobalCluster'],
-    },
-    'AWS::RDS::Integration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):integration:(?<IntegrationIdentifier>[^/:]+)',
-        captureGroups: ['AccountId', 'IntegrationIdentifier'],
     },
     'AWS::RDS::OptionGroup': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):rds:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):og:(?<OptionGroupName>[^/]+)',
         captureGroups: ['AccountId', 'OptionGroupName'],
     },
-    'AWS::RTBFabric::InboundExternalLink': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rtbfabric:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):gateway/(?<GatewayId>[^/:]+)/link/(?<LinkId>[^/:]+)',
-        captureGroups: ['AccountId', 'GatewayId', 'LinkId'],
-    },
-    'AWS::RTBFabric::Link': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rtbfabric:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):gateway/(?<GatewayId>[^/:]+)/link/(?<LinkId>[^/:]+)',
-        captureGroups: ['AccountId', 'GatewayId', 'LinkId'],
-    },
-    'AWS::RTBFabric::OutboundExternalLink': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rtbfabric:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):gateway/(?<GatewayId>[^/:]+)/link/(?<LinkId>[^/:]+)',
-        captureGroups: ['AccountId', 'GatewayId', 'LinkId'],
-    },
-    'AWS::RTBFabric::RequesterGateway': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rtbfabric:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):gateway/(?<GatewayId>[^/:]+)',
-        captureGroups: ['AccountId', 'GatewayId'],
-    },
-    'AWS::RTBFabric::ResponderGateway': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rtbfabric:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):gateway/(?<GatewayId>[^/:]+)',
-        captureGroups: ['AccountId', 'GatewayId'],
-    },
     'AWS::RUM::AppMonitor': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):rum:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):appmonitor/(?<Name>[^:/]+)',
         captureGroups: ['AccountId', 'Name'],
-    },
-    'AWS::Rbin::Rule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rbin:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):rule/(?<ResourceName>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceName'],
     },
     'AWS::Redshift::Cluster': {
         arnRegex:
@@ -4940,16 +2628,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):redshift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):parametergroup:(?<ParameterGroupName>[^/:]+)',
         captureGroups: ['AccountId', 'ParameterGroupName'],
     },
-    'AWS::Redshift::ClusterSecurityGroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):redshift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):securitygroup:(?<SecurityGroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'SecurityGroupName'],
-    },
-    'AWS::Redshift::ClusterSecurityGroupIngress': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):redshift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):securitygroup:(?<SecurityGroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'SecurityGroupName'],
-    },
     'AWS::Redshift::ClusterSubnetGroup': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):redshift:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):subnetgroup:(?<SubnetGroupName>[^/:]+)',
@@ -4959,26 +2637,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):redshift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):eventsubscription:(?<EventSubscriptionName>[^/:]+)',
         captureGroups: ['AccountId', 'EventSubscriptionName'],
-    },
-    'AWS::Redshift::Integration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):redshift:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):integration:(?<IntegrationIdentifier>[^/:]+)',
-        captureGroups: ['AccountId', 'IntegrationIdentifier'],
-    },
-    'AWS::RedshiftServerless::Namespace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):redshift-serverless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):namespace/(?<NamespaceId>[^/:]+)',
-        captureGroups: ['AccountId', 'NamespaceId'],
-    },
-    'AWS::RedshiftServerless::Snapshot': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):redshift-serverless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):snapshot/(?<SnapshotId>[^/:]+)',
-        captureGroups: ['AccountId', 'SnapshotId'],
-    },
-    'AWS::RedshiftServerless::Workgroup': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):redshift-serverless:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workgroup/(?<WorkgroupId>[^/:]+)',
-        captureGroups: ['AccountId', 'WorkgroupId'],
     },
     'AWS::RefactorSpaces::Application': {
         arnRegex:
@@ -5000,20 +2658,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             '^arn:(?<Partition>[a-z-]+):refactor-spaces:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):environment/(?<EnvironmentId>[^/:]+)/application/(?<ApplicationId>[^/:]+)/service/(?<ServiceId>[^/:]+)',
         captureGroups: ['AccountId', 'EnvironmentId', 'ApplicationId', 'ServiceId'],
     },
-    'AWS::Rekognition::Collection': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rekognition:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):collection/(?<CollectionId>[^/:]+)',
-        captureGroups: ['AccountId', 'CollectionId'],
-    },
     'AWS::Rekognition::Project': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):rekognition:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):project/(?<ProjectName>[^/:]+)/(?<CreationTimestamp>[^/:]+)',
         captureGroups: ['AccountId', 'ProjectName', 'CreationTimestamp'],
-    },
-    'AWS::Rekognition::StreamProcessor': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rekognition:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):streamprocessor/(?<Name>[^/:]+)',
-        captureGroups: ['AccountId', 'Name'],
     },
     'AWS::ResilienceHub::App': {
         arnRegex:
@@ -5040,50 +2688,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):resource-groups:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):group/(?<GroupName>[^/:]+(/[^/:]+)?)',
         captureGroups: ['AccountId', 'GroupName'],
     },
-    'AWS::ResourceGroups::TagSyncTask': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):resource-groups:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):group/(?<GroupName>[^/:]+)/tag-sync-task/(?<TaskId>[^/:]+)',
-        captureGroups: ['AccountId', 'GroupName', 'TaskId'],
-    },
-    'AWS::RoboMaker::Fleet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):robomaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):deployment-fleet/(?<FleetName>[^/:]+)/(?<CreatedOnEpoch>[^/:]+)',
-        captureGroups: ['AccountId', 'FleetName', 'CreatedOnEpoch'],
-    },
-    'AWS::RoboMaker::Robot': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):robomaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):robot/(?<RobotName>[^/:]+)/(?<CreatedOnEpoch>[^/:]+)',
-        captureGroups: ['AccountId', 'RobotName', 'CreatedOnEpoch'],
-    },
-    'AWS::RoboMaker::RobotApplication': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):robomaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):robot-application/(?<ApplicationName>[^/:]+)/(?<CreatedOnEpoch>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationName', 'CreatedOnEpoch'],
-    },
-    'AWS::RoboMaker::SimulationApplication': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):robomaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):simulation-application/(?<ApplicationName>[^/:]+)/(?<CreatedOnEpoch>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationName', 'CreatedOnEpoch'],
-    },
-    'AWS::RolesAnywhere::CRL': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rolesanywhere:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):crl/(?<CrlId>[^:/]+)',
-        captureGroups: ['AccountId', 'CrlId'],
-    },
-    'AWS::RolesAnywhere::Profile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rolesanywhere:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):profile/(?<ProfileId>[^:/]+)',
-        captureGroups: ['AccountId', 'ProfileId'],
-    },
-    'AWS::RolesAnywhere::TrustAnchor': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):rolesanywhere:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):trust-anchor/(?<TrustAnchorId>[^:/]+)',
-        captureGroups: ['AccountId', 'TrustAnchorId'],
-    },
-    'AWS::Route53::CidrCollection': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):route53:::cidrcollection/(?<Id>[^/:]+)',
-        captureGroups: ['Id'],
-    },
     'AWS::Route53::HealthCheck': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):route53:::healthcheck/(?<Id>[^/:]+)',
         captureGroups: ['Id'],
@@ -5092,25 +2696,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex: 'arn:(?<Partition>[a-z-]+):route53:::hostedzone/(?<Id>[^/:]+)',
         captureGroups: ['Id'],
     },
-    'AWS::Route53Profiles::Profile': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):route53profiles:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):profile/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::Route53Profiles::ProfileAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):route53profiles:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):profile-association/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
     'AWS::Route53RecoveryControl::Cluster': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):route53-recovery-control::(?<AccountId>[0-9]{12}):cluster/(?<ResourceId>[^:/]+)',
         captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::Route53RecoveryControl::ControlPanel': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):route53-recovery-control::(?<AccountId>[0-9]{12}):controlpanel/(?<ControlPanelId>[^:/]+)',
-        captureGroups: ['AccountId', 'ControlPanelId'],
     },
     'AWS::Route53RecoveryControl::RoutingControl': {
         arnRegex:
@@ -5157,21 +2746,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):route53resolver:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):firewall-rule-group-association/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
     },
-    'AWS::Route53Resolver::OutpostResolver': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):route53resolver:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):outpost-resolver/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::Route53Resolver::ResolverConfig': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):route53resolver:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resolver-config/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::Route53Resolver::ResolverDNSSECConfig': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):route53resolver:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resolver-dnssec-config/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
     'AWS::Route53Resolver::ResolverEndpoint': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):route53resolver:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resolver-endpoint/(?<ResourceId>[^/:]+)',
@@ -5186,20 +2760,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):route53resolver:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resolver-rule/(?<ResourceId>[^/:]+)',
         captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::S3::AccessGrant': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):access-grants/default/grant/(?<Token>[^/:]+)',
-        captureGroups: ['AccountId', 'Token'],
-    },
-    'AWS::S3::AccessGrantsInstance': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):s3:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):access-grants/default',
-        captureGroups: ['AccountId'],
-    },
-    'AWS::S3::AccessGrantsLocation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):access-grants/default/location/(?<Token>[^/:]+)',
-        captureGroups: ['AccountId', 'Token'],
     },
     'AWS::S3::AccessPoint': {
         arnRegex:
@@ -5224,175 +2784,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):s3:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):storage-lens-group/(?<Name>[^/:]+)',
         captureGroups: ['AccountId', 'Name'],
     },
-    'AWS::S3Express::AccessPoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3express:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):accesspoint/(?<AccessPointName>[^/:]+)',
-        captureGroups: ['AccountId', 'AccessPointName'],
-    },
     'AWS::S3Express::DirectoryBucket': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):s3express:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bucket/(?<BucketName>[^:/]+)',
         captureGroups: ['AccountId', 'BucketName'],
     },
-    'AWS::S3ObjectLambda::AccessPoint': {
-        arnRegex:
-            '^arn:(?<Partition>[a-z-]+):s3-object-lambda:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):accesspoint/(?<ResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceId'],
-    },
-    'AWS::S3Outposts::AccessPoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3-outposts:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):outpost/(?<OutpostId>[^/:]+)/accesspoint/(?<AccessPointName>[^/:]+)',
-        captureGroups: ['AccountId', 'OutpostId', 'AccessPointName'],
-    },
-    'AWS::S3Outposts::Bucket': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3-outposts:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):outpost/(?<OutpostId>[^/:]+)/bucket/(?<BucketName>[^/:]+)',
-        captureGroups: ['AccountId', 'OutpostId', 'BucketName'],
-    },
-    'AWS::S3Outposts::Endpoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3-outposts:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):outpost/(?<OutpostId>[^/:]+)/endpoint/(?<EndpointId>[^/:]+)',
-        captureGroups: ['AccountId', 'OutpostId', 'EndpointId'],
-    },
-    'AWS::S3Tables::Table': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3tables:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bucket/(?<TableBucketName>[^/:]+)/table/(?<TableID>[^/:]+)',
-        captureGroups: ['AccountId', 'TableBucketName', 'TableID'],
-    },
-    'AWS::S3Tables::TableBucket': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3tables:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bucket/(?<TableBucketName>[^/:]+)',
-        captureGroups: ['AccountId', 'TableBucketName'],
-    },
-    'AWS::S3Vectors::Index': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3vectors:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bucket/(?<BucketName>[^/:]+)/index/(?<IndexName>[^/:]+)',
-        captureGroups: ['AccountId', 'BucketName', 'IndexName'],
-    },
-    'AWS::S3Vectors::VectorBucket': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):s3vectors:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bucket/(?<BucketName>[^/:]+)',
-        captureGroups: ['AccountId', 'BucketName'],
-    },
-    'AWS::SDB::Domain': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sdb:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainName>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainName'],
-    },
     'AWS::SES::ContactList': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):contact-list/(?<ContactListName>[^/:]+)',
         captureGroups: ['AccountId', 'ContactListName'],
-    },
-    'AWS::SES::CustomVerificationEmailTemplate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):custom-verification-email-template/(?<TemplateName>[^:/]+)',
-        captureGroups: ['AccountId', 'TemplateName'],
-    },
-    'AWS::SES::EmailIdentity': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):identity/(?<IdentityName>[^/:]+)',
-        captureGroups: ['AccountId', 'IdentityName'],
-    },
-    'AWS::SES::MailManagerAddonInstance': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):addon-instance/(?<AddonInstanceId>[^:/]+)',
-        captureGroups: ['AccountId', 'AddonInstanceId'],
-    },
-    'AWS::SES::MailManagerAddonSubscription': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):addon-subscription/(?<AddonSubscriptionId>[^:/]+)',
-        captureGroups: ['AccountId', 'AddonSubscriptionId'],
-    },
-    'AWS::SES::MailManagerAddressList': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):mailmanager-address-list/(?<AddressListId>[^:/]+)',
-        captureGroups: ['AccountId', 'AddressListId'],
-    },
-    'AWS::SES::MailManagerArchive': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):mailmanager-archive/(?<ArchiveId>[^/:]+)',
-        captureGroups: ['AccountId', 'ArchiveId'],
-    },
-    'AWS::SES::MailManagerIngressPoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):mailmanager-ingress-point/(?<IngressPointId>[^:/]+)',
-        captureGroups: ['AccountId', 'IngressPointId'],
-    },
-    'AWS::SES::MailManagerRelay': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):mailmanager-smtp-relay/(?<RelayId>[^:/]+)',
-        captureGroups: ['AccountId', 'RelayId'],
-    },
-    'AWS::SES::MailManagerRuleSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):mailmanager-rule-set/(?<RuleSetId>[^:/]+)',
-        captureGroups: ['AccountId', 'RuleSetId'],
-    },
-    'AWS::SES::MailManagerTrafficPolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):mailmanager-traffic-policy/(?<TrafficPolicyId>[^:/]+)',
-        captureGroups: ['AccountId', 'TrafficPolicyId'],
-    },
-    'AWS::SES::MultiRegionEndpoint': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):multi-region-endpoint/(?<EndpointName>[^/:]+)',
-        captureGroups: ['AccountId', 'EndpointName'],
-    },
-    'AWS::SES::ReceiptFilter': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):receipt-filter/(?<ReceiptFilterName>[^/:]+)',
-        captureGroups: ['AccountId', 'ReceiptFilterName'],
-    },
-    'AWS::SES::ReceiptRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):receipt-rule-set/(?<ReceiptRuleSetName>[^/:]+):receipt-rule/(?<ReceiptRuleName>[^/:]+)',
-        captureGroups: ['AccountId', 'ReceiptRuleSetName', 'ReceiptRuleName'],
-    },
-    'AWS::SES::ReceiptRuleSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):receipt-rule-set/(?<ReceiptRuleSetName>[^/:]+)',
-        captureGroups: ['AccountId', 'ReceiptRuleSetName'],
-    },
-    'AWS::SES::Template': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):template/(?<TemplateName>[^/:]+)',
-        captureGroups: ['AccountId', 'TemplateName'],
-    },
-    'AWS::SES::Tenant': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ses:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):tenant/(?<TenantName>[^/:]+)/(?<TenantId>[^/:]+)',
-        captureGroups: ['AccountId', 'TenantName', 'TenantId'],
-    },
-    'AWS::SMSVOICE::ConfigurationSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sms-voice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):configuration-set/(?<ConfigurationSetName>[^:/]+)',
-        captureGroups: ['AccountId', 'ConfigurationSetName'],
-    },
-    'AWS::SMSVOICE::OptOutList': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sms-voice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):opt-out-list/(?<OptOutListName>[^:/]+)',
-        captureGroups: ['AccountId', 'OptOutListName'],
-    },
-    'AWS::SMSVOICE::PhoneNumber': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sms-voice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):phone-number/(?<PhoneNumberId>[^:/]+)',
-        captureGroups: ['AccountId', 'PhoneNumberId'],
-    },
-    'AWS::SMSVOICE::Pool': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sms-voice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):pool/(?<PoolId>[^/:]+)',
-        captureGroups: ['AccountId', 'PoolId'],
-    },
-    'AWS::SMSVOICE::ProtectConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sms-voice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):protect-configuration/(?<ProtectConfigurationId>[^:/]+)',
-        captureGroups: ['AccountId', 'ProtectConfigurationId'],
-    },
-    'AWS::SMSVOICE::SenderId': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sms-voice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):sender-id/(?<SenderId>[^:/]+)/(?<IsoCountryCode>[^:/]+)',
-        captureGroups: ['AccountId', 'SenderId', 'IsoCountryCode'],
     },
     'AWS::SNS::Topic': {
         arnRegex: 'arn:(?<Partition>[a-z-]+):sns:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):(?<TopicName>[^/:]+)',
@@ -5432,59 +2832,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):ssm:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):parameter/(?<ParameterNameWithoutLeadingSlash>[a-zA-Z0-9_.\\-/]+)',
         captureGroups: ['AccountId', 'ParameterNameWithoutLeadingSlash'],
     },
-    'AWS::SSM::PatchBaseline': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ssm:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):patchbaseline/(?<PatchBaselineIdResourceId>[^/:]+)',
-        captureGroups: ['AccountId', 'PatchBaselineIdResourceId'],
-    },
     'AWS::SSM::ResourceDataSync': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ssm:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resource-data-sync/(?<SyncName>[^/:]+)',
         captureGroups: ['AccountId', 'SyncName'],
     },
-    'AWS::SSMContacts::Contact': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ssm-contacts:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):contact/(?<ContactAlias>[^/:]+)',
-        captureGroups: ['AccountId', 'ContactAlias'],
-    },
-    'AWS::SSMContacts::ContactChannel': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ssm-contacts:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):contactchannel/(?<ContactAlias>[^/:]+)/(?<ContactChannelId>[^/:]+)',
-        captureGroups: ['AccountId', 'ContactAlias', 'ContactChannelId'],
-    },
-    'AWS::SSMContacts::Rotation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ssm-contacts:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):rotation/(?<RotationId>[^/:]+)',
-        captureGroups: ['AccountId', 'RotationId'],
-    },
-    'AWS::SSMIncidents::ReplicationSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ssm-incidents::(?<AccountId>[0-9]{12}):replication-set/(?<ReplicationSet>[^/:]+)',
-        captureGroups: ['AccountId', 'ReplicationSet'],
-    },
     'AWS::SSMIncidents::ResponsePlan': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):ssm-incidents::(?<AccountId>[0-9]{12}):response-plan/(?<ResponsePlan>[^/:]+)',
         captureGroups: ['AccountId', 'ResponsePlan'],
-    },
-    'AWS::SSMQuickSetup::ConfigurationManager': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ssm-quicksetup:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):configuration-manager/(?<ConfigurationManagerId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConfigurationManagerId'],
-    },
-    'AWS::SSO::Application': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sso::(?<AccountId>[0-9]{12}):application/(?<InstanceId>[^:/]+)/(?<ApplicationId>[^:/]+)',
-        captureGroups: ['AccountId', 'InstanceId', 'ApplicationId'],
-    },
-    'AWS::SSO::Instance': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):sso:::instance/(?<InstanceId>[^/:]+)',
-        captureGroups: ['InstanceId'],
-    },
-    'AWS::SSO::PermissionSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sso:::permissionSet/(?<InstanceId>(sso)?ins-[a-zA-Z0-9-.]{16})/(?<PermissionSetId>ps-[a-zA-Z0-9-./]{16})',
-        captureGroups: ['InstanceId', 'PermissionSetId'],
     },
     'AWS::SageMaker::App': {
         arnRegex:
@@ -5505,21 +2861,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):code-repository/(?<CodeRepositoryName>[^/:]+)',
         captureGroups: ['Account', 'CodeRepositoryName'],
-    },
-    'AWS::SageMaker::DataQualityJobDefinition': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):data-quality-job-definition/(?<DataQualityJobDefinitionName>[^/:]+)',
-        captureGroups: ['AccountId', 'DataQualityJobDefinitionName'],
-    },
-    'AWS::SageMaker::Device': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):device-fleet/(?<DeviceFleetName>[^/:]+)/device/(?<DeviceName>[^/:]+)',
-        captureGroups: ['AccountId', 'DeviceFleetName', 'DeviceName'],
-    },
-    'AWS::SageMaker::DeviceFleet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):device-fleet/(?<DeviceFleetName>[^/:]+)',
-        captureGroups: ['AccountId', 'DeviceFleetName'],
     },
     'AWS::SageMaker::Domain': {
         arnRegex:
@@ -5571,20 +2912,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):model/(?<ModelName>[^/:]+)',
         captureGroups: ['AccountId', 'ModelName'],
     },
-    'AWS::SageMaker::ModelBiasJobDefinition': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):model-bias-job-definition/(?<ModelBiasJobDefinitionName>[^/:]+)',
-        captureGroups: ['AccountId', 'ModelBiasJobDefinitionName'],
-    },
     'AWS::SageMaker::ModelCard': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):model-card/(?<ModelCardName>[^/:]+)',
         captureGroups: ['AccountId', 'ModelCardName'],
-    },
-    'AWS::SageMaker::ModelExplainabilityJobDefinition': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):model-explainability-job-definition/(?<ModelExplainabilityJobDefinitionName>[^/:]+)',
-        captureGroups: ['AccountId', 'ModelExplainabilityJobDefinitionName'],
     },
     'AWS::SageMaker::ModelPackage': {
         arnRegex:
@@ -5595,11 +2926,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):model-package-group/(?<ModelPackageGroupName>[^/:]+)',
         captureGroups: ['AccountId', 'ModelPackageGroupName'],
-    },
-    'AWS::SageMaker::ModelQualityJobDefinition': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):model-quality-job-definition/(?<ModelQualityJobDefinitionName>[^/:]+)',
-        captureGroups: ['AccountId', 'ModelQualityJobDefinitionName'],
     },
     'AWS::SageMaker::MonitoringSchedule': {
         arnRegex:
@@ -5616,20 +2942,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):notebook-instance-lifecycle-config/(?<NotebookInstanceLifecycleConfigName>[^/:]+)',
         captureGroups: ['AccountId', 'NotebookInstanceLifecycleConfigName'],
     },
-    'AWS::SageMaker::PartnerApp': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):partner-app/(?<AppId>[^/:]+)',
-        captureGroups: ['AccountId', 'AppId'],
-    },
     'AWS::SageMaker::Pipeline': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):pipeline/(?<PipelineName>[^/:]+)',
         captureGroups: ['AccountId', 'PipelineName'],
-    },
-    'AWS::SageMaker::ProcessingJob': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):processing-job/(?<ProcessingJobName>[^/:]+)',
-        captureGroups: ['AccountId', 'ProcessingJobName'],
     },
     'AWS::SageMaker::Project': {
         arnRegex:
@@ -5656,11 +2972,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):sagemaker:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workteam/(?<WorkteamName>[^:]+)',
         captureGroups: ['AccountId', 'WorkteamName'],
     },
-    'AWS::Scheduler::Schedule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):scheduler:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):schedule/(?<GroupName>[^/:]+)/(?<ScheduleName>[^/:]+)',
-        captureGroups: ['AccountId', 'GroupName', 'ScheduleName'],
-    },
     'AWS::Scheduler::ScheduleGroup': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):scheduler:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):schedule-group/(?<GroupName>[^/:]+)',
@@ -5671,85 +2982,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):secretsmanager:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):secret:(?<SecretId>[^:]+)',
         captureGroups: ['AccountId', 'SecretId'],
     },
-    'AWS::SecurityHub::AggregatorV2': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):aggregatorv2/(?<AggregatorV2Id>[^/:]+)',
-        captureGroups: ['AccountId', 'AggregatorV2Id'],
-    },
-    'AWS::SecurityHub::AutomationRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):automation-rule/(?<AutomationRuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'AutomationRuleId'],
-    },
-    'AWS::SecurityHub::AutomationRuleV2': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):automation-rulev2/(?<AutomationRuleV2Id>[^/:]+)',
-        captureGroups: ['AccountId', 'AutomationRuleV2Id'],
-    },
-    'AWS::SecurityHub::ConfigurationPolicy': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):configuration-policy/(?<ConfigurationPolicyId>[^/:]+)',
-        captureGroups: ['AccountId', 'ConfigurationPolicyId'],
-    },
-    'AWS::SecurityHub::ConnectorV2': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connectorv2/(?<ConnectorV2Id>[^/:]+)',
-        captureGroups: ['AccountId', 'ConnectorV2Id'],
-    },
-    'AWS::SecurityHub::FindingAggregator': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):finding-aggregator/(?<FindingAggregatorId>[^/:]+)',
-        captureGroups: ['AccountId', 'FindingAggregatorId'],
-    },
-    'AWS::SecurityHub::Hub': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):hub/default',
-        captureGroups: ['AccountId'],
-    },
-    'AWS::SecurityHub::HubV2': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):hubv2/(?<HubV2Id>[^/:]+)',
-        captureGroups: ['AccountId', 'HubV2Id'],
-    },
-    'AWS::SecurityHub::Insight': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):insight/(?<CompanyId>[^/:]+)/(?<ProductId>[^/:]+)/(?<UniqueId>[^/:]+)',
-        captureGroups: ['AccountId', 'CompanyId', 'ProductId', 'UniqueId'],
-    },
-    'AWS::SecurityHub::ProductSubscription': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):product-subscription/(?<Company>[^/:]+)/(?<ProductId>[^/:]+)',
-        captureGroups: ['AccountId', 'Company', 'ProductId'],
-    },
-    'AWS::SecurityHub::Standard': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securityhub:::ruleset/(?<StandardsName>[^/:]+)/v/(?<StandardsVersion>[^/:]+)',
-        captureGroups: ['StandardsName', 'StandardsVersion'],
-    },
-    'AWS::SecurityLake::DataLake': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securitylake:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):data-lake/default',
-        captureGroups: ['AccountId'],
-    },
-    'AWS::SecurityLake::Subscriber': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):securitylake:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):subscriber/(?<SubscriberId>[^:/]+)',
-        captureGroups: ['AccountId', 'SubscriberId'],
-    },
-    'AWS::ServiceCatalog::CloudFormationProduct': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):catalog:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):product/(?<PortfolioId>[^/:]+)',
-        captureGroups: ['AccountId', 'PortfolioId'],
-    },
-    'AWS::ServiceCatalog::CloudFormationProvisionedProduct': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):catalog:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):product/(?<PortfolioId>[^/:]+)',
-        captureGroups: ['AccountId', 'PortfolioId'],
-    },
-    'AWS::ServiceCatalog::Portfolio': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):catalog:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):portfolio/(?<PortfolioId>[^/:]+)',
-        captureGroups: ['AccountId', 'PortfolioId'],
-    },
     'AWS::ServiceCatalogAppRegistry::Application': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):servicecatalog:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/applications/(?<ApplicationId>[^/:]+)',
@@ -5759,21 +2991,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):servicecatalog:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):/attribute-groups/(?<AttributeGroupId>[^/:]+)',
         captureGroups: ['AccountId', 'AttributeGroupId'],
-    },
-    'AWS::ServiceDiscovery::HttpNamespace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):servicediscovery:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):namespace/(?<NamespaceId>[^/:]+)',
-        captureGroups: ['AccountId', 'NamespaceId'],
-    },
-    'AWS::ServiceDiscovery::PrivateDnsNamespace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):servicediscovery:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):namespace/(?<NamespaceId>[^/:]+)',
-        captureGroups: ['AccountId', 'NamespaceId'],
-    },
-    'AWS::ServiceDiscovery::PublicDnsNamespace': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):servicediscovery:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):namespace/(?<NamespaceId>[^/:]+)',
-        captureGroups: ['AccountId', 'NamespaceId'],
     },
     'AWS::ServiceDiscovery::Service': {
         arnRegex:
@@ -5794,11 +3011,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):signer:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):/signing-profiles/(?<ProfileName>[^/:]+)',
         captureGroups: ['Account', 'ProfileName'],
     },
-    'AWS::SimSpaceWeaver::Simulation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):simspaceweaver:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):simulation/(?<SimulationName>[^/:]+)',
-        captureGroups: ['AccountId', 'SimulationName'],
-    },
     'AWS::StepFunctions::Activity': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):states:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):activity:(?<ActivityName>[^/:]+)',
@@ -5809,16 +3021,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):states:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stateMachine:(?<StateMachineName>[^/:]+):(?<StateMachineAliasName>[^/:]+)',
         captureGroups: ['AccountId', 'StateMachineName', 'StateMachineAliasName'],
     },
-    'AWS::StepFunctions::StateMachineAlias': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):states:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stateMachine:(?<StateMachineName>[^/:]+):(?<StateMachineAliasName>[^/:]+)',
-        captureGroups: ['AccountId', 'StateMachineName', 'StateMachineAliasName'],
-    },
-    'AWS::StepFunctions::StateMachineVersion': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):states:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):stateMachine:(?<StateMachineName>[^/:]+):(?<StateMachineVersionId>[^/:]+)',
-        captureGroups: ['AccountId', 'StateMachineName', 'StateMachineVersionId'],
-    },
     'AWS::Synthetics::Canary': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):synthetics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):canary:(?<CanaryName>[^/:]+)',
@@ -5828,26 +3030,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):synthetics:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):group:(?<GroupId>[^/:]+)',
         captureGroups: ['AccountId', 'GroupId'],
-    },
-    'AWS::SystemsManagerSAP::Application': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):ssm-sap:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):(?<ApplicationType>[^/:]+)/(?<ApplicationId>[^/:]+)',
-        captureGroups: ['AccountId', 'ApplicationType', 'ApplicationId'],
-    },
-    'AWS::Timestream::Database': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):timestream:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):database/(?<DatabaseName>[^/:]+)',
-        captureGroups: ['AccountId', 'DatabaseName'],
-    },
-    'AWS::Timestream::ScheduledQuery': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):timestream:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):scheduled-query/(?<scheduledQueryName>[a-zA-Z0-9_.-]+)',
-        captureGroups: ['AccountId', 'scheduledQueryName'],
-    },
-    'AWS::Timestream::Table': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):timestream:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):database/(?<databaseName>[a-zA-Z0-9_.-]+)/table/(?<tableName>[a-zA-Z0-9_.-]+)',
-        captureGroups: ['AccountId', 'databaseName', 'tableName'],
     },
     'AWS::Transfer::Agreement': {
         arnRegex:
@@ -5879,11 +3061,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):transfer:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):user/(?<ServerId>s-[a-f0-9]{17})/(?<UserName>[\\w][\\w@.-]{2,99})',
         captureGroups: ['Account', 'ServerId', 'UserName'],
     },
-    'AWS::Transfer::WebApp': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):transfer:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):webapp/(?<WebAppId>[^/:]+)',
-        captureGroups: ['AccountId', 'WebAppId'],
-    },
     'AWS::Transfer::Workflow': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):transfer:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):workflow/(?<WorkflowId>w-[a-f0-9]{17})',
@@ -5894,40 +3071,10 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):verifiedpermissions::(?<AccountId>[0-9]{12}):policy-store/(?<PolicyStoreId>[^/:]+)',
         captureGroups: ['AccountId', 'PolicyStoreId'],
     },
-    'AWS::VoiceID::Domain': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):voiceid:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domain/(?<DomainId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainId'],
-    },
-    'AWS::VpcLattice::AccessLogSubscription': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):accesslogsubscription/(?<AccessLogSubscriptionId>[^/:]+)',
-        captureGroups: ['AccountId', 'AccessLogSubscriptionId'],
-    },
-    'AWS::VpcLattice::DomainVerification': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):domainverification/(?<DomainVerificationId>[^/:]+)',
-        captureGroups: ['AccountId', 'DomainVerificationId'],
-    },
     'AWS::VpcLattice::Listener': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):service/(?<ServiceId>[^/:]+)/listener/(?<ListenerId>[^/:]+)',
         captureGroups: ['AccountId', 'ServiceId', 'ListenerId'],
-    },
-    'AWS::VpcLattice::ResourceConfiguration': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resourceconfiguration/(?<ResourceConfigurationId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceConfigurationId'],
-    },
-    'AWS::VpcLattice::ResourceGateway': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):resourcegateway/(?<ResourceGatewayId>[^/:]+)',
-        captureGroups: ['AccountId', 'ResourceGatewayId'],
-    },
-    'AWS::VpcLattice::Rule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):service/(?<ServiceId>[^/:]+)/listener/(?<ListenerId>[^/:]+)/rule/(?<RuleId>[^/:]+)',
-        captureGroups: ['AccountId', 'ServiceId', 'ListenerId', 'RuleId'],
     },
     'AWS::VpcLattice::Service': {
         arnRegex:
@@ -5939,103 +3086,15 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):servicenetwork/(?<ServiceNetworkId>[^/:]+)',
         captureGroups: ['AccountId', 'ServiceNetworkId'],
     },
-    'AWS::VpcLattice::ServiceNetworkResourceAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):servicenetworkresourceassociation/(?<ServiceNetworkResourceAssociationId>[^/:]+)',
-        captureGroups: ['AccountId', 'ServiceNetworkResourceAssociationId'],
-    },
     'AWS::VpcLattice::ServiceNetworkServiceAssociation': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):servicenetworkserviceassociation/(?<ServiceNetworkServiceAssociationId>[^/:]+)',
         captureGroups: ['AccountId', 'ServiceNetworkServiceAssociationId'],
     },
-    'AWS::VpcLattice::ServiceNetworkVpcAssociation': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):servicenetworkvpcassociation/(?<ServiceNetworkVpcAssociationId>[^/:]+)',
-        captureGroups: ['AccountId', 'ServiceNetworkVpcAssociationId'],
-    },
     'AWS::VpcLattice::TargetGroup': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):vpc-lattice:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):targetgroup/(?<TargetGroupId>[^/:]+)',
         captureGroups: ['AccountId', 'TargetGroupId'],
-    },
-    'AWS::WAF::ByteMatchSet': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):waf::(?<AccountId>[0-9]{12}):bytematchset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAF::IPSet': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):waf::(?<AccountId>[0-9]{12}):ipset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAF::Rule': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):waf::(?<AccountId>[0-9]{12}):rule/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAF::SizeConstraintSet': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):waf::(?<AccountId>[0-9]{12}):sizeconstraintset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAF::SqlInjectionMatchSet': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):waf::(?<AccountId>[0-9]{12}):sqlinjectionset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAF::WebACL': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):waf::(?<AccountId>[0-9]{12}):webacl/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAF::XssMatchSet': {
-        arnRegex: 'arn:(?<Partition>[a-z-]+):waf::(?<AccountId>[0-9]{12}):xssmatchset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::ByteMatchSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):bytematchset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::GeoMatchSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):geomatchset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::IPSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ipset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::RateBasedRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ratebasedrule/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::RegexPatternSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):regexpatternset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::Rule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):rule/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::SizeConstraintSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):sizeconstraintset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::SqlInjectionMatchSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):sqlinjectionset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::WebACL': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):webacl/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
-    },
-    'AWS::WAFRegional::XssMatchSet': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):waf-regional:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):xssmatchset/(?<Id>[^/:]+)',
-        captureGroups: ['AccountId', 'Id'],
     },
     'AWS::WAFv2::IPSet': {
         arnRegex:
@@ -6057,21 +3116,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):wafv2:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):(?<Scope>[^/:]+)/webacl/(?<Name>[^/:]+)/(?<Id>[^/:]+)',
         captureGroups: ['AccountId', 'Scope', 'Name', 'Id'],
     },
-    'AWS::Wisdom::AIAgent': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):wisdom:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ai-agent/(?<AssistantId>[^/:]+)/(?<AIAgentId>[^/:]+)',
-        captureGroups: ['AccountId', 'AssistantId', 'AIAgentId'],
-    },
-    'AWS::Wisdom::AIGuardrail': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):wisdom:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ai-guardrail/(?<AssistantId>[^/:]+)/(?<AIGuardrailId>[^/:]+)',
-        captureGroups: ['AccountId', 'AssistantId', 'AIGuardrailId'],
-    },
-    'AWS::Wisdom::AIPrompt': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):wisdom:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ai-prompt/(?<AssistantId>[^/:]+)/(?<AIPromptId>[^/:]+)',
-        captureGroups: ['AccountId', 'AssistantId', 'AIPromptId'],
-    },
     'AWS::Wisdom::Assistant': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):wisdom:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):assistant/(?<AssistantId>[^/:]+)',
@@ -6087,16 +3131,6 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):wisdom:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):knowledge-base/(?<KnowledgeBaseId>[^/:]+)',
         captureGroups: ['AccountId', 'KnowledgeBaseId'],
     },
-    'AWS::Wisdom::MessageTemplate': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):wisdom:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):message-template/(?<KnowledgeBaseId>[^/:]+)/(?<MessageTemplateId>[^/:]+)',
-        captureGroups: ['AccountId', 'KnowledgeBaseId', 'MessageTemplateId'],
-    },
-    'AWS::Wisdom::QuickResponse': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):wisdom:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):quick-response/(?<KnowledgeBaseId>[^/:]+)/(?<QuickResponseId>[^/:]+)',
-        captureGroups: ['AccountId', 'KnowledgeBaseId', 'QuickResponseId'],
-    },
     'AWS::WorkSpaces::ConnectionAlias': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):workspaces:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):connectionalias/(?<ConnectionAliasId>[^/:]+)',
@@ -6107,92 +3141,24 @@ const arnMetadataMap: Record<string, ArnMetadata> = {
             'arn:(?<Partition>[a-z-]+):workspaces:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workspace/(?<WorkspaceId>[^/:]+)',
         captureGroups: ['AccountId', 'WorkspaceId'],
     },
-    'AWS::WorkSpaces::WorkspacesPool': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workspacespool/(?<PoolId>[^:/]+)',
-        captureGroups: ['AccountId', 'PoolId'],
-    },
-    'AWS::WorkSpacesThinClient::Environment': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):thinclient:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):environment/(?<EnvironmentId>[^:/]+)',
-        captureGroups: ['AccountId', 'EnvironmentId'],
-    },
-    'AWS::WorkSpacesWeb::BrowserSettings': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):browserSettings/(?<BrowserSettingsId>[^/:]+)',
-        captureGroups: ['AccountId', 'BrowserSettingsId'],
-    },
-    'AWS::WorkSpacesWeb::DataProtectionSettings': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):dataProtectionSettings/(?<DataProtectionSettingsId>[^/:]+)',
-        captureGroups: ['AccountId', 'DataProtectionSettingsId'],
-    },
-    'AWS::WorkSpacesWeb::IdentityProvider': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):identityProvider/(?<PortalId>[^/:]+)/(?<IdentityProviderId>[^/:]+)',
-        captureGroups: ['AccountId', 'PortalId', 'IdentityProviderId'],
-    },
-    'AWS::WorkSpacesWeb::IpAccessSettings': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):ipAccessSettings/(?<IpAccessSettingsId>[^/:]+)',
-        captureGroups: ['AccountId', 'IpAccessSettingsId'],
-    },
-    'AWS::WorkSpacesWeb::NetworkSettings': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):networkSettings/(?<NetworkSettingsId>[^/:]+)',
-        captureGroups: ['AccountId', 'NetworkSettingsId'],
-    },
     'AWS::WorkSpacesWeb::Portal': {
         arnRegex:
             'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):portal/(?<PortalId>[a-fA-F0-9\\-]{36})',
         captureGroups: ['AccountId', 'PortalId'],
     },
-    'AWS::WorkSpacesWeb::SessionLogger': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):sessionLogger/(?<SessionLoggerId>[^/:]+)',
-        captureGroups: ['AccountId', 'SessionLoggerId'],
-    },
-    'AWS::WorkSpacesWeb::TrustStore': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):trustStore/(?<TrustStoreId>[^/:]+)',
-        captureGroups: ['AccountId', 'TrustStoreId'],
-    },
-    'AWS::WorkSpacesWeb::UserAccessLoggingSettings': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):userAccessLoggingSettings/(?<UserAccessLoggingSettingsId>[^/:]+)',
-        captureGroups: ['AccountId', 'UserAccessLoggingSettingsId'],
-    },
-    'AWS::WorkSpacesWeb::UserSettings': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-web:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):userSettings/(?<UserSettingsId>[^/:]+)',
-        captureGroups: ['AccountId', 'UserSettingsId'],
-    },
-    'AWS::WorkspacesInstances::WorkspaceInstance': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):workspaces-instances:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):workspaceinstance/(?<WorkspaceInstanceId>[^:/]+)',
-        captureGroups: ['AccountId', 'WorkspaceInstanceId'],
-    },
-    'AWS::XRay::Group': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):xray:(?<Region>[a-z0-9-]+):(?<AccountId>[0-9]{12}):group/(?<GroupName>[^/:]+)',
-        captureGroups: ['AccountId', 'GroupName'],
-    },
-    'AWS::XRay::SamplingRule': {
-        arnRegex:
-            'arn:(?<Partition>[a-z-]+):xray:(?<Region>[a-z0-9-]+):(?<Account>[0-9]{12}):sampling-rule/(?<SamplingRuleName>[^/:]+)',
-        captureGroups: ['Account', 'SamplingRuleName'],
-    },
 };
+
+// Reverse lookup map for CFN -> AREX type conversion
+const cfnToArexTypeMap: Record<string, string> = Object.fromEntries(
+    Object.entries(arexToCfnTypeMap).map(([arex, cfn]) => [cfn, arex]),
+);
 
 export function arexTypeToCfnType(arexType: string): string | undefined {
     return arexToCfnTypeMap[arexType];
 }
 
 export function cfnTypeToArexType(cfnType: string): string | undefined {
-    for (const [arex, cfn] of Object.entries(arexToCfnTypeMap)) {
-        if (cfn === cfnType) return arex;
-    }
-    return undefined;
+    return cfnToArexTypeMap[cfnType];
 }
 
 export function getSearchableResourceTypes(): string[] {
