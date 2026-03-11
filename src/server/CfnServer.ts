@@ -104,9 +104,7 @@ export class CfnServer {
 
         this.lsp.handlers.onCompletion(withTelemetryContext('Completion', completionHandler(this.components)));
         this.lsp.handlers.onHover(withTelemetryContext('Hover', hoverHandler(this.components)));
-        this.lsp.handlers.onExecuteCommand(
-            withTelemetryContext('Execution', executionHandler(this.lsp.documents, this.components)),
-        );
+        this.lsp.handlers.onExecuteCommand(withTelemetryContext('Execution', executionHandler(this.components)));
         this.lsp.handlers.onCodeAction(withTelemetryContext('CodeAction', codeActionHandler(this.components)));
         this.lsp.handlers.onDefinition(withTelemetryContext('Definition', definitionHandler(this.components)));
         this.lsp.handlers.onDocumentSymbol(

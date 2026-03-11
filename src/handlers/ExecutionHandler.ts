@@ -1,11 +1,10 @@
 import { ExecuteCommandParams, ServerRequestHandler } from 'vscode-languageserver';
-import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
+import { getRegion } from '../utils/Region';
 
 export function executionHandler(
-    documents: LspDocuments,
     components: ServerComponents,
 ): ServerRequestHandler<ExecuteCommandParams, unknown, never, void> {
     return (params): unknown => {
@@ -35,6 +34,13 @@ export function executionHandler(
                 }
                 break;
             }
+            case UPDATE_REGION: {
+                const args = params.arguments ?? [];
+                if (args.length > 0) {
+                    components.settingsManager.updateRegion(getRegion(args[0]));
+                }
+                break;
+            }
             default: {
                 // do nothing
                 return;
@@ -45,3 +51,4 @@ export function executionHandler(
 
 export const CLEAR_DIAGNOSTIC = '/command/template/clear-diagnostic';
 export const TRACK_CODE_ACTION_ACCEPTED = '/command/codeAction/track';
+export const UPDATE_REGION = '/command/region/update';

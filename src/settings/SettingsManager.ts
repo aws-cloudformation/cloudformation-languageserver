@@ -79,6 +79,21 @@ export class SettingsManager implements ISettingsSubscriber {
         }
     }
 
+    updateRegion(region: AwsRegion): void {
+        try {
+            const currentSettings = this.getCurrentSettings();
+            this.validateAndUpdate({
+                ...currentSettings,
+                profile: {
+                    ...currentSettings.profile,
+                    region,
+                },
+            });
+        } catch (error) {
+            logger.error(error, `Failed to update region configuration, keeping previous settings`);
+        }
+    }
+
     updateProfileSettings(profile: string, region: AwsRegion): void {
         try {
             const currentSettings = this.getCurrentSettings();
