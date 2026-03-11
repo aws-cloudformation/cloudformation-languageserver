@@ -7,6 +7,7 @@ import { CfnService } from '../../services/CfnService';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { Measure } from '../../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../../utils/Errors';
+import { toString } from '../../utils/String';
 import { processWorkflowUpdates, mapChangesToStackChanges, isStackInReview } from './StackActionOperations';
 import {
     StackActionPhase,
@@ -118,7 +119,7 @@ export class ChangeSetDeletionWorkflow implements StackActionWorkflow<
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: isSuccessful ? StackActionPhase.DELETION_COMPLETE : StackActionPhase.DELETION_FAILED,
                 state: isSuccessful ? StackActionState.SUCCESSFUL : StackActionState.FAILED,
-                failureReason: isSuccessful ? undefined : String(deploymentResult.reason), // reason only appears on failure
+                failureReason: isSuccessful ? undefined : toString(deploymentResult.reason), // reason only appears on failure
             });
         } catch (error) {
             this.log.error(error, `Deletion workflow threw exception ${workflowId}`);

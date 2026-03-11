@@ -1,4 +1,5 @@
 import { ParameterType } from '../../context/semantic/ParameterType';
+import { toString } from '../../utils/String';
 import { LiteralValueType, ParameterDefinition } from './ExtractToParameterTypes';
 
 /**
@@ -35,7 +36,7 @@ export class ParameterTypeInferrer {
 
             default: {
                 // Fallback to string type for unknown literal types
-                return this.createStringParameter(String(value));
+                return this.createStringParameter(toString(value));
             }
         }
     }

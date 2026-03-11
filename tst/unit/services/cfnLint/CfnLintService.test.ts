@@ -148,6 +148,7 @@ describe('CfnLintService', () => {
     let mockPyodide: any;
     let mockComponents: ReturnType<typeof createMockComponents>;
     let mockWorkspaceFolder: StubbedInstance<WorkspaceFolder>;
+    let mockWorkspaceFolderWithoutName: StubbedInstance<WorkspaceFolder>;
     let mockDelayer: StubbedInstance<Delayer<void>>;
     let mockWorkerManager: StubbedInstance<PyodideWorkerManager>;
 
@@ -210,6 +211,12 @@ describe('CfnLintService', () => {
         mockWorkspaceFolder = {
             uri: 'file:///workspace/project',
             name: 'project',
+        };
+
+        // Create mock workspace folder without name
+        mockWorkspaceFolderWithoutName = {
+            uri: 'file:///workspace/project',
+            name: '',
         };
 
         // Use createMockComponents for consistent mocking
@@ -285,6 +292,14 @@ describe('CfnLintService', () => {
         test('should mount folder correctly', async () => {
             await service.initialize();
             await service.mountFolder(mockWorkspaceFolder);
+
+            expect(URI.parse).toHaveBeenCalledWith(mockWorkspaceFolder.uri);
+            expect(mockWorkerManager.mountFolder.calledWith('/path/to/workspace/project', '/project')).toBe(true);
+        });
+
+        test('should mount folder correctly without a name', async () => {
+            await service.initialize();
+            await service.mountFolder(mockWorkspaceFolderWithoutName);
 
             expect(URI.parse).toHaveBeenCalledWith(mockWorkspaceFolder.uri);
             expect(mockWorkerManager.mountFolder.calledWith('/path/to/workspace/project', '/project')).toBe(true);

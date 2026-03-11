@@ -1,8 +1,8 @@
-name: Weekly Maintenance
+name: Automated Maintenance
 
 on:
   schedule:
-    - cron: '0 10 * * 1'  # Weekly on Mondays at 10:00 UTC
+    - cron: '0 10 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -28,20 +28,26 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Install git-secrets
+        run: |
+          git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets
+          cd /tmp/git-secrets
+          sudo make install
+
       - name: Run Maintenance Tasks
         run: npm run download-wheels
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: 'chore: daily maintenance update'
-          branch: maintenance/daily-update
+          commit-message: 'chore: maintenance update'
+          branch: maintenance/update
           delete-branch: true
-          title: 'chore: Weekly Maintenance Update'
+          title: 'chore: Maintenance Update'
           body: |
             Automated maintenance update
             
             - Updated wheels via download-wheels
             
-            This PR was automatically created by the weekly maintenance workflow.
+            This PR was automatically created by the maintenance workflow.
           labels: maintenance, automated

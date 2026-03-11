@@ -21,6 +21,7 @@ import {
     parseValidationEvents,
     publishValidationDiagnostics,
     isStackInReview,
+    formatValidationDetailsMessage,
 } from './StackActionOperations';
 import {
     CreateValidationParams,
@@ -188,6 +189,14 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
                 existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                     validationDetails: validationDetails,
                 });
+
+                // If validation failed and we have detailed events, format them as the failure reason
+                if (result.state === StackActionState.FAILED && validationDetails.length > 0) {
+                    const detailedMessage = formatValidationDetailsMessage(validationDetails);
+                    existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
+                        failureReason: detailedMessage,
+                    });
+                }
 
                 validation.setValidationDetails(validationDetails);
                 await publishValidationDiagnostics(

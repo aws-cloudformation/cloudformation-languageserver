@@ -6,6 +6,7 @@ import { CfnLintInitializationSettings, CfnLintSettings } from '../../settings/S
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Telemetry } from '../../telemetry/TelemetryDecorator';
+import { extractErrorMessage } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { WorkerNotInitializedError } from './CfnLintErrors';
 
@@ -165,7 +166,7 @@ export class PyodideWorkerManager {
                 });
             } catch (error) {
                 this.worker = undefined;
-                reject(error instanceof Error ? error : new Error(String(error)));
+                reject(error instanceof Error ? error : new Error(extractErrorMessage(error)));
             }
         });
     }

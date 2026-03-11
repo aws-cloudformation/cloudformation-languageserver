@@ -29,6 +29,18 @@ export function isClientNetworkError(error: unknown): boolean {
     return CLIENT_NETWORK_ERROR_PATTERNS.some((pattern) => message.toLowerCase().includes(pattern.toLowerCase()));
 }
 
+export function extractStatusReason(error: unknown): string | undefined {
+    try {
+        const message = error instanceof Error ? error.message : String(error);
+        const parsed = JSON.parse(message) as { reason?: { StatusReason?: string } };
+        if (parsed?.reason?.StatusReason) {
+            return parsed.reason.StatusReason;
+        }
+    } catch {
+        // Not JSON, continue with normal error handling
+    }
+}
+
 export function extractErrorMessage(error: unknown) {
     if (error instanceof Error) {
         const prefix = error.name === 'Error' ? '' : `${error.name}: `;

@@ -202,6 +202,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             throw new Error('CfnLintService not initialized. Call initialize() first.');
         }
 
+        const folderName =
+            folder.name.length > 0 ? folder.name : (folder.uri.replace('file://', '').split('/').pop() ?? '');
+        folder.name = folderName; // Update folder name to ensure consistent mounting and path resolution
+
         const fsDir = URI.parse(folder.uri).fsPath;
         const mountDir = '/'.concat(folder.name);
 
@@ -418,6 +422,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
                 throw error;
             }
 
+            const folderName =
+                folder.name.length > 0 ? folder.name : (folder.uri.replace('file://', '').split('/').pop() ?? '');
+
+            folder.name = folderName; // Update folder name to ensure consistent mounting and path resolution
             const relativePath = uri.replace(folder.uri, '/'.concat(folder.name));
 
             // Use worker to lint file

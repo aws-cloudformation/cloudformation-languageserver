@@ -3,6 +3,7 @@ import { parentPort } from 'worker_threads';
 import { loadPyodide, type PyodideInterface } from 'pyodide';
 import { PublishDiagnosticsParams } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
+import { extractErrorMessage } from '../../utils/Errors';
 
 // Instead of sending stdout/stderr messages back to the main thread,
 // we'll just log them in the worker thread
@@ -90,7 +91,7 @@ if (parentPort) {
             if (parentPort !== null && parentPort !== undefined) {
                 parentPort.postMessage({
                     id,
-                    error: error instanceof Error ? error.message : String(error),
+                    error: extractErrorMessage(error),
                     success: false,
                 });
             }

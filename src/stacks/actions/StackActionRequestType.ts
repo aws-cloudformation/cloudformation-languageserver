@@ -128,6 +128,7 @@ export type ValidationDetail = {
     Timestamp?: DateTime;
     Severity: 'INFO' | 'ERROR';
     Message: string;
+    ValidationStatusReason?: string;
     diagnosticId?: string;
 };
 

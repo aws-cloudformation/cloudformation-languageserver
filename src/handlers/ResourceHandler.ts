@@ -23,6 +23,7 @@ import { GetStackTemplateParams, GetStackTemplateResult } from '../stacks/StackR
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { EventType } from '../usageTracker/UsageTracker';
+import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('ResourceHandler');
@@ -203,7 +204,7 @@ export function getManagedResourceStackTemplateHandler(
                 log.error({
                     Handler: 'GetManagedResourceStackTemplateHandler',
                     StackName: params.stackName,
-                    ErrorMessage: error instanceof Error ? error.message : String(error),
+                    ErrorMessage: extractErrorMessage(error),
                     ErrorStack: error instanceof Error ? error.stack : undefined,
                     Error: error,
                 });
