@@ -22,7 +22,7 @@ import { CfnService } from '../../services/CfnService';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../../utils/Errors';
+import { extractErrorMessage, extractStatusReason } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { toString } from '../../utils/String';
 import { pointToPosition } from '../../utils/TypeConverters';
@@ -209,7 +209,7 @@ export async function waitForChangeSetValidation(
         return {
             phase: StackActionPhase.VALIDATION_FAILED,
             state: StackActionState.FAILED,
-            failureReason: extractErrorMessage(error),
+            failureReason: extractStatusReason(error) ?? extractErrorMessage(error),
         };
     }
 }
@@ -249,10 +249,11 @@ export async function waitForDeployment(
         }
     } catch (error) {
         logger.error(error, 'Deployment failed with error');
+
         return {
             phase: StackActionPhase.DEPLOYMENT_FAILED,
             state: StackActionState.FAILED,
-            failureReason: extractErrorMessage(error),
+            failureReason: extractStatusReason(error) ?? extractErrorMessage(error),
         };
     }
 }
