@@ -37,6 +37,7 @@ export function executionHandler(
             case UPDATE_REGION: {
                 const args = params.arguments ?? [];
                 if (args.length > 0) {
+                    components.awsCredentials.handleIamCredentialsDelete();
                     components.settingsManager.updateRegion(getRegion(args[0]));
                 }
                 break;
