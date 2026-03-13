@@ -23,7 +23,6 @@ export class Document {
         public readonly uri: DocumentUri = textDocument.uri,
         public readonly languageId: string = textDocument.languageId,
         public readonly version: number = textDocument.version,
-        public readonly lineCount: number = textDocument.lineCount,
     ) {
         const { extension, type } = detectDocumentType(textDocument.uri, textDocument.getText());
 
@@ -141,6 +140,10 @@ export class Document {
         return this.getText().split('\n');
     }
 
+    public getLineCount(): number {
+        return this.textDocument.lineCount;
+    }
+
     public positionAt(offset: number) {
         return this.textDocument.positionAt(offset);
     }
@@ -166,7 +169,7 @@ export class Document {
             cfnType: this.cfnFileType,
             languageId: this.languageId,
             version: this.version,
-            lineCount: this.lineCount,
+            lineCount: this.textDocument.lineCount,
         };
     }
 

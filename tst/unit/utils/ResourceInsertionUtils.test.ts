@@ -47,7 +47,7 @@ Parameters:
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.YAML;
             doc.getLine.returns('');
-            doc.lineCount = 5;
+            doc.getLineCount.returns(5);
 
             const mockNode = { endPosition: { row: 4, column: 0 } } as any;
 
@@ -60,7 +60,7 @@ Parameters:
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.YAML;
             doc.getLine.returns('    Type: AWS::S3::Bucket');
-            doc.lineCount = 5;
+            doc.getLineCount.returns(5);
 
             const mockNode = { endPosition: { row: 3, column: 0 } } as any;
 
@@ -72,7 +72,7 @@ Parameters:
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.YAML;
             doc.getLine.returns('content');
-            doc.lineCount = 3;
+            doc.getLineCount.returns(3);
 
             const result = getInsertPosition(undefined, doc);
             expect(result.position.line).toBe(3);
@@ -83,7 +83,7 @@ Parameters:
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.YAML;
             doc.getLine.withArgs(2).returns('');
-            doc.lineCount = 3;
+            doc.getLineCount.returns(3);
 
             const result = getInsertPosition(undefined, doc);
             expect(result.position.line).toBe(2);
@@ -92,7 +92,7 @@ Parameters:
         it('should handle JSON with comma prefix needed', () => {
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.JSON;
-            doc.lineCount = 5;
+            doc.getLineCount.returns(5);
             doc.getLine.withArgs(3).returns('    }');
             doc.getLine.withArgs(2).returns('      "Type": "AWS::S3::Bucket"');
 
@@ -105,7 +105,7 @@ Parameters:
         it('should handle JSON ending with comma', () => {
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.JSON;
-            doc.lineCount = 5;
+            doc.getLineCount.returns(5);
             doc.getLine.withArgs(3).returns('    },');
 
             const mockNode = { endPosition: { row: 4, column: 0 } } as any;
@@ -118,7 +118,7 @@ Parameters:
         it('should handle JSON ending with opening brace', () => {
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.JSON;
-            doc.lineCount = 3;
+            doc.getLineCount.returns(3);
             doc.getLine.withArgs(1).returns('  "Resources": {');
 
             const mockNode = { endPosition: { row: 2, column: 0 } } as any;
@@ -131,7 +131,7 @@ Parameters:
         it('should handle JSON with undefined previous line', () => {
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.JSON;
-            doc.lineCount = 3;
+            doc.getLineCount.returns(3);
             doc.getLine.returns(undefined);
 
             const mockNode = { endPosition: { row: 2, column: 0 } } as any;
@@ -143,7 +143,7 @@ Parameters:
         it('should handle JSON with all empty lines (malformed)', () => {
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.JSON;
-            doc.lineCount = 3;
+            doc.getLineCount.returns(3);
             doc.getLine.returns('   ');
 
             const mockNode = { endPosition: { row: 2, column: 0 } } as any;
@@ -155,7 +155,7 @@ Parameters:
         it('should handle JSON without Resources section', () => {
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.JSON;
-            doc.lineCount = 5;
+            doc.getLineCount.returns(5);
             doc.getLine.withArgs(3).returns('  "Parameters": {}');
 
             const result = getInsertPosition(undefined, doc);
