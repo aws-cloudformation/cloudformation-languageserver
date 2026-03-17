@@ -1,9 +1,14 @@
 import { CodeActionKind, Range, TextEdit } from 'vscode-languageserver';
+import { TopLevelSection } from '../context/CloudFormationEnums';
+import { getEntityMap } from '../context/SectionContextBuilder';
+import { Resource } from '../context/semantic/Entity';
 import { SyntaxTree } from '../context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
+import { DocumentType } from '../document/Document';
 import { DocumentManager } from '../document/DocumentManager';
 import { RelatedResourcesCodeAction } from '../protocol/RelatedResourcesProtocol';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
+import { RelationshipSchemaService } from '../services/RelationshipSchemaService';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import {
     combineResourcesToDocumentFormat,
@@ -14,10 +19,13 @@ import {
 
 const log = LoggerFactory.getLogger('RelatedResourcesSnippetProvider');
 
+const REF_PLACEHOLDER_PREFIX = '__CFN_REF_';
+const REF_PLACEHOLDER_SUFFIX = '__';
+
 export interface RelatedResourceObject {
     [logicalId: string]: {
         Type: string;
-        Properties?: Record<string, string>;
+        Properties?: Record<string, unknown>;
     };
 }
 
@@ -28,6 +36,7 @@ export class RelatedResourcesSnippetProvider {
         private readonly documentManager: DocumentManager,
         private readonly syntaxTreeManager: SyntaxTreeManager,
         private readonly schemaRetriever: SchemaRetriever,
+        private readonly relationshipSchemaService: RelationshipSchemaService,
     ) {}
 
     insertRelatedResources(
@@ -47,19 +56,25 @@ export class RelatedResourcesSnippetProvider {
             const syntaxTree: SyntaxTree | undefined = this.syntaxTreeManager.getSyntaxTree(templateUri);
             const editorSettings = this.documentManager.getEditorSettingsForDocument(templateUri);
 
+            const parentLogicalId = this.findParentLogicalId(syntaxTree, parentResourceType);
+
             const resources = relatedResourceTypes.map((resourceType) =>
-                this.generateResourceObject(resourceType, parentResourceType),
+                this.generateResourceObject(resourceType, parentResourceType, parentLogicalId, documentType),
             );
 
             const resourceSection = syntaxTree ? getResourceSection(syntaxTree) : undefined;
             const resourceSectionExists = resourceSection !== undefined;
 
-            const formattedText = combineResourcesToDocumentFormat(
+            let formattedText = combineResourcesToDocumentFormat(
                 resources,
                 documentType,
                 resourceSectionExists,
                 editorSettings,
             );
+
+            if (documentType === DocumentType.YAML) {
+                formattedText = this.replaceRefPlaceholders(formattedText);
+            }
 
             const insertPosition = getInsertPosition(resourceSection, document);
 
@@ -90,17 +105,28 @@ export class RelatedResourcesSnippetProvider {
         }
     }
 
-    private generateResourceObject(resourceType: string, parentResourceType: string): RelatedResourceObject {
+    private generateResourceObject(
+        resourceType: string,
+        parentResourceType: string,
+        parentLogicalId: string | undefined,
+        documentType: DocumentType,
+    ): RelatedResourceObject {
         const logicalId = this.generateLogicalId(resourceType, parentResourceType);
 
         try {
             const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
-            const resource: { Type: string; Properties?: Record<string, string> } = { Type: resourceType };
+            const resource: { Type: string; Properties?: Record<string, unknown> } = { Type: resourceType };
 
             if (schema?.required && schema.required.length > 0) {
                 resource.Properties = {};
                 for (const propName of schema.required) {
-                    resource.Properties[propName] = '';
+                    resource.Properties[propName] = this.getPropertyValueForRelatedResource(
+                        propName,
+                        resourceType,
+                        parentResourceType,
+                        parentLogicalId,
+                        documentType,
+                    );
                 }
             }
 
@@ -108,6 +134,86 @@ export class RelatedResourcesSnippetProvider {
         } catch {
             return { [logicalId]: { Type: resourceType } };
         }
+    }
+
+    /**
+     * Determines the property value for a related resource property.
+     * If the property references the parent resource type, returns a !Ref reference.
+     * Otherwise returns an empty string.
+     */
+    private getPropertyValueForRelatedResource(
+        propName: string,
+        resourceType: string,
+        parentResourceType: string,
+        parentLogicalId: string | undefined,
+        documentType: DocumentType,
+    ): unknown {
+        if (!parentLogicalId) {
+            return '';
+        }
+
+        const relationships = this.relationshipSchemaService.getRelationshipsForResourceType(resourceType);
+        if (!relationships) {
+            return '';
+        }
+
+        for (const rel of relationships.relationships) {
+            // Only match direct top-level property names
+            // rel.property may contain nested paths like "VpcConfig/SecurityGroupIds"
+            // We only match when the property path is exactly the propName (top-level)
+            if (rel.property === propName) {
+                const matchesParent = rel.relatedResourceTypes.some((rt) => rt.typeName === parentResourceType);
+                if (matchesParent) {
+                    if (documentType === DocumentType.YAML) {
+                        // Use a placeholder that will be replaced after YAML serialization
+                        return `${REF_PLACEHOLDER_PREFIX}${parentLogicalId}${REF_PLACEHOLDER_SUFFIX}`;
+                    } else {
+                        // For JSON, return the intrinsic function object
+                        return { Ref: parentLogicalId };
+                    }
+                }
+            }
+        }
+
+        return '';
+    }
+
+    /**
+     * Replaces Ref placeholders in the serialized YAML output with proper !Ref intrinsic functions.
+     * The YAML serializer quotes strings starting with !, so we use placeholders during serialization
+     * and then replace them with the unquoted !Ref syntax afterward.
+     */
+    private replaceRefPlaceholders(text: string): string {
+        // Match both quoted and unquoted placeholders
+        // The YAML serializer may produce: '__CFN_REF_MyVpc__' or __CFN_REF_MyVpc__
+        const placeholderRegex = new RegExp(
+            `['"]?${REF_PLACEHOLDER_PREFIX}([a-zA-Z0-9]+)${REF_PLACEHOLDER_SUFFIX}['"]?`,
+            'g',
+        );
+        return text.replaceAll(placeholderRegex, '!Ref $1');
+    }
+
+    /**
+     * Finds the logical ID of the first resource in the template that matches the given resource type.
+     */
+    private findParentLogicalId(syntaxTree: SyntaxTree | undefined, parentResourceType: string): string | undefined {
+        if (!syntaxTree) {
+            return undefined;
+        }
+
+        const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
+        if (!resourcesMap) {
+            return undefined;
+        }
+
+        for (const [logicalId, context] of resourcesMap) {
+            const resource = context.entity as Resource;
+            if (resource?.Type === parentResourceType) {
+                return logicalId;
+            }
+        }
+
+        return undefined;
     }
 
     private generateLogicalId(resourceType: string, parentResourceType: string): string {

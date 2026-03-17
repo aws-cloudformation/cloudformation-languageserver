@@ -35,6 +35,7 @@ describe('RelatedResourcesSnippetProvider', () => {
         mockComponents.documentManager,
         mockComponents.syntaxTreeManager,
         mockComponents.schemaRetriever,
+        mockComponents.relationshipSchemaService,
     );
     const mockGetEntityMap = vi.mocked(getEntityMap) as any;
 
@@ -334,6 +335,180 @@ Resources:
             expect(() => {
                 provider.insertRelatedResources(templateUri, ['AWS::Lambda::Function'], 'AWS::S3::Bucket');
             }).toThrow('Document manager error');
+        });
+
+        it('should populate !Ref for YAML when property relates to parent resource type', () => {
+            const templateUri = 'file:///test/template.yaml';
+            const yamlContent = `AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  MyVpc:
+    Type: AWS::EC2::VPC
+`;
+            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+
+            const mockSyntaxTree = {
+                findTopLevelSections: vi.fn().mockReturnValue(
+                    new Map([
+                        [
+                            'Resources',
+                            {
+                                endPosition: { row: 3, column: 0 },
+                            },
+                        ],
+                    ]),
+                ),
+            };
+
+            documentManager.get.withArgs(templateUri).returns(document);
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree as any);
+            mockGetEntityMap.mockReturnValue(new Map([['MyVpc', { entity: { Type: 'AWS::EC2::VPC' } }]]));
+            schemaRetriever.getDefault.returns({
+                schemas: new Map([['AWS::EC2::Subnet', { required: ['VpcId', 'AvailabilityZone'] }]]),
+            } as any);
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::EC2::Subnet').returns({
+                resourceType: 'AWS::EC2::Subnet',
+                relationships: [
+                    {
+                        property: 'VpcId',
+                        relatedResourceTypes: [{ typeName: 'AWS::EC2::VPC', attribute: '/properties/VpcId' }],
+                    },
+                ],
+            });
+
+            const result = provider.insertRelatedResources(templateUri, ['AWS::EC2::Subnet'], 'AWS::EC2::VPC');
+
+            expect(result).toBeDefined();
+            const textEdit = result.edit?.changes![templateUri][0];
+            expect(textEdit?.newText).toContain('VpcId: !Ref MyVpc');
+            expect(textEdit?.newText).toContain('AvailabilityZone: ""');
+        });
+
+        it('should populate {"Ref": ...} for JSON when property relates to parent resource type', () => {
+            const templateUri = 'file:///test/template.json';
+            const jsonContent = `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyVpc": {
+      "Type": "AWS::EC2::VPC"
+    }
+  }
+}`;
+            const document = new Document(TextDocument.create(templateUri, 'json', 1, jsonContent));
+
+            const mockSyntaxTree = {
+                findTopLevelSections: vi.fn().mockReturnValue(
+                    new Map([
+                        [
+                            'Resources',
+                            {
+                                endPosition: { row: 6, column: 0 },
+                            },
+                        ],
+                    ]),
+                ),
+            };
+
+            documentManager.get.withArgs(templateUri).returns(document);
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree as any);
+            mockGetEntityMap.mockReturnValue(new Map([['MyVpc', { entity: { Type: 'AWS::EC2::VPC' } }]]));
+            schemaRetriever.getDefault.returns({
+                schemas: new Map([['AWS::EC2::Subnet', { required: ['VpcId', 'AvailabilityZone'] }]]),
+            } as any);
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::EC2::Subnet').returns({
+                resourceType: 'AWS::EC2::Subnet',
+                relationships: [
+                    {
+                        property: 'VpcId',
+                        relatedResourceTypes: [{ typeName: 'AWS::EC2::VPC', attribute: '/properties/VpcId' }],
+                    },
+                ],
+            });
+
+            const result = provider.insertRelatedResources(templateUri, ['AWS::EC2::Subnet'], 'AWS::EC2::VPC');
+
+            expect(result).toBeDefined();
+            const textEdit = result.edit?.changes![templateUri][0];
+            expect(textEdit?.newText).toContain('"Ref": "MyVpc"');
+        });
+
+        it('should leave property empty when it does not relate to parent resource type', () => {
+            const templateUri = 'file:///test/template.yaml';
+            const yamlContent = `AWSTemplateFormatVersion: "2010-09-09"
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+`;
+            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+
+            const mockSyntaxTree = {
+                findTopLevelSections: vi.fn().mockReturnValue(
+                    new Map([
+                        [
+                            'Resources',
+                            {
+                                endPosition: { row: 3, column: 0 },
+                            },
+                        ],
+                    ]),
+                ),
+            };
+
+            documentManager.get.withArgs(templateUri).returns(document);
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(mockSyntaxTree as any);
+            mockGetEntityMap.mockReturnValue(new Map([['MyBucket', { entity: { Type: 'AWS::S3::Bucket' } }]]));
+            schemaRetriever.getDefault.returns({
+                schemas: new Map([['AWS::Lambda::Function', { required: ['Code', 'Role', 'Runtime'] }]]),
+            } as any);
+            // Role relates to IAM::Role, not S3::Bucket
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::Lambda::Function').returns({
+                resourceType: 'AWS::Lambda::Function',
+                relationships: [
+                    {
+                        property: 'Role',
+                        relatedResourceTypes: [{ typeName: 'AWS::IAM::Role', attribute: '/properties/Arn' }],
+                    },
+                ],
+            });
+
+            const result = provider.insertRelatedResources(templateUri, ['AWS::Lambda::Function'], 'AWS::S3::Bucket');
+
+            expect(result).toBeDefined();
+            const textEdit = result.edit?.changes![templateUri][0];
+            // None of the properties should have !Ref since none relate to S3::Bucket
+            expect(textEdit?.newText).not.toContain('!Ref');
+            expect(textEdit?.newText).toContain('Role: ""');
+            expect(textEdit?.newText).toContain('Code: ""');
+            expect(textEdit?.newText).toContain('Runtime: ""');
+        });
+
+        it('should leave property empty when parent logical ID is not found in template', () => {
+            const templateUri = 'file:///test/template.yaml';
+            const yamlContent = 'AWSTemplateFormatVersion: "2010-09-09"\n';
+            const document = new Document(TextDocument.create(templateUri, 'yaml', 1, yamlContent));
+
+            documentManager.get.withArgs(templateUri).returns(document);
+            syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns(undefined);
+
+            schemaRetriever.getDefault.returns({
+                schemas: new Map([['AWS::EC2::Subnet', { required: ['VpcId'] }]]),
+            } as any);
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::EC2::Subnet').returns({
+                resourceType: 'AWS::EC2::Subnet',
+                relationships: [
+                    {
+                        property: 'VpcId',
+                        relatedResourceTypes: [{ typeName: 'AWS::EC2::VPC', attribute: '/properties/VpcId' }],
+                    },
+                ],
+            });
+
+            const result = provider.insertRelatedResources(templateUri, ['AWS::EC2::Subnet'], 'AWS::EC2::VPC');
+
+            expect(result).toBeDefined();
+            const textEdit = result.edit?.changes![templateUri][0];
+            // No parent found, so VpcId should be empty
+            expect(textEdit?.newText).not.toContain('!Ref');
+            expect(textEdit?.newText).toContain('VpcId: ""');
         });
     });
 });
