@@ -1,0 +1,84 @@
+name: Update Release Manifest
+run-name: Update Release Manifest ${{ inputs.tag }} ${{ github.actor }} ${{ github.event_name }}
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: "The release tag (e.g. v1.5.0-beta, v1.5.0)"
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "The release tag (e.g. v1.5.0-beta, v1.5.0)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  get-configs:
+    uses: ./.github/workflows/configs.yml
+
+  update-manifest:
+    needs: [get-configs]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.get-configs.outputs.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install git-secrets
+        run: |
+          git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets
+          cd /tmp/git-secrets
+          sudo make install
+
+      - name: Generate release manifest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run generate-release-manifest
+
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet assets/release-manifest.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.diff.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'Update release manifest for ${{ inputs.tag }}'
+          branch: automated/update-release-manifest
+          delete-branch: true
+          title: 'Update release manifest for ${{ inputs.tag }}'
+          body: |
+            Automated release manifest update for `${{ inputs.tag }}`.
+
+            This PR was created by the `update-release-manifest` workflow.
+            Please review the manifest changes and approve.
+
+            > ⚠️ This file is protected — only automated PRs from this workflow are allowed to modify `assets/release-manifest.json`.
+            > ℹ️ To trigger validation, close and reopen this PR.
+          labels: release-manifest, automated
+          add-paths: assets/release-manifest.json

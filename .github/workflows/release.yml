@@ -311,3 +311,12 @@ jobs:
           files: artifacts/*.zip
           generate_release_notes: true
           fail_on_unmatched_files: true
+
+  update-release-manifest:
+    needs: [version-and-tag, release]
+    uses: ./.github/workflows/update-release-manifest.yml
+    permissions:
+      contents: write
+      pull-requests: write
+    with:
+      tag: ${{ needs.version-and-tag.outputs.tag }}

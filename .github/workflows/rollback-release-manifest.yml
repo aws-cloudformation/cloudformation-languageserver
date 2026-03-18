@@ -1,0 +1,61 @@
+name: Rollback Release Manifest
+run-name: Rollback Release Manifest ${{ github.actor }}
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Get previous manifest version
+        id: previous
+        run: |
+          PREV_COMMIT=$(git log --skip=1 -1 --format="%H" -- assets/release-manifest.json)
+          if [[ -z "$PREV_COMMIT" ]]; then
+            echo "::error::No previous version of release-manifest.json found"
+            exit 1
+          fi
+
+          PREV_MESSAGE=$(git log --skip=1 -1 --format="%s" -- assets/release-manifest.json)
+          echo "commit=$PREV_COMMIT" >> $GITHUB_OUTPUT
+          echo "message=$PREV_MESSAGE" >> $GITHUB_OUTPUT
+
+      - name: Install git-secrets
+        run: |
+          git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets
+          cd /tmp/git-secrets
+          sudo make install
+
+      - name: Restore previous manifest
+        run: git checkout ${{ steps.previous.outputs.commit }} -- assets/release-manifest.json
+
+      - name: Create Rollback PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'Rollback release manifest to previous version'
+          branch: automated/rollback-release-manifest
+          delete-branch: true
+          title: '🚨 Rollback release manifest to previous version'
+          body: |
+            **Emergency rollback** of `assets/release-manifest.json` to the previous version.
+
+            Reverted to the state from commit: `${{ steps.previous.outputs.commit }}`
+            > ${{ steps.previous.outputs.message }}
+
+            Triggered manually by @${{ github.actor }}.
+
+            > ℹ️ To trigger validation, close and reopen this PR.
+          labels: release-manifest, automated, rollback
+          add-paths: assets/release-manifest.json

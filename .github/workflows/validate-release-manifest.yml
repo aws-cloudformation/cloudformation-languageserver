@@ -1,0 +1,110 @@
+name: Validate Release Manifest
+run-name: Validate Release Manifest
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/release-manifest.json'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Verify PR author is automation
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          ALLOWED_AUTHORS="github-actions[bot]"
+          if [[ ! " $ALLOWED_AUTHORS " =~ " $PR_AUTHOR " ]]; then
+            echo "::error::Only automated PRs are allowed to modify assets/release-manifest.json. PR author '$PR_AUTHOR' is not allowed."
+            exit 1
+          fi
+
+      - name: Verify PR branch name
+        env:
+          PR_BRANCH: ${{ github.head_ref }}
+        run: |
+          ALLOWED_BRANCHES="automated/update-release-manifest automated/rollback-release-manifest"
+          if [[ ! " $ALLOWED_BRANCHES " =~ " $PR_BRANCH " ]]; then
+            echo "::error::Release manifest changes must come from an automated branch. Got '$PR_BRANCH'."
+            exit 1
+          fi
+
+      - name: Validate manifest JSON structure
+        run: |
+          FILE="assets/release-manifest.json"
+
+          # Must be valid JSON
+          if ! jq empty "$FILE" 2>/dev/null; then
+            echo "::error::release-manifest.json is not valid JSON"
+            exit 1
+          fi
+
+          # Required top-level fields
+          for field in manifestSchemaVersion artifactId artifactDescription isManifestDeprecated beta prod; do
+            if ! jq -e "has(\"$field\")" "$FILE" > /dev/null; then
+              echo "::error::Missing required field: $field"
+              exit 1
+            fi
+          done
+
+          # Validate each environment has correct structure
+          for env in beta prod; do
+            COUNT=$(jq ".[\"$env\"] | length" "$FILE")
+            if [[ "$COUNT" -eq 0 ]]; then
+              echo "::error::Environment '$env' has no versions"
+              exit 1
+            fi
+
+            # Exactly one entry marked as latest
+            LATEST_COUNT=$(jq "[.[\"$env\"][] | select(.latest == true)] | length" "$FILE")
+            if [[ "$LATEST_COUNT" -ne 1 ]]; then
+              echo "::error::Environment '$env' must have exactly 1 entry with latest=true, found $LATEST_COUNT"
+              exit 1
+            fi
+
+            # Each version must have serverVersion and targets
+            INVALID=$(jq "[.[\"$env\"][] | select(.serverVersion == null or .targets == null or (.targets | length == 0))] | length" "$FILE")
+            if [[ "$INVALID" -ne 0 ]]; then
+              echo "::error::Environment '$env' has $INVALID version(s) missing serverVersion or targets"
+              exit 1
+            fi
+
+            # Each target must have platform, arch, and contents with url
+            BAD_TARGETS=$(jq "[.[\"$env\"][] | .targets[] | select(.platform == null or .arch == null or (.contents | length == 0) or (.contents[] | .url == null))] | length" "$FILE")
+            if [[ "$BAD_TARGETS" -ne 0 ]]; then
+              echo "::error::Environment '$env' has $BAD_TARGETS target(s) with missing platform, arch, or download URL"
+              exit 1
+            fi
+          done
+
+          echo "✅ Manifest validation passed"
+
+      - name: Verify download URLs are reachable
+        run: |
+          FILE="assets/release-manifest.json"
+          FAILED=0
+
+          # Check the latest version's URLs for beta and prod
+          for env in beta prod; do
+            URLS=$(jq -r ".[\"$env\"][] | select(.latest == true) | .targets[].contents[].url" "$FILE")
+            while IFS= read -r url; do
+              if [[ -z "$url" ]]; then continue; fi
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 10 "$url" || echo "000")
+              if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 400 ]]; then
+                echo "::error::URL unreachable (HTTP $HTTP_CODE): $url"
+                FAILED=1
+              fi
+            done <<< "$URLS"
+          done
+
+          if [[ "$FAILED" -eq 1 ]]; then
+            exit 1
+          fi
+          echo "✅ All download URLs for latest versions are reachable"
