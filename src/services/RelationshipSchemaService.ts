@@ -25,6 +25,9 @@ export type RelationshipGroupData = Record<string, RelatedResourceType[]>;
 
 export class RelationshipSchemaService {
     private readonly relationshipCache: Map<string, ResourceTypeRelationships> = new Map();
+    // Reverse index: maps a referenced type to the set of types that reference it
+    // e.g., "AWS::IAM::Role" → Set { "AWS::Lambda::Function", "AWS::ECS::TaskDefinition", ... }
+    private readonly reverseRelationshipCache: Map<string, Set<string>> = new Map();
 
     constructor(private readonly schemaFilePath: string = join(__dirname, 'assets', 'relationship_schemas.json')) {
         this.loadAllSchemas();
@@ -38,6 +41,8 @@ export class RelationshipSchemaService {
             for (const [resourceTypeKey, relationships] of Object.entries(allSchemas)) {
                 try {
                     const processedRelationships: ResourceRelationship[] = [];
+                    // Convert key format: AWS-Lambda-Function → AWS::Lambda::Function
+                    const sourceType = this.convertKeyToResourceType(resourceTypeKey);
 
                     for (const relationshipGroup of relationships) {
                         for (const [property, relatedTypes] of Object.entries(relationshipGroup)) {
@@ -45,6 +50,20 @@ export class RelationshipSchemaService {
                                 property,
                                 relatedResourceTypes: relatedTypes,
                             });
+
+                            // Build reverse index only for top-level properties (no nested paths)
+                            // Nested properties (containing /) can't be populated with !Ref/!GetAtt
+                            if (!property.includes('/')) {
+                                for (const relatedType of relatedTypes) {
+                                    const referencedType = relatedType.typeName;
+                                    let existingSet = this.reverseRelationshipCache.get(referencedType);
+                                    if (!existingSet) {
+                                        existingSet = new Set();
+                                        this.reverseRelationshipCache.set(referencedType, existingSet);
+                                    }
+                                    existingSet.add(sourceType);
+                                }
+                            }
                         }
                     }
 
@@ -66,6 +85,10 @@ export class RelationshipSchemaService {
         return resourceType.replaceAll('::', '-');
     }
 
+    private convertKeyToResourceType(key: string): string {
+        return key.replaceAll('-', '::');
+    }
+
     getRelationshipsForResourceType(resourceType: string): ResourceTypeRelationships | undefined {
         const cacheKey = this.convertResourceTypeToKey(resourceType);
         const result = this.relationshipCache.get(cacheKey);
@@ -81,15 +104,23 @@ export class RelationshipSchemaService {
     }
 
     getAllRelatedResourceTypes(resourceType: string): Set<string> {
+        const relatedTypes = new Set<string>();
+
+        // Outgoing: types that this resource's properties reference
         const relationships = this.getRelationshipsForResourceType(resourceType);
-        if (!relationships) {
-            return new Set<string>();
+        if (relationships) {
+            for (const relationship of relationships.relationships) {
+                for (const relatedType of relationship.relatedResourceTypes) {
+                    relatedTypes.add(relatedType.typeName);
+                }
+            }
         }
 
-        const relatedTypes = new Set<string>();
-        for (const relationship of relationships.relationships) {
-            for (const relatedType of relationship.relatedResourceTypes) {
-                relatedTypes.add(relatedType.typeName);
+        // Incoming: types whose properties reference this resource
+        const incoming = this.reverseRelationshipCache.get(resourceType);
+        if (incoming) {
+            for (const type of incoming) {
+                relatedTypes.add(type);
             }
         }
 

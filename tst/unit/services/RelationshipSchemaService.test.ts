@@ -35,6 +35,38 @@ describe('RelationshipSchemaService', () => {
             expect(result).toBeInstanceOf(Set);
             expect(result.size).toBe(0);
         });
+
+        it('should include incoming references (types that reference the given type)', () => {
+            // AWS::IAM::Role is referenced by many types (Lambda, ECS, etc.)
+            // but IAM::Role's own properties only reference a few types
+            const result = service.getAllRelatedResourceTypes('AWS::IAM::Role');
+
+            expect(result).toBeInstanceOf(Set);
+            // Lambda::Function references IAM::Role in its Role property
+            expect(result.has('AWS::Lambda::Function')).toBe(true);
+        });
+
+        it('should include both outgoing and incoming references', () => {
+            // IAM::Role's own properties reference ManagedPolicy (outgoing)
+            // AND Lambda::Function references IAM::Role (incoming)
+            const result = service.getAllRelatedResourceTypes('AWS::IAM::Role');
+
+            // Outgoing: IAM::Role -> ManagedPolicyArns -> ManagedPolicy
+            expect(result.has('AWS::IAM::ManagedPolicy')).toBe(true);
+            // Incoming: Lambda::Function -> Role -> IAM::Role
+            expect(result.has('AWS::Lambda::Function')).toBe(true);
+        });
+
+        it('should include incoming references for types with no outgoing relationships', () => {
+            // AWS::EC2::VPC has no entry in relationship_schemas.json (no outgoing)
+            // but many types reference it (Subnet, SecurityGroup, etc.)
+            const result = service.getAllRelatedResourceTypes('AWS::EC2::VPC');
+
+            expect(result).toBeInstanceOf(Set);
+            expect(result.size).toBeGreaterThan(0);
+            // EC2::Subnet references VPC in its VpcId property
+            expect(result.has('AWS::EC2::Subnet')).toBe(true);
+        });
     });
 
     describe('getRelationshipContext', () => {

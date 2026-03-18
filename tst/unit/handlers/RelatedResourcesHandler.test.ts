@@ -129,17 +129,47 @@ describe('RelatedResourcesHandler', () => {
     });
 
     describe('getRelatedResourceTypesHandler', () => {
-        it('should return related resource types for a given resource type', () => {
+        it('should return related resource types that have exactly one populatable relationship', () => {
             const handler = getRelatedResourceTypesHandler(mockComponents);
             const params = { parentResourceType: 'AWS::S3::Bucket' };
 
-            const relatedTypes = new Set(['AWS::Lambda::Function', 'AWS::IAM::Role']);
+            const relatedTypes = new Set(['AWS::Lambda::Function', 'AWS::CloudTrail::Trail']);
             relationshipSchemaService.getAllRelatedResourceTypes.withArgs('AWS::S3::Bucket').returns(relatedTypes);
+
+            // Lambda has exactly 1 non-array top-level reference to S3
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::Lambda::Function').returns({
+                resourceType: 'AWS::Lambda::Function',
+                relationships: [
+                    {
+                        property: 'Code/S3Bucket',
+                        relatedResourceTypes: [{ typeName: 'AWS::S3::Bucket', attribute: '/properties/BucketName' }],
+                    },
+                ],
+            });
+
+            // CloudTrail has exactly 1 non-array top-level reference to S3
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::CloudTrail::Trail').returns({
+                resourceType: 'AWS::CloudTrail::Trail',
+                relationships: [
+                    {
+                        property: 'S3BucketName',
+                        relatedResourceTypes: [{ typeName: 'AWS::S3::Bucket', attribute: '/properties/BucketName' }],
+                    },
+                ],
+            });
+
+            mockComponents.schemaRetriever.getDefault.returns({
+                schemas: new Map([
+                    ['AWS::Lambda::Function', { properties: {} }],
+                    ['AWS::CloudTrail::Trail', { properties: { S3BucketName: { type: 'string' } } }],
+                ]),
+            } as any);
 
             const result = handler(params, mockToken);
 
-            expect(result).toEqual(['AWS::Lambda::Function', 'AWS::IAM::Role']);
-            expect(relationshipSchemaService.getAllRelatedResourceTypes.calledWith('AWS::S3::Bucket')).toBe(true);
+            // Lambda only has nested ref (Code/S3Bucket), so 0 top-level → excluded
+            // CloudTrail has 1 top-level non-array ref → included
+            expect(result).toEqual(['AWS::CloudTrail::Trail']);
         });
 
         it('should return empty array when no related types found', () => {
@@ -161,6 +191,150 @@ describe('RelatedResourcesHandler', () => {
             relationshipSchemaService.getAllRelatedResourceTypes.withArgs('AWS::S3::Bucket').throws(error);
 
             expect(() => handler(params, mockToken)).toThrow('Relationship service error');
+        });
+
+        it('should filter out resource types that only have array-property relationships', () => {
+            const handler = getRelatedResourceTypesHandler(mockComponents);
+            const params = { parentResourceType: 'AWS::IAM::Role' };
+
+            const relatedTypes = new Set(['AWS::IAM::ManagedPolicy', 'AWS::Lambda::Function']);
+            relationshipSchemaService.getAllRelatedResourceTypes.withArgs('AWS::IAM::Role').returns(relatedTypes);
+
+            // ManagedPolicy has only array relationship (Roles)
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::IAM::ManagedPolicy').returns({
+                resourceType: 'AWS::IAM::ManagedPolicy',
+                relationships: [
+                    {
+                        property: 'Roles',
+                        relatedResourceTypes: [{ typeName: 'AWS::IAM::Role', attribute: '/properties/RoleName' }],
+                    },
+                ],
+            });
+
+            // Lambda has exactly one non-array relationship (Role)
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::Lambda::Function').returns({
+                resourceType: 'AWS::Lambda::Function',
+                relationships: [
+                    {
+                        property: 'Role',
+                        relatedResourceTypes: [{ typeName: 'AWS::IAM::Role', attribute: '/properties/Arn' }],
+                    },
+                ],
+            });
+
+            mockComponents.schemaRetriever.getDefault.returns({
+                schemas: new Map([
+                    ['AWS::IAM::ManagedPolicy', { properties: { Roles: { type: 'array' } } }],
+                    ['AWS::Lambda::Function', { properties: { Role: { type: 'string' } } }],
+                ]),
+            } as any);
+
+            const result = handler(params, mockToken);
+
+            expect(result).toEqual(['AWS::Lambda::Function']);
+            expect(result).not.toContain('AWS::IAM::ManagedPolicy');
+        });
+
+        it('should filter out resource types with 2 top-level refs to parent (including arrays)', () => {
+            const handler = getRelatedResourceTypesHandler(mockComponents);
+            const params = { parentResourceType: 'AWS::IAM::Role' };
+
+            const relatedTypes = new Set(['AWS::IAM::InstanceProfile']);
+            relationshipSchemaService.getAllRelatedResourceTypes.withArgs('AWS::IAM::Role').returns(relatedTypes);
+
+            // InstanceProfile has 2 top-level refs: Roles (array) + InstanceProfileName
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::IAM::InstanceProfile').returns({
+                resourceType: 'AWS::IAM::InstanceProfile',
+                relationships: [
+                    {
+                        property: 'Roles',
+                        relatedResourceTypes: [
+                            { typeName: 'AWS::IAM::Role', attribute: '/properties/RoleName' },
+                            { typeName: 'AWS::IAM::Role', attribute: '/properties/Arn' },
+                        ],
+                    },
+                    {
+                        property: 'InstanceProfileName',
+                        relatedResourceTypes: [{ typeName: 'AWS::IAM::Role', attribute: '/properties/RoleName' }],
+                    },
+                ],
+            });
+
+            mockComponents.schemaRetriever.getDefault.returns({
+                schemas: new Map([
+                    [
+                        'AWS::IAM::InstanceProfile',
+                        { properties: { Roles: { type: 'array' }, InstanceProfileName: { type: 'string' } } },
+                    ],
+                ]),
+            } as any);
+
+            const result = handler(params, mockToken);
+
+            // 2 total top-level refs (Roles + InstanceProfileName) → excluded
+            expect(result).toEqual([]);
+        });
+
+        it('should filter out resource types with no relationships to parent', () => {
+            const handler = getRelatedResourceTypesHandler(mockComponents);
+            const params = { parentResourceType: 'AWS::IAM::Role' };
+
+            const relatedTypes = new Set(['AWS::EMR::Cluster']);
+            relationshipSchemaService.getAllRelatedResourceTypes.withArgs('AWS::IAM::Role').returns(relatedTypes);
+
+            // EMR::Cluster has no relationships (came from reverse lookup)
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::EMR::Cluster').returns(undefined);
+
+            const result = handler(params, mockToken);
+
+            // No relationships found → excluded
+            expect(result).toEqual([]);
+        });
+
+        it('should filter out resource types where all relationships to parent are arrays', () => {
+            const handler = getRelatedResourceTypesHandler(mockComponents);
+            const params = { parentResourceType: 'AWS::EC2::SecurityGroup' };
+
+            const relatedTypes = new Set(['AWS::EC2::Instance']);
+            relationshipSchemaService.getAllRelatedResourceTypes
+                .withArgs('AWS::EC2::SecurityGroup')
+                .returns(relatedTypes);
+
+            relationshipSchemaService.getRelationshipsForResourceType.withArgs('AWS::EC2::Instance').returns({
+                resourceType: 'AWS::EC2::Instance',
+                relationships: [
+                    {
+                        property: 'SecurityGroups',
+                        relatedResourceTypes: [
+                            { typeName: 'AWS::EC2::SecurityGroup', attribute: '/properties/GroupId' },
+                        ],
+                    },
+                    {
+                        property: 'SecurityGroupIds',
+                        relatedResourceTypes: [
+                            { typeName: 'AWS::EC2::SecurityGroup', attribute: '/properties/GroupId' },
+                        ],
+                    },
+                ],
+            });
+
+            mockComponents.schemaRetriever.getDefault.returns({
+                schemas: new Map([
+                    [
+                        'AWS::EC2::Instance',
+                        {
+                            properties: {
+                                SecurityGroups: { type: 'array' },
+                                SecurityGroupIds: { type: 'array' },
+                            },
+                        },
+                    ],
+                ]),
+            } as any);
+
+            const result = handler(params, mockToken);
+
+            expect(result).toEqual([]);
         });
     });
 
