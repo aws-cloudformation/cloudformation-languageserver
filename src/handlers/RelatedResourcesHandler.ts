@@ -108,9 +108,7 @@ function hasExactlyOnePopulatableRelationship(
             continue;
         }
 
-        const isArray =
-            schema?.properties?.[rel.property]?.type === 'array' ||
-            schema?.properties?.[rel.property]?.items !== undefined;
+        const isArray = schema?.properties?.[rel.property]?.type === 'array';
         topLevelParentRefs.push({ property: rel.property, isArray });
     }
 

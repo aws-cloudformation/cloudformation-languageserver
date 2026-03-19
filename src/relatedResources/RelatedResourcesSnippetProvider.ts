@@ -220,7 +220,7 @@ export class RelatedResourcesSnippetProvider {
 
             // Skip array properties - don't auto-populate them with references
             const propSchema = schema?.properties?.[rel.property];
-            if (propSchema?.type === 'array' || propSchema?.items !== undefined) {
+            if (propSchema?.type === 'array') {
                 continue;
             }
 
@@ -258,7 +258,7 @@ export class RelatedResourcesSnippetProvider {
         // Skip array properties - don't auto-populate them with references
         const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
         const propSchema = schema?.properties?.[propName];
-        if (propSchema?.type === 'array' || propSchema?.items !== undefined) {
+        if (propSchema?.type === 'array') {
             return '';
         }
 
