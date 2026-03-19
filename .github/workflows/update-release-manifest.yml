@@ -56,16 +56,13 @@ jobs:
         run: npm run generate-release-manifest
 
       - name: Check for changes
-        id: diff
         run: |
           if git diff --quiet assets/release-manifest.json; then
-            echo "changed=false" >> $GITHUB_OUTPUT
-          else
-            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "::error::No changes detected in release-manifest.json. Expected updates after release."
+            exit 1
           fi
 
       - name: Create Pull Request
-        if: steps.diff.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           commit-message: 'Update release manifest for ${{ inputs.tag }}'

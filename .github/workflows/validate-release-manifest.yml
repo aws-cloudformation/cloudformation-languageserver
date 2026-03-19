@@ -96,8 +96,8 @@ jobs:
             URLS=$(jq -r ".[\"$env\"][] | select(.latest == true) | .targets[].contents[].url" "$FILE")
             while IFS= read -r url; do
               if [[ -z "$url" ]]; then continue; fi
-              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --head --max-time 10 "$url" || echo "000")
-              if [[ "$HTTP_CODE" -lt 200 || "$HTTP_CODE" -ge 400 ]]; then
+              HTTP_CODE=$(curl -sL -o /dev/null -w "%{http_code}" --head --max-time 10 "$url" || echo "000")
+              if [[ "$HTTP_CODE" -ne 200 ]]; then
                 echo "::error::URL unreachable (HTTP $HTTP_CODE): $url"
                 FAILED=1
               fi
