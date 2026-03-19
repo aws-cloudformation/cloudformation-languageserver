@@ -3,6 +3,7 @@ import { TopLevelSection } from '../context/CloudFormationEnums';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Resource } from '../context/semantic/Entity';
 import {
+    AuthoredResource,
     GetRelatedResourceTypesParams,
     InsertRelatedResourcesParams,
     RelatedResourcesCodeAction,
@@ -19,7 +20,7 @@ import {
 
 export function getAuthoredResourceTypesHandler(
     components: ServerComponents,
-): RequestHandler<TemplateUri, string[], void> {
+): RequestHandler<TemplateUri, AuthoredResource[], void> {
     return (rawParams) => {
         try {
             const templateUri = parseWithPrettyError(parseTemplateUriParams, rawParams);
@@ -27,14 +28,17 @@ export function getAuthoredResourceTypesHandler(
             if (syntaxTree) {
                 const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
                 if (resourcesMap) {
-                    const resourceTypes = [...resourcesMap.values()]
-                        .map((context) => {
-                            const resource = context.entity as Resource;
-                            return resource?.Type;
-                        })
-                        .filter((type): type is string => type !== undefined && type !== null);
-
-                    return [...new Set(resourceTypes)];
+                    const resources: AuthoredResource[] = [];
+                    for (const [logicalId, context] of resourcesMap) {
+                        const resource = context.entity as Resource;
+                        if (resource?.Type) {
+                            resources.push({
+                                logicalId,
+                                type: resource.Type,
+                            });
+                        }
+                    }
+                    return resources;
                 }
             }
 
@@ -124,7 +128,7 @@ export function insertRelatedResourcesHandler(
 ): RequestHandler<InsertRelatedResourcesParams, RelatedResourcesCodeAction, void> {
     return (rawParams) => {
         try {
-            const { templateUri, relatedResourceTypes, parentResourceType } = parseWithPrettyError(
+            const { templateUri, relatedResourceTypes, parentResourceType, parentLogicalId } = parseWithPrettyError(
                 parseInsertRelatedResourcesParams,
                 rawParams,
             );
@@ -132,6 +136,7 @@ export function insertRelatedResourcesHandler(
                 templateUri,
                 relatedResourceTypes,
                 parentResourceType,
+                parentLogicalId,
             );
         } catch (error) {
             handleLspError(error, 'Failed to insert related resources');

@@ -46,6 +46,7 @@ export class RelatedResourcesSnippetProvider {
         templateUri: string,
         relatedResourceTypes: string[],
         parentResourceType: string,
+        providedParentLogicalId?: string,
     ): RelatedResourcesCodeAction {
         this.currentTemplateUri = templateUri;
 
@@ -59,7 +60,8 @@ export class RelatedResourcesSnippetProvider {
             const syntaxTree: SyntaxTree | undefined = this.syntaxTreeManager.getSyntaxTree(templateUri);
             const editorSettings = this.documentManager.getEditorSettingsForDocument(templateUri);
 
-            const parentLogicalId = this.findParentLogicalId(syntaxTree, parentResourceType);
+            // Use provided logical ID if available, otherwise find the first match
+            const parentLogicalId = providedParentLogicalId ?? this.findParentLogicalId(syntaxTree, parentResourceType);
 
             const resources = relatedResourceTypes.map((resourceType) =>
                 this.generateResourceObject(resourceType, parentResourceType, parentLogicalId, documentType),

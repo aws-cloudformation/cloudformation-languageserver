@@ -16,6 +16,7 @@ const InsertRelatedResourcesParamsSchema = z.object({
     templateUri: NonEmptyZodString,
     relatedResourceTypes: z.array(NonEmptyZodString).min(1),
     parentResourceType: NonEmptyZodString,
+    parentLogicalId: NonEmptyZodString.optional(),
 });
 
 export function parseTemplateUriParams(input: unknown): TemplateUri {

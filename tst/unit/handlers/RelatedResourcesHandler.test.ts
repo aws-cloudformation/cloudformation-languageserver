@@ -37,7 +37,7 @@ describe('RelatedResourcesHandler', () => {
     });
 
     describe('getAuthoredResourceTypesHandler', () => {
-        it('should return unique resource types from template', () => {
+        it('should return authored resources with logical IDs and types', () => {
             const handler = getAuthoredResourceTypesHandler(mockComponents);
             const templateUri = 'file:///test/template.yaml';
 
@@ -48,7 +48,7 @@ describe('RelatedResourcesHandler', () => {
                 entity: { Type: 'AWS::Lambda::Function' },
             };
             const mockResourceContext3 = {
-                entity: { Type: 'AWS::S3::Bucket' }, // Duplicate
+                entity: { Type: 'AWS::S3::Bucket' },
             };
 
             syntaxTreeManager.getSyntaxTree.withArgs(templateUri).returns({} as any);
@@ -62,7 +62,11 @@ describe('RelatedResourcesHandler', () => {
 
             const result = handler(templateUri, mockToken);
 
-            expect(result).toEqual(['AWS::S3::Bucket', 'AWS::Lambda::Function']);
+            expect(result).toEqual([
+                { logicalId: 'Bucket1', type: 'AWS::S3::Bucket' },
+                { logicalId: 'Function1', type: 'AWS::Lambda::Function' },
+                { logicalId: 'Bucket2', type: 'AWS::S3::Bucket' },
+            ]);
             expect(syntaxTreeManager.getSyntaxTree.calledWith(templateUri)).toBe(true);
         });
 
@@ -114,7 +118,7 @@ describe('RelatedResourcesHandler', () => {
 
             const result = handler(templateUri, mockToken);
 
-            expect(result).toEqual(['AWS::S3::Bucket']);
+            expect(result).toEqual([{ logicalId: 'Bucket1', type: 'AWS::S3::Bucket' }]);
         });
 
         it('should handle errors and rethrow them', () => {
@@ -339,7 +343,7 @@ describe('RelatedResourcesHandler', () => {
     });
 
     describe('insertRelatedResourcesHandler', () => {
-        it('should insert related resources and return code action', () => {
+        it('should insert related resources and return code action without parentLogicalId', () => {
             const handler = insertRelatedResourcesHandler(mockComponents);
             const params = {
                 templateUri: 'file:///test/template.yaml',
@@ -358,19 +362,52 @@ describe('RelatedResourcesHandler', () => {
             };
 
             mockComponents.relatedResourcesSnippetProvider.insertRelatedResources
-                .withArgs('file:///test/template.yaml', ['AWS::Lambda::Function', 'AWS::IAM::Role'], 'AWS::S3::Bucket')
+                .withArgs(
+                    'file:///test/template.yaml',
+                    ['AWS::Lambda::Function', 'AWS::IAM::Role'],
+                    'AWS::S3::Bucket',
+                    undefined,
+                )
                 .returns(mockCodeAction);
 
             const result = handler(params, mockToken);
 
             expect(result).toEqual(mockCodeAction);
-            expect(
-                mockComponents.relatedResourcesSnippetProvider.insertRelatedResources.calledWith(
-                    'file:///test/template.yaml',
-                    ['AWS::Lambda::Function', 'AWS::IAM::Role'],
-                    'AWS::S3::Bucket',
-                ),
-            ).toBe(true);
+        });
+
+        it('should insert related resources with parentLogicalId when provided', () => {
+            const handler = insertRelatedResourcesHandler(mockComponents);
+            const params = {
+                templateUri: 'file:///test/template.yaml',
+                relatedResourceTypes: ['AWS::Lambda::Function'],
+                parentResourceType: 'AWS::IAM::Role',
+                parentLogicalId: 'MyRole',
+            };
+
+            const mockCodeAction = {
+                title: 'Insert 1 related resources',
+                kind: 'refactor',
+                edit: {
+                    changes: {
+                        'file:///test/template.yaml': [],
+                    },
+                },
+            };
+
+            mockComponents.relatedResourcesSnippetProvider.insertRelatedResources.returns(mockCodeAction);
+
+            const result = handler(params, mockToken);
+
+            expect(result).toEqual(mockCodeAction);
+            // Verify it was called with the parentLogicalId
+            expect(mockComponents.relatedResourcesSnippetProvider.insertRelatedResources.calledOnce).toBe(true);
+            const call = mockComponents.relatedResourcesSnippetProvider.insertRelatedResources.getCall(0);
+            expect(call.args).toEqual([
+                'file:///test/template.yaml',
+                ['AWS::Lambda::Function'],
+                'AWS::IAM::Role',
+                'MyRole',
+            ]);
         });
 
         it('should handle errors and rethrow them', () => {

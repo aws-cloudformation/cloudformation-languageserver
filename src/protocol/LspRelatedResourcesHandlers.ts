@@ -1,5 +1,6 @@
 import { Connection, RequestHandler } from 'vscode-languageserver';
 import {
+    AuthoredResource,
     GetAuthoredResourceTypesRequest,
     GetRelatedResourceTypesParams,
     GetRelatedResourceTypesRequest,
@@ -12,7 +13,7 @@ import {
 export class LspRelatedResourcesHandlers {
     constructor(private readonly connection: Connection) {}
 
-    onGetAuthoredResourceTypes(handler: RequestHandler<TemplateUri, string[], void>) {
+    onGetAuthoredResourceTypes(handler: RequestHandler<TemplateUri, AuthoredResource[], void>) {
         this.connection.onRequest(GetAuthoredResourceTypesRequest.method, handler);
     }
 
