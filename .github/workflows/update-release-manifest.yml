@@ -1,20 +1,8 @@
 name: Update Release Manifest
-run-name: Update Release Manifest ${{ inputs.tag }} ${{ github.actor }} ${{ github.event_name }}
 
 on:
   workflow_call:
-    inputs:
-      tag:
-        description: "The release tag (e.g. v1.5.0-beta, v1.5.0)"
-        required: true
-        type: string
-
   workflow_dispatch:
-    inputs:
-      tag:
-        description: "The release tag (e.g. v1.5.0-beta, v1.5.0)"
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -65,12 +53,12 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: 'Update release manifest for ${{ inputs.tag }}'
+          commit-message: 'ci: Update release manifest'
           branch: automated/update-release-manifest
           delete-branch: true
-          title: 'Update release manifest for ${{ inputs.tag }}'
+          title: 'ci: Update Release Manifest'
           body: |
-            Automated release manifest update for `${{ inputs.tag }}`.
+            Automated release manifest update.
 
             This PR was created by the `update-release-manifest` workflow.
             Please review the manifest changes and approve.

@@ -39,15 +39,17 @@ jobs:
           sudo make install
 
       - name: Revert last manifest commit
-        run: git revert --no-commit ${{ steps.previous.outputs.commit }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git revert ${{ steps.previous.outputs.commit }}
 
       - name: Create Rollback PR
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: 'Revert: ${{ steps.previous.outputs.message }}'
           branch: automated/rollback-release-manifest
           delete-branch: true
-          title: '🚨 Rollback release manifest to previous version'
+          title: 'revert: Rollback release manifest to previous version'
           body: |
             **Emergency rollback** of `assets/release-manifest.json` to the previous version.
 

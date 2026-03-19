@@ -318,5 +318,3 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    with:
-      tag: ${{ needs.version-and-tag.outputs.tag }}
