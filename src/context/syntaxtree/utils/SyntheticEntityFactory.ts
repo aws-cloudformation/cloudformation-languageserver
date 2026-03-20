@@ -14,7 +14,7 @@ export function createSyntheticNode(
     return {
         // @ts-expect-error Cannot create a tree from a synthetic node
         tree: undefined,
-        id: Math.random() * 1000000, // eslint-disable-line
+        id: Math.random() * 1_000_000,
         typeId: Number.MAX_SAFE_INTEGER,
         grammarId: Number.MAX_SAFE_INTEGER,
         type: CommonNodeTypes.SYNTHETIC_ENTITY,

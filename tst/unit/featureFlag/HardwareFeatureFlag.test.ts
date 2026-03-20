@@ -9,15 +9,15 @@ const mockNodeVersion = 'v20.0.0';
 const mockProcessArch = 'arm64';
 const mockProcessPlatform = 'darwin';
 
+vi.mock('os', () => ({
+    arch: vi.fn(() => mockArch),
+    platform: vi.fn(() => mockPlatform),
+    release: vi.fn(() => mockRelease),
+    version: vi.fn(() => mockVersion),
+}));
+
 describe('HardwareFeatureFlag', () => {
     beforeEach(() => {
-        vi.mock('os', () => ({
-            arch: vi.fn(() => mockArch),
-            platform: vi.fn(() => mockPlatform),
-            release: vi.fn(() => mockRelease),
-            version: vi.fn(() => mockVersion),
-        }));
-
         Object.defineProperty(process, 'version', { value: mockNodeVersion, writable: true });
         Object.defineProperty(process, 'arch', { value: mockProcessArch, writable: true });
         Object.defineProperty(process, 'platform', { value: mockProcessPlatform, writable: true });

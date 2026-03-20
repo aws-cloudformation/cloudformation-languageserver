@@ -9,6 +9,10 @@ import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createMockSyntaxTreeManager } from '../../utils/MockServerComponents';
 import { createMockYamlSyntaxTree } from '../../utils/TestTree';
 
+vi.mock('../../../src/context/SectionContextBuilder', () => ({
+    getEntityMap: vi.fn(),
+}));
+
 describe('ConditionCompletionProvider', () => {
     const mockSyntaxTreeManager = createMockSyntaxTreeManager();
     const mockSyntaxTree = createMockYamlSyntaxTree();
@@ -43,10 +47,6 @@ describe('ConditionCompletionProvider', () => {
         'EnableVPCFlowLogs',
         'IsComplianceRequired',
     ];
-
-    vi.mock('../../../src/context/SectionContextBuilder', () => ({
-        getEntityMap: vi.fn(),
-    }));
 
     beforeEach(() => {
         vi.clearAllMocks();
