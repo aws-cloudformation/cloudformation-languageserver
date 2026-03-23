@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "@aws/cloudformation-languageserver@1.5.0",
-  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.5.0-ab2714a9-4b0b-4056-9114-9cd78828ed98",
+  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.5.0-7d1cfb53-a303-4369-97bc-7033eaa0da09",
   "creationInfo": {
-    "created": "2026-03-20T17:39:58.128Z",
+    "created": "2026-03-23T18:17:39.358Z",
     "creators": [
       "Tool: npm/cli-10.9.2"
     ]
@@ -410,11 +410,11 @@
     },
     {
       "name": "@aws-sdk/client-cloudcontrol",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
-      "versionInfo": "3.1013.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
+      "versionInfo": "3.1014.0",
       "packageFileName": "node_modules/@aws-sdk/client-cloudcontrol",
       "description": "AWS SDK for JavaScript Cloudcontrol Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-cloudcontrol/-/client-cloudcontrol-3.1013.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-cloudcontrol/-/client-cloudcontrol-3.1014.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-cloudcontrol",
       "licenseDeclared": "Apache-2.0",
@@ -422,23 +422,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-cloudcontrol@3.1013.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-cloudcontrol@3.1014.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "2e4ddc6c882d40331bdc1e2fa0aadda8dccf27cbf6101021afc219ac4cd27362fc8f087fae39ad8c84b63d6421c3b3122ea5977bcbe4a2ed304065120700c17d"
+          "checksumValue": "731c28db5e393ae0fa5609978c65bc694994c9cbd39cb3d29e791b7b6b3b9403e94953824c372fcb47247b61e114ddcbf37c079d70e263458f4a7895ccdd0e14"
         }
       ]
     },
     {
       "name": "@aws-sdk/client-cloudformation",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
-      "versionInfo": "3.1013.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
+      "versionInfo": "3.1014.0",
       "packageFileName": "node_modules/@aws-sdk/client-cloudformation",
       "description": "AWS SDK for JavaScript Cloudformation Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-cloudformation/-/client-cloudformation-3.1013.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-cloudformation/-/client-cloudformation-3.1014.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-cloudformation",
       "licenseDeclared": "Apache-2.0",
@@ -446,23 +446,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-cloudformation@3.1013.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-cloudformation@3.1014.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "edee696f3cc4ba9d7cfdb3cc419770fca65edbde4121b945b4d37454357bc93082b25896de39bdc25e6a152f09f14687f453dcfea83498e3c953c339004a50f5"
+          "checksumValue": "e6aa39a4b8d366b3ea40dd6d2e7c9730cd9a05e5e7c2706f6e3d88c3f024f99ea6b4308d70c8fa3dc9a54c5c5fe897d914af0a26bac2d05cba479dd49d4d953a"
         }
       ]
     },
     {
       "name": "@aws-sdk/client-iam",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
-      "versionInfo": "3.1013.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
+      "versionInfo": "3.1014.0",
       "packageFileName": "node_modules/@aws-sdk/client-iam",
       "description": "AWS SDK for JavaScript Iam Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-iam/-/client-iam-3.1013.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-iam/-/client-iam-3.1014.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-iam",
       "licenseDeclared": "Apache-2.0",
@@ -470,23 +470,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-iam@3.1013.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-iam@3.1014.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "3daf8d92ac297bce5e27faac8a38d88377006b988bb72227dd972ba66d3cb0d29edbf2b4d2dadc36432d1bae06f69f5642fa6c2b23834dd230a5a9e62c64625c"
+          "checksumValue": "d8517cf8da4f2951393bbab53bd1b275da32c009ce04132b588584ab3e16aa170df05db6b05e6c0f3f085de31462c19fccd7654f242a72816a01aa073a24ae7f"
         }
       ]
     },
     {
       "name": "@aws-sdk/client-s3",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
-      "versionInfo": "3.1013.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
+      "versionInfo": "3.1014.0",
       "packageFileName": "node_modules/@aws-sdk/client-s3",
       "description": "AWS SDK for JavaScript S3 Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-s3/-/client-s3-3.1013.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-s3/-/client-s3-3.1014.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-s3",
       "licenseDeclared": "Apache-2.0",
@@ -494,23 +494,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-s3@3.1013.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-s3@3.1014.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "bc577247245ab45fb13fd162fb86a56649b365a76a380337e0f9ba49466c62dba636b5a480c73fa455884e7b2ae9e96d33ca9c57fbdc8a74356415d69bf3e52a"
+          "checksumValue": "d172eb393e029b734486188c13b97ff0b6d35d2e0a76c6d1e1d4ab636d3b28d2937072cb4d9f445ede19a609d37cbbd6405de918fdaeb38662d5f60ba3437e3b"
         }
       ]
     },
     {
       "name": "@aws-sdk/client-sts",
-      "SPDXID": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
-      "versionInfo": "3.1013.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
+      "versionInfo": "3.1014.0",
       "packageFileName": "node_modules/@aws-sdk/client-sts",
       "description": "AWS SDK for JavaScript Sts Client for Node.js, Browser and React Native",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-sts/-/client-sts-3.1013.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/client-sts/-/client-sts-3.1014.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/clients/client-sts",
       "licenseDeclared": "Apache-2.0",
@@ -518,23 +518,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/client-sts@3.1013.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/client-sts@3.1014.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "6fea7f14c1f3d81f424f54d918098de18a499989f791249d34c7fe21186636a26d171eeb8c6bbb32ede9388217752ccdf8c7828123a66e1c437240e2f06aea2a"
+          "checksumValue": "911ba5f29b282497979bcd0555c7cc31f8ff7d3fad686d1c546d79a36749b9d434881139b60ec61d8437b3858f3e75b1cd09200d97fb2766c42334d8ca398e4a"
         }
       ]
     },
     {
       "name": "@aws-sdk/core",
-      "SPDXID": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "versionInfo": "3.973.22",
+      "SPDXID": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "versionInfo": "3.973.23",
       "packageFileName": "node_modules/@aws-sdk/core",
       "description": "Core functions & classes shared by multiple AWS SDK clients.",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/core/-/core-3.973.22.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/core/-/core-3.973.23.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/core",
       "licenseDeclared": "Apache-2.0",
@@ -542,13 +542,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/core@3.973.22"
+          "referenceLocator": "pkg:npm/%40aws-sdk/core@3.973.23"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "958ea0e4bf798c13603948ad5217d5d8dfd6fa2d3c8c7125df1b8b383612407e527f9d15f8b9156014b26512edbf6472b97657895ef243e69ca6cc0ad6d96b38"
+          "checksumValue": "6a826772f0f55ef96867d24b9caa9344bf5d072f92ce4af2a1a83d553f95d53aacb94808c55f5c9c154cfe1ac38b6bc4f1b0ea2e20d1f278ab75170276d26ed3"
         }
       ]
     },
@@ -578,11 +578,11 @@
     },
     {
       "name": "@aws-sdk/credential-provider-env",
-      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.20",
-      "versionInfo": "3.972.20",
+      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.21",
+      "versionInfo": "3.972.21",
       "packageFileName": "node_modules/@aws-sdk/credential-provider-env",
       "description": "AWS credential provider that sources credentials from known environment variables",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-env/-/credential-provider-env-3.972.20.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-env/-/credential-provider-env-3.972.21.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-env",
       "licenseDeclared": "Apache-2.0",
@@ -590,23 +590,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-env@3.972.20"
+          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-env@3.972.21"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "bc8d1037de83171de0f40ba77ce585dc24b870c92a16247f58cfc5c8ff501ebe6b67674a3e46303f7b428003af1aebbd09723b742d6f53615552e67eb5fa4dbd"
+          "checksumValue": "06401f2aaf01778b210ad79cd6eb0dcfffeeacf245fd2672d78a89cb1912691250fd5bf5815874559493992eda13a68b3042e4155e701c7ad2f5971d1bc2b1b2"
         }
       ]
     },
     {
       "name": "@aws-sdk/credential-provider-http",
-      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
-      "versionInfo": "3.972.22",
+      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
+      "versionInfo": "3.972.23",
       "packageFileName": "node_modules/@aws-sdk/credential-provider-http",
       "description": "AWS credential provider for containers and HTTP sources",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-http/-/credential-provider-http-3.972.22.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-http/-/credential-provider-http-3.972.23.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-http",
       "licenseDeclared": "Apache-2.0",
@@ -614,23 +614,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-http@3.972.22"
+          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-http@3.972.23"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "692ffcd6c99a9697bb5c39ee41f3aae0b20fb9a5763d1294d9a313ac772a3b9043e07c0ee6411238735c79cd8061f06d2ed203aa017a4578ac8019df2bf8edd3"
+          "checksumValue": "e17677f86bb90d8f3f9fccd014706070a4c5ee1590978d86e8263dc5f5d5a36776e4533f9589299aece1628a58a0f2f52135a42763920507d812ee4945f1ce84"
         }
       ]
     },
     {
       "name": "@aws-sdk/credential-provider-ini",
-      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
-      "versionInfo": "3.972.22",
+      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
+      "versionInfo": "3.972.23",
       "packageFileName": "node_modules/@aws-sdk/credential-provider-ini",
       "description": "AWS credential provider that sources credentials from ~/.aws/credentials and ~/.aws/config",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-ini/-/credential-provider-ini-3.972.22.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-ini/-/credential-provider-ini-3.972.23.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-ini",
       "licenseDeclared": "Apache-2.0",
@@ -638,23 +638,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-ini@3.972.22"
+          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-ini@3.972.23"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "ae917c7c14f42e594c0e9efcb3ad9a2f603ff0c69c723c89d0e473aaef9900378408b4abac258879e5ecb916a6fa9c6200c908d6e2320d926680b19d69d90f5f"
+          "checksumValue": "3d92d2994d091693420c545e89d05ecec80be638bd8ce06bcbc0a765dc38263e9dd0adb3dc5b67a78e0d5e0003a98c7904b32efd91ee8df78945e683a15f88c1"
         }
       ]
     },
     {
       "name": "@aws-sdk/credential-provider-login",
-      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.22",
-      "versionInfo": "3.972.22",
+      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.23",
+      "versionInfo": "3.972.23",
       "packageFileName": "node_modules/@aws-sdk/credential-provider-login",
       "description": "AWS credential provider that sources credentials from aws login cached tokens",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-login/-/credential-provider-login-3.972.22.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-login/-/credential-provider-login-3.972.23.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-login",
       "licenseDeclared": "Apache-2.0",
@@ -662,23 +662,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-login@3.972.22"
+          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-login@3.972.23"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "bb7dc23bdcde3739e555283db564c2458c5a1a4aabd6e7d4eaa7829699b301a6d765af11671428557c4be53e77a19245cd0623f85226391092b22ec7ec1efb81"
+          "checksumValue": "3a613fa5291b30cddd0a3d4774e9d9e645e728af91fd8cfe91b06e82b68179ca74a4602cdb57845117d0473fb53768332072d5c8620fd4c12393fb92ac5b2782"
         }
       ]
     },
     {
       "name": "@aws-sdk/credential-provider-node",
-      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
-      "versionInfo": "3.972.23",
+      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
+      "versionInfo": "3.972.24",
       "packageFileName": "node_modules/@aws-sdk/credential-provider-node",
       "description": "AWS credential provider that sources credentials from a Node.JS environment. ",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-node/-/credential-provider-node-3.972.23.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-node/-/credential-provider-node-3.972.24.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-node",
       "licenseDeclared": "Apache-2.0",
@@ -686,23 +686,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-node@3.972.23"
+          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-node@3.972.24"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "53cb722db2ce648b6e5564c7d1acbd816a38c4ca99c2a41b835a0ccdd5381504a44e9a977a69b85f4ba828147a965a804ad801a77d3388a1491d3038de5e2a33"
+          "checksumValue": "f49c22edaa6cdc07d489c272179b9d61a74fca93e90b0519e8148aaff42345b542a51552d7073ed50e80119feacfc27826b69e45ddb8ee94b3c8c41220755e6f"
         }
       ]
     },
     {
       "name": "@aws-sdk/credential-provider-process",
-      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.20",
-      "versionInfo": "3.972.20",
+      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.21",
+      "versionInfo": "3.972.21",
       "packageFileName": "node_modules/@aws-sdk/credential-provider-process",
       "description": "AWS credential provider that sources credential_process from ~/.aws/credentials and ~/.aws/config",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-process/-/credential-provider-process-3.972.20.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-process/-/credential-provider-process-3.972.21.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-process",
       "licenseDeclared": "Apache-2.0",
@@ -710,23 +710,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-process@3.972.20"
+          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-process@3.972.21"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "4117e4ec66c0e3f1c346384fdd0611e9006bfd02ab795a0ecefbe54479ceb868182647a83e03d8dcb008d642b564c819e211fd2a21a9ef9eff9eda25f883408a"
+          "checksumValue": "9d1c5b78e27513581503494d41ecee3159ddc7e65cbb2696fd1074e6952cce7379071ca44a51fa2a467fec26bfb9b25fde2e4dde9d20c0d3b9ce03d20b38fec3"
         }
       ]
     },
     {
       "name": "@aws-sdk/credential-provider-sso",
-      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.22",
-      "versionInfo": "3.972.22",
+      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.23",
+      "versionInfo": "3.972.23",
       "packageFileName": "node_modules/@aws-sdk/credential-provider-sso",
       "description": "AWS credential provider that exchanges a resolved SSO login token file for temporary AWS credentials",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-sso/-/credential-provider-sso-3.972.22.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-sso/-/credential-provider-sso-3.972.23.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-sso",
       "licenseDeclared": "Apache-2.0",
@@ -734,23 +734,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-sso@3.972.22"
+          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-sso@3.972.23"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "e2faa549a51b063e1a34f54a7c1eb25ee210d99da6bcb7c819b6b63b3cc5eb3524378dfbfcf196b31054d85f103d2147b62eac79c92fc825e2754dc7f91f0dbd"
+          "checksumValue": "00f51c7000ee60f2cbd1fda1b6933c67873369b4a61ce768e2be355ba94a119772fbe70d278d9169dab2eb1e13a2910dcebde147a598332862ba2aad6dffe700"
         }
       ]
     },
     {
       "name": "@aws-sdk/credential-provider-web-identity",
-      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.22",
-      "versionInfo": "3.972.22",
+      "SPDXID": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.23",
+      "versionInfo": "3.972.23",
       "packageFileName": "node_modules/@aws-sdk/credential-provider-web-identity",
       "description": "AWS credential provider that calls STS assumeRole for temporary AWS credentials",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-web-identity/-/credential-provider-web-identity-3.972.22.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/credential-provider-web-identity/-/credential-provider-web-identity-3.972.23.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/credential-provider-web-identity",
       "licenseDeclared": "Apache-2.0",
@@ -758,13 +758,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-web-identity@3.972.22"
+          "referenceLocator": "pkg:npm/%40aws-sdk/credential-provider-web-identity@3.972.23"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "ff0375098836ad52e15bcfe32f131669c42b9296b29e72fee23fd9f9ee97d4f7e813a3620b405e3b0de2d099ad66b2ae9fce70355e469aca6fb9626285f79e53"
+          "checksumValue": "1f924daad2303aefdf7889e630c59c2b474be6bf3ded17849fb9f69b5e837740cf0fd800d8783c0aae140f367ff4ecda2e1feea8133ab1e8b1cf453a162d846a"
         }
       ]
     },
@@ -816,10 +816,10 @@
     },
     {
       "name": "@aws-sdk/middleware-flexible-checksums",
-      "SPDXID": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
-      "versionInfo": "3.974.2",
+      "SPDXID": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
+      "versionInfo": "3.974.3",
       "packageFileName": "node_modules/@aws-sdk/middleware-flexible-checksums",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/middleware-flexible-checksums/-/middleware-flexible-checksums-3.974.2.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/middleware-flexible-checksums/-/middleware-flexible-checksums-3.974.3.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/middleware-flexible-checksums",
       "licenseDeclared": "Apache-2.0",
@@ -827,13 +827,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/middleware-flexible-checksums@3.974.2"
+          "referenceLocator": "pkg:npm/%40aws-sdk/middleware-flexible-checksums@3.974.3"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "e2ca0dfcde11ea9b5d9c7c3b8573d50d930820bfaf84df2bc2d2dd0f24b4b83ec4c6169db49ce895304833978a4a46f0e6e0446c8c2d25cf07086d8d33ab4dfe"
+          "checksumValue": "7c1ec534b1f5f953d4b3440bdcf2eb1d6f830f880abba75a1605adcaadd1d18d0bc7c0cb64fbf2180c4264d141c47f8cdb1b7d2af0495fa512c23baabe2b6609"
         }
       ]
     },
@@ -931,10 +931,10 @@
     },
     {
       "name": "@aws-sdk/middleware-sdk-s3",
-      "SPDXID": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
-      "versionInfo": "3.972.22",
+      "SPDXID": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
+      "versionInfo": "3.972.23",
       "packageFileName": "node_modules/@aws-sdk/middleware-sdk-s3",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/middleware-sdk-s3/-/middleware-sdk-s3-3.972.22.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/middleware-sdk-s3/-/middleware-sdk-s3-3.972.23.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/middleware-sdk-s3",
       "licenseDeclared": "Apache-2.0",
@@ -942,13 +942,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/middleware-sdk-s3@3.972.22"
+          "referenceLocator": "pkg:npm/%40aws-sdk/middleware-sdk-s3@3.972.23"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "76451c471178ad5a4f6f21e9c63080a462ba6fb2699d27a8eed0e835a92944a9a22cc0aa832e2d9460607846099d980bac0e317398d52ae5e0be0a8aa94d7c2b"
+          "checksumValue": "e744201c63d001bdaf7aa14e9931750371ac02494b1d95cbe3b29b637e6484891f6d71f93cbbeaa4473f80e00404f8ffc85c6b960c73ffc9aa59c593371064c1"
         }
       ]
     },
@@ -977,10 +977,10 @@
     },
     {
       "name": "@aws-sdk/middleware-user-agent",
-      "SPDXID": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
-      "versionInfo": "3.972.23",
+      "SPDXID": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
+      "versionInfo": "3.972.24",
       "packageFileName": "node_modules/@aws-sdk/middleware-user-agent",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/middleware-user-agent/-/middleware-user-agent-3.972.23.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/middleware-user-agent/-/middleware-user-agent-3.972.24.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/middleware-user-agent",
       "licenseDeclared": "Apache-2.0",
@@ -988,23 +988,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/middleware-user-agent@3.972.23"
+          "referenceLocator": "pkg:npm/%40aws-sdk/middleware-user-agent@3.972.24"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "1d0bbc428a866594ef8344a997d1f7f504ec48c17082efbccb3fd018a9dd5c52e4f4564c88288880109595354a303bd56e0a88cc3f6283efc7997b082f645bfa"
+          "checksumValue": "74b4d6cba21f00c84d89212f32bd3b83fa99e786deea92ea97155b95b17a03369f9a6180ccc323f2a32863d078f98813fa063d21cbb166c94d874dcbe8fc8c09"
         }
       ]
     },
     {
       "name": "@aws-sdk/nested-clients",
-      "SPDXID": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
-      "versionInfo": "3.996.12",
+      "SPDXID": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
+      "versionInfo": "3.996.13",
       "packageFileName": "node_modules/@aws-sdk/nested-clients",
       "description": "Nested clients for AWS SDK packages.",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/nested-clients/-/nested-clients-3.996.12.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/nested-clients/-/nested-clients-3.996.13.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/nested-clients",
       "licenseDeclared": "Apache-2.0",
@@ -1012,22 +1012,22 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/nested-clients@3.996.12"
+          "referenceLocator": "pkg:npm/%40aws-sdk/nested-clients@3.996.13"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "28b7501893d29bdf2e2c8368950d13a25f0e01b93b83463bce99472752bcdef6cc207d776a80af47a4e1a3aeb1b9e5b897869994481518b5819c3f227d432c19"
+          "checksumValue": "a6d6751c5e326073495fc720145fbc35d60eebd5c92999fb7edd3fca75777348426cdfbcf5f01bacb4be7ea9e2536b56f28f4a7ea863f05521f883d76f642cbb"
         }
       ]
     },
     {
       "name": "@aws-sdk/region-config-resolver",
-      "SPDXID": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
-      "versionInfo": "3.972.8",
+      "SPDXID": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
+      "versionInfo": "3.972.9",
       "packageFileName": "node_modules/@aws-sdk/region-config-resolver",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/region-config-resolver/-/region-config-resolver-3.972.8.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/region-config-resolver/-/region-config-resolver-3.972.9.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/awslabs/smithy-typescript/tree/main/packages-internal/region-config-resolver",
       "licenseDeclared": "Apache-2.0",
@@ -1035,22 +1035,22 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/region-config-resolver@3.972.8"
+          "referenceLocator": "pkg:npm/%40aws-sdk/region-config-resolver@3.972.9"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "d5e0f8ba14c379a99b3bf3cd203546d7d03afafe0d743ef1cf02c70eeb47b14ab3d01fa2ebad4cc100767983b8fdcadc0af0a2406e12466d64f35939e05108bf"
+          "checksumValue": "790f9d154d396510bf942d97a5895848f957b57dd54fcb27e6da3137616fec45e5328036a7d57bbd404aa87ba77c3e1344ba7152af18f0e97f9c2aa2bf7dbb36"
         }
       ]
     },
     {
       "name": "@aws-sdk/signature-v4-multi-region",
-      "SPDXID": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.10",
-      "versionInfo": "3.996.10",
+      "SPDXID": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.11",
+      "versionInfo": "3.996.11",
       "packageFileName": "node_modules/@aws-sdk/signature-v4-multi-region",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/signature-v4-multi-region/-/signature-v4-multi-region-3.996.10.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/signature-v4-multi-region/-/signature-v4-multi-region-3.996.11.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/signature-v4-multi-region",
       "licenseDeclared": "Apache-2.0",
@@ -1058,23 +1058,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/signature-v4-multi-region@3.996.10"
+          "referenceLocator": "pkg:npm/%40aws-sdk/signature-v4-multi-region@3.996.11"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "c8949b15379d87531c7ea5daf706738dc86a436a6eab93c8fea473e645238365174b998ee0c05805b797699daba7f87e65b91c604768e10b226a1f69b32a31ac"
+          "checksumValue": "48a81963bc7a025a0b5173b6d052469e4289ddae825f3343b7a3d8b36caaa0fce0534c4a59c5281862461014ec7cce5e8a1296e3695bc29fac5f30022db4ac68"
         }
       ]
     },
     {
       "name": "@aws-sdk/token-providers",
-      "SPDXID": "SPDXRef-Package-aws-sdk.token-providers-3.1013.0",
-      "versionInfo": "3.1013.0",
+      "SPDXID": "SPDXRef-Package-aws-sdk.token-providers-3.1014.0",
+      "versionInfo": "3.1014.0",
       "packageFileName": "node_modules/@aws-sdk/token-providers",
       "description": "A collection of token providers",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/token-providers/-/token-providers-3.1013.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/token-providers/-/token-providers-3.1014.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages/token-providers",
       "licenseDeclared": "Apache-2.0",
@@ -1082,13 +1082,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/token-providers@3.1013.0"
+          "referenceLocator": "pkg:npm/%40aws-sdk/token-providers@3.1014.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "20bd5ce7852f6ee111aecf682e6e6bbe4ccc722c218699f514bd12942dd750ca0b94585d06c58981028af0ee5fb102f16c556a8db8c5c7d38192b9f8e17f4f1f"
+          "checksumValue": "8074c7354a1a38636b496925df603bc05b14efc8e535396a31c70bbb46f2524e42cac6185dac4d308a27215af861cca40bbbe0b434b9001bb3f37822cba7f324"
         }
       ]
     },
@@ -1188,10 +1188,10 @@
     },
     {
       "name": "@aws-sdk/util-user-agent-node",
-      "SPDXID": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
-      "versionInfo": "3.973.9",
+      "SPDXID": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
+      "versionInfo": "3.973.10",
       "packageFileName": "node_modules/@aws-sdk/util-user-agent-node",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/util-user-agent-node/-/util-user-agent-node-3.973.9.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/util-user-agent-node/-/util-user-agent-node-3.973.10.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/util-user-agent-node",
       "licenseDeclared": "Apache-2.0",
@@ -1199,23 +1199,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/util-user-agent-node@3.973.9"
+          "referenceLocator": "pkg:npm/%40aws-sdk/util-user-agent-node@3.973.10"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "8de16aaa9f0a0ff3f93bea9e2b1c867aeed611521914da6b9e46838c69813a3c3163069f081869c53815d53956e8bf1eefa561fec88dca536637f3a648814151"
+          "checksumValue": "13df73793b1c09cfa94cc7ecbe77e2e9fa0fa4a99d0f57197ce0bbfcff1452b8eca10760f551163d10fec5d15db8a9df3d7c1cbdbcb9f0094ef63c3017a53dea"
         }
       ]
     },
     {
       "name": "@aws-sdk/xml-builder",
-      "SPDXID": "SPDXRef-Package-aws-sdk.xml-builder-3.972.14",
-      "versionInfo": "3.972.14",
+      "SPDXID": "SPDXRef-Package-aws-sdk.xml-builder-3.972.15",
+      "versionInfo": "3.972.15",
       "packageFileName": "node_modules/@aws-sdk/xml-builder",
       "description": "XML utilities for the AWS SDK",
-      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/xml-builder/-/xml-builder-3.972.14.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@aws-sdk/xml-builder/-/xml-builder-3.972.15.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/aws/aws-sdk-js-v3/tree/main/packages-internal/xml-builder",
       "licenseDeclared": "Apache-2.0",
@@ -1223,13 +1223,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40aws-sdk/xml-builder@3.972.14"
+          "referenceLocator": "pkg:npm/%40aws-sdk/xml-builder@3.972.15"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "1bf61df019e7ca1f10aea2dff235896e2c449d2714156db87bfc0e04661dc350a5e2bf34297fc3bc7c8cd86559daf4e9ec9e204c4afc2172654da740f3e51fb9"
+          "checksumValue": "3f131194214d8909e47bd611dbdbe3150c33e23abee90d38ace5457930d1d8aed0a6ff61f453963b11becc98da81e8a661b5aa1376d3b8b8e6af25870166ef68"
         }
       ]
     },
@@ -1594,6 +1594,30 @@
       ]
     },
     {
+      "name": "@harperfast/extended-iterable",
+      "SPDXID": "SPDXRef-Package-harperfast.extended-iterable-1.0.3",
+      "versionInfo": "1.0.3",
+      "packageFileName": "node_modules/@harperfast/extended-iterable",
+      "description": "Extended iterable class, providing lazy array-like methods with automatic async and return/throw forwarding",
+      "downloadLocation": "https://registry.npmjs.org/@harperfast/extended-iterable/-/extended-iterable-1.0.3.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/harperdb/extended-iterable#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40harperfast/extended-iterable@1.0.3"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "b1201885071adeb0d6b505074803de3bb6b1148509388ea19f5823442e403d51356bdd2dbb24fc7f9588811b05861580ee1b4d923bb6bde07d7962fa6078bf2f"
+        }
+      ]
+    },
+    {
       "name": "@isaacs/cliui",
       "SPDXID": "SPDXRef-Package-isaacs.cliui-8.0.2",
       "versionInfo": "8.0.2",
@@ -1643,11 +1667,11 @@
     },
     {
       "name": "@lmdb/lmdb-darwin-arm64",
-      "SPDXID": "SPDXRef-Package-lmdb.lmdb-darwin-arm64-3.4.2",
-      "versionInfo": "3.4.2",
+      "SPDXID": "SPDXRef-Package-lmdb.lmdb-darwin-arm64-3.5.2",
+      "versionInfo": "3.5.2",
       "packageFileName": "node_modules/@lmdb/lmdb-darwin-arm64",
       "description": "Platform specific binary for lmdb on darwin OS with arm64 architecture",
-      "downloadLocation": "https://registry.npmjs.org/@lmdb/lmdb-darwin-arm64/-/lmdb-darwin-arm64-3.4.2.tgz",
+      "downloadLocation": "https://registry.npmjs.org/@lmdb/lmdb-darwin-arm64/-/lmdb-darwin-arm64-3.5.2.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/kriszyp/lmdb-js#readme",
       "licenseDeclared": "MIT",
@@ -1655,13 +1679,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/%40lmdb/lmdb-darwin-arm64@3.4.2"
+          "referenceLocator": "pkg:npm/%40lmdb/lmdb-darwin-arm64@3.5.2"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "34af345b00e8383c8f6926b329bcdddcd109df281e3eb904462959b21c4156204044dcf6d6b99e76292d187131a23f67e6df7e0a19602e5c5e71d14a2c2b822a"
+          "checksumValue": "65312e4b0077407380e896a5e1b8b4a31015d4c2b7c6dcd2de850cab938adc749734de00efd7fd76189e640d2182fc0e4da1b311699377c160f574a40488405b"
         }
       ]
     },
@@ -4062,6 +4086,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "e268569b767ccfe8b9d3ccd027bafa5e2ef2e269a826976f1f47d93c54645ab769e5fabb8616761e162890438b91fa923203d1e19f44c81dc30646ca18ea9989"
+        }
+      ]
+    },
+    {
+      "name": "@pinojs/redact",
+      "SPDXID": "SPDXRef-Package-pinojs.redact-0.4.0",
+      "versionInfo": "0.4.0",
+      "packageFileName": "node_modules/@pinojs/redact",
+      "description": "Redact JS objects",
+      "downloadLocation": "https://registry.npmjs.org/@pinojs/redact/-/redact-0.4.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/pinojs/redact#readme",
+      "licenseDeclared": "MIT",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40pinojs/redact@0.4.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "93610d9e606e804febcd07c471d58770263efc533754bcc7f5c604b1b76ca2aaefcc029185465e44d84066f07c3a2b502754c179ddf2a96b5d8f34bac09281c2"
         }
       ]
     },
@@ -6652,11 +6700,11 @@
     },
     {
       "name": "fast-copy",
-      "SPDXID": "SPDXRef-Package-fast-copy-3.0.2",
-      "versionInfo": "3.0.2",
+      "SPDXID": "SPDXRef-Package-fast-copy-4.0.2",
+      "versionInfo": "4.0.2",
       "packageFileName": "node_modules/fast-copy",
       "description": "A blazing fast deep object copier",
-      "downloadLocation": "https://registry.npmjs.org/fast-copy/-/fast-copy-3.0.2.tgz",
+      "downloadLocation": "https://registry.npmjs.org/fast-copy/-/fast-copy-4.0.2.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/planttheidea/fast-copy#readme",
       "licenseDeclared": "MIT",
@@ -6664,13 +6712,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/fast-copy@3.0.2"
+          "referenceLocator": "pkg:npm/fast-copy@4.0.2"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "765d0ef55863bbc22b70b9ddbf6794e2576dd5fb5732aa9f80de07d5ca66195ecfea3781f45c2937d6b673c0cf184d58b3cf2b3542556031eaef708600638f7d"
+          "checksumValue": "c9b03a3c35c85ce5e2bcb24aff3f5ef8eb64eef7b5dc8e1c901bc63b923645198153580c1cb54325812e258846c1ecfb60d9588e2d8cd83bd553e6bd99214397"
         }
       ]
     },
@@ -6695,30 +6743,6 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "fddf6c7e8b38cb1ce9c240e4b8dee4d92a852ad60d9824f381f129cfcdb1df820cf7fcdcf0a1b14285e0d6588d0bf8b3a5133f30176de38366c78d595aa93e15"
-        }
-      ]
-    },
-    {
-      "name": "fast-redact",
-      "SPDXID": "SPDXRef-Package-fast-redact-3.5.0",
-      "versionInfo": "3.5.0",
-      "packageFileName": "node_modules/fast-redact",
-      "description": "very fast object redaction",
-      "downloadLocation": "https://registry.npmjs.org/fast-redact/-/fast-redact-3.5.0.tgz",
-      "filesAnalyzed": false,
-      "homepage": "https://github.com/davidmarkclements/fast-redact#readme",
-      "licenseDeclared": "MIT",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/fast-redact@3.5.0"
-        }
-      ],
-      "checksums": [
-        {
-          "algorithm": "SHA512",
-          "checksumValue": "770b284254bb87d84c79852ad56fbedb73437012d5e0aa8e3672130d5f438df4b7ab54a00c656b05dbef4cb528b56b4f483edab160d5f7f0a6b193f2f077fbd0"
         }
       ]
     },
@@ -6772,11 +6796,11 @@
     },
     {
       "name": "fast-xml-parser",
-      "SPDXID": "SPDXRef-Package-fast-xml-parser-5.5.6",
-      "versionInfo": "5.5.6",
+      "SPDXID": "SPDXRef-Package-fast-xml-parser-5.5.8",
+      "versionInfo": "5.5.8",
       "packageFileName": "node_modules/fast-xml-parser",
       "description": "Validate XML, Parse XML, Build XML without C/C++ based libraries",
-      "downloadLocation": "https://registry.npmjs.org/fast-xml-parser/-/fast-xml-parser-5.5.6.tgz",
+      "downloadLocation": "https://registry.npmjs.org/fast-xml-parser/-/fast-xml-parser-5.5.8.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/NaturalIntelligence/fast-xml-parser#readme",
       "licenseDeclared": "MIT",
@@ -6784,13 +6808,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/fast-xml-parser@5.5.6"
+          "referenceLocator": "pkg:npm/fast-xml-parser@5.5.8"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "dfe7dd672051560dbd9f8ad73f48e81ed86170774f5076880b5e9cbb2c9dd622ecb9a3ba55e6b7e8c3ebc600336d99daf2586f65e44bf0173d18fe7afc9f7113"
+          "checksumValue": "67b161da755049bd9dfa9a03562334eb78b1d991adf63998d675a13df1c138ad878276ff396dcfe04b773fff354847a3d09ed06d6b49ab13b4e61f1061f2bb2d"
         }
       ]
     },
@@ -7468,11 +7492,11 @@
     },
     {
       "name": "lmdb",
-      "SPDXID": "SPDXRef-Package-lmdb-3.4.2",
-      "versionInfo": "3.4.2",
+      "SPDXID": "SPDXRef-Package-lmdb-3.5.2",
+      "versionInfo": "3.5.2",
       "packageFileName": "node_modules/lmdb",
       "description": "Simple, efficient, scalable, high-performance LMDB interface",
-      "downloadLocation": "https://registry.npmjs.org/lmdb/-/lmdb-3.4.2.tgz",
+      "downloadLocation": "https://registry.npmjs.org/lmdb/-/lmdb-3.5.2.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/kriszyp/lmdb-js#readme",
       "licenseDeclared": "MIT",
@@ -7480,13 +7504,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/lmdb@3.4.2"
+          "referenceLocator": "pkg:npm/lmdb@3.5.2"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "9f054651f4c153024a5ddea5455f2914d7e7ac20b5fa5e3d112251335f6dfed15bffded07c9122c5ee43611bee83924eec34852a829a572ee818cb79ad5a99be"
+          "checksumValue": "a1de405a1d4c37294839e5fb301ed357adbb30cf6dcf23949fc53c15939e58aa56167314e454bda6ee6de35a52e3ea62ecec47472939415461b948a61e37e49a"
         }
       ]
     },
@@ -8068,11 +8092,11 @@
     },
     {
       "name": "pino",
-      "SPDXID": "SPDXRef-Package-pino-9.9.0",
-      "versionInfo": "9.9.0",
+      "SPDXID": "SPDXRef-Package-pino-10.3.1",
+      "versionInfo": "10.3.1",
       "packageFileName": "node_modules/pino",
       "description": "super fast, all natural json logger",
-      "downloadLocation": "https://registry.npmjs.org/pino/-/pino-9.9.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/pino/-/pino-10.3.1.tgz",
       "filesAnalyzed": false,
       "homepage": "https://getpino.io",
       "licenseDeclared": "MIT",
@@ -8080,23 +8104,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/pino@9.9.0"
+          "referenceLocator": "pkg:npm/pino@10.3.1"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "cf1b112101bd1f31be8c49639af999ba938c0d44342698f4c80804dbc8d0befadd6139446a21b07a526976774c97f301b91afbd217888fcdd0caa25459a53c99"
+          "checksumValue": "af7e321ff1a54292996d4d41bc516a3a3848491a3530dc75b5662c62f9a3e8a2111d23cc4f6fb21ce11bd521ba34cbd1a07445d1ad3b9023a8c7ff726a4975be"
         }
       ]
     },
     {
       "name": "pino-abstract-transport",
-      "SPDXID": "SPDXRef-Package-pino-abstract-transport-2.0.0",
-      "versionInfo": "2.0.0",
+      "SPDXID": "SPDXRef-Package-pino-abstract-transport-3.0.0",
+      "versionInfo": "3.0.0",
       "packageFileName": "node_modules/pino-abstract-transport",
       "description": "Write Pino transports easily",
-      "downloadLocation": "https://registry.npmjs.org/pino-abstract-transport/-/pino-abstract-transport-2.0.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/pino-abstract-transport/-/pino-abstract-transport-3.0.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/pinojs/pino-abstract-transport#readme",
       "licenseDeclared": "MIT",
@@ -8104,23 +8128,23 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/pino-abstract-transport@2.0.0"
+          "referenceLocator": "pkg:npm/pino-abstract-transport@3.0.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "17adf1e6d8b357a58287847a447ca2d8c97e33bd033515edffe1c0368c0c7e5a60185300ca6fd52a6e86ed9390463a8ded76c6c4ad4b83db7a66bb7339a8af33"
+          "checksumValue": "c257d473353e9fb1f2fc76b98fd6bf819372ed67b9f9c5e9f182fe5fe3c6f12d0a5f1c3b9ff257037738e98d334339c827cdd44498b0cbb2e1e7a58ba2436ec6"
         }
       ]
     },
     {
       "name": "pino-pretty",
-      "SPDXID": "SPDXRef-Package-pino-pretty-13.1.1",
-      "versionInfo": "13.1.1",
+      "SPDXID": "SPDXRef-Package-pino-pretty-13.1.3",
+      "versionInfo": "13.1.3",
       "packageFileName": "node_modules/pino-pretty",
       "description": "Prettifier for Pino log lines",
-      "downloadLocation": "https://registry.npmjs.org/pino-pretty/-/pino-pretty-13.1.1.tgz",
+      "downloadLocation": "https://registry.npmjs.org/pino-pretty/-/pino-pretty-13.1.3.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/pinojs/pino-pretty#readme",
       "licenseDeclared": "MIT",
@@ -8128,13 +8152,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/pino-pretty@13.1.1"
+          "referenceLocator": "pkg:npm/pino-pretty@13.1.3"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "4cd3443a0d1e034bbefd6baa1f4307d17ba2eeea9593d0fbe0448ea63b5e6d24186cd58993f748c425c8c45b0d7de379dc99ad5aa6073f63ab2198d3fc20449c"
+          "checksumValue": "b6d5d19243b3e96582f7929e63dfb1c562fa02d226c1bc8c1eb2f5992c2ac16f6efaf2e9fd620496f1ef0920e0d313bf0f3ae0833d73bf7acde68bd3455a302a"
         }
       ]
     },
@@ -9052,11 +9076,11 @@
     },
     {
       "name": "strnum",
-      "SPDXID": "SPDXRef-Package-strnum-2.2.1",
-      "versionInfo": "2.2.1",
+      "SPDXID": "SPDXRef-Package-strnum-2.2.2",
+      "versionInfo": "2.2.2",
       "packageFileName": "node_modules/strnum",
       "description": "Parse String to Number based on configuration",
-      "downloadLocation": "https://registry.npmjs.org/strnum/-/strnum-2.2.1.tgz",
+      "downloadLocation": "https://registry.npmjs.org/strnum/-/strnum-2.2.2.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/NaturalIntelligence/strnum#readme",
       "licenseDeclared": "MIT",
@@ -9064,13 +9088,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/strnum@2.2.1"
+          "referenceLocator": "pkg:npm/strnum@2.2.2"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "07046f35de7f42802dc96d676b5cb52ec24640dbd196475ee90fe2a6aa846a2be831d57e07538c39355dc11f8dfdcc1551c22df4f6321e657c1f27b10994aea6"
+          "checksumValue": "0e747dd08fa3b573524d759dc2b132f456a45bb517faa519836f208f97e4dafc7197bb92ff76e92387e315856674af5eb69b5804f364a5a86e427130870102a8"
         }
       ]
     },
@@ -9148,11 +9172,11 @@
     },
     {
       "name": "thread-stream",
-      "SPDXID": "SPDXRef-Package-thread-stream-3.1.0",
-      "versionInfo": "3.1.0",
+      "SPDXID": "SPDXRef-Package-thread-stream-4.0.0",
+      "versionInfo": "4.0.0",
       "packageFileName": "node_modules/thread-stream",
       "description": "A streaming way to send data to a Node.js Worker Thread",
-      "downloadLocation": "https://registry.npmjs.org/thread-stream/-/thread-stream-3.1.0.tgz",
+      "downloadLocation": "https://registry.npmjs.org/thread-stream/-/thread-stream-4.0.0.tgz",
       "filesAnalyzed": false,
       "homepage": "https://github.com/mcollina/thread-stream#readme",
       "licenseDeclared": "MIT",
@@ -9160,13 +9184,13 @@
         {
           "referenceCategory": "PACKAGE-MANAGER",
           "referenceType": "purl",
-          "referenceLocator": "pkg:npm/thread-stream@3.1.0"
+          "referenceLocator": "pkg:npm/thread-stream@4.0.0"
         }
       ],
       "checksums": [
         {
           "algorithm": "SHA512",
-          "checksumValue": "3aac8f67dbbde95a2103231f2729339a2bcead8db07cc49fdc2e53b4525580df879ba6a3fafa058652be919108bf61418755fa5e9dc396708e7c443707627ce8"
+          "checksumValue": "e223152fa1c020d5d67f564a66320f733e7061a39d3e1b4ef004ef67e5eaa7705375aaad03042436628e46a708a3962442a197ab97307ecc03c0caaa40dae924"
         }
       ]
     },
@@ -9844,32 +9868,32 @@
       "relationshipType": "DESCRIBES"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
@@ -9959,7 +9983,7 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-lmdb-3.4.2",
+      "spdxElementId": "SPDXRef-Package-lmdb-3.5.2",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
@@ -9974,12 +9998,12 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-pino-9.9.0",
+      "spdxElementId": "SPDXRef-Package-pino-10.3.1",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-pino-pretty-13.1.1",
+      "spdxElementId": "SPDXRef-Package-pino-pretty-13.1.3",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.5.0",
       "relationshipType": "DEPENDENCY_OF"
     },
@@ -10135,1277 +10159,1277 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.996.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.27",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.44",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.43",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.47",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.3.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-waiter-4.2.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudcontrol-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.996.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.27",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.44",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.43",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.47",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.3.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-waiter-4.2.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-cloudformation-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.996.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.27",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.44",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.43",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.47",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.3.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-waiter-4.2.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-iam-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha1-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-bucket-endpoint-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-expect-continue-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-location-constraint-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-ssec-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.10",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.11",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.996.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.eventstream-serde-browser-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.eventstream-serde-config-resolver-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.eventstream-serde-node-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-blob-browser-4.2.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-stream-node-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.md5-js-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.27",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.44",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.43",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.47",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.3.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-stream-4.5.20",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-waiter-4.2.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-s3-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.996.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.27",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.44",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.43",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.47",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.3.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.client-sts-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.xml-builder-3.972.14",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.xml-builder-3.972.15",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.signature-v4-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.core-3.973.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.20",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.21",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.20",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.21",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-stream-4.5.20",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.20",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.21",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.20",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.21",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.credential-provider-imds-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.shared-ini-file-loader-4.4.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.shared-ini-file-loader-4.4.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-login-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.20",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-env-3.972.21",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-http-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-ini-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.20",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.21",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.credential-provider-imds-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.shared-ini-file-loader-4.4.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.20",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.21",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.20",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.21",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.shared-ini-file-loader-4.4.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.20",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-process-3.972.21",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.token-providers-3.1013.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.token-providers-3.1014.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.shared-ini-file-loader-4.4.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-sso-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.shared-ini-file-loader-4.4.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.credential-provider-web-identity-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -11435,57 +11459,57 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.crc32-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.crc32c-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.util-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.crc64-nvme-3.972.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.is-array-buffer-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-stream-4.5.20",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.2",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-flexible-checksums-3.974.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -11504,303 +11528,303 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-arn-parser-3.972.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.signature-v4-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-config-provider-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-stream-4.5.20",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.996.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-browser-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-crypto.sha256-js-5.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-host-header-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-logger-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-recursion-detection-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-endpoints-3.996.5",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-browser-3.972.8",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.core-3.23.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.fetch-http-handler-5.3.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.hash-node-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.invalid-dependency-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-content-length-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-endpoint-4.4.27",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-retry-4.4.44",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-serde-4.2.15",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.middleware-stack-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-http-handler-4.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.smithy-client-4.12.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.url-parser-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-base64-4.3.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-browser-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-body-length-node-4.2.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-browser-4.3.43",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-defaults-mode-node-4.2.47",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-endpoints-3.3.3",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-middleware-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-retry-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-utf8-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.config-resolver-4.4.13",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.region-config-resolver-3.972.9",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.10",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-sdk-s3-3.972.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.11",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.protocol-http-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.10",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.11",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.signature-v4-5.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.10",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.signature-v4-multi-region-3.996.11",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.22",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.token-providers-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.core-3.973.23",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.token-providers-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.token-providers-3.1013.0",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.nested-clients-3.996.13",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.token-providers-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.property-provider-4.2.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.token-providers-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.token-providers-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.shared-ini-file-loader-4.4.7",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.token-providers-3.1013.0",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.token-providers-3.1014.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -11819,23 +11843,23 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.23",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
+      "spdxElementId": "SPDXRef-Package-aws-sdk.middleware-user-agent-3.972.24",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.node-config-provider-4.3.12",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-smithy.util-config-provider-4.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.9",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.util-user-agent-node-3.973.10",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-fast-xml-parser-5.5.6",
-      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.xml-builder-3.972.14",
+      "spdxElementId": "SPDXRef-Package-fast-xml-parser-5.5.8",
+      "relatedSpdxElement": "SPDXRef-Package-aws-sdk.xml-builder-3.972.15",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -14110,17 +14134,17 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-fast-xml-builder-1.1.4",
-      "relatedSpdxElement": "SPDXRef-Package-fast-xml-parser-5.5.6",
+      "relatedSpdxElement": "SPDXRef-Package-fast-xml-parser-5.5.8",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-path-expression-matcher-1.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-fast-xml-parser-5.5.6",
+      "relatedSpdxElement": "SPDXRef-Package-fast-xml-parser-5.5.8",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-strnum-2.2.1",
-      "relatedSpdxElement": "SPDXRef-Package-fast-xml-parser-5.5.6",
+      "spdxElementId": "SPDXRef-Package-strnum-2.2.2",
+      "relatedSpdxElement": "SPDXRef-Package-fast-xml-parser-5.5.8",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -14294,33 +14318,38 @@
       "relationshipType": "DEPENDENCY_OF"
     },
     {
+      "spdxElementId": "SPDXRef-Package-harperfast.extended-iterable-1.0.3",
+      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.5.2",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
       "spdxElementId": "SPDXRef-Package-msgpackr-1.11.9",
-      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.4.2",
+      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.5.2",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-node-addon-api-6.1.0",
-      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.4.2",
+      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.5.2",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-node-gyp-build-optional-packages-5.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.4.2",
+      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.5.2",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-ordered-binary-1.6.1",
-      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.4.2",
+      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.5.2",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-weak-lru-cache-1.2.2",
-      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.4.2",
+      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.5.2",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-lmdb.lmdb-darwin-arm64-3.4.2",
-      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.4.2",
+      "spdxElementId": "SPDXRef-Package-lmdb.lmdb-darwin-arm64-3.5.2",
+      "relatedSpdxElement": "SPDXRef-Package-lmdb-3.5.2",
       "relationshipType": "OPTIONAL_DEPENDENCY_OF"
     },
     {
@@ -14380,117 +14409,117 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-atomic-sleep-1.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
-      "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-fast-redact-3.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-on-exit-leak-free-2.1.2",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-pino-abstract-transport-2.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "spdxElementId": "SPDXRef-Package-pino-abstract-transport-3.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-pino-std-serializers-7.1.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-process-warning-5.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-quick-format-unescaped-4.0.4",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-real-require-0.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-safe-stable-stringify-2.5.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-pinojs.redact-0.4.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-sonic-boom-4.2.1",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-thread-stream-3.1.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-9.9.0",
+      "spdxElementId": "SPDXRef-Package-thread-stream-4.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-10.3.1",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-split2-4.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-abstract-transport-2.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-abstract-transport-3.0.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-colorette-2.0.20",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-dateformat-4.6.3",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-fast-copy-3.0.2",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "spdxElementId": "SPDXRef-Package-fast-copy-4.0.2",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-fast-safe-stringify-2.1.1",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-help-me-5.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-joycon-3.1.1",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-on-exit-leak-free-2.1.2",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
-      "spdxElementId": "SPDXRef-Package-pino-abstract-transport-2.0.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "spdxElementId": "SPDXRef-Package-pino-abstract-transport-3.0.0",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-secure-json-parse-4.1.0",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-sonic-boom-4.2.1",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
       "spdxElementId": "SPDXRef-Package-strip-json-comments-5.0.3",
-      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.1",
+      "relatedSpdxElement": "SPDXRef-Package-pino-pretty-13.1.3",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
@@ -14685,7 +14714,7 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-real-require-0.2.0",
-      "relatedSpdxElement": "SPDXRef-Package-thread-stream-3.1.0",
+      "relatedSpdxElement": "SPDXRef-Package-thread-stream-4.0.0",
       "relationshipType": "DEPENDENCY_OF"
     },
     {
