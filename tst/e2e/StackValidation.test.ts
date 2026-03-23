@@ -1,4 +1,4 @@
-import { stub, restore, SinonStub } from 'sinon';
+import { restore, SinonStub } from 'sinon';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { CreateValidationRequest, DescribeValidationStatusRequest } from '../../src/stacks/actions/StackActionProtocol';
 import {
@@ -7,33 +7,17 @@ import {
     CreateStackActionResult,
     StackActionPhase,
 } from '../../src/stacks/actions/StackActionRequestType';
-import { createMockAwsClient } from '../utils/MockServerComponents';
+import { MockAwsTestClient, createMockAwsTestClient } from '../utils/MockAwsTestClient';
 import { TestExtension } from '../utils/TestExtension';
 
 describe('Stack Validation E2E', () => {
-    let mockCloudControlSend: SinonStub;
     let mockCloudFormationSend: SinonStub;
-    let mockS3Send: SinonStub;
     let client: TestExtension;
 
     beforeAll(async () => {
-        mockCloudControlSend = stub();
-        mockCloudFormationSend = stub();
-        mockS3Send = stub();
-
-        client = new TestExtension({
-            awsClientFactory: createMockAwsClient(mockCloudControlSend, mockCloudFormationSend, mockS3Send),
-        });
-
-        await client.ready();
-
-        stub(client.core.awsCredentials, 'credentialsAvailable').returns(true);
-        stub(client.core.awsCredentials, 'getIAM').returns({
-            accessKeyId: 'mock-key',
-            secretAccessKey: 'mock-secret',
-            profile: 'default',
-            region: 'us-east-1',
-        });
+        const testClient: MockAwsTestClient = await createMockAwsTestClient();
+        mockCloudFormationSend = testClient.mockCloudFormationSend;
+        client = testClient.client;
     });
 
     beforeEach(async () => {

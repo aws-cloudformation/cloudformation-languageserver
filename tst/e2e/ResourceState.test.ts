@@ -1,5 +1,5 @@
 import { ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
-import { stub, restore, SinonStub } from 'sinon';
+import { restore, SinonStub } from 'sinon';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import {
     ListResourcesParams,
@@ -14,41 +14,20 @@ import {
     ResourceTypesResult,
 } from '../../src/resourceState/ResourceStateTypes';
 import { ResourceStackManagementResult } from '../../src/resourceState/StackManagementInfoProvider';
-import { createMockAwsClient } from '../utils/MockServerComponents';
+import { MockAwsTestClient, createMockAwsTestClient } from '../utils/MockAwsTestClient';
 import { getSimpleYamlTemplateText, getSimpleJsonTemplateText } from '../utils/TemplateUtils';
 import { TestExtension } from '../utils/TestExtension';
-
-/**
- * E2E tests for Resource State functionality.
- *
- * These tests mock AWS SDK clients (network calls) by injecting a mock AwsClient factory
- * at TestExtension initialization time, following e2e test guidelines.
- */
 
 describe('ResourceState E2E', () => {
     let mockCloudControlSend: SinonStub;
     let mockCloudFormationSend: SinonStub;
-    let mockS3Send: SinonStub;
     let client: TestExtension;
 
     beforeAll(async () => {
-        mockCloudControlSend = stub();
-        mockCloudFormationSend = stub();
-        mockS3Send = stub();
-
-        client = new TestExtension({
-            awsClientFactory: createMockAwsClient(mockCloudControlSend, mockCloudFormationSend, mockS3Send),
-        });
-
-        await client.ready();
-
-        stub(client.core.awsCredentials, 'credentialsAvailable').returns(true);
-        stub(client.core.awsCredentials, 'getIAM').returns({
-            accessKeyId: 'mock-key',
-            secretAccessKey: 'mock-secret',
-            profile: 'default',
-            region: 'us-east-1',
-        });
+        const testClient: MockAwsTestClient = await createMockAwsTestClient();
+        mockCloudControlSend = testClient.mockCloudControlSend;
+        mockCloudFormationSend = testClient.mockCloudFormationSend;
+        client = testClient.client;
     });
 
     beforeEach(async () => {
