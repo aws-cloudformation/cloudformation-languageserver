@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, statSync, writeFileSync } from 'fs'; // eslint-disable-line no-restricted-imports -- files being checked
-import { writeFile } from 'fs/promises';
+import { existsSync, readFileSync, renameSync, statSync, writeFileSync } from 'fs'; // eslint-disable-line no-restricted-imports -- files being checked
+import { rename, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { Logger } from 'pino';
 import { lock, LockOptions, lockSync } from 'proper-lockfile';
@@ -28,18 +28,15 @@ export class EncryptedFileStore implements DataStore {
         this.telemetry = TelemetryService.instance.get(`FileStore.${name}`);
 
         if (existsSync(this.file)) {
+            const release = lockSync(this.file, LOCK_OPTIONS_SYNC);
             try {
                 this.content = this.readFile();
             } catch (error) {
                 this.log.error(error, 'Failed to decrypt file store, recreating store');
                 this.telemetry.count('filestore.recreate', 1);
-
-                const release = lockSync(this.file, LOCK_OPTIONS_SYNC);
-                try {
-                    this.saveSync();
-                } finally {
-                    release();
-                }
+                this.saveSync();
+            } finally {
+                release();
             }
         } else {
             this.saveSync();
@@ -113,11 +110,15 @@ export class EncryptedFileStore implements DataStore {
     }
 
     private saveSync() {
-        writeFileSync(this.file, encrypt(this.KEY, JSON.stringify(this.content)));
+        const tmp = `${this.file}.${process.pid}.tmp`;
+        writeFileSync(tmp, encrypt(this.KEY, JSON.stringify(this.content)));
+        renameSync(tmp, this.file);
     }
 
     private async save() {
-        await writeFile(this.file, encrypt(this.KEY, JSON.stringify(this.content)));
+        const tmp = `${this.file}.${process.pid}.tmp`;
+        await writeFile(tmp, encrypt(this.KEY, JSON.stringify(this.content)));
+        await rename(tmp, this.file);
     }
 }
 

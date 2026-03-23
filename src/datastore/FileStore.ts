@@ -19,6 +19,7 @@ export class FileStoreFactory implements DataStoreFactory {
 
     private readonly metricsInterval: NodeJS.Timeout;
     private readonly timeout: NodeJS.Timeout;
+    private closed = false;
 
     constructor(
         rootDir: string,
@@ -60,12 +61,16 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 
     close(): Promise<void> {
+        if (this.closed) return Promise.resolve();
+        this.closed = true;
         clearTimeout(this.timeout);
         clearInterval(this.metricsInterval);
         return Promise.resolve();
     }
 
     private emitMetrics(): void {
+        if (this.closed) return;
+
         this.telemetry.histogram('version', VersionNumber);
         this.telemetry.histogram('env.entries', this.stores.size);
 
@@ -84,6 +89,8 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 
     private cleanupOldVersions(): void {
+        if (this.closed || !existsSync(this.fileDbRoot)) return;
+
         const entries = readdirSync(this.fileDbRoot, { withFileTypes: true });
         for (const entry of entries) {
             try {
