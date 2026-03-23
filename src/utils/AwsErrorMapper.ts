@@ -88,6 +88,19 @@ export function classifyAwsError(error: unknown): { category: AwsErrorCategory; 
     return { category: 'unknown' };
 }
 
+const CLIENT_FAULT_CATEGORIES: ReadonlySet<AwsErrorCategory> = new Set(['credentials', 'network', 'permissions']);
+
+export function isClientError(error: unknown): boolean {
+    const { category, httpStatus } = classifyAwsError(error);
+    if (CLIENT_FAULT_CATEGORIES.has(category)) {
+        return true;
+    }
+    if (category === 'service') {
+        return httpStatus !== undefined && httpStatus < 500;
+    }
+    return false;
+}
+
 export function mapAwsErrorToLspError(error: unknown): ResponseError<unknown> {
     if (error instanceof ResponseError) {
         return error;

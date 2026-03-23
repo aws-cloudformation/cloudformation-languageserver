@@ -13,6 +13,7 @@ import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure, Count } from '../telemetry/TelemetryDecorator';
+import { isClientError } from '../utils/AwsErrorMapper';
 import { Closeable } from '../utils/Closeable';
 import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
@@ -74,11 +75,13 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         } catch (error) {
             if (error instanceof ResourceNotFoundException) {
                 log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
-            } else {
-                log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
-                this.telemetry.count('state.fault', 1);
+                return;
             }
-            return;
+            if (isClientError(error)) {
+                log.info(`Client error for type ${typeName} and identifier "${identifier}"`);
+                return;
+            }
+            throw error;
         }
 
         if (!output?.TypeName || !output?.ResourceDescription?.Identifier || !output?.ResourceDescription?.Properties) {
@@ -312,7 +315,6 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     private initializeCounters(): void {
         this.telemetry.count('state.hit', 0);
         this.telemetry.count('state.miss', 0);
-        this.telemetry.count('state.fault', 0);
         this.telemetry.count('state.invalidated', 0);
         this.telemetry.count('list.invalidated', 0);
     }

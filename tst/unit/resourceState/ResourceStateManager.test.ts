@@ -85,8 +85,15 @@ describe('ResourceStateManager', () => {
             expect(result).toBeUndefined();
         });
 
-        it('should handle other errors', async () => {
+        it('should throw on server errors', async () => {
             const error = new Error('Service error');
+            vi.mocked(mockCcapiService.getResource).mockRejectedValue(error);
+
+            await expect(manager.getResource('AWS::S3::Bucket', 'my-bucket')).rejects.toThrow('Service error');
+        });
+
+        it('should return undefined for client errors', async () => {
+            const error = { name: 'AccessDeniedException', $metadata: { httpStatusCode: 403 }, message: 'Denied' };
             vi.mocked(mockCcapiService.getResource).mockRejectedValue(error);
 
             const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');

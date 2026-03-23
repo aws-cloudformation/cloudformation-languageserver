@@ -1,3 +1,4 @@
+import { ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
 import { stub, restore, SinonStub } from 'sinon';
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import {
@@ -182,7 +183,7 @@ describe('ResourceState E2E', () => {
                 resources: [{ resourceType: 'AWS::Lambda::Function' }],
             } satisfies ListResourcesParams);
 
-            mockCloudControlSend.rejects(new Error('ResourceNotFoundException'));
+            mockCloudControlSend.rejects(new ResourceNotFoundException({ message: 'Not found', $metadata: {} }));
 
             const result = (await client.send('aws/cfn/resources/search', {
                 resourceType: 'AWS::Lambda::Function',

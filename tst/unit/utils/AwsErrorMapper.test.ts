@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { classifyAwsError, mapAwsErrorToLspError } from '../../../src/utils/AwsErrorMapper';
+import { classifyAwsError, isClientError, mapAwsErrorToLspError } from '../../../src/utils/AwsErrorMapper';
 import { OnlineFeatureErrorCode } from '../../../src/utils/OnlineFeatureError';
 
 describe('mapAwsErrorToLspError', () => {
@@ -81,5 +81,38 @@ describe('classifyAwsError', () => {
         const error = { name: 'AccessDeniedException', $metadata: { httpStatusCode: 403 } };
         const result = classifyAwsError(error);
         expect(result.category).toBe('permissions');
+    });
+});
+
+describe('isClientError', () => {
+    it('should return true for credential errors', () => {
+        expect(isClientError({ name: 'ExpiredToken' })).toBe(true);
+        expect(isClientError({ name: 'CredentialsProviderError' })).toBe(true);
+    });
+
+    it('should return true for network errors', () => {
+        expect(isClientError({ name: 'NetworkingError' })).toBe(true);
+        expect(isClientError({ name: 'TimeoutError' })).toBe(true);
+    });
+
+    it('should return true for permission errors', () => {
+        expect(isClientError({ name: 'AccessDeniedException', $metadata: { httpStatusCode: 403 } })).toBe(true);
+    });
+
+    it('should return true for 4xx service errors', () => {
+        expect(isClientError({ name: 'ValidationException', $metadata: { httpStatusCode: 400 } })).toBe(true);
+    });
+
+    it('should return false for 5xx service errors', () => {
+        expect(isClientError({ $metadata: { httpStatusCode: 500 } })).toBe(false);
+        expect(isClientError({ $metadata: { httpStatusCode: 503 } })).toBe(false);
+    });
+
+    it('should return false for throttling errors', () => {
+        expect(isClientError({ name: 'ThrottlingException', $metadata: { httpStatusCode: 429 } })).toBe(false);
+    });
+
+    it('should return false for non-AWS errors', () => {
+        expect(isClientError(new Error('random'))).toBe(false);
     });
 });
