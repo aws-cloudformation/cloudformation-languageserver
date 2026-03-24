@@ -1,8 +1,7 @@
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID as v4 } from 'crypto';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { PassThrough } from 'stream';
-import { v4 } from 'uuid';
 import { StreamMessageReader, StreamMessageWriter, createMessageConnection } from 'vscode-jsonrpc/node';
 import {
     InitializeRequest,

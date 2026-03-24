@@ -1,5 +1,5 @@
+import { randomUUID as v4 } from 'crypto';
 import { join } from 'path';
-import { v4 } from 'uuid';
 import { staticInitialize } from '../src/app/initialize';
 
 staticInitialize(undefined, {

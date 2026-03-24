@@ -1,7 +1,7 @@
 {
     "name": "@aws/cloudformation-languageserver",
     "displayName": "AWS CloudFormation",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "id": "aws-cloudformation-languageserver",
     "description": "AWS CloudFormation Language Server",
     "publisher": "aws",
@@ -84,7 +84,6 @@
         "tree-sitter": "0.22.4",
         "tree-sitter-json": "0.24.8",
         "ts-essentials": "10.1.1",
-        "uuid": "13.0.0",
         "vscode-languageserver": "9.0.1",
         "vscode-languageserver-textdocument": "1.0.12",
         "vscode-uri": "3.1.0",

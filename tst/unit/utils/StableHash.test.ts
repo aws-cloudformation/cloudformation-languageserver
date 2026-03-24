@@ -1,4 +1,4 @@
-import { v4 } from 'uuid';
+import { randomUUID as v4 } from 'crypto';
 import { describe, it, expect } from 'vitest';
 import { stableHashCode } from '../../../src/utils/StableHash';
 

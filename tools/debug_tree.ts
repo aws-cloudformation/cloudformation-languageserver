@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { v4 } from 'uuid';
+import { randomUUID as v4 } from 'crypto';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { extname, resolve, join } from 'path';
 import { staticInitialize } from '../src/app/initialize';

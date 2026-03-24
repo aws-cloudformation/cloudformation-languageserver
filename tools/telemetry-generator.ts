@@ -1,12 +1,11 @@
 #!/usr/bin/env node
-import { v4 } from 'uuid';
+import { randomUUID as v4, randomBytes } from 'crypto';
 import { readdirSync } from 'fs';
 import { join, extname, resolve } from 'path';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { AwsMetadata } from '../src/server/InitParams';
 import { staticInitialize } from '../src/app/initialize';
-import { randomBytes } from 'crypto';
 
 const argv = yargs(hideBin(process.argv))
     .option('templates', {

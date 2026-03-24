@@ -1,3 +1,4 @@
+import { randomUUID as uuidv4 } from 'crypto';
 import {
     Change,
     ChangeSetType,
@@ -10,7 +11,6 @@ import {
 import { WaiterState } from '@smithy/util-waiter';
 import { dump } from 'js-yaml';
 import { DateTime } from 'luxon';
-import { v4 as uuidv4 } from 'uuid';
 import { ResponseError, ErrorCodes, Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
 import { ArtifactExporter } from '../../artifactexporter/ArtifactExporter';
 import { TopLevelSection } from '../../context/CloudFormationEnums';

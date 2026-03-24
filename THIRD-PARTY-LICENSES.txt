@@ -2485,7 +2485,7 @@ Apache License
 ******************************
 
 @aws-sdk/core
-3.973.23 <https://github.com/aws/aws-sdk-js-v3>
+3.973.24 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -2897,7 +2897,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-env
-3.972.21 <https://github.com/aws/aws-sdk-js-v3>
+3.972.22 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3103,14 +3103,14 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-http
-3.972.23 <https://github.com/aws/aws-sdk-js-v3>
+3.972.24 <https://github.com/aws/aws-sdk-js-v3>
 license: Apache-2.0
 authors: AWS SDK for JavaScript Team <https://aws.amazon.com/javascript/>
 
 ******************************
 
 @aws-sdk/credential-provider-ini
-3.972.23 <https://github.com/aws/aws-sdk-js-v3>
+3.972.24 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3316,7 +3316,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-login
-3.972.23 <https://github.com/aws/aws-sdk-js-v3>
+3.972.24 <https://github.com/aws/aws-sdk-js-v3>
 license: Apache-2.0
 authors: AWS SDK for JavaScript Team <https://aws.amazon.com/javascript/>
 
@@ -3529,7 +3529,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-process
-3.972.21 <https://github.com/aws/aws-sdk-js-v3>
+3.972.22 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3735,7 +3735,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-sso
-3.972.23 <https://github.com/aws/aws-sdk-js-v3>
+3.972.24 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3941,7 +3941,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-web-identity
-3.972.23 <https://github.com/aws/aws-sdk-js-v3>
+3.972.24 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -4561,7 +4561,7 @@ Apache License
 ******************************
 
 @aws-sdk/middleware-flexible-checksums
-3.974.3 <https://github.com/aws/aws-sdk-js-v3>
+3.974.4 <https://github.com/aws/aws-sdk-js-v3>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -5595,7 +5595,7 @@ Apache License
 ******************************
 
 @aws-sdk/middleware-sdk-s3
-3.972.23 <https://github.com/aws/aws-sdk-js-v3>
+3.972.24 <https://github.com/aws/aws-sdk-js-v3>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -6009,7 +6009,7 @@ Apache License
 ******************************
 
 @aws-sdk/middleware-user-agent
-3.972.24 <https://github.com/aws/aws-sdk-js-v3>
+3.972.25 <https://github.com/aws/aws-sdk-js-v3>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -6216,7 +6216,7 @@ Apache License
 ******************************
 
 @aws-sdk/nested-clients
-3.996.13 <https://github.com/aws/aws-sdk-js-v3>
+3.996.14 <https://github.com/aws/aws-sdk-js-v3>
 license: Apache-2.0
 authors: AWS SDK for JavaScript Team <https://aws.amazon.com/javascript/>
 
@@ -6429,7 +6429,7 @@ Apache License
 ******************************
 
 @aws-sdk/signature-v4-multi-region
-3.996.11 <https://github.com/aws/aws-sdk-js-v3>
+3.996.12 <https://github.com/aws/aws-sdk-js-v3>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -6636,7 +6636,7 @@ Apache License
 ******************************
 
 @aws-sdk/token-providers
-3.1014.0 <https://github.com/aws/aws-sdk-js-v3>
+3.1015.0 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -7873,7 +7873,7 @@ Apache License
 ******************************
 
 @aws-sdk/util-user-agent-node
-3.973.10 <https://github.com/aws/aws-sdk-js-v3>
+3.973.11 <https://github.com/aws/aws-sdk-js-v3>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
