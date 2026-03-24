@@ -55,5 +55,6 @@ jobs:
     uses: ./.github/workflows/release.yml
     permissions:
       contents: write
+      pull-requests: write
     with:
       tag: ${{ needs.create-alpha-tag.outputs.tag }}
