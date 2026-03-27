@@ -1,14 +1,14 @@
 import { getYamlTemplate, getSimpleYamlTemplateText, Templates } from '../utils/TemplateUtils';
 
-export interface TesterConfig {
+export type TesterConfig = {
     maxRetries: number;
     responseTimeout: number;
-}
+};
 
-export interface TemplateConfig {
+export type TemplateConfig = {
     name: string;
     content: string;
-}
+};
 
 export const TEMPLATE_CONFIGS: TemplateConfig[] = [
     {

@@ -1,11 +1,15 @@
-import { WaitFor } from '../utils/Utils';
-import { recordOperation } from './LongRunningMonitoring';
+import { WaitFor } from '../../utils/Utils';
+import { recordOperation } from '../LongRunningMonitoring';
+import { TesterConfig } from '../LongRunningTypes';
+
+export interface Tester {
+    testAllScenarios(uri: string): Promise<void>;
+}
 
 export async function executeWithRetry<T>(
     operation: () => Promise<T>,
     operationName: string,
-    maxRetries: number,
-    responseTimeout: number,
+    config: TesterConfig,
 ): Promise<T> {
     let result: T;
     let responseTime: number;
@@ -20,11 +24,13 @@ export async function executeWithRetry<T>(
                 if (result === undefined) {
                     throw new Error(`${operationName} should return a result (not undefined)`);
                 }
-                if (responseTime > responseTimeout) {
-                    throw new Error(`${operationName} response time ${responseTime}ms exceeds ${responseTimeout}ms`);
+                if (responseTime > config.responseTimeout) {
+                    throw new Error(
+                        `${operationName} response time ${responseTime}ms exceeds ${config.responseTimeout}ms`,
+                    );
                 }
             },
-            maxRetries * 1000,
+            config.maxRetries * 1000,
             1000,
         );
 

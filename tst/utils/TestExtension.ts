@@ -71,11 +71,12 @@ import { createMockCfnLintService } from './MockServerComponents';
 import { getTestPrivateSchemas, samFileType, SamSchemaFiles, schemaFileType, Schemas } from './SchemaUtils';
 import { flushAllPromises, WaitFor } from './Utils';
 
-type TestExtensionConfig = {
+export type TestExtensionConfig = {
     id?: string;
     initializeParams?: Partial<InitializeParams>;
     workspaceConfig?: Record<string, unknown>[];
     awsClientFactory?: (credentials: AwsCredentials, endpoint?: string) => AwsClient;
+    schemaRetrieverFactory?: (schemaStore: SchemaStore) => SchemaRetriever;
 };
 
 export class TestExtension implements Closeable {
@@ -84,7 +85,7 @@ export class TestExtension implements Closeable {
 
     private readonly readStream = new PassThrough();
     private readonly writeStream = new PassThrough();
-    private readonly clientConnection = createMessageConnection(
+    protected readonly clientConnection = createMessageConnection(
         new StreamMessageReader(this.writeStream),
         new StreamMessageWriter(this.readStream),
     );
@@ -139,16 +140,18 @@ export class TestExtension implements Closeable {
                     });
 
                     const schemaStore = new SchemaStore(dataStoreFactory);
-                    const schemaRetriever = new SchemaRetriever(
-                        schemaStore,
-                        (_region) => {
-                            return Promise.resolve(schemaFileType(Object.values(Schemas)));
-                        },
-                        () => Promise.resolve(getTestPrivateSchemas()),
-                        () => {
-                            return Promise.resolve(samFileType(Object.values(SamSchemaFiles)));
-                        },
-                    );
+                    const schemaRetriever =
+                        config.schemaRetrieverFactory?.(schemaStore) ??
+                        new SchemaRetriever(
+                            schemaStore,
+                            (_region) => {
+                                return Promise.resolve(schemaFileType(Object.values(Schemas)));
+                            },
+                            () => Promise.resolve(getTestPrivateSchemas()),
+                            () => {
+                                return Promise.resolve(samFileType(Object.values(SamSchemaFiles)));
+                            },
+                        );
 
                     const ffFile = join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json');
                     this.external = new CfnExternal(lsp, this.core, {
@@ -212,7 +215,7 @@ export class TestExtension implements Closeable {
                 if (pbSchemas === undefined || samSchemas === undefined) {
                     throw new Error('Schemas not loaded yet');
                 }
-            }, 5_000);
+            }, 30_000); // Increased timeout for real schema downloads
 
             await flushAllPromises();
             this.isReady = true;

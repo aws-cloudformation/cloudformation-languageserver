@@ -3,10 +3,10 @@ import { expect } from 'vitest';
 import { CompletionTriggerKind } from 'vscode-languageserver-protocol';
 import { DocumentHelper } from '../../utils/DocumentHelper';
 import { TestExtension } from '../../utils/TestExtension';
-import { executeWithRetry } from '../LongRunningLspClient';
 import { TesterConfig } from '../LongRunningTypes';
+import { Tester, executeWithRetry } from './TesterCommon';
 
-export class CompletionTester {
+export class CompletionTester implements Tester {
     constructor(
         private readonly testExtension: TestExtension,
         private readonly config: TesterConfig,
@@ -30,8 +30,7 @@ export class CompletionTester {
                     context: { triggerKind: CompletionTriggerKind.Invoked },
                 }),
             'completion',
-            this.config.maxRetries,
-            this.config.responseTimeout,
+            this.config,
         );
 
         expect(result1).toBeDefined();
@@ -61,8 +60,7 @@ export class CompletionTester {
                     context: { triggerKind: CompletionTriggerKind.Invoked },
                 }),
             'completion',
-            this.config.maxRetries,
-            this.config.responseTimeout,
+            this.config,
         );
 
         expect(result2).toBeDefined();

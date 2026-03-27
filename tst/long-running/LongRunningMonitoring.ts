@@ -1,17 +1,14 @@
 /* eslint-disable no-console */
-const MEMORY_LIMIT_MB = 2048;
+const AVG_DURATION_LIMIT_MS = 200;
 
-export interface LspTestMetrics {
+export type LspTestMetrics = {
     operationsAttempted: number;
     operationsFailed: number;
     averageDuration: number | null;
     minDuration: number | null;
     maxDuration: number | null;
     lastDuration: number | null;
-    currentMemoryMB: number;
-    maxMemoryMB: number;
-    minMemoryMB: number;
-}
+};
 
 const metrics: LspTestMetrics = {
     operationsAttempted: 0,
@@ -20,14 +17,7 @@ const metrics: LspTestMetrics = {
     minDuration: null,
     maxDuration: null,
     lastDuration: null,
-    currentMemoryMB: 0,
-    maxMemoryMB: 0,
-    minMemoryMB: Number.MAX_VALUE,
 };
-
-function getCurrentMemory(): number {
-    return Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
-}
 
 export function recordOperation(duration: number, success: boolean): void {
     metrics.operationsAttempted++;
@@ -44,22 +34,13 @@ export function recordOperation(duration: number, success: boolean): void {
     } else {
         metrics.operationsFailed++;
     }
-
-    // Update memory metrics
-    const currentMem = getCurrentMemory();
-    metrics.currentMemoryMB = currentMem;
-    metrics.maxMemoryMB = Math.max(metrics.maxMemoryMB, currentMem);
-    metrics.minMemoryMB = Math.min(metrics.minMemoryMB, currentMem);
 }
 
-export function checkMemoryUsage(): void {
-    const currentMem = getCurrentMemory();
-    metrics.currentMemoryMB = currentMem;
-    metrics.maxMemoryMB = Math.max(metrics.maxMemoryMB, currentMem);
-    metrics.minMemoryMB = Math.min(metrics.minMemoryMB, currentMem);
-
-    if (currentMem > MEMORY_LIMIT_MB) {
-        throw new Error(`Memory usage ${currentMem}MB exceeds limit ${MEMORY_LIMIT_MB}MB`);
+export function checkPerformanceDegradation(): void {
+    if (metrics.averageDuration !== null && metrics.averageDuration > AVG_DURATION_LIMIT_MS) {
+        throw new Error(
+            `Average duration ${metrics.averageDuration.toFixed(1)}ms exceeds limit ${AVG_DURATION_LIMIT_MS}ms`,
+        );
     }
 }
 
@@ -78,6 +59,31 @@ export function logProgress() {
         `   Success Rate: ${metrics.operationsAttempted > 0 ? (((metrics.operationsAttempted - metrics.operationsFailed) / metrics.operationsAttempted) * 100).toFixed(1) : 0}%`,
     );
     console.log(`   Avg Duration: ${avgResponseTime.toFixed(1)}ms`);
-    console.log(`   Memory (Heap): ${metrics.currentMemoryMB}MB`);
-    console.log(`   Max Memory: ${metrics.maxMemoryMB}MB`);
+}
+
+export function generateFinalReport(startTime: number): void {
+    console.log('Final Test Report');
+    console.log('='.repeat(50));
+
+    const runtime = Date.now() - startTime;
+    const avgResponseTime = metrics.averageDuration ?? 0;
+    const maxResponseTime = metrics.maxDuration ?? 0;
+    const minResponseTime = metrics.minDuration ?? 0;
+    const lastResponseTime = metrics.lastDuration ?? 0;
+
+    console.log(`Runtime: ${Math.round(runtime / 1000 / 60)} minutes`);
+    console.log(`Total Operations: ${metrics.operationsAttempted}`);
+    console.log(`Successful: ${metrics.operationsAttempted - metrics.operationsFailed}`);
+    console.log(`Failed: ${metrics.operationsFailed}`);
+    console.log(
+        `Success Rate: ${metrics.operationsAttempted > 0 ? (((metrics.operationsAttempted - metrics.operationsFailed) / metrics.operationsAttempted) * 100).toFixed(2) : 0}%`,
+    );
+    console.log(`Average Duration: ${avgResponseTime > 0 ? avgResponseTime.toFixed(2) + 'ms' : 'N/A'}`);
+    console.log(`Max Duration: ${maxResponseTime > 0 ? maxResponseTime.toFixed(2) + 'ms' : 'N/A'}`);
+    console.log(
+        `Min Duration: ${minResponseTime !== null && minResponseTime >= 0 ? minResponseTime.toFixed(2) + 'ms' : 'N/A'}`,
+    );
+    console.log(`Final Duration: ${lastResponseTime > 0 ? lastResponseTime.toFixed(2) + 'ms' : 'N/A'}`);
+
+    console.log('='.repeat(50));
 }

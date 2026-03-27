@@ -2,10 +2,10 @@
 import { expect } from 'vitest';
 import { DocumentHelper } from '../../utils/DocumentHelper';
 import { TestExtension } from '../../utils/TestExtension';
-import { executeWithRetry } from '../LongRunningLspClient';
 import { TesterConfig } from '../LongRunningTypes';
+import { Tester, executeWithRetry } from './TesterCommon';
 
-export class HoverTester {
+export class HoverTester implements Tester {
     constructor(
         private readonly testExtension: TestExtension,
         private readonly config: TesterConfig,
@@ -53,8 +53,7 @@ Resources:
                     position: { line: 3, character: 15 },
                 }),
             'hover',
-            this.config.maxRetries,
-            this.config.responseTimeout,
+            this.config,
         );
 
         expect(result1).toBeDefined();
@@ -83,8 +82,7 @@ Parameters:
                     position: { line: 9, character: 10 },
                 }),
             'hover',
-            this.config.maxRetries,
-            this.config.responseTimeout,
+            this.config,
         );
 
         expect(result2).toBeDefined();

@@ -1,11 +1,11 @@
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-export interface LongRunningConfig {
+export type LongRunningConfig = {
     duration: string;
     maxRetries: number;
     responseTimeout: number;
-}
+};
 
 export function parseConfig(): LongRunningConfig {
     const isVitest = process.argv.some((arg) => arg.includes('vitest'));
