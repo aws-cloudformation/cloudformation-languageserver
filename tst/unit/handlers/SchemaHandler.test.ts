@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { CancellationToken, ResponseError } from 'vscode-languageserver';
 import { schemaReadinessHandler } from '../../../src/handlers/SchemaHandler';
 import { RegionalSchemasType } from '../../../src/schema/RegionalSchemas';
-import { SchemaReadinessRequest } from '../../../src/schema/SchemaRequestType';
+import { GetSchemaReadinessRequest } from '../../../src/schema/SchemaRequestType';
 import { AwsRegion } from '../../../src/utils/Region';
 import { createMockComponents } from '../../utils/MockServerComponents';
 
@@ -26,7 +26,7 @@ describe('SchemaReadinessHandler', () => {
             mockComponents.schemaStore.getPublicSchemas.returns(mockSchemas);
 
             const handler = schemaReadinessHandler(mockComponents);
-            const request: SchemaReadinessRequest = { region };
+            const request: GetSchemaReadinessRequest = { region };
 
             const result = await handler(request, CancellationToken.None);
 
@@ -42,7 +42,7 @@ describe('SchemaReadinessHandler', () => {
             mockComponents.schemaStore.getPublicSchemas.returns(undefined);
 
             const handler = schemaReadinessHandler(mockComponents);
-            const request: SchemaReadinessRequest = { region };
+            const request: GetSchemaReadinessRequest = { region };
 
             const result = await handler(request, CancellationToken.None);
 
@@ -64,7 +64,7 @@ describe('SchemaReadinessHandler', () => {
             mockComponents.schemaStore.getPublicSchemas.returns(mockSchemas);
 
             const handler = schemaReadinessHandler(mockComponents);
-            const request: SchemaReadinessRequest = { region };
+            const request: GetSchemaReadinessRequest = { region };
 
             const result = await handler(request, CancellationToken.None);
 
@@ -79,7 +79,7 @@ describe('SchemaReadinessHandler', () => {
             mockComponents.schemaStore.getPublicSchemas.throws(new Error('Database error'));
 
             const handler = schemaReadinessHandler(mockComponents);
-            const request: SchemaReadinessRequest = { region };
+            const request: GetSchemaReadinessRequest = { region };
 
             await expect(handler(request, CancellationToken.None)).rejects.toThrow(ResponseError);
             await expect(handler(request, CancellationToken.None)).rejects.toThrow(

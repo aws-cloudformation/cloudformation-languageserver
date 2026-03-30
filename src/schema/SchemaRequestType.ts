@@ -1,15 +1,17 @@
 import { RequestType } from 'vscode-languageserver-protocol';
 import { AwsRegion } from '../utils/Region';
 
-export interface SchemaReadinessRequest {
+export interface GetSchemaReadinessRequest {
     region: AwsRegion;
 }
 
-export interface SchemaReadinessResponse {
+export interface GetSchemaReadinessResponse {
     region: AwsRegion;
     schemasReady: boolean;
 }
 
-export const SchemaReadinessRequestType = new RequestType<SchemaReadinessRequest, SchemaReadinessResponse, void>(
-    'aws/cfn/schema/readiness',
-);
+export const GetSchemaReadinessRequestType = new RequestType<
+    GetSchemaReadinessRequest,
+    GetSchemaReadinessResponse,
+    void
+>('aws/cfn/schema/readiness');

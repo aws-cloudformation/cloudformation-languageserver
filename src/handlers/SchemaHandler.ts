@@ -1,13 +1,13 @@
 import { ErrorCodes, ResponseError, RequestHandler } from 'vscode-languageserver';
 import { parseSchemaReadinessRequest } from '../schema/SchemaRequestParser';
-import { SchemaReadinessRequest, SchemaReadinessResponse } from '../schema/SchemaRequestType';
+import { GetSchemaReadinessRequest, GetSchemaReadinessResponse } from '../schema/SchemaRequestType';
 import { ServerComponents } from '../server/ServerComponents';
 import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 export function schemaReadinessHandler(
     components: ServerComponents,
-): RequestHandler<SchemaReadinessRequest, SchemaReadinessResponse, void> {
+): RequestHandler<GetSchemaReadinessRequest, GetSchemaReadinessResponse, void> {
     return (rawParams) => {
         try {
             const params = parseWithPrettyError(parseSchemaReadinessRequest, rawParams);

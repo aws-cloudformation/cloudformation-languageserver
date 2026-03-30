@@ -2,7 +2,7 @@ import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Connection } from 'vscode-languageserver/node';
 import { LspSchemaHandlers } from '../../../src/protocol/LspSchemaHandlers';
-import { SchemaReadinessRequestType } from '../../../src/schema/SchemaRequestType';
+import { GetSchemaReadinessRequestType } from '../../../src/schema/SchemaRequestType';
 
 describe('LspSchemaHandlers', () => {
     let lspSchemaHandlers: LspSchemaHandlers;
@@ -26,7 +26,7 @@ describe('LspSchemaHandlers', () => {
 
             lspSchemaHandlers.onGetSchemaReadiness(mockHandler);
 
-            expect(mockConnection.onRequest.calledWith(SchemaReadinessRequestType.method)).toBe(true);
+            expect(mockConnection.onRequest.calledWith(GetSchemaReadinessRequestType.method)).toBe(true);
         });
     });
 });

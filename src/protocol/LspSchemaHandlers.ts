@@ -1,14 +1,16 @@
 import { Connection, ServerRequestHandler } from 'vscode-languageserver';
 import {
-    SchemaReadinessRequestType,
-    SchemaReadinessRequest,
-    SchemaReadinessResponse,
+    GetSchemaReadinessRequestType,
+    GetSchemaReadinessRequest,
+    GetSchemaReadinessResponse,
 } from '../schema/SchemaRequestType';
 
 export class LspSchemaHandlers {
     constructor(private readonly connection: Connection) {}
 
-    onGetSchemaReadiness(handler: ServerRequestHandler<SchemaReadinessRequest, SchemaReadinessResponse, never, void>) {
-        this.connection.onRequest(SchemaReadinessRequestType.method, handler);
+    onGetSchemaReadiness(
+        handler: ServerRequestHandler<GetSchemaReadinessRequest, GetSchemaReadinessResponse, never, void>,
+    ) {
+        this.connection.onRequest(GetSchemaReadinessRequestType.method, handler);
     }
 }
