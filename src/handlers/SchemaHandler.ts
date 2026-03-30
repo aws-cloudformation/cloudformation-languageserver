@@ -5,7 +5,7 @@ import { ServerComponents } from '../server/ServerComponents';
 import { extractErrorMessage } from '../utils/Errors';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
-export function schemaReadinessHandler(
+export function getSchemaReadinessHandler(
     components: ServerComponents,
 ): RequestHandler<GetSchemaReadinessRequest, GetSchemaReadinessResponse, void> {
     return (rawParams) => {
