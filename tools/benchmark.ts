@@ -1,5 +1,5 @@
 #!/usr/bin/env node --expose-gc
-import { v4 } from 'uuid';
+import { randomUUID as v4 } from 'crypto';
 import { join, extname, resolve, dirname } from 'path';
 import { staticInitialize } from '../src/app/initialize';
 

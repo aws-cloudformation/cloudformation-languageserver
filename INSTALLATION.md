@@ -36,16 +36,6 @@ unzip cfn-lsp.zip -d /path/to/install-location
 
 ## Server Configuration
 
-### Running the Server
-
-```bash
-node /path/to/install-location/cfn-lsp-server-standalone.js --stdio
-```
-
-Communication options:
-- `--stdio` - Use stdin/stdout (recommended)
-- `--node-ipc` - Use Node IPC
-
 ### Initialization Options
 
 The language server accepts initialization options via the LSP `initialize` request:
@@ -60,7 +50,8 @@ The language server accepts initialization options via the LSP `initialize` requ
           "version": "1.0.0"
         }
       },
-      "telemetryEnabled": true
+      "telemetryEnabled": true,
+      "logLevel": "info"
     }
   }
 }
@@ -131,7 +122,7 @@ See [Telemetry](src/telemetry/README.md) for details on collected metrics.
 
 ---
 
-## Editor Setup
+## Client Setup
 
 ### Neovim
 
@@ -143,7 +134,7 @@ if not configs.cfn_lsp then
   configs.cfn_lsp = {
     default_config = {
       cmd = { "node", "/path/to/install-location/cfn-lsp-server-standalone.js", "--stdio" },
-      filetypes = { "yaml", "json" },
+      filetypes = { "json", "yaml", "yml", "cfn", "template" },
       root_dir = function(fname)
         return lspconfig.util.root_pattern(".git", "package.json")(fname) or vim.fn.getcwd()
       end,
@@ -151,7 +142,6 @@ if not configs.cfn_lsp then
         aws = {
           clientInfo = {
             extension = { name = "neovim", version = vim.version().major .. "." .. vim.version().minor },
-            clientId = vim.fn.hostname(),
           },
           telemetryEnabled = true,
         },
@@ -165,6 +155,47 @@ lspconfig.cfn_lsp.setup({})
 
 Verify: Open a YAML/JSON file and run `:LspInfo`
 
+### Kiro CLI
+
+[Kiro CLI](https://kiro.dev/docs/cli/) supports [custom language servers](https://kiro.dev/docs/cli/code-intelligence/#custom-language-servers) via its LSP integration. To configure the CloudFormation Language Server:
+
+1. Run `/code init` in your project root (if not already initialized)
+
+2. Edit the generated `lsp.json` (located at `.kiro/settings/lsp.json`) and add the `cloudformation` entry:
+
+```json
+{
+  "languages": {
+    "cfn-lsp": {
+      "name": "cloudformation-languageserver",
+      "command": "node",
+      "args": ["/path/to/install-location/cfn-lsp-server-standalone.js", "--stdio"],
+      "file_extensions": ["json", "yaml", "yml", "cfn", "template"],
+      "project_patterns": [],
+      "exclude_patterns": [],
+      "multi_workspace": false,
+      "initialization_options": {
+        "aws": {
+          "clientInfo": {
+            "extension": {
+              "name": "kiro-cli", 
+              "version": "1.0.0"
+            }
+          },
+          "telemetryEnabled": true,
+          "logLevel": "warn"
+        }
+      },
+      "request_timeout_secs": 60
+    }
+  }
+}
+```
+
+3. Restart Kiro CLI to load the new configuration, or run `/code init -f` to force re-initialization
+
+Verify: Run `/code status` to confirm the `cfn-lsp` server is initialized.
+
 ### Sublime Text (LSP package)
 
 Add to LSP settings:
@@ -174,13 +205,19 @@ Add to LSP settings:
   "clients": {
     "cfn-lsp": {
       "enabled": true,
-      "command": ["node", "/path/to/install-location/cfn-lsp-server-standalone.js", "--stdio"],
+      "command": [
+        "node",
+        "/path/to/install-location/cfn-lsp-server-standalone.js",
+        "--stdio"
+      ],
       "selector": "source.yaml | source.json",
       "initializationOptions": {
         "aws": {
           "clientInfo": {
-            "extension": { "name": "sublime", "version": "4.0" },
-            "clientId": "sublime-client"
+            "extension": {
+              "name": "sublime",
+              "version": "4.0"
+            }
           },
           "telemetryEnabled": true
         }

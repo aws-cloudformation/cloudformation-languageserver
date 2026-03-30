@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'async_hooks';
-import { v4 } from 'uuid';
+import { randomUUID as v4 } from 'crypto';
 
 type TelemetryContextType = {
     HandlerSource?: string;

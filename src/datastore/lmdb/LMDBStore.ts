@@ -71,7 +71,7 @@ export class LMDBStore implements DataStore {
     }
 
     keys(limit: number): ReadonlyArray<string> {
-        return this.exec('keys', () => this.store.getKeys({ limit }).asArray);
+        return this.exec('keys', () => [...this.store.getKeys({ limit })]);
     }
 
     stats(): StoreStatsType {

@@ -1,7 +1,7 @@
+import { randomUUID as v4 } from 'crypto';
 import { metrics, trace } from '@opentelemetry/api';
 import { MetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import { v4 } from 'uuid';
 import { AwsMetadata, ClientInfo } from '../server/InitParams';
 import { Closeable } from '../utils/Closeable';
 import { LoggerFactory } from './LoggerFactory';

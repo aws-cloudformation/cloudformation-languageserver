@@ -1,5 +1,5 @@
+import { randomUUID as v4 } from 'crypto';
 import { join } from 'path';
-import { v4 } from 'uuid';
 import { staticInitialize } from '../../../src/app/initialize';
 import { EncryptedFileStore } from '../../../src/datastore/file/EncryptedFileStore';
 import { encryptionKey } from '../../../src/datastore/file/Encryption';

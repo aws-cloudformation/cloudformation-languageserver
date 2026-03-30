@@ -1,6 +1,6 @@
+import { randomUUID as v4 } from 'crypto';
 import fs from 'fs';
 import { join } from 'path';
-import { v4 } from 'uuid';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { StoreName } from '../../../src/datastore/DataStore';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
