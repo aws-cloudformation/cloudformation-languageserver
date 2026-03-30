@@ -27,6 +27,7 @@ import {
     removeResourceTypeHandler,
 } from '../handlers/ResourceHandler';
 import { uploadFileToS3Handler } from '../handlers/S3Handler';
+import { schemaReadinessHandler } from '../handlers/SchemaHandler';
 import {
     listStacksHandler,
     listChangeSetsHandler,
@@ -114,6 +115,10 @@ export class CfnServer {
             withTelemetryContext('Configuration', configurationHandler(this.components)),
         );
         this.lsp.handlers.onCodeLens(withTelemetryContext('CodeLens', codeLensHandler(this.components)));
+
+        this.lsp.schemaHandlers.onGetSchemaReadiness(
+            withTelemetryContext('SchemaReadiness', schemaReadinessHandler(this.components)),
+        );
 
         this.lsp.authHandlers.onIamCredentialsUpdate(
             withTelemetryContext('Auth.Update', iamCredentialsUpdateHandler(this.components)),
