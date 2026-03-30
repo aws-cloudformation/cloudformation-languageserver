@@ -1,9 +1,9 @@
 import { execFile } from 'child_process';
 import { randomUUID as v4 } from 'crypto';
-import { rmSync, mkdirSync, writeFileSync } from 'fs';
+import { rmSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DataStore, StoreName } from '../../../src/datastore/DataStore';
 import { EncryptedFileStore } from '../../../src/datastore/file/EncryptedFileStore';
 import { decrypt, encrypt, encryptionKey } from '../../../src/datastore/file/Encryption';
