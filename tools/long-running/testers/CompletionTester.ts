@@ -1,8 +1,8 @@
 import { LspClient } from '../../lsp-client/LspClient';
 import { StandaloneTester, OperationType } from './TesterTypes';
-import { retryOperationWithPerformance } from './StandaloneTesterCommon';
+import { retryOperationWithPerformance } from './TesterCommon';
 
-export class StandaloneCompletionTester implements StandaloneTester {
+export class CompletionTester implements StandaloneTester {
     constructor(private readonly client: LspClient) {}
 
     private validateCompletionItems(result: any, requiredLabels: string[], context: string): void {

@@ -1,4 +1,4 @@
-import { recordOperation } from '../StandaloneMonitoring';
+import { recordOperation } from '../Monitoring';
 import { WaitFor } from '../../../tst/utils/Utils';
 import { OperationType, getTesterConfig } from './TesterTypes';
 

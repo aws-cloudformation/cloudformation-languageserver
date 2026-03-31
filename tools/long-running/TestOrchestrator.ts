@@ -1,25 +1,24 @@
 import { LspClient } from '../lsp-client/LspClient';
-import { parseStandaloneConfig, parseDuration } from './StandaloneConfig';
+import { parseStandaloneConfig, parseDuration } from './Config';
 import {
     initializeMonitoring,
     logProgress,
     checkPerformanceDegradation,
-    generateFinalReport,
-} from './StandaloneMonitoring';
-import { StandaloneHoverTester } from './testers/StandaloneHoverTester';
-import { StandaloneCompletionTester } from './testers/StandaloneCompletionTester';
-import { STANDALONE_TEMPLATE_CONFIGS } from './StandaloneTemplates';
+} from './Monitoring';
+import { HoverTester } from './testers/HoverTester';
+import { CompletionTester } from './testers/CompletionTester';
+import { STANDALONE_TEMPLATE_CONFIGS } from './Templates';
 import { AwsRegion } from '../../src/utils/Region';
 import { WaitFor } from '../../tst/utils/Utils';
 import { existsSync } from 'fs';
 
-export class StandaloneTestOrchestrator {
+export class TestOrchestrator {
     private client!: LspClient;
     private readonly config = parseStandaloneConfig();
     private startTime!: number;
     private endTime!: number;
-    private hoverTester!: StandaloneHoverTester;
-    private completionTester!: StandaloneCompletionTester;
+    private hoverTester!: HoverTester;
+    private completionTester!: CompletionTester;
 
     private readonly templates = STANDALONE_TEMPLATE_CONFIGS;
 
@@ -49,8 +48,8 @@ export class StandaloneTestOrchestrator {
         console.log('LSP client initialized');
 
         // Initialize testers
-        this.hoverTester = new StandaloneHoverTester(this.client);
-        this.completionTester = new StandaloneCompletionTester(this.client);
+        this.hoverTester = new HoverTester(this.client);
+        this.completionTester = new CompletionTester(this.client);
 
         console.log(`Loaded ${this.templates.length} templates`);
 
@@ -183,7 +182,6 @@ export class StandaloneTestOrchestrator {
         }
 
         for (const region of unavailableRegions) {
-            //console.log(`Loading schemas for unavailable region: ${region}`);
             await this.switchToRegion(region);
             await this.waitForRegionSchemas(region);
         }
@@ -192,7 +190,6 @@ export class StandaloneTestOrchestrator {
     }
 
     private async waitForRegionSchemas(region: string): Promise<void> {
-        //console.log(`StandaloneTestOrchestrator: Waiting for ${region} schemas...`);
         try {
             await WaitFor.waitFor(
                 async () => {
@@ -200,7 +197,6 @@ export class StandaloneTestOrchestrator {
                     if (!status.schemasReady) {
                         throw new Error(`Region ${region} schemas not ready yet`);
                     }
-                    //console.log(`StandaloneTestOrchestrator: ${region} schemas are ready`);
                 },
                 30_000, // 30 second timeout
                 500, // Check every 500ms
@@ -210,9 +206,7 @@ export class StandaloneTestOrchestrator {
         }
     }
 
-    private async switchToRegion(region: string): Promise<void> {
-        //console.log(`StandaloneTestOrchestrator: Switching to region: ${region}`);
-        
+    private async switchToRegion(region: string): Promise<void> {        
         // Store the new configuration
         await this.client.changeConfiguration({
             settings: {
@@ -223,22 +217,6 @@ export class StandaloneTestOrchestrator {
                 },
             },
         });
-        
-        /*
-        // Wait for the settings to actually change
-        await WaitFor.waitFor(
-            async () => {
-                //console.log(`waiting for switch from to ${region}`)
-                const systemStatus = await this.client.getSystemStatus();
-                const currentRegion = systemStatus.currentSettings?.profile?.region;
-                if (currentRegion !== region) {
-                    throw new Error(`Region not yet switched: expected ${region}, got ${currentRegion}`);
-                }
-                //console.log(`StandaloneTestOrchestrator: Successfully switched to region: ${region}`);
-            },
-            10_000, // 10 second timeout
-            200, // Check every 200ms
-        );*/
     }
 
     private async validateLsp(uri: string): Promise<void> {

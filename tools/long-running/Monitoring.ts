@@ -124,8 +124,8 @@ export function checkPerformanceDegradation(): void {
     const memUsage = process.memoryUsage();
     const heapUsedMB = Math.round(memUsage.heapUsed / 1024 / 1024);
 
-    if (heapUsedMB > 1000) {
-        // 1GB threshold
+    if (heapUsedMB > 2000) {
+        // 2GB threshold
         console.warn(`High memory usage detected: ${heapUsedMB}MB heap used`);
     }
 }

@@ -1,8 +1,8 @@
-import { StandaloneTestOrchestrator } from './StandaloneTestOrchestrator';
-import { generateFinalReport } from './StandaloneMonitoring';
+import { TestOrchestrator } from './TestOrchestrator';
+import { generateFinalReport } from './Monitoring';
 
 async function main(): Promise<void> {
-    const orchestrator = new StandaloneTestOrchestrator();
+    const orchestrator = new TestOrchestrator();
 
     try {
         await orchestrator.initialize();
