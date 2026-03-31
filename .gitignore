@@ -10,6 +10,8 @@
 .DS_Store
 tools/*
 !tools/*.ts
+!tools/lsp-client/
+!tools/long-running/
 **/.aws-cfn-storage
 /oss-attribution
 /tmp-tst
