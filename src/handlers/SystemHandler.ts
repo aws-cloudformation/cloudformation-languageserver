@@ -11,7 +11,7 @@ export function getSystemStatusHandler(
             // If settings are updating, everything is not ready
             if (components.settingsManager.isSettingsUpdateInProgress()) {
                 return {
-                    schemasReady: { ready: false, reason: 'Settings updating', availableRegions: [], totalRegions: 0 },
+                    schemasReady: { ready: false, reason: 'Settings updating', availableRegions: [] },
                     cfnLintReady: { ready: false, reason: 'Settings updating' },
                     cfnGuardReady: { ready: false, reason: 'Settings updating' },
                     currentSettings: components.settingsManager.getCurrentSettings(),
@@ -22,7 +22,6 @@ export function getSystemStatusHandler(
             return {
                 schemasReady: {
                     availableRegions: [...availableRegions],
-                    totalRegions: availableRegions.length,
                     ready: availableRegions.length > 0,
                     ...(availableRegions.length === 0 ? { reason: 'No schemas loaded' } : {}),
                 },

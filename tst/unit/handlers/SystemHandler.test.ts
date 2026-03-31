@@ -28,7 +28,6 @@ describe('SystemStatusHandler', () => {
                 schemasReady: {
                     ready: true,
                     availableRegions,
-                    totalRegions: 2,
                 },
                 cfnLintReady: { ready: true },
                 cfnGuardReady: { ready: true },
@@ -55,7 +54,6 @@ describe('SystemStatusHandler', () => {
                     ready: false,
                     reason: 'No schemas loaded',
                     availableRegions: [],
-                    totalRegions: 0,
                 },
                 cfnLintReady: { ready: false, reason: 'Status is Uninitialized' },
                 cfnGuardReady: { ready: false, reason: 'No rules loaded' },
@@ -80,7 +78,7 @@ describe('SystemStatusHandler', () => {
             const result = handler(undefined, CancellationToken.None);
 
             expect(result).toEqual({
-                schemasReady: { ready: false, reason: 'Settings updating', availableRegions: [], totalRegions: 0 },
+                schemasReady: { ready: false, reason: 'Settings updating', availableRegions: [] },
                 cfnLintReady: { ready: false, reason: 'Settings updating' },
                 cfnGuardReady: { ready: false, reason: 'Settings updating' },
                 currentSettings: DefaultSettings,
