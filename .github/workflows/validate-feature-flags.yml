@@ -1,0 +1,150 @@
+name: Validate Feature Flags
+run-name: Validate Feature Flags
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'assets/featureFlag/*.json'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Validate JSON syntax
+        run: |
+          FAILED=0
+          for file in assets/featureFlag/*.json; do
+            if ! jq empty "$file" 2>/dev/null; then
+              echo "ERROR: $file is not valid JSON"
+              FAILED=1
+            fi
+          done
+          if [[ "$FAILED" -eq 1 ]]; then exit 1; fi
+          echo "All feature flag files are valid JSON"
+
+      - name: Validate schema structure
+        run: |
+          FAILED=0
+          for file in assets/featureFlag/*.json; do
+            # Required top-level fields
+            for field in version description features; do
+              if ! jq -e "has(\"$field\")" "$file" > /dev/null 2>&1; then
+                echo "ERROR: $file: missing required field '$field'"
+                FAILED=1
+              fi
+            done
+
+            # version must be a number
+            if ! jq -e '.version | type == "number"' "$file" > /dev/null 2>&1; then
+              echo "ERROR: $file: 'version' must be a number"
+              FAILED=1
+            fi
+
+            # description must be a string
+            if ! jq -e '.description | type == "string"' "$file" > /dev/null 2>&1; then
+              echo "ERROR: $file: 'description' must be a string"
+              FAILED=1
+            fi
+
+            # features must be an object
+            if ! jq -e '.features | type == "object"' "$file" > /dev/null 2>&1; then
+              echo "ERROR: $file: 'features' must be an object"
+              FAILED=1
+            fi
+
+            # No extra top-level keys
+            EXTRA_KEYS=$(jq -r 'keys[] | select(. != "version" and . != "description" and . != "features")' "$file" || true)
+            if [[ -n "$EXTRA_KEYS" ]]; then
+              echo "ERROR: $file: unexpected top-level keys: $EXTRA_KEYS"
+              FAILED=1
+            fi
+
+            # Validate each feature entry
+            for feature in $(jq -r '.features | keys[]' "$file"); do
+              # 'enabled' is required and must be boolean
+              if ! jq -e ".features[\"$feature\"].enabled | type == \"boolean\"" "$file" > /dev/null 2>&1; then
+                echo "ERROR: $file: feature '$feature' must have a boolean 'enabled' field"
+                FAILED=1
+              fi
+
+              # 'fleetPercentage' if present must be a number between 0 and 100
+              HAS_FLEET=$(jq -r ".features[\"$feature\"] | has(\"fleetPercentage\")" "$file" || true)
+              if [[ "$HAS_FLEET" == "true" ]]; then
+                VALID_FLEET=$(jq -r ".features[\"$feature\"].fleetPercentage | type == \"number\" and . >= 0 and . <= 100" "$file" || true)
+                if [[ "$VALID_FLEET" != "true" ]]; then
+                  echo "ERROR: $file: feature '$feature' fleetPercentage must be a number between 0 and 100"
+                  FAILED=1
+                fi
+              fi
+
+              # 'allowlistedRegions' if present must be an array of strings
+              HAS_REGIONS=$(jq -r ".features[\"$feature\"] | has(\"allowlistedRegions\")" "$file" || true)
+              if [[ "$HAS_REGIONS" == "true" ]]; then
+                VALID_REGIONS=$(jq -r ".features[\"$feature\"].allowlistedRegions | type == \"array\" and all(type == \"string\")" "$file" || true)
+                if [[ "$VALID_REGIONS" != "true" ]]; then
+                  echo "ERROR: $file: feature '$feature' allowlistedRegions must be an array of strings"
+                  FAILED=1
+                fi
+              fi
+
+              # No unexpected keys in feature entry
+              EXTRA_FEATURE_KEYS=$(jq -r ".features[\"$feature\"] | keys[] | select(. != \"enabled\" and . != \"fleetPercentage\" and . != \"allowlistedRegions\")" "$file" || true)
+              if [[ -n "$EXTRA_FEATURE_KEYS" ]]; then
+                echo "ERROR: $file: feature '$feature' has unexpected keys: $EXTRA_FEATURE_KEYS"
+                FAILED=1
+              fi
+            done
+          done
+
+          if [[ "$FAILED" -eq 1 ]]; then exit 1; fi
+          echo "All feature flag files pass schema validation"
+
+      - name: Validate cross-environment consistency
+        run: |
+          FAILED=0
+          FILES=(assets/featureFlag/*.json)
+
+          if [[ ${#FILES[@]} -lt 2 ]]; then
+            echo "Only one environment file found, skipping cross-env check"
+            exit 0
+          fi
+
+          # All environment files must define the same set of feature keys
+          REFERENCE_FILE="${FILES[0]}"
+          REFERENCE_KEYS=$(jq -r '.features | keys | sort | join(",")' "$REFERENCE_FILE")
+
+          for file in "${FILES[@]:1}"; do
+            FILE_KEYS=$(jq -r '.features | keys | sort | join(",")' "$file")
+            if [[ "$REFERENCE_KEYS" != "$FILE_KEYS" ]]; then
+              echo "ERROR: Feature key mismatch: $(basename "$REFERENCE_FILE") has [$REFERENCE_KEYS] but $(basename "$file") has [$FILE_KEYS]"
+              FAILED=1
+            fi
+          done
+
+          if [[ "$FAILED" -eq 1 ]]; then exit 1; fi
+          echo "All environments define the same feature flags"
+
+      - name: Validate registered feature flags exist
+        run: |
+          # These are the feature flag keys registered in FeatureFlagSupplier.ts.
+          # Update this list when adding or removing feature flags from the codebase.
+          REGISTERED_FLAGS="Constants EnhancedDryRun"
+          FAILED=0
+
+          for file in assets/featureFlag/*.json; do
+            for flag in $REGISTERED_FLAGS; do
+              if ! jq -e ".features | has(\"$flag\")" "$file" > /dev/null 2>&1; then
+                echo "ERROR: $file: missing registered feature flag '$flag'"
+                FAILED=1
+              fi
+            done
+          done
+
+          if [[ "$FAILED" -eq 1 ]]; then exit 1; fi
+          echo "All registered feature flags are present in every environment"
