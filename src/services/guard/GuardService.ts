@@ -60,6 +60,9 @@ export class GuardService implements SettingsConfigurable, Closeable {
     // Cache loaded rules
     private enabledRules: GuardRule[] = [];
 
+    // Track async rule loading state
+    private isLoadingRules = false;
+
     // Validation queuing for concurrent requests
     private readonly validationQueue: ValidationQueueEntry[] = [];
     private readonly activeValidations = new Map<string, Promise<GuardViolation[]>>();
@@ -97,6 +100,17 @@ export class GuardService implements SettingsConfigurable, Closeable {
      * Get the readiness status of the Guard service
      */
     public getReadinessStatus(): { ready: boolean; reason?: string } {
+        // If disabled, consider it ready (nothing to do)
+        if (!this.settings.enabled) {
+            return { ready: true };
+        }
+
+        // If loading rules, not ready
+        if (this.isLoadingRules) {
+            return { ready: false, reason: 'Loading rules' };
+        }
+
+        // Check if rules are loaded
         const ready = this.enabledRules.length > 0;
         return {
             ready,
@@ -149,13 +163,18 @@ export class GuardService implements SettingsConfigurable, Closeable {
             // Clear maps only when rule configuration actually changes
             this.ruleToPacksMap.clear();
             this.ruleCustomMessages.clear();
-            // Preload rules with new settings
+
+            // Track async rule loading
+            this.isLoadingRules = true;
             this.getEnabledRulesByConfiguration()
                 .then((rules) => {
                     this.enabledRules = rules;
                 })
                 .catch((error) => {
                     this.log.error(`Failed to preload rules after settings change: ${extractErrorMessage(error)}`);
+                })
+                .finally(() => {
+                    this.isLoadingRules = false;
                 });
             this.revalidateAllDocuments();
         }

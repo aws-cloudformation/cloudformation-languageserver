@@ -17,7 +17,8 @@ describe('SystemStatusHandler', () => {
             mockComponents.schemaStore.getPublicSchemaRegions.returns(availableRegions);
             mockComponents.cfnLintService.getReadinessStatus.returns({ ready: true });
             mockComponents.guardService.getReadinessStatus.returns({ ready: true });
-            mockComponents.settingsManager.getAppliedSettings.returns(DefaultSettings);
+            mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
+            mockComponents.settingsManager.isSettingsUpdateInProgress.returns(false);
 
             const handler = getSystemStatusHandler(mockComponents);
 
@@ -31,7 +32,7 @@ describe('SystemStatusHandler', () => {
                 },
                 cfnLintReady: { ready: true },
                 cfnGuardReady: { ready: true },
-                appliedSettings: DefaultSettings,
+                currentSettings: DefaultSettings,
             });
         });
 
@@ -42,7 +43,8 @@ describe('SystemStatusHandler', () => {
                 reason: 'Status is Uninitialized',
             });
             mockComponents.guardService.getReadinessStatus.returns({ ready: false, reason: 'No rules loaded' });
-            mockComponents.settingsManager.getAppliedSettings.returns(DefaultSettings);
+            mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
+            mockComponents.settingsManager.isSettingsUpdateInProgress.returns(false);
 
             const handler = getSystemStatusHandler(mockComponents);
 
@@ -57,7 +59,7 @@ describe('SystemStatusHandler', () => {
                 },
                 cfnLintReady: { ready: false, reason: 'Status is Uninitialized' },
                 cfnGuardReady: { ready: false, reason: 'No rules loaded' },
-                appliedSettings: DefaultSettings,
+                currentSettings: DefaultSettings,
             });
         });
 
@@ -67,6 +69,22 @@ describe('SystemStatusHandler', () => {
 
             const handler = getSystemStatusHandler(mockComponents);
             expect(() => handler(undefined, CancellationToken.None)).toThrow(ResponseError);
+        });
+
+        it('should return all components as not ready during settings update', () => {
+            mockComponents.settingsManager.isSettingsUpdateInProgress.returns(true);
+            mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
+
+            const handler = getSystemStatusHandler(mockComponents);
+
+            const result = handler(undefined, CancellationToken.None);
+
+            expect(result).toEqual({
+                schemasReady: { ready: false, reason: 'Settings updating', availableRegions: [], totalRegions: 0 },
+                cfnLintReady: { ready: false, reason: 'Settings updating' },
+                cfnGuardReady: { ready: false, reason: 'Settings updating' },
+                currentSettings: DefaultSettings,
+            });
         });
     });
 });

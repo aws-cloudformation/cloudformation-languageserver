@@ -378,6 +378,40 @@ describe('SettingsManager', () => {
         });
     });
 
+    describe('isSettingsUpdateInProgress', () => {
+        test('should return false initially', () => {
+            expect(manager.isSettingsUpdateInProgress()).toBe(false);
+        });
+
+        test('should return true during settings update', async () => {
+            const mockConfig = { hover: { enabled: false } };
+            mockWorkspace.getConfiguration.resolves(mockConfig);
+
+            let flagDuringUpdate = false;
+
+            // Spy on the subscription manager notify method to capture the flag state
+            const originalNotify = (manager as any).subscriptionManager.notify;
+            (manager as any).subscriptionManager.notify = vi.fn().mockImplementation((...args) => {
+                flagDuringUpdate = manager.isSettingsUpdateInProgress();
+                return originalNotify.apply((manager as any).subscriptionManager, args);
+            });
+
+            await manager.syncConfiguration();
+
+            expect(flagDuringUpdate).toBe(true);
+            expect(manager.isSettingsUpdateInProgress()).toBe(false);
+        });
+
+        test('should return false after settings update completes', async () => {
+            const mockConfig = { hover: { enabled: false } };
+            mockWorkspace.getConfiguration.resolves(mockConfig);
+
+            await manager.syncConfiguration();
+
+            expect(manager.isSettingsUpdateInProgress()).toBe(false);
+        });
+    });
+
     describe('initialization settings', () => {
         test('should apply init settings when workspace returns null', async () => {
             const initSettings = {

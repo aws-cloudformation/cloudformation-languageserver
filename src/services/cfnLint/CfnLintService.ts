@@ -194,6 +194,12 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
      * Get the readiness status of the CfnLint service
      */
     public getReadinessStatus(): { ready: boolean; reason?: string } {
+        // If disabled, consider it ready (nothing to do)
+        if (!this.settings.enabled) {
+            return { ready: true };
+        }
+
+        // If enabled, check actual readiness
         const ready = this.status === STATUS.Initialized;
         return {
             ready,

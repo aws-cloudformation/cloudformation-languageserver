@@ -13,7 +13,7 @@ export interface GetSystemStatusResponse {
     };
     cfnLintReady: ReadinessStatus;
     cfnGuardReady: ReadinessStatus;
-    appliedSettings: Settings;
+    currentSettings: Settings;
 }
 
 export const GetSystemStatusRequestType = new RequestType<void, GetSystemStatusResponse, void>('aws/cfn/systemStatus');

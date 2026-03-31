@@ -218,7 +218,7 @@ export function createMockResourceStateImporter() {
 export function createMockSettingsManager(customSettings?: Settings) {
     const mock = stubInterface<SettingsManager>();
     mock.getCurrentSettings.returns(customSettings ?? DefaultSettings);
-    mock.getAppliedSettings.returns(customSettings ?? DefaultSettings);
+    mock.isSettingsUpdateInProgress.returns(false);
     mock.syncConfiguration.returns(Promise.resolve());
     return mock;
 }

@@ -18,6 +18,7 @@ export class SettingsManager implements ISettingsSubscriber {
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private readonly settingsState = new SettingsState();
     private readonly subscriptionManager = new SubscriptionManager<Settings>();
+    private isUpdatingSettings = false;
 
     constructor(
         private readonly workspace: LspWorkspace,
@@ -34,10 +35,10 @@ export class SettingsManager implements ISettingsSubscriber {
     }
 
     /**
-     * Get applied settings (alias for getCurrentSettings for system status)
+     * Check if settings update is in progress
      */
-    getAppliedSettings(): Settings {
-        return this.settingsState.toSettings();
+    isSettingsUpdateInProgress(): boolean {
+        return this.isUpdatingSettings;
     }
 
     reset() {
@@ -165,9 +166,14 @@ export class SettingsManager implements ISettingsSubscriber {
         const hasChanged = Object.keys(difference).length > 0;
 
         if (hasChanged) {
-            this.settingsState.update(newSettings);
-            logger.info(`Settings updated: ${toString(difference)}`);
-            this.subscriptionManager.notify(newSettings, oldSettings);
+            this.isUpdatingSettings = true;
+            try {
+                this.settingsState.update(newSettings);
+                logger.info(`Settings updated: ${toString(difference)}`);
+                this.subscriptionManager.notify(newSettings, oldSettings);
+            } finally {
+                this.isUpdatingSettings = false;
+            }
         }
     }
 
