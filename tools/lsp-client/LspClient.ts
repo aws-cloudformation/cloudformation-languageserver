@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { spawn, ChildProcess } from 'child_process';
 import {
     createMessageConnection,
@@ -69,6 +70,7 @@ export class LspClient implements LspConnection {
         this.connection = createMessageConnection(reader, writer);
 
         // Handle workspace/configuration requests from server
+
         this.connection.onRequest('workspace/configuration', (params: any) => {
             // Extract the specific configuration section requested
             if (params?.items?.length > 0) {
@@ -76,7 +78,7 @@ export class LspClient implements LspConnection {
                     if (item.section === 'aws.cloudformation') {
                         // Return just the CloudFormation config part
                         const fullConfig = this.currentWorkspaceConfig[0] ?? {};
-                        return fullConfig['aws.cloudformation'] ?? {};
+                        return (fullConfig as any)['aws.cloudformation'] ?? {};
                     }
                     return {};
                 });
@@ -99,29 +101,29 @@ export class LspClient implements LspConnection {
         }
     }
 
+    private readonly onServerOutput = (data: Buffer) => {
+        const output = data.toString().trim();
+
+        // Readiness detection
+        if (output.includes('cfn-lint version')) {
+            this.readinessFlags.cfnLint = true;
+        }
+        if (output.includes('Loading rules from')) {
+            this.readinessFlags.cfnGuard = true;
+        }
+
+        // Log filtering
+        const suppressLevels = this.config.suppressLogLevels ?? ['INFO', 'DEBUG'];
+        const shouldSuppress = suppressLevels.some((level) => output.includes(`${level}:`));
+
+        if (!shouldSuppress) {
+            console.error(`[LSP Server]: ${output}`);
+        }
+    };
+
     protected attachOutputListeners(): void {
-        const onServerOutput = (data: Buffer) => {
-            const output = data.toString().trim();
-
-            // Readiness detection
-            if (output.includes('cfn-lint version')) {
-                this.readinessFlags.cfnLint = true;
-            }
-            if (output.includes('Loading rules from')) {
-                this.readinessFlags.cfnGuard = true;
-            }
-
-            // Log filtering
-            const suppressLevels = this.config.suppressLogLevels ?? ['INFO', 'DEBUG'];
-            const shouldSuppress = suppressLevels.some((level) => output.includes(`${level}:`));
-
-            if (!shouldSuppress) {
-                console.error(`[LSP Server]: ${output}`);
-            }
-        };
-
-        this.serverProcess!.stdout?.on('data', onServerOutput);
-        this.serverProcess!.stderr?.on('data', onServerOutput);
+        this.serverProcess!.stdout?.on('data', this.onServerOutput);
+        this.serverProcess!.stderr?.on('data', this.onServerOutput);
 
         this.serverProcess!.on('exit', (code, signal) => {
             if (signal) {
@@ -176,7 +178,7 @@ export class LspClient implements LspConnection {
         try {
             await Promise.race([
                 this.connection!.sendRequest('initialize', initParams),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Initialize timeout')), 30_000)),
+                new Promise((_resolve, reject) => setTimeout(() => reject(new Error('Initialize timeout')), 30_000)),
             ]);
             console.log('LspClient: Initialize request completed');
 
@@ -303,15 +305,15 @@ export class LspClient implements LspConnection {
         if (!this.connection) {
             throw new Error('LSP client not initialized');
         }
-        
+
         // console.log(`LspClient: Checking schema readiness for region: ${region}`);
         // Use the new system status endpoint
         const systemStatus = await this.getSystemStatus();
-        
+
         // Check if the requested region is available
-        const schemasReady = systemStatus.schemasReady.ready && 
-                           systemStatus.schemasReady.availableRegions.includes(region);
-        
+        const schemasReady =
+            systemStatus.schemasReady.ready && systemStatus.schemasReady.availableRegions.includes(region);
+
         // console.log(`LspClient: Schema readiness for ${region}: ${schemasReady}`);
         return { region, schemasReady };
     }

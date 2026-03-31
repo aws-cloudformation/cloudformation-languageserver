@@ -7,7 +7,7 @@ export class HoverTester implements StandaloneTester {
 
     private extractHoverContent(hoverResult: any): string {
         if (typeof hoverResult.contents === 'string') {
-            return hoverResult.contents;
+            return hoverResult.contents as string;
         } else if (Array.isArray(hoverResult.contents)) {
             return hoverResult.contents.length > 0 ? JSON.stringify(hoverResult.contents) : '';
         } else if (
@@ -15,7 +15,7 @@ export class HoverTester implements StandaloneTester {
             typeof hoverResult.contents === 'object' &&
             'value' in hoverResult.contents
         ) {
-            return hoverResult.contents.value;
+            return hoverResult.contents.value as string;
         }
         return '';
     }

@@ -1,10 +1,6 @@
 import { LspClient } from '../lsp-client/LspClient';
 import { parseStandaloneConfig, parseDuration } from './Config';
-import {
-    initializeMonitoring,
-    logProgress,
-    checkPerformanceDegradation,
-} from './Monitoring';
+import { initializeMonitoring, logProgress, checkPerformanceDegradation } from './Monitoring';
 import { HoverTester } from './testers/HoverTester';
 import { CompletionTester } from './testers/CompletionTester';
 import { STANDALONE_TEMPLATE_CONFIGS } from './Templates';
@@ -64,27 +60,27 @@ export class TestOrchestrator {
 
     private async waitForSystemReadiness(): Promise<void> {
         console.log('Waiting for full system readiness');
-        
+
         await WaitFor.waitFor(
             async () => {
                 const systemStatus = await this.client.getSystemStatus();
-                
+
                 if (!systemStatus.schemasReady.ready) {
-                    throw new Error(`Schemas not ready: ${systemStatus.schemasReady.reason || 'Unknown reason'}`);
+                    throw new Error(`Schemas not ready: ${systemStatus.schemasReady.reason ?? 'Unknown reason'}`);
                 }
-                
+
                 if (!systemStatus.cfnLintReady.ready) {
-                    throw new Error(`CfnLint not ready: ${systemStatus.cfnLintReady.reason || 'Unknown reason'}`);
+                    throw new Error(`CfnLint not ready: ${systemStatus.cfnLintReady.reason ?? 'Unknown reason'}`);
                 }
-                
+
                 if (!systemStatus.cfnGuardReady.ready) {
-                    throw new Error(`CfnGuard not ready: ${systemStatus.cfnGuardReady.reason || 'Unknown reason'}`);
+                    throw new Error(`CfnGuard not ready: ${systemStatus.cfnGuardReady.reason ?? 'Unknown reason'}`);
                 }
-                
+
                 console.log('All system components are ready');
             },
             60_000, // 60 second timeout for full system readiness
-            1_000, // Check every 1 second
+            1000, // Check every 1 second
         );
     }
 
@@ -169,11 +165,11 @@ export class TestOrchestrator {
         // Get current system status to see what's already available
         const systemStatus = await this.client.getSystemStatus();
         const availableRegions = new Set(systemStatus.schemasReady.availableRegions);
-        
+
         // Determine which regions need schema loading
-        const unavailableRegions = this.testRegions.filter(region => !availableRegions.has(region));
-        const alreadyAvailable = this.testRegions.filter(region => availableRegions.has(region));
-        
+        const unavailableRegions = this.testRegions.filter((region) => !availableRegions.has(region));
+        const alreadyAvailable = this.testRegions.filter((region) => availableRegions.has(region));
+
         console.log(`Schema status: ${alreadyAvailable.length} available, ${unavailableRegions.length} unavailable`);
         console.log(`Available region schemas: ${alreadyAvailable.join(', ')}`);
 
@@ -206,7 +202,7 @@ export class TestOrchestrator {
         }
     }
 
-    private async switchToRegion(region: string): Promise<void> {        
+    private async switchToRegion(region: string): Promise<void> {
         // Store the new configuration
         await this.client.changeConfiguration({
             settings: {

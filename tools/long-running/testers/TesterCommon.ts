@@ -11,7 +11,7 @@ export async function retryOperationWithPerformance<T>(
 ): Promise<void> {
     const config = getTesterConfig(operationType);
     let responseTime: number = 0;
-    
+
     await WaitFor.waitFor(
         async () => {
             const startTime = performance.now();
@@ -20,7 +20,7 @@ export async function retryOperationWithPerformance<T>(
             validate(result);
         },
         config.retryTimeoutMs,
-        RETRY_INTERVAL_MS
+        RETRY_INTERVAL_MS,
     );
 
     recordOperation(responseTime, true, operationType);

@@ -33,10 +33,10 @@ function parseSimpleArgs(): Partial<StandaloneConfig> {
 export function parseStandaloneConfig(): StandaloneConfig {
     // Start with environment variables (npm script support)
     const envConfig = {
-        duration: process.env.LONG_RUNNING_DURATION || '4h',
-        maxRetries: Number.parseInt(process.env.MAX_RETRIES || '3'),
-        responseTimeout: Number.parseInt(process.env.RESPONSE_TIMEOUT || '5000'),
-        standalonePath: process.env.STANDALONE_PATH || './cfn-lsp-server-standalone.js',
+        duration: process.env.LONG_RUNNING_DURATION ?? '4h',
+        maxRetries: Number.parseInt(process.env.MAX_RETRIES ?? '3'),
+        responseTimeout: Number.parseInt(process.env.RESPONSE_TIMEOUT ?? '5000'),
+        standalonePath: process.env.STANDALONE_PATH ?? './cfn-lsp-server-standalone.js',
     };
 
     // Override with command line arguments if provided

@@ -11,10 +11,10 @@ async function main(): Promise<void> {
     } catch (error) {
         generateFinalReport(Date.now());
         console.error('Standalone test failed:', error);
-        process.exit(1);
+        throw error;
     } finally {
         await orchestrator.cleanup();
     }
 }
 
-main();
+void main();

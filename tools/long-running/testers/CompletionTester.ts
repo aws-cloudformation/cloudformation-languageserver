@@ -10,7 +10,7 @@ export class CompletionTester implements StandaloneTester {
             throw new Error(`${context} returned no items`);
         }
 
-        const labels = new Set(result.items.map((item: any) => item.label));
+        const labels = new Set(result.items.map((item: any) => item.label as string));
         for (const required of requiredLabels) {
             if (!labels.has(required)) {
                 throw new Error(`${context} missing ${required}`);
