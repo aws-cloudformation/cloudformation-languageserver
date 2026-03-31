@@ -117,6 +117,7 @@ import { LspStackHandlers } from '../src/protocol/LspStackHandlers';
 import { LspResourceHandlers } from '../src/protocol/LspResourceHandlers';
 import { LspRelatedResourcesHandlers } from '../src/protocol/LspRelatedResourcesHandlers';
 import { LspS3Handlers } from '../src/protocol/LspS3Handlers';
+import { LspSystemHandlers } from '../src/protocol/LspSystemHandlers';
 import { RelationshipSchemaService } from '../src/services/RelationshipSchemaService';
 import { LspCfnEnvironmentHandlers } from '../src/protocol/LspCfnEnvironmentHandlers';
 import { FeatureFlagProvider, getFromGitHub } from '../src/featureFlag/FeatureFlagProvider';
@@ -189,6 +190,7 @@ function main() {
         stubInterface<LspResourceHandlers>(),
         stubInterface<LspRelatedResourcesHandlers>(),
         stubInterface<LspS3Handlers>(),
+        stubInterface<LspSystemHandlers>(),
     );
 
     const dataStoreFactory = new MultiDataStoreFactoryProvider();

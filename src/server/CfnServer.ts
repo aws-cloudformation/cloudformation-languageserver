@@ -50,6 +50,7 @@ import {
     describeChangeSetHandler,
     describeEventsHandler,
 } from '../handlers/StackHandler';
+import { getSystemStatusHandler } from '../handlers/SystemHandler';
 import { LspComponents } from '../protocol/LspComponents';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { withTelemetryContext } from '../telemetry/TelemetryContext';
@@ -114,6 +115,10 @@ export class CfnServer {
             withTelemetryContext('Configuration', configurationHandler(this.components)),
         );
         this.lsp.handlers.onCodeLens(withTelemetryContext('CodeLens', codeLensHandler(this.components)));
+
+        this.lsp.systemHandlers.onGetSystemStatus(
+            withTelemetryContext('SystemStatus', getSystemStatusHandler(this.components)),
+        );
 
         this.lsp.authHandlers.onIamCredentialsUpdate(
             withTelemetryContext('Auth.Update', iamCredentialsUpdateHandler(this.components)),

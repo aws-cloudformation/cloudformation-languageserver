@@ -30,6 +30,7 @@ import { LspRelatedResourcesHandlers } from '../../src/protocol/LspRelatedResour
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
 import { LspS3Handlers } from '../../src/protocol/LspS3Handlers';
 import { LspStackHandlers } from '../../src/protocol/LspStackHandlers';
+import { LspSystemHandlers } from '../../src/protocol/LspSystemHandlers';
 import { LspWorkspace } from '../../src/protocol/LspWorkspace';
 import { RelatedResourcesSnippetProvider } from '../../src/relatedResources/RelatedResourcesSnippetProvider';
 import { ResourceStateImporter } from '../../src/resourceState/ResourceStateImporter';
@@ -132,6 +133,7 @@ export function createMockCfnLintService() {
     mock.lint.returns(Promise.resolve());
     mock.lintDelayed.returns(Promise.resolve());
     mock.isInitialized.returns(true);
+    mock.getReadinessStatus.returns({ ready: true });
     return mock;
 }
 
@@ -144,6 +146,7 @@ export function createMockGuardService() {
     mock.getPendingValidationCount.returns(0);
     mock.getQueuedValidationCount.returns(0);
     mock.getActiveValidationCount.returns(0);
+    mock.getReadinessStatus.returns({ ready: true });
     return mock;
 }
 
@@ -215,6 +218,7 @@ export function createMockResourceStateImporter() {
 export function createMockSettingsManager(customSettings?: Settings) {
     const mock = stubInterface<SettingsManager>();
     mock.getCurrentSettings.returns(customSettings ?? DefaultSettings);
+    mock.getAppliedSettings.returns(customSettings ?? DefaultSettings);
     mock.syncConfiguration.returns(Promise.resolve());
     return mock;
 }
@@ -353,6 +357,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         resourceHandlers: overrides.resourceHandlers ?? stubInterface<LspResourceHandlers>(),
         relatedResourcesHandlers: overrides.relatedResourcesHandlers ?? stubInterface<LspRelatedResourcesHandlers>(),
         s3Handlers: overrides.s3Handlers ?? stubInterface<LspS3Handlers>(),
+        systemHandlers: overrides.systemHandlers ?? stubInterface<LspSystemHandlers>(),
     };
 
     const core: MockInfraCoreComponents = {

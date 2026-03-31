@@ -8,6 +8,7 @@ import { LspRelatedResourcesHandlers } from './LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from './LspResourceHandlers';
 import { LspS3Handlers } from './LspS3Handlers';
 import { LspStackHandlers } from './LspStackHandlers';
+import { LspSystemHandlers } from './LspSystemHandlers';
 import { LspWorkspace } from './LspWorkspace';
 
 export class LspComponents {
@@ -23,5 +24,6 @@ export class LspComponents {
         public readonly resourceHandlers: LspResourceHandlers,
         public readonly relatedResourcesHandlers: LspRelatedResourcesHandlers,
         public readonly s3Handlers: LspS3Handlers,
+        public readonly systemHandlers: LspSystemHandlers,
     ) {}
 }

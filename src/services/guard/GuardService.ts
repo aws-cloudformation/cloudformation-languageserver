@@ -94,6 +94,17 @@ export class GuardService implements SettingsConfigurable, Closeable {
     }
 
     /**
+     * Get the readiness status of the Guard service
+     */
+    public getReadinessStatus(): { ready: boolean; reason?: string } {
+        const ready = this.enabledRules.length > 0;
+        return {
+            ready,
+            ...(ready ? {} : { reason: 'No rules loaded' }),
+        };
+    }
+
+    /**
      * Configure the GuardService with settings manager
      * Sets up subscription to diagnostics settings changes
      */

@@ -191,6 +191,17 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     }
 
     /**
+     * Get the readiness status of the CfnLint service
+     */
+    public getReadinessStatus(): { ready: boolean; reason?: string } {
+        const ready = this.status === STATUS.Initialized;
+        return {
+            ready,
+            ...(ready ? {} : { reason: `Status is ${STATUS[this.status]}` }),
+        };
+    }
+
+    /**
      * Mount a workspace folder to the Pyodide filesystem.
      * This allows cfn-lint to access files in the workspace for linting.
      *

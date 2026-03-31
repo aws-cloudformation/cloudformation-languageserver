@@ -33,6 +33,13 @@ export class SettingsManager implements ISettingsSubscriber {
         return this.settingsState.toSettings();
     }
 
+    /**
+     * Get applied settings (alias for getCurrentSettings for system status)
+     */
+    getAppliedSettings(): Settings {
+        return this.settingsState.toSettings();
+    }
+
     reset() {
         this.validateAndUpdate(DefaultSettings);
     }
