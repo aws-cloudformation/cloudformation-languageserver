@@ -63,7 +63,7 @@ jobs:
             This PR was created by the `update-release-manifest` workflow.
             Please review the manifest changes and approve.
 
-            > ⚠️ This file is protected — only automated PRs from this workflow are allowed to modify `assets/release-manifest.json`.
-            > ℹ️ To trigger validation, close and reopen this PR.
+            > This file is protected — only automated PRs from this workflow are allowed to modify `assets/release-manifest.json`.
+            > To trigger validation, close and reopen this PR.
           labels: release-manifest, automated
           add-paths: assets/release-manifest.json

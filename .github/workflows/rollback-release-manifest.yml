@@ -58,6 +58,6 @@ jobs:
 
             Triggered manually by @${{ github.actor }}.
 
-            > ℹ️ To trigger validation, close and reopen this PR.
+            > ️To trigger validation, close and reopen this PR.
           labels: release-manifest, automated, rollback
           add-paths: assets/release-manifest.json
