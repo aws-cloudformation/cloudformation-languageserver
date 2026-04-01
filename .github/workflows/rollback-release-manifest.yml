@@ -49,7 +49,7 @@ jobs:
         with:
           branch: automated/rollback-release-manifest
           delete-branch: true
-          title: 'revert: Rollback release manifest to previous version'
+          title: 'revert: Rollback Release Manifest'
           body: |
             **Emergency rollback** of `assets/release-manifest.json` to the previous version.
 
@@ -58,6 +58,6 @@ jobs:
 
             Triggered manually by @${{ github.actor }}.
 
-            > ️To trigger validation, close and reopen this PR.
+            > To trigger validation, close and reopen this PR.
           labels: release-manifest, automated, rollback
           add-paths: assets/release-manifest.json
