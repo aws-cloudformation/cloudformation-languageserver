@@ -1,6 +1,7 @@
 import { diff } from 'deep-object-diff';
 import { DeepReadonly } from 'ts-essentials';
 import { LspWorkspace } from '../protocol/LspWorkspace';
+import { ReadinessStatus } from '../system/SystemTypes';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
@@ -18,7 +19,7 @@ export class SettingsManager implements ISettingsSubscriber {
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private readonly settingsState = new SettingsState();
     private readonly subscriptionManager = new SubscriptionManager<Settings>();
-    private isUpdatingSettings = false;
+    private readinessStatus: ReadinessStatus = { ready: false, reason: 'Not initialized' };
 
     constructor(
         private readonly workspace: LspWorkspace,
@@ -34,11 +35,8 @@ export class SettingsManager implements ISettingsSubscriber {
         return this.settingsState.toSettings();
     }
 
-    /**
-     * Check if settings update is in progress
-     */
-    isSettingsUpdateInProgress(): boolean {
-        return this.isUpdatingSettings;
+    getReadinessStatus(): ReadinessStatus {
+        return this.readinessStatus;
     }
 
     reset() {
@@ -82,7 +80,10 @@ export class SettingsManager implements ISettingsSubscriber {
 
             const settings = parseWithPrettyError(parseSettings, mergedConfig, this.getCurrentSettings());
             this.validateAndUpdate(settings);
+            this.readinessStatus = { ready: true };
         } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            this.readinessStatus = { ready: false, reason: `Settings sync failed: ${errorMessage}` };
             logger.error(error, `Failed to sync configuration, keeping previous settings`);
         }
     }
@@ -166,13 +167,16 @@ export class SettingsManager implements ISettingsSubscriber {
         const hasChanged = Object.keys(difference).length > 0;
 
         if (hasChanged) {
-            this.isUpdatingSettings = true;
+            this.readinessStatus = { ready: false, reason: 'Settings updating' };
             try {
                 this.settingsState.update(newSettings);
                 logger.info(`Settings updated: ${toString(difference)}`);
                 this.subscriptionManager.notify(newSettings, oldSettings);
-            } finally {
-                this.isUpdatingSettings = false;
+                this.readinessStatus = { ready: true };
+            } catch (error) {
+                const errorMessage = error instanceof Error ? error.message : String(error);
+                this.readinessStatus = { ready: false, reason: `Settings update failed: ${errorMessage}` };
+                logger.error(error, 'Failed to update settings');
             }
         }
     }

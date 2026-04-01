@@ -378,37 +378,37 @@ describe('SettingsManager', () => {
         });
     });
 
-    describe('isSettingsUpdateInProgress', () => {
-        test('should return false initially', () => {
-            expect(manager.isSettingsUpdateInProgress()).toBe(false);
+    describe('settings readiness status', () => {
+        test('should return not ready initially', () => {
+            expect(manager.getReadinessStatus()).toEqual({ ready: false, reason: 'Not initialized' });
         });
 
-        test('should return true during settings update', async () => {
+        test('should return updating during settings update', async () => {
             const mockConfig = { hover: { enabled: false } };
             mockWorkspace.getConfiguration.resolves(mockConfig);
 
-            let flagDuringUpdate = false;
+            let statusDuringUpdate: any = null;
 
-            // Spy on the subscription manager notify method to capture the flag state
+            // Spy on the subscription manager notify method to capture the status during update
             const originalNotify = (manager as any).subscriptionManager.notify;
             (manager as any).subscriptionManager.notify = vi.fn().mockImplementation((...args) => {
-                flagDuringUpdate = manager.isSettingsUpdateInProgress();
+                statusDuringUpdate = manager.getReadinessStatus();
                 return originalNotify.apply((manager as any).subscriptionManager, args);
             });
 
             await manager.syncConfiguration();
 
-            expect(flagDuringUpdate).toBe(true);
-            expect(manager.isSettingsUpdateInProgress()).toBe(false);
+            expect(statusDuringUpdate).toEqual({ ready: false, reason: 'Settings updating' });
+            expect(manager.getReadinessStatus()).toEqual({ ready: true });
         });
 
-        test('should return false after settings update completes', async () => {
+        test('should return ready after settings update completes', async () => {
             const mockConfig = { hover: { enabled: false } };
             mockWorkspace.getConfiguration.resolves(mockConfig);
 
             await manager.syncConfiguration();
 
-            expect(manager.isSettingsUpdateInProgress()).toBe(false);
+            expect(manager.getReadinessStatus()).toEqual({ ready: true });
         });
     });
 

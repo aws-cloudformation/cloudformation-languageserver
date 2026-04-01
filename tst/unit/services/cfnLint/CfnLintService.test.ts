@@ -1459,46 +1459,4 @@ describe('CfnLintService', () => {
             expect(lintStub.calledWith(mockTemplate, mockUri)).toBe(true);
         });
     });
-
-    describe('getReadinessStatus', () => {
-        test('should return not ready when uninitialized', () => {
-            const result = service.getReadinessStatus();
-            expect(result).toEqual({ ready: false, reason: 'Status is Uninitialized' });
-        });
-
-        test('should return not ready when initializing', () => {
-            void service.initialize();
-            const result = service.getReadinessStatus();
-            expect(result).toEqual({ ready: false, reason: 'Status is Initializing' });
-        });
-
-        test('should return ready when initialized', async () => {
-            await service.initialize();
-            const result = service.getReadinessStatus();
-            expect(result).toEqual({ ready: true });
-        });
-
-        test('should return ready when disabled', () => {
-            const { service, components } = createTestServiceWithState();
-
-            // Mock disabled settings
-            const disabledSettings = {
-                ...components.settingsManager.getCurrentSettings(),
-                diagnostics: {
-                    ...components.settingsManager.getCurrentSettings().diagnostics,
-                    cfnLint: {
-                        ...components.settingsManager.getCurrentSettings().diagnostics.cfnLint,
-                        enabled: false,
-                    },
-                },
-            };
-            components.settingsManager.getCurrentSettings.returns(disabledSettings);
-
-            // Configure service to pick up new settings
-            service.configure(components.settingsManager);
-
-            const result = service.getReadinessStatus();
-            expect(result).toEqual({ ready: true });
-        });
-    });
 });

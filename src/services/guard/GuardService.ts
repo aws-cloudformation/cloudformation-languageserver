@@ -6,6 +6,7 @@ import { DocumentManager } from '../../document/DocumentManager';
 import { ServerComponents } from '../../server/ServerComponents';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../../settings/ISettingsSubscriber';
 import { DefaultSettings, GuardSettings } from '../../settings/Settings';
+import { ReadinessStatus } from '../../system/SystemTypes';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
@@ -96,10 +97,7 @@ export class GuardService implements SettingsConfigurable, Closeable {
             });
     }
 
-    /**
-     * Get the readiness status of the Guard service
-     */
-    public getReadinessStatus(): { ready: boolean; reason?: string } {
+    public getReadinessStatus(): ReadinessStatus {
         // If disabled, consider it ready (nothing to do)
         if (!this.settings.enabled) {
             return { ready: true };

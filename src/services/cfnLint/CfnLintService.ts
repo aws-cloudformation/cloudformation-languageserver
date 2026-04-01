@@ -8,6 +8,7 @@ import { LspWorkspace } from '../../protocol/LspWorkspace';
 import { CfnLspServerComponentsType } from '../../server/ServerComponents';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../../settings/ISettingsSubscriber';
 import { DefaultSettings, CfnLintSettings } from '../../settings/Settings';
+import { ReadinessStatus } from '../../system/SystemTypes';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
@@ -48,6 +49,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
     private static readonly CFN_LINT_SOURCE = 'cfn-lint';
 
     private status: STATUS = STATUS.Uninitialized;
+    private readinessStatus: ReadinessStatus = { ready: false, reason: 'Not initialized' };
     private readonly delayer: Delayer<void>;
     private settings: CfnLintSettings;
     private settingsSubscription?: SettingsSubscription;
@@ -128,6 +130,17 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
         });
     }
 
+    getReadinessStatus(): ReadinessStatus {
+        if (!this.settings.enabled) {
+            return { ready: true }; // Disabled services are considered ready
+        }
+        return this.readinessStatus;
+    }
+
+    setReadinessStatus(status: ReadinessStatus): void {
+        this.readinessStatus = status;
+    }
+
     private onSettingsChanged(newSettings: CfnLintSettings): void {
         this.settings = newSettings;
         this.workerManager.updateSettings(newSettings);
@@ -188,23 +201,6 @@ export class CfnLintService implements SettingsConfigurable, Closeable {
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
             throw new Error(`Failed to initialize Pyodide worker: ${extractErrorMessage(error)}`);
         }
-    }
-
-    /**
-     * Get the readiness status of the CfnLint service
-     */
-    public getReadinessStatus(): { ready: boolean; reason?: string } {
-        // If disabled, consider it ready (nothing to do)
-        if (!this.settings.enabled) {
-            return { ready: true };
-        }
-
-        // If enabled, check actual readiness
-        const ready = this.status === STATUS.Initialized;
-        return {
-            ready,
-            ...(ready ? {} : { reason: `Status is ${STATUS[this.status]}` }),
-        };
     }
 
     /**

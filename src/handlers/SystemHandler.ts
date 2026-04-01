@@ -8,18 +8,22 @@ export function getSystemStatusHandler(
 ): RequestHandler<void, GetSystemStatusResponse, void> {
     return (): GetSystemStatusResponse => {
         try {
-            // If settings are updating, everything is not ready
-            if (components.settingsManager.isSettingsUpdateInProgress()) {
+            const settingsStatus = components.settingsManager.getReadinessStatus();
+
+            if (!settingsStatus.ready) {
+                const reason = settingsStatus.reason ?? 'Server initializing';
                 return {
-                    schemasReady: { ready: false, reason: 'Settings updating', availableRegions: [] },
-                    cfnLintReady: { ready: false, reason: 'Settings updating' },
-                    cfnGuardReady: { ready: false, reason: 'Settings updating' },
+                    settingsReady: settingsStatus,
+                    schemasReady: { ready: false, reason, availableRegions: [] },
+                    cfnLintReady: { ready: false, reason },
+                    cfnGuardReady: { ready: false, reason },
                     currentSettings: components.settingsManager.getCurrentSettings(),
                 };
             }
 
             const availableRegions = components.schemaStore.getPublicSchemaRegions();
             return {
+                settingsReady: settingsStatus,
                 schemasReady: {
                     availableRegions: [...availableRegions],
                     ready: availableRegions.length > 0,

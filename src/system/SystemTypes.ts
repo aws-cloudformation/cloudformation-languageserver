@@ -7,6 +7,7 @@ export type ReadinessStatus = {
 };
 
 export type GetSystemStatusResponse = {
+    settingsReady: ReadinessStatus;
     schemasReady: ReadinessStatus & {
         availableRegions: string[];
     };
@@ -15,4 +16,4 @@ export type GetSystemStatusResponse = {
     currentSettings: Settings;
 };
 
-export const GetSystemStatusRequestType = new RequestType<void, GetSystemStatusResponse, void>('aws/cfn/system/status');
+export const GetSystemStatusRequestType = new RequestType<void, GetSystemStatusResponse, void>('aws/system/status');

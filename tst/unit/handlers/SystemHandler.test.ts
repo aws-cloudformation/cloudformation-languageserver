@@ -15,16 +15,17 @@ describe('SystemStatusHandler', () => {
         it('should return complete system status when all components ready', () => {
             const availableRegions = ['us-east-1', 'us-west-2'];
             mockComponents.schemaStore.getPublicSchemaRegions.returns(availableRegions);
-            mockComponents.cfnLintService.getReadinessStatus.returns({ ready: true });
             mockComponents.guardService.getReadinessStatus.returns({ ready: true });
             mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
-            mockComponents.settingsManager.isSettingsUpdateInProgress.returns(false);
+            mockComponents.settingsManager.getReadinessStatus.returns({ ready: true });
+            mockComponents.cfnLintService.getReadinessStatus.returns({ ready: true });
 
             const handler = getSystemStatusHandler(mockComponents);
 
             const result = handler(undefined, CancellationToken.None);
 
             expect(result).toEqual({
+                settingsReady: { ready: true },
                 schemasReady: {
                     ready: true,
                     availableRegions,
@@ -37,25 +38,26 @@ describe('SystemStatusHandler', () => {
 
         it('should return reasons when components not ready', () => {
             mockComponents.schemaStore.getPublicSchemaRegions.returns([]);
-            mockComponents.cfnLintService.getReadinessStatus.returns({
-                ready: false,
-                reason: 'Status is Uninitialized',
-            });
             mockComponents.guardService.getReadinessStatus.returns({ ready: false, reason: 'No rules loaded' });
             mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
-            mockComponents.settingsManager.isSettingsUpdateInProgress.returns(false);
+            mockComponents.settingsManager.getReadinessStatus.returns({ ready: true });
+            mockComponents.cfnLintService.getReadinessStatus.returns({
+                ready: false,
+                reason: 'Service initialization failed',
+            });
 
             const handler = getSystemStatusHandler(mockComponents);
 
             const result = handler(undefined, CancellationToken.None);
 
             expect(result).toEqual({
+                settingsReady: { ready: true },
                 schemasReady: {
                     ready: false,
                     reason: 'No schemas loaded',
                     availableRegions: [],
                 },
-                cfnLintReady: { ready: false, reason: 'Status is Uninitialized' },
+                cfnLintReady: { ready: false, reason: 'Service initialization failed' },
                 cfnGuardReady: { ready: false, reason: 'No rules loaded' },
                 currentSettings: DefaultSettings,
             });
@@ -69,8 +71,11 @@ describe('SystemStatusHandler', () => {
             expect(() => handler(undefined, CancellationToken.None)).toThrow(ResponseError);
         });
 
-        it('should return all components as not ready during settings update', () => {
-            mockComponents.settingsManager.isSettingsUpdateInProgress.returns(true);
+        it('should return all components as not ready when settings not initialized', () => {
+            mockComponents.settingsManager.getReadinessStatus.returns({
+                ready: false,
+                reason: 'Settings sync failed',
+            });
             mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
 
             const handler = getSystemStatusHandler(mockComponents);
@@ -78,9 +83,10 @@ describe('SystemStatusHandler', () => {
             const result = handler(undefined, CancellationToken.None);
 
             expect(result).toEqual({
-                schemasReady: { ready: false, reason: 'Settings updating', availableRegions: [] },
-                cfnLintReady: { ready: false, reason: 'Settings updating' },
-                cfnGuardReady: { ready: false, reason: 'Settings updating' },
+                settingsReady: { ready: false, reason: 'Settings sync failed' },
+                schemasReady: { ready: false, reason: 'Settings sync failed', availableRegions: [] },
+                cfnLintReady: { ready: false, reason: 'Settings sync failed' },
+                cfnGuardReady: { ready: false, reason: 'Settings sync failed' },
                 currentSettings: DefaultSettings,
             });
         });

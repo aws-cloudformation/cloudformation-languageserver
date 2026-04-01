@@ -134,6 +134,7 @@ export function createMockCfnLintService() {
     mock.lintDelayed.returns(Promise.resolve());
     mock.isInitialized.returns(true);
     mock.getReadinessStatus.returns({ ready: true });
+    mock.setReadinessStatus.returns();
     return mock;
 }
 
@@ -218,7 +219,7 @@ export function createMockResourceStateImporter() {
 export function createMockSettingsManager(customSettings?: Settings) {
     const mock = stubInterface<SettingsManager>();
     mock.getCurrentSettings.returns(customSettings ?? DefaultSettings);
-    mock.isSettingsUpdateInProgress.returns(false);
+    mock.getReadinessStatus.returns({ ready: true });
     mock.syncConfiguration.returns(Promise.resolve());
     return mock;
 }
