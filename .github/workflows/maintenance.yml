@@ -40,14 +40,16 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: 'chore: maintenance update'
+          commit-message: 'chore: Maintenance update'
           branch: maintenance/update
           delete-branch: true
           title: 'chore: Maintenance Update'
           body: |
-            Automated maintenance update
-            
+            Automated maintenance update.
+
             - Updated wheels via download-wheels
-            
-            This PR was automatically created by the maintenance workflow.
+
+            This PR was created by the `maintenance` workflow.
+
+            > To trigger validation, close and reopen this PR.
           labels: maintenance, automated

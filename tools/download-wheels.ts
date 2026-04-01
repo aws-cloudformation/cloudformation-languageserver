@@ -1,16 +1,15 @@
 #!/usr/bin/env node
 
 import { execSync } from 'child_process';
-import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
+import { mkdirSync, readdirSync, rmSync, unlinkSync } from 'fs';
 import { join, resolve } from 'path';
 
 function downloadWheels(): void {
     const projectRoot = resolve(__dirname, '..');
     const wheelsDir = join(projectRoot, 'assets', 'wheels');
 
-    if (!existsSync(wheelsDir)) {
-        mkdirSync(wheelsDir, { recursive: true });
-    }
+    rmSync(wheelsDir, { recursive: true, force: true });
+    mkdirSync(wheelsDir, { recursive: true });
 
     console.log(`Downloading wheels to: ${wheelsDir}`);
 

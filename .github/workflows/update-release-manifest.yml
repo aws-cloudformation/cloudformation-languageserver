@@ -53,17 +53,17 @@ jobs:
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v7
         with:
-          commit-message: 'ci: Update release manifest'
+          commit-message: 'chore: Update release manifest'
           branch: automated/update-release-manifest
           delete-branch: true
-          title: 'ci: Update Release Manifest'
+          title: 'chore: Update Release Manifest'
           body: |
             Automated release manifest update.
 
             This PR was created by the `update-release-manifest` workflow.
             Please review the manifest changes and approve.
 
-            > This file is protected — only automated PRs from this workflow are allowed to modify `assets/release-manifest.json`.
+            > This file is protected. Only automated PRs from this workflow are allowed to modify `assets/release-manifest.json`.
             > To trigger validation, close and reopen this PR.
           labels: release-manifest, automated
           add-paths: assets/release-manifest.json
