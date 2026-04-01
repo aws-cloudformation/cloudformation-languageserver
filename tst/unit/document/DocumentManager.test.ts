@@ -2,7 +2,7 @@ import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { TextDocuments } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { CloudFormationFileType } from '../../../src/document/Document';
+import { CloudFormationFileType, Document } from '../../../src/document/Document';
 import { DocumentManager } from '../../../src/document/DocumentManager';
 
 describe('DocumentManager', () => {
@@ -45,6 +45,19 @@ describe('DocumentManager', () => {
 
             expect(documentManager.get('file:///missing.yaml')?.cfnFileType).toBeUndefined();
             expect(documentManager.isTemplate('file:///missing.yaml')).toBe(false);
+        });
+    });
+
+    describe('updateDocument', () => {
+        it('should update cached document', () => {
+            const uri = 'file:///template.yaml';
+            const document1 = new Document(TextDocument.create(uri, 'yaml', 1, 'content1'));
+            const document2 = new Document(TextDocument.create(uri, 'json', 2, 'content2'));
+
+            documentManager.updateDocument(uri, document1);
+            documentManager.updateDocument(uri, document2);
+
+            expect(documentManager.get(uri)).toBe(document2);
         });
     });
 

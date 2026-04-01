@@ -126,6 +126,10 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
         this.documentMap.delete(uri);
     }
 
+    updateDocument(uri: string, document: Document): void {
+        this.documentMap.set(uri, document);
+    }
+
     private onEditorSettingsChanged(newEditorSettings: EditorSettings): void {
         const oldSettings = this.editorSettings;
         this.editorSettings = newEditorSettings;

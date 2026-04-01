@@ -54,13 +54,20 @@ export function didChangeHandler(
         }
 
         // This is the document AFTER changes
-        const document = new Document(textDocument);
-        const finalContent = document.getText();
+        const finalDocument = new Document(textDocument);
+        const finalContent = finalDocument.getText();
+
+        const cachedDocument = components.documentManager.get(documentUri);
+
+        // Update cache if file type changed
+        if (cachedDocument?.cfnFileType !== finalDocument.cfnFileType) {
+            components.documentManager.updateDocument(documentUri, finalDocument);
+        }
 
         const tree = components.syntaxTreeManager.getSyntaxTree(documentUri);
 
         // Short-circuit if this is not a template (anymore)
-        if (document.cfnFileType === CloudFormationFileType.Other) {
+        if (finalDocument.cfnFileType === CloudFormationFileType.Other) {
             if (tree) {
                 // Clean-up if was but no longer is a template
                 components.syntaxTreeManager.deleteSyntaxTree(documentUri);

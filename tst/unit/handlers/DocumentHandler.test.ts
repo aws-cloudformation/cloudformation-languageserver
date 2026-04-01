@@ -482,4 +482,81 @@ describe('DocumentHandler', () => {
             // Both should be called despite cfn-lint failing
         });
     });
+
+    describe('Document manager updates on file type change', () => {
+        it('should update document cache when file type changes from Empty to Template', () => {
+            const emptyContent = '';
+            const templateContent = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket';
+
+            const emptyTextDoc = TextDocument.create(testUri, 'yaml', 1, emptyContent);
+            const templateTextDoc = TextDocument.create(testUri, 'yaml', 2, templateContent);
+
+            const oldDocument = new Document(emptyTextDoc);
+            mockServices.documentManager.get.returns(oldDocument);
+
+            mockDocuments({ get: vi.fn().mockReturnValue(templateTextDoc) });
+
+            const params: DidChangeTextDocumentParams = {
+                textDocument: { uri: testUri, version: 2 },
+                contentChanges: [{ text: templateContent }],
+            };
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(params);
+
+            expect(mockServices.documentManager.updateDocument.calledOnce).toBe(true);
+            const [uri, newDoc] = mockServices.documentManager.updateDocument.getCall(0).args;
+            expect(uri).toBe(testUri);
+            expect(newDoc.cfnFileType).toBe(CloudFormationFileType.Template);
+        });
+
+        it('should update document cache when file type changes from Other to Template', () => {
+            const otherContent = 'name: testing\nversion: 1.0.0';
+            const templateContent =
+                'AWSTemplateFormatVersion: "2010-09-09"\nResources:\n  Bucket:\n    Type: AWS::S3::Bucket';
+
+            const otherTextDoc = TextDocument.create(testUri, 'yaml', 1, otherContent);
+            const templateTextDoc = TextDocument.create(testUri, 'yaml', 2, templateContent);
+
+            const oldDocument = new Document(otherTextDoc);
+            mockServices.documentManager.get.returns(oldDocument);
+
+            // Mock documents collection to return updated document
+            mockDocuments({ get: vi.fn().mockReturnValue(templateTextDoc) });
+
+            const params: DidChangeTextDocumentParams = {
+                textDocument: { uri: testUri, version: 2 },
+                contentChanges: [{ text: templateContent }],
+            };
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(params);
+
+            expect(mockServices.documentManager.updateDocument.calledOnce).toBe(true);
+        });
+
+        it('should not update document cache when file type remains the same', () => {
+            const templateContent1 = 'Resources:\n  Bucket1:\n    Type: AWS::S3::Bucket';
+            const templateContent2 = 'Resources:\n  Bucket2:\n    Type: AWS::S3::Bucket';
+
+            const templateTextDoc1 = TextDocument.create(testUri, 'yaml', 1, templateContent1);
+            const templateTextDoc2 = TextDocument.create(testUri, 'yaml', 2, templateContent2);
+
+            const oldDocument = new Document(templateTextDoc1);
+            mockServices.documentManager.get.returns(oldDocument);
+
+            mockDocuments({ get: vi.fn().mockReturnValue(templateTextDoc2) });
+
+            const params: DidChangeTextDocumentParams = {
+                textDocument: { uri: testUri, version: 2 },
+                contentChanges: [{ text: templateContent2 }],
+            };
+
+            const handler = didChangeHandler(mockServices.documents, mockServices);
+            handler(params);
+
+            // Verify updateDocument was NOT called when file type didn't change
+            expect(mockServices.documentManager.updateDocument.called).toBe(false);
+        });
+    });
 });
