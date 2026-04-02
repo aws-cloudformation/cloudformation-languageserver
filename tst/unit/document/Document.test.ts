@@ -466,17 +466,16 @@ describe('Document', () => {
             const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
             const doc = new Document(textDocument);
 
-            const meta = doc.metadata();
-
-            expect(meta.sizeBytes).toBe(new TextEncoder().encode(content).length);
+            expect(doc.metadata().sizeBytes).toBe(46);
         });
 
         it('should compute sizeBytes using byte length not character count', () => {
-            const content = '日本語テンプレート';
+            // 'é' is 1 character but 2 bytes in UTF-8
+            const content = 'é'.repeat(10);
             const textDocument = TextDocument.create('file:///unicode.yaml', 'yaml', 1, content);
             const doc = new Document(textDocument);
 
-            expect(doc.metadata().sizeBytes).toBe(new TextEncoder().encode(content).length);
+            expect(doc.metadata().sizeBytes).toBe(20);
         });
     });
 });
