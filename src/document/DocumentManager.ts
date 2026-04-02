@@ -7,7 +7,6 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { Delayer } from '../utils/Delayer';
-import { byteSize } from '../utils/String';
 import { CloudFormationFileType, Document, DocumentType } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
@@ -170,7 +169,7 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
     private emitDocSizeMetrics() {
         for (const doc of this.documentMap.values()) {
             if (doc.isTemplate()) {
-                this.telemetry.histogram('documents.template.size.bytes', byteSize(doc.contents()), { unit: 'By' });
+                this.telemetry.histogram('documents.template.size.bytes', doc.metadata().sizeBytes, { unit: 'By' });
             }
         }
     }

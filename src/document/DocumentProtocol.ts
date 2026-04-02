@@ -10,6 +10,7 @@ export type DocumentMetadata = {
     languageId: string;
     version: number;
     lineCount: number;
+    sizeBytes: number;
 };
 
 export type DocumentPreview = {
