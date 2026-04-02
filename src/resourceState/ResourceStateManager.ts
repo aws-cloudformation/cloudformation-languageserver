@@ -17,7 +17,6 @@ import { isClientError } from '../utils/AwsErrorMapper';
 import { Closeable } from '../utils/Closeable';
 import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
-import { cached } from 'zod/v4/core/util.cjs';
 
 const log = LoggerFactory.getLogger('ResourceStateManager');
 
@@ -86,7 +85,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         }
 
         if (!output?.TypeName || !output?.ResourceDescription?.Identifier || !output?.ResourceDescription?.Properties) {
-            throw new Error (
+            throw new Error(
                 `GetResource output is missing required fields for type ${typeName} with identifier "${identifier}"`,
             );
         }
@@ -141,7 +140,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         } catch {
             return { found: false };
         }
-      
+
         // Add to cache
         const cached = this.resourceListMap.get(typeName);
         if (cached && !cached.resourceIdentifiers.includes(identifier)) {
