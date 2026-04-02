@@ -152,12 +152,6 @@ export class RelatedResourcesSnippetProvider {
         }
     }
 
-    /**
-     * Counts the number of top-level properties on the inserted resource type
-     * that reference the parent resource type. Used to determine whether to
-     * auto-populate: if multiple properties reference the same parent, we leave
-     * them empty since we can't determine which one the user intends.
-     */
     private countTopLevelParentReferences(resourceType: string, parentResourceType: string): number {
         const relationships = this.relationshipSchemaService.getRelationshipsForResourceType(resourceType);
         if (!relationships) {
@@ -177,12 +171,6 @@ export class RelatedResourcesSnippetProvider {
         return count;
     }
 
-    /**
-     * Adds non-required properties that reference the parent resource type.
-     * These properties are discovered from the relationship schema and are
-     * pre-populated with !Ref or !GetAtt to the parent logical ID.
-     * Only populates when exactly one top-level property references the parent.
-     */
     private addParentReferencingProperties(
         resource: { Type: string; Properties?: Record<string, unknown> },
         resourceType: string,
@@ -195,7 +183,6 @@ export class RelatedResourcesSnippetProvider {
             return;
         }
 
-        // Don't auto-populate if multiple top-level properties reference the parent
         if (this.countTopLevelParentReferences(resourceType, parentResourceType) > 1) {
             return;
         }
@@ -208,17 +195,14 @@ export class RelatedResourcesSnippetProvider {
         const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
 
         for (const rel of relationships.relationships) {
-            // Only match direct top-level property names (no nested paths with /)
             if (rel.property.includes('/')) {
                 continue;
             }
 
-            // Skip if already added as a required property
             if (requiredProps.has(rel.property)) {
                 continue;
             }
 
-            // Skip array properties - don't auto-populate them with references
             const propSchema = schema?.properties?.[rel.property];
             if (propSchema?.type === 'array') {
                 continue;
@@ -238,12 +222,6 @@ export class RelatedResourcesSnippetProvider {
         }
     }
 
-    /**
-     * Determines the property value for a related resource property.
-     * If the property references the parent resource type, returns a !Ref or !GetAtt reference.
-     * Only populates when exactly one top-level property references the parent.
-     * Otherwise returns an empty string.
-     */
     private getPropertyValueForRelatedResource(
         propName: string,
         resourceType: string,
@@ -255,14 +233,12 @@ export class RelatedResourcesSnippetProvider {
             return '';
         }
 
-        // Skip array properties - don't auto-populate them with references
         const schema = this.schemaRetriever.getDefault().schemas.get(resourceType);
         const propSchema = schema?.properties?.[propName];
         if (propSchema?.type === 'array') {
             return '';
         }
 
-        // Don't auto-populate if multiple top-level properties reference the parent
         if (this.countTopLevelParentReferences(resourceType, parentResourceType) > 1) {
             return '';
         }
@@ -273,9 +249,6 @@ export class RelatedResourcesSnippetProvider {
         }
 
         for (const rel of relationships.relationships) {
-            // Only match direct top-level property names
-            // rel.property may contain nested paths like "VpcConfig/SecurityGroupIds"
-            // We only match when the property path is exactly the propName (top-level)
             if (rel.property === propName) {
                 const matchingType = rel.relatedResourceTypes.find((rt) => rt.typeName === parentResourceType);
                 if (matchingType) {
@@ -292,32 +265,20 @@ export class RelatedResourcesSnippetProvider {
         return '';
     }
 
-    /**
-     * Builds the appropriate intrinsic function reference (!Ref or !GetAtt) based on
-     * whether the attribute matches the parent resource's primary identifier.
-     *
-     * - If the attribute is the primary identifier → !Ref ParentLogicalId
-     * - If the attribute is NOT the primary identifier → !GetAtt ParentLogicalId.AttributeName
-     *
-     * @param parentLogicalId - The logical ID of the parent resource in the template
-     * @param attribute - The attribute path from the relationship schema (e.g., "/properties/Arn")
-     * @param parentResourceType - The parent resource type (e.g., "AWS::IAM::Role")
-     * @param documentType - YAML or JSON
-     */
     private buildIntrinsicReference(
         parentLogicalId: string,
-        attribute: string,
+        attributePath: string,
         parentResourceType: string,
         documentType: DocumentType,
     ): unknown {
-        const useGetAtt = !this.isAttributePrimaryIdentifier(attribute, parentResourceType);
-        const attributeName = this.extractAttributeName(attribute);
+        const useGetAtt = !this.isAttributePrimaryIdentifier(attributePath, parentResourceType);
+        const attributePathName = this.extractAttributeName(attributePath);
 
-        if (useGetAtt && attributeName) {
+        if (useGetAtt && attributePathName) {
             if (documentType === DocumentType.YAML) {
-                return `${GETATT_PLACEHOLDER_PREFIX}${parentLogicalId}${GETATT_PLACEHOLDER_SEPARATOR}${attributeName}${GETATT_PLACEHOLDER_SUFFIX}`;
+                return `${GETATT_PLACEHOLDER_PREFIX}${parentLogicalId}${GETATT_PLACEHOLDER_SEPARATOR}${attributePathName}${GETATT_PLACEHOLDER_SUFFIX}`;
             } else {
-                return { [IntrinsicFunction.GetAtt]: [parentLogicalId, attributeName] };
+                return { [IntrinsicFunction.GetAtt]: [parentLogicalId, attributePathName] };
             }
         }
 
@@ -329,56 +290,36 @@ export class RelatedResourcesSnippetProvider {
         }
     }
 
-    /**
-     * Checks if the given attribute path matches the parent resource type's primary identifier.
-     * If the parent schema is not available, defaults to using !Ref (returns true).
-     */
-    private isAttributePrimaryIdentifier(attribute: string, parentResourceType: string): boolean {
+    private isAttributePrimaryIdentifier(attributePath: string, parentResourceType: string): boolean {
         try {
             const parentSchema = this.schemaRetriever.getDefault().schemas.get(parentResourceType);
             if (!parentSchema?.primaryIdentifier) {
-                return true; // Default to !Ref when schema is unavailable
+                return true;
             }
-            return parentSchema.primaryIdentifier.includes(attribute);
+            return parentSchema.primaryIdentifier.includes(attributePath);
         } catch {
-            return true; // Default to !Ref on error
+            return true;
         }
     }
 
-    /**
-     * Extracts the attribute name from a JSON pointer path.
-     * e.g., "/properties/Arn" → "Arn"
-     *       "/properties/VpcId" → "VpcId"
-     */
-    private extractAttributeName(attribute: string): string | undefined {
-        const parts = attribute.split('/');
+    private extractAttributeName(attributePath: string): string | undefined {
+        const parts = attributePath.split('/');
         return parts.length > 0 ? parts[parts.length - 1] : undefined;
     }
 
-    /**
-     * Replaces intrinsic function placeholders in the serialized YAML output with
-     * proper !Ref and !GetAtt syntax.
-     * The YAML serializer quotes strings starting with !, so we use placeholders during
-     * serialization and then replace them afterward.
-     */
     private replaceIntrinsicPlaceholders(text: string): string {
-        // Replace !GetAtt placeholders: '__CFN_GETATT_MyRole_DOT_Arn__' → '!GetAtt MyRole.Arn'
         const getAttRegex = new RegExp(
             `['"]?${GETATT_PLACEHOLDER_PREFIX}([a-zA-Z0-9]+)${GETATT_PLACEHOLDER_SEPARATOR}([a-zA-Z0-9]+)${GETATT_PLACEHOLDER_SUFFIX}['"]?`,
             'g',
         );
         text = text.replaceAll(getAttRegex, '!GetAtt $1.$2');
 
-        // Replace !Ref placeholders: '__CFN_REF_MyVpc__' → '!Ref MyVpc'
         const refRegex = new RegExp(`['"]?${REF_PLACEHOLDER_PREFIX}([a-zA-Z0-9]+)${REF_PLACEHOLDER_SUFFIX}['"]?`, 'g');
         text = text.replaceAll(refRegex, '!Ref $1');
 
         return text;
     }
 
-    /**
-     * Finds the logical ID of the first resource in the template that matches the given resource type.
-     */
     private findParentLogicalId(syntaxTree: SyntaxTree | undefined, parentResourceType: string): string | undefined {
         if (!syntaxTree) {
             return undefined;
