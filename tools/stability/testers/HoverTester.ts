@@ -1,8 +1,8 @@
-import { LspClient } from '../../lsp-client/LspClient';
-import { StandaloneTester, OperationType } from './TesterTypes';
+import { LspClient } from '../../lspClient/LspClient';
+import { OperationTester, OperationType } from './TesterTypes';
 import { retryOperationWithPerformance } from './TesterCommon';
 
-export class HoverTester implements StandaloneTester {
+export class HoverTester implements OperationTester {
     constructor(private readonly client: LspClient) {}
 
     private extractHoverContent(hoverResult: any): string {

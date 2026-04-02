@@ -23,5 +23,5 @@ export async function retryOperationWithPerformance<T>(
         RETRY_INTERVAL_MS,
     );
 
-    recordOperation(responseTime, true, operationType);
+    recordOperation(responseTime, operationType);
 }

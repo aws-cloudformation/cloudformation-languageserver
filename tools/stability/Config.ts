@@ -1,12 +1,12 @@
-export interface StandaloneConfig {
+export interface Config {
     duration: string;
     maxRetries: number;
     responseTimeout: number;
-    standalonePath: string;
+    path: string;
 }
 
-function parseSimpleArgs(): Partial<StandaloneConfig> {
-    const args: Partial<StandaloneConfig> = {};
+function parseSimpleArgs(): Partial<Config> {
+    const args: Partial<Config> = {};
 
     for (let i = 0; i < process.argv.length; i++) {
         const arg = process.argv[i];
@@ -21,8 +21,8 @@ function parseSimpleArgs(): Partial<StandaloneConfig> {
         } else if (arg === '--response-timeout' && nextArg) {
             args.responseTimeout = Number.parseInt(nextArg);
             i++;
-        } else if (arg === '--standalone-path' && nextArg) {
-            args.standalonePath = nextArg;
+        } else if (arg === '--path' && nextArg) {
+            args.path = nextArg;
             i++;
         }
     }
@@ -30,13 +30,13 @@ function parseSimpleArgs(): Partial<StandaloneConfig> {
     return args;
 }
 
-export function parseStandaloneConfig(): StandaloneConfig {
+export function parseConfig(): Config {
     // Start with environment variables (npm script support)
     const envConfig = {
-        duration: process.env.LONG_RUNNING_DURATION ?? '4h',
+        duration: process.env.STABILITY_TEST_DURATION ?? '4h',
         maxRetries: Number.parseInt(process.env.MAX_RETRIES ?? '3'),
         responseTimeout: Number.parseInt(process.env.RESPONSE_TIMEOUT ?? '5000'),
-        standalonePath: process.env.STANDALONE_PATH ?? './cfn-lsp-server-standalone.js',
+        path: process.env.STANDALONE_PATH ?? './cfn-lsp-server-standalone.js',
     };
 
     // Override with command line arguments if provided

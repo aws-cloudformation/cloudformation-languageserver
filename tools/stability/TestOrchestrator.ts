@@ -1,43 +1,52 @@
-import { LspClient } from '../lsp-client/LspClient';
-import { parseStandaloneConfig, parseDuration } from './Config';
+import { LspClient } from '../lspClient/LspClient';
+import { parseConfig, parseDuration } from './Config';
 import { initializeMonitoring, logProgress, checkPerformanceDegradation } from './Monitoring';
 import { HoverTester } from './testers/HoverTester';
 import { CompletionTester } from './testers/CompletionTester';
-import { STANDALONE_TEMPLATE_CONFIGS } from './Templates';
+import { TEMPLATE_CONFIGS } from './Templates';
 import { AwsRegion } from '../../src/utils/Region';
 import { WaitFor } from '../../tst/utils/Utils';
 import { existsSync } from 'fs';
 
 export class TestOrchestrator {
     private client!: LspClient;
-    private readonly config = parseStandaloneConfig();
+    private readonly config = parseConfig();
     private startTime!: number;
     private endTime!: number;
     private hoverTester!: HoverTester;
     private completionTester!: CompletionTester;
 
-    private readonly templates = STANDALONE_TEMPLATE_CONFIGS;
+    private readonly templates = TEMPLATE_CONFIGS;
 
     private readonly testRegions = Object.values(AwsRegion);
 
     async initialize(): Promise<void> {
-        console.log('Starting CloudFormation Language Server Standalone Long-Running Tests');
+        console.log('Starting CloudFormation Language Server Long-Running Tests');
         console.log(`Duration: ${this.config.duration}`);
         console.log(`Max retries: ${this.config.maxRetries}`);
         console.log(`Response timeout: ${this.config.responseTimeout}ms`);
-        console.log(`Standalone path: ${this.config.standalonePath}`);
+        console.log(`Standalone path: ${this.config.path}`);
 
         // Verify standalone bundle exists
-        if (!existsSync(this.config.standalonePath)) {
-            throw new Error(`Standalone bundle not found at: ${this.config.standalonePath}`);
+        if (!existsSync(this.config.path)) {
+            throw new Error(`Standalone bundle not found at: ${this.config.path}`);
         }
 
         // Initialize LSP client
         this.client = new LspClient({
-            serverPath: this.config.standalonePath,
+            serverPath: this.config.path,
             mode: 'ipc',
-            clientId: 'standalone-long-running-test',
+            clientId: 'stability-test',
+            clientInfo: {
+                name: 'CFN LSP Stability Test',
+                version: '1.0.0',
+            },
+            extensionInfo: {
+                name: 'aws.cloudformation.lsp.stability-test',
+                version: '1.0.0',
+            },
             telemetryEnabled: false,
+            featureFlags: {},
         });
 
         await this.client.initialize();
@@ -49,19 +58,12 @@ export class TestOrchestrator {
 
         console.log(`Loaded ${this.templates.length} templates`);
 
-        // Wait for full system readiness before loading schemas
-        await this.waitForSystemReadiness();
+        await this.client.waitForExternalServiceInitialization();
 
         await this.loadAllRegionSchemas();
 
         initializeMonitoring();
         console.log('Initialization complete');
-    }
-
-    private async waitForSystemReadiness(): Promise<void> {
-        console.log('Waiting for core services readiness');
-
-        await this.client.waitForReadiness();
     }
 
     async runTests(): Promise<void> {
@@ -73,7 +75,6 @@ export class TestOrchestrator {
 
         let cycleCount = 0;
         let successCount = 0;
-        let errorCount = 0;
         let lastProgressLog = Date.now();
         const progressInterval = 5 * 60 * 1000; // 5 minutes
 
@@ -91,13 +92,10 @@ export class TestOrchestrator {
                     lastProgressLog = Date.now();
                 }
             } catch (error) {
-                errorCount++;
                 console.error(`Test cycle ${cycleCount} failed:`, error);
 
-                // Fail fast if too many errors
-                if (errorCount > 10) {
-                    throw new Error(`Too many errors (${errorCount}), failing fast`);
-                }
+                // Fail fast - throw immediately on any error
+                throw new Error(`Long-running test failed on cycle ${cycleCount}: ${error}`);
             }
 
             // Brief pause between cycles
@@ -105,7 +103,7 @@ export class TestOrchestrator {
         }
 
         console.log(`Test execution completed after ${cycleCount} cycles`);
-        console.log(`Results: ${successCount} success, ${errorCount} errors`);
+        console.log(`Results: ${successCount} success, 0 errors`);
     }
 
     async cleanup(): Promise<void> {
@@ -143,8 +141,8 @@ export class TestOrchestrator {
 
     private async loadAllRegionSchemas(): Promise<void> {
         // Check what regions are already available from LspClient
-        const alreadyAvailable = [...this.client.readyRegions];
-        const unavailableRegions = this.testRegions.filter((region) => !this.client.readyRegions.has(region));
+        const alreadyAvailable = [...this.client.getAvailableRegions()];
+        const unavailableRegions = this.testRegions.filter((region) => !this.client.getAvailableRegions().has(region));
 
         console.log(`Schema status: ${alreadyAvailable.length} available, ${unavailableRegions.length} unavailable`);
         console.log(`Available region schemas: ${alreadyAvailable.join(', ')}`);
@@ -165,8 +163,8 @@ export class TestOrchestrator {
         try {
             await WaitFor.waitFor(
                 () => {
-                    if (!this.client.readyRegions.has(region)) {
-                        throw new Error(`Region ${region} schemas not ready yet`);
+                    if (!this.client.getAvailableRegions().has(region)) {
+                        throw new Error(`Region ${region} schemas not loaded yet`);
                     }
                 },
                 30_000, // 30 second timeout

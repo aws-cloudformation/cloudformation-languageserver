@@ -10,7 +10,7 @@ async function main(): Promise<void> {
         generateFinalReport(Date.now());
     } catch (error) {
         generateFinalReport(Date.now());
-        console.error('Standalone test failed:', error);
+        console.error('Test failed:', error);
         throw error;
     } finally {
         await orchestrator.cleanup();

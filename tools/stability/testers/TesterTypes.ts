@@ -3,7 +3,7 @@ export enum OperationType {
     COMPLETION = 'completion',
 }
 
-export interface StandaloneTester {
+export interface OperationTester {
     testAllScenarios(uri: string): Promise<void>;
 }
 

@@ -9,32 +9,33 @@ import {
     IPCMessageWriter,
     TextDocumentContentChangeEvent,
 } from 'vscode-languageserver-protocol/node';
-import { randomBytes, randomUUID } from 'crypto';
-import { LspClientConfig, ReadinessFlags, ExtendedInitializeParams } from './types';
+import { randomBytes } from 'crypto';
+import { CompactEncrypt } from 'jose';
+import { LspClientConfig, InitializationFlags } from './types';
+import { ExtendedInitializeParams } from '../../src/server/InitParams';
+import { IamCredentials } from '../../src/auth/AwsLspAuthTypes';
 import { LspConnection } from './LspConnectionInterface';
 import { WaitFor } from '../../tst/utils/Utils';
 
 /**
  * Common LSP client for CloudFormation Language Server testing.
- * Handles server startup, LSP protocol communication, and readiness detection.
+ * Handles server startup, LSP protocol communication, and external service initialization detection.
  */
 export class LspClient implements LspConnection {
     protected serverProcess?: ChildProcess;
     protected connection?: MessageConnection;
-    protected readinessFlags: ReadinessFlags = {
+    protected initialization: InitializationFlags = {
         cfnLint: false,
         cfnGuard: false,
     };
 
-    public readonly clientId: string;
     public readonly createdAt: number;
-    protected readonly encryptionKey: Buffer;
+    private readonly encryptionKey: Buffer;
     protected isShutdown = false;
-    protected currentWorkspaceConfig: Record<string, unknown>[] = [{}];
-    public readyRegions = new Set<string>();
+    protected workspaceConfig: Record<string, unknown>[] = [{}];
+    protected availableRegions = new Set<string>();
 
     constructor(protected config: LspClientConfig) {
-        this.clientId = config.clientId ?? `lsp-client-${randomUUID()}`;
         this.createdAt = performance.now();
         this.encryptionKey = randomBytes(32);
     }
@@ -53,7 +54,7 @@ export class LspClient implements LspConnection {
 
         console.log(`LspClient: Server process spawned with PID: ${this.serverProcess.pid}`);
 
-        // 2. Setup output monitoring for readiness detection
+        // 2. Setup output monitoring for external service initialization detection
         this.attachOutputListeners();
 
         // 3. Create LSP connection
@@ -78,14 +79,14 @@ export class LspClient implements LspConnection {
                 const results = params.items.map((item: any) => {
                     if (item.section === 'aws.cloudformation') {
                         // Return just the CloudFormation config part
-                        const fullConfig = this.currentWorkspaceConfig[0] ?? {};
+                        const fullConfig = this.workspaceConfig[0] ?? {};
                         return (fullConfig as any)['aws.cloudformation'] ?? {};
                     }
                     return {};
                 });
                 return results;
             }
-            return this.currentWorkspaceConfig;
+            return this.workspaceConfig;
         });
 
         this.connection.listen();
@@ -105,18 +106,18 @@ export class LspClient implements LspConnection {
     private readonly onServerOutput = (data: Buffer) => {
         const output = data.toString().trim();
 
-        // Readiness detection
+        // external service initialization detection
         if (output.includes('cfn-lint version')) {
-            this.readinessFlags.cfnLint = true;
+            this.initialization.cfnLint = true;
         }
         if (output.includes('Loading rules from')) {
-            this.readinessFlags.cfnGuard = true;
+            this.initialization.cfnGuard = true;
         }
 
         // Region-specific schema loading
         const regionSchemaMatch = output.match(/public schemas downloaded for ([a-z0-9-]+)/);
         if (regionSchemaMatch) {
-            this.readyRegions.add(regionSchemaMatch[1]);
+            this.availableRegions.add(regionSchemaMatch[1]);
         }
 
         // Log filtering
@@ -155,28 +156,20 @@ export class LspClient implements LspConnection {
                     completion: { dynamicRegistration: true },
                 },
             },
-            clientInfo: {
-                name: 'CFN LSP Test Client',
-                version: '1.0.0',
-            },
+            clientInfo: this.config.clientInfo,
             initializationOptions: {
                 aws: {
                     clientInfo: {
-                        extension: {
-                            name: 'aws.cloudformation.lsp.test',
-                            version: '1.0.0',
-                        },
-                        clientId: this.clientId,
+                        extension: this.config.extensionInfo,
+                        clientId: this.config.clientId,
                     },
-                    telemetryEnabled: this.config.telemetryEnabled ?? true,
+                    telemetryEnabled: this.config.telemetryEnabled,
                     storageDir: this.config.storageDir,
                     encryption: {
                         key: this.encryptionKey.toString('base64'),
                         mode: 'JWT',
                     },
-                    ...(this.config.featureFlags && {
-                        featureFlags: this.config.featureFlags,
-                    }),
+                    featureFlags: this.config.featureFlags,
                 },
             },
         };
@@ -251,8 +244,8 @@ export class LspClient implements LspConnection {
     async changeConfiguration(params: { settings: any }): Promise<void> {
         // Store the new configuration
         if (params.settings) {
-            const currentConfig = this.currentWorkspaceConfig[0] ?? {};
-            this.currentWorkspaceConfig = [{ ...currentConfig, ...params.settings }];
+            const currentConfig = this.workspaceConfig[0] ?? {};
+            this.workspaceConfig = [{ ...currentConfig, ...params.settings }];
         }
 
         // Send the configuration change notification
@@ -275,24 +268,37 @@ export class LspClient implements LspConnection {
         this.connection!.onRequest(method, handler);
     }
 
-    async waitForReadiness(timeoutMs: number = 30_000): Promise<void> {
+    async waitForExternalServiceInitialization(): Promise<void> {
+        console.log('Waiting for lint and guard initialization');
+
         await WaitFor.waitFor(
             () => {
-                if (!this.readinessFlags.cfnLint || !this.readinessFlags.cfnGuard) {
-                    throw new Error('Lint and Guard services not ready yet');
+                if (!this.initialization.cfnLint || !this.initialization.cfnGuard) {
+                    throw new Error('Lint and Guard services not initialized');
                 }
-                console.log('Lint and Guard services are ready');
+                console.log('Lint and Guard services are initialized');
             },
-            timeoutMs,
+            30_000,
             500, // Check every 500ms
         );
     }
 
-    get readiness(): ReadinessFlags {
-        return { ...this.readinessFlags };
+    getAvailableRegions(): ReadonlySet<string> {
+        return this.availableRegions;
     }
 
-    /** Shutdown the LSP server */
+    async updateCredentials(credentials: IamCredentials): Promise<void> {
+        const payload = new TextEncoder().encode(JSON.stringify({ data: credentials }));
+        const jwt = await new CompactEncrypt(payload)
+            .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
+            .encrypt(this.encryptionKey);
+
+        await this.connection!.sendRequest('aws/credentials/iam/update', {
+            data: jwt,
+            encrypted: true,
+        });
+    }
+
     async shutdown(): Promise<void> {
         if (this.isShutdown) return;
         this.isShutdown = true;
