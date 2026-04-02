@@ -207,16 +207,16 @@ jobs:
         run: echo "Bundling from branch=$(git rev-parse --abbrev-ref HEAD), commit=$(git rev-parse HEAD), tag=$(git describe --tags --exact-match)"
 
       - name: Setup Node.js ${{ matrix.node-version }} (${{ runner.os }})
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
 
       - name: Setup Go ${{ needs.get-configs.outputs.go-version }} (${{ runner.os }})
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v6
         with:
           go-version: ${{ needs.get-configs.outputs.go-version }}
-          cache: true
+          cache-dependency-path: cfn-init/go.sum
 
       - name: Install Dependencies
         run: npm ci
