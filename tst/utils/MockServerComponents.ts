@@ -133,8 +133,7 @@ export function createMockCfnLintService() {
     mock.lint.returns(Promise.resolve());
     mock.lintDelayed.returns(Promise.resolve());
     mock.isInitialized.returns(true);
-    mock.getReadinessStatus.returns({ ready: true });
-    mock.setReadinessStatus.returns();
+    mock.isReady.returns({ ready: true });
     return mock;
 }
 
@@ -147,7 +146,7 @@ export function createMockGuardService() {
     mock.getPendingValidationCount.returns(0);
     mock.getQueuedValidationCount.returns(0);
     mock.getActiveValidationCount.returns(0);
-    mock.getReadinessStatus.returns({ ready: true });
+    mock.isReady.returns({ ready: true });
     return mock;
 }
 
@@ -219,7 +218,7 @@ export function createMockResourceStateImporter() {
 export function createMockSettingsManager(customSettings?: Settings) {
     const mock = stubInterface<SettingsManager>();
     mock.getCurrentSettings.returns(customSettings ?? DefaultSettings);
-    mock.getReadinessStatus.returns({ ready: true });
+    mock.isReady.returns({ ready: true });
     mock.syncConfiguration.returns(Promise.resolve());
     return mock;
 }
@@ -385,6 +384,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         iacGeneratorService: overrides.iacGeneratorService ?? createMockIacGeneratorService(),
         schemaStore: overrides.schemaStore ?? createMockSchemaStore(),
         schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
+        schemaReadiness: overrides.schemaReadiness ?? stubInterface(),
         cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
         guardService: overrides.guardService ?? createMockGuardService(),
         s3Service: overrides.s3Service ?? stubInterface(),

@@ -2,6 +2,7 @@ import { FeatureFlagProvider, getFromGitHub } from '../featureFlag/FeatureFlagPr
 import { LspComponents } from '../protocol/LspComponents';
 import { getSamSchemas } from '../schema/GetSamSchemaTask';
 import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
+import { SchemaReadiness } from '../schema/SchemaReadiness';
 import { SchemaRetriever } from '../schema/SchemaRetriever';
 import { SchemaStore } from '../schema/SchemaStore';
 import { AwsClient } from '../services/AwsClient';
@@ -31,6 +32,7 @@ export class CfnExternal implements Configurables, Closeable {
 
     readonly schemaStore: SchemaStore;
     readonly schemaRetriever: SchemaRetriever;
+    readonly schemaReadiness: SchemaReadiness;
 
     readonly cfnLintService: CfnLintService;
     readonly guardService: GuardService;
@@ -59,6 +61,7 @@ export class CfnExternal implements Configurables, Closeable {
                 undefined,
                 validatePositiveOrUndefined(core.awsMetadata?.schema?.staleDaysThreshold),
             );
+        this.schemaReadiness = overrides.schemaReadiness ?? new SchemaReadiness(this.schemaStore);
 
         this.cfnLintService =
             overrides.cfnLintService ??
@@ -80,7 +83,7 @@ export class CfnExternal implements Configurables, Closeable {
     }
 
     configurables(): Configurable[] {
-        return [this.schemaRetriever, this.cfnLintService, this.guardService];
+        return [this.schemaRetriever, this.schemaReadiness, this.cfnLintService, this.guardService];
     }
 
     async close() {

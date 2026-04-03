@@ -617,11 +617,11 @@ rule S3_BUCKET_ENCRYPTION {
         });
     });
 
-    describe('getReadinessStatus', () => {
+    describe('isReady', () => {
         it('should return not ready when no rules loaded', () => {
             const service = GuardService.create(mockComponents, mockGuardEngine, mockRuleConfiguration, mockDelayer);
-            const result = service.getReadinessStatus();
-            expect(result).toEqual({ ready: false, reason: 'No rules loaded' });
+            const result = service.isReady();
+            expect(result).toEqual({ ready: false });
         });
 
         it('should return not ready when loading rules', () => {
@@ -630,8 +630,8 @@ rule S3_BUCKET_ENCRYPTION {
             // Set the loading state via private property access
             (service as any).isLoadingRules = true;
 
-            const result = service.getReadinessStatus();
-            expect(result).toEqual({ ready: false, reason: 'Loading rules' });
+            const result = service.isReady();
+            expect(result).toEqual({ ready: false });
         });
 
         it('should return ready when service is disabled', () => {
@@ -651,7 +651,7 @@ rule S3_BUCKET_ENCRYPTION {
             // Configure the service to pick up the settings
             service.configure(mockComponents.settingsManager);
 
-            const result = service.getReadinessStatus();
+            const result = service.isReady();
             expect(result).toEqual({ ready: true });
         });
     });

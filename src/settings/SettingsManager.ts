@@ -1,10 +1,10 @@
 import { diff } from 'deep-object-diff';
 import { DeepReadonly } from 'ts-essentials';
 import { LspWorkspace } from '../protocol/LspWorkspace';
-import { ReadinessStatus } from '../system/SystemTypes';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
+import { ReadinessContributor, ReadinessStatus } from '../utils/ReadinessContributor';
 import { AwsRegion } from '../utils/Region';
 import { toString } from '../utils/String';
 import { PartialDataObserver, SubscriptionManager } from '../utils/SubscriptionManager';
@@ -15,11 +15,11 @@ import { parseSettings } from './SettingsParser';
 
 const logger = LoggerFactory.getLogger('SettingsManager');
 
-export class SettingsManager implements ISettingsSubscriber {
+export class SettingsManager implements ISettingsSubscriber, ReadinessContributor {
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private readonly settingsState = new SettingsState();
     private readonly subscriptionManager = new SubscriptionManager<Settings>();
-    private readinessStatus: ReadinessStatus = { ready: false, reason: 'Not initialized' };
+    private settingsReady = false;
 
     constructor(
         private readonly workspace: LspWorkspace,
@@ -35,8 +35,8 @@ export class SettingsManager implements ISettingsSubscriber {
         return this.settingsState.toSettings();
     }
 
-    getReadinessStatus(): ReadinessStatus {
-        return this.readinessStatus;
+    isReady(): ReadinessStatus {
+        return { ready: this.settingsReady };
     }
 
     reset() {
@@ -80,10 +80,8 @@ export class SettingsManager implements ISettingsSubscriber {
 
             const settings = parseWithPrettyError(parseSettings, mergedConfig, this.getCurrentSettings());
             this.validateAndUpdate(settings);
-            this.readinessStatus = { ready: true };
+            this.settingsReady = true;
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            this.readinessStatus = { ready: false, reason: `Settings sync failed: ${errorMessage}` };
             logger.error(error, `Failed to sync configuration, keeping previous settings`);
         }
     }
@@ -124,6 +122,8 @@ export class SettingsManager implements ISettingsSubscriber {
      */
     @Measure({ name: 'settingsUpdate', captureErrorAttributes: true })
     private validateAndUpdate(newSettings: Settings): void {
+        this.settingsReady = false;
+
         const oldSettings = this.settingsState.toSettings();
 
         newSettings.diagnostics.cfnLint.initialization.maxDelayMs = clipNumber(
@@ -167,18 +167,16 @@ export class SettingsManager implements ISettingsSubscriber {
         const hasChanged = Object.keys(difference).length > 0;
 
         if (hasChanged) {
-            this.readinessStatus = { ready: false, reason: 'Settings updating' };
             try {
                 this.settingsState.update(newSettings);
                 logger.info(`Settings updated: ${toString(difference)}`);
                 this.subscriptionManager.notify(newSettings, oldSettings);
-                this.readinessStatus = { ready: true };
             } catch (error) {
-                const errorMessage = error instanceof Error ? error.message : String(error);
-                this.readinessStatus = { ready: false, reason: `Settings update failed: ${errorMessage}` };
                 logger.error(error, 'Failed to update settings');
             }
         }
+
+        this.settingsReady = true;
     }
 
     private registerSettingsGauges(): void {

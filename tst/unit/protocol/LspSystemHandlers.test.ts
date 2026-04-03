@@ -1,8 +1,7 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Connection } from 'vscode-languageserver/node';
-import { LspSystemHandlers } from '../../../src/protocol/LspSystemHandlers';
-import { GetSystemStatusRequestType } from '../../../src/system/SystemTypes';
+import { GetSystemStatusRequestType, LspSystemHandlers } from '../../../src/protocol/LspSystemHandlers';
 
 describe('LspSystemHandlers', () => {
     let lspSystemHandlers: LspSystemHandlers;

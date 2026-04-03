@@ -27,7 +27,6 @@ describe('InitializeHandler', () => {
         mockServices.cfnLintService.initialize.returns(Promise.resolve());
 
         const syncConfigSpy = vi.spyOn(mockServices.settingsManager, 'syncConfiguration').mockResolvedValue();
-        const setLintReadinessSpy = vi.spyOn(mockServices.cfnLintService, 'setReadinessStatus');
 
         const handler = initializedHandler(mockServices.lsp.workspace, mockServices);
         handler();
@@ -38,41 +37,5 @@ describe('InitializeHandler', () => {
         expect(syncConfigSpy).toHaveBeenCalled();
         expect(mockServices.cfnLintService.initialize.called).toBe(true);
         expect(mockServices.cfnLintService.mountFolder.calledWith(mockWorkspaceFolder)).toBe(true);
-
-        expect(setLintReadinessSpy).toHaveBeenCalledWith({ ready: true });
-    });
-
-    test('should handle mounting failures and set appropriate lint status', async () => {
-        const mountError = new Error('Mount failed');
-        mockServices.workspace.getAllWorkspaceFolders.returns([mockWorkspaceFolder]);
-        mockServices.cfnLintService.initialize.returns(Promise.resolve());
-        mockServices.cfnLintService.mountFolder.returns(Promise.reject(mountError));
-
-        const setLintReadinessSpy = vi.spyOn(mockServices.cfnLintService, 'setReadinessStatus');
-
-        const handler = initializedHandler(mockServices.lsp.workspace, mockServices);
-        handler();
-
-        await flushAllPromises();
-
-        expect(setLintReadinessSpy).toHaveBeenCalledWith({
-            ready: false,
-            reason: 'Failed to mount folder test: Mount failed',
-        });
-    });
-
-    test('should set lint as ready when no workspace folders exist', async () => {
-        mockServices.workspace.getAllWorkspaceFolders.returns([]);
-        mockServices.cfnLintService.initialize.returns(Promise.resolve());
-
-        const setLintReadinessSpy = vi.spyOn(mockServices.cfnLintService, 'setReadinessStatus');
-
-        const handler = initializedHandler(mockServices.lsp.workspace, mockServices);
-        handler();
-
-        await flushAllPromises();
-
-        // Assert lint readiness was set to ready (no folders to mount)
-        expect(setLintReadinessSpy).toHaveBeenCalledWith({ ready: true });
     });
 });

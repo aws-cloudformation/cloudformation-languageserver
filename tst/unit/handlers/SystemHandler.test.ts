@@ -12,13 +12,12 @@ describe('SystemStatusHandler', () => {
     });
 
     describe('systemStatusHandler', () => {
-        it('should return complete system status when all components ready', () => {
-            const availableRegions = ['us-east-1', 'us-west-2'];
-            mockComponents.schemaStore.getPublicSchemaRegions.returns(availableRegions);
-            mockComponents.guardService.getReadinessStatus.returns({ ready: true });
+        it('should return system status when all components ready', () => {
+            mockComponents.guardService.isReady.returns({ ready: true });
             mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
-            mockComponents.settingsManager.getReadinessStatus.returns({ ready: true });
-            mockComponents.cfnLintService.getReadinessStatus.returns({ ready: true });
+            mockComponents.settingsManager.isReady.returns({ ready: true });
+            mockComponents.cfnLintService.isReady.returns({ ready: true });
+            mockComponents.schemaReadiness.isReady.returns({ ready: true });
 
             const handler = getSystemStatusHandler(mockComponents);
 
@@ -26,25 +25,21 @@ describe('SystemStatusHandler', () => {
 
             expect(result).toEqual({
                 settingsReady: { ready: true },
-                schemasReady: {
-                    ready: true,
-                    availableRegions,
-                },
+                schemasReady: { ready: true },
                 cfnLintReady: { ready: true },
                 cfnGuardReady: { ready: true },
                 currentSettings: DefaultSettings,
             });
         });
 
-        it('should return reasons when components not ready', () => {
-            mockComponents.schemaStore.getPublicSchemaRegions.returns([]);
-            mockComponents.guardService.getReadinessStatus.returns({ ready: false, reason: 'No rules loaded' });
+        it('should return system status when components not ready', () => {
+            mockComponents.guardService.isReady.returns({ ready: false });
             mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
-            mockComponents.settingsManager.getReadinessStatus.returns({ ready: true });
-            mockComponents.cfnLintService.getReadinessStatus.returns({
+            mockComponents.settingsManager.isReady.returns({ ready: true });
+            mockComponents.cfnLintService.isReady.returns({
                 ready: false,
-                reason: 'Service initialization failed',
             });
+            mockComponents.schemaReadiness.isReady.returns({ ready: false });
 
             const handler = getSystemStatusHandler(mockComponents);
 
@@ -52,43 +47,21 @@ describe('SystemStatusHandler', () => {
 
             expect(result).toEqual({
                 settingsReady: { ready: true },
-                schemasReady: {
-                    ready: false,
-                    reason: 'No schemas loaded',
-                    availableRegions: [],
-                },
-                cfnLintReady: { ready: false, reason: 'Service initialization failed' },
-                cfnGuardReady: { ready: false, reason: 'No rules loaded' },
+                schemasReady: { ready: false },
+                cfnLintReady: { ready: false },
+                cfnGuardReady: { ready: false },
                 currentSettings: DefaultSettings,
             });
         });
 
         it('should handle errors gracefully', () => {
             const originalError = new Error('Database error');
-            mockComponents.schemaStore.getPublicSchemaRegions.throws(originalError);
+            mockComponents.settingsManager.getCurrentSettings.throws(originalError);
 
             const handler = getSystemStatusHandler(mockComponents);
+
             expect(() => handler(undefined, CancellationToken.None)).toThrow(ResponseError);
-        });
-
-        it('should return all components as not ready when settings not initialized', () => {
-            mockComponents.settingsManager.getReadinessStatus.returns({
-                ready: false,
-                reason: 'Settings sync failed',
-            });
-            mockComponents.settingsManager.getCurrentSettings.returns(DefaultSettings);
-
-            const handler = getSystemStatusHandler(mockComponents);
-
-            const result = handler(undefined, CancellationToken.None);
-
-            expect(result).toEqual({
-                settingsReady: { ready: false, reason: 'Settings sync failed' },
-                schemasReady: { ready: false, reason: 'Settings sync failed', availableRegions: [] },
-                cfnLintReady: { ready: false, reason: 'Settings sync failed' },
-                cfnGuardReady: { ready: false, reason: 'Settings sync failed' },
-                currentSettings: DefaultSettings,
-            });
+            expect(() => handler(undefined, CancellationToken.None)).toThrow('Failed to get system status');
         });
     });
 });

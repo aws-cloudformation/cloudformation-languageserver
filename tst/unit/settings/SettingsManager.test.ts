@@ -380,7 +380,7 @@ describe('SettingsManager', () => {
 
     describe('settings readiness status', () => {
         test('should return not ready initially', () => {
-            expect(manager.getReadinessStatus()).toEqual({ ready: false, reason: 'Not initialized' });
+            expect(manager.isReady()).toEqual({ ready: false });
         });
 
         test('should return updating during settings update', async () => {
@@ -392,14 +392,14 @@ describe('SettingsManager', () => {
             // Spy on the subscription manager notify method to capture the status during update
             const originalNotify = (manager as any).subscriptionManager.notify;
             (manager as any).subscriptionManager.notify = vi.fn().mockImplementation((...args) => {
-                statusDuringUpdate = manager.getReadinessStatus();
+                statusDuringUpdate = manager.isReady();
                 return originalNotify.apply((manager as any).subscriptionManager, args);
             });
 
             await manager.syncConfiguration();
 
-            expect(statusDuringUpdate).toEqual({ ready: false, reason: 'Settings updating' });
-            expect(manager.getReadinessStatus()).toEqual({ ready: true });
+            expect(statusDuringUpdate).toEqual({ ready: false });
+            expect(manager.isReady()).toEqual({ ready: true });
         });
 
         test('should return ready after settings update completes', async () => {
@@ -408,7 +408,7 @@ describe('SettingsManager', () => {
 
             await manager.syncConfiguration();
 
-            expect(manager.getReadinessStatus()).toEqual({ ready: true });
+            expect(manager.isReady()).toEqual({ ready: true });
         });
     });
 

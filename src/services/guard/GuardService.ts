@@ -6,7 +6,6 @@ import { DocumentManager } from '../../document/DocumentManager';
 import { ServerComponents } from '../../server/ServerComponents';
 import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../../settings/ISettingsSubscriber';
 import { DefaultSettings, GuardSettings } from '../../settings/Settings';
-import { ReadinessStatus } from '../../system/SystemTypes';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
@@ -14,6 +13,7 @@ import { Closeable } from '../../utils/Closeable';
 import { CancellationError, Delayer } from '../../utils/Delayer';
 import { extractErrorMessage } from '../../utils/Errors';
 import { readFileIfExistsAsync } from '../../utils/File';
+import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessContributor';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
 import { getRulesForPack, getAvailableRulePacks, GuardRuleData } from './GeneratedGuardRules';
@@ -42,7 +42,7 @@ interface ValidationQueueEntry {
     reject: (error: Error) => void;
 }
 
-export class GuardService implements SettingsConfigurable, Closeable {
+export class GuardService implements SettingsConfigurable, Closeable, ReadinessContributor {
     private static readonly CFN_GUARD_SOURCE = 'cfn-guard';
 
     private settings: GuardSettings;
@@ -97,23 +97,11 @@ export class GuardService implements SettingsConfigurable, Closeable {
             });
     }
 
-    public getReadinessStatus(): ReadinessStatus {
-        // If disabled, consider it ready (nothing to do)
+    public isReady(): ReadinessStatus {
         if (!this.settings.enabled) {
             return { ready: true };
         }
-
-        // If loading rules, not ready
-        if (this.isLoadingRules) {
-            return { ready: false, reason: 'Loading rules' };
-        }
-
-        // Check if rules are loaded
-        const ready = this.enabledRules.length > 0;
-        return {
-            ready,
-            ...(ready ? {} : { reason: 'No rules loaded' }),
-        };
+        return { ready: !this.isLoadingRules && this.enabledRules.length > 0 };
     }
 
     /**
