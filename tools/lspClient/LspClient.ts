@@ -11,10 +11,9 @@ import {
 } from 'vscode-languageserver-protocol/node';
 import { randomBytes } from 'crypto';
 import { CompactEncrypt } from 'jose';
-import { LspClientConfig, InitializationFlags } from './types';
+import { LspClientConfig, LspConnection, InitializationFlags } from './LspConnection';
 import { ExtendedInitializeParams } from '../../src/server/InitParams';
 import { IamCredentials } from '../../src/auth/AwsLspAuthTypes';
-import { LspConnection } from './LspConnectionInterface';
 import { WaitFor } from '../../tst/utils/Utils';
 
 /**
