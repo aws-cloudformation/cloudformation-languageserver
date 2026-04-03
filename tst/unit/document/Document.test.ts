@@ -459,4 +459,23 @@ describe('Document', () => {
             expect(doc.getTemplateSizeCategory()).toBe('xlarge');
         });
     });
+
+    describe('metadata', () => {
+        it('should include sizeBytes matching content byte length', () => {
+            const content = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket';
+            const textDocument = TextDocument.create('file:///test.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.metadata().sizeBytes).toBe(46);
+        });
+
+        it('should compute sizeBytes using byte length not character count', () => {
+            // 'é' is 1 character but 2 bytes in UTF-8
+            const content = 'é'.repeat(10);
+            const textDocument = TextDocument.create('file:///unicode.yaml', 'yaml', 1, content);
+            const doc = new Document(textDocument);
+
+            expect(doc.metadata().sizeBytes).toBe(20);
+        });
+    });
 });

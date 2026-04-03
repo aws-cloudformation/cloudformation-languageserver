@@ -2,6 +2,7 @@ import { TextDocument, Position, Range, DocumentUri } from 'vscode-languageserve
 import { TopLevelSection } from '../context/CloudFormationEnums';
 import { DefaultSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { byteSize } from '../utils/String';
 import { DocumentMetadata } from './DocumentProtocol';
 import { detectDocumentType, uriToPath } from './DocumentUtils';
 import { parseValidYaml } from './YamlParser';
@@ -170,6 +171,7 @@ export class Document {
             languageId: this.languageId,
             version: this.version,
             lineCount: this.textDocument.lineCount,
+            sizeBytes: byteSize(this.textDocument.getText()),
         };
     }
 
