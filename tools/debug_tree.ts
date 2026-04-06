@@ -143,7 +143,7 @@ class DebugTreeTool {
                 path: filePath,
                 extension: fileExtension,
                 size: content.length,
-                cloudFormationFileType: cloudFormationFileType!.toString(),
+                cloudFormationFileType: cloudFormationFileType?.toString() ?? 'unknown',
             },
             syntaxTree: {
                 rootNodeType: '',

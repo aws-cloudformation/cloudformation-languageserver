@@ -2508,6 +2508,40 @@ Resources:
             });
         });
 
+        describe('Resource Type Value', () => {
+            it('should provide resource type value completions when typing in Type field', async () => {
+                const template = getSimpleJsonTemplateText();
+                const updatedTemplate = `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyBucket": {
+      "Type": "AWS::S3::B"
+    }
+  }
+}`;
+                const uri = await client.openJsonTemplate(template);
+
+                await client.changeDocument({
+                    textDocument: { uri, version: 2 },
+                    contentChanges: [{ text: updatedTemplate }],
+                });
+
+                const completions: any = await client.completion({
+                    textDocument: { uri },
+                    position: { line: 4, character: 23 },
+                });
+
+                expect(completions).toBeDefined();
+                expect(completions?.items).toBeDefined();
+                expect(completions.items.length).toBeGreaterThan(0);
+
+                const labels = completions.items.map((item: any) => item.label);
+                expect(labels).toContain('AWS::S3::Bucket');
+
+                await client.closeDocument({ textDocument: { uri } });
+            });
+        });
+
         describe('Resource Attributes', () => {
             it('should provide Type attribute completion', async () => {
                 const template = getSimpleJsonTemplateText();

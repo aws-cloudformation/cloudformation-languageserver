@@ -95,7 +95,10 @@ export class CompletionFormatter {
 
         // Set filterText for ALL items (including snippets) when in JSON with quotes
         const isInJsonString = documentType === DocumentType.JSON && context.syntaxNode.type === 'string';
-        if (isInJsonString) {
+        const isJsonValueCompletion = documentType === DocumentType.JSON && item.kind === CompletionItemKind.Class;
+        if (isJsonValueCompletion) {
+            formattedItem.filterText = `"${item.label}"`;
+        } else if (isInJsonString) {
             formattedItem.filterText = `"${context.text}"`;
         }
 
@@ -170,6 +173,20 @@ export class CompletionFormatter {
 
         const indentation = ' '.repeat(context.startPosition.column);
         const indentString = getIndentationString(editorSettings, DocumentType.JSON);
+
+        // When completing a value (e.g. resource type "AWS::S3::Bucket"), just replace the value text
+        // Resource types use CompletionItemKind.Class and are always value completions in JSON
+        const isValueCompletion = item.kind === CompletionItemKind.Class;
+        if (isValueCompletion) {
+            // Include surrounding quotes in the range so VS Code matches the full token
+            const startCol = Math.max(0, context.startPosition.column - 1);
+            const endCol = context.endPosition.column + 1;
+            const range = Range.create(
+                Position.create(context.startPosition.row, startCol),
+                Position.create(context.endPosition.row, endCol),
+            );
+            return { text: `"${label}"`, range, isSnippet: false };
+        }
 
         let replacementText = `${indentation}"${label}":`;
         let isSnippet = false;

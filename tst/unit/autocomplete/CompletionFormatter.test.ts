@@ -542,7 +542,7 @@ describe('CompletionFormatAdapter', () => {
             const mockContext = createResourceContext('MyBucket', {
                 type: DocumentType.JSON,
                 text: 'BucketEncryption',
-                propertyPath: ['Resources', 'MyBucket', 'Properties'],
+                propertyPath: ['Resources', 'MyBucket', 'Properties', 'BucketEncryption'],
                 data: { Type: 'AWS::S3::Bucket' },
                 nodeType: 'string',
             });
@@ -779,10 +779,11 @@ describe('CompletionFormatAdapter', () => {
 
     describe('JSON filterText handling', () => {
         test('should set filterText with quotes when in JSON string context', () => {
-            const mockContext = createTopLevelContext('Resources', {
+            const mockContext = createTopLevelContext('Unknown', {
                 type: DocumentType.JSON,
                 nodeType: 'string',
                 text: 'Res',
+                propertyPath: ['Res'],
             });
             const completions: CompletionList = {
                 isIncomplete: false,
@@ -867,6 +868,67 @@ describe('CompletionFormatAdapter', () => {
             expect(result.items[0].textEdit).toBeDefined();
             // First type is 'string', so should format as string
             expect(result.items[0].textEdit?.newText).toContain('"MultiTypeProperty": "$0"');
+        });
+    });
+
+    describe('JSON value completions', () => {
+        test('should format resource type value completion without colon', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'AWS::S3::B',
+                propertyPath: ['Resources', 'MyBucket', 'Type'],
+                data: { Type: 'AWS::S3::B' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'AWS::S3::Bucket',
+                        kind: CompletionItemKind.Class,
+                    },
+                ],
+            };
+
+            const lineContent = '      "Type": "AWS::S3::B"';
+            const result = formatter.format(completions, mockContext, defaultEditorSettings, lineContent);
+
+            expect(result.items[0].textEdit).toBeDefined();
+            // Value completions should not append a colon after the value
+            expect(result.items[0].textEdit?.newText).not.toMatch(/:$/);
+            expect(result.items[0].textEdit?.newText).not.toMatch(/:\s*$/);
+            // Should include quotes around the value
+            expect(result.items[0].textEdit?.newText).toContain('"AWS::S3::Bucket"');
+            // filterText should include quotes for VS Code matching
+            expect(result.items[0].filterText).toBe('"AWS::S3::Bucket"');
+        });
+
+        test('should not replace the key when completing a value', () => {
+            const mockContext = createResourceContext('MyBucket', {
+                type: DocumentType.JSON,
+                text: 'AWS::S3::B',
+                propertyPath: ['Resources', 'MyBucket', 'Type'],
+                data: { Type: 'AWS::S3::B' },
+                nodeType: 'string',
+            });
+
+            const completions: CompletionList = {
+                isIncomplete: false,
+                items: [
+                    {
+                        label: 'AWS::S3::Bucket',
+                        kind: CompletionItemKind.Class,
+                    },
+                ],
+            };
+
+            const lineContent = '      "Type": "AWS::S3::B"';
+            const result = formatter.format(completions, mockContext, defaultEditorSettings, lineContent);
+
+            // Range should start near the value, not at column 0
+            const textEdit = result.items[0].textEdit as any;
+            expect(textEdit.range.start.character).toBeGreaterThan(0);
         });
     });
 });
