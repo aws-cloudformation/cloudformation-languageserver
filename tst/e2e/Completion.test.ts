@@ -2542,6 +2542,41 @@ Resources:
             });
         });
 
+        describe('Enum Value Completions', () => {
+            it('should provide enum value completions for DeletionPolicy in JSON', async () => {
+                const template = getSimpleJsonTemplateText();
+                const updatedTemplate = `{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Resources": {
+    "MyBucket": {
+      "Type": "AWS::S3::Bucket",
+      "DeletionPolicy": ""
+    }
+  }
+}`;
+                const uri = await client.openJsonTemplate(template);
+
+                await client.changeDocument({
+                    textDocument: { uri, version: 2 },
+                    contentChanges: [{ text: updatedTemplate }],
+                });
+
+                const completions: any = await client.completion({
+                    textDocument: { uri },
+                    position: { line: 5, character: 24 },
+                });
+
+                expect(completions).toBeDefined();
+                expect(completions?.items).toBeDefined();
+                expect(completions.items.length).toBeGreaterThan(0);
+
+                const labels = completions.items.map((item: any) => item.label);
+                expect(labels).toContain('Retain');
+                expect(labels).toContain('Delete');
+
+                await client.closeDocument({ textDocument: { uri } });
+            });
+        });
         describe('Resource Attributes', () => {
             it('should provide Type attribute completion', async () => {
                 const template = getSimpleJsonTemplateText();
