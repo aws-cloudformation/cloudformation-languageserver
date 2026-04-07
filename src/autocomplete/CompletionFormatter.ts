@@ -95,8 +95,8 @@ export class CompletionFormatter {
 
         // Set filterText for ALL items (including snippets) when in JSON with quotes
         const isInJsonString = documentType === DocumentType.JSON && context.syntaxNode.type === 'string';
-        const isJsonValueCompletion = documentType === DocumentType.JSON && item.kind === CompletionItemKind.Class;
-        if (isJsonValueCompletion) {
+        const isJsonValueNode = isInJsonString && this.isJsonValuePosition(context);
+        if (isJsonValueNode) {
             formattedItem.filterText = `"${item.label}"`;
         } else if (isInJsonString) {
             formattedItem.filterText = `"${context.text}"`;
@@ -175,8 +175,8 @@ export class CompletionFormatter {
         const indentString = getIndentationString(editorSettings, DocumentType.JSON);
 
         // When completing a value (e.g. resource type "AWS::S3::Bucket"), just replace the value text
-        // Resource types use CompletionItemKind.Class and are always value completions in JSON
-        const isValueCompletion = item.kind === CompletionItemKind.Class;
+        // Check the syntax tree: if the node is the value child of a JSON pair, it's a value completion
+        const isValueCompletion = this.isJsonValuePosition(context);
         if (isValueCompletion) {
             // Include surrounding quotes in the range so VS Code matches the full token
             const startCol = Math.max(0, context.startPosition.column - 1);
@@ -365,5 +365,15 @@ export class CompletionFormatter {
     private isArrayType(item?: CompletionItem): boolean {
         const data = item?.data as CompletionItemData | undefined;
         return data?.type === 'array';
+    }
+
+    /**
+     * Check if the cursor is at a JSON value position using the syntax tree.
+     * A node is a value if it's the value child of a pair node.
+     */
+    private isJsonValuePosition(context: Context): boolean {
+        const node = context.syntaxNode;
+        const parent = node.parent;
+        return parent?.type === 'pair' && parent.childForFieldName('value') === node;
     }
 }

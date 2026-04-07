@@ -872,6 +872,12 @@ describe('CompletionFormatAdapter', () => {
     });
 
     describe('JSON value completions', () => {
+        function mockValueNode(context: any) {
+            const node = context.syntaxNode;
+            const pairParent = { type: 'pair', childForFieldName: (name: string) => (name === 'value' ? node : null) };
+            Object.defineProperty(node, 'parent', { value: pairParent, writable: true });
+        }
+
         test('should format resource type value completion without colon', () => {
             const mockContext = createResourceContext('MyBucket', {
                 type: DocumentType.JSON,
@@ -880,6 +886,7 @@ describe('CompletionFormatAdapter', () => {
                 data: { Type: 'AWS::S3::B' },
                 nodeType: 'string',
             });
+            mockValueNode(mockContext);
 
             const completions: CompletionList = {
                 isIncomplete: false,
@@ -912,6 +919,7 @@ describe('CompletionFormatAdapter', () => {
                 data: { Type: 'AWS::S3::B' },
                 nodeType: 'string',
             });
+            mockValueNode(mockContext);
 
             const completions: CompletionList = {
                 isIncomplete: false,
