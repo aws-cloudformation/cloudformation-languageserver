@@ -19,6 +19,7 @@ export interface MetricConfig extends MetricOptions {
     trackObjectKey?: string;
     attributes?: Attributes;
     captureErrorAttributes?: boolean;
+    captureErrorType?: boolean;
 }
 
 export class ScopedTelemetry implements Closeable {
@@ -54,16 +55,18 @@ export class ScopedTelemetry implements Closeable {
     }
 
     error(name: string, error: unknown, origin?: 'uncaughtException' | 'unhandledRejection', config?: MetricConfig) {
-        if (config === undefined || config?.captureErrorAttributes !== true) {
-            this.count(name, 1, config);
-        } else {
+        if (config?.captureErrorAttributes) {
             config.attributes = {
                 ...config.attributes,
                 ...errorAttributes(error, origin),
             };
-
-            this.count(name, 1, config);
+        } else if (config?.captureErrorType) {
+            config.attributes = {
+                ...config.attributes,
+                'error.type': error instanceof Error ? error.name : typeof error,
+            };
         }
+        this.count(name, 1, config);
     }
 
     registerGaugeProvider(name: string, provider: () => number, config?: MetricConfig): void {
