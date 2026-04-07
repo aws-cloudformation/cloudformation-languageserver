@@ -19,7 +19,7 @@ import { entityTypeFromSection, nodeToEntity } from './semantic/EntityBuilder';
 import { normalizeIntrinsicFunction } from './semantic/Intrinsics';
 import { PropertyPath } from './syntaxtree/SyntaxTree';
 import { NodeType } from './syntaxtree/utils/NodeType';
-import { YamlNodeTypes, CommonNodeTypes } from './syntaxtree/utils/TreeSitterTypes';
+import { YamlNodeTypes, CommonNodeTypes, JsonNodeTypes, FieldNames } from './syntaxtree/utils/TreeSitterTypes';
 import { TransformContext } from './TransformContext';
 
 type QuoteCharacter = '"' | "'";
@@ -177,6 +177,18 @@ export class Context {
 
         // If we're positioned on the property name itself, it's a key not a value
         return !(this.propertyPath.at(-1) === this.text);
+    }
+
+    /**
+     * Check if the cursor is at a JSON value position using the syntax tree.
+     * Uses the tree-sitter pair node structure: a node is a value when it is
+     * the value child of a pair node.
+     */
+    public isJsonPairValue(): boolean {
+        return (
+            this.node.parent?.type === JsonNodeTypes.PAIR &&
+            this.node.parent.childForFieldName(FieldNames.VALUE) === this.node
+        );
     }
 
     public isResourceAttributeProperty(): boolean {

@@ -874,7 +874,10 @@ describe('CompletionFormatAdapter', () => {
     describe('JSON value completions', () => {
         function mockValueNode(context: any) {
             const node = context.syntaxNode;
-            const pairParent = { type: 'pair', childForFieldName: (name: string) => (name === 'value' ? node : null) };
+            const pairParent = {
+                type: 'pair',
+                childForFieldName: (name: string) => (name === 'value' ? node : null),
+            };
             Object.defineProperty(node, 'parent', { value: pairParent, writable: true });
         }
 
