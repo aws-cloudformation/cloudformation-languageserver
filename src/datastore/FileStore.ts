@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
+import { readdir, rm } from 'fs/promises';
 import { join } from 'path';
 import { Logger } from 'pino';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -44,7 +45,7 @@ export class FileStoreFactory implements DataStoreFactory {
 
         this.timeout = setTimeout(
             () => {
-                this.cleanupOldVersions();
+                void this.cleanupOldVersions();
             },
             2 * 60 * 1000,
         );
@@ -65,7 +66,7 @@ export class FileStoreFactory implements DataStoreFactory {
         this.closed = true;
         clearTimeout(this.timeout);
         clearInterval(this.metricsInterval);
-        return Promise.resolve();
+        return Promise.all([...this.stores.values()].map((store) => store.close())).then(() => {});
     }
 
     private emitMetrics(): void {
@@ -88,20 +89,20 @@ export class FileStoreFactory implements DataStoreFactory {
         });
     }
 
-    private cleanupOldVersions(): void {
+    private async cleanupOldVersions(): Promise<void> {
         if (this.closed || !existsSync(this.fileDbRoot)) return;
 
-        const entries = readdirSync(this.fileDbRoot, { withFileTypes: true });
-        for (const entry of entries) {
-            try {
+        try {
+            const entries = await readdir(this.fileDbRoot, { withFileTypes: true });
+            for (const entry of entries) {
                 if (entry.name !== Version) {
                     this.telemetry.count('oldVersion.cleanup.count', 1);
-                    rmSync(join(this.fileDbRoot, entry.name), { recursive: true, force: true });
+                    await rm(join(this.fileDbRoot, entry.name), { recursive: true, force: true });
                 }
-            } catch (error) {
-                this.log.error(error, 'Failed to cleanup old FileDB versions');
-                this.telemetry.count('oldVersion.cleanup.error', 1);
             }
+        } catch (error) {
+            this.log.error(error, 'Failed to cleanup old FileDB versions');
+            this.telemetry.count('oldVersion.cleanup.error', 1);
         }
     }
 

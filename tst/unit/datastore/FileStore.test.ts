@@ -35,7 +35,7 @@ describe('FileStore', () => {
             expect(fileStore.get<typeof testValue>('test-key')).toEqual(testValue);
         });
 
-        it('should read from in-memory cache without hitting disk', async () => {
+        it('should detect cross-process writes via file mtime', async () => {
             const encTestDir = join(testDir, 'get-cache-test');
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
@@ -47,13 +47,9 @@ describe('FileStore', () => {
             const store2 = new EncryptedFileStore(key, 'test', encTestDir);
             expect(store2.get('key1')).toBe('value1');
 
-            // store1 writes key2 to disk — store2 doesn't see it via get()
-            // because get() reads from in-memory cache only
+            // store1 writes key2 to disk — store2 sees it via get()
+            // because refreshIfStale detects the mtime change
             await store1.put('key2', 'value2');
-            expect(store2.get('key2')).toBeUndefined();
-
-            // But after store2 does a write (which re-reads disk under lock), it sees key2
-            await store2.put('key3', 'value3');
             expect(store2.get('key2')).toBe('value2');
         });
     });
@@ -433,7 +429,7 @@ describe('FileStore', () => {
             clearTimeoutSpy.mockRestore();
         });
 
-        it('should cleanup old version directories', () => {
+        it('should cleanup old version directories', async () => {
             const fileDbRoot = join(testDir, 'filedb');
 
             // Create old version directories
@@ -445,7 +441,7 @@ describe('FileStore', () => {
             expect(existsSync(join(fileDbRoot, 'v1'))).toBe(true);
 
             // Trigger cleanup directly (normally runs after 2min timeout)
-            (fileFactory as any).cleanupOldVersions();
+            await (fileFactory as any).cleanupOldVersions();
 
             expect(existsSync(join(fileDbRoot, 'v1'))).toBe(false);
             expect(existsSync(join(fileDbRoot, 'v2'))).toBe(true);
@@ -457,7 +453,7 @@ describe('FileStore', () => {
 
             const newFactory = new FileStoreFactory(testDir);
             rmSync(join(testDir, 'filedb'), { recursive: true, force: true });
-            (newFactory as any).cleanupOldVersions();
+            await (newFactory as any).cleanupOldVersions();
 
             expect(existsSync(join(testDir, 'filedb'))).toBe(false);
             await newFactory.close();
@@ -526,6 +522,98 @@ describe('FileStore', () => {
             expect(result).toBeDefined();
             expect(Object.keys(result!.schemas)).toHaveLength(200);
             expect(result!.schemas['AWS::Service0::Resource']).toContain('Service0');
+            await newFactory.close();
+        });
+    });
+
+    describe('stale cache detection', () => {
+        it('should return fresh data when another instance writes to disk', async () => {
+            const encTestDir = join(testDir, 'stale-detect-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store1 = new EncryptedFileStore(key, 'test', encTestDir);
+            const store2 = new EncryptedFileStore(key, 'test', encTestDir);
+
+            await store1.put('key1', 'value1');
+
+            // store2.get() should detect the mtime change and re-read
+            expect(store2.get('key1')).toBe('value1');
+        });
+
+        it('should not re-read when file has not changed', async () => {
+            const encTestDir = join(testDir, 'no-reread-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store = new EncryptedFileStore(key, 'test', encTestDir);
+            await store.put('key1', 'value1');
+
+            // Multiple gets without external writes should not cause re-reads
+            expect(store.get('key1')).toBe('value1');
+            expect(store.get('key1')).toBe('value1');
+            expect(store.get('key1')).toBe('value1');
+        });
+    });
+
+    describe('graceful shutdown', () => {
+        it('should resolve close immediately when no operations are in-flight', async () => {
+            const encTestDir = join(testDir, 'close-idle-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store = new EncryptedFileStore(key, 'test', encTestDir);
+            await expect(store.close()).resolves.toBeUndefined();
+        });
+
+        it('should wait for in-flight put to complete before close resolves', async () => {
+            const encTestDir = join(testDir, 'close-inflight-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store = new EncryptedFileStore(key, 'test', encTestDir);
+
+            // Start a put (in-flight) and close concurrently
+            const putPromise = store.put('key', 'value');
+            const closePromise = store.close();
+
+            await Promise.all([putPromise, closePromise]);
+
+            // Data should be persisted
+            const store2 = new EncryptedFileStore(key, 'test', encTestDir);
+            expect(store2.get('key')).toBe('value');
+        });
+
+        it('should wait for all concurrent operations before close resolves', async () => {
+            const encTestDir = join(testDir, 'close-multi-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store = new EncryptedFileStore(key, 'test', encTestDir);
+
+            const puts = Array.from({ length: 3 }, (_, i) => store.put(`key${i}`, `value${i}`));
+            const closePromise = store.close();
+
+            await Promise.all([...puts, closePromise]);
+
+            const store2 = new EncryptedFileStore(key, 'test', encTestDir);
+            for (let i = 0; i < 3; i++) {
+                expect(store2.get(`key${i}`)).toBe(`value${i}`);
+            }
+        });
+    });
+
+    describe('factory close', () => {
+        it('should await in-flight store operations on factory close', async () => {
+            const putPromise = fileStore.put('inflight-key', 'inflight-value');
+            const closePromise = fileFactory.close();
+
+            await Promise.all([putPromise, closePromise]);
+
+            // Verify data was persisted before close completed
+            const newFactory = new FileStoreFactory(testDir);
+            const newStore = newFactory.get(StoreName.public_schemas);
+            expect(newStore.get('inflight-key')).toBe('inflight-value');
             await newFactory.close();
         });
     });
