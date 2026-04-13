@@ -152,11 +152,13 @@ export class TelemetryService implements Closeable {
 
     private registerErrorHandlers(telemetry: ScopedTelemetry): void {
         process.on('unhandledRejection', (reason, _promise) => {
+            if (LoggerFactory.isPinoStreamError(reason)) return;
             telemetry.error('process.promise.unhandled', reason, undefined, { captureErrorAttributes: true });
             void this.metricsReader?.forceFlush();
         });
 
         process.on('uncaughtException', (error, origin) => {
+            if (LoggerFactory.isPinoStreamError(error)) return;
             telemetry.error('process.exception.uncaught', error, origin, { captureErrorAttributes: true });
             void this.metricsReader?.forceFlush();
         });

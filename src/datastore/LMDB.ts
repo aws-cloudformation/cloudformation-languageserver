@@ -80,7 +80,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 noSubdir: config.noSubdir,
                 overlappingSync: config.overlappingSync,
             },
-            `Initialized LMDB ${Version} with stores: ${toString(storeNames)} and ${formatNumber(this.totalBytes() / (1024 * 1024), 4)} MB`,
+            `Initialized LMDB ${Version} with stores: ${toString(storeNames)} and ${formatNumber(stats(this.env).totalSize / (1024 * 1024), 4)} MB`,
         );
     }
 
@@ -106,10 +106,15 @@ export class LMDBStoreFactory implements DataStoreFactory {
         if (this.closed) return;
         const msg = extractErrorMessage(error);
 
-        if (msg.includes('MDB_BAD_RSLOT') || msg.includes("doesn't match env pid")) {
-            this.recoverFromFork();
-        } else {
-            this.recoverFromError();
+        try {
+            if (msg.includes('MDB_BAD_RSLOT') || msg.includes("doesn't match env pid")) {
+                this.recoverFromFork();
+            } else {
+                this.recoverFromError();
+            }
+        } catch (recoveryError) {
+            this.log.error(recoveryError, 'LMDB recovery failed, disabling database');
+            this.telemetry.count('recovery.failed', 1);
         }
     }
 
@@ -117,11 +122,17 @@ export class LMDBStoreFactory implements DataStoreFactory {
         if (process.pid !== this.openPid) {
             this.telemetry.count('process.forked', 1);
             this.log.warn({ oldPid: this.openPid, newPid: process.pid }, 'Process fork detected, reopening LMDB');
-            this.reopenEnv();
 
-            // Update all stores with new handles
-            for (const store of this.storeNames) {
-                this.stores.get(store)?.updateStore(createDB(this.env, store));
+            try {
+                this.reopenEnv();
+
+                // Update all stores with new handles
+                for (const store of this.storeNames) {
+                    this.stores.get(store)?.updateStore(createDB(this.env, store));
+                }
+            } catch (e) {
+                this.log.error(e, 'Failed to reopen LMDB after fork');
+                this.deleteAndRecreate();
             }
         }
     }
@@ -129,8 +140,14 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private recoverFromFork(): void {
         this.telemetry.count('forked.recover', 1);
         this.log.warn({ oldPid: this.openPid, newPid: process.pid }, 'Process fork detected, reopening LMDB');
-        this.reopenEnv();
-        this.recreateStores();
+
+        try {
+            this.reopenEnv();
+            this.recreateStores();
+        } catch {
+            this.log.warn('Fork recovery failed, deleting and recreating');
+            this.deleteAndRecreate();
+        }
     }
 
     private recoverFromError(): void {
@@ -143,9 +160,18 @@ export class LMDBStoreFactory implements DataStoreFactory {
             this.log.info('Successfully recovered by reopening LMDB');
         } catch {
             this.log.warn('Reopen failed, deleting database');
+            this.deleteAndRecreate();
+        }
+    }
+
+    private deleteAndRecreate(): void {
+        try {
             this.deleteVersionDir();
             this.reopenEnv();
             this.recreateStores();
+        } catch (e) {
+            this.log.error(e, 'Failed to recreate LMDB after deletion');
+            this.telemetry.count('recovery.failed', 1);
         }
     }
 
@@ -209,8 +235,6 @@ export class LMDBStoreFactory implements DataStoreFactory {
         if (this.closed) return;
 
         try {
-            const totalBytes = this.totalBytes();
-
             const envStat = stats(this.env);
             this.telemetry.histogram('version', VersionNumber);
             this.telemetry.histogram('env.size.bytes', envStat.totalSize, { unit: 'By' });
@@ -219,10 +243,12 @@ export class LMDBStoreFactory implements DataStoreFactory {
             });
             this.telemetry.histogram('env.entries', envStat.entries);
 
+            let totalBytes = envStat.totalSize;
             for (const [name, store] of this.stores.entries()) {
                 const stat = store.stats();
                 this.telemetry.histogram(`store.${name}.size.bytes`, stat.totalSize, { unit: 'By' });
                 this.telemetry.histogram(`store.${name}.entries`, stat.entries);
+                totalBytes += stat.totalSize;
             }
 
             this.telemetry.histogram('total.usage', 100 * (totalBytes / TotalMaxDbSize), { unit: '%' });
@@ -230,17 +256,6 @@ export class LMDBStoreFactory implements DataStoreFactory {
         } catch (e) {
             this.handleError(e);
         }
-    }
-
-    private totalBytes() {
-        let totalBytes = 0;
-        totalBytes += stats(this.env).totalSize;
-
-        for (const store of this.stores.values()) {
-            totalBytes += store.stats().totalSize;
-        }
-
-        return totalBytes;
     }
 }
 

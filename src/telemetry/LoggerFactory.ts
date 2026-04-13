@@ -155,6 +155,14 @@ export class LoggerFactory implements Closeable {
         clearInterval(this.interval);
     }
 
+    /**
+     * Returns true if the error is a known pino stream race condition that
+     * occurs when the ThreadStream worker exits while async log calls are in flight.
+     */
+    static isPinoStreamError(error: unknown): boolean {
+        return error instanceof TypeError && error.message.includes('pino.msgPrefix');
+    }
+
     static getLogger(clazz: string | Function): Logger {
         if (LoggerFactory._instance === undefined) {
             throw new Error('Logger not configured');
