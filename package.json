@@ -9,7 +9,7 @@
     "license": "Apache-2.0",
     "main": "src/app/standalone.ts",
     "engines": {
-        "node": ">=22.15.0 <22.17.0",
+        "node": "^22.15.0",
         "npm": ">=10.5.0"
     },
     "keywords": [
