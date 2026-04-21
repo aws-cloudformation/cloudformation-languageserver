@@ -68,12 +68,7 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.relationshipSchemaService = overrides.relationshipSchemaService ?? new RelationshipSchemaService();
         this.relatedResourcesSnippetProvider =
             overrides.relatedResourcesSnippetProvider ??
-            new RelatedResourcesSnippetProvider(
-                core.documentManager,
-                core.syntaxTreeManager,
-                external.schemaRetriever,
-                this.relationshipSchemaService,
-            );
+            new RelatedResourcesSnippetProvider(core.documentManager, core.syntaxTreeManager, external.schemaRetriever);
         this.s3Service = overrides.s3Service ?? new S3Service(external.awsClient);
 
         this.hoverRouter =

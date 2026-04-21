@@ -6,16 +6,10 @@ export type GetRelatedResourceTypesParams = {
     parentResourceType: string;
 };
 
-export type AuthoredResource = {
-    logicalId: string;
-    type: string;
-};
-
 export type InsertRelatedResourcesParams = {
     templateUri: string;
     relatedResourceTypes: string[];
     parentResourceType: string;
-    parentLogicalId?: string;
 };
 
 export interface RelatedResourcesCodeAction extends CodeAction {
@@ -25,7 +19,7 @@ export interface RelatedResourcesCodeAction extends CodeAction {
     };
 }
 
-export const GetAuthoredResourceTypesRequest = new RequestType<TemplateUri, AuthoredResource[], void>(
+export const GetAuthoredResourceTypesRequest = new RequestType<TemplateUri, string[], void>(
     'aws/cfn/template/resources/authored',
 );
 
