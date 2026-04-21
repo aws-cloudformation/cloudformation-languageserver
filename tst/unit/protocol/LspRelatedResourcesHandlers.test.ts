@@ -3,7 +3,9 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Connection, RequestHandler } from 'vscode-languageserver/node';
 import { LspRelatedResourcesHandlers } from '../../../src/protocol/LspRelatedResourcesHandlers';
 import {
+    AuthoredResource,
     GetAuthoredResourceTypesRequest,
+    GetAuthoredResourceTypesRequestV2,
     GetRelatedResourceTypesParams,
     GetRelatedResourceTypesRequest,
     InsertRelatedResourcesParams,
@@ -27,6 +29,14 @@ describe('LspRelatedResourcesHandlers', () => {
         relatedResourcesHandlers.onGetAuthoredResourceTypes(mockHandler);
 
         expect(connection.onRequest.calledWith(GetAuthoredResourceTypesRequest.method)).toBe(true);
+    });
+
+    it('should register onGetAuthoredResourceTypesV2 handler', () => {
+        const mockHandler: RequestHandler<TemplateUri, AuthoredResource[], void> = vi.fn();
+
+        relatedResourcesHandlers.onGetAuthoredResourceTypesV2(mockHandler);
+
+        expect(connection.onRequest.calledWith(GetAuthoredResourceTypesRequestV2.method)).toBe(true);
     });
 
     it('should register onGetRelatedResourceTypes handler', () => {

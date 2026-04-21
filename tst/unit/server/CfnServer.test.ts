@@ -48,6 +48,7 @@ describe('CfnServer', () => {
             expect(mockFeatures.stackHandlers.onListStackResources.calledOnce).toBe(true);
 
             expect(mockFeatures.relatedResourcesHandlers.onGetAuthoredResourceTypes.calledOnce).toBe(true);
+            expect(mockFeatures.relatedResourcesHandlers.onGetAuthoredResourceTypesV2.calledOnce).toBe(true);
             expect(mockFeatures.relatedResourcesHandlers.onGetRelatedResourceTypes.calledOnce).toBe(true);
             expect(mockFeatures.relatedResourcesHandlers.onInsertRelatedResources.calledOnce).toBe(true);
         });
