@@ -281,7 +281,7 @@ const baseConfig = {
                 test: /\.wasm$/,
                 type: 'asset/resource',
                 generator: {
-                    filename: '[name][ext]',
+                    filename: '[name].[ext]',
                 },
             },
         ],

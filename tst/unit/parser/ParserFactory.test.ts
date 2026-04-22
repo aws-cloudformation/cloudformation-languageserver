@@ -34,7 +34,7 @@ describe('ParserFactory', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        originalEnv = process.env.CLOUDFORMATIONLSP_USE_WASM;
+        originalEnv = process.env.BUILD_TARGET;
 
         const mockLanguage = { name: 'test-language' } as any;
         vi.mocked(Parser.init).mockResolvedValue(undefined);
@@ -45,16 +45,16 @@ describe('ParserFactory', () => {
 
     afterEach(() => {
         if (originalEnv === undefined) {
-            delete process.env.CLOUDFORMATIONLSP_USE_WASM;
+            delete process.env.BUILD_TARGET;
         } else {
-            process.env.CLOUDFORMATIONLSP_USE_WASM = originalEnv;
+            process.env.BUILD_TARGET = originalEnv;
         }
         vi.resetModules();
     });
 
     describe('environment detection', () => {
         it('should use native parser by default', async () => {
-            delete process.env.CLOUDFORMATIONLSP_USE_WASM;
+            delete process.env.BUILD_TARGET;
 
             const { parserFactory } = await import('../../../src/parser/ParserFactory');
 
@@ -65,8 +65,8 @@ describe('ParserFactory', () => {
             expect(jsonParser).toBeDefined();
         });
 
-        it('should use WASM parser when environment variable is set', async () => {
-            process.env.CLOUDFORMATIONLSP_USE_WASM = 'true';
+        it('should use WASM parser on legacy linux', async () => {
+            process.env.BUILD_TARGET = 'legacy';
 
             const { parserFactory } = await import('../../../src/parser/ParserFactory');
 
@@ -77,7 +77,7 @@ describe('ParserFactory', () => {
 
     describe('native parser with fallback', () => {
         it('should create YAML parser', async () => {
-            delete process.env.CLOUDFORMATIONLSP_USE_WASM;
+            delete process.env.BUILD_TARGET;
 
             const { parserFactory } = await import('../../../src/parser/ParserFactory');
             const parser = parserFactory.createYamlParser();
@@ -87,7 +87,7 @@ describe('ParserFactory', () => {
         });
 
         it('should create JSON parser', async () => {
-            delete process.env.CLOUDFORMATIONLSP_USE_WASM;
+            delete process.env.BUILD_TARGET;
 
             const { parserFactory } = await import('../../../src/parser/ParserFactory');
             const parser = parserFactory.createJsonParser();

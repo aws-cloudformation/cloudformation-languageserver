@@ -59,20 +59,19 @@ class NativeParserFactory implements ParserFactory {
     }
 }
 
-// Environment detection and factory creation
-const shouldForceWasm = (): boolean => {
-    return process.env.CLOUDFORMATIONLSP_USE_WASM === 'true';
-};
+// Legacy Linux builds use WASM since native bindings may not work
+const isLegacyLinux = process.env.BUILD_TARGET === 'legacy';
 
 // Initialize the factory - async initialization happens in background
 let factoryInstance: ParserFactory;
 
-if (shouldForceWasm()) {
-    log.info('Forcing WASM tree-sitter implementation (CLOUDFORMATIONLSP_USE_WASM=true)');
+if (isLegacyLinux) {
+    log.info('Legacy Linux detected, using WASM tree-sitter implementation');
     const wasmFactory = new WasmParserFactory();
     // eslint-disable-next-line unicorn/prefer-top-level-await
     wasmFactory.initialize().catch((error: unknown) => {
-        log.error(error, 'Failed to initialize WASM parser factory');
+        log.error(error, 'WASM initialization failed, falling back to native');
+        factoryInstance = new NativeParserFactory();
     });
     factoryInstance = wasmFactory;
 } else {

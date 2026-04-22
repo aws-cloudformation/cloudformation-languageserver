@@ -66,6 +66,9 @@ jobs:
       - name: Test
         run: npm run test
 
+      - name: Test (WASM parser)
+        run: npm run test:wasm
+
   build-test-go:
     needs: [ get-configs ]
     runs-on: ${{ inputs.runs-on }}
