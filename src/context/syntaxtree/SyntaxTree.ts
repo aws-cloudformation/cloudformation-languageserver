@@ -3,6 +3,7 @@ import { Position } from 'vscode-languageserver-textdocument';
 import { DocumentType } from '../../document/Document';
 import { createEdit } from '../../document/DocumentUtils';
 import { parserFactory } from '../../parser/ParserFactory';
+import { parserType } from '../../parser/ParserType';
 import { Measure } from '../../telemetry/TelemetryDecorator';
 import { TopLevelSection, TopLevelSections, IntrinsicsSet } from '../CloudFormationEnums';
 import { normalizeIntrinsicFunction } from '../semantic/Intrinsics';
@@ -47,7 +48,7 @@ export abstract class SyntaxTree {
         return this._lines;
     }
 
-    @Measure({ name: 'updateWithEdit', captureErrorAttributes: true })
+    @Measure({ name: 'updateWithEdit', captureErrorAttributes: true, attributes: { 'parser.type': parserType } })
     public updateWithEdit(content: string, edit: Edit) {
         this._lines = undefined; // Invalidate cache
         this.rawContent = content; // Update raw content
@@ -55,13 +56,13 @@ export abstract class SyntaxTree {
         this.tree = this.parser.parse(content, this.tree);
     }
 
-    @Measure({ name: 'update', captureErrorAttributes: true })
+    @Measure({ name: 'update', captureErrorAttributes: true, attributes: { 'parser.type': parserType } })
     public update(textToInsert: string, start: Point, end: Point) {
         const { newContent, edit } = createEdit(this.content(), textToInsert, start, end);
         this.updateWithEdit(newContent, edit);
     }
 
-    @Measure({ name: 'getNodeAtPosition', captureErrorAttributes: true })
+    @Measure({ name: 'getNodeAtPosition', captureErrorAttributes: true, attributes: { 'parser.type': parserType } })
     public getNodeAtPosition(position: Position): SyntaxNode {
         const point: Point = {
             row: position.line,
@@ -415,7 +416,7 @@ export abstract class SyntaxTree {
      * Analyzes a node to determine its semantic path within the document.
      * It walks up the tree from the given node, building a property path and identifying the entity root.
      */
-    @Measure({ name: 'getPathAndEntityInfo', captureErrorAttributes: true })
+    @Measure({ name: 'getPathAndEntityInfo', captureErrorAttributes: true, attributes: { 'parser.type': parserType } })
     public getPathAndEntityInfo(node: SyntaxNode): PathAndEntity {
         if (!node) {
             return {
@@ -841,7 +842,7 @@ export abstract class SyntaxTree {
      * @param pathSegments Array like ["Resources", "MyBucket", "Properties", "BucketName"] or ["Resources", "MyBucket", "Properties", 0]
      * @returns Object with the node and whether the full path was resolved
      */
-    @Measure({ name: 'getNodeByPath', captureErrorAttributes: true })
+    @Measure({ name: 'getNodeByPath', captureErrorAttributes: true, attributes: { 'parser.type': parserType } })
     getNodeByPath(pathSegments: ReadonlyArray<string | number>): {
         node: SyntaxNode | undefined;
         fullyResolved: boolean;
@@ -961,7 +962,7 @@ export abstract class SyntaxTree {
     }
 
     // Finds CloudFormation sections (Parameters, Resources, etc.)
-    @Measure({ name: 'findTopLevelSections' })
+    @Measure({ name: 'findTopLevelSections', attributes: { 'parser.type': parserType } })
     public findTopLevelSections(sectionsToFind: TopLevelSection[]): Map<TopLevelSection, SyntaxNode> {
         const result = new Map<TopLevelSection, SyntaxNode>();
         if (sectionsToFind.length === 0) {

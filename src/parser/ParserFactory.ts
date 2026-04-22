@@ -83,4 +83,4 @@ if (isLegacyLinux) {
 
 export const parserFactory: ParserFactory = factoryInstance;
 export const parserFactoryReady: Promise<void> = readyPromise;
-export const parserType: 'wasm' | 'native' = isLegacyLinux ? 'wasm' : 'native';
+export { parserType } from './ParserType';
