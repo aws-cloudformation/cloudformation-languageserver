@@ -629,7 +629,7 @@ export abstract class SyntaxTree {
                     }
 
                     // Stop if we've reached the root node (avoid infinite loop)
-                    if (current === this.tree.rootNode) {
+                    if (current.id === this.tree.rootNode.id) {
                         break;
                     }
                     current = current.parent;

@@ -88,7 +88,7 @@ export class NodeSearch {
 
             const nearbyNode = rootNode.namedDescendantForPosition(nearbyPoint);
 
-            if (nearbyNode !== originalNode && predicate(nearbyNode)) {
+            if (nearbyNode.id !== originalNode.id && predicate(nearbyNode)) {
                 return nearbyNode;
             }
         }
@@ -161,6 +161,6 @@ export class NodeSearch {
             return false;
         }
 
-        return pair.parent !== mainMapping;
+        return pair.parent?.id !== mainMapping.id;
     }
 }

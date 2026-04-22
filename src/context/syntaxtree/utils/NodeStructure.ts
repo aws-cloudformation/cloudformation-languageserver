@@ -161,7 +161,7 @@ export class NodeStructure {
     ): void {
         while (contextPairs.length > 0) {
             const lastPair = contextPairs[contextPairs.length - 1];
-            const lastPairInfo = allPairs.find((p) => p.node === lastPair);
+            const lastPairInfo = allPairs.find((p) => p.node.id === lastPair.id);
             const lastIndentLevel = lastPairInfo?.indentLevel ?? -1;
 
             // If last pair has same or greater indentation, it's a sibling/child - remove it
