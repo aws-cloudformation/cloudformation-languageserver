@@ -126,83 +126,95 @@ Resources:`;
                 ],
             });
 
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            // Wait for guard diagnostics after adding a resource type
+            await WaitFor.waitFor(() => {
+                const diags = client.receivedDiagnostics;
+                const latest = diags[diags.length - 1];
+                if (latest?.uri !== uri || latest.diagnostics.length === 0) {
+                    throw new Error('No diagnostics received yet for typed resource');
+                }
+            }, 5000);
 
-            // Test validates incremental resource creation triggers diagnostics
-            expect(uri).toBeDefined();
+            const latest = client.receivedDiagnostics[client.receivedDiagnostics.length - 1];
+            expect(latest.uri).toBe(uri);
+            expect(latest.diagnostics.length).toBeGreaterThan(0);
+
+            const guardDiags = latest.diagnostics.filter((d: any) => d.source === 'cfn-guard');
+            expect(guardDiags.length).toBeGreaterThan(0);
 
             await client.closeDocument({ textDocument: { uri } });
         });
 
-        it('should handle typing workflow for public access violations', async () => {
-            // Start with basic bucket
+        it('should receive diagnostics for public access violations', async () => {
+            // Create bucket with public access explicitly disabled
             const template = `AWSTemplateFormatVersion: '2010-09-09'
 Resources:
   MyBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: public-bucket`;
-
-            const uri = await client.openYamlTemplate(template);
-            await new Promise((resolve) => setTimeout(resolve, 300));
-
-            // Type PublicAccessBlockConfiguration incrementally
-            await client.changeDocument({
-                textDocument: { uri, version: 2 },
-                contentChanges: [
-                    {
-                        range: {
-                            start: { line: 5, character: 33 },
-                            end: { line: 5, character: 33 },
-                        },
-                        text: `
-      PublicAccessBlockConfiguration:`,
-                    },
-                ],
-            });
-
-            await new Promise((resolve) => setTimeout(resolve, 200));
-
-            // Add BlockPublicAcls: false
-            await client.changeDocument({
-                textDocument: { uri, version: 3 },
-                contentChanges: [
-                    {
-                        range: {
-                            start: { line: 6, character: 34 },
-                            end: { line: 6, character: 34 },
-                        },
-                        text: `
-        BlockPublicAcls: false`,
-                    },
-                ],
-            });
-
-            await new Promise((resolve) => setTimeout(resolve, 200));
-
-            // Add remaining properties incrementally
-            await client.changeDocument({
-                textDocument: { uri, version: 4 },
-                contentChanges: [
-                    {
-                        range: {
-                            start: { line: 7, character: 23 },
-                            end: { line: 7, character: 23 },
-                        },
-                        text: `
+      BucketName: public-bucket
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
         BlockPublicPolicy: false
         IgnorePublicAcls: false
-        RestrictPublicBuckets: false`,
-                    },
-                ],
-            });
+        RestrictPublicBuckets: false`;
 
-            await new Promise((resolve) => setTimeout(resolve, 500));
+            const uri = await client.openYamlTemplate(template);
 
-            // Test validates incremental typing of public access configuration
-            expect(uri).toBeDefined();
+            // Wait for guard diagnostics about public access
+            await WaitFor.waitFor(() => {
+                const diags = client.receivedDiagnostics;
+                const latest = diags[diags.length - 1];
+                if (latest?.uri !== uri || latest.diagnostics.length === 0) {
+                    throw new Error('No diagnostics received yet');
+                }
+            }, 5000);
+
+            const latest = client.receivedDiagnostics[client.receivedDiagnostics.length - 1];
+            expect(latest.uri).toBe(uri);
+
+            const guardDiags = latest.diagnostics.filter((d: any) => d.source === 'cfn-guard');
+            expect(guardDiags.length).toBeGreaterThan(0);
+
+            // Should flag the public access configuration
+            const publicAccessDiag = guardDiags.find((d: any) => /PublicAccessBlock|public/i.test(d.message));
+            expect(publicAccessDiag).toBeDefined();
 
             await client.closeDocument({ textDocument: { uri } });
+        });
+
+        it('should clear diagnostics when document is closed', async () => {
+            const template = `AWSTemplateFormatVersion: '2010-09-09'
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket`;
+
+            const uri = await client.openYamlTemplate(template);
+
+            // Wait for diagnostics to arrive
+            await WaitFor.waitFor(() => {
+                const latest = client.receivedDiagnostics[client.receivedDiagnostics.length - 1];
+                if (latest?.uri !== uri || latest.diagnostics.length === 0) {
+                    throw new Error('No diagnostics received yet');
+                }
+            }, 5000);
+
+            // Close the document
+            await client.closeDocument({ textDocument: { uri } });
+
+            // Wait for empty diagnostics to be published for the closed URI
+            await WaitFor.waitFor(() => {
+                const clearEvent = client.receivedDiagnostics.find(
+                    (d: any) => d.uri === uri && d.diagnostics.length === 0,
+                );
+                if (!clearEvent) {
+                    throw new Error('Diagnostics not cleared after close');
+                }
+            }, 5000);
+
+            const clearEvent = client.receivedDiagnostics.find((d: any) => d.uri === uri && d.diagnostics.length === 0);
+            expect(clearEvent).toBeDefined();
+            expect(clearEvent.diagnostics).toHaveLength(0);
         });
     });
 });
