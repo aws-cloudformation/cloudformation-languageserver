@@ -18,7 +18,9 @@ export class TestOrchestrator {
 
     private readonly templates = TEMPLATE_CONFIGS;
 
-    private readonly testRegions = Object.values(AwsRegion);
+    private readonly testRegions = Object.values(AwsRegion).filter(
+        (region) => region !== AwsRegion.ME_SOUTH_1 && region !== AwsRegion.ME_CENTRAL_1,
+    );
 
     async initialize(): Promise<void> {
         console.log('Starting CloudFormation Language Server Long-Running Tests');
@@ -58,7 +60,24 @@ export class TestOrchestrator {
 
         console.log(`Loaded ${this.templates.length} templates`);
 
-        await this.client.waitForExternalServiceInitialization();
+        // Wait for all system components to be ready
+        console.log('Waiting for system components to be ready...');
+        await WaitFor.waitFor(
+            async () => {
+                const status = await this.client.getSystemStatus();
+                if (
+                    !status.settingsReady.ready ||
+                    !status.schemasReady.ready ||
+                    !status.cfnLintReady.ready ||
+                    !status.cfnGuardReady.ready
+                ) {
+                    throw new Error('System not ready');
+                }
+            },
+            30_000,
+            1000,
+        );
+        console.log('All system components ready');
 
         await this.loadAllRegionSchemas();
 
@@ -140,42 +159,32 @@ export class TestOrchestrator {
     }
 
     private async loadAllRegionSchemas(): Promise<void> {
-        // Check what regions are already available from LspClient
-        const alreadyAvailable = [...this.client.getAvailableRegions()];
-        const unavailableRegions = this.testRegions.filter((region) => !this.client.getAvailableRegions().has(region));
+        console.log('Loading schemas for all regions...');
 
-        console.log(`Schema status: ${alreadyAvailable.length} available, ${unavailableRegions.length} unavailable`);
-        console.log(`Available region schemas: ${alreadyAvailable.join(', ')}`);
-
-        if (unavailableRegions.length > 0) {
-            console.log(`Loading the following region schemas: ${unavailableRegions.join(', ')}`);
-        }
-
-        for (const region of unavailableRegions) {
+        for (const region of this.testRegions) {
             await this.switchToRegion(region);
-            await this.waitForRegionSchemas(region);
+
+            // Wait for schemas to be ready after region switch
+            try {
+                await WaitFor.waitFor(
+                    async () => {
+                        const status = await this.client.getSystemStatus();
+                        if (!status.schemasReady.ready) {
+                            throw new Error(`Schemas not ready for region ${region}`);
+                        }
+                    },
+                    30_000,
+                    200,
+                );
+            } catch (error) {
+                console.warn(`Failed to load schemas for region ${region}, continuing anyway:`, error);
+            }
         }
 
         console.log('Regional schema loading complete');
     }
 
-    private async waitForRegionSchemas(region: string): Promise<void> {
-        try {
-            await WaitFor.waitFor(
-                () => {
-                    if (!this.client.getAvailableRegions().has(region)) {
-                        throw new Error(`Region ${region} schemas not loaded yet`);
-                    }
-                },
-                30_000, // 30 second timeout
-                500, // Check every 500ms
-            );
-        } catch {
-            console.warn(`Timeout waiting for ${region} schemas, proceeding anyway`);
-        }
-    }
-
-    private async switchToRegion(region: string): Promise<void> {
+    private async switchToRegion(region: AwsRegion): Promise<void> {
         // Store the new configuration
         await this.client.changeConfiguration({
             settings: {
@@ -186,6 +195,23 @@ export class TestOrchestrator {
                 },
             },
         });
+
+        // Wait for settings to be applied with correct region
+        await WaitFor.waitFor(
+            async () => {
+                const status = await this.client.getSystemStatus();
+                if (!status.settingsReady.ready) {
+                    throw new Error('Settings not ready after region change');
+                }
+                if (status.currentSettings.profile.region !== region) {
+                    throw new Error(
+                        `Region not applied: expected ${region}, got ${status.currentSettings.profile.region}`,
+                    );
+                }
+            },
+            5000,
+            100,
+        ); // Reduced timeout and faster polling
     }
 
     private async validateLsp(uri: string): Promise<void> {

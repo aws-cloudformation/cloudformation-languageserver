@@ -1,0 +1,88 @@
+name: Post-Beta Long Running Tests
+run-name: Long Running Tests for ${{ github.event.release.tag_name }}
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  check-beta-release:
+    runs-on: ubuntu-latest
+    outputs:
+      is-beta: ${{ steps.check.outputs.is-beta }}
+    steps:
+      - name: Check if beta release
+        id: check
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          if [[ "$TAG" =~ -beta$ ]]; then
+            echo "is-beta=true" >> $GITHUB_OUTPUT
+          else
+            echo "is-beta=false" >> $GITHUB_OUTPUT
+          fi
+
+  long-running-tests:
+    needs: check-beta-release
+    if: needs.check-beta-release.outputs.is-beta == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        node-version: [18, 20, 22]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Download release standalone
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${{ github.event.release.tag_name }}"
+          case "${{ matrix.os }}" in
+            ubuntu-latest) PLATFORM="linux" ;;
+            windows-latest) PLATFORM="win32" ;;
+            macos-latest) PLATFORM="darwin" ;;
+          esac
+          PATTERN="*${PLATFORM}*x64*node${{ matrix.node-version }}*.zip"
+          gh release download "$TAG" --pattern "$PATTERN"
+
+      - name: Extract standalone bundle
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            unzip *.zip
+          else
+            unzip *.zip
+            chmod +x cfn-lsp-server-standalone.js
+          fi
+
+      - name: Test standalone bundle
+        run: node cfn-lsp-server-standalone.js --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run long-running stability tests
+        env:
+          STABILITY_TEST_DURATION: 4h
+          STANDALONE_PATH: ./cfn-lsp-server-standalone.js
+        run: npm run test:stability
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: long-running-test-results-${{ matrix.os }}
+          path: |
+            test-results.json
+            test-logs.txt
+          if-no-files-found: ignore

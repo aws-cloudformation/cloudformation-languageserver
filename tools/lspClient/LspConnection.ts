@@ -21,8 +21,3 @@ export type LspClientConfig = {
     env?: NodeJS.ProcessEnv;
     suppressLogLevels?: string[];
 };
-
-export type InitializationFlags = {
-    cfnLint: boolean;
-    cfnGuard: boolean;
-};

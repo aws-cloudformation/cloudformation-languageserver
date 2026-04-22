@@ -11,9 +11,10 @@ import {
 } from 'vscode-languageserver-protocol/node';
 import { randomBytes } from 'crypto';
 import { CompactEncrypt } from 'jose';
-import { LspClientConfig, LspConnection, InitializationFlags } from './LspConnection';
+import { LspClientConfig, LspConnection } from './LspConnection';
 import { ExtendedInitializeParams } from '../../src/server/InitParams';
 import { IamCredentials } from '../../src/auth/AwsLspAuthTypes';
+import { GetSystemStatusResponse } from '../../src/protocol/LspSystemHandlers';
 import { WaitFor } from '../../tst/utils/Utils';
 
 /**
@@ -23,16 +24,11 @@ import { WaitFor } from '../../tst/utils/Utils';
 export class LspClient implements LspConnection {
     protected serverProcess?: ChildProcess;
     protected connection?: MessageConnection;
-    protected initialization: InitializationFlags = {
-        cfnLint: false,
-        cfnGuard: false,
-    };
 
     public readonly createdAt: number;
     private readonly encryptionKey: Buffer;
     protected isShutdown = false;
     protected workspaceConfig: Record<string, unknown>[] = [{}];
-    protected availableRegions = new Set<string>();
 
     constructor(protected config: LspClientConfig) {
         this.createdAt = performance.now();
@@ -105,21 +101,7 @@ export class LspClient implements LspConnection {
     private readonly onServerOutput = (data: Buffer) => {
         const output = data.toString().trim();
 
-        // external service initialization detection
-        if (output.includes('cfn-lint version')) {
-            this.initialization.cfnLint = true;
-        }
-        if (output.includes('Loading rules from')) {
-            this.initialization.cfnGuard = true;
-        }
-
-        // Region-specific schema loading
-        const regionSchemaMatch = output.match(/public schemas downloaded for ([a-z0-9-]+)/);
-        if (regionSchemaMatch) {
-            this.availableRegions.add(regionSchemaMatch[1]);
-        }
-
-        // Log filtering
+        // Log filtering - keep for debugging
         const suppressLevels = this.config.suppressLogLevels ?? ['INFO', 'DEBUG'];
         const shouldSuppress = suppressLevels.some((level) => output.includes(`${level}:`));
 
@@ -268,11 +250,15 @@ export class LspClient implements LspConnection {
     }
 
     async waitForExternalServiceInitialization(): Promise<void> {
-        console.log('Waiting for lint and guard initialization');
+        console.log('Waiting for lint and guard initialization via SystemHandler...');
 
         await WaitFor.waitFor(
-            () => {
-                if (!this.initialization.cfnLint || !this.initialization.cfnGuard) {
+            async () => {
+                const status = await this.getSystemStatus();
+                console.log(
+                    `Service status: cfnLint=${status.cfnLintReady.ready}, cfnGuard=${status.cfnGuardReady.ready}`,
+                );
+                if (!status.cfnLintReady.ready || !status.cfnGuardReady.ready) {
                     throw new Error('Lint and Guard services not initialized');
                 }
                 console.log('Lint and Guard services are initialized');
@@ -280,10 +266,6 @@ export class LspClient implements LspConnection {
             30_000,
             500, // Check every 500ms
         );
-    }
-
-    getAvailableRegions(): ReadonlySet<string> {
-        return this.availableRegions;
     }
 
     async updateCredentials(credentials: IamCredentials): Promise<void> {
@@ -296,6 +278,10 @@ export class LspClient implements LspConnection {
             data: jwt,
             encrypted: true,
         });
+    }
+
+    async getSystemStatus(): Promise<GetSystemStatusResponse> {
+        return await this.sendRequest('aws/system/status', {});
     }
 
     async shutdown(): Promise<void> {
