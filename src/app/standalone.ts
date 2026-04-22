@@ -14,6 +14,9 @@ async function onInitialize(params: ExtendedInitializeParams) {
     staticInitialize(params.clientInfo, params.initializationOptions?.['aws']);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
+    const { parserFactoryReady } = await import('../parser/ParserFactory');
+    await parserFactoryReady;
+
     const { CfnInfraCore } = await import('../server/CfnInfraCore');
     const core = new CfnInfraCore(lsp.components, params);
 

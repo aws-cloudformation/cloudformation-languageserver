@@ -1,3 +1,4 @@
+import { existsSync } from 'fs';
 import { join } from 'path';
 import Parser from 'web-tree-sitter';
 import { DocumentType } from '../document/Document';
@@ -22,12 +23,33 @@ export class GrammarManager {
         const basePath = config.wasmBasePath ?? this.getDefaultWasmPath();
 
         this.config = {
-            yamlGrammarPath: config.yamlGrammarPath ?? join(basePath, 'tree-sitter-yaml.wasm'),
-            jsonGrammarPath: config.jsonGrammarPath ?? join(basePath, 'tree-sitter-json.wasm'),
+            yamlGrammarPath:
+                config.yamlGrammarPath ??
+                this.resolveGrammarPath(
+                    basePath,
+                    'tree-sitter-yaml.wasm',
+                    '@tree-sitter-grammars/tree-sitter-yaml/tree-sitter-yaml.wasm',
+                ),
+            jsonGrammarPath:
+                config.jsonGrammarPath ??
+                this.resolveGrammarPath(basePath, 'tree-sitter-json.wasm', 'tree-sitter-json/tree-sitter-json.wasm'),
             maxRetries: config.maxRetries ?? 3,
             retryDelay: config.retryDelay ?? 100,
             wasmBasePath: basePath,
         };
+    }
+
+    private resolveGrammarPath(basePath: string, filename: string, nodeModulesPath: string): string {
+        const bundledPath = join(basePath, filename);
+        if (existsSync(bundledPath)) {
+            return bundledPath;
+        }
+        // Unbundled environment (tests/dev): resolve from node_modules
+        try {
+            return require.resolve(nodeModulesPath);
+        } catch {
+            return bundledPath;
+        }
     }
 
     private getDefaultWasmPath(): string {
@@ -50,10 +72,16 @@ export class GrammarManager {
     private async ensureInitialized(): Promise<void> {
         if (this.initialized) return;
 
+        const treeSitterWasm = this.resolveGrammarPath(
+            join(this.config.wasmBasePath, '..'),
+            'tree-sitter.wasm',
+            'web-tree-sitter/tree-sitter.wasm',
+        );
+
         await Parser.init({
             locateFile: (scriptName: string) => {
                 if (scriptName === 'tree-sitter.wasm') {
-                    return join(this.config.wasmBasePath, '..', 'tree-sitter.wasm');
+                    return treeSitterWasm;
                 }
                 return scriptName;
             },

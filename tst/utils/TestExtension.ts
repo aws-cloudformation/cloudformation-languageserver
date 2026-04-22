@@ -131,7 +131,10 @@ export class TestExtension implements Closeable {
         this.serverConnection = new LspConnection(
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
             {
-                onInitialize: (params) => {
+                onInitialize: async (params) => {
+                    const { parserFactoryReady } = await import('../../src/parser/ParserFactory');
+                    await parserFactoryReady;
+
                     const lsp = this.serverConnection.components;
                     LoggerFactory.reconfigure('warn');
 
