@@ -17,6 +17,7 @@ export function staticInitialize(ClientInfo?: ClientInfo, AwsMetadata?: AwsMetad
                 Process: ProcessType,
                 Machine: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
                 Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
+                Parser: process.env.BUILD_TARGET === 'legacy' ? 'wasm' : 'native',
                 ClientInfo,
                 aws: {
                     clientInfo: AwsMetadata?.clientInfo,
