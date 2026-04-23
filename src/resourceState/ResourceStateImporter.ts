@@ -16,6 +16,7 @@ import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
+import { extractErrorMessage } from '../utils/Errors';
 import { getIndentationString } from '../utils/IndentationUtils';
 import { ResourceStateManager } from './ResourceStateManager';
 import {
@@ -160,7 +161,6 @@ export class ResourceStateImporter {
             completionItem: undefined,
             failedImports: {},
             successfulImports: {},
-            failureReasons: {},
         };
 
         const generatedLogicalIds = new Set<string>();
@@ -198,7 +198,7 @@ export class ResourceStateImporter {
                 } catch (error) {
                     log.error(error, `Error importing resource state for ${resourceType} id: ${resourceIdentifier}`);
                     this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
-                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    const errorMessage = extractErrorMessage(error);
                     importResult.failureReasons ??= {};
                     importResult.failureReasons[resourceType] ??= {};
                     importResult.failureReasons[resourceType][resourceIdentifier] = errorMessage;

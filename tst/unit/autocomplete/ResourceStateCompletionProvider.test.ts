@@ -115,7 +115,7 @@ describe('ResourceStateCompletionProvider', () => {
         });
 
         mockComponents.schemaRetriever.getDefault.returns(s3Schemas);
-        mockComponents.resourceStateManager.getResource.resolves();
+        mockComponents.resourceStateManager.getResource.rejects(new Error('Resource not found'));
 
         const result = await provider.getCompletions(context, mockYamlParams);
 

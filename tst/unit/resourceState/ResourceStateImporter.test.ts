@@ -219,6 +219,79 @@ describe('ResourceStateImporter', () => {
             expect(Object.keys(result.failedImports)).toHaveLength(1);
         });
 
+        it('should populate failureReasons when resource import fails', async () => {
+            const uri = 'test://test-failure-reasons.template';
+            const scenario = TestScenarios[0];
+
+            createAndRegisterDocument(uri, scenario.initialContent, scenario.documentType);
+
+            mockResourceStateManager.getResource.mockRejectedValue(new Error('Access denied'));
+
+            const params: ResourceStateParams = {
+                resourceSelections: [{ resourceType: 'AWS::S3::Bucket', resourceIdentifiers: ['my-bucket'] }],
+                textDocument: { uri } as any,
+                purpose: ResourceStatePurpose.IMPORT,
+            };
+
+            const result = await importer.importResourceState(params);
+
+            expect(result.failureReasons).toBeDefined();
+            expect(result.failureReasons!['AWS::S3::Bucket']['my-bucket']).toBe('Access denied');
+        });
+
+        it('should not include failureReasons when all imports succeed', async () => {
+            const uri = 'test://test-no-failure-reasons.template';
+            const scenario = TestScenarios[0];
+
+            createAndRegisterDocument(uri, scenario.initialContent, scenario.documentType);
+
+            const mockResource = createMockResourceState('AWS::S3::Bucket');
+            mockResourceStateManager.getResource.mockResolvedValue(mockResource);
+
+            const params: ResourceStateParams = {
+                resourceSelections: [
+                    { resourceType: 'AWS::S3::Bucket', resourceIdentifiers: [mockResource.identifier] },
+                ],
+                textDocument: { uri } as any,
+                purpose: ResourceStatePurpose.IMPORT,
+            };
+
+            const result = await importer.importResourceState(params);
+
+            expect(result.failureReasons).toBeUndefined();
+        });
+
+        it('should populate failureReasons per resource type and identifier', async () => {
+            const uri = 'test://test-multi-failure-reasons.template';
+            const scenario = TestScenarios[0];
+
+            createAndRegisterDocument(uri, scenario.initialContent, scenario.documentType);
+
+            const mockResource = createMockResourceState('AWS::S3::Bucket');
+            mockResourceStateManager.getResource
+                .mockResolvedValueOnce(mockResource)
+                .mockRejectedValueOnce(new Error('Not found'))
+                .mockRejectedValueOnce(new Error('Timeout'));
+
+            const params: ResourceStateParams = {
+                resourceSelections: [
+                    {
+                        resourceType: 'AWS::S3::Bucket',
+                        resourceIdentifiers: [mockResource.identifier, 'bad-bucket', 'timeout-bucket'],
+                    },
+                ],
+                textDocument: { uri } as any,
+                purpose: ResourceStatePurpose.IMPORT,
+            };
+
+            const result = await importer.importResourceState(params);
+
+            expect(result.successfulImports['AWS::S3::Bucket']).toContain(mockResource.identifier);
+            expect(result.failureReasons).toBeDefined();
+            expect(result.failureReasons!['AWS::S3::Bucket']['bad-bucket']).toBe('Not found');
+            expect(result.failureReasons!['AWS::S3::Bucket']['timeout-bucket']).toBe('Timeout');
+        });
+
         it('should include warning when importing managed resources', async () => {
             const uri = 'test://test-managed-resources.template';
             const scenario = TestScenarios[0];
