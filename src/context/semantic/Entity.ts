@@ -114,7 +114,9 @@ export class Parameter extends Entity {
 
         return new Parameter(
             logicalId,
-            object['Type'] as ParameterType | undefined,
+            typeof object['Type'] === 'string' && Object.values(ParameterType).includes(object['Type'] as ParameterType)
+                ? (object['Type'] as ParameterType)
+                : undefined,
             Default,
             typeof object['AllowedPattern'] === 'string' ? object['AllowedPattern'] : undefined,
             AllowedValues,

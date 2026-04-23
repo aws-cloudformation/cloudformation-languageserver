@@ -42,7 +42,7 @@ describe('EntityFieldCompletionProvider', () => {
             const mockContext = createParameterContext('MyParameter', {
                 text: 'e',
                 data: {
-                    Type: 'string',
+                    Type: 'String',
                     Description: 'some description',
                 },
                 propertyPath: ['Parameters', 'MyParameter', 'e'],
