@@ -1,6 +1,6 @@
 import { execFile } from 'child_process';
 import { randomUUID as v4 } from 'crypto';
-import { rmSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from 'fs';
+import { rmSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { promisify } from 'util';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -328,6 +328,62 @@ describe('FileStore', () => {
 
             const files = readdirSync(encTestDir);
             expect(files.filter((f) => f.endsWith('.tmp'))).toHaveLength(0);
+        });
+    });
+
+    describe('stale tmp cleanup', () => {
+        it('should remove leftover tmp files from prior crashed processes on construction', () => {
+            const encTestDir = join(testDir, 'stale-tmp-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            // Simulate leftover tmp files from a crashed process
+            writeFileSync(join(encTestDir, 'test.enc.9999.1.tmp'), 'stale1');
+            writeFileSync(join(encTestDir, 'test.enc.8888.2.tmp'), 'stale2');
+            // Unrelated file should survive
+            writeFileSync(join(encTestDir, 'other.txt'), 'keep');
+
+            new EncryptedFileStore(key, 'test', encTestDir);
+
+            const files = readdirSync(encTestDir);
+            expect(files.filter((f) => f.endsWith('.tmp'))).toHaveLength(0);
+            expect(files).toContain('other.txt');
+        });
+
+        it('should not remove tmp files belonging to a different store name', () => {
+            const encTestDir = join(testDir, 'stale-tmp-isolation');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            // tmp file for a different store name
+            writeFileSync(join(encTestDir, 'other.enc.9999.1.tmp'), 'other-store');
+
+            new EncryptedFileStore(key, 'test', encTestDir);
+
+            const files = readdirSync(encTestDir);
+            expect(files).toContain('other.enc.9999.1.tmp');
+        });
+    });
+
+    describe('withLock file deletion resilience', () => {
+        it('should handle file being deleted between writes', async () => {
+            const encTestDir = join(testDir, 'deleted-file-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store = new EncryptedFileStore(key, 'test', encTestDir);
+            await store.put('key1', 'value1');
+
+            // Simulate another process deleting the file
+            unlinkSync(join(encTestDir, 'test.enc'));
+
+            // Next write should recreate the file (withLock checks existsSync)
+            await store.put('key2', 'value2');
+
+            // Only key2 should exist — key1 was lost with the deleted file
+            const store2 = new EncryptedFileStore(key, 'test', encTestDir);
+            expect(store2.get('key1')).toBeUndefined();
+            expect(store2.get('key2')).toBe('value2');
         });
     });
 
