@@ -100,5 +100,24 @@ describe('Entity', () => {
             expect(parameter.name).toBe('TestParam');
             expect(parameter.NoEcho).toBe(true);
         });
+
+        it('should handle intrinsic functions in string fields by setting them to undefined', () => {
+            const data = {
+                Type: ParameterType.String,
+                Description: { 'Fn::Sub': 'Repository for ${AWS::StackName}' }, // Object instead of string
+                ConstraintDescription: { 'Fn::If': ['Condition', 'Valid', 'Invalid'] }, // Object instead of string
+                AllowedPattern: { 'Fn::Sub': '^${AWS::StackName}.*' }, // Object instead of string
+                Default: 'valid-default', // This should work fine
+            } as any; // Cast to any to test runtime behavior with invalid types
+
+            const parameter = Parameter.from('TestParam', data);
+
+            expect(parameter.name).toBe('TestParam');
+            expect(parameter.Type).toBe(ParameterType.String);
+            expect(parameter.Default).toBe('valid-default'); // Valid string preserved
+            expect(parameter.Description).toBeUndefined(); // Object filtered out
+            expect(parameter.ConstraintDescription).toBeUndefined(); // Object filtered out
+            expect(parameter.AllowedPattern).toBeUndefined(); // Object filtered out
+        });
     });
 });

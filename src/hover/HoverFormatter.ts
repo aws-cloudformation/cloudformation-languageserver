@@ -1104,7 +1104,7 @@ export function formatParameterHover(parameter: Parameter): string {
         doc.push(`**Constraint Description:** ${parameter.ConstraintDescription}`);
     }
 
-    return doc.filter((item) => typeof item === 'string' && item.trim() !== '').join('\n\n');
+    return doc.filter((item) => item.trim() !== '').join('\n\n');
 }
 
 /**

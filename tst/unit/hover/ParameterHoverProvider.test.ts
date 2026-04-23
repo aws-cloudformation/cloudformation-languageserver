@@ -43,7 +43,8 @@ describe('ParameterHoverProvider', () => {
             expect(result).toContain('(parameter) EcrRepoName: string');
             expect(result).toContain('**Type:** String');
             expect(result).toContain('**Default Value:** "my-repo"');
-            // Description should be filtered out since it's not a string
+            // Description should be undefined since it's not a string, so no description shown
+            expect(result).not.toContain('Description');
             expect(result).not.toContain('Fn::Sub');
         });
     });
