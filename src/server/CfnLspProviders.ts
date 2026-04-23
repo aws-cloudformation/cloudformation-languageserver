@@ -73,7 +73,7 @@ export class CfnLspProviders implements Configurables, Closeable {
 
         this.hoverRouter =
             overrides.hoverRouter ??
-            new HoverRouter(core.contextManager, external.schemaRetriever, external.featureFlags.get('Constants'));
+            new HoverRouter(core.contextManager, external.schemaRetriever, core.featureFlags.get('Constants'));
         this.completionRouter = overrides.completionRouter ?? CompletionRouter.create(core, external, this);
 
         this.definitionProvider = overrides.definitionProvider ?? new DefinitionProvider(core.contextManager);

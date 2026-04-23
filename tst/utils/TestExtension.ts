@@ -133,8 +133,14 @@ export class TestExtension implements Closeable {
                     const lsp = this.serverConnection.components;
                     LoggerFactory.reconfigure('warn');
 
-                    const dataStoreFactory = new MultiDataStoreFactoryProvider();
+                    const ffFile = join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json');
+                    const featureFlags = new FeatureFlagProvider((_env) => {
+                        return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
+                    }, ffFile);
+
+                    const dataStoreFactory = new MultiDataStoreFactoryProvider(featureFlags.get('FileDb'));
                     this.core = new CfnInfraCore(lsp, params, {
+                        featureFlags,
                         dataStoreFactory,
                     });
 
@@ -150,14 +156,10 @@ export class TestExtension implements Closeable {
                         },
                     );
 
-                    const ffFile = join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json');
                     this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
                         schemaRetriever,
                         cfnLintService: createMockCfnLintService(),
-                        featureFlags: new FeatureFlagProvider((_env) => {
-                            return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
-                        }, ffFile),
                         awsClient: config.awsClientFactory?.(
                             this.core.awsCredentials,
                             this.core.awsMetadata?.cloudformation?.endpoint,

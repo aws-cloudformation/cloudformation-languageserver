@@ -193,7 +193,11 @@ function main() {
         stubInterface<LspSystemHandlers>(),
     );
 
-    const dataStoreFactory = new MultiDataStoreFactoryProvider();
+    const featureFlags = new FeatureFlagProvider(
+        getFromGitHub,
+        join(__dirname, '..', 'assets', 'featureFlag', `${AwsEnv}.json`),
+    );
+    const dataStoreFactory = new MultiDataStoreFactoryProvider(featureFlags.get('FileDb'));
     const core = new CfnInfraCore(
         lsp,
         {
@@ -213,10 +217,6 @@ function main() {
     const schemaStore = new SchemaStore(dataStoreFactory);
     const external = new CfnExternal(lsp, core, {
         schemaStore,
-        featureFlags: new FeatureFlagProvider(
-            getFromGitHub,
-            join(__dirname, '..', 'assets', 'featureFlag', `${AwsEnv}.json`),
-        ),
     });
 
     const providers = new CfnLspProviders(core, external, {

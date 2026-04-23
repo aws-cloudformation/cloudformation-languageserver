@@ -28,7 +28,7 @@ export class FeatureFlagProvider implements Closeable {
 
     constructor(
         private readonly getLatestFeatureFlags: (env: string) => Promise<unknown>,
-        private readonly localFile = join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`),
+        private readonly localFile = defaultLocalFile(),
         refreshIntervalMs: number = RefreshIntervalMs,
         dynamicRefreshIntervalMs: number = DynamicRefreshIntervalMs,
     ) {
@@ -134,4 +134,8 @@ function defaultConfig(configFile: string, telemetry: ScopedTelemetry): FeatureF
         log.error(err, 'Failed to read config file, using empty config');
         return { version: 1, description: 'Default empty config', features: {} };
     }
+}
+
+export function defaultLocalFile() {
+    return join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`);
 }

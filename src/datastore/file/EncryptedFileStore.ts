@@ -139,7 +139,9 @@ export class EncryptedFileStore implements DataStore {
                         this.content = existsSync(this.file) ? this.readFile() : {};
                         return await fn();
                     } finally {
-                        await release();
+                        await release().catch(() => {
+                            // do nothing, lock was already released
+                        });
                     }
                 },
                 { captureErrorAttributes: true },

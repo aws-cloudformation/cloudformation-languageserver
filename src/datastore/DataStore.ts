@@ -1,3 +1,4 @@
+import { FeatureFlag } from '../featureFlag/FeatureFlagI';
 import { Closeable } from '../utils/Closeable';
 import { isWindows } from '../utils/Environment';
 import { pathToStorage } from '../utils/Storage';
@@ -62,8 +63,8 @@ export class MultiDataStoreFactoryProvider implements DataStoreFactoryProvider {
     private readonly memoryStoreFactory: MemoryStoreFactory;
     private readonly persistedStore: DataStoreFactory;
 
-    constructor() {
-        if (isWindows) {
+    constructor(fileDbFeatureFlag: FeatureFlag) {
+        if (fileDbFeatureFlag.isEnabled() || isWindows) {
             this.persistedStore = new FileStoreFactory(pathToStorage());
         } else {
             this.persistedStore = new LMDBStoreFactory(pathToStorage());

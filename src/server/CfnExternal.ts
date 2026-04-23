@@ -1,4 +1,4 @@
-import { FeatureFlagProvider, getFromGitHub } from '../featureFlag/FeatureFlagProvider';
+import { FeatureFlagProvider } from '../featureFlag/FeatureFlagProvider';
 import { LspComponents } from '../protocol/LspComponents';
 import { getSamSchemas } from '../schema/GetSamSchemaTask';
 import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
@@ -41,7 +41,7 @@ export class CfnExternal implements Configurables, Closeable {
     readonly featureFlags: FeatureFlagProvider;
     readonly onlineFeatureGuard: OnlineFeatureGuard;
 
-    constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Partial<CfnExternal> = {}) {
+    constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Omit<Partial<CfnExternal>, 'featureFlags'> = {}) {
         this.awsClient =
             overrides.awsClient ?? new AwsClient(core.awsCredentials, core.awsMetadata?.cloudformation?.endpoint);
 
@@ -71,14 +71,7 @@ export class CfnExternal implements Configurables, Closeable {
             new GuardService(core.documentManager, core.diagnosticCoordinator, core.syntaxTreeManager);
 
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus();
-        this.featureFlags =
-            overrides.featureFlags ??
-            new FeatureFlagProvider(
-                getFromGitHub,
-                undefined,
-                validatePositiveOrUndefined(core.awsMetadata?.featureFlags?.refreshIntervalMs),
-                validatePositiveOrUndefined(core.awsMetadata?.featureFlags?.dynamicRefreshIntervalMs),
-            );
+        this.featureFlags = core.featureFlags;
         this.onlineFeatureGuard = overrides.onlineFeatureGuard ?? new OnlineFeatureGuard(core.awsCredentials);
     }
 
@@ -87,12 +80,6 @@ export class CfnExternal implements Configurables, Closeable {
     }
 
     async close() {
-        return await closeSafely(
-            this.cfnLintService,
-            this.guardService,
-            this.schemaRetriever,
-            this.onlineStatus,
-            this.featureFlags,
-        );
+        return await closeSafely(this.cfnLintService, this.guardService, this.schemaRetriever, this.onlineStatus);
     }
 }

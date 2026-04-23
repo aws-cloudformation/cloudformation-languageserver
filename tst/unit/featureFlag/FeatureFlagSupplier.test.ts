@@ -25,7 +25,7 @@ describe('FeatureFlagSupplier', () => {
     it('should initialize with feature flags', () => {
         const supplier = new FeatureFlagSupplier(configSupplier, throwError);
 
-        expect([...supplier.featureFlags.keys()]).toEqual(['Constants']);
+        expect([...supplier.featureFlags.keys()]).toEqual(['Constants', 'FileDb']);
         expect(supplier.featureFlags.get('Constants')?.isEnabled()).toBe(false);
 
         expect([...supplier.targetedFeatureFlags.keys()]).toEqual(['EnhancedDryRun']);
@@ -52,7 +52,7 @@ describe('FeatureFlagSupplier', () => {
     it('should handle invalid config and fallback to default', () => {
         const supplier = new FeatureFlagSupplier(() => 'invalid', configSupplier);
 
-        expect([...supplier.featureFlags.keys()]).toEqual(['Constants']);
+        expect([...supplier.featureFlags.keys()]).toEqual(['Constants', 'FileDb']);
         expect([...supplier.targetedFeatureFlags.keys()]).toEqual(['EnhancedDryRun']);
 
         supplier.close();
@@ -61,7 +61,7 @@ describe('FeatureFlagSupplier', () => {
     it('should handle undefined config', () => {
         const supplier = new FeatureFlagSupplier(() => undefined, configSupplier);
 
-        expect([...supplier.featureFlags.keys()]).toEqual(['Constants']);
+        expect([...supplier.featureFlags.keys()]).toEqual(['Constants', 'FileDb']);
         expect([...supplier.targetedFeatureFlags.keys()]).toEqual(['EnhancedDryRun']);
 
         supplier.close();
