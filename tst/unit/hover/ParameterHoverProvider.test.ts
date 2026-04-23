@@ -27,5 +27,24 @@ describe('ParameterHoverProvider', () => {
             expect(result).toContain('- prod');
             expect(result).toContain('**Constraint Description:** Must be dev, test, or prod');
         });
+
+        it('should handle parameter with intrinsic function in Description without crashing', () => {
+            const mockContext = createParameterContext('EcrRepoName', {
+                data: {
+                    Type: 'String' as any,
+                    Default: 'my-repo',
+                    Description: { 'Fn::Sub': 'Repository for ${AWS::StackName}' }, // Object instead of string
+                },
+            });
+
+            // Should not throw an error
+            const result = parameterHoverProvider.getInformation(mockContext);
+
+            expect(result).toContain('(parameter) EcrRepoName: string');
+            expect(result).toContain('**Type:** String');
+            expect(result).toContain('**Default Value:** "my-repo"');
+            // Description should be filtered out since it's not a string
+            expect(result).not.toContain('Fn::Sub');
+        });
     });
 });
