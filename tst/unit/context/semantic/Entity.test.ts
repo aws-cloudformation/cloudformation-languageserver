@@ -103,26 +103,26 @@ describe('Entity', () => {
 
         it('should handle intrinsic functions in string fields by setting them to undefined', () => {
             const data = {
-                Type: { 'Fn::Sub': 'String' }, // Object instead of string
-                Description: { 'Fn::Sub': 'Repository for ${AWS::StackName}' }, // Object instead of string
-                ConstraintDescription: { 'Fn::If': ['Condition', 'Valid', 'Invalid'] }, // Object instead of string
-                AllowedPattern: { 'Fn::Sub': '^${AWS::StackName}.*' }, // Object instead of string
-                Default: 'valid-default', // This should work fine
-            } as any; // Cast to any to test runtime behavior with invalid types
+                Type: { 'Fn::Sub': 'String' },
+                Description: { 'Fn::Sub': 'Repository for ${AWS::StackName}' },
+                ConstraintDescription: { 'Fn::If': ['Condition', 'Valid', 'Invalid'] },
+                AllowedPattern: { 'Fn::Sub': '^${AWS::StackName}.*' },
+                Default: 'valid-default',
+            } as any;
 
             const parameter = Parameter.from('TestParam', data);
 
             expect(parameter.name).toBe('TestParam');
-            expect(parameter.Type).toBeUndefined(); // Object filtered out
-            expect(parameter.Default).toBe('valid-default'); // Valid string preserved
-            expect(parameter.Description).toBeUndefined(); // Object filtered out
-            expect(parameter.ConstraintDescription).toBeUndefined(); // Object filtered out
-            expect(parameter.AllowedPattern).toBeUndefined(); // Object filtered out
+            expect(parameter.Type).toBeUndefined();
+            expect(parameter.Default).toBe('valid-default');
+            expect(parameter.Description).toBeUndefined();
+            expect(parameter.ConstraintDescription).toBeUndefined();
+            expect(parameter.AllowedPattern).toBeUndefined();
         });
 
         it('should handle invalid string values in Type field', () => {
             const data = {
-                Type: 'InvalidParameterType', // Invalid enum value
+                Type: 'InvalidParameterType',
                 Description: 'Valid description',
                 Default: 'valid-default',
             } as any;
@@ -130,8 +130,27 @@ describe('Entity', () => {
             const parameter = Parameter.from('TestParam', data);
 
             expect(parameter.name).toBe('TestParam');
-            expect(parameter.Type).toBeUndefined(); // Invalid enum value filtered out
-            expect(parameter.Description).toBe('Valid description'); // Valid string preserved
+            expect(parameter.Type).toBeUndefined();
+            expect(parameter.Description).toBe('Valid description');
+            expect(parameter.Default).toBe('valid-default');
+        });
+
+        it('should coerce numbers and booleans to strings', () => {
+            const data = {
+                Type: ParameterType.String,
+                Description: 123,
+                ConstraintDescription: true,
+                AllowedPattern: false,
+                Default: 'valid-default',
+            } as any;
+
+            const parameter = Parameter.from('TestParam', data);
+
+            expect(parameter.name).toBe('TestParam');
+            expect(parameter.Type).toBe(ParameterType.String);
+            expect(parameter.Description).toBe('123');
+            expect(parameter.ConstraintDescription).toBe('true');
+            expect(parameter.AllowedPattern).toBe('false');
             expect(parameter.Default).toBe('valid-default');
         });
     });

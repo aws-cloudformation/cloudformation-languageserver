@@ -33,7 +33,7 @@ describe('ParameterHoverProvider', () => {
                 data: {
                     Type: 'String' as any,
                     Default: 'my-repo',
-                    Description: { 'Fn::Sub': 'Repository for ${AWS::StackName}' }, // Object instead of string
+                    Description: { 'Fn::Sub': 'Repository for ${AWS::StackName}' },
                 },
             });
 
@@ -43,7 +43,6 @@ describe('ParameterHoverProvider', () => {
             expect(result).toContain('(parameter) EcrRepoName: string');
             expect(result).toContain('**Type:** String');
             expect(result).toContain('**Default Value:** "my-repo"');
-            // Description should be undefined since it's not a string, so no description shown
             expect(result).not.toContain('Description');
             expect(result).not.toContain('Fn::Sub');
         });

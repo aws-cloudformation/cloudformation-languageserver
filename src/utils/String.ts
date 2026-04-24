@@ -38,3 +38,9 @@ export function byteSize(str: string) {
 export function formatNumber(value: number, decimals: number = 2) {
     return value.toFixed(decimals);
 }
+
+export function toStringOrUndefined(value: unknown): string | undefined {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    return undefined;
+}
