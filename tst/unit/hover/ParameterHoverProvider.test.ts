@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import { ParameterType } from '../../../src/context/semantic/ParameterType';
 import { ParameterHoverProvider } from '../../../src/hover/ParameterHoverProvider';
 import { createParameterContext } from '../../utils/MockContext';
 
@@ -8,7 +9,7 @@ describe('ParameterHoverProvider', () => {
         it('should return parameter information from template', () => {
             const mockContext = createParameterContext('EnvironmentType', {
                 data: {
-                    Type: 'String' as any,
+                    Type: ParameterType.String,
                     Default: 'dev',
                     Description: 'Environment type',
                     AllowedValues: ['dev', 'test', 'prod'],
