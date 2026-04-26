@@ -3,7 +3,7 @@ import { join } from 'path';
 import { open } from 'lmdb';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StoreName } from '../../../src/datastore/DataStore';
-import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
+import { LMDBStoreFactory } from '../../../src/datastore/LMDBStoreFactory';
 
 vi.mock('lmdb', async () => {
     const actual = await vi.importActual<typeof import('lmdb')>('lmdb');

@@ -6,14 +6,14 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { formatNumber } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName } from './DataStore';
-import { EncryptedFileStore } from './file/EncryptedFileStore';
 import { encryptionKey } from './file/Encryption';
+import { KeyedFileStore } from './file/KeyedFileStore';
 
 export class FileStoreFactory implements DataStoreFactory {
     private readonly log: Logger;
     @Telemetry({ scope: 'FileStore.Global' }) private readonly telemetry!: ScopedTelemetry;
 
-    private readonly stores = new Map<StoreName, EncryptedFileStore>();
+    private readonly stores = new Map<StoreName, KeyedFileStore>();
     private readonly fileDbRoot: string;
     private readonly fileDbDir: string;
 
@@ -35,7 +35,7 @@ export class FileStoreFactory implements DataStoreFactory {
         }
 
         for (const store of storeNames) {
-            this.stores.set(store, new EncryptedFileStore(encryptionKey(VersionNumber), store, this.fileDbDir));
+            this.stores.set(store, new KeyedFileStore(encryptionKey(VersionNumber), store, this.fileDbDir));
         }
 
         this.metricsInterval = setInterval(() => {
@@ -116,5 +116,5 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 }
 
-const VersionNumber = 2;
+const VersionNumber = 3;
 const Version = `v${VersionNumber}`;
