@@ -1,8 +1,8 @@
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FeatureFlagConfigSchema } from '../../../src/featureFlag/FeatureFlagBuilder';
-import { FeatureFlagProvider } from '../../../src/featureFlag/FeatureFlagProvider';
+import { featureFlagLocalFile, FeatureFlagProvider } from '../../../src/featureFlag/FeatureFlagProvider';
 import { ScopedTelemetry } from '../../../src/telemetry/ScopedTelemetry';
 
 describe('FeatureFlagProvider', () => {
@@ -141,6 +141,32 @@ describe('FeatureFlagProvider', () => {
             );
 
             await expect((provider as any).getFeatureFlags('alpha')).rejects.toThrow('status code 500');
+        });
+    });
+
+    describe('featureFlagLocalFile', () => {
+        const projectRoot = join(__dirname, '..', '..', '..');
+
+        it('should resolve to an existing file with project root as baseDir', () => {
+            const path = featureFlagLocalFile(projectRoot);
+            expect(existsSync(path)).toBe(true);
+        });
+
+        it('should produce a parseable feature flag config', () => {
+            const path = featureFlagLocalFile(projectRoot);
+            const content = JSON.parse(readFileSync(path, 'utf8'));
+            expect(FeatureFlagConfigSchema.parse(content)).toBeDefined();
+        });
+
+        it('should build path with assets/featureFlag/<env>.json structure', () => {
+            const path = featureFlagLocalFile('/some/base');
+            expect(path).toMatch(/\/some\/base\/assets\/featureFlag\/\w+\.json$/);
+        });
+
+        it('should default baseDir to __dirname of the source module', () => {
+            const defaultPath = featureFlagLocalFile();
+            expect(defaultPath).toContain(join('assets', 'featureFlag'));
+            expect(defaultPath).toMatch(/\.json$/);
         });
     });
 });

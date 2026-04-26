@@ -51,7 +51,7 @@ import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '.
 import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';
 import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
-import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
+import { featureFlagLocalFile, FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { LspCapabilities } from '../../src/protocol/LspCapabilities';
 import { LspConnection } from '../../src/protocol/LspConnection';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
@@ -133,9 +133,14 @@ export class TestExtension implements Closeable {
                     const lsp = this.serverConnection.components;
                     LoggerFactory.reconfigure('warn');
 
-                    const dataStoreFactory = new MultiDataStoreFactoryProvider();
+                    const ffFile = featureFlagLocalFile(join(__dirname, '..', '..'));
+                    const featureFlags = new FeatureFlagProvider((_env) => {
+                        return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
+                    }, ffFile);
+                    const dataStoreFactory = new MultiDataStoreFactoryProvider(featureFlags.get('FileDb'));
                     this.core = new CfnInfraCore(lsp, params, {
                         dataStoreFactory,
+                        featureFlags,
                     });
 
                     const schemaStore = new SchemaStore(dataStoreFactory);
@@ -150,14 +155,10 @@ export class TestExtension implements Closeable {
                         },
                     );
 
-                    const ffFile = join(__dirname, '..', '..', 'assets', 'featureFlag', 'alpha.json');
                     this.external = new CfnExternal(lsp, this.core, {
                         schemaStore,
                         schemaRetriever,
                         cfnLintService: createMockCfnLintService(),
-                        featureFlags: new FeatureFlagProvider((_env) => {
-                            return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
-                        }, ffFile),
                         awsClient: config.awsClientFactory?.(
                             this.core.awsCredentials,
                             this.core.awsMetadata?.cloudformation?.endpoint,

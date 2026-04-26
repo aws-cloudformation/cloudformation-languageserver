@@ -1,7 +1,7 @@
 import { execFile } from 'child_process';
 import { randomUUID as v4 } from 'crypto';
 import { rmSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from 'fs';
-import { join } from 'path';
+import { basename, join } from 'path';
 import { promisify } from 'util';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DataStore, StoreName } from '../../../src/datastore/DataStore';
@@ -525,6 +525,6 @@ function encodedFilePath(dir: string, store: string, key: string) {
     const filePath = join(dir, `${store}.${stableHashCode(key)}.enc`);
     return {
         filePath,
-        relPath: filePath.replace(`${dir}/`, ''),
+        relPath: basename(filePath),
     };
 }

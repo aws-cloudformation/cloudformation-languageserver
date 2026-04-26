@@ -1,9 +1,11 @@
 import { describe, it, expect } from 'vitest';
+import { AndFeatureFlag, LocalHostTargetedFeatureFlag } from '../../../src/featureFlag/CombinedFeatureFlags';
 import {
     StaticFeatureFlag,
     FleetTargetedFeatureFlag,
     RegionAllowlistFeatureFlag,
 } from '../../../src/featureFlag/FeatureFlag';
+import { buildLocalHost } from '../../../src/featureFlag/FeatureFlagBuilder';
 import { AwsRegion } from '../../../src/utils/Region';
 
 describe('StaticFeatureFlag', () => {
@@ -78,5 +80,72 @@ describe('RegionAllowlistFeatureFlag', () => {
         expect(description).toContain('my-feature');
         expect(description).toContain('us-east-1');
         expect(description).toContain('eu-west-1');
+    });
+});
+
+describe('AndFeatureFlag', () => {
+    it('should return true when all flags are enabled', () => {
+        const flag = new AndFeatureFlag(new StaticFeatureFlag('a', true), new StaticFeatureFlag('b', true));
+        expect(flag.isEnabled()).toBe(true);
+    });
+
+    it('should return false when any flag is disabled', () => {
+        const flag = new AndFeatureFlag(new StaticFeatureFlag('a', true), new StaticFeatureFlag('b', false));
+        expect(flag.isEnabled()).toBe(false);
+    });
+
+    it('should throw when constructed with no flags', () => {
+        expect(() => new AndFeatureFlag()).toThrow('1 or more feature flags required');
+    });
+
+    it('should describe all child flags', () => {
+        const flag = new AndFeatureFlag(new StaticFeatureFlag('a', true), new StaticFeatureFlag('b', false));
+        expect(flag.describe()).toContain('a');
+        expect(flag.describe()).toContain('b');
+    });
+});
+
+describe('LocalHostTargetedFeatureFlag', () => {
+    it('should be enabled at 100% fleet percentage', () => {
+        const flag = new LocalHostTargetedFeatureFlag(new FleetTargetedFeatureFlag('test', 100));
+        expect(flag.isEnabled()).toBe(true);
+    });
+
+    it('should be disabled at 0% fleet percentage', () => {
+        const flag = new LocalHostTargetedFeatureFlag(new FleetTargetedFeatureFlag('test', 0));
+        expect(flag.isEnabled()).toBe(false);
+    });
+
+    it('should return consistent results across calls', () => {
+        const flag = new LocalHostTargetedFeatureFlag(new FleetTargetedFeatureFlag('test', 50));
+        expect(flag.isEnabled()).toBe(flag.isEnabled());
+    });
+
+    it('should describe itself with fleet info', () => {
+        const flag = new LocalHostTargetedFeatureFlag(new FleetTargetedFeatureFlag('test', 75));
+        expect(flag.describe()).toContain('LocalHostTargetedFeatureFlag');
+        expect(flag.describe()).toContain('75');
+    });
+});
+
+describe('buildLocalHost', () => {
+    it('should return enabled flag when enabled with 100% fleet', () => {
+        const flag = buildLocalHost('FileDb', { enabled: true, fleetPercentage: 100 });
+        expect(flag.isEnabled()).toBe(true);
+    });
+
+    it('should return disabled flag when enabled is false', () => {
+        const flag = buildLocalHost('FileDb', { enabled: false, fleetPercentage: 100 });
+        expect(flag.isEnabled()).toBe(false);
+    });
+
+    it('should return disabled flag when fleet percentage is 0', () => {
+        const flag = buildLocalHost('FileDb', { enabled: true, fleetPercentage: 0 });
+        expect(flag.isEnabled()).toBe(false);
+    });
+
+    it('should default to disabled with no config', () => {
+        const flag = buildLocalHost('FileDb');
+        expect(flag.isEnabled()).toBe(false);
     });
 });

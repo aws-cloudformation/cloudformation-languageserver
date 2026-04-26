@@ -362,6 +362,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
 
     const core: MockInfraCoreComponents = {
         dataStoreFactory,
+        featureFlags: overrides.featureFlags ?? stubInterface<FeatureFlagProvider>(),
         clientMessage: overrides.clientMessage ?? createMockClientMessage(),
         settingsManager: overrides.settingsManager ?? createMockSettingsManager(),
         syntaxTreeManager: overrides.syntaxTreeManager ?? createMockSyntaxTreeManager(),

@@ -5,6 +5,7 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DataStoreFactoryProvider, MultiDataStoreFactoryProvider } from '../datastore/DataStore';
 import { DocumentManager } from '../document/DocumentManager';
 import { DocumentMetadata } from '../document/DocumentProtocol';
+import { featureFlagLocalFile, FeatureFlagProvider, getFromGitHub } from '../featureFlag/FeatureFlagProvider';
 import { LspComponents } from '../protocol/LspComponents';
 import { DiagnosticCoordinator } from '../services/DiagnosticCoordinator';
 import { SettingsManager } from '../settings/SettingsManager';
@@ -15,6 +16,7 @@ import { UsageTracker } from '../usageTracker/UsageTracker';
 import { UsageTrackerMetrics } from '../usageTracker/UsageTrackerMetrics';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { Configurable, Configurables } from '../utils/Configurable';
+import { validatePositiveOrUndefined } from '../utils/Number';
 import { AwsMetadata, ExtendedInitializeParams } from './InitParams';
 
 /**
@@ -24,6 +26,7 @@ import { AwsMetadata, ExtendedInitializeParams } from './InitParams';
  */
 export class CfnInfraCore implements Configurables, Closeable {
     readonly awsMetadata?: AwsMetadata;
+    readonly featureFlags: FeatureFlagProvider;
     readonly dataStoreFactory: DataStoreFactoryProvider;
     readonly clientMessage: ClientMessage;
     readonly settingsManager: SettingsManager;
@@ -45,7 +48,16 @@ export class CfnInfraCore implements Configurables, Closeable {
         overrides: Partial<CfnInfraCore> = {},
     ) {
         this.awsMetadata = initializeParams.initializationOptions?.aws;
-        this.dataStoreFactory = overrides.dataStoreFactory ?? new MultiDataStoreFactoryProvider();
+        this.featureFlags =
+            overrides.featureFlags ??
+            new FeatureFlagProvider(
+                getFromGitHub,
+                featureFlagLocalFile(),
+                validatePositiveOrUndefined(this.awsMetadata?.featureFlags?.refreshIntervalMs),
+                validatePositiveOrUndefined(this.awsMetadata?.featureFlags?.dynamicRefreshIntervalMs),
+            );
+        this.dataStoreFactory =
+            overrides.dataStoreFactory ?? new MultiDataStoreFactoryProvider(this.featureFlags.get('FileDb'));
         this.clientMessage = overrides.clientMessage ?? new ClientMessage(lspComponents.communication);
         this.settingsManager =
             overrides.settingsManager ?? new SettingsManager(lspComponents.workspace, this.awsMetadata?.settings);
@@ -82,6 +94,11 @@ export class CfnInfraCore implements Configurables, Closeable {
     }
 
     async close() {
-        return await closeSafely(this.documentManager, this.dataStoreFactory, TelemetryService.instance);
+        return await closeSafely(
+            this.documentManager,
+            this.dataStoreFactory,
+            this.featureFlags,
+            TelemetryService.instance,
+        );
     }
 }

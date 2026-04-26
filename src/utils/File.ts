@@ -44,7 +44,7 @@ export function readBufferIfExists(
         encoding?: null | undefined;
         flag?: string | undefined;
     } | null,
-): NonSharedBuffer {
+): Buffer {
     try {
         if (existsSync(path)) {
             return readFileSync(path, options);

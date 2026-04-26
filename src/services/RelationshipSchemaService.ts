@@ -26,7 +26,7 @@ export type RelationshipGroupData = Record<string, RelatedResourceType[]>;
 export class RelationshipSchemaService {
     private readonly relationshipCache: Map<string, ResourceTypeRelationships> = new Map();
 
-    constructor(private readonly schemaFilePath: string = join(__dirname, 'assets', 'relationship_schemas.json')) {
+    constructor(private readonly schemaFilePath: string = relationshipLocalFile()) {
         this.loadAllSchemas();
     }
 
@@ -151,4 +151,8 @@ export class RelationshipSchemaService {
 
         return [...resourceTypes];
     }
+}
+
+export function relationshipLocalFile(baseDir: string = __dirname) {
+    return join(baseDir, 'assets', 'relationship_schemas.json');
 }

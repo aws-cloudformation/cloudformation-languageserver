@@ -1,7 +1,16 @@
 import { Logger } from 'pino';
 import * as sinon from 'sinon';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { RetryOptions, retryWithExponentialBackoff } from '../../../src/utils/Retry';
+import { RetryOptions, retryWithExponentialBackoff, sleep } from '../../../src/utils/Retry';
+
+describe('sleep', () => {
+    it('should resolve after the specified duration', async () => {
+        const start = performance.now();
+        await sleep(50);
+        const elapsed = performance.now() - start;
+        expect(elapsed).toBeGreaterThanOrEqual(40);
+    });
+});
 
 describe('retryWithExponentialBackoff', () => {
     const options: RetryOptions = {
