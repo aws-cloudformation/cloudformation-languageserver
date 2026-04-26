@@ -15,7 +15,7 @@ import { FeatureFlagSupplier, FeatureFlagConfigKey, TargetedFeatureFlagConfigKey
 
 const log = LoggerFactory.getLogger('FeatureFlagProvider');
 
-const RefreshIntervalMs = 5 * 60 * 1000;
+const RefreshIntervalMs = 15 * 60 * 1000;
 
 export class FeatureFlagProvider implements Closeable {
     @Telemetry()
@@ -28,7 +28,7 @@ export class FeatureFlagProvider implements Closeable {
 
     constructor(
         private readonly getLatestFeatureFlags: (env: string) => Promise<unknown>,
-        private readonly localFile = join(__dirname, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`),
+        private readonly localFile = featureFlagLocalFile(),
         refreshIntervalMs: number = RefreshIntervalMs,
         dynamicRefreshIntervalMs: number = DynamicRefreshIntervalMs,
     ) {
@@ -78,6 +78,7 @@ export class FeatureFlagProvider implements Closeable {
         this.config = newConfig;
         writeFileSync(this.localFile, JSON.stringify(newConfig, undefined, 2));
         this.telemetry.count('refresh.local.update', 1);
+        log.info('Updated and saved feature flags');
         this.log();
     }
 
@@ -134,4 +135,8 @@ function defaultConfig(configFile: string, telemetry: ScopedTelemetry): FeatureF
         log.error(err, 'Failed to read config file, using empty config');
         return { version: 1, description: 'Default empty config', features: {} };
     }
+}
+
+export function featureFlagLocalFile(baseDir: string = __dirname) {
+    return join(baseDir, 'assets', 'featureFlag', `${AwsEnv.toLowerCase()}.json`);
 }

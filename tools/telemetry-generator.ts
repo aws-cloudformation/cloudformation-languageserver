@@ -120,9 +120,8 @@ import { LspS3Handlers } from '../src/protocol/LspS3Handlers';
 import { LspSystemHandlers } from '../src/protocol/LspSystemHandlers';
 import { RelationshipSchemaService } from '../src/services/RelationshipSchemaService';
 import { LspCfnEnvironmentHandlers } from '../src/protocol/LspCfnEnvironmentHandlers';
-import { FeatureFlagProvider, getFromGitHub } from '../src/featureFlag/FeatureFlagProvider';
-import { AwsEnv } from '../src/utils/Environment';
 import { TelemetryService } from '../src/telemetry/TelemetryService';
+import { featureFlagLocalFile, FeatureFlagProvider, getFromGitHub } from '../src/featureFlag/FeatureFlagProvider';
 
 const textDocuments = new TextDocuments(TextDocument);
 
@@ -193,7 +192,8 @@ function main() {
         stubInterface<LspSystemHandlers>(),
     );
 
-    const dataStoreFactory = new MultiDataStoreFactoryProvider();
+    const featureFlags = new FeatureFlagProvider(getFromGitHub, featureFlagLocalFile(join(__dirname, '..')));
+    const dataStoreFactory = new MultiDataStoreFactoryProvider(featureFlags.get('FileDb'));
     const core = new CfnInfraCore(
         lsp,
         {
@@ -207,16 +207,13 @@ function main() {
         {
             dataStoreFactory,
             documentManager: new DocumentManager(textDocuments),
+            featureFlags,
         },
     );
 
     const schemaStore = new SchemaStore(dataStoreFactory);
     const external = new CfnExternal(lsp, core, {
         schemaStore,
-        featureFlags: new FeatureFlagProvider(
-            getFromGitHub,
-            join(__dirname, '..', 'assets', 'featureFlag', `${AwsEnv}.json`),
-        ),
     });
 
     const providers = new CfnLspProviders(core, external, {

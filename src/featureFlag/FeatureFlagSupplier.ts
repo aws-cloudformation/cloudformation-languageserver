@@ -33,7 +33,10 @@ export class FeatureFlagSupplier implements Closeable {
         defaultConfig: () => unknown,
         dynamicRefreshIntervalMs: number = DynamicRefreshIntervalMs,
     ) {
-        for (const [key, builder] of Object.entries(FeatureBuilders)) {
+        for (const [key, builder] of Object.entries(FeatureBuilders) as [
+            FeatureFlagConfigKey,
+            FeatureFlagBuilderType,
+        ][]) {
             const ff = new DynamicFeatureFlag(
                 key,
                 () => featureConfigSupplier(key, configSupplier, defaultConfig, this.telemetry),
@@ -43,7 +46,10 @@ export class FeatureFlagSupplier implements Closeable {
             this._featureFlags.set(key, ff);
         }
 
-        for (const [key, builder] of Object.entries(TargetedFeatureBuilders)) {
+        for (const [key, builder] of Object.entries(TargetedFeatureBuilders) as [
+            TargetedFeatureFlagConfigKey,
+            TargetedFeatureFlagBuilderType<unknown>,
+        ][]) {
             const ff = new DynamicTargetedFeatureFlag(
                 key,
                 () => featureConfigSupplier(key, configSupplier, defaultConfig, this.telemetry),
@@ -95,19 +101,20 @@ function featureConfigSupplier(
         return FeatureFlagConfigSchema.parse(configSupplier()).features[key];
     } catch (err) {
         telemetry.count('used.config.default', 1);
-        log.warn(err, `Failed to parse feature flag config: \n${toString(configSupplier())}. Using defaults instead`);
+        log.error(err, `Failed to parse feature flag config: \n${toString(configSupplier())}. Using defaults instead`);
         return FeatureFlagConfigSchema.parse(defaultConfig()).features[key];
     }
 }
 
-const FeatureBuilders: Record<string, FeatureFlagBuilderType> = {
+const FeatureBuilders = {
     Constants: buildStatic,
-} as const;
-const TargetedFeatureBuilders: Record<string, TargetedFeatureFlagBuilderType<unknown>> = {
+    FileDb: buildLocalHost,
+} as const satisfies Record<string, FeatureFlagBuilderType>;
+const TargetedFeatureBuilders = {
     EnhancedDryRun: (name: string, config?: FeatureFlagConfigType) => {
         return new CompoundFeatureFlag(buildLocalHost(name, config), buildRegional(name, config));
     },
-} as const;
+} as const satisfies Record<string, TargetedFeatureFlagBuilderType<unknown>>;
 
 export type FeatureFlagConfigKey = keyof typeof FeatureBuilders;
 export type TargetedFeatureFlagConfigKey = keyof typeof TargetedFeatureBuilders;

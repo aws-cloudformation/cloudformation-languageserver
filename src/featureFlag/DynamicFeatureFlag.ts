@@ -2,7 +2,7 @@ import { Closeable } from '../utils/Closeable';
 import { FeatureFlagBuilderType, FeatureFlagConfigType, TargetedFeatureFlagBuilderType } from './FeatureFlagBuilder';
 import { FeatureFlag, TargetedFeatureFlag } from './FeatureFlagI';
 
-export const DynamicRefreshIntervalMs = 60 * 1000;
+export const DynamicRefreshIntervalMs = 2 * 60 * 1000;
 
 export class DynamicFeatureFlag implements FeatureFlag, Closeable {
     private flag: FeatureFlag;
