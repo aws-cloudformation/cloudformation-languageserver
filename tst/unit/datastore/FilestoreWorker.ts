@@ -1,8 +1,8 @@
 import { randomUUID as v4 } from 'crypto';
 import { join } from 'path';
 import { staticInitialize } from '../../../src/app/initialize';
-import { EncryptedFileStore } from '../../../src/datastore/file/EncryptedFileStore';
 import { encryptionKey } from '../../../src/datastore/file/Encryption';
+import { KeyedFileStore } from '../../../src/datastore/file/KeyedFileStore';
 
 // Worker script for multiprocess FileStore testing
 staticInitialize(undefined, {
@@ -15,7 +15,7 @@ const [encTestDir, workerId, numWrites] = process.argv.slice(2);
 const key = encryptionKey(2);
 
 async function main() {
-    const store = new EncryptedFileStore(key, 'test', encTestDir);
+    const store = new KeyedFileStore(key, 'test', encTestDir);
 
     for (let i = 0; i < Number.parseInt(numWrites); i++) {
         await store.put(`worker${workerId}_key${i}`, `worker${workerId}_value${i}`);

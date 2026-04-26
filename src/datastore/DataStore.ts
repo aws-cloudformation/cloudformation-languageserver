@@ -1,8 +1,8 @@
 import { Closeable } from '../utils/Closeable';
 import { isWindows } from '../utils/Environment';
 import { pathToStorage } from '../utils/Storage';
-import { FileStoreFactory } from './FileStore';
-import { LMDBStoreFactory } from './LMDB';
+import { FileStoreFactory } from './FileStoreFactory';
+import { LMDBStoreFactory } from './LMDBStoreFactory';
 import { MemoryStoreFactory } from './MemoryStore';
 
 export enum Persistence {

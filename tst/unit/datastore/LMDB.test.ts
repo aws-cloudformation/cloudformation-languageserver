@@ -3,7 +3,7 @@ import fs from 'fs';
 import { join } from 'path';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { DataStore, StoreName } from '../../../src/datastore/DataStore';
-import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
+import { LMDBStoreFactory } from '../../../src/datastore/LMDBStoreFactory';
 
 describe('LMDB', () => {
     let lmdbFactory: LMDBStoreFactory;

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import { join } from 'path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { LMDBStoreFactory } from '../../../src/datastore/LMDB';
+import { LMDBStoreFactory } from '../../../src/datastore/LMDBStoreFactory';
 
 describe('LMDB corruption error detection', () => {
     it('should identify MDB_CORRUPTED error message', () => {
