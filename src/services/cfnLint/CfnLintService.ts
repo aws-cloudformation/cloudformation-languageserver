@@ -192,7 +192,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             }
         } catch (error) {
             this.status = STATUS.Uninitialized;
-            this.telemetry.error('init.fault', error, undefined, { captureErrorAttributes: true });
+            this.telemetry.error('init.fault', error, undefined, { captureErrorType: true });
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
             throw new Error(`Failed to initialize Pyodide worker: ${extractErrorMessage(error)}`);
         }
@@ -233,7 +233,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             this.logError('mounting folder', error);
             const errorType = this.classifyLintError(error);
             this.telemetry.error('mount.fault', error, undefined, {
-                captureErrorAttributes: true,
+                captureErrorType: true,
                 attributes: { errorType },
             });
             throw new MountError(`Failed to mount folder ${mountDir}`, error instanceof Error ? error : undefined);
@@ -331,7 +331,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * @param uri The document URI
      * @param fileType The CloudFormation file type
      */
-    @Count({ name: 'lint.standaloneFile', captureErrorAttributes: true })
+    @Count({ name: 'lint.standaloneFile', captureErrorType: true })
     private async lintStandaloneFile(content: string, uri: string, fileType: CloudFormationFileType): Promise<void> {
         const startTime = performance.now();
         const doc = this.documentManager.get(uri);
@@ -364,7 +364,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             // Only count as lint.error if it's a cfn-lint failure, not infrastructure issues
             if (!this.isInfrastructureError(errorType)) {
                 this.telemetry.error('lint.error', error, undefined, {
-                    captureErrorAttributes: true,
+                    captureErrorType: true,
                     attributes: {
                         fileType,
                         errorType,
@@ -409,7 +409,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * @param fileType The CloudFormation file type
      * @param content The document content (used for GitSync deployment files)
      */
-    @Count({ name: 'lint.workspaceFile', captureErrorAttributes: true })
+    @Count({ name: 'lint.workspaceFile', captureErrorType: true })
     private async lintWorkspaceFile(
         uri: string,
         folder: WorkspaceFolder,
@@ -476,7 +476,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             // Only count as lint.error if it's a cfn-lint failure, not infrastructure issues
             if (!this.isInfrastructureError(errorType)) {
                 this.telemetry.error('lint.error', error, undefined, {
-                    captureErrorAttributes: true,
+                    captureErrorType: true,
                     attributes: {
                         fileType,
                         errorType,

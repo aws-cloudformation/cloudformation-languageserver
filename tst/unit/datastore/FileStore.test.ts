@@ -489,6 +489,68 @@ describe('FileStore', () => {
         });
     });
 
+    describe('fileNames caching', () => {
+        it('should early-return in recoverFile when file is already cached via put', async () => {
+            const encTestDir = join(testDir, 'cache-skip-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store = new KeyedFileStore(key, 'test', encTestDir);
+            await store.put('key1', 'value1');
+
+            const keysToFiles = (store as any).keysToFiles as Map<string, unknown>;
+            const mapSetSpy = vi.spyOn(keysToFiles, 'set');
+
+            // keys() calls loadAllFiles → recoverFile for each .enc on disk
+            store.keys(10);
+
+            // Map.set not called proves recoverFile early-returned
+            expect(mapSetSpy).not.toHaveBeenCalled();
+            mapSetSpy.mockRestore();
+        });
+
+        it('should early-return in recoverFile when file was loaded in constructor', async () => {
+            const encTestDir = join(testDir, 'cache-ctor-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store1 = new KeyedFileStore(key, 'test', encTestDir);
+            await store1.put('x', 'val');
+
+            // Constructor loads existing files from disk into fileNames
+            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+            const keysToFiles = (store2 as any).keysToFiles as Map<string, unknown>;
+            const mapSetSpy = vi.spyOn(keysToFiles, 'set');
+
+            store2.stats();
+
+            expect(mapSetSpy).not.toHaveBeenCalled();
+            mapSetSpy.mockRestore();
+        });
+
+        it('should process a file not yet in fileNames cache', async () => {
+            const encTestDir = join(testDir, 'cache-miss-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+
+            const store1 = new KeyedFileStore(key, 'test', encTestDir);
+            await store1.put('before', 'v1');
+
+            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+
+            // Write a new file that store2 doesn't know about yet
+            await store1.put('after', 'v2');
+
+            const keysToFiles = (store2 as any).keysToFiles as Map<string, unknown>;
+            const sizeBefore = keysToFiles.size;
+
+            store2.keys(10);
+
+            // The uncached file was processed — map grew by 1
+            expect(keysToFiles.size).toBe(sizeBefore + 1);
+        });
+    });
+
     describe('large data', () => {
         it('should handle realistic schema-sized data', async () => {
             // Simulate a regional schema payload (~1000 resource types, each ~2KB)
