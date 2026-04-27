@@ -100,7 +100,7 @@ describe('ResourceStateManager', () => {
             await expect(manager.getResource('AWS::S3::Bucket', 'my-bucket')).rejects.toThrow(error.message);
         });
 
-        it('should throw InvalidResourceOutputError for missing required fields', async () => {
+        it('should return undefined for missing required fields', async () => {
             const mockOutput: GetResourceCommandOutput = {
                 TypeName: 'AWS::S3::Bucket',
                 ResourceDescription: {
@@ -111,9 +111,7 @@ describe('ResourceStateManager', () => {
             };
             vi.mocked(mockCcapiService.getResource).mockResolvedValue(mockOutput);
 
-            await expect(manager.getResource('AWS::S3::Bucket', 'my-bucket')).rejects.toThrow(
-                'GetResource output is missing required fields',
-            );
+            await expect(manager.getResource('AWS::S3::Bucket', 'my-bucket')).resolves.toBeUndefined();
         });
     });
 

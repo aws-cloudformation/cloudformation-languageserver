@@ -58,8 +58,8 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         this.initializeCounters();
     }
 
-    @Measure({ name: 'getResource' })
-    public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<ResourceState> {
+    @Measure({ name: 'getResource', captureErrorType: true })
+    public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<ResourceState | undefined> {
         const cachedResources = this.getResourceState(typeName, identifier);
         if (cachedResources) {
             this.telemetry.count('state.hit', 1);
@@ -82,9 +82,10 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         }
 
         if (!output?.TypeName || !output?.ResourceDescription?.Identifier || !output?.ResourceDescription?.Properties) {
-            throw new Error(
+            log.error(
                 `GetResource output is missing required fields for type ${typeName} with identifier "${identifier}"`,
             );
+            return;
         }
 
         const value: ResourceState = {

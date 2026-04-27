@@ -177,6 +177,10 @@ export class ResourceStateImporter {
             for (const resourceIdentifier of resourceSelection.resourceIdentifiers) {
                 try {
                     const resourceState = await this.resourceStateManager.getResource(resourceType, resourceIdentifier);
+                    if (!resourceState) {
+                        this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
+                        continue;
+                    }
                     this.getOrCreate(importResult.successfulImports, resourceType, []).push(resourceIdentifier);
                     const logicalId = this.generateUniqueLogicalId(
                         resourceType,

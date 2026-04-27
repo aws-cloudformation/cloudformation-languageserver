@@ -56,6 +56,9 @@ export class ResourceStateCompletionProvider implements CompletionProvider {
         let properties: string;
         try {
             const resourceState = await this.resourceStateManager.getResource(resource.Type, identifier);
+            if (!resourceState) {
+                return [];
+            }
             properties = resourceState.properties;
         } catch {
             log.info(`No resource found for id: ${identifier} and type: ${resource.Type}`);
