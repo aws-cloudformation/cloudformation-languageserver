@@ -18,7 +18,7 @@ export const MockResourceStates = {
                 BlockPublicPolicy: true,
             },
         }),
-    } as ResourceState,
+    },
 
     'AWS::EC2::Instance': {
         typeName: 'AWS::EC2::Instance',
@@ -30,7 +30,7 @@ export const MockResourceStates = {
             KeyName: 'my-key-pair',
             SecurityGroups: ['sg-12345678'],
         }),
-    } as ResourceState,
+    },
 
     'AWS::IAM::Role': {
         typeName: 'AWS::IAM::Role',
@@ -50,7 +50,7 @@ export const MockResourceStates = {
             },
             Description: 'Test role for Lambda',
         }),
-    } as ResourceState,
+    },
 
     'AWS::Lambda::Function': {
         typeName: 'AWS::Lambda::Function',
@@ -65,7 +65,7 @@ export const MockResourceStates = {
             Handler: 'index.handler',
             Role: 'arn:aws:iam::123456789012:role/lambda-role',
         }),
-    } as ResourceState,
+    },
 
     'AWS::EC2::VPC': {
         typeName: 'AWS::EC2::VPC',
@@ -77,7 +77,7 @@ export const MockResourceStates = {
             EnableDnsSupport: true,
             Tags: [{ Key: 'Name', Value: 'MyVPC' }],
         }),
-    } as ResourceState,
+    },
 
     'AWS::EC2::Subnet': {
         typeName: 'AWS::EC2::Subnet',
@@ -88,7 +88,7 @@ export const MockResourceStates = {
             CidrBlock: '10.0.1.0/24',
             MapPublicIpOnLaunch: true,
         }),
-    } as ResourceState,
+    },
 
     'AWS::EC2::SecurityGroup': {
         typeName: 'AWS::EC2::SecurityGroup',
@@ -106,7 +106,7 @@ export const MockResourceStates = {
                 },
             ],
         }),
-    } as ResourceState,
+    },
 
     'AWS::EC2::LaunchTemplate': {
         typeName: 'AWS::EC2::LaunchTemplate',
@@ -120,7 +120,7 @@ export const MockResourceStates = {
                 KeyName: 'my-key-pair',
             },
         }),
-    } as ResourceState,
+    },
 
     'AWS::AutoScaling::AutoScalingGroup': {
         typeName: 'AWS::AutoScaling::AutoScalingGroup',
@@ -137,7 +137,7 @@ export const MockResourceStates = {
             },
             VPCZoneIdentifier: ['subnet-12345678'],
         }),
-    } as ResourceState,
+    },
 
     'AWS::RDS::DBInstance': {
         typeName: 'AWS::RDS::DBInstance',
@@ -151,7 +151,7 @@ export const MockResourceStates = {
             AllocatedStorage: '20',
             VPCSecurityGroups: ['sg-12345678'],
         }),
-    } as ResourceState,
+    },
 
     'AWS::CloudWatch::Alarm': {
         typeName: 'AWS::CloudWatch::Alarm',
@@ -167,7 +167,7 @@ export const MockResourceStates = {
             Period: 300,
             Statistic: 'Average',
         }),
-    } as ResourceState,
+    },
 
     'AWS::SNS::Topic': {
         typeName: 'AWS::SNS::Topic',
@@ -183,7 +183,7 @@ export const MockResourceStates = {
                 },
             ],
         }),
-    } as ResourceState,
+    },
 
     'AWS::SSM::Parameter': {
         typeName: 'AWS::SSM::Parameter',
@@ -195,7 +195,7 @@ export const MockResourceStates = {
             Value: 'mysql://localhost:3306/myapp',
             Description: 'Database connection URL',
         }),
-    } as ResourceState,
+    },
 
     'AWS::Synthetics::Canary': {
         typeName: 'AWS::Synthetics::Canary',
@@ -214,7 +214,7 @@ export const MockResourceStates = {
             },
             RuntimeVersion: 'syn-nodejs-puppeteer-3.9',
         }),
-    } as ResourceState,
+    },
 
     'AWS::SecurityLake::SubscriberNotification': {
         typeName: 'AWS::SecurityLake::SubscriberNotification',
@@ -229,7 +229,7 @@ export const MockResourceStates = {
                 },
             },
         }),
-    } as ResourceState,
+    },
 };
 
 export function createMockResourceState(resourceType: string): ResourceState {

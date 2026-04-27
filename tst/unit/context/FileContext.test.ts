@@ -1310,14 +1310,14 @@ this is not valid yaml
                             Count: 1,
                             Timeout: 'PT10M',
                         },
-                    } as Record<string, unknown>,
+                    },
                     undefined,
                     {
                         AutoScalingRollingUpdate: {
                             MinInstancesInService: 1,
                             MaxBatchSize: 1,
                         },
-                    } as Record<string, unknown>,
+                    },
                     undefined,
                 );
 

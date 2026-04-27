@@ -61,7 +61,6 @@ function fetchReleases(): GHRelease[] {
     );
     const releases = JSON.parse(output);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return releases.map((r: any): GHRelease => {
         const assetsOutput = execSync(
             `gh api repos/aws-cloudformation/cloudformation-languageserver/releases/tags/${r.tagName}`,

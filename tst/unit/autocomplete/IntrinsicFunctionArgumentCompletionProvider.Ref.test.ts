@@ -1,7 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CompletionParams, TextDocumentIdentifier } from 'vscode-languageserver';
+import { CompletionParams } from 'vscode-languageserver';
 import { IntrinsicFunctionArgumentCompletionProvider } from '../../../src/autocomplete/IntrinsicFunctionArgumentCompletionProvider';
 import { IntrinsicFunction, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
@@ -67,7 +67,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Ref Function', () => {
     });
 
     const createTestParams = (): CompletionParams => ({
-        textDocument: { uri: 'test://test.yaml' } as TextDocumentIdentifier,
+        textDocument: { uri: 'test://test.yaml' },
         position: { line: 0, character: 0 },
     });
 

@@ -96,7 +96,7 @@ describe('ResourceStateImporter', () => {
 
                     const params: ResourceStateParams = {
                         resourceSelections,
-                        textDocument: { uri } as any,
+                        textDocument: { uri },
                         purpose: ResourceStatePurpose.IMPORT,
                     };
 
@@ -140,7 +140,7 @@ describe('ResourceStateImporter', () => {
 
                     const params: ResourceStateParams = {
                         resourceSelections,
-                        textDocument: { uri } as any,
+                        textDocument: { uri },
                         purpose: ResourceStatePurpose.CLONE,
                     };
 
@@ -170,7 +170,7 @@ describe('ResourceStateImporter', () => {
 
             const params: ResourceStateParams = {
                 resourceSelections: [],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -186,7 +186,7 @@ describe('ResourceStateImporter', () => {
 
             const params: ResourceStateParams = {
                 resourceSelections: [{ resourceType: 'AWS::S3::Bucket', resourceIdentifiers: ['test-bucket'] }],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -205,7 +205,7 @@ describe('ResourceStateImporter', () => {
 
             const params: ResourceStateParams = {
                 resourceSelections: [{ resourceType: 'AWS::S3::Bucket', resourceIdentifiers: ['test-bucket'] }],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -239,7 +239,7 @@ describe('ResourceStateImporter', () => {
                         resourceIdentifiers: [mockResource.identifier],
                     },
                 ],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -273,7 +273,7 @@ describe('ResourceStateImporter', () => {
                         resourceIdentifiers: [mockResource.identifier],
                     },
                 ],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.CLONE,
             };
 
@@ -303,7 +303,7 @@ describe('ResourceStateImporter', () => {
                         resourceIdentifiers: [mockResource.identifier],
                     },
                 ],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -348,7 +348,7 @@ describe('ResourceStateImporter', () => {
 
             const params: ResourceStateParams = {
                 resourceSelections,
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -387,7 +387,7 @@ describe('ResourceStateImporter', () => {
 
             const params: ResourceStateParams = {
                 resourceSelections,
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 

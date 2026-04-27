@@ -22,7 +22,7 @@ describe('Entity', () => {
         });
 
         it('should handle null object gracefully', () => {
-            const parameter = Parameter.from('TestParam', null as any);
+            const parameter = Parameter.from('TestParam', null);
 
             expect(parameter.name).toBe('TestParam');
             expect(parameter.Type).toBeUndefined();
@@ -34,7 +34,7 @@ describe('Entity', () => {
         });
 
         it('should handle undefined object gracefully', () => {
-            const parameter = Parameter.from('TestParam', undefined as any);
+            const parameter = Parameter.from('TestParam', undefined);
 
             expect(parameter.name).toBe('TestParam');
             expect(parameter.Type).toBeUndefined();

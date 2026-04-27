@@ -388,7 +388,9 @@ function benchmarkTemplate(templateName: string, format: DocumentType): Benchmar
     const syntaxTreeManager = new SyntaxTreeManager();
     try {
         syntaxTreeManager.add(uri, content);
-    } catch {}
+    } catch {
+        // do nothing
+    }
     const contextManager = new ContextManager(syntaxTreeManager);
 
     // Get initial resource usage

@@ -36,7 +36,7 @@ describe('CompletionHandler', () => {
         };
 
         const handler = completionHandler(mockServices);
-        const result = (await handler(mockParams, CancellationToken.None, undefined as any, undefined as any)) as any;
+        const result = (await handler(mockParams, CancellationToken.None, undefined as any, undefined)) as any;
 
         expect(result).toBeDefined();
         expect(result?.isIncomplete).toBe(false);

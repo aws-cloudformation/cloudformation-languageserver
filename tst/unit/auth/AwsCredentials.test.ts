@@ -60,7 +60,7 @@ describe('AwsCredentials', () => {
         });
 
         test('handles invalid encrypted data', async () => {
-            const result = await awsCredentials.handleIamCredentialsUpdate({ data: 'invalid-data' as any });
+            const result = await awsCredentials.handleIamCredentialsUpdate({ data: 'invalid-data' });
 
             expect(result).toBe(false);
             expect(mockSettingsManager.updateProfileSettings).toHaveBeenCalledWith('default', 'us-east-1');

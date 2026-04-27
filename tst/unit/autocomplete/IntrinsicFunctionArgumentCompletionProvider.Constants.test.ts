@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CompletionItemKind, CompletionParams, TextDocumentIdentifier } from 'vscode-languageserver';
+import { CompletionItemKind, CompletionParams } from 'vscode-languageserver';
 import { IntrinsicFunctionArgumentCompletionProvider } from '../../../src/autocomplete/IntrinsicFunctionArgumentCompletionProvider';
 import { IntrinsicFunction, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
@@ -33,7 +33,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - Constants', () => {
     const mockDocumentManager = createMockDocumentManager();
 
     const createTestParams = (): CompletionParams => ({
-        textDocument: { uri: 'test://test.yaml' } as TextDocumentIdentifier,
+        textDocument: { uri: 'test://test.yaml' },
         position: { line: 0, character: 0 },
     });
 

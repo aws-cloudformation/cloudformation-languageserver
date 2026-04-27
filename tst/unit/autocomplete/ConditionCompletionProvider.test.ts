@@ -109,7 +109,7 @@ describe('ConditionCompletionProvider', () => {
 
             const mockConditionsMap = new Map();
             for (const key of mockConditionKeys) {
-                mockConditionsMap.set(key, {} as Context);
+                mockConditionsMap.set(key, {});
             }
             mockGetEntityMap(mockConditionsMap);
 
@@ -140,7 +140,7 @@ describe('ConditionCompletionProvider', () => {
 
             const mockConditionsMap = new Map();
             for (const key of mockConditionKeys) {
-                mockConditionsMap.set(key, {} as Context);
+                mockConditionsMap.set(key, {});
             }
             mockGetEntityMap(mockConditionsMap);
 
@@ -171,7 +171,7 @@ describe('ConditionCompletionProvider', () => {
 
             const mockConditionsMap = new Map();
             for (const key of mockConditionKeys) {
-                mockConditionsMap.set(key, {} as Context);
+                mockConditionsMap.set(key, {});
             }
             mockGetEntityMap(mockConditionsMap);
 
@@ -200,7 +200,7 @@ describe('ConditionCompletionProvider', () => {
 
             const mockConditionsMap = new Map();
             for (const key of mockConditionKeys) {
-                mockConditionsMap.set(key, {} as Context);
+                mockConditionsMap.set(key, {});
             }
             mockGetEntityMap(mockConditionsMap);
 
@@ -233,7 +233,7 @@ describe('ConditionCompletionProvider', () => {
 
             const mockConditionsMap = new Map();
             for (const key of mockConditionKeys) {
-                mockConditionsMap.set(key, {} as Context);
+                mockConditionsMap.set(key, {});
             }
             mockGetEntityMap(mockConditionsMap);
 
@@ -253,7 +253,7 @@ describe('ConditionCompletionProvider', () => {
 
             const mockConditionsMap = new Map();
             for (const key of mockConditionKeys) {
-                mockConditionsMap.set(key, {} as Context);
+                mockConditionsMap.set(key, {});
             }
             mockGetEntityMap(mockConditionsMap);
 
@@ -281,7 +281,7 @@ describe('ConditionCompletionProvider', () => {
 
             const mockConditionsMap = new Map();
             for (const key of mockConditionKeys) {
-                mockConditionsMap.set(key, {} as Context);
+                mockConditionsMap.set(key, {});
             }
             mockGetEntityMap(mockConditionsMap);
 
@@ -309,7 +309,7 @@ describe('ConditionCompletionProvider', () => {
 
             const mockConditionsMap = new Map();
             for (const key of mockConditionKeys) {
-                mockConditionsMap.set(key, {} as Context);
+                mockConditionsMap.set(key, {});
             }
             mockGetEntityMap(mockConditionsMap);
 

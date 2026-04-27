@@ -1,7 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CompletionItemKind, CompletionParams, TextDocumentIdentifier } from 'vscode-languageserver';
+import { CompletionItemKind, CompletionParams } from 'vscode-languageserver';
 import { IntrinsicFunctionArgumentCompletionProvider } from '../../../src/autocomplete/IntrinsicFunctionArgumentCompletionProvider';
 import { IntrinsicFunction, TopLevelSection } from '../../../src/context/CloudFormationEnums';
 import { getEntityMap } from '../../../src/context/SectionContextBuilder';
@@ -84,7 +84,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
     });
 
     const createTestParams = (): CompletionParams => ({
-        textDocument: { uri: 'test://test.yaml' } as TextDocumentIdentifier,
+        textDocument: { uri: 'test://test.yaml' },
         position: { line: 0, character: 0 },
     });
 
@@ -381,7 +381,7 @@ describe('IntrinsicFunctionArgumentCompletionProvider - FindInMap Function', () 
     describe('Position Determination', () => {
         it('should determine position 1 when args is not an array', () => {
             setupMappingEntities(mockMappingData);
-            const mockContext = createMockFindInMapContext('Region', 'not-an-array' as any);
+            const mockContext = createMockFindInMapContext('Region', 'not-an-array');
 
             const result = provider.getCompletions(mockContext, createTestParams());
 
