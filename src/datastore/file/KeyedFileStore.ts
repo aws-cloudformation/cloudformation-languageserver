@@ -9,6 +9,7 @@ import { EncryptedFile } from './EncryptedFile';
 
 export class KeyedFileStore implements DataStore {
     private readonly log: Logger;
+    private readonly fileNames = new Set();
     private readonly keysToFiles = new Map<string, EncryptedFile>();
     private readonly telemetry: ScopedTelemetry;
 
@@ -19,7 +20,7 @@ export class KeyedFileStore implements DataStore {
     ) {
         this.log = LoggerFactory.getLogger(`KeyedFileStore.${storeName}`);
         this.telemetry = TelemetryService.instance.get(`FileStore.${storeName}`);
-        this.loadAllKeys();
+        this.loadAllFiles();
     }
 
     get<T>(key: string): T | undefined {
@@ -60,7 +61,7 @@ export class KeyedFileStore implements DataStore {
         return this.telemetry.measureAsync(
             'clear',
             async () => {
-                this.loadAllKeys();
+                this.loadAllFiles();
                 const files = [...this.keysToFiles.values()];
                 this.keysToFiles.clear();
                 for (const file of files) {
@@ -75,7 +76,7 @@ export class KeyedFileStore implements DataStore {
         return this.telemetry.measure(
             'keys',
             () => {
-                this.loadAllKeys();
+                this.loadAllFiles();
                 return [...this.keysToFiles.keys()].slice(0, limit);
             },
             {
@@ -85,7 +86,7 @@ export class KeyedFileStore implements DataStore {
     }
 
     stats(): FileStoreStats {
-        this.loadAllKeys();
+        this.loadAllFiles();
         let entries = 0;
         let totalSize = 0;
         for (const store of this.keysToFiles.values()) {
@@ -98,12 +99,8 @@ export class KeyedFileStore implements DataStore {
     private getOrCreate(key: string): EncryptedFile {
         let store = this.keysToFiles.get(key);
         if (!store) {
-            store = new EncryptedFile(
-                this.encryptionKey,
-                this.storeName,
-                fileName(this.storeName, key),
-                this.fileDbDir,
-            );
+            const fileName = keyStoreToFileName(this.storeName, key);
+            store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir);
 
             const existing = store.entry();
             if (existing && existing.key !== key) {
@@ -114,16 +111,17 @@ export class KeyedFileStore implements DataStore {
 
             store.setKey(key);
             this.keysToFiles.set(key, store);
+            this.fileNames.add(fileName);
         }
         return store;
     }
 
-    private loadAllKeys(): void {
+    private loadAllFiles(): void {
         const prefix = `${this.storeName}.`;
         try {
             for (const entry of readdirSync(this.fileDbDir)) {
                 if (entry.startsWith(prefix) && entry.endsWith('.enc')) {
-                    this.recoverKey(entry);
+                    this.recoverFile(entry);
                 }
             }
         } catch (error) {
@@ -131,16 +129,21 @@ export class KeyedFileStore implements DataStore {
         }
     }
 
-    private recoverKey(filename: string): void {
+    private recoverFile(fileName: string): void {
+        if (this.fileNames.has(fileName)) {
+            return;
+        }
+
         try {
-            const store = new EncryptedFile(this.encryptionKey, this.storeName, filename, this.fileDbDir);
+            const store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir);
             const entry = store.entry();
             if (entry?.key) {
                 store.setKey(entry.key);
                 this.keysToFiles.set(entry.key, store);
+                this.fileNames.add(fileName);
             }
         } catch (error) {
-            this.log.warn(error, `Failed to recover key from ${filename}`);
+            this.log.warn(error, `Failed to recover key from ${fileName}`);
         }
     }
 }
@@ -150,6 +153,6 @@ type FileStoreStats = {
     totalSize: number;
 };
 
-function fileName(storeName: string, key: string) {
+function keyStoreToFileName(storeName: string, key: string) {
     return `${storeName}.${stableHashCode(key)}.enc`;
 }

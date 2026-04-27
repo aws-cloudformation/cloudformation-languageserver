@@ -79,7 +79,11 @@ export class EncryptedFile {
             return true;
         }
 
-        const release = await lock(this.file, LOCK_OPTIONS);
+        const release = await this.tryLock();
+        if (!release) {
+            await this.save();
+            return true;
+        }
         try {
             await this.save();
             return true;
@@ -95,12 +99,32 @@ export class EncryptedFile {
             return true;
         }
 
-        const release = await lock(this.file, LOCK_OPTIONS);
+        const release = await this.tryLock();
+        if (!release) {
+            return true;
+        }
         try {
             await unlink(this.file);
             return true;
+        } catch (error: unknown) {
+            if (isFileNotFound(error)) {
+                return true;
+            }
+            throw error;
         } finally {
             await release();
+        }
+    }
+
+    /** Returns the release function, or undefined if the file was deleted by another process. */
+    private async tryLock(): Promise<(() => Promise<void>) | undefined> {
+        try {
+            return await lock(this.file, LOCK_OPTIONS);
+        } catch (error: unknown) {
+            if (isFileNotFound(error)) {
+                return undefined;
+            }
+            throw error;
         }
     }
 
@@ -117,4 +141,10 @@ export class EncryptedFile {
         await writeFile(tmp, encrypt(this.KEY, JSON.stringify(this.content)));
         await rename(tmp, this.file);
     }
+}
+
+const ENOENT = 'ENOENT'; // File was deleted by another process (e.g. a concurrent IDE session sharing the same storage directory).
+
+function isFileNotFound(error: unknown): boolean {
+    return error instanceof Error && (error as NodeJS.ErrnoException).code === ENOENT;
 }
