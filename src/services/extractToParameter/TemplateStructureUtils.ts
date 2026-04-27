@@ -164,12 +164,12 @@ export class TemplateStructureUtils {
             if (documentType === DocumentType.JSON) {
                 const parsed = parseJson(templateContent) as Record<string, unknown> | undefined;
                 if (parsed?.Parameters && typeof parsed.Parameters === 'object' && parsed.Parameters !== null) {
-                    return new Set(Object.keys(parsed.Parameters as Record<string, unknown>));
+                    return new Set(Object.keys(parsed.Parameters));
                 }
             } else {
                 const parsed = parseYaml(templateContent) as Record<string, unknown> | undefined;
                 if (parsed?.Parameters && typeof parsed.Parameters === 'object' && parsed.Parameters !== null) {
-                    return new Set(Object.keys(parsed.Parameters as Record<string, unknown>));
+                    return new Set(Object.keys(parsed.Parameters));
                 }
             }
 

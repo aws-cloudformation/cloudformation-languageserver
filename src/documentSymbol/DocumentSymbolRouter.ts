@@ -153,7 +153,7 @@ export class DocumentSymbolRouter {
 
         // Add children if this section has entities
         if (config.hasEntities) {
-            const sectionEntities = contextEntities.get(section as SectionType);
+            const sectionEntities = contextEntities.get(section);
 
             if (config.entityType === 'simple' && config.entitySymbolKind) {
                 const symbolKind = config.entitySymbolKind;

@@ -73,6 +73,7 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
             getNodeAutoInstrumentations({
                 '@opentelemetry/instrumentation-amqplib': { enabled: false },
                 '@opentelemetry/instrumentation-aws-lambda': { enabled: false },
+                '@opentelemetry/instrumentation-aws-sdk': { enabled: false },
                 '@opentelemetry/instrumentation-bunyan': { enabled: false },
                 '@opentelemetry/instrumentation-cassandra-driver': { enabled: false },
                 '@opentelemetry/instrumentation-connect': { enabled: false },
@@ -80,7 +81,6 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
                 '@opentelemetry/instrumentation-dataloader': { enabled: false },
                 '@opentelemetry/instrumentation-dns': { enabled: false },
                 '@opentelemetry/instrumentation-express': { enabled: false },
-                '@opentelemetry/instrumentation-fastify': { enabled: false },
                 '@opentelemetry/instrumentation-fs': { enabled: false },
                 '@opentelemetry/instrumentation-generic-pool': { enabled: false },
                 '@opentelemetry/instrumentation-graphql': { enabled: false },
@@ -99,6 +99,7 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
                 '@opentelemetry/instrumentation-mysql': { enabled: false },
                 '@opentelemetry/instrumentation-nestjs-core': { enabled: false },
                 '@opentelemetry/instrumentation-net': { enabled: false },
+                '@opentelemetry/instrumentation-openai': { enabled: false },
                 '@opentelemetry/instrumentation-oracledb': { enabled: false },
                 '@opentelemetry/instrumentation-pg': { enabled: false },
                 '@opentelemetry/instrumentation-pino': { enabled: false },
@@ -109,7 +110,6 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
                 '@opentelemetry/instrumentation-tedious': { enabled: false },
                 '@opentelemetry/instrumentation-undici': { enabled: false },
                 '@opentelemetry/instrumentation-winston': { enabled: false },
-                '@opentelemetry/instrumentation-aws-sdk': { enabled: false },
 
                 // Only enable system level instrumentation
                 '@opentelemetry/instrumentation-runtime-node': {

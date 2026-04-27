@@ -135,25 +135,23 @@ function processTemplate(uri: string, content: string, pos: TestPosition, compon
         components.contextManager.getContextAndRelatedEntities(params);
         components.fileContextManager.getFileContext(params.textDocument.uri);
 
-        hoverHandler(components)(params, CancellationToken.None, undefined as any, undefined as any);
+        hoverHandler(components)(params, CancellationToken.None, undefined as any);
 
         completionHandler(components)(
             { ...params, context: { triggerKind: 2 } },
             CancellationToken.None,
             undefined as any,
-            undefined as any,
         );
 
-        definitionHandler(components)(params, CancellationToken.None, undefined as any, undefined as any);
+        definitionHandler(components)(params, CancellationToken.None, undefined as any);
 
-        documentSymbolHandler(components)(params, CancellationToken.None, undefined as any, undefined as any);
+        documentSymbolHandler(components)(params, CancellationToken.None, undefined as any);
 
-        codeLensHandler(components)(params, CancellationToken.None, undefined as any, undefined as any);
+        codeLensHandler(components)(params, CancellationToken.None, undefined as any);
 
         codeActionHandler(components)(
             { textDocument: { uri }, range: { start: position, end: position }, context: { diagnostics: [] } },
             CancellationToken.None,
-            undefined as any,
             undefined as any,
         );
     } catch (err) {

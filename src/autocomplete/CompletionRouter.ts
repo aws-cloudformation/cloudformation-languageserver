@@ -227,7 +227,7 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
 
         // Check for logical intrinsics that use Condition keyword (Fn::And, Fn::Or, Fn::Not, Fn::Equals)
 
-        if (IntrinsicsUsingConditionKeyword.includes(intrinsicFunction.type as IntrinsicFunction)) {
+        if (IntrinsicsUsingConditionKeyword.includes(intrinsicFunction.type)) {
             return this.isAfterConditionKeywordWithinIntrinsic(context);
         }
 

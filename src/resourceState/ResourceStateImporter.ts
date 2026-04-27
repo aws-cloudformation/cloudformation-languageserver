@@ -268,7 +268,7 @@ export class ResourceStateImporter {
     private getResourceSection(syntaxTree: SyntaxTree): ResourcesSection | undefined {
         const topLevelSections = syntaxTree.findTopLevelSections([TopLevelSection.Resources]);
         if (topLevelSections.has(TopLevelSection.Resources)) {
-            return topLevelSections.get(TopLevelSection.Resources) as ResourcesSection;
+            return topLevelSections.get(TopLevelSection.Resources);
         }
         return;
     }

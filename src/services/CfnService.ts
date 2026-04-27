@@ -208,7 +208,7 @@ export class CfnService {
         NextToken?: string;
     }): Promise<DescribeEventsCommandOutput> {
         return await this.withClient(async (client) => {
-            return (await client.send(
+            return await client.send(
                 new DescribeEventsCommand({
                     StackName: params.StackName,
                     ChangeSetName: params.ChangeSetName,
@@ -216,7 +216,7 @@ export class CfnService {
                     Filters: params.FailedEventsOnly ? { FailedEvents: true } : undefined,
                     NextToken: params.NextToken,
                 }),
-            )) as unknown as DescribeEventsCommandOutput;
+            );
         });
     }
 

@@ -308,7 +308,7 @@ export class ResourcePropertyCompletionProvider implements CompletionProvider {
                     }
 
                     if (arrayItem && typeof arrayItem === 'object' && arrayItem !== null) {
-                        return new Set(Object.keys(arrayItem as Record<string, CfnValue>));
+                        return new Set(Object.keys(arrayItem));
                     }
                 }
             }

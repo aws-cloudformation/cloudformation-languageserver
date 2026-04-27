@@ -35,13 +35,9 @@ export class ResourceSectionCompletionProvider implements CompletionProvider {
         params: CompletionParams,
     ): Promise<CompletionItem[]> | CompletionItem[] | undefined {
         if (context.atEntityKeyLevel()) {
-            return this.resourceProviders
-                .get(ResourceCompletionType.Entity)
-                ?.getCompletions(context, params) as CompletionItem[];
+            return this.resourceProviders.get(ResourceCompletionType.Entity)?.getCompletions(context, params);
         } else if (context.entitySection === 'Type' || this.isAtResourceTypeField(context)) {
-            return this.resourceProviders
-                .get(ResourceCompletionType.Type)
-                ?.getCompletions(context, params) as CompletionItem[];
+            return this.resourceProviders.get(ResourceCompletionType.Type)?.getCompletions(context, params);
         } else if (
             context.entitySection === 'Properties' ||
             ResourceAttributesSet.has(context.entitySection as string) ||

@@ -14,7 +14,7 @@ export class EntityFieldCompletionProvider<T extends Entity> implements Completi
         // Extract the actual entity (handle both regular and ForEach resources)
         let entity;
         if (context.getEntityType() === EntityType.ForEachResource) {
-            entity = context.getResourceEntity() as unknown as T;
+            entity = context.getResourceEntity();
         } else {
             entity = context.entity as T;
         }
@@ -23,7 +23,7 @@ export class EntityFieldCompletionProvider<T extends Entity> implements Completi
             return [];
         }
 
-        const items = this.getFieldsAsCompletionItems(entity);
+        const items = this.getFieldsAsCompletionItems(entity as T);
         if (context.text.length > 0) {
             const fsFunc = entityFieldFuzzySearchFuncMap.get(entity.entityType);
             return fsFunc ? fsFunc(items, context.text) : items;

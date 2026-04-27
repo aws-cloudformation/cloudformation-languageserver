@@ -43,7 +43,7 @@ export class AddWriteOnlyRequiredPropertiesTransformer implements ResourceTempla
             return true;
         }
         if (typeof value === 'object' && !Array.isArray(value)) {
-            return Object.keys(value as Record<string, unknown>).length === 0;
+            return Object.keys(value).length === 0;
         }
         return false;
     }
