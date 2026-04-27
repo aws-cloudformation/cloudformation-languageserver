@@ -229,7 +229,7 @@ describe('ResourceStateImporter', () => {
 
             const params: ResourceStateParams = {
                 resourceSelections: [{ resourceType: 'AWS::S3::Bucket', resourceIdentifiers: ['my-bucket'] }],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -252,7 +252,7 @@ describe('ResourceStateImporter', () => {
                 resourceSelections: [
                     { resourceType: 'AWS::S3::Bucket', resourceIdentifiers: [mockResource.identifier] },
                 ],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 
@@ -280,7 +280,7 @@ describe('ResourceStateImporter', () => {
                         resourceIdentifiers: [mockResource.identifier, 'bad-bucket', 'timeout-bucket'],
                     },
                 ],
-                textDocument: { uri } as any,
+                textDocument: { uri },
                 purpose: ResourceStatePurpose.IMPORT,
             };
 

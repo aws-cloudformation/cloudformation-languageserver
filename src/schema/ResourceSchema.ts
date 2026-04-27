@@ -170,7 +170,7 @@ export class ResourceSchema {
         }
 
         const parts = path.split('/');
-        let current: any = this as unknown as any; // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
+        let current: any = this as any;
 
         for (const part of parts) {
             if (!current || typeof current !== 'object') {
