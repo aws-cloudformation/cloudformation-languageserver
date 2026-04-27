@@ -184,7 +184,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
      * @param uri The document URI
      * @param forceUseContent If true, always use the provided content (for consistency with CfnLintService)
      */
-    @Count({ name: 'validate', captureErrorAttributes: true })
+    @Count({ name: 'validate', captureErrorType: true })
     async validate(content: string, uri: string, _forceUseContent?: boolean): Promise<void> {
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
@@ -254,7 +254,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
                 // Publish empty diagnostics to clear any previous Guard diagnostics
                 this.publishDiagnostics(uri, []);
                 this.telemetry.error('parser.error', error, undefined, {
-                    captureErrorAttributes: true,
+                    captureErrorType: true,
                     attributes: { errorType: 'ParseError' },
                 });
                 // Parse errors are developer issues, not service availability issues
@@ -264,7 +264,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
             // Check for WASM errors
             if (errorMessage.includes('WASM') || errorMessage.includes('wasm')) {
                 this.telemetry.error('wasm.error', error, undefined, {
-                    captureErrorAttributes: true,
+                    captureErrorType: true,
                     attributes: { errorType: 'WasmError' },
                 });
             }
@@ -275,13 +275,13 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
                 errorMessage.includes('Memory') ||
                 errorMessage.includes('out of memory')
             ) {
-                this.telemetry.error('memory.threshold.exceeded', error, undefined, { captureErrorAttributes: true });
+                this.telemetry.error('memory.threshold.exceeded', error, undefined, { captureErrorType: true });
             }
 
             // For other errors (WASM issues, timeouts, etc.), log as error and show diagnostic
             this.publishErrorDiagnostics(uri, errorMessage);
             this.telemetry.error('validate.error', error, undefined, {
-                captureErrorAttributes: true,
+                captureErrorType: true,
                 attributes: { fileType, errorType: 'Unknown' },
             });
         } finally {
@@ -672,7 +672,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
                 this.log.info(`Loaded ${customRules.length} rules from custom file: ${this.settings.rulesFile}`);
             } catch (error) {
                 this.telemetry.error('rules.load.error', error, undefined, {
-                    captureErrorAttributes: true,
+                    captureErrorType: true,
                     attributes: { errorType: 'CustomFile' },
                 });
                 this.log.error(
@@ -711,7 +711,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
                     }
                 } catch (error) {
                     this.telemetry.error('rules.load.error', error, undefined, {
-                        captureErrorAttributes: true,
+                        captureErrorType: true,
                         attributes: { pack: packName, errorType: 'PackLoad' },
                     });
                     this.log.error(`Failed to get rules for pack '${packName}': ${extractErrorMessage(error)}`);

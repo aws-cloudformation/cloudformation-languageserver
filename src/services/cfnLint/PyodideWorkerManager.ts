@@ -140,17 +140,17 @@ export class PyodideWorkerManager {
                     },
                     reject: (reason: Error) => {
                         this.worker = undefined;
-                        this.telemetry.error('pyodide.init.fault', reason, undefined, { captureErrorAttributes: true });
+                        this.telemetry.error('pyodide.init.fault', reason, undefined, { captureErrorType: true });
 
                         // Try to determine if it was a PyPI or wheels failure
                         const errorMessage = reason.message || '';
                         if (errorMessage.includes('PyPI')) {
                             this.telemetry.error('init.pypi.fault', reason, undefined, {
-                                captureErrorAttributes: true,
+                                captureErrorType: true,
                             });
                         } else if (errorMessage.includes('wheels') || errorMessage.includes('wheel')) {
                             this.telemetry.error('init.wheels.fault', reason, undefined, {
-                                captureErrorAttributes: true,
+                                captureErrorType: true,
                             });
                         }
 
