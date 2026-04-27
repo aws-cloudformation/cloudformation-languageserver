@@ -160,7 +160,8 @@ describe('FeatureFlagProvider', () => {
 
         it('should build path with assets/featureFlag/<env>.json structure', () => {
             const path = featureFlagLocalFile('/some/base');
-            expect(path).toMatch(/\/some\/base\/assets\/featureFlag\/\w+\.json$/);
+            expect(path).toContain(join('some', 'base', 'assets', 'featureFlag'));
+            expect(path.endsWith('.json')).toBe(true);
         });
 
         it('should default baseDir to __dirname of the source module', () => {
