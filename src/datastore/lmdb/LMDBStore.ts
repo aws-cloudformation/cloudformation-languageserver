@@ -12,8 +12,8 @@ export class LMDBStore implements DataStore {
     constructor(
         public readonly name: StoreName,
         private store: Database<unknown, string>,
-        private readonly onError?: ErrorHandler,
-        private readonly validateDatabase?: () => void,
+        private readonly onError: ErrorHandler,
+        private readonly validateDatabase: () => void,
     ) {
         this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
     }
@@ -27,11 +27,13 @@ export class LMDBStore implements DataStore {
             op,
             () => {
                 try {
-                    this.validateDatabase?.();
+                    this.validateDatabase();
                     return fn();
                 } catch (e) {
-                    this.onError?.(e);
-                    throw e;
+                    this.onError(e);
+                    this.telemetry.count(`retry.${op}`, 1);
+                    this.validateDatabase();
+                    return fn();
                 }
             },
             { captureErrorAttributes: true },
@@ -43,11 +45,13 @@ export class LMDBStore implements DataStore {
             op,
             async () => {
                 try {
-                    this.validateDatabase?.();
+                    this.validateDatabase();
                     return await fn();
                 } catch (e) {
-                    this.onError?.(e);
-                    throw e;
+                    this.onError(e);
+                    this.telemetry.count(`retry.${op}`, 1);
+                    this.validateDatabase();
+                    return await fn();
                 }
             },
             { captureErrorAttributes: true },

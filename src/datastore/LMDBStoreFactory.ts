@@ -235,6 +235,10 @@ export class LMDBStoreFactory implements DataStoreFactory {
         if (this.closed) return;
 
         try {
+            const staleLocks = this.env.readerCheck();
+            if (staleLocks > 0) {
+                this.log.info(`Removed ${staleLocks} stale reader locks for LMDB`);
+            }
             const envStat = stats(this.env);
             this.telemetry.histogram('version', VersionNumber);
             this.telemetry.histogram('env.size.bytes', envStat.totalSize, { unit: 'By' });
@@ -271,6 +275,11 @@ function createEnv(lmdbDir: string) {
         mapSize: TotalMaxDbSize,
         encoding: Encoding,
         encryptionKey: encryptionStrategy(VersionNumber),
+        // Forces use of the last safely flushed transaction on open, rather than the last committed
+        // (but possibly unflushed) one. Prevents corruption when the process is killed mid-flush.
+        // https://github.com/kriszyp/lmdb-js#readme ("safeRestore")
+        // https://github.com/kriszyp/lmdb-js/blob/master/open.js#L188 (flag 0x800)
+        ...({ safeRestore: true } as Record<string, unknown>),
     };
 
     if (isWindows) {
