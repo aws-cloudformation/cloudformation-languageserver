@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { spawn, ChildProcess } from 'child_process';
 import {
     createMessageConnection,
