@@ -15,6 +15,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure, Count } from '../telemetry/TelemetryDecorator';
 import { isClientError } from '../utils/AwsErrorMapper';
 import { Closeable } from '../utils/Closeable';
+import { extractErrorMessage } from '../utils/Errors';
 import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
 
@@ -26,6 +27,8 @@ export type ResourceState = {
     properties: string;
     createdTimestamp: DateTime;
 };
+
+export type GetResourceResult = { resource?: ResourceState; error?: string };
 
 type ResourceList = {
     typeName: string;
@@ -60,11 +63,11 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     }
 
     @Measure({ name: 'getResource', captureErrorType: true })
-    public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<ResourceState | undefined> {
+    public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<GetResourceResult> {
         const cachedResources = this.getResourceState(typeName, identifier);
         if (cachedResources) {
             this.telemetry.count('state.hit', 1);
-            return cachedResources;
+            return { resource: cachedResources };
         }
 
         this.telemetry.count('state.miss', 1);
@@ -76,11 +79,12 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         } catch (error) {
             if (error instanceof ResourceNotFoundException) {
                 log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
+                return {};
             } else if (isClientError(error)) {
                 log.info(`Client error for type ${typeName} and identifier "${identifier}"`);
-            } else {
-                log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
+                return { error: extractErrorMessage(error) };
             }
+            log.error(error, `CCAPI GetResource failed for type ${typeName} and identifier "${identifier}"`);
             throw error;
         }
 
@@ -88,7 +92,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
             log.error(
                 `GetResource output is missing required fields for type ${typeName} with identifier "${identifier}"`,
             );
-            return;
+            return { error: 'GetResource output is missing required fields' };
         }
 
         const value: ResourceState = {
@@ -99,7 +103,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         };
 
         this.storeResourceState(typeName, identifier, value);
-        return value;
+        return { resource: value };
     }
 
     @Measure({ name: 'listResources' })
@@ -136,9 +140,14 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         typeName: string,
         identifier: string,
     ): Promise<{ found: boolean; resourceList?: ResourceList }> {
+        let result: GetResourceResult;
         try {
-            await this.getResource(typeName, identifier);
+            result = await this.getResource(typeName, identifier);
         } catch {
+            return { found: false };
+        }
+
+        if (!result.resource) {
             return { found: false };
         }
 

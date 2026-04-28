@@ -55,11 +55,11 @@ export class ResourceStateCompletionProvider implements CompletionProvider {
         log.info(`Retrieving resource details from AWS account with id: ${identifier} and type: ${resource.Type}`);
         let properties: string;
         try {
-            const resourceState = await this.resourceStateManager.getResource(resource.Type, identifier);
-            if (!resourceState) {
+            const result = await this.resourceStateManager.getResource(resource.Type, identifier);
+            if (!result.resource) {
                 return [];
             }
-            properties = resourceState.properties;
+            properties = result.resource.properties;
         } catch {
             log.info(`No resource found for id: ${identifier} and type: ${resource.Type}`);
             return [];

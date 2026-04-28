@@ -157,6 +157,7 @@ export class ResourceStateImporter {
         parentResourceType?: string,
     ): Promise<{ fetchedResourceStates: ResourceTemplateFormat[]; importResult: ResourceStateResult }> {
         const fetchedResourceStates: ResourceTemplateFormat[] = [];
+        const failureReasons: Record<string, Record<string, string>> = {};
         const importResult: ResourceStateResult = {
             completionItem: undefined,
             failedImports: {},
@@ -176,9 +177,13 @@ export class ResourceStateImporter {
             }
             for (const resourceIdentifier of resourceSelection.resourceIdentifiers) {
                 try {
-                    const resourceState = await this.resourceStateManager.getResource(resourceType, resourceIdentifier);
-                    if (!resourceState) {
+                    const result = await this.resourceStateManager.getResource(resourceType, resourceIdentifier);
+                    if (!result.resource) {
                         this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
+                        if (result.error) {
+                            failureReasons[resourceType] ??= {};
+                            failureReasons[resourceType][resourceIdentifier] = result.error;
+                        }
                         continue;
                     }
                     this.getOrCreate(importResult.successfulImports, resourceType, []).push(resourceIdentifier);
@@ -195,7 +200,12 @@ export class ResourceStateImporter {
                             Type: resourceType,
                             DeletionPolicy:
                                 purpose === ResourceStatePurpose.IMPORT ? DeletionPolicyOnImport : undefined,
-                            Properties: this.applyTransformations(resourceState.properties, schema, purpose, logicalId),
+                            Properties: this.applyTransformations(
+                                result.resource.properties,
+                                schema,
+                                purpose,
+                                logicalId,
+                            ),
                             Metadata: await this.createMetadata(resourceIdentifier, purpose),
                         },
                     });
@@ -203,11 +213,13 @@ export class ResourceStateImporter {
                     log.error(error, `Error importing resource state for ${resourceType} id: ${resourceIdentifier}`);
                     this.getOrCreate(importResult.failedImports, resourceType, []).push(resourceIdentifier);
                     const errorMessage = extractErrorMessage(error);
-                    importResult.failureReasons ??= {};
-                    importResult.failureReasons[resourceType] ??= {};
-                    importResult.failureReasons[resourceType][resourceIdentifier] = errorMessage;
+                    failureReasons[resourceType] ??= {};
+                    failureReasons[resourceType][resourceIdentifier] = errorMessage;
                 }
             }
+        }
+        if (Object.keys(failureReasons).length > 0) {
+            importResult.failureReasons = failureReasons;
         }
         return { fetchedResourceStates, importResult };
     }
