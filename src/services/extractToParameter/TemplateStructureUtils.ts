@@ -1,8 +1,7 @@
 import { TopLevelSection } from '../../context/CloudFormationEnums';
-import { JsonSyntaxTree } from '../../context/syntaxtree/JsonSyntaxTree';
 import { SyntaxTree } from '../../context/syntaxtree/SyntaxTree';
+import { syntaxTreeFactory } from '../../context/syntaxtree/SyntaxTreeFactory';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
-import { YamlSyntaxTree } from '../../context/syntaxtree/YamlSyntaxTree';
 import { DocumentType } from '../../document/Document';
 import { parseJson } from '../../document/JsonParser';
 import { parseYaml } from '../../document/YamlParser';
@@ -202,11 +201,7 @@ export class TemplateStructureUtils {
      * Encapsulates the logic for choosing the right parser.
      */
     private createSyntaxTree(templateContent: string, documentType: DocumentType): SyntaxTree {
-        if (documentType === DocumentType.JSON) {
-            return new JsonSyntaxTree(templateContent);
-        } else {
-            return new YamlSyntaxTree(templateContent);
-        }
+        return syntaxTreeFactory.createSyntaxTree(templateContent, documentType);
     }
 
     /**

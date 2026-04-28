@@ -1,16 +1,23 @@
 import { Point } from 'tree-sitter';
-import { describe, it, expect, beforeEach, afterEach, vi, Mocked, MockedClass } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi, Mocked } from 'vitest';
 import { JsonSyntaxTree } from '../../../../src/context/syntaxtree/JsonSyntaxTree';
 import { SyntaxTreeManager } from '../../../../src/context/syntaxtree/SyntaxTreeManager';
 import { YamlSyntaxTree } from '../../../../src/context/syntaxtree/YamlSyntaxTree';
 import { DocumentType, CloudFormationFileType } from '../../../../src/document/Document';
 import { point } from '../../../utils/TemplateUtils';
 
-vi.mock('../../../../src/context/syntaxtree/JsonSyntaxTree', () => ({
-    JsonSyntaxTree: vi.fn(function () {}),
-}));
-vi.mock('../../../../src/context/syntaxtree/YamlSyntaxTree', () => ({
-    YamlSyntaxTree: vi.fn(function () {}),
+let mockJsonTree: Mocked<JsonSyntaxTree>;
+let mockYamlTree: Mocked<YamlSyntaxTree>;
+
+vi.mock('../../../../src/context/syntaxtree/SyntaxTreeFactory', () => ({
+    syntaxTreeFactory: {
+        createSyntaxTree: vi.fn((content: string, documentType: DocumentType) => {
+            if (documentType === DocumentType.JSON) {
+                return mockJsonTree;
+            }
+            return mockYamlTree;
+        }),
+    },
 }));
 
 describe('SyntaxTreeManager', () => {
@@ -18,14 +25,8 @@ describe('SyntaxTreeManager', () => {
     const testUri1 = 'file:///test1.yaml';
     const testUri2 = 'file:///test2.json';
     const testUri3 = 'file:///test3.template';
-    const MockedJsonSyntaxTree = JsonSyntaxTree as MockedClass<typeof JsonSyntaxTree>;
-    const MockedYamlSyntaxTree = YamlSyntaxTree as MockedClass<typeof YamlSyntaxTree>;
 
-    // Mock syntax tree instances
-    let mockJsonTree: Mocked<JsonSyntaxTree>;
-    let mockYamlTree: Mocked<YamlSyntaxTree>;
-
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
         mockJsonTree = {
             type: DocumentType.JSON,
@@ -38,12 +39,15 @@ describe('SyntaxTreeManager', () => {
             cleanup: vi.fn(),
         } as any;
 
-        MockedJsonSyntaxTree.mockImplementation(function () {
-            return mockJsonTree;
-        });
-        MockedYamlSyntaxTree.mockImplementation(function () {
-            return mockYamlTree;
-        });
+        const { syntaxTreeFactory } = await import('../../../../src/context/syntaxtree/SyntaxTreeFactory');
+        vi.mocked(syntaxTreeFactory.createSyntaxTree).mockImplementation(
+            (content: string, documentType: DocumentType) => {
+                if (documentType === DocumentType.JSON) {
+                    return mockJsonTree;
+                }
+                return mockYamlTree;
+            },
+        );
 
         syntaxTreeManager = new SyntaxTreeManager();
     });
@@ -53,43 +57,43 @@ describe('SyntaxTreeManager', () => {
     });
 
     describe('add', () => {
-        it('should create JSON syntax tree for .json file extension', () => {
+        it('should create JSON syntax tree for .json file extension', async () => {
             const content = '{"key": "value"}';
+            const { syntaxTreeFactory } = await import('../../../../src/context/syntaxtree/SyntaxTreeFactory');
 
             syntaxTreeManager.add(testUri2, content);
 
-            expect(MockedJsonSyntaxTree).toHaveBeenCalledWith(content);
-            expect(MockedYamlSyntaxTree).not.toHaveBeenCalled();
+            expect(syntaxTreeFactory.createSyntaxTree).toHaveBeenCalledWith(content, DocumentType.JSON);
             expect(syntaxTreeManager.getSyntaxTree(testUri2)).toBe(mockJsonTree);
         });
 
-        it('should create JSON syntax tree for content starting with {', () => {
+        it('should create JSON syntax tree for content starting with {', async () => {
             const content = '{"Resources": {}}';
+            const { syntaxTreeFactory } = await import('../../../../src/context/syntaxtree/SyntaxTreeFactory');
 
             syntaxTreeManager.add(testUri3, content);
 
-            expect(MockedJsonSyntaxTree).toHaveBeenCalledWith(content);
-            expect(MockedYamlSyntaxTree).not.toHaveBeenCalled();
+            expect(syntaxTreeFactory.createSyntaxTree).toHaveBeenCalledWith(content, DocumentType.JSON);
             expect(syntaxTreeManager.getSyntaxTree(testUri3)).toBe(mockJsonTree);
         });
 
-        it('should create JSON syntax tree for content starting with [', () => {
+        it('should create JSON syntax tree for content starting with [', async () => {
             const content = '[{"key": "value"}]';
+            const { syntaxTreeFactory } = await import('../../../../src/context/syntaxtree/SyntaxTreeFactory');
 
             syntaxTreeManager.add(testUri3, content);
 
-            expect(MockedJsonSyntaxTree).toHaveBeenCalledWith(content);
-            expect(MockedYamlSyntaxTree).not.toHaveBeenCalled();
+            expect(syntaxTreeFactory.createSyntaxTree).toHaveBeenCalledWith(content, DocumentType.JSON);
             expect(syntaxTreeManager.getSyntaxTree(testUri3)).toBe(mockJsonTree);
         });
 
-        it('should create YAML syntax tree for .yaml file extension', () => {
+        it('should create YAML syntax tree for .yaml file extension', async () => {
             const content = 'key: value';
+            const { syntaxTreeFactory } = await import('../../../../src/context/syntaxtree/SyntaxTreeFactory');
 
             syntaxTreeManager.add(testUri1, content);
 
-            expect(MockedYamlSyntaxTree).toHaveBeenCalledWith(content);
-            expect(MockedJsonSyntaxTree).not.toHaveBeenCalled();
+            expect(syntaxTreeFactory.createSyntaxTree).toHaveBeenCalledWith(content, DocumentType.YAML);
             expect(syntaxTreeManager.getSyntaxTree(testUri1)).toBe(mockYamlTree);
         });
     });
@@ -184,33 +188,36 @@ describe('SyntaxTreeManager', () => {
     });
 
     describe('file extension detection', () => {
-        it('should handle case-insensitive file extensions', () => {
+        it('should handle case-insensitive file extensions', async () => {
+            const { syntaxTreeFactory } = await import('../../../../src/context/syntaxtree/SyntaxTreeFactory');
+
             syntaxTreeManager.add('file:///test.JSON', '{"key": "value"}');
             syntaxTreeManager.add('file:///test.YAML', 'key: value');
 
-            expect(MockedJsonSyntaxTree).toHaveBeenCalled();
-            expect(MockedYamlSyntaxTree).toHaveBeenCalled();
+            expect(syntaxTreeFactory.createSyntaxTree).toHaveBeenCalledTimes(2);
         });
     });
 
     describe('addWithTypes', () => {
-        it('should create syntax tree for empty files', () => {
+        it('should create syntax tree for empty files', async () => {
             const uri = 'file:///empty.yaml';
             const content = '';
+            const { syntaxTreeFactory } = await import('../../../../src/context/syntaxtree/SyntaxTreeFactory');
 
             syntaxTreeManager.addWithTypes(uri, content, DocumentType.YAML, CloudFormationFileType.Empty);
 
-            expect(MockedYamlSyntaxTree).toHaveBeenCalledWith(content);
+            expect(syntaxTreeFactory.createSyntaxTree).toHaveBeenCalledWith(content, DocumentType.YAML);
             expect(syntaxTreeManager.getSyntaxTree(uri)).toBe(mockYamlTree);
         });
 
-        it('should not create syntax tree for other file types', () => {
+        it('should not create syntax tree for other file types', async () => {
             const uri = 'file:///other.yaml';
             const content = 'name: my-app\nversion: 1.0.0';
+            const { syntaxTreeFactory } = await import('../../../../src/context/syntaxtree/SyntaxTreeFactory');
 
             syntaxTreeManager.addWithTypes(uri, content, DocumentType.YAML, CloudFormationFileType.Other);
 
-            expect(MockedYamlSyntaxTree).not.toHaveBeenCalled();
+            expect(syntaxTreeFactory.createSyntaxTree).not.toHaveBeenCalled();
             expect(syntaxTreeManager.getSyntaxTree(uri)).toBeUndefined();
         });
     });

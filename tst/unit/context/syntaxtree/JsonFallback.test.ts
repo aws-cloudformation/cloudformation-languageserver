@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { JsonSyntaxTree } from '../../../../src/context/syntaxtree/JsonSyntaxTree';
+import { createJsonTree } from '../../../utils/TestTree';
 
 describe('JSON Fallback for Malformed Documents', () => {
     describe('Incomplete Keys', () => {
@@ -10,7 +10,7 @@ describe('JSON Fallback for Malformed Documents', () => {
       "Type": "AWS::S3::Bucket",
       "Properties": {
         "Buck`;
-            const tree = new JsonSyntaxTree(content);
+            const tree = createJsonTree(content);
             const node = tree.getNodeAtPosition({ line: 5, character: 13 });
             const pathInfo = tree.getPathAndEntityInfo(node);
 
@@ -25,7 +25,7 @@ describe('JSON Fallback for Malformed Documents', () => {
       "Type": "AWS::S3::Bucket",
       "Properties": {
         "BucketName":`;
-            const tree = new JsonSyntaxTree(content);
+            const tree = createJsonTree(content);
             const node = tree.getNodeAtPosition({ line: 5, character: 21 });
             const pathInfo = tree.getPathAndEntityInfo(node);
 
@@ -43,7 +43,7 @@ describe('JSON Fallback for Malformed Documents', () => {
       "Properties": {
         "Tags": [
           { "Key":`;
-            const tree = new JsonSyntaxTree(content);
+            const tree = createJsonTree(content);
             const node = tree.getNodeAtPosition({ line: 6, character: 18 });
             const pathInfo = tree.getPathAndEntityInfo(node);
 
@@ -60,7 +60,7 @@ describe('JSON Fallback for Malformed Documents', () => {
       "Type": "AWS::S3::Bucket",
       "Properties": {
         "BucketName": { "Fn::Sub":`;
-            const tree = new JsonSyntaxTree(content);
+            const tree = createJsonTree(content);
             const node = tree.getNodeAtPosition({ line: 5, character: 34 });
             const pathInfo = tree.getPathAndEntityInfo(node);
 

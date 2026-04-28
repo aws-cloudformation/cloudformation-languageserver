@@ -1,5 +1,4 @@
 import { arch, machine, platform, release, type } from 'os';
-import { parserType } from '../parser/ParserType';
 import { AwsMetadata, ClientInfo } from '../server/InitParams';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
@@ -18,7 +17,6 @@ export function staticInitialize(ClientInfo?: ClientInfo, AwsMetadata?: AwsMetad
                 Process: ProcessType,
                 Machine: `${type()}-${platform()}-${arch()}-${machine()}-${release()}`,
                 Runtime: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
-                Parser: parserType,
                 ClientInfo,
                 aws: {
                     clientInfo: AwsMetadata?.clientInfo,

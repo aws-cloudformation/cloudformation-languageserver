@@ -3,9 +3,8 @@ import { CloudFormationFileType, DocumentType } from '../../document/Document';
 import { detectDocumentType } from '../../document/DocumentUtils';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { Measure } from '../../telemetry/TelemetryDecorator';
-import { JsonSyntaxTree } from './JsonSyntaxTree';
 import { SyntaxTree } from './SyntaxTree';
-import { YamlSyntaxTree } from './YamlSyntaxTree';
+import { syntaxTreeFactory } from './SyntaxTreeFactory';
 
 const logger = LoggerFactory.getLogger('SyntaxTreeManager');
 
@@ -50,11 +49,11 @@ export class SyntaxTreeManager {
     }
 
     private createJsonSyntaxTree(uri: string, content: string) {
-        this.syntaxTrees.set(uri, new JsonSyntaxTree(content));
+        this.syntaxTrees.set(uri, syntaxTreeFactory.createSyntaxTree(content, DocumentType.JSON));
     }
 
     private createYamlSyntaxTree(uri: string, content: string) {
-        this.syntaxTrees.set(uri, new YamlSyntaxTree(content));
+        this.syntaxTrees.set(uri, syntaxTreeFactory.createSyntaxTree(content, DocumentType.YAML));
     }
 
     public getSyntaxTree(uri: string): SyntaxTree | undefined {

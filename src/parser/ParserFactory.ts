@@ -83,4 +83,3 @@ if (isLegacyLinux) {
 
 export const parserFactory: ParserFactory = factoryInstance;
 export const parserFactoryReady: Promise<void> = readyPromise;
-export { parserType } from './ParserType';

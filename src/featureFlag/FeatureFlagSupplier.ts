@@ -109,6 +109,7 @@ function featureConfigSupplier(
 const FeatureBuilders = {
     Constants: buildStatic,
     FileDb: buildLocalHost,
+    WasmParser: buildLocalHost,
 } as const satisfies Record<string, FeatureFlagBuilderType>;
 const TargetedFeatureBuilders = {
     EnhancedDryRun: (name: string, config?: FeatureFlagConfigType) => {

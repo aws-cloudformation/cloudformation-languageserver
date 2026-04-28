@@ -37,11 +37,13 @@ class ParserAdapter {
         oldTree?: NativeParser.Tree,
         options?: NativeParser.Options,
     ): NativeParser.Tree {
+        /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
         const result = this.wasmParser.parse(
             input as string,
             oldTree as unknown as Parser.Tree,
             options as unknown as Parser.Options,
         );
+        /* eslint-enable @typescript-eslint/no-unnecessary-type-assertion */
         return result as unknown as NativeParser.Tree;
     }
 
@@ -54,8 +56,7 @@ class ParserAdapter {
     setLanguage = (language?: NativeParser.Language) =>
         this.wasmParser.setLanguage(language as unknown as Parser.Language);
     getLogger = () => this.wasmParser.getLogger();
-    setLogger = (logFunc?: NativeParser.Logger | false | null) =>
-        this.wasmParser.setLogger(logFunc as unknown as Parser.Logger);
+    setLogger = (logFunc?: NativeParser.Logger | false | null) => this.wasmParser.setLogger(logFunc);
 
     printDotGraphs(_enabled?: boolean, _fd?: number) {
         // WASM doesn't support dot graphs, so this is a no-op

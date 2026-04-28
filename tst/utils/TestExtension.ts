@@ -132,8 +132,8 @@ export class TestExtension implements Closeable {
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
             {
                 onInitialize: async (params) => {
-                    const { parserFactoryReady } = await import('../../src/parser/ParserFactory');
-                    await parserFactoryReady;
+                    const { syntaxTreeFactory } = await import('../../src/context/syntaxtree/SyntaxTreeFactory');
+                    await syntaxTreeFactory.ready;
 
                     const lsp = this.serverConnection.components;
                     LoggerFactory.reconfigure('warn');
@@ -147,6 +147,7 @@ export class TestExtension implements Closeable {
                         dataStoreFactory,
                         featureFlags,
                     });
+                    await syntaxTreeFactory.ready;
 
                     const schemaStore = new SchemaStore(dataStoreFactory);
                     const schemaRetriever = new SchemaRetriever(
