@@ -89,6 +89,7 @@ export type SearchResourceParams = {
 export type SearchResourceResult = {
     found: boolean;
     resource?: ResourceSummary;
+    error?: string;
 };
 
 export const SearchResourceRequest = new RequestType<SearchResourceParams, SearchResourceResult, void>(

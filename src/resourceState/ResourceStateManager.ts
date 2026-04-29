@@ -79,7 +79,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         } catch (error) {
             if (error instanceof ResourceNotFoundException) {
                 log.info(`No resource found for type ${typeName} and identifier "${identifier}"`);
-                return {};
+                return { error: extractErrorMessage(error) };
             } else if (isClientError(error)) {
                 log.info(`Client error for type ${typeName} and identifier "${identifier}"`);
                 return { error: extractErrorMessage(error) };
@@ -139,7 +139,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
     public async searchResourceByIdentifier(
         typeName: string,
         identifier: string,
-    ): Promise<{ found: boolean; resourceList?: ResourceList }> {
+    ): Promise<{ found: boolean; resourceList?: ResourceList; error?: string }> {
         let result: GetResourceResult;
         try {
             result = await this.getResource(typeName, identifier);
@@ -148,7 +148,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         }
 
         if (!result.resource) {
-            return { found: false };
+            return { found: false, error: result.error };
         }
 
         // Add to cache

@@ -136,6 +136,7 @@ export function searchResourceHandler(
                       nextToken: result.resourceList.nextToken,
                   }
                 : undefined,
+            error: result.error,
         };
     };
 }

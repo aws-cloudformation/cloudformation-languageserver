@@ -84,7 +84,7 @@ describe('ResourceStateManager', () => {
 
             const result = await manager.getResource('AWS::S3::Bucket', 'nonexistent');
             expect(result.resource).toBeUndefined();
-            expect(result.error).toBeUndefined();
+            expect(result.error).toContain('Resource not found');
         });
 
         it('should rethrow other errors', async () => {
