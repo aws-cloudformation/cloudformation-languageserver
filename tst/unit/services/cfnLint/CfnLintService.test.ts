@@ -1459,4 +1459,100 @@ describe('CfnLintService', () => {
             expect(lintStub.calledWith(mockTemplate, mockUri)).toBe(true);
         });
     });
+
+    describe('local cfn-lint path functionality', () => {
+        test('should switch to local executor when path is set', () => {
+            const components = createMockComponents();
+            const service = CfnLintService.create(components);
+            const baseSettings = new SettingsState().toSettings();
+            const settingsWithPath = {
+                ...baseSettings,
+                diagnostics: {
+                    ...baseSettings.diagnostics,
+                    cfnLint: {
+                        ...baseSettings.diagnostics.cfnLint,
+                        path: '/usr/local/bin/cfn-lint',
+                    },
+                },
+            };
+            const settingsManager = createMockSettingsManager(settingsWithPath);
+
+            service.configure(settingsManager);
+
+            // Verify local executor is created from initial settings
+            expect((service as any).localExecutor).toBeDefined();
+        });
+
+        test('should switch to local executor on settings change', () => {
+            const components = createMockComponents();
+            const service = CfnLintService.create(components);
+            const settingsManager = createMockSettingsManager();
+
+            service.configure(settingsManager);
+            expect((service as any).localExecutor).toBeUndefined();
+
+            // Trigger settings change with path
+            const callback = settingsManager.subscribe.getCall(0).args[1];
+            const baseSettings = new SettingsState().toSettings();
+            callback({
+                cfnLint: {
+                    ...baseSettings.diagnostics.cfnLint,
+                    path: '/usr/local/bin/cfn-lint',
+                },
+            } as any);
+
+            expect((service as any).localExecutor).toBeDefined();
+        });
+
+        test('should switch back to pyodide when path is cleared', () => {
+            const components = createMockComponents();
+            const service = CfnLintService.create(components);
+            const settingsManager = createMockSettingsManager();
+
+            service.configure(settingsManager);
+
+            const callback = settingsManager.subscribe.getCall(0).args[1];
+            const baseSettings = new SettingsState().toSettings();
+
+            // First set path
+            callback({
+                cfnLint: {
+                    ...baseSettings.diagnostics.cfnLint,
+                    path: '/usr/local/bin/cfn-lint',
+                },
+            } as any);
+            expect((service as any).localExecutor).toBeDefined();
+
+            // Then clear path
+            callback({
+                cfnLint: {
+                    ...baseSettings.diagnostics.cfnLint,
+                },
+            } as any);
+
+            expect((service as any).localExecutor).toBeUndefined();
+        });
+
+        test('should initialize immediately when using local executor', async () => {
+            const components = createMockComponents();
+            const baseSettings = new SettingsState().toSettings();
+            const settingsWithPath = {
+                ...baseSettings,
+                diagnostics: {
+                    ...baseSettings.diagnostics,
+                    cfnLint: {
+                        ...baseSettings.diagnostics.cfnLint,
+                        path: '/usr/local/bin/cfn-lint',
+                    },
+                },
+            };
+            const settingsManager = createMockSettingsManager(settingsWithPath);
+            const service = CfnLintService.create(components);
+            service.configure(settingsManager);
+
+            await service.initialize();
+
+            expect(service.isInitialized()).toBe(true);
+        });
+    });
 });

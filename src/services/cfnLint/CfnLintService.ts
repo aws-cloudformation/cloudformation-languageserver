@@ -18,6 +18,7 @@ import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessCont
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
 import { WorkerNotInitializedError, MountError } from './CfnLintErrors';
+import { LocalCfnLintExecutor } from './LocalCfnLintExecutor';
 import { PyodideWorkerManager } from './PyodideWorkerManager';
 
 export enum LintTrigger {
@@ -54,6 +55,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
     private settingsSubscription?: SettingsSubscription;
     private initializationPromise?: Promise<void>;
     private readonly workerManager: PyodideWorkerManager;
+    private localExecutor?: LocalCfnLintExecutor;
     private readonly log = LoggerFactory.getLogger(CfnLintService);
     private readonly mountedFolders = new Map<string, WorkspaceFolder>();
 
@@ -127,6 +129,11 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         this.settingsSubscription = settingsManager.subscribe('diagnostics', (newDiagnosticsSettings) => {
             this.onSettingsChanged(newDiagnosticsSettings.cfnLint);
         });
+
+        // Initialize local executor if path is configured
+        if (this.settings.path) {
+            this.localExecutor = new LocalCfnLintExecutor(this.settings.path);
+        }
     }
 
     isReady(): ReadinessStatus {
@@ -137,8 +144,17 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
     }
 
     private onSettingsChanged(newSettings: CfnLintSettings): void {
+        const pathChanged = this.settings.path !== newSettings.path;
         this.settings = newSettings;
         this.workerManager.updateSettings(newSettings);
+
+        if (pathChanged) {
+            if (newSettings.path) {
+                this.localExecutor = new LocalCfnLintExecutor(newSettings.path);
+            } else {
+                this.localExecutor = undefined;
+            }
+        }
         // Note: Delayer delay is immutable, set at construction time
         // The new delayMs will be used for future operations that check this.settings.delayMs
     }
@@ -162,6 +178,15 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
 
         const startTime = performance.now();
         try {
+            if (this.settings.path) {
+                // Local executor doesn't need heavy initialization
+                this.localExecutor = new LocalCfnLintExecutor(this.settings.path);
+                this.status = STATUS.Initialized;
+                this.telemetry.count('init.success', 1, { attributes: { mode: 'local' } });
+                this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
+                return;
+            }
+
             // Initialize the worker manager
             await this.workerManager.initialize();
 
@@ -208,6 +233,11 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
     public async mountFolder(folder: WorkspaceFolder): Promise<void> {
         if (this.status === STATUS.Uninitialized) {
             throw new Error('CfnLintService not initialized. Call initialize() first.');
+        }
+
+        // Local executor accesses the filesystem directly, no mounting needed
+        if (this.localExecutor) {
+            return;
         }
 
         const folderName =
@@ -338,8 +368,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         const sizeCategory = doc?.getTemplateSizeCategory() ?? 'unknown';
 
         try {
-            // Use worker to lint template
-            const diagnosticPayloads = await this.workerManager.lintTemplate(content, uri, fileType);
+            // Use local executor or worker to lint template
+            const diagnosticPayloads = this.localExecutor
+                ? await this.localExecutor.lintTemplate(content, uri, fileType)
+                : await this.workerManager.lintTemplate(content, uri, fileType);
 
             if (!diagnosticPayloads || diagnosticPayloads.length === 0) {
                 // If no diagnostics were returned, publish empty diagnostics to clear any previous issues
@@ -438,8 +470,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             folder.name = folderName; // Update folder name to ensure consistent mounting and path resolution
             const relativePath = uri.replace(folder.uri, '/'.concat(folder.name));
 
-            // Use worker to lint file
-            const diagnosticPayloads = await this.workerManager.lintFile(relativePath, uri, fileType);
+            let diagnosticPayloads;
+            if (this.localExecutor) {
+                const filePath = URI.parse(uri).fsPath;
+                const workspaceRoot = URI.parse(folder.uri).fsPath;
+                diagnosticPayloads = await this.localExecutor.lintFile(filePath, uri, fileType, workspaceRoot);
+            } else {
+                diagnosticPayloads = await this.workerManager.lintFile(relativePath, uri, fileType);
+            }
 
             if (!diagnosticPayloads || diagnosticPayloads.length === 0) {
                 // Handle empty result case
@@ -821,6 +859,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         if (this.status !== STATUS.Uninitialized) {
             // Shutdown worker manager
             await this.workerManager.shutdown();
+            this.localExecutor = undefined;
             this.status = STATUS.Uninitialized;
         }
     }
