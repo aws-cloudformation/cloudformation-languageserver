@@ -4567,7 +4567,7 @@ rule WORKSPACE_ENCRYPTION_ENABLED when %workspace_encryption_enabled !empty {
 };
 
 export const RULE_PACKS: Record<string, string[]> = {
-    'ABS-CCIGv2-Material': [
+    'abs-ccigv2-material': [
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_ALARM_ACTION_CHECK',
@@ -4638,7 +4638,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
     ],
-    'ABS-CCIGv2-Standard': [
+    'abs-ccigv2-standard': [
         'CLOUD_TRAIL_CLOUD_WATCH_LOGS_ENABLED',
         'CLOUDTRAIL_S3_DATAEVENTS_ENABLED',
         'CLOUDWATCH_ALARM_ACTION_CHECK',
@@ -5932,7 +5932,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'REDSHIFT_BACKUP_ENABLED',
         'S3_BUCKET_VERSIONING_ENABLED',
     ],
-    'FDA-21CFR-Part-11': [
+    'fda-21cfr-part-11': [
         'S3_BUCKET_VERSIONING_ENABLED',
         'S3_BUCKET_DEFAULT_LOCK_ENABLED',
         'CLOUD_TRAIL_LOG_FILE_VALIDATION_ENABLED',
@@ -7463,7 +7463,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'CLOUDWATCH_ALARM_ACTION_CHECK',
         'SECRETSMANAGER_USING_CMK',
     ],
-    'wa-Reliability-Pillar': [
+    'wa-reliability-pillar': [
         'LAMBDA_CONCURRENCY_CHECK',
         'LAMBDA_DLQ_CHECK',
         'ELASTICSEARCH_IN_VPC_ONLY',
@@ -7488,7 +7488,7 @@ export const RULE_PACKS: Record<string, string[]> = {
         'RDS_INSTANCE_DELETION_PROTECTION_ENABLED',
         'S3_BUCKET_DEFAULT_LOCK_ENABLED',
     ],
-    'wa-Security-Pillar': [
+    'wa-security-pillar': [
         'CODEBUILD_PROJECT_ENVVAR_AWSCRED_CHECK',
         'ECS_TASK_DEFINITION_USER_FOR_HOST_MODE_CHECK',
         'IAM_NO_INLINE_POLICY_CHECK',
@@ -7549,7 +7549,7 @@ export const RULE_PACKS: Record<string, string[]> = {
 };
 
 export function getRulesForPack(packName: string): GuardRuleData[] {
-    const ruleNames = RULE_PACKS[packName];
+    const ruleNames = RULE_PACKS[packName.toLowerCase()];
     if (!ruleNames) {
         throw new Error('Unknown rule pack: ' + packName);
     }

@@ -445,7 +445,7 @@ async function main() {
             .filter((f) => f.startsWith('rule_set_') && f.endsWith('.json'));
 
         for (const file of mappingFiles) {
-            const packName = file.replace('rule_set_', '').replace('.json', '').replace(/_/g, '-');
+            const packName = file.replace('rule_set_', '').replace('.json', '').replace(/_/g, '-').toLowerCase();
             const mappingPath = path.join(mappingsDir, file);
             const mapping = JSON.parse(fs.readFileSync(mappingPath, 'utf8'));
 

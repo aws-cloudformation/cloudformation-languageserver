@@ -640,7 +640,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
         const availablePackSet = new Set(availablePackNames);
 
         for (const enabledPack of this.settings.enabledRulePacks) {
-            if (!availablePackSet.has(enabledPack)) {
+            if (!availablePackSet.has(enabledPack.toLowerCase())) {
                 errors.push(`Rule pack '${enabledPack}' is enabled but not available`);
             }
         }
