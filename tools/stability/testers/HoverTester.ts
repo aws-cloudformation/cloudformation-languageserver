@@ -1,6 +1,6 @@
 import { LspClient } from '../../lspClient/LspClient';
 import { OperationTester, OperationType } from './TesterTypes';
-import { retryOperationWithPerformance } from './TesterCommon';
+import { retryOperationWithPerformance } from './TesterUtils';
 
 export class HoverTester implements OperationTester {
     constructor(private readonly client: LspClient) {}

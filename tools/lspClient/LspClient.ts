@@ -29,9 +29,12 @@ export class LspClient implements LspConnection {
     protected isShutdown = false;
     protected workspaceConfig: Record<string, unknown>[] = [{}];
 
-    constructor(protected config: LspClientConfig) {
+    private readonly suppressLevels: string[];
+
+    constructor(private readonly config: LspClientConfig) {
         this.createdAt = performance.now();
         this.encryptionKey = randomBytes(32);
+        this.suppressLevels = this.config.suppressLogLevels ?? ['INFO', 'DEBUG'];
     }
 
     async initialize(): Promise<void> {
@@ -100,9 +103,7 @@ export class LspClient implements LspConnection {
     private readonly onServerOutput = (data: Buffer) => {
         const output = data.toString().trim();
 
-        // Log filtering - keep for debugging
-        const suppressLevels = this.config.suppressLogLevels ?? ['INFO', 'DEBUG'];
-        const shouldSuppress = suppressLevels.some((level) => output.includes(`${level}:`));
+        const shouldSuppress = this.suppressLevels.some((level) => output.includes(`${level}:`));
 
         if (!shouldSuppress) {
             console.error(`[LSP Server]: ${output}`);

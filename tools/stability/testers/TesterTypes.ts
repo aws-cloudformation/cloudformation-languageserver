@@ -25,7 +25,3 @@ export const TESTER_CONFIG: Record<OperationType, TesterConfig> = {
         maxDurationLimitMs: 5000,
     },
 };
-
-export function getTesterConfig(operationType: OperationType): TesterConfig {
-    return TESTER_CONFIG[operationType];
-}

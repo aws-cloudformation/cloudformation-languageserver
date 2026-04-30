@@ -1,22 +1,22 @@
 import { LspClient } from '../lspClient/LspClient';
-import { parseConfig, parseDuration } from './Config';
+import { config, parseDuration } from './Config';
 import { initializeMonitoring, logProgress, checkPerformanceDegradation } from './Monitoring';
 import { HoverTester } from './testers/HoverTester';
 import { CompletionTester } from './testers/CompletionTester';
-import { TEMPLATE_CONFIGS } from './Templates';
+import { TEST_TEMPLATES } from './Templates';
 import { AwsRegion } from '../../src/utils/Region';
 import { WaitFor } from '../../tst/utils/Utils';
 import { existsSync } from 'fs';
 
 export class TestOrchestrator {
     private client!: LspClient;
-    private readonly config = parseConfig();
+    private readonly config = config;
     private startTime!: number;
     private endTime!: number;
     private hoverTester!: HoverTester;
     private completionTester!: CompletionTester;
 
-    private readonly templates = TEMPLATE_CONFIGS;
+    private readonly templates = TEST_TEMPLATES;
 
     private readonly testRegions = Object.values(AwsRegion).filter(
         (region) => region !== AwsRegion.ME_SOUTH_1 && region !== AwsRegion.ME_CENTRAL_1,
@@ -138,15 +138,15 @@ export class TestOrchestrator {
 
             // Test all templates for this region
             for (const template of this.templates) {
-                const uri = `file:///test/${template.name}`;
+                const uri = `file:///test/${template.fileName}`;
 
                 try {
-                    await this.client.openDocument(uri, template.content);
+                    await this.client.openDocument(uri, template.contents);
 
                     await this.validateLsp(uri);
 
                     // Revert document to original state after tests
-                    await this.client.updateDocument(uri, 6, template.content);
+                    await this.client.updateDocument(uri, 6, template.contents);
                 } finally {
                     try {
                         await this.client.closeDocument(uri);

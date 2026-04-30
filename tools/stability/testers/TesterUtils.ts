@@ -1,6 +1,6 @@
 import { recordOperation } from '../Monitoring';
 import { WaitFor } from '../../../tst/utils/Utils';
-import { OperationType, getTesterConfig } from './TesterTypes';
+import { OperationType, TESTER_CONFIG } from './TesterTypes';
 
 const RETRY_INTERVAL_MS = 250;
 
@@ -9,7 +9,7 @@ export async function retryOperationWithPerformance<T>(
     validate: (result: T) => void,
     operationType: OperationType,
 ): Promise<void> {
-    const config = getTesterConfig(operationType);
+    const config = TESTER_CONFIG[operationType];
     let responseTime: number = 0;
 
     await WaitFor.waitFor(

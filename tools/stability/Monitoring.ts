@@ -1,4 +1,4 @@
-import { OperationType, getTesterConfig } from './testers/TesterTypes';
+import { OperationType, TESTER_CONFIG } from './testers/TesterTypes';
 
 export type TestMetrics = {
     operations: number;
@@ -83,7 +83,7 @@ export function generateFinalReport(testStartTime: number): void {
 
 export function checkPerformanceDegradation(): void {
     for (const [operationType, metric] of Object.entries(metrics) as [OperationType, TestMetrics][]) {
-        const config = getTesterConfig(operationType);
+        const config = TESTER_CONFIG[operationType];
 
         if (metric.averageDuration !== null && metric.averageDuration > config.avgDurationLimitMs) {
             throw new Error(

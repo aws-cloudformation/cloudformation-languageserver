@@ -12,7 +12,12 @@ const loadTemplate = (name: string) => {
     return cache.get(name)!;
 };
 
-export const Templates: Record<string, Record<'json' | 'yaml', { fileName: string; contents: string }>> = {
+export interface TemplateConfig {
+    fileName: string;
+    contents: string;
+}
+
+export const Templates: Record<string, Record<'json' | 'yaml', TemplateConfig>> = {
     broken: {
         json: {
             fileName: 'file://broken.json',

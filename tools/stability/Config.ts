@@ -30,24 +30,6 @@ function parseSimpleArgs(): Partial<Config> {
     return args;
 }
 
-export function parseConfig(): Config {
-    // Start with environment variables (npm script support)
-    const envConfig = {
-        duration: process.env.STABILITY_TEST_DURATION ?? '4h',
-        maxRetries: Number.parseInt(process.env.MAX_RETRIES ?? '3'),
-        responseTimeout: Number.parseInt(process.env.RESPONSE_TIMEOUT ?? '5000'),
-        path: process.env.STANDALONE_PATH ?? './cfn-lsp-server-standalone.js',
-    };
-
-    // Override with command line arguments if provided
-    const cliArgs = parseSimpleArgs();
-
-    return {
-        ...envConfig,
-        ...cliArgs,
-    };
-}
-
 export function parseDuration(duration: string): number {
     const match = duration.match(/^(\d+)([hms])$/);
     if (!match) throw new Error(`Invalid duration format: ${duration}`);
@@ -70,3 +52,11 @@ export function parseDuration(duration: string): number {
         }
     }
 }
+
+export const config: Config = {
+    duration: process.env.STABILITY_TEST_DURATION ?? '4h',
+    maxRetries: Number.parseInt(process.env.MAX_RETRIES ?? '3'),
+    responseTimeout: Number.parseInt(process.env.RESPONSE_TIMEOUT ?? '5000'),
+    path: process.env.STANDALONE_PATH ?? './cfn-lsp-server-standalone.js',
+    ...parseSimpleArgs(),
+};
