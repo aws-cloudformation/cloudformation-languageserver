@@ -122,25 +122,7 @@ async function initializePyodide(): Promise<InitializeResult> {
             throw new Error('Failed to initialize Pyodide: returned null');
         }
 
-        // Load required packages
-        await pyodide.loadPackage('micropip');
-        await pyodide.loadPackage('ssl');
-        await pyodide.loadPackage('pyyaml');
-
-        // Load additional packages that cfn-lint needs
-        await pyodide.loadPackage('regex');
-        await pyodide.loadPackage('rpds-py');
-        await pyodide.loadPackage('pydantic');
-        await pyodide.loadPackage('pydantic-core');
-
-        // Replace CSafeLoader with SafeLoader to avoid Pyodide parsing issues
-        await pyodide.runPythonAsync(`
-       import yaml
-       if hasattr(yaml, 'CSafeLoader'):
-           yaml.CSafeLoader = yaml.SafeLoader
-     `);
-
-        // Mount assets directory to access local wheels
+        // Mount assets directory early so local wheels are available as fallback
         const assetsPath = path.join(__dirname, 'assets');
         try {
             pyodide.FS.mkdirTree('/assets');
@@ -149,57 +131,126 @@ async function initializePyodide(): Promise<InitializeResult> {
             // Failed to mount assets directory
         }
 
+        // Load bootstrap packages — micropip is required for fallback installs
+        // loadPackage fetches from JsDelivr CDN which can silently fail
+        // Set CFN_LSP_OFFLINE=1 to skip CDN and test local wheel fallback
+        const offlineMode = process.env.CFN_LSP_OFFLINE === '1';
+        if (!offlineMode) {
+            await pyodide.loadPackage('micropip');
+        }
+        // ssl is a system shared library — must always use loadPackage (can't install via micropip)
+        await pyodide.loadPackage('ssl');
+
+        // Verify micropip is available; fall back to local wheel if CDN failed
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        const micropipAvailable = await pyodide.runPythonAsync(`
+            try:
+                import micropip
+                True
+            except ModuleNotFoundError:
+                False
+        `);
+        if (!micropipAvailable) {
+            // loadPackage with emfs: URLs also silently fails, so unzip directly
+            await pyodide.runPythonAsync(`
+                from pathlib import Path
+                from zipfile import ZipFile
+                import importlib, site
+                wheels = list(Path('/assets/wheels').glob('micropip-*.whl'))
+                if not wheels:
+                    raise ModuleNotFoundError('micropip not available and no local wheel found')
+                with ZipFile(str(wheels[0])) as zf:
+                    zf.extractall(site.getsitepackages()[0])
+                importlib.invalidate_caches()
+                import micropip
+            `);
+        }
+
+        // Load packages with verification and local wheel/micropip fallback
+        // Define the package mapping once, used for both verification and cfn-lint skip logic
+        const pyodidePackages = ['pyyaml', 'regex', 'rpds-py', 'pydantic', 'pydantic-core'];
+        if (!offlineMode) {
+            for (const pkg of pyodidePackages) {
+                await pyodide.loadPackage(pkg);
+            }
+        }
+        await pyodide.runPythonAsync(`
+            import micropip
+            from pathlib import Path
+
+            # Package name -> import name mapping for Pyodide-managed packages
+            PYODIDE_PACKAGES = {
+                "micropip": "micropip", "pyyaml": "yaml", "regex": "regex",
+                "rpds-py": "rpds", "pydantic": "pydantic", "pydantic-core": "pydantic_core", "ssl": "ssl",
+            }
+
+            _wheels_dir = Path('/assets/wheels')
+            for pkg_name, import_name in PYODIDE_PACKAGES.items():
+                try:
+                    __import__(import_name)
+                except ModuleNotFoundError:
+                    _installed = False
+                    if _wheels_dir.exists():
+                        _prefix = pkg_name.replace('-', '_')
+                        _local = [w for w in _wheels_dir.glob('*.whl') if w.name.lower().startswith(_prefix.lower())]
+                        if _local:
+                            try:
+                                await micropip.install(f'emfs:{_local[0]}', deps=False)
+                                _installed = True
+                            except Exception:
+                                pass
+                    if not _installed:
+                        await micropip.install(pkg_name)
+        `);
+
+        // Replace CSafeLoader with SafeLoader to avoid Pyodide parsing issues
+        await pyodide.runPythonAsync(`
+       import yaml
+       if hasattr(yaml, 'CSafeLoader'):
+           yaml.CSafeLoader = yaml.SafeLoader
+     `);
+
         // Install cfn-lint with local wheel fallback
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const installResult = await pyodide.runPythonAsync(`
       import micropip
-      import os
       from pathlib import Path
       
       cfn_lint_installed = False
       install_source = None
-      
-      # Debug: Check current working directory and available paths
-      print(f'Current working directory: {os.getcwd()}')
-      print(f'Directory contents: {os.listdir(".")}')
       
       # Try to install latest from PyPI first
       try:
           await micropip.install('cfn-lint')
           cfn_lint_installed = True
           install_source = 'pypi'
-          print('Installed cfn-lint from PyPI')
-      except Exception as e:
-          print(f'Failed to install cfn-lint from PyPI: {e}')
+      except Exception:
+          pass
       
       # Fallback to local wheels if online installation failed
       if not cfn_lint_installed:
           wheels_dir = Path('/assets/wheels')
-          print(f'Checking for wheels in: {wheels_dir}')
+          _fail_reason = f'wheels_dir exists={wheels_dir.exists()}'
           
           if wheels_dir.exists():
               wheel_files = list(wheels_dir.glob('*.whl'))
-              print(f'Found {len(wheel_files)} wheel files')
+              _fail_reason = f'{len(wheel_files)} wheel files found'
               
               if wheel_files:
                   try:
-                      # Install all wheels using emfs:// URLs with no-deps to avoid online dependency resolution
-                      for wheel_file in wheel_files:
-                          wheel_url = f'emfs:{wheel_file}'
-                          print(f'Installing: {wheel_file.name}')
-                          await micropip.install(wheel_url, deps=False)
+                      # Skip packages already installed above
+                      _skip = {p.replace('-','_') for p in PYODIDE_PACKAGES}
+                      for whl in wheel_files:
+                          if whl.name.split('-')[0].lower() in _skip:
+                              continue
+                          await micropip.install(f'emfs:{whl}', deps=False)
                       cfn_lint_installed = True
                       install_source = 'wheels'
-                      print(f'Installed cfn-lint and dependencies from local wheels ({len(wheel_files)} packages)')
                   except Exception as e:
-                      print(f'Failed to install from local wheels: {e}')
-              else:
-                  print('No wheel files found in wheels directory')
-          else:
-              print(f'Wheels directory not found: {wheels_dir}')
+                      _fail_reason = f'wheel install error: {e}'
           
           if not cfn_lint_installed:
-              raise Exception('Failed to install cfn-lint from both PyPI and local wheels')
+              raise Exception(f'Failed to install cfn-lint from both PyPI and local wheels. {_fail_reason}')
       
       install_source
     `);

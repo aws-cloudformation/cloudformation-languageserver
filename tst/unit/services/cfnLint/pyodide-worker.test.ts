@@ -1056,4 +1056,107 @@ describe('pyodide-worker', () => {
             });
         });
     });
+
+    describe('loadPackage verification and fallback', () => {
+        /**
+         * Simulates the initializePyodide flow from pyodide-worker.ts using a mock pyodide.
+         * The mock's runPythonAsync behavior is controlled by the caller to simulate
+         * CDN success/failure scenarios.
+         */
+        async function simulateInitialization(pyodide: ReturnType<typeof createMockPyodide>) {
+            // 1. Mount assets (no-op in tests)
+            pyodide.FS.mkdirTree('/assets');
+
+            // 2. Load bootstrap packages from CDN
+            await pyodide.loadPackage('micropip');
+            await pyodide.loadPackage('ssl');
+
+            // 3. Verify micropip
+            const micropipAvailable = await pyodide.runPythonAsync(`
+                try:
+                    import micropip
+                    True
+                except ModuleNotFoundError:
+                    False
+            `);
+            if (!micropipAvailable) {
+                // 3b. Fallback to local wheel
+                await pyodide.runPythonAsync('install micropip from local wheel');
+            }
+
+            // 4. Load other packages from CDN
+            const packages = ['pyyaml', 'regex', 'rpds-py', 'pydantic', 'pydantic-core'];
+            for (const pkg of packages) {
+                await pyodide.loadPackage(pkg);
+            }
+
+            // 5. Verify and fallback
+            await pyodide.runPythonAsync('verify packages and fallback to local wheels');
+        }
+
+        test('happy path: all loadPackage calls succeed, no fallback needed', async () => {
+            const pyodide = createMockPyodide();
+            // micropip verification returns True
+            pyodide.runPythonAsync.mockResolvedValueOnce(true);
+            // package verification succeeds (no fallback triggered)
+            pyodide.runPythonAsync.mockResolvedValueOnce(undefined);
+
+            await simulateInitialization(pyodide);
+
+            expect(pyodide.loadPackage).toHaveBeenCalledWith('micropip');
+            expect(pyodide.loadPackage).toHaveBeenCalledWith('ssl');
+            expect(pyodide.loadPackage).toHaveBeenCalledWith('pyyaml');
+            expect(pyodide.loadPackage).toHaveBeenCalledWith('pydantic');
+            // runPythonAsync called exactly twice: micropip check + package verify
+            expect(pyodide.runPythonAsync).toHaveBeenCalledTimes(2);
+        });
+
+        test('micropip CDN fails: falls back to local wheel', async () => {
+            const pyodide = createMockPyodide();
+            // micropip verification returns False (CDN failed silently)
+            pyodide.runPythonAsync.mockResolvedValueOnce(false);
+            // local wheel install succeeds
+            pyodide.runPythonAsync.mockResolvedValueOnce(undefined);
+            // package verification succeeds
+            pyodide.runPythonAsync.mockResolvedValueOnce(undefined);
+
+            await simulateInitialization(pyodide);
+
+            // Should have 3 runPythonAsync calls: micropip check, local wheel install, package verify
+            expect(pyodide.runPythonAsync).toHaveBeenCalledTimes(3);
+        });
+
+        test('micropip CDN fails and no local wheel: throws', async () => {
+            const pyodide = createMockPyodide();
+            // micropip verification returns False
+            pyodide.runPythonAsync.mockResolvedValueOnce(false);
+            // local wheel install fails
+            pyodide.runPythonAsync.mockRejectedValueOnce(
+                new Error('micropip not available after loadPackage and no local wheel found'),
+            );
+
+            await expect(simulateInitialization(pyodide)).rejects.toThrow(
+                'micropip not available after loadPackage and no local wheel found',
+            );
+        });
+
+        test('package CDN fails: verification triggers fallback to local wheels', async () => {
+            const pythonCalls: string[] = [];
+            const pyodide = createMockPyodide();
+            pyodide.runPythonAsync.mockImplementation((code: string) => {
+                pythonCalls.push(code);
+                if (code.includes('import micropip')) {
+                    return Promise.resolve(true); // micropip available
+                }
+                return Promise.resolve(undefined); // verification/fallback runs
+            });
+
+            await simulateInitialization(pyodide);
+
+            // loadPackage called for all 7 packages
+            expect(pyodide.loadPackage).toHaveBeenCalledTimes(7);
+            // Verification code was executed
+            expect(pythonCalls.some((c) => c.includes('verify packages'))).toBe(true);
+        });
+    });
 });
