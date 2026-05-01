@@ -4,7 +4,7 @@ import { open, RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
-import { isWindows } from '../utils/Environment';
+import { isWindows, processId } from '../utils/Environment';
 import { extractErrorMessage } from '../utils/Errors';
 import { formatNumber, toString } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName } from './DataStore';
@@ -21,7 +21,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private readonly metricsInterval: NodeJS.Timeout;
 
     private env: RootDatabase;
-    private openPid = process.pid;
+    private openPid = processId();
     private closed = false;
 
     private readonly stores = new Map<StoreName, LMDBStore>();
@@ -119,9 +119,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private ensureValidEnv(): void {
-        if (process.pid !== this.openPid) {
+        if (processId() !== this.openPid) {
             this.telemetry.count('process.forked', 1);
-            this.log.warn({ oldPid: this.openPid, newPid: process.pid }, 'Process fork detected, reopening LMDB');
+            this.log.warn({ oldPid: this.openPid, newPid: processId() }, 'Process fork detected, reopening LMDB');
 
             try {
                 this.reopenEnv();
@@ -139,7 +139,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
     private recoverFromFork(): void {
         this.telemetry.count('forked.recover', 1);
-        this.log.warn({ oldPid: this.openPid, newPid: process.pid }, 'Process fork detected, reopening LMDB');
+        this.log.warn({ oldPid: this.openPid, newPid: processId() }, 'Process fork detected, reopening LMDB');
 
         try {
             this.reopenEnv();
@@ -178,7 +178,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private reopenEnv(): void {
         this.telemetry.count('env.reopen', 1);
         this.env = createEnv(this.lmdbDir).env;
-        this.openPid = process.pid;
+        this.openPid = processId();
         this.log.warn('Recreated LMDB environment');
     }
 

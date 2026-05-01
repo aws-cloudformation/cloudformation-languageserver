@@ -1,10 +1,8 @@
 import { randomUUID as v4 } from 'crypto';
 import { join } from 'path';
 import { staticInitialize } from '../../../src/app/initialize';
-import { encryptionKey } from '../../../src/datastore/file/Encryption';
-import { KeyedFileStore } from '../../../src/datastore/file/KeyedFileStore';
 
-// Worker script for multiprocess FileStore testing
+// Initialize BEFORE importing modules that call factories like Logger at the top level
 staticInitialize(undefined, {
     telemetryEnabled: false,
     logLevel: 'silent',
@@ -12,9 +10,12 @@ staticInitialize(undefined, {
 });
 
 const [encTestDir, workerId, numWrites] = process.argv.slice(2);
-const key = encryptionKey(2);
 
 async function main() {
+    const { encryptionKey } = await import('../../../src/datastore/file/Encryption');
+    const { KeyedFileStore } = await import('../../../src/datastore/file/KeyedFileStore');
+
+    const key = encryptionKey(2);
     const store = new KeyedFileStore(key, 'test', encTestDir);
 
     for (let i = 0; i < Number.parseInt(numWrites); i++) {

@@ -1,4 +1,3 @@
-import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
@@ -6,7 +5,7 @@ import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
 import { isClientNetworkError } from '../utils/Errors';
-import { readFileIfExists } from '../utils/File';
+import { LocalFile } from '../utils/LocalFile';
 import { downloadJson } from '../utils/RemoteDownload';
 import { DynamicRefreshIntervalMs } from './DynamicFeatureFlag';
 import { FeatureFlagConfigSchema, FeatureFlagSchemaType } from './FeatureFlagBuilder';
@@ -25,21 +24,23 @@ export class FeatureFlagProvider implements Closeable {
     private readonly supplier: FeatureFlagSupplier;
 
     private readonly timeout: NodeJS.Timeout;
+    private readonly file: LocalFile;
 
     constructor(
         private readonly getLatestFeatureFlags: (env: string) => Promise<unknown>,
-        private readonly localFile = featureFlagLocalFile(),
+        filePath = featureFlagLocalFile(),
         refreshIntervalMs: number = RefreshIntervalMs,
         dynamicRefreshIntervalMs: number = DynamicRefreshIntervalMs,
     ) {
-        this.config = defaultConfig(localFile, this.telemetry);
+        this.file = new LocalFile(filePath);
+        this.config = defaultConfig(this.file, this.telemetry);
 
         this.supplier = new FeatureFlagSupplier(
             () => {
                 return this.config;
             },
             () => {
-                return defaultConfig(localFile, this.telemetry);
+                return defaultConfig(this.file, this.telemetry);
             },
             dynamicRefreshIntervalMs,
         );
@@ -76,7 +77,8 @@ export class FeatureFlagProvider implements Closeable {
             return;
         }
         this.config = newConfig;
-        writeFileSync(this.localFile, JSON.stringify(newConfig, undefined, 2));
+
+        await this.file.write(JSON.stringify(newConfig, undefined, 2));
         this.telemetry.count('refresh.local.update', 1);
         log.info('Updated and saved feature flags');
         this.log();
@@ -127,13 +129,22 @@ export function getFromGitHub(env: string): Promise<FeatureFlagSchemaType> {
     );
 }
 
-function defaultConfig(configFile: string, telemetry: ScopedTelemetry): FeatureFlagSchemaType {
+const EmptyConfig = { version: 1, description: 'Default empty config', features: {} };
+
+function defaultConfig(configFile: LocalFile, telemetry: ScopedTelemetry): FeatureFlagSchemaType {
     try {
-        return JSON.parse(readFileIfExists(configFile, 'utf8')) as FeatureFlagSchemaType;
+        const contents = configFile.readString();
+        if (contents === undefined) {
+            telemetry.count('default.empty', 1);
+            log.error('No local feature flag configs found');
+            return EmptyConfig;
+        }
+
+        return JSON.parse(contents) as FeatureFlagSchemaType;
     } catch (err) {
         telemetry.count('parse.default.error', 1);
         log.error(err, 'Failed to read config file, using empty config');
-        return { version: 1, description: 'Default empty config', features: {} };
+        return EmptyConfig;
     }
 }
 

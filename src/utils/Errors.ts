@@ -109,3 +109,13 @@ export function errorAttributes(error: unknown, origin?: 'uncaughtException' | '
         ...location,
     };
 }
+
+export class DoesNotExist extends Error {
+    constructor(resource: string, options?: ErrorOptions) {
+        super(`${resource} does not exist`, options);
+        this.name = this.constructor.name;
+
+        // Explicitly set the prototype, to ensure that `instanceof` checks work correctly
+        Object.setPrototypeOf(this, DoesNotExist.prototype);
+    }
+}

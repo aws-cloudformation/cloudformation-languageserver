@@ -1,14 +1,9 @@
-import { existsSync, readFileSync, statSync, unlinkSync } from 'fs'; // eslint-disable-line no-restricted-imports -- files being checked
-import { rename, unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { Logger } from 'pino';
-import { lock, LockOptions, lockSync } from 'proper-lockfile';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { TelemetryService } from '../../telemetry/TelemetryService';
+import { LocalFile } from '../../utils/LocalFile';
 import { decrypt, encrypt } from './Encryption';
-
-const LOCK_OPTIONS_SYNC: LockOptions = { stale: 10_000 };
-const LOCK_OPTIONS: LockOptions = { ...LOCK_OPTIONS_SYNC, retries: { retries: 20, minTimeout: 50, maxTimeout: 1000 } };
 
 /**
  * Encrypted on-disk envelope. Stores the original key alongside the value
@@ -21,30 +16,25 @@ export type EncryptedEntry<T = unknown> = {
 
 export class EncryptedFile {
     private readonly log: Logger;
-    private readonly file: string;
+    private readonly file: LocalFile;
     private key: string | undefined;
     private content: EncryptedEntry | undefined = undefined;
 
     constructor(
-        private readonly KEY: Buffer,
+        private readonly encryptionKey: Buffer,
         storeName: string,
         fileName: string,
         fileDbDir: string,
     ) {
         this.log = LoggerFactory.getLogger(`EncryptedFile.${storeName}`);
-        this.file = join(fileDbDir, fileName);
+        this.file = new LocalFile(join(fileDbDir, fileName));
 
-        if (this.exists()) {
-            const release = lockSync(this.file, LOCK_OPTIONS_SYNC);
-            try {
-                this.content = this.readFile();
-            } catch (error) {
-                this.log.error(error, 'Failed to decrypt file store, deleting store');
-                TelemetryService.instance.get(`FileStore.${storeName}`).count('filestore.recreate', 1);
-                unlinkSync(this.file);
-            } finally {
-                release();
-            }
+        try {
+            this.content = this.readFile();
+        } catch (error) {
+            this.log.error(error, 'Failed to decrypt, deleting file');
+            TelemetryService.instance.get(`FileStore.${storeName}`).count('filestore.recreate', 1);
+            this.file.unsafeRemove();
         }
     }
 
@@ -56,7 +46,7 @@ export class EncryptedFile {
     }
 
     exists() {
-        return existsSync(this.file);
+        return this.file.exists();
     }
 
     entry(): EncryptedEntry | undefined {
@@ -73,78 +63,24 @@ export class EncryptedFile {
         }
 
         this.content = { key: this.key, value };
-
-        if (!this.exists()) {
-            await this.save();
-            return true;
-        }
-
-        const release = await this.tryLock();
-        if (!release) {
-            await this.save();
-            return true;
-        }
-        try {
-            await this.save();
-            return true;
-        } finally {
-            await release();
-        }
+        return await this.file.write(encrypt(this.encryptionKey, JSON.stringify(this.content)));
     }
 
     async remove() {
         this.content = undefined;
-
-        if (!this.exists()) {
-            return true;
-        }
-
-        const release = await this.tryLock();
-        if (!release) {
-            return true;
-        }
-        try {
-            await unlink(this.file);
-            return true;
-        } catch (error: unknown) {
-            if (isFileNotFound(error)) {
-                return true;
-            }
-            throw error;
-        } finally {
-            await release();
-        }
-    }
-
-    /** Returns the release function, or undefined if the file was deleted by another process. */
-    private async tryLock(): Promise<(() => Promise<void>) | undefined> {
-        try {
-            return await lock(this.file, LOCK_OPTIONS);
-        } catch (error: unknown) {
-            if (isFileNotFound(error)) {
-                return undefined;
-            }
-            throw error;
-        }
+        return await this.file.remove();
     }
 
     fileSize(): number {
-        return existsSync(this.file) ? statSync(this.file).size : 0;
+        return this.file.fileBytes();
     }
 
-    private readFile(): EncryptedEntry {
-        return JSON.parse(decrypt(this.KEY, readFileSync(this.file))) as EncryptedEntry;
+    private readFile(): EncryptedEntry | undefined {
+        const contents = this.file.readBytes();
+        if (contents !== undefined) {
+            return JSON.parse(decrypt(this.encryptionKey, contents)) as EncryptedEntry;
+        }
+
+        return;
     }
-
-    private async save() {
-        const tmp = `${this.file}.${process.pid}.tmp`;
-        await writeFile(tmp, encrypt(this.KEY, JSON.stringify(this.content)));
-        await rename(tmp, this.file);
-    }
-}
-
-const ENOENT = 'ENOENT'; // File was deleted by another process (e.g. a concurrent IDE session sharing the same storage directory).
-
-function isFileNotFound(error: unknown): boolean {
-    return error instanceof Error && (error as NodeJS.ErrnoException).code === ENOENT;
 }

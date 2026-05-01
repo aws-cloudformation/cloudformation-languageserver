@@ -82,3 +82,7 @@ export const isLinux = process.platform === 'linux';
 export const ProcessType = `${process.platform}${process.env.BUILD_TARGET ? `-${process.env.BUILD_TARGET}` : ''}-${process.arch}`;
 export const ServiceEnv = `${getNodeEnv()}-${getAwsEnv()}`;
 export const Service = `${ExtensionId}-${ExtensionVersion}`;
+
+export function processId() {
+    return process.pid;
+}
