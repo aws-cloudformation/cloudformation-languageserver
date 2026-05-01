@@ -4,6 +4,7 @@ import { initializeMonitoring, logProgress, checkPerformanceDegradation } from '
 import { HoverTester } from './testers/HoverTester';
 import { CompletionTester } from './testers/CompletionTester';
 import { TEST_TEMPLATES } from './Templates';
+import { nextDocumentVersion, resetDocumentVersion } from './testers/TesterUtils';
 import { AwsRegion } from '../../src/utils/Region';
 import { WaitFor } from '../../tst/utils/Utils';
 import { existsSync } from 'fs';
@@ -141,12 +142,13 @@ export class TestOrchestrator {
                 const uri = `file:///test/${template.fileName}`;
 
                 try {
+                    resetDocumentVersion();
                     await this.client.openDocument(uri, template.contents);
 
                     await this.validateLsp(uri);
 
                     // Revert document to original state after tests
-                    await this.client.updateDocument(uri, 6, template.contents);
+                    await this.client.updateDocument(uri, nextDocumentVersion(), template.contents);
                 } finally {
                     try {
                         await this.client.closeDocument(uri);

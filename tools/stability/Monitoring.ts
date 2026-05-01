@@ -6,7 +6,6 @@ export type TestMetrics = {
     minDuration: number | null;
     maxDuration: number | null;
     lastDuration: number | null;
-    durations: number[];
 };
 
 const createEmptyMetrics = (): TestMetrics => ({
@@ -15,7 +14,6 @@ const createEmptyMetrics = (): TestMetrics => ({
     minDuration: null,
     maxDuration: null,
     lastDuration: null,
-    durations: [],
 });
 
 const metrics: Record<OperationType, TestMetrics> = {} as Record<OperationType, TestMetrics>;
@@ -34,7 +32,6 @@ export function recordOperation(duration: number, operationType: OperationType):
     metric.minDuration = metric.minDuration === null ? duration : Math.min(metric.minDuration, duration);
     metric.maxDuration = metric.maxDuration === null ? duration : Math.max(metric.maxDuration, duration);
     metric.lastDuration = duration;
-    metric.durations.push(duration);
 }
 
 let startTime: number;
@@ -61,8 +58,8 @@ export function logProgress(): void {
     }
 }
 
-export function generateFinalReport(testStartTime: number): void {
-    const runtime = Date.now() - testStartTime;
+export function generateFinalReport(): void {
+    const runtime = Date.now() - startTime;
 
     console.log('Final Test Report');
     console.log('='.repeat(50));

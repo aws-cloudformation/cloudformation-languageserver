@@ -7,7 +7,9 @@ import {
     IPCMessageReader,
     IPCMessageWriter,
     TextDocumentContentChangeEvent,
+    ConfigurationParams,
 } from 'vscode-languageserver-protocol/node';
+import { Hover, CompletionList } from 'vscode-languageserver-types';
 import { randomBytes } from 'crypto';
 import { CompactEncrypt } from 'jose';
 import { LspClientConfig, LspConnection } from './LspConnection';
@@ -70,14 +72,12 @@ export class LspClient implements LspConnection {
 
         // Handle workspace/configuration requests from server
 
-        this.connection.onRequest('workspace/configuration', (params: any) => {
-            // Extract the specific configuration section requested
+        this.connection.onRequest('workspace/configuration', (params: ConfigurationParams) => {
             if (params?.items?.length > 0) {
-                const results = params.items.map((item: any) => {
+                const results = params.items.map((item) => {
                     if (item.section === 'aws.cloudformation') {
-                        // Return just the CloudFormation config part
                         const fullConfig = this.workspaceConfig[0] ?? {};
-                        return (fullConfig as any)['aws.cloudformation'] ?? {};
+                        return fullConfig['aws.cloudformation'] ?? {};
                     }
                     return {};
                 });
@@ -208,21 +208,21 @@ export class LspClient implements LspConnection {
         });
     }
 
-    async hover(uri: string, line: number, character: number): Promise<any> {
+    async hover(uri: string, line: number, character: number): Promise<Hover | null> {
         return await this.connection!.sendRequest('textDocument/hover', {
             textDocument: { uri },
             position: { line, character },
         });
     }
 
-    async completion(uri: string, line: number, character: number): Promise<any> {
+    async completion(uri: string, line: number, character: number): Promise<CompletionList | null> {
         return await this.connection!.sendRequest('textDocument/completion', {
             textDocument: { uri },
             position: { line, character },
         });
     }
 
-    async changeConfiguration(params: { settings: any }): Promise<void> {
+    async changeConfiguration(params: { settings: Record<string, unknown> }): Promise<void> {
         // Store the new configuration
         if (params.settings) {
             const currentConfig = this.workspaceConfig[0] ?? {};
@@ -281,7 +281,7 @@ export class LspClient implements LspConnection {
     }
 
     async getSystemStatus(): Promise<GetSystemStatusResponse> {
-        return await this.sendRequest('aws/system/status', {});
+        return (await this.sendRequest('aws/system/status', {})) as GetSystemStatusResponse;
     }
 
     async shutdown(): Promise<void> {

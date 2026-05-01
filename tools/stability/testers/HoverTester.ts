@@ -1,21 +1,19 @@
 import { LspClient } from '../../lspClient/LspClient';
+import { Hover, MarkupContent } from 'vscode-languageserver-types';
 import { OperationTester, OperationType } from './TesterTypes';
-import { retryOperationWithPerformance } from './TesterUtils';
+import { retryOperationWithPerformance, nextDocumentVersion } from './TesterUtils';
 
 export class HoverTester implements OperationTester {
     constructor(private readonly client: LspClient) {}
 
-    private extractHoverContent(hoverResult: any): string {
-        if (typeof hoverResult.contents === 'string') {
-            return hoverResult.contents as string;
-        } else if (Array.isArray(hoverResult.contents)) {
-            return hoverResult.contents.length > 0 ? JSON.stringify(hoverResult.contents) : '';
-        } else if (
-            hoverResult.contents &&
-            typeof hoverResult.contents === 'object' &&
-            'value' in hoverResult.contents
-        ) {
-            return hoverResult.contents.value as string;
+    private extractHoverContent(hoverResult: Hover): string {
+        const contents = hoverResult.contents;
+        if (typeof contents === 'string') {
+            return contents;
+        } else if (Array.isArray(contents)) {
+            return contents.length > 0 ? JSON.stringify(contents) : '';
+        } else if ('value' in contents) {
+            return (contents as MarkupContent).value;
         }
         return '';
     }
@@ -43,11 +41,11 @@ Resources:
       BucketName: TestName
 `;
 
-        await this.client.updateDocument(uri, 2, s3Template);
+        await this.client.updateDocument(uri, nextDocumentVersion(), s3Template);
 
         await retryOperationWithPerformance(
             () => this.client.hover(uri, 3, 15),
-            (result: any) => {
+            (result: Hover | null) => {
                 if (!result?.contents) {
                     throw new Error('Hover on resource type returned no content');
                 }
@@ -66,7 +64,7 @@ Parameters:
     Default: TestValue
 `;
 
-        await this.client.updateDocument(uri, 3, [
+        await this.client.updateDocument(uri, nextDocumentVersion(), [
             {
                 range: { start: { line: 6, character: 0 }, end: { line: 6, character: 0 } },
                 text: parametersSection,
@@ -75,7 +73,7 @@ Parameters:
 
         await retryOperationWithPerformance(
             () => this.client.hover(uri, 8, 10),
-            (result: any) => {
+            (result: Hover | null) => {
                 if (!result?.contents) {
                     throw new Error('Hover on parameter returned no content');
                 }

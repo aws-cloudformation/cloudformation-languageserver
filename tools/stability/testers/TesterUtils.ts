@@ -4,6 +4,16 @@ import { OperationType, TESTER_CONFIG } from './TesterTypes';
 
 const RETRY_INTERVAL_MS = 250;
 
+let documentVersion = 1;
+
+export function nextDocumentVersion(): number {
+    return ++documentVersion;
+}
+
+export function resetDocumentVersion(): void {
+    documentVersion = 1;
+}
+
 export async function retryOperationWithPerformance<T>(
     operation: () => Promise<T>,
     validate: (result: T) => void,

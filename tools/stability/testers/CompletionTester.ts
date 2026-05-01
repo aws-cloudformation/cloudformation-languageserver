@@ -1,16 +1,17 @@
 import { LspClient } from '../../lspClient/LspClient';
+import { CompletionList } from 'vscode-languageserver-types';
 import { OperationTester, OperationType } from './TesterTypes';
-import { retryOperationWithPerformance } from './TesterUtils';
+import { retryOperationWithPerformance, nextDocumentVersion } from './TesterUtils';
 
 export class CompletionTester implements OperationTester {
     constructor(private readonly client: LspClient) {}
 
-    private validateCompletionItems(result: any, requiredLabels: string[], context: string): void {
-        if (!result?.items || !Array.isArray(result.items) || result.items.length === 0) {
+    private validateCompletionItems(result: CompletionList | null, requiredLabels: string[], context: string): void {
+        if (!result?.items || result.items.length === 0) {
             throw new Error(`${context} returned no items`);
         }
 
-        const labels = new Set(result.items.map((item: any) => item.label as string));
+        const labels = new Set(result.items.map((item) => item.label));
         for (const required of requiredLabels) {
             if (!labels.has(required)) {
                 throw new Error(`${context} missing ${required}`);
@@ -23,11 +24,12 @@ export class CompletionTester implements OperationTester {
         const basicTemplate = `AWSTemplateFormatVersion: '2010-09-09'
 `;
 
-        await this.client.updateDocument(uri, 4, basicTemplate);
+        await this.client.updateDocument(uri, nextDocumentVersion(), basicTemplate);
 
         await retryOperationWithPerformance(
             () => this.client.completion(uri, 1, 0),
-            (result: any) => this.validateCompletionItems(result, ['Resources', 'Parameters'], 'Top-level completion'),
+            (result: CompletionList | null) =>
+                this.validateCompletionItems(result, ['Resources', 'Parameters'], 'Top-level completion'),
             OperationType.COMPLETION,
         );
 
@@ -39,7 +41,7 @@ Resources:
     Properties:
       `;
 
-        await this.client.updateDocument(uri, 5, [
+        await this.client.updateDocument(uri, nextDocumentVersion(), [
             {
                 range: { start: { line: 1, character: 0 }, end: { line: 1, character: 0 } },
                 text: resourceSection,
@@ -48,7 +50,8 @@ Resources:
 
         await retryOperationWithPerformance(
             () => this.client.completion(uri, 6, 6),
-            (result: any) => this.validateCompletionItems(result, ['BucketName', 'Tags'], 'S3 bucket completion'),
+            (result: CompletionList | null) =>
+                this.validateCompletionItems(result, ['BucketName', 'Tags'], 'S3 bucket completion'),
             OperationType.COMPLETION,
         );
     }

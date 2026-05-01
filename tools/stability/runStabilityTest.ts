@@ -7,9 +7,9 @@ async function main(): Promise<void> {
     try {
         await orchestrator.initialize();
         await orchestrator.runTests();
-        generateFinalReport(Date.now());
+        generateFinalReport();
     } catch (error) {
-        generateFinalReport(Date.now());
+        generateFinalReport();
         console.error('Test failed:', error);
         throw error;
     } finally {
