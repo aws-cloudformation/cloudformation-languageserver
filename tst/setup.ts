@@ -1,3 +1,4 @@
+import '../src/app/polyfills';
 import { randomUUID as v4 } from 'crypto';
 import { join } from 'path';
 import { staticInitialize } from '../src/app/initialize';

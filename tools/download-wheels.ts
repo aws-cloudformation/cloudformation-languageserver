@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import '../src/app/polyfills';
 import { execSync } from 'child_process';
 import {
     existsSync,
