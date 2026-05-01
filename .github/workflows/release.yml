@@ -130,6 +130,7 @@ jobs:
 
               apt-get update
               apt-get install -y make g++ python3 python3-pip build-essential tar gzip wget tree
+              python3 -m pip install --upgrade pip
           
               SYS_LIB=$(find /usr/lib -name libstdc++.so.6 | head -n 1)
               SYS_MAX=$(strings "$SYS_LIB" | grep "GLIBCXX_[0-9]" | sort -V | tail -n 1)
