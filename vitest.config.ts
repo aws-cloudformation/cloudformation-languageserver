@@ -13,21 +13,21 @@ export default defineConfig({
             include: ['src/**/*.{js,ts}'],
             enabled: true,
             thresholds: {
-                statements: 87,
-                branches: 80,
-                functions: 88,
-                lines: 87,
+                statements: 88,
+                branches: 82,
+                functions: 90,
+                lines: 88,
             },
             exclude: [
-                'src/ai/**',
                 'src/services/cfnLint/pyodide-worker.ts',
                 'src/telemetry/OTELInstrumentation.ts',
                 'src/telemetry/TelemetryService.ts',
                 'src/services/guard/assets/**',
             ],
         },
-        pool: 'forks', // Run tests in separate processes for better isolation
         isolate: true, // Ensure each test file runs in isolation
+        maxWorkers: 4,
+        execArgv: ['--max-old-space-size=4096'],
         testTimeout: 30000, // Increase timeout for longer-running tests
     },
 });

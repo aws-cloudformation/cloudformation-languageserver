@@ -75,7 +75,7 @@ jobs:
       ref: ${{ needs.version-and-tag.outputs.tag }}
       runs-on: ${{ matrix.os }}
 
-  bundle-linux-old:
+  bundle-linux-legacy:
     needs: [ get-configs, version-and-tag, build-and-test ]
     strategy:
       fail-fast: true
@@ -129,7 +129,7 @@ jobs:
               apt-get -o Acquire::Check-Valid-Until=false update
 
               apt-get update
-              apt-get install -y make g++ python3 build-essential tar gzip wget tree
+              apt-get install -y make g++ python3 python3-pip build-essential tar gzip wget tree
           
               SYS_LIB=$(find /usr/lib -name libstdc++.so.6 | head -n 1)
               SYS_MAX=$(strings "$SYS_LIB" | grep "GLIBCXX_[0-9]" | sort -V | tail -n 1)
@@ -279,7 +279,7 @@ jobs:
           compression-level: 6
 
   release:
-    needs: [ version-and-tag, bundle-linux-old, bundle ]
+    needs: [ version-and-tag, bundle-linux-legacy, bundle ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
