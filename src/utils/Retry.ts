@@ -17,12 +17,20 @@ export function sleep(ms: number): Promise<void> {
     });
 }
 
-function calculateDelay(
+const DefaultRetryOptions = {
+    maxRetries: 3,
+    initialDelayMs: 1000,
+    maxDelayMs: 5000,
+    backoffMultiplier: 2,
+    jitterFactor: 0.1,
+};
+
+export function calculateDelay(
     attempt: number,
-    initialDelayMs: number,
-    jitterFactor: number,
-    backoffMultiplier: number,
-    maxDelayMs: number,
+    initialDelayMs: number = DefaultRetryOptions.initialDelayMs,
+    jitterFactor: number = DefaultRetryOptions.jitterFactor,
+    backoffMultiplier: number = DefaultRetryOptions.backoffMultiplier,
+    maxDelayMs: number = DefaultRetryOptions.maxDelayMs,
 ): number {
     // 1. Exponential Backoff: initial * 2^0, initial * 2^1, etc.
     const exponentialDelay = initialDelayMs * Math.pow(backoffMultiplier, attempt);
@@ -45,11 +53,11 @@ export async function retryWithExponentialBackoff<T>(
     },
 ): Promise<T> {
     const {
-        maxRetries = 3,
-        initialDelayMs = 1000,
-        maxDelayMs = 5000,
-        backoffMultiplier = 2,
-        jitterFactor = 0.1,
+        maxRetries = DefaultRetryOptions.maxRetries,
+        initialDelayMs = DefaultRetryOptions.initialDelayMs,
+        maxDelayMs = DefaultRetryOptions.maxDelayMs,
+        backoffMultiplier = DefaultRetryOptions.backoffMultiplier,
+        jitterFactor = DefaultRetryOptions.jitterFactor,
         operationName,
         totalTimeoutMs,
     } = options;

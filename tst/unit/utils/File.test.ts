@@ -92,9 +92,8 @@ describe('File', () => {
             expect(Buffer.compare(result, binaryContent)).toBe(0);
         });
 
-        it('should throw DoesNotExist for nonexistent path', () => {
-            // readBufferIfExistsAsync throws synchronously from existsSync check
-            expect(() => readBufferIfExistsAsync(nonexistentPath)).toThrow('does not exist');
+        it('should throw DoesNotExist for nonexistent path', async () => {
+            await expect(readBufferIfExistsAsync(nonexistentPath)).rejects.toThrow('does not exist');
         });
     });
 

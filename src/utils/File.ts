@@ -1,9 +1,9 @@
-import { readFileSync, existsSync, PathLike } from 'fs'; // eslint-disable-line no-restricted-imports
+import { readFileSync, PathLike } from 'fs'; // eslint-disable-line no-restricted-imports
 import { readFile, rename, unlink, open } from 'fs/promises'; // eslint-disable-line no-restricted-imports
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { isWindows } from './Environment';
 import { DoesNotExist } from './Errors';
-import { sleep } from './Retry';
+import { calculateDelay, sleep } from './Retry';
 import { toString } from './String';
 
 const log = LoggerFactory.getLogger('File');
@@ -15,29 +15,31 @@ type Options =
           flag?: string | undefined;
       };
 
+const ENOENT = 'ENOENT'; // No such file or directory
+const RETRIABLE_RENAME_CODES = new Set(['EPERM', 'EACCES', 'EBUSY']);
+
+function wrapReadEnoentError(path: PathLike, err: unknown): never {
+    log.error(err);
+    if (isFileNotFoundError(err)) {
+        throw new DoesNotExist(toString(path));
+    }
+
+    throw err;
+}
+
 export function readFileIfExists(path: PathLike, options: Options = 'utf8'): string {
     try {
-        if (existsSync(path)) {
-            return readFileSync(path, options);
-        } else {
-            throw new DoesNotExist(toString(path));
-        }
+        return readFileSync(path, options);
     } catch (err) {
-        log.error(err);
-        throw err;
+        wrapReadEnoentError(path, err);
     }
 }
 
 export async function readFileIfExistsAsync(path: PathLike, options: Options = 'utf8'): Promise<string> {
     try {
-        if (existsSync(path)) {
-            return await readFile(path, options);
-        } else {
-            throw new DoesNotExist(toString(path));
-        }
+        return await readFile(path, options);
     } catch (err) {
-        log.error(err);
-        throw err;
+        wrapReadEnoentError(path, err);
     }
 }
 
@@ -49,18 +51,13 @@ export function readBufferIfExists(
     } | null,
 ): Buffer {
     try {
-        if (existsSync(path)) {
-            return readFileSync(path, options);
-        } else {
-            throw new DoesNotExist(toString(path));
-        }
+        return readFileSync(path, options);
     } catch (err) {
-        log.error(err);
-        throw err;
+        wrapReadEnoentError(path, err);
     }
 }
 
-export function readBufferIfExistsAsync(
+export async function readBufferIfExistsAsync(
     path: PathLike,
     options?: {
         encoding?: null | undefined;
@@ -68,24 +65,17 @@ export function readBufferIfExistsAsync(
     } | null,
 ): Promise<Buffer> {
     try {
-        if (existsSync(path)) {
-            return readFile(path, options);
-        } else {
-            throw new DoesNotExist(toString(path));
-        }
+        return await readFile(path, options);
     } catch (err) {
-        log.error(err);
-        throw err;
+        wrapReadEnoentError(path, err);
     }
 }
-
-const RETRIABLE_RENAME_CODES = new Set(['EPERM', 'EACCES', 'EBUSY', 'ENOENT']);
 
 export async function asyncRenameWithRetry(
     sourcePath: string,
     destinationPath: string,
     maxRetries = 10,
-    retryDelayMs = 50,
+    initialDelayMs = 50,
 ): Promise<void> {
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
@@ -95,14 +85,15 @@ export async function asyncRenameWithRetry(
             const code = (error as NodeJS.ErrnoException).code;
             if (!code || !RETRIABLE_RENAME_CODES.has(code) || attempt === maxRetries - 1) {
                 try {
-                    await unlink(sourcePath);
+                    if (!isFileNotFoundError(error)) {
+                        await unlink(sourcePath);
+                    }
                 } catch (err) {
-                    // best-effort tmp cleanup
-                    log.error(err);
+                    log.error(err, `Best effort tmp cleanup failed for ${sourcePath}`);
                 }
                 throw error;
             }
-            await sleep(retryDelayMs);
+            await sleep(calculateDelay(attempt, initialDelayMs));
         }
     }
 }
@@ -133,7 +124,5 @@ export async function asyncDirSync(dirPath: string): Promise<void> {
 }
 
 export function isFileNotFoundError(error: unknown): boolean {
-    // File was deleted by another process (e.g. a concurrent IDE session sharing the same storage directory)
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
-    return (error as any).code === 'ENOENT';
+    return error !== null && typeof error === 'object' && (error as NodeJS.ErrnoException).code === ENOENT;
 }

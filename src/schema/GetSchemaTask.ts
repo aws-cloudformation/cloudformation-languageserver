@@ -27,7 +27,7 @@ export class GetPublicSchemaTask extends GetSchemaTask {
     @Telemetry()
     private readonly telemetry!: ScopedTelemetry;
 
-    static readonly MaxAttempts = 3;
+    static readonly MaxAttempts = 5;
     private attempts = 0;
 
     constructor(

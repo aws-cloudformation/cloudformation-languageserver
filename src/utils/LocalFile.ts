@@ -1,5 +1,5 @@
 import { existsSync, statSync, unlinkSync } from 'fs';
-import { unlink, writeFile, readdir } from 'fs/promises';
+import { unlink, writeFile, readdir, stat } from 'fs/promises';
 import { Stats } from 'node:fs';
 import { Stream } from 'node:stream';
 import { basename, dirname, join } from 'path';
@@ -31,7 +31,33 @@ const LOCK_OPTIONS: LockOptions = {
         randomize: true, // Add jitter to retry delays to avoid contention between concurrent writes
     },
 };
+const STALE_TMP_FILE_THRESHOLD_MS = 30 * 60 * 1000;
 
+/**
+ * Cross-platform local file with atomic writes and lockless reads.
+ *
+ * ## Write path
+ * Writes use a write-to-temp → fsync → rename pattern under a `proper-lockfile` advisory lock,
+ * ensuring that the target file is always in a consistent state. The temp file is created in the
+ * same directory as the target so the rename is always a same-volume operation.
+ *
+ * ## Read path — lockless by design
+ * Reads do not acquire a lock. This is safe because `fs.rename` (libuv `MoveFileExW` on Windows,
+ * `rename(2)` on POSIX) is an atomic replace on same-volume NTFS and all POSIX filesystems.
+ * A concurrent reader will see either the old or the new content, never a partial or corrupt file.
+ *
+ * ### Risk profile
+ * | Scenario                                  | POSIX        | Windows (NTFS)                          |
+ * |-------------------------------------------|--------------|-----------------------------------------|
+ * | Reader during rename                      | Old or new   | Old or new (atomic via `MoveFileExW`)   |
+ * | Reader between delete+create (non-NTFS)   | N/A          | Transient `ENOENT` → returns `undefined`|
+ * | Partial / corrupt read                    | Not possible | Not possible (rename is atomic)         |
+ *
+ * The only scenario where a reader could observe a missing file is on a non-NTFS Windows filesystem
+ * (e.g. FAT32, network share) where rename may not be atomic. Even then, the failure mode is
+ * graceful: `readString` / `readBytes` return `undefined`, and all callers treat that as a cache
+ * miss (e.g. falling back to defaults or re-fetching).
+ */
 export class LocalFile {
     private tempFileCounter = 0;
     readonly fileName: string;
@@ -40,6 +66,7 @@ export class LocalFile {
     constructor(readonly path: string) {
         this.fileName = basename(path);
         this.dirName = dirname(path);
+        this.scheduleCleanup();
     }
 
     exists() {
@@ -119,7 +146,7 @@ export class LocalFile {
     ): Promise<boolean> {
         const release = await this.tryLock();
         try {
-            await this.cleanupStaleTmpFiles();
+            this.scheduleCleanup(); // Defer tmp file cleanup, so we don't block the main write operation
             const tmp = this.tmpPath();
 
             try {
@@ -188,6 +215,12 @@ export class LocalFile {
         return `${this.path}.${processId()}.${this.tempFileCounter}.tmp`;
     }
 
+    private scheduleCleanup() {
+        setTimeout(() => {
+            this.cleanupStaleTmpFiles().catch(log.error);
+        }, 60 * 1000).unref();
+    }
+
     private async cleanupStaleTmpFiles() {
         try {
             const entries = await readdir(this.dirName);
@@ -196,7 +229,12 @@ export class LocalFile {
                     const fullPath = join(this.dirName, entry);
 
                     try {
-                        await unlink(fullPath);
+                        const fileStat = await stat(fullPath);
+                        // Only delete the file if it is significantly older than the current time.
+                        // This prevents process B from deleting process A's active temp file when stealing a lock.
+                        if (Date.now() - fileStat.mtimeMs > STALE_TMP_FILE_THRESHOLD_MS) {
+                            await unlink(fullPath);
+                        }
                     } catch (err) {
                         if (isFileNotFoundError(err)) {
                             continue;

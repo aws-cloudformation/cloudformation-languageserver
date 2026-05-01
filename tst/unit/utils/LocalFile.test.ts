@@ -1,14 +1,16 @@
 import { randomUUID as v4 } from 'crypto';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync, unlinkSync } from 'fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync, unlinkSync, utimesSync } from 'fs';
 import { join } from 'path';
-import { describe, it, expect, beforeAll, afterEach, beforeEach } from 'vitest';
+import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { LocalFile } from '../../../src/utils/LocalFile';
+import { waitFor } from '../../utils/Utils';
 
 describe('LocalFile', () => {
     const testDir = join(process.cwd(), 'node_modules', '.cache', 'localfile-tests', v4());
     const filePath = join(testDir, 'test-file.txt');
 
-    beforeAll(() => {
+    beforeEach(() => {
+        rmSync(testDir, { recursive: true, force: true });
         mkdirSync(testDir, { recursive: true });
     });
 
@@ -111,16 +113,32 @@ describe('LocalFile', () => {
             expect(readFileSync(tmpFile).equals(Buffer.from(data))).toBe(true);
         });
 
-        it('should clean up stale tmp files before writing', async () => {
-            writeFileSync(filePath, 'original');
-            const staleTmp = `${filePath}.99999.1.tmp`;
-            writeFileSync(staleTmp, 'stale');
+        it('should clean up stale tmp files after writing', async () => {
+            vi.useFakeTimers({ shouldAdvanceTime: true });
+            try {
+                writeFileSync(filePath, 'original');
+                const staleTmp = `${filePath}.99999.1.tmp`;
+                writeFileSync(staleTmp, 'stale');
 
-            const localFile = new LocalFile(filePath);
-            await localFile.write('new-content');
+                // Backdate the tmp file so it exceeds the 30-minute staleness threshold
+                const oldTime = new Date(Date.now() - 31 * 60 * 1000);
+                utimesSync(staleTmp, oldTime, oldTime);
 
-            expect(existsSync(staleTmp)).toBe(false);
-            expect(readFileSync(filePath, 'utf8')).toBe('new-content');
+                const localFile = new LocalFile(filePath);
+                await localFile.write('new-content');
+
+                // Advance past the 60s setTimeout to trigger deferred cleanup
+                await vi.advanceTimersByTimeAsync(60 * 1000);
+                // Allow the async cleanup to complete
+                await vi.advanceTimersByTimeAsync(0);
+
+                await waitFor(() => {
+                    expect(existsSync(staleTmp)).toBe(false);
+                    expect(readFileSync(filePath, 'utf8')).toBe('new-content');
+                });
+            } finally {
+                vi.useRealTimers();
+            }
         });
 
         it('should not leave tmp files after successful write', async () => {
