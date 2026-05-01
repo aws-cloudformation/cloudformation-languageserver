@@ -8,6 +8,7 @@ import {
     IPCMessageWriter,
     TextDocumentContentChangeEvent,
     ConfigurationParams,
+    DidChangeConfigurationParams,
 } from 'vscode-languageserver-protocol/node';
 import { Hover, CompletionList } from 'vscode-languageserver-types';
 import { randomBytes } from 'crypto';
@@ -222,7 +223,7 @@ export class LspClient implements LspConnection {
         });
     }
 
-    async changeConfiguration(params: { settings: Record<string, unknown> }): Promise<void> {
+    async changeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
         // Store the new configuration
         if (params.settings) {
             const currentConfig = this.workspaceConfig[0] ?? {};
