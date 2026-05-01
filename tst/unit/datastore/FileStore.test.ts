@@ -272,7 +272,7 @@ describe('FileStore', () => {
             expect(readdirSync(encTestDir)).toEqual([]);
 
             await store.put('key', 'someValue');
-            expect(readdirSync(encTestDir)).toEqual([encodedFilePath(encTestDir, 'test', 'key').relPath]);
+            expect(readdirSync(encTestDir)).toEqual([encodedFilePath(encTestDir, 'test', 'key').fileName]);
         });
     });
 
@@ -587,6 +587,6 @@ function encodedFilePath(dir: string, store: string, key: string) {
     const filePath = join(dir, `${store}.${stableHashCode(key)}.enc`);
     return {
         filePath,
-        relPath: basename(filePath),
+        fileName: basename(filePath),
     };
 }

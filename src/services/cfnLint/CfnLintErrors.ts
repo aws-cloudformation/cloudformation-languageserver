@@ -1,16 +1,17 @@
 export class WorkerNotInitializedError extends Error {
-    constructor(message: string = 'Worker not initialized') {
-        super(message);
+    constructor(message: string = 'Worker not initialized', options?: ErrorOptions) {
+        super(message, options);
         this.name = 'WorkerNotInitializedError';
+        Object.setPrototypeOf(this, WorkerNotInitializedError.prototype);
     }
 }
 
 export class MountError extends Error {
     public override readonly cause?: Error;
 
-    constructor(message: string, cause?: Error) {
-        super(message);
+    constructor(message: string, options?: ErrorOptions) {
+        super(message, options);
         this.name = 'MountError';
-        this.cause = cause;
+        Object.setPrototypeOf(this, MountError.prototype);
     }
 }

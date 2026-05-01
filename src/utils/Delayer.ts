@@ -1,7 +1,8 @@
 export class CancellationError extends Error {
-    constructor(key: string) {
-        super(`Request cancelled for key: ${key}`);
+    constructor(key: string, options?: ErrorOptions) {
+        super(`Request cancelled for key: ${key}`, options);
         this.name = 'CancellationError';
+        Object.setPrototypeOf(this, CancellationError.prototype);
     }
 }
 
