@@ -29,6 +29,7 @@ type Target = {
 
 type Version = {
     serverVersion: string;
+    tag: string;
     latest: boolean;
     isDelisted: boolean;
     targets: Target[];
@@ -41,10 +42,14 @@ const DELISTED_VERSIONS = new Set([
     'v1.0.0-beta',
     'v1.1.0',
     'v1.1.0-beta',
+    'v1.2.0',
+    'v1.2.0-beta',
     'v1.3.0',
     'v1.3.0-beta',
     'v1.3.1',
     'v1.3.1-beta',
+    'v1.4.0',
+    'v1.4.0-beta',
 ]);
 
 function getEnvFromTag(tag: string): string {
@@ -149,6 +154,7 @@ function generateManifest() {
 
             versions.push({
                 serverVersion: release.tag_name.replace('v', ''),
+                tag: release.tag_name,
                 latest: i === 0,
                 isDelisted: false,
                 targets,
