@@ -1,0 +1,71 @@
+name: Automated Maintenance
+
+on:
+  schedule:
+    - cron: '0 10 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  get-configs:
+    uses: ./.github/workflows/configs.yml
+
+  maintenance:
+    needs: [get-configs]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ needs.get-configs.outputs.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install git-secrets
+        run: |
+          git clone https://github.com/awslabs/git-secrets.git /tmp/git-secrets
+          cd /tmp/git-secrets
+          sudo make install
+
+      - name: Update requirements-pyodide.txt
+        run: |
+          PACKAGES=$(grep -v '^#' requirements-pyodide.txt | grep -v '^$' | sed 's/==.*//' | tr '\n' ' ')
+
+          rm -rf /tmp/wheels-update && mkdir /tmp/wheels-update
+          python3 -m pip download --dest /tmp/wheels-update \
+            --only-binary=:all: --python-version 313 --platform any \
+            --implementation py --abi none --no-deps $PACKAGES
+
+          # Regenerate lock file from downloaded wheel filenames
+          head -8 requirements-pyodide.txt > /tmp/requirements-header.txt
+          ls /tmp/wheels-update/*.whl | xargs -I{} basename {} | sort | \
+            sed 's/^\(.*\)-\(.*\)-py[23].*/\1==\2/' | sed 's/_/-/g' \
+            > /tmp/requirements-pins.txt
+          cat /tmp/requirements-header.txt /tmp/requirements-pins.txt > requirements-pyodide.txt
+
+      - name: Verify wheels download
+        run: npm run download-wheels
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: 'chore: Maintenance update'
+          branch: maintenance/update
+          delete-branch: true
+          title: 'chore: Maintenance Update'
+          body: |
+            Automated maintenance update.
+
+            - Updated wheels via download-wheels
+
+            This PR was created by the `maintenance` workflow.
+
+            > To trigger validation, close and reopen this PR.
+          labels: maintenance, automated
