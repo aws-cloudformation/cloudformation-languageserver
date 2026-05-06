@@ -122,36 +122,14 @@ async function initializePyodide(): Promise<InitializeResult> {
             throw new Error('Failed to initialize Pyodide: returned null');
         }
 
-        // Mount assets directory early so local wheels are available as fallback
-        const assetsPath = path.join(__dirname, 'assets');
-        try {
-            pyodide.FS.mkdirTree('/assets');
-            pyodide.mountNodeFS('/assets', assetsPath);
-        } catch {
-            // Failed to mount assets directory
-        }
-
-        // Load bootstrap packages — micropip is required for fallback installs
-        // loadPackage fetches from JsDelivr CDN which can silently fail
-        // Set CFN_LSP_OFFLINE=1 to skip CDN and test local wheel fallback
+        // Load bootstrap packages
         const offlineMode = process.env.CFN_LSP_OFFLINE === '1';
         if (!offlineMode) {
             await pyodide.loadPackage('micropip');
         }
-        // ssl is a system shared library — must always use loadPackage (can't install via micropip)
-        await pyodide.loadPackage('ssl');
 
-        // Verify micropip is available; fall back to local wheel if CDN failed
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-        const micropipAvailable = await pyodide.runPythonAsync(`
-            try:
-                import micropip
-                True
-            except ModuleNotFoundError:
-                False
-        `);
-        if (!micropipAvailable) {
-            // loadPackage with emfs: URLs also silently fails, so unzip directly
+        // If micropip didn't load (offline or CDN failed), fall back to local wheels
+        if (!pyodide.loadedPackages?.micropip) {
             await pyodide.runPythonAsync(`
                 from pathlib import Path
                 from zipfile import ZipFile
@@ -164,6 +142,18 @@ async function initializePyodide(): Promise<InitializeResult> {
                 importlib.invalidate_caches()
                 import micropip
             `);
+        }
+
+        // ssl is a system shared library — must always use loadPackage (can't install via micropip)
+        await pyodide.loadPackage('ssl');
+
+        // Mount assets directory for local wheel fallback (must be after loadPackage)
+        const assetsPath = path.join(__dirname, 'assets');
+        try {
+            pyodide.FS.mkdirTree('/assets');
+            pyodide.mountNodeFS('/assets', assetsPath);
+        } catch {
+            // Failed to mount assets directory
         }
 
         // Load packages with verification and local wheel/micropip fallback

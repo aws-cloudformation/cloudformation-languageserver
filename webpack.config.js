@@ -2,6 +2,7 @@ const { resolve, join } = require('path');
 const nodeExternals = require('webpack-node-externals');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
+const { PyodidePlugin } = require('@pyodide/webpack-plugin');
 const webpack = require('webpack');
 const fs = require('fs');
 const { execSync } = require('child_process');
@@ -88,6 +89,9 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
     } else {
         console.log('[DownloadWheels] Skipped (skipWheels=true)');
     }
+
+    // Pyodide plugin — handles copying pyodide files and configures CDN for loadPackage
+    plugins.push(new PyodidePlugin());
 
     // Copy relationship schemas for both development and production
     plugins.push(
