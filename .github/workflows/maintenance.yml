@@ -2,7 +2,7 @@ name: Automated Maintenance
 
 on:
   schedule:
-    - cron: '0 10 * * 1'
+    - cron: '0 10 * * *'
   workflow_dispatch:
 
 permissions:
@@ -34,23 +34,7 @@ jobs:
           cd /tmp/git-secrets
           sudo make install
 
-      - name: Update requirements-pyodide.txt
-        run: |
-          PACKAGES=$(grep -v '^#' requirements-pyodide.txt | grep -v '^$' | sed 's/==.*//' | tr '\n' ' ')
-
-          rm -rf /tmp/wheels-update && mkdir /tmp/wheels-update
-          python3 -m pip download --dest /tmp/wheels-update \
-            --only-binary=:all: --python-version 313 --platform any \
-            --implementation py --abi none --no-deps $PACKAGES
-
-          # Regenerate lock file from downloaded wheel filenames
-          head -8 requirements-pyodide.txt > /tmp/requirements-header.txt
-          ls /tmp/wheels-update/*.whl | xargs -I{} basename {} | sort | \
-            sed 's/^\(.*\)-\(.*\)-py[23].*/\1==\2/' | sed 's/_/-/g' \
-            > /tmp/requirements-pins.txt
-          cat /tmp/requirements-header.txt /tmp/requirements-pins.txt > requirements-pyodide.txt
-
-      - name: Verify wheels download
+      - name: Update wheels
         run: npm run download-wheels
 
       - name: Create Pull Request
