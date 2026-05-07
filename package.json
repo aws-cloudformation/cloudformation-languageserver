@@ -1,16 +1,42 @@
 {
-    "name": "@aws/cloudformation-languageserver",
+    "name": "aws-cloudformation-languageserver",
     "displayName": "AWS CloudFormation",
     "version": "1.7.0",
     "id": "aws-cloudformation-languageserver",
     "description": "AWS CloudFormation Language Server",
-    "publisher": "aws",
+    "publisher": "amazonwebservices",
     "author": "Amazon Web Services (AWS)",
     "license": "Apache-2.0",
-    "main": "src/app/standalone.ts",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/aws-cloudformation/cloudformation-languageserver"
+    },
+    "icon": "assets/Arch_AWS-CloudFormation_64@5x.png",
+    "categories": [
+        "Programming Languages",
+        "Linters",
+        "Snippets",
+        "Other"
+    ],
+    "main": "./bundle/development/cfn-lsp-server-standalone.js",
+    "activationEvents": [
+        "onLanguage:yaml",
+        "onLanguage:json",
+        "onLanguage:cloudformation"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "cloudformation",
+                "extensions": [".template", ".cfn"],
+                "aliases": ["CloudFormation"]
+            }
+        ]
+    },
     "engines": {
         "node": "^22.15.0",
-        "npm": ">=10.5.0"
+        "npm": ">=10.5.0",
+        "vscode": "^1.83.0"
     },
     "keywords": [
         "Amazon Web Services (AWS)",
