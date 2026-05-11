@@ -20,7 +20,7 @@ jmespath==1.1.0
 s3transfer==0.17.0
 python-dateutil==2.9.0.post0
 six==1.17.0
-urllib3==2.6.3
+urllib3==2.7.0
 jsonschema==4.26.0
 jsonschema-specifications==2025.9.1
 referencing==0.37.0
