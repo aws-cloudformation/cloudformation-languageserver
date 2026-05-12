@@ -374,6 +374,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test error',
                 'error.stack': 'at func (file.ts:10:5)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -390,6 +391,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'uncaughtException',
                 'error.message': 'TypeError: type error',
                 'error.stack': 'at test (test.ts:1:1)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -406,6 +408,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'unhandledRejection',
                 'error.message': 'Error: rejection',
                 'error.stack': 'at promise (p.ts:5:10)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -427,6 +430,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test',
                 'error.stack': 'at x (x.ts:1:1)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -453,6 +457,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test',
                 'error.stack': 'at x (x.ts:1:1)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -464,6 +469,7 @@ describe('ScopedTelemetry', () => {
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'string',
                 'error.origin': 'Unknown',
+                'error.code': 'Unknown',
             });
         });
 
@@ -475,6 +481,7 @@ describe('ScopedTelemetry', () => {
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'object',
                 'error.origin': 'Unknown',
+                'error.code': 'Unknown',
             });
         });
 
@@ -486,6 +493,7 @@ describe('ScopedTelemetry', () => {
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'undefined',
                 'error.origin': 'Unknown',
+                'error.code': 'Unknown',
             });
         });
     });

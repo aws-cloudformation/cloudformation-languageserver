@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { errorAttributes, extractLocationFromStack, isClientNetworkError } from '../../../src/utils/Errors';
+import { errorAttributes, errorType, extractLocationFromStack, isClientNetworkError } from '../../../src/utils/Errors';
 
 describe('isClientNetworkError', () => {
     test('returns true for SSL certificate errors', () => {
@@ -294,24 +294,33 @@ describe('errorAttributes', () => {
         const result = errorAttributes(error);
 
         expect(result).toEqual({
-            'error.type': 'Error',
             'error.origin': 'Unknown',
             'error.message': 'Error: test message',
             'error.stack': 'at func (file.ts:10:5)',
+        });
+
+        expect(errorType(error)).toEqual({
+            'error.code': 'Unknown',
+            'error.type': 'Error',
         });
     });
 
     test('returns attributes for custom Error type', () => {
         const error = new TypeError('type error');
         error.stack = 'TypeError: type error\n    at func (file.ts:1:1)';
+        (error as NodeJS.ErrnoException).code = 'SomeCode';
 
         const result = errorAttributes(error);
 
         expect(result).toEqual({
-            'error.type': 'TypeError',
             'error.origin': 'Unknown',
             'error.message': 'TypeError: type error',
             'error.stack': 'at func (file.ts:1:1)',
+        });
+
+        expect(errorType(error)).toEqual({
+            'error.code': 'SomeCode',
+            'error.type': 'TypeError',
         });
     });
 
@@ -322,10 +331,14 @@ describe('errorAttributes', () => {
         const result = errorAttributes(error, 'uncaughtException');
 
         expect(result).toEqual({
-            'error.type': 'Error',
             'error.origin': 'uncaughtException',
             'error.message': 'Error: test',
             'error.stack': 'at x (x.ts:1:1)',
+        });
+
+        expect(errorType(error)).toEqual({
+            'error.code': 'Unknown',
+            'error.type': 'Error',
         });
     });
 
@@ -336,37 +349,56 @@ describe('errorAttributes', () => {
         const result = errorAttributes(error, 'unhandledRejection');
 
         expect(result).toEqual({
-            'error.type': 'Error',
             'error.origin': 'unhandledRejection',
             'error.message': 'Error: test',
             'error.stack': 'at x (x.ts:1:1)',
         });
+
+        expect(errorType(error)).toEqual({
+            'error.code': 'Unknown',
+            'error.type': 'Error',
+        });
     });
 
     test('returns attributes for non-Error string value', () => {
-        const result = errorAttributes('string error');
+        const error = 'string error';
+        const result = errorAttributes(error);
 
         expect(result).toEqual({
-            'error.type': 'string',
             'error.origin': 'Unknown',
+        });
+
+        expect(errorType(error)).toEqual({
+            'error.code': 'Unknown',
+            'error.type': 'string',
         });
     });
 
     test('returns attributes for non-Error null value', () => {
-        const result = errorAttributes(null);
+        const error = null;
+        const result = errorAttributes(error);
 
         expect(result).toEqual({
-            'error.type': 'object',
             'error.origin': 'Unknown',
+        });
+
+        expect(errorType(error)).toEqual({
+            'error.code': 'Unknown',
+            'error.type': 'object',
         });
     });
 
     test('returns attributes for non-Error undefined value', () => {
-        const result = errorAttributes(undefined);
+        const error = undefined;
+        const result = errorAttributes(error);
 
         expect(result).toEqual({
-            'error.type': 'undefined',
             'error.origin': 'Unknown',
+        });
+
+        expect(errorType(error)).toEqual({
+            'error.code': 'Unknown',
+            'error.type': 'undefined',
         });
     });
 });
