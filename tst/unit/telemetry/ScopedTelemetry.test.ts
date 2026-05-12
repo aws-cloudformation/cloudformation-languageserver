@@ -508,6 +508,7 @@ describe('ScopedTelemetry', () => {
             expect(() => scopedTelemetry.measure('test', fn)).toThrow(error);
             expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(0, expect.anything());
             expect(counters.get('test.fault')!.add).not.toHaveBeenCalledWith(1, expect.anything());
+            expect(counters.get('test.error')!.add).toHaveBeenCalledWith(1, expect.anything());
         });
 
         it('should not emit fault metric for tagged errors in countExecution', () => {
@@ -527,6 +528,7 @@ describe('ScopedTelemetry', () => {
             expect(() => scopedTelemetry.countExecution('test', fn)).toThrow(error);
             expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(0, expect.anything());
             expect(counters.get('test.fault')!.add).not.toHaveBeenCalledWith(1, expect.anything());
+            expect(counters.get('test.error')!.add).toHaveBeenCalledWith(1, expect.anything());
         });
 
         it('should emit fault metric for untagged errors', () => {

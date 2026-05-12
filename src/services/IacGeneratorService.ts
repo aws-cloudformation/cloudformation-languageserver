@@ -19,8 +19,7 @@ import {
     UpdateGeneratedTemplateCommandInput,
 } from '@aws-sdk/client-cloudformation';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { isClientError } from '../utils/AwsErrorMapper';
-import { markSuppressFault } from '../utils/FaultSuppression';
+import { markIfClientError } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('IacGeneratorService');
@@ -34,9 +33,7 @@ export class IacGeneratorService {
             return await request(client);
         } catch (error) {
             log.error(error, 'IaC Generator API call failed');
-            if (error instanceof Error && isClientError(error)) {
-                markSuppressFault(error);
-            }
+            markIfClientError(error);
             throw error;
         }
     }
