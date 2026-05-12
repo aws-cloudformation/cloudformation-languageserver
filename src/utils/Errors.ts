@@ -101,12 +101,20 @@ function sanitizeErrorMessage(message: string): string {
 
 export function errorAttributes(error: unknown, origin?: 'uncaughtException' | 'unhandledRejection'): Attributes {
     const location = error instanceof Error ? extractLocationFromStack(error.stack) : {};
+
+    return {
+        'error.origin': origin ?? 'Unknown',
+        ...location,
+    };
+}
+
+export function errorType(error: unknown): Attributes {
     const type = error instanceof Error ? error.name : typeof error;
+    const code = error !== null && typeof error === 'object' ? (error as NodeJS.ErrnoException).code : undefined;
 
     return {
         'error.type': type,
-        'error.origin': origin ?? 'Unknown',
-        ...location,
+        'error.code': code ?? 'Unknown',
     };
 }
 
