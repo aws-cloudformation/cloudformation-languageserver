@@ -49,8 +49,6 @@ jobs:
     timeout-minutes: ${{ fromJSON(needs.check-release.outputs.timeout) }}
     steps:
       - uses: actions/checkout@v5
-        with:
-          ref: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
