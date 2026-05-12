@@ -14,7 +14,7 @@ describe('mapAwsErrorToLspError', () => {
         const error = { name: 'ExpiredToken', message: 'Token expired' };
         const result = mapAwsErrorToLspError(error);
         expect(result.code).toBe(OnlineFeatureErrorCode.ExpiredCredentials);
-        expect(result.data).toEqual({ retryable: false, requiresReauth: true });
+        expect(result.data).toEqual({ retryable: false, requiresReauth: true, suppressFault: true });
     });
 
     it('should map 401 status to ExpiredCredentials', () => {
@@ -33,7 +33,7 @@ describe('mapAwsErrorToLspError', () => {
         const error = { name: 'NetworkingError', message: 'Network failed' };
         const result = mapAwsErrorToLspError(error);
         expect(result.code).toBe(OnlineFeatureErrorCode.NoInternet);
-        expect(result.data).toEqual({ retryable: true, requiresReauth: false });
+        expect(result.data).toEqual({ retryable: true, requiresReauth: false, suppressFault: true });
     });
 
     it('should map timeout errors to NoInternet', () => {
@@ -60,6 +60,19 @@ describe('mapAwsErrorToLspError', () => {
         const error = { $metadata: { httpStatusCode: 500 }, message: 'Internal error' };
         const result = mapAwsErrorToLspError(error);
         expect((result.data as any)?.retryable).toBe(true);
+        expect((result.data as any)?.suppressFault).toBe(false);
+    });
+
+    it('should suppress fault for 4xx errors', () => {
+        const error = { name: 'ValidationException', $metadata: { httpStatusCode: 400 }, message: 'Bad request' };
+        const result = mapAwsErrorToLspError(error);
+        expect((result.data as any)?.suppressFault).toBe(true);
+    });
+
+    it('should not suppress fault for 5xx errors', () => {
+        const error = { $metadata: { httpStatusCode: 503 }, message: 'Service unavailable' };
+        const result = mapAwsErrorToLspError(error);
+        expect((result.data as any)?.suppressFault).toBe(false);
     });
 
     it('should map unknown errors to AwsServiceError', () => {

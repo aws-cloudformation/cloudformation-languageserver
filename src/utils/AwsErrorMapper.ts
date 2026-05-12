@@ -111,7 +111,7 @@ export function mapAwsErrorToLspError(error: unknown): ResponseError<unknown> {
             return createOnlineFeatureError(
                 OnlineFeatureErrorCode.ExpiredCredentials,
                 'AWS credentials are invalid or expired. Please re-authenticate.',
-                { retryable: false, requiresReauth: true },
+                { retryable: false, requiresReauth: true, suppressFault: true },
             );
         }
 
@@ -119,14 +119,14 @@ export function mapAwsErrorToLspError(error: unknown): ResponseError<unknown> {
             return createOnlineFeatureError(
                 OnlineFeatureErrorCode.NoInternet,
                 'Network error occurred while contacting AWS. Please check your internet connection.',
-                { retryable: true, requiresReauth: false },
+                { retryable: true, requiresReauth: false, suppressFault: true },
             );
         }
 
         return createOnlineFeatureError(
             OnlineFeatureErrorCode.AwsServiceError,
             `AWS service error: ${error.message ?? extractErrorMessage(error)}`,
-            { retryable: isRetryableAwsError(error), requiresReauth: false },
+            { retryable: isRetryableAwsError(error), requiresReauth: false, suppressFault: isClientError(error) },
         );
     }
 

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ResponseError } from 'vscode-languageserver';
 import { ScopedTelemetry } from '../../../src/telemetry/ScopedTelemetry';
 
 describe('ScopedTelemetry', () => {
@@ -486,6 +487,96 @@ describe('ScopedTelemetry', () => {
                 'error.type': 'undefined',
                 'error.origin': 'Unknown',
             });
+        });
+    });
+
+    describe('suppressFault', () => {
+        it('should not emit fault metric when ResponseError has suppressFault: true in measure', () => {
+            const counters = new Map<string, { add: ReturnType<typeof vi.fn> }>();
+            mockMeter.createCounter.mockImplementation((name: string) => {
+                const counter = { add: vi.fn() };
+                counters.set(name, counter);
+                return counter;
+            });
+
+            const error = new ResponseError(1, 'test', { suppressFault: true });
+            const fn = vi.fn(() => {
+                throw error;
+            });
+
+            expect(() => scopedTelemetry.measure('test', fn)).toThrow(error);
+            expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(0, expect.anything());
+            expect(counters.get('test.fault')!.add).not.toHaveBeenCalledWith(1, expect.anything());
+        });
+
+        it('should not emit fault metric when ResponseError has suppressFault: true in measureAsync', async () => {
+            const counters = new Map<string, { add: ReturnType<typeof vi.fn> }>();
+            mockMeter.createCounter.mockImplementation((name: string) => {
+                const counter = { add: vi.fn() };
+                counters.set(name, counter);
+                return counter;
+            });
+
+            const error = new ResponseError(1, 'test', { suppressFault: true });
+            const fn = vi.fn(async () => {
+                await Promise.resolve();
+                throw error;
+            });
+
+            await expect(scopedTelemetry.measureAsync('test', fn)).rejects.toThrow(error);
+            expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(0, expect.anything());
+            expect(counters.get('test.fault')!.add).not.toHaveBeenCalledWith(1, expect.anything());
+        });
+
+        it('should not emit fault metric when ResponseError has suppressFault: true in countExecution', () => {
+            const counters = new Map<string, { add: ReturnType<typeof vi.fn> }>();
+            mockMeter.createCounter.mockImplementation((name: string) => {
+                const counter = { add: vi.fn() };
+                counters.set(name, counter);
+                return counter;
+            });
+
+            const error = new ResponseError(1, 'test', { suppressFault: true });
+            const fn = vi.fn(() => {
+                throw error;
+            });
+
+            expect(() => scopedTelemetry.countExecution('test', fn)).toThrow(error);
+            expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(0, expect.anything());
+            expect(counters.get('test.fault')!.add).not.toHaveBeenCalledWith(1, expect.anything());
+        });
+
+        it('should emit fault metric for regular errors', () => {
+            const counters = new Map<string, { add: ReturnType<typeof vi.fn> }>();
+            mockMeter.createCounter.mockImplementation((name: string) => {
+                const counter = { add: vi.fn() };
+                counters.set(name, counter);
+                return counter;
+            });
+
+            const fn = vi.fn(() => {
+                throw new Error('regular error');
+            });
+
+            expect(() => scopedTelemetry.measure('test', fn)).toThrow('regular error');
+            expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(1, expect.anything());
+        });
+
+        it('should emit fault metric when ResponseError has suppressFault: false', () => {
+            const counters = new Map<string, { add: ReturnType<typeof vi.fn> }>();
+            mockMeter.createCounter.mockImplementation((name: string) => {
+                const counter = { add: vi.fn() };
+                counters.set(name, counter);
+                return counter;
+            });
+
+            const error = new ResponseError(1, 'test', { suppressFault: false });
+            const fn = vi.fn(() => {
+                throw error;
+            });
+
+            expect(() => scopedTelemetry.measure('test', fn)).toThrow(error);
+            expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(1, expect.anything());
         });
     });
 });

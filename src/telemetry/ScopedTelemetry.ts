@@ -10,10 +10,15 @@ import {
     UpDownCounter,
     ValueType,
 } from '@opentelemetry/api';
+import { ResponseError } from 'vscode-languageserver';
 import { Closeable } from '../utils/Closeable';
 import { errorAttributes } from '../utils/Errors';
 import { typeOf } from '../utils/TypeCheck';
 import { TelemetryContext } from './TelemetryContext';
+
+function hasSuppressFault(error: unknown): boolean {
+    return error instanceof ResponseError && (error.data as Record<string, unknown>)?.suppressFault === true;
+}
 
 export interface MetricConfig extends MetricOptions {
     trackObjectKey?: string;
@@ -109,7 +114,9 @@ export class ScopedTelemetry implements Closeable {
         try {
             return fn();
         } catch (error) {
-            this.error(`${name}.fault`, error, undefined, config);
+            if (!hasSuppressFault(error)) {
+                this.error(`${name}.fault`, error, undefined, config);
+            }
             throw error;
         }
     }
@@ -120,7 +127,9 @@ export class ScopedTelemetry implements Closeable {
         try {
             return await fn();
         } catch (error) {
-            this.error(`${name}.fault`, error, undefined, config);
+            if (!hasSuppressFault(error)) {
+                this.error(`${name}.fault`, error, undefined, config);
+            }
             throw error;
         }
     }
@@ -140,7 +149,9 @@ export class ScopedTelemetry implements Closeable {
             if (trackResponse) this.recordResponse(name, result, config);
             return result;
         } catch (error) {
-            this.error(`${name}.fault`, error, undefined, config);
+            if (!hasSuppressFault(error)) {
+                this.error(`${name}.fault`, error, undefined, config);
+            }
             throw error;
         } finally {
             this.recordDuration(name, performance.now() - startTime, config);
@@ -167,7 +178,9 @@ export class ScopedTelemetry implements Closeable {
             if (trackResponse) this.recordResponse(name, result, config);
             return result;
         } catch (error) {
-            this.error(`${name}.fault`, error, undefined, config);
+            if (!hasSuppressFault(error)) {
+                this.error(`${name}.fault`, error, undefined, config);
+            }
             throw error;
         } finally {
             this.recordDuration(name, performance.now() - startTime, config);
