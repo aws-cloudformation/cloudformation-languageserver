@@ -68,7 +68,7 @@ jobs:
               if [[ "${{ matrix.node-version }}" == "18" ]]; then
                 PATTERN="*linuxglib2.28*x64*node18*.zip"
               else
-                PATTERN="*linux*x64*node22*.zip"
+                PATTERN="*-linux-x64*node22*.zip"
               fi
               ;;
             windows-latest) PATTERN="*win32*x64*node22*.zip" ;;
