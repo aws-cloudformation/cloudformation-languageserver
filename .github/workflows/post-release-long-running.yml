@@ -1,9 +1,14 @@
 name: Post-Release Long Running Tests
-run-name: Long Running Tests for ${{ github.event.release.tag_name }}
+run-name: Long Running Tests for ${{ github.event.release.tag_name || inputs.tag }}
 
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to test (e.g. v1.7.0-beta)'
+        required: true
 
 permissions:
   contents: read
@@ -19,7 +24,7 @@ jobs:
       - name: Check release type
         id: check
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
           if [[ "$TAG" =~ -beta$ ]]; then
             echo "should-run=true" >> $GITHUB_OUTPUT
             echo "duration=4h" >> $GITHUB_OUTPUT
@@ -36,6 +41,7 @@ jobs:
     needs: check-release
     if: needs.check-release.outputs.should-run == 'true'
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         node-version: [18, 20, 22]
@@ -44,7 +50,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.release.tag_name }}
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -56,13 +62,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ github.event.release.tag_name }}"
+          TAG="${{ github.event.release.tag_name || inputs.tag }}"
           case "${{ matrix.os }}" in
-            ubuntu-latest) PLATFORM="linux" ;;
-            windows-latest) PLATFORM="win32" ;;
-            macos-latest) PLATFORM="darwin" ;;
+            ubuntu-latest)
+              if [[ "${{ matrix.node-version }}" == "18" ]]; then
+                PATTERN="*linuxglib2.28*x64*node18*.zip"
+              else
+                PATTERN="*linux*x64*node22*.zip"
+              fi
+              ;;
+            windows-latest) PATTERN="*win32*x64*node22*.zip" ;;
+            macos-latest) PATTERN="*darwin*x64*node22*.zip" ;;
           esac
-          PATTERN="*${PLATFORM}*x64*node${{ matrix.node-version }}*.zip"
           gh release download "$TAG" --pattern "$PATTERN"
 
       - name: Extract standalone bundle
