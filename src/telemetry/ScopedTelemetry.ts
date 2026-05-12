@@ -10,15 +10,11 @@ import {
     UpDownCounter,
     ValueType,
 } from '@opentelemetry/api';
-import { ResponseError } from 'vscode-languageserver';
 import { Closeable } from '../utils/Closeable';
 import { errorAttributes } from '../utils/Errors';
+import { hasSuppressFault } from '../utils/FaultSuppression';
 import { typeOf } from '../utils/TypeCheck';
 import { TelemetryContext } from './TelemetryContext';
-
-function hasSuppressFault(error: unknown): boolean {
-    return error instanceof ResponseError && (error.data as Record<string, unknown>)?.suppressFault === true;
-}
 
 export interface MetricConfig extends MetricOptions {
     trackObjectKey?: string;

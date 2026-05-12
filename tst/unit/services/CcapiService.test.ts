@@ -7,7 +7,6 @@ import {
 } from '@aws-sdk/client-cloudcontrol';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ResponseError } from 'vscode-languageserver';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { CcapiService } from '../../../src/services/CcapiService';
 
@@ -68,7 +67,7 @@ describe('CcapiService', () => {
             const error = createCloudControlServiceError();
             cloudControlMock.on(ListResourcesCommand).rejects(error);
 
-            await expect(service.listResources('AWS::S3::Bucket')).rejects.toThrow(ResponseError);
+            await expect(service.listResources('AWS::S3::Bucket')).rejects.toThrow(error);
         });
     });
 
@@ -91,7 +90,7 @@ describe('CcapiService', () => {
             const error = createResourceNotFoundError();
             cloudControlMock.on(GetResourceCommand).rejects(error);
 
-            await expect(service.getResource('AWS::S3::Bucket', 'nonexistent')).rejects.toThrow(ResponseError);
+            await expect(service.getResource('AWS::S3::Bucket', 'nonexistent')).rejects.toThrow(error);
         });
     });
 

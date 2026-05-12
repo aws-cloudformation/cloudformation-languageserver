@@ -7,7 +7,8 @@ import {
 } from '@aws-sdk/client-cloudcontrol';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
-import { mapAwsErrorToLspError } from '../utils/AwsErrorMapper';
+import { isClientError } from '../utils/AwsErrorMapper';
+import { markSuppressFault } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('CcapiService');
@@ -26,7 +27,10 @@ export class CcapiService {
             return await request(client);
         } catch (error) {
             log.error(error, 'CloudControl API call failed');
-            throw mapAwsErrorToLspError(error, { isAwsCall: true });
+            if (error instanceof Error && isClientError(error)) {
+                markSuppressFault(error);
+            }
+            throw error;
         }
     }
 

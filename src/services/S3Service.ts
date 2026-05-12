@@ -3,7 +3,8 @@ import { fileURLToPath } from 'url';
 import { S3Client, PutObjectCommand, ListBucketsCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
-import { mapAwsErrorToLspError } from '../utils/AwsErrorMapper';
+import { isClientError } from '../utils/AwsErrorMapper';
+import { markSuppressFault } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('S3Service');
@@ -17,7 +18,10 @@ export class S3Service {
             return await request(client);
         } catch (error) {
             log.error(error, 'S3 API call failed');
-            throw mapAwsErrorToLspError(error, { isAwsCall: true });
+            if (error instanceof Error && isClientError(error)) {
+                markSuppressFault(error);
+            }
+            throw error;
         }
     }
 

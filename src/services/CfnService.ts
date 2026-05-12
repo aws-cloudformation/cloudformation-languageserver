@@ -64,7 +64,8 @@ import { AwsClientSettings, DefaultSettings } from '../settings/Settings';
 import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Count, Measure } from '../telemetry/TelemetryDecorator';
-import { mapAwsErrorToLspError } from '../utils/AwsErrorMapper';
+import { isClientError } from '../utils/AwsErrorMapper';
+import { markSuppressFault } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('CfnService');
@@ -80,7 +81,10 @@ export class CfnService {
             return await request(client);
         } catch (error) {
             log.error(error, 'CloudFormation API call failed');
-            throw mapAwsErrorToLspError(error, { isAwsCall: true });
+            if (error instanceof Error && isClientError(error)) {
+                markSuppressFault(error);
+            }
+            throw error;
         }
     }
 

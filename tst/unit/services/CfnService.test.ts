@@ -32,9 +32,9 @@ import {
 import { WaiterState } from '@smithy/util-waiter';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ResponseError } from 'vscode-languageserver';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { CfnService } from '../../../src/services/CfnService';
+import { hasSuppressFault } from '../../../src/utils/FaultSuppression';
 import { TEST_CONSTANTS, MOCK_RESPONSES } from './CfnServiceTestConstants';
 
 // Mock the waiter functions
@@ -115,7 +115,7 @@ describe('CfnService', () => {
             const error = createCloudFormationServiceError();
             cloudFormationMock.on(ListStacksCommand).rejects(error);
 
-            await expect(service.listStacks()).rejects.toThrow(ResponseError);
+            await expect(service.listStacks()).rejects.toThrow(error);
         });
 
         it('should pass statusToInclude filter to API', async () => {
@@ -165,7 +165,7 @@ describe('CfnService', () => {
                     StackName: TEST_CONSTANTS.STACK_NAME,
                     TemplateBody: TEST_CONSTANTS.TEMPLATE_BODY,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -182,9 +182,7 @@ describe('CfnService', () => {
             const error = createStackNotFoundError();
             cloudFormationMock.on(DescribeStacksCommand).rejects(error);
 
-            await expect(service.describeStacks({ StackName: TEST_CONSTANTS.STACK_NAME })).rejects.toThrow(
-                ResponseError,
-            );
+            await expect(service.describeStacks({ StackName: TEST_CONSTANTS.STACK_NAME })).rejects.toThrow(error);
         });
 
         it('should use custom parameters when provided', async () => {
@@ -237,7 +235,7 @@ describe('CfnService', () => {
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     TemplateBody: TEST_CONSTANTS.TEMPLATE_BODY,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -302,7 +300,7 @@ describe('CfnService', () => {
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     IncludePropertyValues: true,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -327,7 +325,7 @@ describe('CfnService', () => {
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -350,7 +348,7 @@ describe('CfnService', () => {
                 service.detectStackDrift({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -406,7 +404,7 @@ describe('CfnService', () => {
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -518,7 +516,7 @@ describe('CfnService', () => {
                     },
                     { nextToken: 'test-token' },
                 ),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -541,7 +539,7 @@ describe('CfnService', () => {
                 service.describeStackResources({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -566,7 +564,7 @@ describe('CfnService', () => {
                     StackName: TEST_CONSTANTS.STACK_NAME,
                     LogicalResourceId: TEST_CONSTANTS.LOGICAL_RESOURCE_ID,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -591,7 +589,7 @@ describe('CfnService', () => {
                 service.listStackResources({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -616,7 +614,7 @@ describe('CfnService', () => {
                 service.describeStackResourceDrifts({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(ResponseError);
+            ).rejects.toThrow(error);
         });
     });
 
@@ -832,6 +830,44 @@ describe('CfnService', () => {
             });
 
             await expect(service.listStacks()).rejects.toThrow('Failed to create AWS CloudFormation client');
+        });
+    });
+
+    describe('fault suppression', () => {
+        it('should tag client errors (4xx) with suppressFault', async () => {
+            const error = new StackNotFoundException({
+                message: 'Stack not found',
+                $metadata: { httpStatusCode: 404 },
+            });
+            cloudFormationMock.on(DescribeStacksCommand).rejects(error);
+
+            await expect(service.describeStacks({ StackName: 'test' })).rejects.toSatisfy((thrown: unknown) => {
+                return thrown instanceof StackNotFoundException && hasSuppressFault(thrown);
+            });
+        });
+
+        it('should not tag server errors (5xx) with suppressFault', async () => {
+            const error = new CloudFormationServiceException({
+                message: 'Internal error',
+                $metadata: { httpStatusCode: 500 },
+                name: 'CloudFormationServiceException',
+                $fault: 'server',
+            });
+            cloudFormationMock.on(ListStacksCommand).rejects(error);
+
+            await expect(service.listStacks()).rejects.toSatisfy((thrown: unknown) => {
+                return thrown instanceof CloudFormationServiceException && !hasSuppressFault(thrown);
+            });
+        });
+
+        it('should preserve instanceof after tagging', async () => {
+            const error = new StackNotFoundException({
+                message: 'Stack not found',
+                $metadata: { httpStatusCode: 404 },
+            });
+            cloudFormationMock.on(DescribeStacksCommand).rejects(error);
+
+            await expect(service.describeStacks({ StackName: 'test' })).rejects.toBeInstanceOf(StackNotFoundException);
         });
     });
 });

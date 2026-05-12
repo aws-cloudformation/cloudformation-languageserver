@@ -10,7 +10,6 @@ export enum OnlineFeatureErrorCode {
 export interface OnlineFeatureErrorData {
     retryable: boolean;
     requiresReauth: boolean;
-    suppressFault: boolean;
 }
 
 export function createOnlineFeatureError(
@@ -21,6 +20,5 @@ export function createOnlineFeatureError(
     return new ResponseError(code, message, {
         retryable: data?.retryable ?? false,
         requiresReauth: data?.requiresReauth ?? false,
-        suppressFault: data?.suppressFault ?? false,
     });
 }
