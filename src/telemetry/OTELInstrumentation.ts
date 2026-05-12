@@ -39,7 +39,7 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
             ['process.version']: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
         }),
         resourceDetectors: [],
-        metricReader: metricsReader,
+        metricReaders: [metricsReader],
         views: [
             {
                 instrumentName: '*.duration',

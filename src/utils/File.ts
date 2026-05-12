@@ -19,11 +19,13 @@ const ENOENT = 'ENOENT'; // No such file or directory
 const RETRIABLE_RENAME_CODES = new Set(['EPERM', 'EACCES', 'EBUSY']);
 
 function wrapReadEnoentError(path: PathLike, err: unknown): never {
-    log.error(err);
     if (isFileNotFoundError(err)) {
-        throw new DoesNotExist(toString(path));
+        const pathStr = toString(path);
+        log.warn(err, `${pathStr} does not exist`);
+        throw new DoesNotExist(pathStr);
     }
 
+    log.error(err);
     throw err;
 }
 
