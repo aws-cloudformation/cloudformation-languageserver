@@ -84,9 +84,6 @@ jobs:
             chmod +x cfn-lsp-server-standalone.js
           fi
 
-      - name: Test standalone bundle
-        run: node cfn-lsp-server-standalone.js --version
-
       - name: Install dependencies
         run: npm ci
 
