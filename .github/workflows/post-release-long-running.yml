@@ -79,7 +79,7 @@ jobs:
       - name: Extract standalone bundle
         shell: bash
         run: |
-          unzip *.zip
+          unzip -o *.zip
           if [[ "${{ matrix.os }}" != "windows-latest" ]]; then
             chmod +x cfn-lsp-server-standalone.js
           fi
