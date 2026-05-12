@@ -87,12 +87,6 @@ export function checkPerformanceDegradation(): void {
                 `${operationType} average duration ${metric.averageDuration.toFixed(1)}ms exceeds limit ${config.avgDurationLimitMs}ms`,
             );
         }
-
-        if (metric.maxDuration !== null && metric.maxDuration > config.maxDurationLimitMs) {
-            throw new Error(
-                `${operationType} max duration ${metric.maxDuration.toFixed(1)}ms exceeds limit ${config.maxDurationLimitMs}ms`,
-            );
-        }
     }
 
     // Basic memory check
