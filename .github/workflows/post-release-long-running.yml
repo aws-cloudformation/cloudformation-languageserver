@@ -77,9 +77,10 @@ jobs:
       - name: Extract standalone bundle
         shell: bash
         run: |
-          unzip -o *.zip
+          mkdir -p standalone
+          unzip -o *.zip -d standalone
           if [[ "${{ matrix.os }}" != "windows-latest" ]]; then
-            chmod +x cfn-lsp-server-standalone.js
+            chmod +x standalone/cfn-lsp-server-standalone.js
           fi
 
       - name: Install dependencies
@@ -88,7 +89,7 @@ jobs:
       - name: Run long-running stability tests
         env:
           STABILITY_TEST_DURATION: ${{ needs.check-release.outputs.duration }}
-          STANDALONE_PATH: ./cfn-lsp-server-standalone.js
+          STANDALONE_PATH: ./standalone/cfn-lsp-server-standalone.js
         run: npm run test:stability
 
       - name: Upload test results
