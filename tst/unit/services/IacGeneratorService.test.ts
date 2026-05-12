@@ -13,6 +13,7 @@ import {
 } from '@aws-sdk/client-cloudformation';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ResponseError } from 'vscode-languageserver';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { IacGeneratorService } from '../../../src/services/IacGeneratorService';
 
@@ -68,7 +69,7 @@ describe('IacGeneratorService', () => {
             const error = createCloudFormationServiceError();
             cloudFormationMock.on(StartResourceScanCommand).rejects(error);
 
-            await expect(service.startResourceScan()).rejects.toThrow(error);
+            await expect(service.startResourceScan()).rejects.toThrow(ResponseError);
         });
     });
 
@@ -93,7 +94,7 @@ describe('IacGeneratorService', () => {
             const error = createCloudFormationServiceError();
             cloudFormationMock.on(ListResourceScanResourcesCommand).rejects(error);
 
-            await expect(service.listResourceScanResources('scan-123')).rejects.toThrow(error);
+            await expect(service.listResourceScanResources('scan-123')).rejects.toThrow(ResponseError);
         });
     });
 
@@ -114,7 +115,7 @@ describe('IacGeneratorService', () => {
             const error = createCloudFormationServiceError();
             cloudFormationMock.on(DescribeResourceScanCommand).rejects(error);
 
-            await expect(service.describeResourceScan('scan-123')).rejects.toThrow(error);
+            await expect(service.describeResourceScan('scan-123')).rejects.toThrow(ResponseError);
         });
     });
 
@@ -134,7 +135,7 @@ describe('IacGeneratorService', () => {
             cloudFormationMock.on(CreateGeneratedTemplateCommand).rejects(error);
 
             const input = { GeneratedTemplateName: 'my-template' };
-            await expect(service.createGeneratedTemplate(input)).rejects.toThrow(error);
+            await expect(service.createGeneratedTemplate(input)).rejects.toThrow(ResponseError);
         });
     });
 
@@ -154,7 +155,7 @@ describe('IacGeneratorService', () => {
             cloudFormationMock.on(UpdateGeneratedTemplateCommand).rejects(error);
 
             const input = { GeneratedTemplateName: 'my-template' };
-            await expect(service.updateGeneratedTemplate(input)).rejects.toThrow(error);
+            await expect(service.updateGeneratedTemplate(input)).rejects.toThrow(ResponseError);
         });
     });
 
@@ -177,7 +178,7 @@ describe('IacGeneratorService', () => {
             cloudFormationMock.on(DescribeGeneratedTemplateCommand).rejects(error);
 
             const input = { GeneratedTemplateName: 'my-template' };
-            await expect(service.describeGeneratedTemplate(input)).rejects.toThrow(error);
+            await expect(service.describeGeneratedTemplate(input)).rejects.toThrow(ResponseError);
         });
     });
 
@@ -199,7 +200,7 @@ describe('IacGeneratorService', () => {
             cloudFormationMock.on(GetGeneratedTemplateCommand).rejects(error);
 
             const input = { GeneratedTemplateName: 'my-template' };
-            await expect(service.getGeneratedTemplate(input)).rejects.toThrow(error);
+            await expect(service.getGeneratedTemplate(input)).rejects.toThrow(ResponseError);
         });
     });
 

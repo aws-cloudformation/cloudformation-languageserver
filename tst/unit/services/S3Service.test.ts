@@ -1,6 +1,7 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ResponseError } from 'vscode-languageserver';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { S3Service } from '../../../src/services/S3Service';
 
@@ -68,6 +69,18 @@ describe('S3Service', () => {
                 Key: 'folder/subfolder/test-key.txt',
                 Body: fileContent,
             });
+        });
+
+        it('should throw ResponseError when API call fails', async () => {
+            const localFilePath = '/path/to/file.txt';
+            const s3Uri = 's3://test-bucket/test-key.txt';
+
+            const { readFileSync } = await import('fs');
+            vi.mocked(readFileSync).mockReturnValue(Buffer.from('content'));
+
+            s3Mock.on(PutObjectCommand).rejects({ name: 'S3ServiceException', $metadata: { httpStatusCode: 500 } });
+
+            await expect(service.putObject(localFilePath, s3Uri)).rejects.toThrow(ResponseError);
         });
     });
 

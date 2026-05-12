@@ -1,15 +1,24 @@
 import { readFileSync } from 'fs'; // eslint-disable-line no-restricted-imports -- TODO: Needs to be fixed
 import { fileURLToPath } from 'url';
 import { S3Client, PutObjectCommand, ListBucketsCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
+import { mapAwsErrorToLspError } from '../utils/AwsErrorMapper';
 import { AwsClient } from './AwsClient';
+
+const log = LoggerFactory.getLogger('S3Service');
 
 export class S3Service {
     public constructor(private readonly awsClient: AwsClient) {}
 
     protected async withClient<T>(request: (client: S3Client) => Promise<T>): Promise<T> {
-        const client = this.awsClient.getS3Client();
-        return await request(client);
+        try {
+            const client = this.awsClient.getS3Client();
+            return await request(client);
+        } catch (error) {
+            log.error(error, 'S3 API call failed');
+            throw mapAwsErrorToLspError(error, { isAwsCall: true });
+        }
     }
 
     @Measure({ name: 'listBuckets' })

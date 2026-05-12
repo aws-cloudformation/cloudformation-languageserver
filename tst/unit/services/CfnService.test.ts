@@ -32,6 +32,7 @@ import {
 import { WaiterState } from '@smithy/util-waiter';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { ResponseError } from 'vscode-languageserver';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { CfnService } from '../../../src/services/CfnService';
 import { TEST_CONSTANTS, MOCK_RESPONSES } from './CfnServiceTestConstants';
@@ -114,7 +115,7 @@ describe('CfnService', () => {
             const error = createCloudFormationServiceError();
             cloudFormationMock.on(ListStacksCommand).rejects(error);
 
-            await expect(service.listStacks()).rejects.toThrow(error);
+            await expect(service.listStacks()).rejects.toThrow(ResponseError);
         });
 
         it('should pass statusToInclude filter to API', async () => {
@@ -164,7 +165,7 @@ describe('CfnService', () => {
                     StackName: TEST_CONSTANTS.STACK_NAME,
                     TemplateBody: TEST_CONSTANTS.TEMPLATE_BODY,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -181,7 +182,9 @@ describe('CfnService', () => {
             const error = createStackNotFoundError();
             cloudFormationMock.on(DescribeStacksCommand).rejects(error);
 
-            await expect(service.describeStacks({ StackName: TEST_CONSTANTS.STACK_NAME })).rejects.toThrow(error);
+            await expect(service.describeStacks({ StackName: TEST_CONSTANTS.STACK_NAME })).rejects.toThrow(
+                ResponseError,
+            );
         });
 
         it('should use custom parameters when provided', async () => {
@@ -234,7 +237,7 @@ describe('CfnService', () => {
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     TemplateBody: TEST_CONSTANTS.TEMPLATE_BODY,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -299,7 +302,7 @@ describe('CfnService', () => {
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     IncludePropertyValues: true,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -324,7 +327,7 @@ describe('CfnService', () => {
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -347,7 +350,7 @@ describe('CfnService', () => {
                 service.detectStackDrift({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -403,7 +406,7 @@ describe('CfnService', () => {
                     ChangeSetName: TEST_CONSTANTS.CHANGE_SET_NAME,
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -515,7 +518,7 @@ describe('CfnService', () => {
                     },
                     { nextToken: 'test-token' },
                 ),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -538,7 +541,7 @@ describe('CfnService', () => {
                 service.describeStackResources({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -563,7 +566,7 @@ describe('CfnService', () => {
                     StackName: TEST_CONSTANTS.STACK_NAME,
                     LogicalResourceId: TEST_CONSTANTS.LOGICAL_RESOURCE_ID,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -588,7 +591,7 @@ describe('CfnService', () => {
                 service.listStackResources({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
@@ -613,7 +616,7 @@ describe('CfnService', () => {
                 service.describeStackResourceDrifts({
                     StackName: TEST_CONSTANTS.STACK_NAME,
                 }),
-            ).rejects.toThrow(error);
+            ).rejects.toThrow(ResponseError);
         });
     });
 
