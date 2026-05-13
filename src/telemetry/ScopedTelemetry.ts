@@ -11,8 +11,8 @@ import {
     ValueType,
 } from '@opentelemetry/api';
 import { Closeable } from '../utils/Closeable';
-import { hasSuppressFault } from '../utils/FaultSuppression';
 import { errorAttributes, errorType } from '../utils/Errors';
+import { hasSuppressFault } from '../utils/FaultSuppression';
 import { typeOf } from '../utils/TypeCheck';
 import { TelemetryContext } from './TelemetryContext';
 
