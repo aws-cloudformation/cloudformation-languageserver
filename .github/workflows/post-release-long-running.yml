@@ -1,9 +1,13 @@
 name: Post-Release Long Running Tests
-run-name: Long Running Tests for ${{ github.event.release.tag_name || inputs.tag }}
+run-name: Long Running Tests for ${{ inputs.tag }}
 
 on:
-  release:
-    types: [published]
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release tag to test (e.g. v1.7.0-beta)'
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -24,7 +28,7 @@ jobs:
       - name: Check release type
         id: check
         run: |
-          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          TAG="${{ inputs.tag }}"
           if [[ "$TAG" =~ -beta$ ]]; then
             echo "should-run=true" >> $GITHUB_OUTPUT
             echo "duration=4h" >> $GITHUB_OUTPUT
@@ -34,7 +38,9 @@ jobs:
             echo "duration=20m" >> $GITHUB_OUTPUT
             echo "timeout=60" >> $GITHUB_OUTPUT
           else
-            echo "should-run=false" >> $GITHUB_OUTPUT
+            echo "should-run=true" >> $GITHUB_OUTPUT
+            echo "duration=4h" >> $GITHUB_OUTPUT
+            echo "timeout=360" >> $GITHUB_OUTPUT
           fi
 
   long-running-tests:
@@ -60,7 +66,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG="${{ github.event.release.tag_name || inputs.tag }}"
+          TAG="${{ inputs.tag }}"
           case "${{ matrix.os }}" in
             ubuntu-latest)
               if [[ "${{ matrix.node-version }}" == "18" ]]; then
