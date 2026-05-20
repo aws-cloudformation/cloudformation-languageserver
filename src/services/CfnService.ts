@@ -58,6 +58,15 @@ import {
     type Tag,
     OnStackFailure,
     ChangeSetType,
+    DeactivateTypeCommand,
+    SetTypeConfigurationCommand,
+    type SetTypeConfigurationCommandOutput,
+    ListHookResultsCommand,
+    type ListHookResultsCommandOutput,
+    type ListHookResultsTargetType,
+    GetHookResultCommand,
+    type GetHookResultCommandOutput,
+    BatchDescribeTypeConfigurationsCommand,
 } from '@aws-sdk/client-cloudformation';
 import type { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClientSettings, DefaultSettings } from '../settings/Settings';
@@ -432,6 +441,111 @@ export class CfnService {
         } catch {
             return { changeSets: [] };
         }
+    }
+
+    // --- Hooks ---
+
+    @Count({ name: 'listHooks', captureErrorAttributes: true })
+    public async listHooks(nextToken?: string): Promise<{ hooks: TypeSummary[]; nextToken?: string }> {
+        return await this.withClient(async (client) => {
+            const response = await client.send(
+                new ListTypesCommand({
+                    Type: RegistryType.HOOK,
+                    Visibility: Visibility.PRIVATE,
+                    MaxResults: 100,
+                    NextToken: nextToken,
+                }),
+            );
+            return {
+                hooks: response.TypeSummaries ?? [],
+                nextToken: response.NextToken,
+            };
+        });
+    }
+
+    @Count({ name: 'describeHook', captureErrorAttributes: true })
+    public async describeHook(params: { typeName?: string; arn?: string }): Promise<DescribeTypeOutput> {
+        return await this.withClient((client) =>
+            client.send(
+                new DescribeTypeCommand({
+                    Type: RegistryType.HOOK,
+                    TypeName: params.typeName,
+                    Arn: params.arn,
+                }),
+            ),
+        );
+    }
+
+    @Count({ name: 'getHookConfiguration', captureErrorAttributes: true })
+    public async getHookConfiguration(typeName: string): Promise<string> {
+        return await this.withClient(async (client) => {
+            const response = await client.send(
+                new BatchDescribeTypeConfigurationsCommand({
+                    TypeConfigurationIdentifiers: [{ Type: RegistryType.HOOK, TypeName: typeName }],
+                }),
+            );
+            return response.TypeConfigurations?.[0]?.Configuration ?? '{}';
+        });
+    }
+
+    @Count({ name: 'setHookConfiguration', captureErrorAttributes: true })
+    public async setHookConfiguration(params: {
+        typeName: string;
+        configuration: string;
+    }): Promise<SetTypeConfigurationCommandOutput> {
+        return await this.withClient((client) =>
+            client.send(
+                new SetTypeConfigurationCommand({
+                    Type: RegistryType.HOOK,
+                    TypeName: params.typeName,
+                    Configuration: params.configuration,
+                }),
+            ),
+        );
+    }
+
+    @Count({ name: 'listHookResults', captureErrorAttributes: true })
+    public async listHookResults(params: {
+        typeArn?: string;
+        status?: string;
+        targetId?: string;
+        targetType?: string;
+        nextToken?: string;
+    }): Promise<ListHookResultsCommandOutput> {
+        return await this.withClient((client) =>
+            client.send(
+                new ListHookResultsCommand({
+                    TypeArn: params.typeArn,
+                    TargetId: params.targetId,
+                    TargetType: params.targetType as ListHookResultsTargetType,
+                    NextToken: params.nextToken,
+                }),
+            ),
+        );
+    }
+
+    @Count({ name: 'getHookResult', captureErrorAttributes: true })
+    public async getHookResult(hookResultId: string): Promise<GetHookResultCommandOutput> {
+        return await this.withClient((client) =>
+            client.send(
+                new GetHookResultCommand({
+                    HookResultId: hookResultId,
+                }),
+            ),
+        );
+    }
+
+    @Count({ name: 'deactivateHook', captureErrorAttributes: true })
+    public async deactivateHook(params: { typeName?: string; arn?: string }): Promise<void> {
+        await this.withClient((client) =>
+            client.send(
+                new DeactivateTypeCommand({
+                    Type: params.typeName ? RegistryType.HOOK : undefined,
+                    TypeName: params.typeName,
+                    Arn: params.arn,
+                }),
+            ),
+        );
     }
 }
 

@@ -19,6 +19,7 @@ import { DocumentSymbolRouter } from '../../src/documentSymbol/DocumentSymbolRou
 import { FeatureFlag } from '../../src/featureFlag/FeatureFlagI';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { HoverRouter } from '../../src/hover/HoverRouter';
+import { HooksManager } from '../../src/hooks/HooksManager';
 import { LspAuthHandlers } from '../../src/protocol/LspAuthHandlers';
 import { LspCfnEnvironmentHandlers } from '../../src/protocol/LspCfnEnvironmentHandlers';
 import { LspCommunication } from '../../src/protocol/LspCommunication';
@@ -26,6 +27,7 @@ import { LspComponents } from '../../src/protocol/LspComponents';
 import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
 import { LspDocuments } from '../../src/protocol/LspDocuments';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
+import { LspHooksHandlers } from '../../src/protocol/LspHooksHandlers';
 import { LspRelatedResourcesHandlers } from '../../src/protocol/LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
 import { LspS3Handlers } from '../../src/protocol/LspS3Handlers';
@@ -358,6 +360,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         relatedResourcesHandlers: overrides.relatedResourcesHandlers ?? stubInterface<LspRelatedResourcesHandlers>(),
         s3Handlers: overrides.s3Handlers ?? stubInterface<LspS3Handlers>(),
         systemHandlers: overrides.systemHandlers ?? stubInterface<LspSystemHandlers>(),
+        hooksHandlers: overrides.hooksHandlers ?? stubInterface<LspHooksHandlers>(),
     };
 
     const core: MockInfraCoreComponents = {
@@ -417,6 +420,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
         documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
         codeLensProvider: overrides.codeLensProvider ?? stubInterface<CodeLensProvider>(),
+        hooksManager: overrides.hooksManager ?? stubInterface<HooksManager>(),
         close: () => Promise.resolve(),
         configurables: () => [],
     };

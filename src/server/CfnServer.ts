@@ -9,6 +9,13 @@ import { definitionHandler } from '../handlers/DefinitionHandler';
 import { didChangeHandler, didCloseHandler, didOpenHandler, didSaveHandler } from '../handlers/DocumentHandler';
 import { documentSymbolHandler } from '../handlers/DocumentSymbolHandler';
 import { executionHandler } from '../handlers/ExecutionHandler';
+import {
+    configureHookHandler,
+    describeHookHandler,
+    getHookResultHandler,
+    listHookResultsHandler,
+    listHooksHandler,
+} from '../handlers/HooksHandler';
 import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
 import {
@@ -301,6 +308,38 @@ export class CfnServer {
             withTelemetryContext(
                 'S3.Upload.File',
                 withOnlineGuard(this.components.onlineFeatureGuard, uploadFileToS3Handler(this.components)),
+            ),
+        );
+
+        // Hooks
+        this.lsp.hooksHandlers.onListHooks(
+            withTelemetryContext(
+                'Hooks.List',
+                withOnlineGuard(this.components.onlineFeatureGuard, listHooksHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onDescribeHook(
+            withTelemetryContext(
+                'Hooks.Describe',
+                withOnlineGuard(this.components.onlineFeatureGuard, describeHookHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListHookResults(
+            withTelemetryContext(
+                'Hooks.Results.List',
+                withOnlineGuard(this.components.onlineFeatureGuard, listHookResultsHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onGetHookResult(
+            withTelemetryContext(
+                'Hooks.Result.Get',
+                withOnlineGuard(this.components.onlineFeatureGuard, getHookResultHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onConfigureHook(
+            withTelemetryContext(
+                'Hooks.Configure',
+                withOnlineGuard(this.components.onlineFeatureGuard, configureHookHandler(this.components)),
             ),
         );
     }

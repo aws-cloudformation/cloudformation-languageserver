@@ -2,6 +2,7 @@ import { CompletionRouter } from '../autocomplete/CompletionRouter';
 import { CodeLensProvider } from '../codeLens/CodeLensProvider';
 import { DefinitionProvider } from '../definition/DefinitionProvider';
 import { DocumentSymbolRouter } from '../documentSymbol/DocumentSymbolRouter';
+import { HooksManager } from '../hooks/HooksManager';
 import { HoverRouter } from '../hover/HoverRouter';
 import { RelatedResourcesSnippetProvider } from '../relatedResources/RelatedResourcesSnippetProvider';
 import { ResourceStateImporter } from '../resourceState/ResourceStateImporter';
@@ -50,6 +51,7 @@ export class CfnLspProviders implements Configurables, Closeable {
     readonly codeActionService: CodeActionService;
     readonly documentSymbolRouter: DocumentSymbolRouter;
     readonly codeLensProvider: CodeLensProvider;
+    readonly hooksManager: HooksManager;
 
     constructor(core: CfnInfraCore, external: CfnExternal, overrides: Partial<CfnLspProviders> = {}) {
         this.stackManagementInfoProvider =
@@ -81,6 +83,7 @@ export class CfnLspProviders implements Configurables, Closeable {
         this.documentSymbolRouter = overrides.documentSymbolRouter ?? new DocumentSymbolRouter(core.syntaxTreeManager);
         this.codeLensProvider =
             overrides.codeLensProvider ?? new CodeLensProvider(core.syntaxTreeManager, core.documentManager);
+        this.hooksManager = overrides.hooksManager ?? new HooksManager(external.cfnService);
     }
 
     configurables(): Configurable[] {
