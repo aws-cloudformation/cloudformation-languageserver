@@ -21,17 +21,20 @@ import { TestExtension } from '../utils/TestExtension';
 describe('ResourceState E2E', () => {
     let mockCloudControlSend: SinonStub;
     let mockCloudFormationSend: SinonStub;
+    let mockS3Send: SinonStub;
     let client: TestExtension;
 
     beforeAll(async () => {
         const testClient: MockAwsTestClient = await createMockAwsTestClient();
         mockCloudControlSend = testClient.mockCloudControlSend;
         mockCloudFormationSend = testClient.mockCloudFormationSend;
+        mockS3Send = testClient.mockS3Send;
         client = testClient.client;
     });
 
     beforeEach(async () => {
         await client.reset();
+        mockS3Send.resolves({ BucketRegion: 'us-east-1' });
     });
 
     afterAll(async () => {

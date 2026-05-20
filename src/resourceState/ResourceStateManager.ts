@@ -72,6 +72,13 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
 
         this.telemetry.count('state.miss', 1);
 
+        if (typeName === 'AWS::S3::Bucket') {
+            const bucketError = await this.s3Service.verifyBucketAccessibleInRegion(identifier, this.settings.region);
+            if (bucketError) {
+                return { error: bucketError };
+            }
+        }
+
         let output: GetResourceCommandOutput | undefined = undefined;
 
         try {

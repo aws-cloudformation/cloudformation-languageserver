@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetBucketEncryptionCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
 import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AwsClient } from '../../../src/services/AwsClient';
@@ -108,6 +108,68 @@ describe('S3Service', () => {
                 Key: key,
                 Body: content,
             });
+        });
+    });
+
+    describe('verifyBucketAccessibleInRegion', () => {
+        it('should return undefined when bucket is owned and in the correct region', async () => {
+            s3Mock.on(GetBucketEncryptionCommand).resolves({});
+            s3Mock.on(HeadBucketCommand).resolves({ BucketRegion: 'us-east-1' });
+
+            const result = await service.verifyBucketAccessibleInRegion('my-bucket', 'us-east-1');
+
+            expect(result).toBeUndefined();
+            expect(s3Mock.commandCalls(GetBucketEncryptionCommand)[0].args[0].input).toEqual({
+                Bucket: 'my-bucket',
+            });
+            expect(s3Mock.commandCalls(HeadBucketCommand)[0].args[0].input).toEqual({
+                Bucket: 'my-bucket',
+            });
+        });
+
+        it('should return error when GetBucketEncryption fails with client error', async () => {
+            const error = new Error('Access Denied');
+            error.name = 'AccessDenied';
+            (error as any).$metadata = { httpStatusCode: 403 };
+            s3Mock.on(GetBucketEncryptionCommand).rejects(error);
+
+            const result = await service.verifyBucketAccessibleInRegion('not-my-bucket', 'us-east-1');
+
+            expect(result).toContain('not owned by the current account');
+            expect(s3Mock.commandCalls(HeadBucketCommand)).toHaveLength(0);
+        });
+
+        it('should return error when bucket is in a different region', async () => {
+            s3Mock.on(GetBucketEncryptionCommand).resolves({});
+            s3Mock.on(HeadBucketCommand).resolves({ BucketRegion: 'eu-west-1' });
+
+            const result = await service.verifyBucketAccessibleInRegion('my-bucket', 'us-east-1');
+
+            expect(result).toContain('in region eu-west-1');
+            expect(result).toContain('not us-east-1');
+        });
+
+        it('should throw on unexpected server errors from GetBucketEncryption', async () => {
+            const error = new Error('Internal Server Error');
+            error.name = 'InternalError';
+            (error as any).$metadata = { httpStatusCode: 500 };
+            s3Mock.on(GetBucketEncryptionCommand).rejects(error);
+
+            await expect(service.verifyBucketAccessibleInRegion('my-bucket', 'us-east-1')).rejects.toThrow(
+                'Internal Server Error',
+            );
+        });
+
+        it('should return error when HeadBucket fails with client error', async () => {
+            s3Mock.on(GetBucketEncryptionCommand).resolves({});
+            const error = new Error('Not Found');
+            error.name = 'NotFound';
+            (error as any).$metadata = { httpStatusCode: 404 };
+            s3Mock.on(HeadBucketCommand).rejects(error);
+
+            const result = await service.verifyBucketAccessibleInRegion('my-bucket', 'us-east-1');
+
+            expect(result).toContain('not accessible');
         });
     });
 });
