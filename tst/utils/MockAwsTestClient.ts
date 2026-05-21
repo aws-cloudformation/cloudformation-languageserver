@@ -6,6 +6,7 @@ export interface MockAwsTestClient {
     mockCloudControlSend: SinonStub;
     mockCloudFormationSend: SinonStub;
     mockS3Send: SinonStub;
+    mockStsSend: SinonStub;
     client: TestExtension;
 }
 
@@ -13,9 +14,10 @@ export async function createMockAwsTestClient(): Promise<MockAwsTestClient> {
     const mockCloudControlSend = stub();
     const mockCloudFormationSend = stub();
     const mockS3Send = stub();
+    const mockStsSend = stub();
 
     const client = new TestExtension({
-        awsClientFactory: createMockAwsClient(mockCloudControlSend, mockCloudFormationSend, mockS3Send),
+        awsClientFactory: createMockAwsClient(mockCloudControlSend, mockCloudFormationSend, mockS3Send, mockStsSend),
     });
 
     await client.ready();
@@ -28,5 +30,5 @@ export async function createMockAwsTestClient(): Promise<MockAwsTestClient> {
         region: 'us-east-1',
     });
 
-    return { mockCloudControlSend, mockCloudFormationSend, mockS3Send, client };
+    return { mockCloudControlSend, mockCloudFormationSend, mockS3Send, mockStsSend, client };
 }

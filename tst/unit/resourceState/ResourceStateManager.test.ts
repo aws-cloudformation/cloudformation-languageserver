@@ -108,31 +108,31 @@ describe('ResourceStateManager', () => {
             expect(result.error).toContain('not authorized to perform');
         });
 
-        it('should return error when S3 bucket verification throws a client error', async () => {
-            const error = new Error(
-                'User: arn:aws:iam::123:user/me is not authorized to perform: s3:GetEncryptionConfiguration',
+        it('should return error when S3 bucket verification throws ResourceNotFoundException', async () => {
+            vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockRejectedValue(
+                new ResourceNotFoundException({
+                    message: "Resource of type 'AWS::S3::Bucket' with identifier 'not-my-bucket' was not found",
+                    $metadata: { httpStatusCode: 403 },
+                }),
             );
-            error.name = 'AccessDenied';
-            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 403 };
-            vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockRejectedValue(error);
 
             const result = await manager.getResource('AWS::S3::Bucket', 'not-my-bucket');
 
             expect(result.resource).toBeUndefined();
-            expect(result.error).toContain('s3:GetEncryptionConfiguration');
+            expect(result.error).toContain('was not found');
             expect(mockCcapiService.getResource).not.toHaveBeenCalled();
         });
 
-        it('should return error when S3 bucket verification throws NoSuchBucket', async () => {
-            const error = new Error('The specified bucket does not exist');
-            error.name = 'NoSuchBucket';
-            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 404 };
+        it('should return error when S3 bucket verification fails with a network/credential error', async () => {
+            const error = new Error('The security token included in the request is expired');
+            error.name = 'ExpiredToken';
+            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 401 };
             vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockRejectedValue(error);
 
-            const result = await manager.getResource('AWS::S3::Bucket', 'missing-bucket');
+            const result = await manager.getResource('AWS::S3::Bucket', 'my-bucket');
 
             expect(result.resource).toBeUndefined();
-            expect(result.error).toContain('does not exist');
+            expect(result.error).toContain('security token');
             expect(mockCcapiService.getResource).not.toHaveBeenCalled();
         });
 

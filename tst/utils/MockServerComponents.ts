@@ -437,6 +437,7 @@ export function createMockAwsClient(
     mockCloudControlSend: SinonStub,
     mockCloudFormationSend: SinonStub,
     mockS3Send: SinonStub,
+    mockStsSend: SinonStub,
 ): (credentials: AwsCredentials, endpoint?: string) => AwsClient {
     return (credentials: AwsCredentials, endpoint?: string) => {
         const mockClient = new AwsClient(credentials, endpoint);
@@ -451,6 +452,10 @@ export function createMockAwsClient(
 
         stub(mockClient, 'getS3Client').returns({
             send: mockS3Send,
+        } as any);
+
+        stub(mockClient, 'getStsClient').returns({
+            send: mockStsSend,
         } as any);
 
         return mockClient;

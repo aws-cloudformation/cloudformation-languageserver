@@ -82,6 +82,10 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
                     return { error: regionError };
                 }
             } catch (error) {
+                if (error instanceof ResourceNotFoundException) {
+                    log.info(`No S3 bucket found for identifier "${identifier}" or it is owned by another account`);
+                    return { error: extractErrorMessage(error) };
+                }
                 if (isClientError(error)) {
                     log.info(`S3 bucket verification failed for "${identifier}": ${extractErrorMessage(error)}`);
                     return { error: extractErrorMessage(error) };
