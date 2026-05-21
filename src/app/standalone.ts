@@ -1,7 +1,8 @@
 import './polyfills';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node'; // eslint-disable-line no-restricted-imports
 import { InitializedParams } from 'vscode-languageserver-protocol';
-import { LspCapabilities } from '../protocol/LspCapabilities';
+import { initCommands, getCommands } from '../handlers/ExecutionHandler';
+import { buildCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';
 import { ExtendedInitializeParams } from '../server/InitParams';
 import { ExtensionName } from '../utils/ExtensionConfig';
@@ -13,13 +14,17 @@ let server: unknown;
 async function onInitialize(params: ExtendedInitializeParams) {
     staticInitialize(params.clientInfo, params.initializationOptions?.['aws']);
 
+    const name = params.initializationOptions?.aws?.clientInfo?.extension?.name;
+    const suffix = typeof name === 'string' ? name : undefined;
+    initCommands(suffix);
+
     // Dynamically load these modules so that OTEL can instrument all the libraries first
     const { CfnInfraCore } = await import('../server/CfnInfraCore');
     const core = new CfnInfraCore(lsp.components, params);
 
     const { CfnServer } = await import('../server/CfnServer');
     server = new CfnServer(lsp.components, core);
-    return LspCapabilities;
+    return buildCapabilities(getCommands());
 }
 
 function onInitialized(params: InitializedParams) {

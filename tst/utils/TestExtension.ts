@@ -52,7 +52,8 @@ import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';
 import { MultiDataStoreFactoryProvider } from '../../src/datastore/DataStore';
 import { featureFlagLocalFile, FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
-import { LspCapabilities } from '../../src/protocol/LspCapabilities';
+import { buildCapabilities } from '../../src/protocol/LspCapabilities';
+import { getCommands } from '../../src/handlers/ExecutionHandler';
 import { LspConnection } from '../../src/protocol/LspConnection';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { SchemaStore } from '../../src/schema/SchemaStore';
@@ -173,7 +174,7 @@ export class TestExtension implements Closeable {
                         ),
                     });
                     this.server = new CfnServer(lsp, this.core, this.external, this.providers);
-                    return LspCapabilities;
+                    return buildCapabilities(getCommands());
                 },
                 onInitialized: (params) => this.server.initialized(params),
                 onShutdown: () => this.server.close(),

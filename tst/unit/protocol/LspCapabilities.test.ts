@@ -1,8 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { TextDocumentSyncKind, CodeActionKind } from 'vscode-languageserver';
-import { CLEAR_DIAGNOSTIC, TRACK_CODE_ACTION_ACCEPTED, UPDATE_REGION } from '../../../src/handlers/ExecutionHandler';
-import { LspCapabilities } from '../../../src/protocol/LspCapabilities';
+import {
+    CLEAR_DIAGNOSTIC,
+    TRACK_CODE_ACTION_ACCEPTED,
+    UPDATE_REGION,
+    createCommands,
+} from '../../../src/handlers/ExecutionHandler';
+import { buildCapabilities } from '../../../src/protocol/LspCapabilities';
 import { ExtensionName, ExtensionVersion } from '../../../src/utils/ExtensionConfig';
+
+const LspCapabilities = buildCapabilities(createCommands());
 
 describe('LspCapabilities', () => {
     describe('capabilities structure', () => {
