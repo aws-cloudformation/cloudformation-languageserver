@@ -10,7 +10,6 @@ import {
 } from '@aws-sdk/client-s3';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
-import { isClientError } from '../utils/AwsErrorMapper';
 import { markIfClientError } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
@@ -74,30 +73,20 @@ export class S3Service {
 
     @Measure({ name: 'verifyBucketAccessibleInRegion' })
     async verifyBucketAccessibleInRegion(bucketName: string, region: string): Promise<string | undefined> {
-        const client = this.awsClient.getS3Client();
-
-        try {
+        return await this.withClient(async (client) => {
+            // GetBucketEncryption is a bucket-owner-restricted operation; a successful response is
+            // positive evidence that the caller can read the bucket. Any failure (cross-account
+            // 403, NoSuchBucket, network error, expired credentials, etc.) propagates to the
+            // caller rather than being interpreted as a specific ownership failure.
             await client.send(new GetBucketEncryptionCommand({ Bucket: bucketName }));
-        } catch (error) {
-            if (isClientError(error)) {
-                return `Bucket "${bucketName}" is not owned by the current account`;
-            }
-            throw error;
-        }
 
-        try {
             const response = await client.send(new HeadBucketCommand({ Bucket: bucketName }));
             if (response.BucketRegion !== region) {
                 return `Bucket "${bucketName}" is in region ${response.BucketRegion}, not ${region}`;
             }
-        } catch (error) {
-            if (isClientError(error)) {
-                return `Bucket "${bucketName}" is not accessible`;
-            }
-            throw error;
-        }
 
-        return undefined;
+            return;
+        });
     }
 
     async putObject(localFilePath: string, s3Url: string) {

@@ -127,19 +127,7 @@ describe('S3Service', () => {
             });
         });
 
-        it('should return error when GetBucketEncryption fails with client error', async () => {
-            const error = new Error('Access Denied');
-            error.name = 'AccessDenied';
-            (error as any).$metadata = { httpStatusCode: 403 };
-            s3Mock.on(GetBucketEncryptionCommand).rejects(error);
-
-            const result = await service.verifyBucketAccessibleInRegion('not-my-bucket', 'us-east-1');
-
-            expect(result).toContain('not owned by the current account');
-            expect(s3Mock.commandCalls(HeadBucketCommand)).toHaveLength(0);
-        });
-
-        it('should return error when bucket is in a different region', async () => {
+        it('should return error string when bucket is in a different region', async () => {
             s3Mock.on(GetBucketEncryptionCommand).resolves({});
             s3Mock.on(HeadBucketCommand).resolves({ BucketRegion: 'eu-west-1' });
 
@@ -149,10 +137,44 @@ describe('S3Service', () => {
             expect(result).toContain('not us-east-1');
         });
 
-        it('should throw on unexpected server errors from GetBucketEncryption', async () => {
+        it('should propagate access-denied errors from GetBucketEncryption without claiming ownership', async () => {
+            const error = new Error('Access Denied');
+            error.name = 'AccessDenied';
+            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 403 };
+            s3Mock.on(GetBucketEncryptionCommand).rejects(error);
+
+            await expect(service.verifyBucketAccessibleInRegion('not-my-bucket', 'us-east-1')).rejects.toThrow(
+                'Access Denied',
+            );
+            expect(s3Mock.commandCalls(HeadBucketCommand)).toHaveLength(0);
+        });
+
+        it('should propagate NoSuchBucket errors from GetBucketEncryption', async () => {
+            const error = new Error('The specified bucket does not exist');
+            error.name = 'NoSuchBucket';
+            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 404 };
+            s3Mock.on(GetBucketEncryptionCommand).rejects(error);
+
+            await expect(service.verifyBucketAccessibleInRegion('missing-bucket', 'us-east-1')).rejects.toThrow(
+                'The specified bucket does not exist',
+            );
+            expect(s3Mock.commandCalls(HeadBucketCommand)).toHaveLength(0);
+        });
+
+        it('should propagate network errors instead of claiming ownership failure', async () => {
+            const error = new Error('getaddrinfo ENOTFOUND s3.us-east-1.amazonaws.com');
+            error.name = 'NetworkingError';
+            s3Mock.on(GetBucketEncryptionCommand).rejects(error);
+
+            await expect(service.verifyBucketAccessibleInRegion('my-bucket', 'us-east-1')).rejects.toThrow(
+                'getaddrinfo ENOTFOUND',
+            );
+        });
+
+        it('should propagate server errors from GetBucketEncryption', async () => {
             const error = new Error('Internal Server Error');
             error.name = 'InternalError';
-            (error as any).$metadata = { httpStatusCode: 500 };
+            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 500 };
             s3Mock.on(GetBucketEncryptionCommand).rejects(error);
 
             await expect(service.verifyBucketAccessibleInRegion('my-bucket', 'us-east-1')).rejects.toThrow(
@@ -160,16 +182,14 @@ describe('S3Service', () => {
             );
         });
 
-        it('should return error when HeadBucket fails with client error', async () => {
+        it('should propagate HeadBucket failures after a successful encryption check', async () => {
             s3Mock.on(GetBucketEncryptionCommand).resolves({});
             const error = new Error('Not Found');
             error.name = 'NotFound';
-            (error as any).$metadata = { httpStatusCode: 404 };
+            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 404 };
             s3Mock.on(HeadBucketCommand).rejects(error);
 
-            const result = await service.verifyBucketAccessibleInRegion('my-bucket', 'us-east-1');
-
-            expect(result).toContain('not accessible');
+            await expect(service.verifyBucketAccessibleInRegion('my-bucket', 'us-east-1')).rejects.toThrow('Not Found');
         });
     });
 });

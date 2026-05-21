@@ -108,15 +108,31 @@ describe('ResourceStateManager', () => {
             expect(result.error).toContain('not authorized to perform');
         });
 
-        it('should return error when S3 bucket ownership verification fails', async () => {
-            vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockResolvedValue(
-                'Bucket "not-my-bucket" is not owned by the current account',
+        it('should return error when S3 bucket verification throws a client error', async () => {
+            const error = new Error(
+                'User: arn:aws:iam::123:user/me is not authorized to perform: s3:GetEncryptionConfiguration',
             );
+            error.name = 'AccessDenied';
+            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 403 };
+            vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockRejectedValue(error);
 
             const result = await manager.getResource('AWS::S3::Bucket', 'not-my-bucket');
 
             expect(result.resource).toBeUndefined();
-            expect(result.error).toContain('not owned by the current account');
+            expect(result.error).toContain('s3:GetEncryptionConfiguration');
+            expect(mockCcapiService.getResource).not.toHaveBeenCalled();
+        });
+
+        it('should return error when S3 bucket verification throws NoSuchBucket', async () => {
+            const error = new Error('The specified bucket does not exist');
+            error.name = 'NoSuchBucket';
+            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 404 };
+            vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockRejectedValue(error);
+
+            const result = await manager.getResource('AWS::S3::Bucket', 'missing-bucket');
+
+            expect(result.resource).toBeUndefined();
+            expect(result.error).toContain('does not exist');
             expect(mockCcapiService.getResource).not.toHaveBeenCalled();
         });
 
@@ -148,7 +164,7 @@ describe('ResourceStateManager', () => {
             expect(mockS3Service.verifyBucketAccessibleInRegion).toHaveBeenCalledWith('my-bucket', 'us-east-1');
         });
 
-        it('should skip ownership verification for non-S3 resource types', async () => {
+        it('should skip bucket verification for non-S3 resource types', async () => {
             const mockOutput: GetResourceCommandOutput = {
                 TypeName: 'AWS::IAM::Role',
                 ResourceDescription: {
@@ -164,12 +180,14 @@ describe('ResourceStateManager', () => {
             expect(mockS3Service.verifyBucketAccessibleInRegion).not.toHaveBeenCalled();
         });
 
-        it('should throw when verifyBucketAccessibleInRegion throws unexpected error', async () => {
-            vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockRejectedValue(
-                new Error('Internal Server Error'),
-            );
+        it('should rethrow non-client errors from verifyBucketAccessibleInRegion', async () => {
+            const error = new Error('Internal Server Error');
+            error.name = 'InternalError';
+            (error as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 500 };
+            vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockRejectedValue(error);
 
             await expect(manager.getResource('AWS::S3::Bucket', 'my-bucket')).rejects.toThrow('Internal Server Error');
+            expect(mockCcapiService.getResource).not.toHaveBeenCalled();
         });
 
         it('should return error for missing required fields', async () => {
