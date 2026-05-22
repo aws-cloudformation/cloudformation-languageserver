@@ -1,6 +1,7 @@
 import { AwsCredentials } from '../auth/AwsCredentials';
 import { ContextManager } from '../context/ContextManager';
 import { FileContextManager } from '../context/FileContextManager';
+import { syntaxTreeFactory } from '../context/syntaxtree/SyntaxTreeFactory';
 import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { DataStoreFactoryProvider, MultiDataStoreFactoryProvider } from '../datastore/DataStore';
 import { DocumentManager } from '../document/DocumentManager';
@@ -58,6 +59,7 @@ export class CfnInfraCore implements Configurables, Closeable {
             );
         this.dataStoreFactory =
             overrides.dataStoreFactory ?? new MultiDataStoreFactoryProvider(this.featureFlags.get('FileDb'));
+        syntaxTreeFactory.initialize(this.featureFlags.get('WasmParser'));
         this.clientMessage = overrides.clientMessage ?? new ClientMessage(lspComponents.communication);
         this.settingsManager =
             overrides.settingsManager ?? new SettingsManager(lspComponents.workspace, this.awsMetadata?.settings);

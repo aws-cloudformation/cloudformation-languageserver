@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { JsonSyntaxTree } from '../../../../src/context/syntaxtree/JsonSyntaxTree';
-import { YamlSyntaxTree } from '../../../../src/context/syntaxtree/YamlSyntaxTree';
+import { createJsonTree, createYamlTree } from '../../../utils/TestTree';
 
 describe('Intrinsic Function Path Preservation', () => {
     it('should preserve Fn::If in path when navigating to conditional content', () => {
@@ -343,13 +342,13 @@ Conditions:
 });
 
 function getYamlPath(content: string, line: number, character: number): (string | number)[] {
-    const tree = new YamlSyntaxTree(content);
+    const tree = createYamlTree(content);
     const node = tree.getNodeAtPosition({ line, character });
     return [...tree.getPathAndEntityInfo(node).propertyPath];
 }
 
 function getJsonPath(content: string, line: number, character: number): (string | number)[] {
-    const tree = new JsonSyntaxTree(content);
+    const tree = createJsonTree(content);
     const node = tree.getNodeAtPosition({ line, character });
     return [...tree.getPathAndEntityInfo(node).propertyPath];
 }

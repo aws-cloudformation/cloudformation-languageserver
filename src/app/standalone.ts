@@ -14,8 +14,14 @@ async function onInitialize(params: ExtendedInitializeParams) {
     staticInitialize(params.clientInfo, params.initializationOptions?.['aws']);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
+    const { syntaxTreeFactory } = await import('../context/syntaxtree/SyntaxTreeFactory');
+    await syntaxTreeFactory.ready;
+
     const { CfnInfraCore } = await import('../server/CfnInfraCore');
     const core = new CfnInfraCore(lsp.components, params);
+
+    // CfnInfraCore.initialize may switch to WASM based on feature flag
+    await syntaxTreeFactory.ready;
 
     const { CfnServer } = await import('../server/CfnServer');
     server = new CfnServer(lsp.components, core);

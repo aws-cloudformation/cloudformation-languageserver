@@ -1,12 +1,12 @@
-import YamlGrammar from '@tree-sitter-grammars/tree-sitter-yaml';
-import Parser, { Edit, Point, SyntaxNode, Tree, Language } from 'tree-sitter';
-import JsonGrammar from 'tree-sitter-json';
+import { Edit, Point, SyntaxNode, Tree } from 'tree-sitter';
 import { Position } from 'vscode-languageserver-textdocument';
 import { DocumentType } from '../../document/Document';
 import { createEdit } from '../../document/DocumentUtils';
+import { ParserFactory } from '../../parser/ParserFactory';
 import { Measure } from '../../telemetry/TelemetryDecorator';
 import { TopLevelSection, TopLevelSections, IntrinsicsSet } from '../CloudFormationEnums';
 import { normalizeIntrinsicFunction } from '../semantic/Intrinsics';
+import { ParserType } from './SyntaxTreeFactory';
 import { extractEntityFromNodeTextYaml } from './utils/NodeParse';
 import { NodeSearch } from './utils/NodeSearch';
 import { NodeStructure } from './utils/NodeStructure';
@@ -15,20 +15,13 @@ import { NodeType } from './utils/NodeType';
 import { createSyntheticNode } from './utils/SyntheticEntityFactory';
 import { CommonNodeTypes, JsonNodeTypes, YamlNodeTypes } from './utils/TreeSitterTypes';
 
-// Optimization to only load the different language grammars once
-// Loading native/wasm code is expensive
-const JSON_PARSER = new Parser();
-JSON_PARSER.setLanguage(JsonGrammar as Language);
-
-const YAML_PARSER = new Parser();
-YAML_PARSER.setLanguage(YamlGrammar as Language);
-
 export type PropertyPath = ReadonlyArray<string | number>;
 export type PathAndEntity = {
     path: ReadonlyArray<SyntaxNode>; // All nodes from target to root
     propertyPath: PropertyPath; // Path like ["Resources", "MyBucket", "Properties"]
     entityRootNode?: SyntaxNode; // The complete entity definition (e.g., entire resource)
 };
+
 const LARGE_NODE_TEXT_LIMIT = 200; // If a node's text is > 200 chars, we are likely not at the most specific node (indicating that it might be invalid)
 
 export abstract class SyntaxTree {
@@ -36,15 +29,19 @@ export abstract class SyntaxTree {
     private readonly parser;
     private rawContent: string;
     private _lines: string[] | undefined;
+    private readonly parserType: ParserType;
 
     protected constructor(
         public readonly type: DocumentType,
         content: string,
+        factory: ParserFactory,
+        parserType: ParserType,
     ) {
+        this.parserType = parserType;
         if (type === DocumentType.YAML) {
-            this.parser = YAML_PARSER;
+            this.parser = factory.createYamlParser();
         } else {
-            this.parser = JSON_PARSER;
+            this.parser = factory.createJsonParser();
         }
         this.rawContent = content;
         this.tree = this.parser.parse(this.rawContent);
@@ -637,7 +634,7 @@ export abstract class SyntaxTree {
                     }
 
                     // Stop if we've reached the root node (avoid infinite loop)
-                    if (current === this.tree.rootNode) {
+                    if (current.id === this.tree.rootNode.id) {
                         break;
                     }
                     current = current.parent;

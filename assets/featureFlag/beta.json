@@ -47,6 +47,10 @@
         "FileDb": {
             "enabled": false,
             "fleetPercentage": 100
+        },
+        "WasmParser": {
+            "enabled": false,
+            "fleetPercentage": 0
         }
     }
 }

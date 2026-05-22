@@ -1,14 +1,11 @@
 import { stubInterface } from 'ts-sinon';
 import { JsonSyntaxTree } from '../../src/context/syntaxtree/JsonSyntaxTree';
+import { syntaxTreeFactory } from '../../src/context/syntaxtree/SyntaxTreeFactory';
 import { YamlSyntaxTree } from '../../src/context/syntaxtree/YamlSyntaxTree';
 import { DocumentType } from '../../src/document/Document';
 
 export function createTree(content: string, documentType: DocumentType) {
-    if (documentType === DocumentType.JSON) {
-        return new JsonSyntaxTree(content);
-    }
-
-    return new YamlSyntaxTree(content);
+    return syntaxTreeFactory.createSyntaxTree(content, documentType);
 }
 
 export function createYamlTree(content: string) {

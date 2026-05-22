@@ -131,7 +131,10 @@ export class TestExtension implements Closeable {
         this.serverConnection = new LspConnection(
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
             {
-                onInitialize: (params) => {
+                onInitialize: async (params) => {
+                    const { syntaxTreeFactory } = await import('../../src/context/syntaxtree/SyntaxTreeFactory');
+                    await syntaxTreeFactory.ready;
+
                     const lsp = this.serverConnection.components;
                     LoggerFactory.reconfigure('warn');
 
@@ -144,6 +147,7 @@ export class TestExtension implements Closeable {
                         dataStoreFactory,
                         featureFlags,
                     });
+                    await syntaxTreeFactory.ready;
 
                     const schemaStore = new SchemaStore(dataStoreFactory);
                     const schemaRetriever = new SchemaRetriever(
