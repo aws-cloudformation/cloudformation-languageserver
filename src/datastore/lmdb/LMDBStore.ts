@@ -14,6 +14,8 @@ export class LMDBStore implements DataStore {
         private store: Database<unknown, string>,
         private readonly onError: ErrorHandler,
         private readonly validateDatabase: () => void,
+        // eslint-disable-next-line unicorn/consistent-function-scoping
+        private readonly beginOp: () => () => void = () => () => {},
     ) {
         this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
     }
@@ -26,6 +28,7 @@ export class LMDBStore implements DataStore {
         return this.telemetry.measure(
             op,
             () => {
+                const release = this.beginOp();
                 try {
                     this.validateDatabase();
                     return fn();
@@ -34,6 +37,8 @@ export class LMDBStore implements DataStore {
                     this.telemetry.count(`retry.${op}`, 1);
                     this.validateDatabase();
                     return fn();
+                } finally {
+                    release();
                 }
             },
             { captureErrorAttributes: true },
@@ -44,6 +49,7 @@ export class LMDBStore implements DataStore {
         return await this.telemetry.measureAsync(
             op,
             async () => {
+                const release = this.beginOp();
                 try {
                     this.validateDatabase();
                     return await fn();
@@ -52,6 +58,8 @@ export class LMDBStore implements DataStore {
                     this.telemetry.count(`retry.${op}`, 1);
                     this.validateDatabase();
                     return await fn();
+                } finally {
+                    release();
                 }
             },
             { captureErrorAttributes: true },

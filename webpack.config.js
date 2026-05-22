@@ -57,7 +57,7 @@ function generateExternals() {
 
 const EXTERNALS = generateExternals();
 
-function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, buildTarget = '') {
+function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, buildTarget = '', skipWheels = false) {
     const plugins = [];
 
     plugins.push(
@@ -69,21 +69,25 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
     );
 
     // Download Python wheels at build time so they don't need to be committed to git
-    plugins.push({
-        apply: (compiler) => {
-            compiler.hooks.beforeRun.tapAsync('DownloadWheels', (_compilation, callback) => {
-                try {
-                    console.log('[DownloadWheels] Downloading Python wheels...');
-                    execSync('npm run download-wheels', { cwd: __dirname, stdio: 'inherit' });
-                    console.log('[DownloadWheels] Done');
-                    callback();
-                } catch (error) {
-                    console.error('[DownloadWheels] Error:', error);
-                    callback(error);
-                }
-            });
-        },
-    });
+    if (!skipWheels) {
+        plugins.push({
+            apply: (compiler) => {
+                compiler.hooks.beforeRun.tapAsync('DownloadWheels', (_compilation, callback) => {
+                    try {
+                        console.log('[DownloadWheels] Downloading Python wheels...');
+                        execSync('npm run download-wheels', { cwd: __dirname, stdio: 'inherit' });
+                        console.log('[DownloadWheels] Done');
+                        callback();
+                    } catch (error) {
+                        console.error('[DownloadWheels] Error:', error);
+                        callback(error);
+                    }
+                });
+            },
+        });
+    } else {
+        console.log('[DownloadWheels] Skipped (skipWheels=true)');
+    }
 
     // Copy relationship schemas for both development and production
     plugins.push(
@@ -295,6 +299,7 @@ module.exports = (env = {}) => {
     let awsEnv = env.env;
     const rebuild = env.rebuild === 'true' || env.rebuild === true;
     const buildTarget = env.buildTarget || '';
+    const skipWheels = env.skipWheels === 'true' || env.skipWheels === true;
 
     // Validate mode
     const validModes = ['development', 'production'];
@@ -320,7 +325,7 @@ module.exports = (env = {}) => {
     console.info(`Building server with mode: ${mode}`);
     console.info(`NODE_ENV: ${mode}`);
     console.info(`AWS_ENV: ${awsEnv}`);
-    console.info(`Platform: ${process.platform}, Arch: ${process.arch}, Rebuild: ${rebuild}`);
+    console.info(`Platform: ${process.platform}, Arch: ${process.arch}, Rebuild: ${rebuild}, SkipWheels: ${skipWheels}`);
     console.info(`Node.js ${process.version}, Versions: ${JSON.stringify(process.versions, null, 2)}`);
     console.info(`Output path: ${outputPath}`);
 
@@ -348,6 +353,6 @@ module.exports = (env = {}) => {
                 chunks: 'all',
             },
         },
-        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, rebuild, buildTarget),
+        plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, rebuild, buildTarget, skipWheels),
     };
 };

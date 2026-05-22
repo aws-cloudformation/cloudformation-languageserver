@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ScopedTelemetry } from '../../../src/telemetry/ScopedTelemetry';
+import { markSuppressFault } from '../../../src/utils/FaultSuppression';
 
 describe('ScopedTelemetry', () => {
     let mockMeter: any;
@@ -373,6 +374,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test error',
                 'error.stack': 'at func (file.ts:10:5)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -389,6 +391,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'uncaughtException',
                 'error.message': 'TypeError: type error',
                 'error.stack': 'at test (test.ts:1:1)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -405,6 +408,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'unhandledRejection',
                 'error.message': 'Error: rejection',
                 'error.stack': 'at promise (p.ts:5:10)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -426,6 +430,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test',
                 'error.stack': 'at x (x.ts:1:1)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -452,6 +457,7 @@ describe('ScopedTelemetry', () => {
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test',
                 'error.stack': 'at x (x.ts:1:1)',
+                'error.code': 'Unknown',
             });
         });
 
@@ -463,6 +469,7 @@ describe('ScopedTelemetry', () => {
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'string',
                 'error.origin': 'Unknown',
+                'error.code': 'Unknown',
             });
         });
 
@@ -474,6 +481,7 @@ describe('ScopedTelemetry', () => {
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'object',
                 'error.origin': 'Unknown',
+                'error.code': 'Unknown',
             });
         });
 
@@ -485,7 +493,66 @@ describe('ScopedTelemetry', () => {
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'undefined',
                 'error.origin': 'Unknown',
+                'error.code': 'Unknown',
             });
+        });
+    });
+
+    describe('suppressFault', () => {
+        it('should not emit fault metric for tagged errors in measure', () => {
+            const counters = new Map<string, { add: ReturnType<typeof vi.fn> }>();
+            mockMeter.createCounter.mockImplementation((name: string) => {
+                const counter = { add: vi.fn() };
+                counters.set(name, counter);
+                return counter;
+            });
+
+            const error = new Error('client error');
+            markSuppressFault(error);
+            const fn = vi.fn(() => {
+                throw error;
+            });
+
+            expect(() => scopedTelemetry.measure('test', fn)).toThrow(error);
+            expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(0, expect.anything());
+            expect(counters.get('test.fault')!.add).not.toHaveBeenCalledWith(1, expect.anything());
+            expect(counters.get('test.error')!.add).toHaveBeenCalledWith(1, expect.anything());
+        });
+
+        it('should not emit fault metric for tagged errors in countExecution', () => {
+            const counters = new Map<string, { add: ReturnType<typeof vi.fn> }>();
+            mockMeter.createCounter.mockImplementation((name: string) => {
+                const counter = { add: vi.fn() };
+                counters.set(name, counter);
+                return counter;
+            });
+
+            const error = new Error('client error');
+            markSuppressFault(error);
+            const fn = vi.fn(() => {
+                throw error;
+            });
+
+            expect(() => scopedTelemetry.countExecution('test', fn)).toThrow(error);
+            expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(0, expect.anything());
+            expect(counters.get('test.fault')!.add).not.toHaveBeenCalledWith(1, expect.anything());
+            expect(counters.get('test.error')!.add).toHaveBeenCalledWith(1, expect.anything());
+        });
+
+        it('should emit fault metric for untagged errors', () => {
+            const counters = new Map<string, { add: ReturnType<typeof vi.fn> }>();
+            mockMeter.createCounter.mockImplementation((name: string) => {
+                const counter = { add: vi.fn() };
+                counters.set(name, counter);
+                return counter;
+            });
+
+            const fn = vi.fn(() => {
+                throw new Error('server error');
+            });
+
+            expect(() => scopedTelemetry.measure('test', fn)).toThrow('server error');
+            expect(counters.get('test.fault')!.add).toHaveBeenCalledWith(1, expect.anything());
         });
     });
 });

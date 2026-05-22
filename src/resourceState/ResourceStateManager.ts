@@ -72,6 +72,29 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
 
         this.telemetry.count('state.miss', 1);
 
+        if (typeName === 'AWS::S3::Bucket') {
+            try {
+                const regionError = await this.s3Service.verifyBucketAccessibleInRegion(
+                    identifier,
+                    this.settings.region,
+                );
+                if (regionError) {
+                    return { error: regionError };
+                }
+            } catch (error) {
+                if (error instanceof ResourceNotFoundException) {
+                    log.info(`No S3 bucket found for identifier "${identifier}" or it is owned by another account`);
+                    return { error: extractErrorMessage(error) };
+                }
+                if (isClientError(error)) {
+                    log.info(`S3 bucket verification failed for "${identifier}": ${extractErrorMessage(error)}`);
+                    return { error: extractErrorMessage(error) };
+                }
+                log.error(error, `S3 bucket verification failed for "${identifier}"`);
+                throw error;
+            }
+        }
+
         let output: GetResourceCommandOutput | undefined = undefined;
 
         try {

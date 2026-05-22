@@ -319,3 +319,9 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+
+  long-running-tests:
+    needs: [version-and-tag, release]
+    uses: ./.github/workflows/post-release-long-running.yml
+    with:
+      tag: ${{ needs.version-and-tag.outputs.tag }}

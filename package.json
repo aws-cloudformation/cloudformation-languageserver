@@ -27,6 +27,7 @@
         "test:integration": "cross-env NODE_ENV=test vitest run --config vitest.integration.config.ts",
         "test:unit": "cross-env NODE_ENV=test vitest run --config vitest.unit.config.ts",
         "test:leaks": "cross-env NODE_ENV=test vitest run --pool=forks --logHeapUsage",
+        "test:stability": "cross-env NODE_ENV=test tsx tools/stability/runStabilityTest.ts",
         "lint": "eslint --cache --cache-location node_modules/.cache/eslint --max-warnings 0 .",
         "lint:fix": "npm run lint -- --fix",
         "build:go:dev": "GOPROXY=direct go build -C cfn-init/cmd -v -o ../../bundle/development/bin/cfn-init",

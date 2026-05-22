@@ -62,8 +62,12 @@ import {
 import type { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClientSettings, DefaultSettings } from '../settings/Settings';
 import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Count, Measure } from '../telemetry/TelemetryDecorator';
+import { markIfClientError } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
+
+const log = LoggerFactory.getLogger('CfnService');
 
 export class CfnService {
     private readonly awsClientSettings: AwsClientSettings = DefaultSettings.awsClient;
@@ -71,8 +75,14 @@ export class CfnService {
     public constructor(private readonly awsClient: AwsClient) {}
 
     protected async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
-        const client = this.awsClient.getCloudFormationClient();
-        return await request(client);
+        try {
+            const client = this.awsClient.getCloudFormationClient();
+            return await request(client);
+        } catch (error) {
+            log.error(error, 'CloudFormation API call failed');
+            markIfClientError(error);
+            throw error;
+        }
     }
 
     public async listStacks(

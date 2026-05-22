@@ -30,10 +30,18 @@ function downloadWheels(): void {
 
     try {
         // 1. Download cfn-lint and pure Python dependencies via pip
-        execSync('python3 -m pip download --dest ' + wheelsDir + ' --only-binary=:all: cfn-lint', {
-            stdio: 'inherit',
-            cwd: projectRoot,
-        });
+        // Use --python-version 313 to ensure we get wheels compatible with Pyodide's Python 3.13,
+        // regardless of the host Python version (e.g. Python 3.7 on legacy build containers).
+        const requirementsFile = join(projectRoot, 'requirements-pyodide.txt');
+        execSync(
+            `python3 -m pip download --dest ${wheelsDir}` +
+                ` --only-binary=:all: --python-version 313 --platform any --implementation py --abi none` +
+                ` --no-deps -r ${requirementsFile}`,
+            {
+                stdio: 'inherit',
+                cwd: projectRoot,
+            },
+        );
 
         // 2. Remove host-platform wheels for Pyodide-managed packages (pip gets the wrong arch)
         const wheels = readdirSync(wheelsDir).filter((file) => file.endsWith('.whl'));

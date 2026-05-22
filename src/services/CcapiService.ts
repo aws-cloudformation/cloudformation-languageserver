@@ -5,8 +5,12 @@ import {
     ListResourcesCommand,
     ListResourcesOutput,
 } from '@aws-sdk/client-cloudcontrol';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
+import { markIfClientError } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
+
+const log = LoggerFactory.getLogger('CcapiService');
 
 export interface ListResourcesOptions {
     nextToken?: string;
@@ -17,8 +21,14 @@ export class CcapiService {
     constructor(private readonly awsClient: AwsClient) {}
 
     private async withClient<T>(request: (client: CloudControlClient) => Promise<T>): Promise<T> {
-        const client = this.awsClient.getCloudControlClient();
-        return await request(client);
+        try {
+            const client = this.awsClient.getCloudControlClient();
+            return await request(client);
+        } catch (error) {
+            log.error(error, 'CloudControl API call failed');
+            markIfClientError(error);
+            throw error;
+        }
     }
 
     @Measure({ name: 'listResources' })

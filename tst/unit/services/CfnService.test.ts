@@ -34,6 +34,7 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { CfnService } from '../../../src/services/CfnService';
+import { hasSuppressFault } from '../../../src/utils/FaultSuppression';
 import { TEST_CONSTANTS, MOCK_RESPONSES } from './CfnServiceTestConstants';
 
 // Mock the waiter functions
@@ -829,6 +830,44 @@ describe('CfnService', () => {
             });
 
             await expect(service.listStacks()).rejects.toThrow('Failed to create AWS CloudFormation client');
+        });
+    });
+
+    describe('fault suppression', () => {
+        it('should tag client errors (4xx) with suppressFault', async () => {
+            const error = new StackNotFoundException({
+                message: 'Stack not found',
+                $metadata: { httpStatusCode: 404 },
+            });
+            cloudFormationMock.on(DescribeStacksCommand).rejects(error);
+
+            await expect(service.describeStacks({ StackName: 'test' })).rejects.toSatisfy((thrown: unknown) => {
+                return thrown instanceof StackNotFoundException && hasSuppressFault(thrown);
+            });
+        });
+
+        it('should not tag server errors (5xx) with suppressFault', async () => {
+            const error = new CloudFormationServiceException({
+                message: 'Internal error',
+                $metadata: { httpStatusCode: 500 },
+                name: 'CloudFormationServiceException',
+                $fault: 'server',
+            });
+            cloudFormationMock.on(ListStacksCommand).rejects(error);
+
+            await expect(service.listStacks()).rejects.toSatisfy((thrown: unknown) => {
+                return thrown instanceof CloudFormationServiceException && !hasSuppressFault(thrown);
+            });
+        });
+
+        it('should preserve instanceof after tagging', async () => {
+            const error = new StackNotFoundException({
+                message: 'Stack not found',
+                $metadata: { httpStatusCode: 404 },
+            });
+            cloudFormationMock.on(DescribeStacksCommand).rejects(error);
+
+            await expect(service.describeStacks({ StackName: 'test' })).rejects.toBeInstanceOf(StackNotFoundException);
         });
     });
 });

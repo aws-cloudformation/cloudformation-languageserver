@@ -23,6 +23,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private env: RootDatabase;
     private openPid = processId();
     private closed = false;
+    private activeOps = 0;
 
     private readonly stores = new Map<StoreName, LMDBStore>();
 
@@ -96,10 +97,29 @@ export class LMDBStoreFactory implements DataStoreFactory {
         if (this.closed) return;
         this.closed = true;
 
+        const deadline = Date.now() + 2000;
+        while (this.activeOps > 0 && Date.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+        if (this.activeOps > 0) {
+            this.log.warn({ activeOps: this.activeOps }, 'Closing LMDB with in-flight operations after timeout');
+        }
+
         clearInterval(this.metricsInterval);
         clearTimeout(this.timeout);
         this.stores.clear();
         await this.env.close();
+    }
+
+    private beginOp(): () => void {
+        // Safe: JS is single-threaded, so closed check + increment is atomic within a tick
+        if (this.closed) {
+            throw new Error('Database is closed');
+        }
+        this.activeOps++;
+        return () => {
+            this.activeOps--;
+        };
     }
 
     private handleError(error: unknown): void {
@@ -175,6 +195,12 @@ export class LMDBStoreFactory implements DataStoreFactory {
         }
     }
 
+    /**
+     * Replaces the LMDB environment synchronously. In-flight async operations may
+     * fail on the old env, but execAsync's retry logic will recover using the new
+     * store handle (updated by recreateStores). Unlike close(), we don't drain
+     * activeOps because the env is being replaced, not destroyed.
+     */
     private reopenEnv(): void {
         this.telemetry.count('env.reopen', 1);
         this.env = createEnv(this.lmdbDir).env;
@@ -202,6 +228,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 database,
                 (e) => this.handleError(e),
                 () => this.ensureValidEnv(),
+                () => this.beginOp(),
             ),
         );
     }

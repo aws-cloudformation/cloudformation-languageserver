@@ -21,17 +21,23 @@ import { TestExtension } from '../utils/TestExtension';
 describe('ResourceState E2E', () => {
     let mockCloudControlSend: SinonStub;
     let mockCloudFormationSend: SinonStub;
+    let mockS3Send: SinonStub;
+    let mockStsSend: SinonStub;
     let client: TestExtension;
 
     beforeAll(async () => {
         const testClient: MockAwsTestClient = await createMockAwsTestClient();
         mockCloudControlSend = testClient.mockCloudControlSend;
         mockCloudFormationSend = testClient.mockCloudFormationSend;
+        mockS3Send = testClient.mockS3Send;
+        mockStsSend = testClient.mockStsSend;
         client = testClient.client;
     });
 
     beforeEach(async () => {
         await client.reset();
+        mockS3Send.resolves({ BucketRegion: 'us-east-1' });
+        mockStsSend.resolves({ Account: '123456789012' });
     });
 
     afterAll(async () => {
@@ -354,6 +360,83 @@ describe('ResourceState E2E', () => {
 
             expect(result.successfulImports).toEqual({});
             expect(result.completionItem).toBeUndefined();
+        });
+
+        it('should not call CCAPI when S3 bucket verification fails with 403 (cross-account)', async () => {
+            const template = getSimpleYamlTemplateText();
+            const uri = await client.openYamlTemplate(template);
+
+            const forbidden = new Error('Forbidden');
+            forbidden.name = 'Forbidden';
+            (forbidden as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 403 };
+            mockS3Send.reset();
+            mockS3Send.rejects(forbidden);
+            mockCloudControlSend.resetHistory();
+
+            const result = (await client.send('aws/cfn/resources/state', {
+                textDocument: { uri },
+                resourceSelections: [
+                    {
+                        resourceType: 'AWS::S3::Bucket',
+                        resourceIdentifiers: ['someone-elses-bucket'],
+                    },
+                ],
+                purpose: ResourceStatePurpose.IMPORT,
+            } satisfies ResourceStateParams)) as ResourceStateResult;
+
+            expect(result.failedImports['AWS::S3::Bucket']).toContain('someone-elses-bucket');
+            expect(result.successfulImports).toEqual({});
+            expect(mockCloudControlSend.called).toBe(false);
+        });
+
+        it('should not call CCAPI when S3 bucket verification fails with 404 (does not exist)', async () => {
+            const template = getSimpleYamlTemplateText();
+            const uri = await client.openYamlTemplate(template);
+
+            const notFound = new Error('Not Found');
+            notFound.name = 'NotFound';
+            (notFound as { $metadata?: { httpStatusCode?: number } }).$metadata = { httpStatusCode: 404 };
+            mockS3Send.reset();
+            mockS3Send.rejects(notFound);
+            mockCloudControlSend.resetHistory();
+
+            const result = (await client.send('aws/cfn/resources/state', {
+                textDocument: { uri },
+                resourceSelections: [
+                    {
+                        resourceType: 'AWS::S3::Bucket',
+                        resourceIdentifiers: ['nonexistent-bucket'],
+                    },
+                ],
+                purpose: ResourceStatePurpose.IMPORT,
+            } satisfies ResourceStateParams)) as ResourceStateResult;
+
+            expect(result.failedImports['AWS::S3::Bucket']).toContain('nonexistent-bucket');
+            expect(mockCloudControlSend.called).toBe(false);
+        });
+
+        it('should not call CCAPI when S3 bucket is in a different region', async () => {
+            const template = getSimpleYamlTemplateText();
+            const uri = await client.openYamlTemplate(template);
+
+            mockS3Send.reset();
+            mockS3Send.resolves({ BucketRegion: 'eu-west-1' });
+            mockCloudControlSend.resetHistory();
+
+            const result = (await client.send('aws/cfn/resources/state', {
+                textDocument: { uri },
+                resourceSelections: [
+                    {
+                        resourceType: 'AWS::S3::Bucket',
+                        resourceIdentifiers: ['my-bucket-elsewhere'],
+                    },
+                ],
+                purpose: ResourceStatePurpose.IMPORT,
+            } satisfies ResourceStateParams)) as ResourceStateResult;
+
+            expect(result.failedImports['AWS::S3::Bucket']).toContain('my-bucket-elsewhere');
+            expect(result.failureReasons?.['AWS::S3::Bucket']?.['my-bucket-elsewhere']).toContain('eu-west-1');
+            expect(mockCloudControlSend.called).toBe(false);
         });
     });
 

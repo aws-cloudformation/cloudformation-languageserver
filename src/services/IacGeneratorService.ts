@@ -18,14 +18,24 @@ import {
     UpdateGeneratedTemplateCommand,
     UpdateGeneratedTemplateCommandInput,
 } from '@aws-sdk/client-cloudformation';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { markIfClientError } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
+
+const log = LoggerFactory.getLogger('IacGeneratorService');
 
 export class IacGeneratorService {
     constructor(private readonly awsClient: AwsClient) {}
 
     private async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
-        const client = this.awsClient.getCloudFormationClient();
-        return await request(client);
+        try {
+            const client = this.awsClient.getCloudFormationClient();
+            return await request(client);
+        } catch (error) {
+            log.error(error, 'IaC Generator API call failed');
+            markIfClientError(error);
+            throw error;
+        }
     }
 
     public async startResourceScan(types?: string[]): Promise<string | undefined> {
