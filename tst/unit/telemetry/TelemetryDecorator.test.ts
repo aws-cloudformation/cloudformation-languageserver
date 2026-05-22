@@ -286,7 +286,7 @@ describe('TelemetryDecorator', () => {
                 attributes: {
                     'entity.type': 'Resource',
                     'resource.type': 'AWS::S3::Bucket',
-                    'property.path': 'Resources.MyBucket.Properties',
+                    'property.path': 'Resources.[*].Properties',
                 },
             });
         });

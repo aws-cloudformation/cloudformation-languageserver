@@ -67,7 +67,8 @@ function createTelemetryMethodDecorator(methodNames: MethodNames) {
                         try {
                             contextAttributes['entity.type'] = contextArg.getEntityType();
                             contextAttributes['resource.type'] = contextArg.getResourceEntity()?.Type ?? 'unknown';
-                            contextAttributes['property.path'] = contextArg.propertyPath?.join('.') ?? 'unknown';
+                            contextAttributes['property.path'] =
+                                sanitizePropertyPath(contextArg.propertyPath) ?? 'unknown';
                         } catch {
                             // Ignore errors extracting context attributes
                         }
@@ -110,3 +111,12 @@ export const Count = createTelemetryMethodDecorator({
     sync: 'countExecution',
     async: 'countExecutionAsync',
 });
+
+function sanitizePropertyPath(propertyPath?: ReadonlyArray<string | number>): string | undefined {
+    if (!propertyPath || propertyPath.length === 0) return undefined;
+    const sanitized = [...propertyPath];
+    if (sanitized.length > 1) {
+        sanitized[1] = '[*]';
+    }
+    return sanitized.join('.');
+}
