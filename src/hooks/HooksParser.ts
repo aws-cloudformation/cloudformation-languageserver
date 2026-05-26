@@ -7,6 +7,8 @@ import type {
     GetHookResultParams,
     ConfigureHookParams,
     DeactivateHookParams,
+    ActivateHookParams,
+    SetHookConfigurationParams,
 } from './HooksRequestType';
 
 const ListHooksParamsSchema = z
@@ -82,4 +84,28 @@ export function parseConfigureHookParams(input: unknown): ConfigureHookParams {
 
 export function parseDeactivateHookParams(input: unknown): DeactivateHookParams {
     return DeactivateHookParamsSchema.parse(input);
+}
+
+const ActivateHookParamsSchema = z
+    .object({
+        typeName: NonEmptyZodString,
+        publisherId: NonEmptyZodString.optional(),
+        typeNameAlias: NonEmptyZodString.optional(),
+        executionRoleArn: NonEmptyZodString.optional(),
+    })
+    .strict();
+
+const SetHookConfigurationParamsSchema = z
+    .object({
+        typeName: NonEmptyZodString,
+        configuration: NonEmptyZodString,
+    })
+    .strict();
+
+export function parseActivateHookParams(input: unknown): ActivateHookParams {
+    return ActivateHookParamsSchema.parse(input);
+}
+
+export function parseSetHookConfigurationParams(input: unknown): SetHookConfigurationParams {
+    return SetHookConfigurationParamsSchema.parse(input);
 }

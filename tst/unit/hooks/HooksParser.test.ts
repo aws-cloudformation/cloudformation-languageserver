@@ -6,6 +6,8 @@ import {
     parseGetHookResultParams,
     parseConfigureHookParams,
     parseDeactivateHookParams,
+    parseActivateHookParams,
+    parseSetHookConfigurationParams,
 } from '../../../src/hooks/HooksParser';
 
 describe('HooksParser', () => {
@@ -188,6 +190,62 @@ describe('HooksParser', () => {
 
         it('should reject empty typeName with no arn', () => {
             expect(() => parseDeactivateHookParams({ typeName: '' })).toThrow();
+        });
+    });
+
+    describe('parseActivateHookParams', () => {
+        it('should accept typeName only', () => {
+            const result = parseActivateHookParams({ typeName: 'AWS::Hooks::GuardHook' });
+            expect(result).toEqual({ typeName: 'AWS::Hooks::GuardHook' });
+        });
+
+        it('should accept all optional fields', () => {
+            const result = parseActivateHookParams({
+                typeName: 'AWS::Hooks::GuardHook',
+                publisherId: 'pub-123',
+                typeNameAlias: 'Private::Guard::MyHook',
+                executionRoleArn: 'arn:aws:iam::123:role/HookRole',
+            });
+            expect(result.publisherId).toBe('pub-123');
+            expect(result.typeNameAlias).toBe('Private::Guard::MyHook');
+            expect(result.executionRoleArn).toBe('arn:aws:iam::123:role/HookRole');
+        });
+
+        it('should reject missing typeName', () => {
+            expect(() => parseActivateHookParams({})).toThrow();
+        });
+
+        it('should reject empty typeName', () => {
+            expect(() => parseActivateHookParams({ typeName: '' })).toThrow();
+        });
+    });
+
+    describe('parseSetHookConfigurationParams', () => {
+        it('should accept typeName and configuration', () => {
+            const result = parseSetHookConfigurationParams({
+                typeName: 'Private::Guard::S3Check',
+                configuration: '{"CloudFormationConfiguration":{}}',
+            });
+            expect(result).toEqual({
+                typeName: 'Private::Guard::S3Check',
+                configuration: '{"CloudFormationConfiguration":{}}',
+            });
+        });
+
+        it('should reject missing typeName', () => {
+            expect(() => parseSetHookConfigurationParams({ configuration: '{}' })).toThrow();
+        });
+
+        it('should reject empty typeName', () => {
+            expect(() => parseSetHookConfigurationParams({ typeName: '', configuration: '{}' })).toThrow();
+        });
+
+        it('should reject missing configuration', () => {
+            expect(() => parseSetHookConfigurationParams({ typeName: 'Hook' })).toThrow();
+        });
+
+        it('should reject empty configuration', () => {
+            expect(() => parseSetHookConfigurationParams({ typeName: 'Hook', configuration: '' })).toThrow();
         });
     });
 });

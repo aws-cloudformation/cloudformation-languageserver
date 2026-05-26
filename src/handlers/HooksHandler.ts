@@ -1,12 +1,16 @@
 import { RequestHandler } from 'vscode-languageserver';
 import type { HooksManager } from '../hooks/HooksManager';
 import {
+    parseActivateHookParams,
     parseConfigureHookParams,
     parseDescribeHookParams,
     parseGetHookResultParams,
     parseListHookResultsParams,
+    parseSetHookConfigurationParams,
 } from '../hooks/HooksParser';
 import type {
+    ActivateHookParams,
+    ActivateHookResult,
     ConfigureHookParams,
     ConfigureHookResult,
     ListHooksParams,
@@ -17,6 +21,8 @@ import type {
     ListHookResultsResult,
     GetHookResultParams,
     GetHookResultResult,
+    SetHookConfigurationParams,
+    SetHookConfigurationResult,
 } from '../hooks/HooksRequestType';
 import type { CfnService } from '../services/CfnService';
 import { handleLspError } from '../utils/Errors';
@@ -136,6 +142,39 @@ export function configureHookHandler(
             };
         } catch (error) {
             handleLspError(error, 'configureHook');
+        }
+    };
+}
+
+export function activateHookHandler(
+    components: HooksComponents,
+): RequestHandler<ActivateHookParams, ActivateHookResult, void> {
+    return async (params) => {
+        try {
+            const parsed = parseActivateHookParams(params);
+            const response = await components.cfnService.activateHook(parsed);
+            components.hooksManager.clearCache();
+            return { arn: response.Arn };
+        } catch (error) {
+            handleLspError(error, 'activateHook');
+        }
+    };
+}
+
+export function setHookConfigurationHandler(
+    components: HooksComponents,
+): RequestHandler<SetHookConfigurationParams, SetHookConfigurationResult, void> {
+    return async (params) => {
+        try {
+            const parsed = parseSetHookConfigurationParams(params);
+            const response = await components.cfnService.setHookConfiguration({
+                typeName: parsed.typeName,
+                configuration: parsed.configuration,
+            });
+            components.hooksManager.clearCache();
+            return { configurationArn: response.ConfigurationArn };
+        } catch (error) {
+            handleLspError(error, 'setHookConfiguration');
         }
     };
 }

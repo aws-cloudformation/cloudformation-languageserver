@@ -142,3 +142,37 @@ export type DeactivateHookResult = Record<string, never>;
 export const DeactivateHookRequest = new RequestType<DeactivateHookParams, DeactivateHookResult, void>(
     'aws/cfn/hooks/deactivate',
 );
+
+// --- Activate Hook ---
+
+export type ActivateHookParams = {
+    typeName: string;
+    publisherId?: string;
+    typeNameAlias?: string;
+    executionRoleArn?: string;
+};
+
+export type ActivateHookResult = {
+    arn?: string;
+};
+
+export const ActivateHookRequest = new RequestType<ActivateHookParams, ActivateHookResult, void>(
+    'aws/cfn/hooks/activate',
+);
+
+// --- Set Hook Configuration (full JSON) ---
+
+export type SetHookConfigurationParams = {
+    typeName: string;
+    configuration: string;
+};
+
+export type SetHookConfigurationResult = {
+    configurationArn?: string;
+};
+
+export const SetHookConfigurationRequest = new RequestType<
+    SetHookConfigurationParams,
+    SetHookConfigurationResult,
+    void
+>('aws/cfn/hooks/setConfiguration');

@@ -67,6 +67,9 @@ import {
     GetHookResultCommand,
     type GetHookResultCommandOutput,
     BatchDescribeTypeConfigurationsCommand,
+    ActivateTypeCommand,
+    type ActivateTypeCommandOutput,
+    ThirdPartyType,
 } from '@aws-sdk/client-cloudformation';
 import type { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
 import { AwsClientSettings, DefaultSettings } from '../settings/Settings';
@@ -543,6 +546,26 @@ export class CfnService {
                     Type: params.typeName ? RegistryType.HOOK : undefined,
                     TypeName: params.typeName,
                     Arn: params.arn,
+                }),
+            ),
+        );
+    }
+
+    @Count({ name: 'activateHook', captureErrorAttributes: true })
+    public async activateHook(params: {
+        typeName: string;
+        publisherId?: string;
+        typeNameAlias?: string;
+        executionRoleArn?: string;
+    }): Promise<ActivateTypeCommandOutput> {
+        return await this.withClient((client) =>
+            client.send(
+                new ActivateTypeCommand({
+                    Type: ThirdPartyType.HOOK,
+                    TypeName: params.typeName,
+                    PublisherId: params.publisherId,
+                    TypeNameAlias: params.typeNameAlias,
+                    ExecutionRoleArn: params.executionRoleArn,
                 }),
             ),
         );

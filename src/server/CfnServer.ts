@@ -10,11 +10,13 @@ import { didChangeHandler, didCloseHandler, didOpenHandler, didSaveHandler } fro
 import { documentSymbolHandler } from '../handlers/DocumentSymbolHandler';
 import { executionHandler } from '../handlers/ExecutionHandler';
 import {
+    activateHookHandler,
     configureHookHandler,
     describeHookHandler,
     getHookResultHandler,
     listHookResultsHandler,
     listHooksHandler,
+    setHookConfigurationHandler,
 } from '../handlers/HooksHandler';
 import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
@@ -340,6 +342,18 @@ export class CfnServer {
             withTelemetryContext(
                 'Hooks.Configure',
                 withOnlineGuard(this.components.onlineFeatureGuard, configureHookHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onActivateHook(
+            withTelemetryContext(
+                'Hooks.Activate',
+                withOnlineGuard(this.components.onlineFeatureGuard, activateHookHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onSetHookConfiguration(
+            withTelemetryContext(
+                'Hooks.SetConfiguration',
+                withOnlineGuard(this.components.onlineFeatureGuard, setHookConfigurationHandler(this.components)),
             ),
         );
     }

@@ -18,6 +18,12 @@ import {
     DeactivateHookParams,
     DeactivateHookResult,
     DeactivateHookRequest,
+    ActivateHookParams,
+    ActivateHookResult,
+    ActivateHookRequest,
+    SetHookConfigurationParams,
+    SetHookConfigurationResult,
+    SetHookConfigurationRequest,
 } from '../hooks/HooksRequestType';
 
 export class LspHooksHandlers {
@@ -45,5 +51,13 @@ export class LspHooksHandlers {
 
     onDeactivateHook(handler: RequestHandler<DeactivateHookParams, DeactivateHookResult, void>) {
         this.connection.onRequest(DeactivateHookRequest.method, handler);
+    }
+
+    onActivateHook(handler: RequestHandler<ActivateHookParams, ActivateHookResult, void>) {
+        this.connection.onRequest(ActivateHookRequest.method, handler);
+    }
+
+    onSetHookConfiguration(handler: RequestHandler<SetHookConfigurationParams, SetHookConfigurationResult, void>) {
+        this.connection.onRequest(SetHookConfigurationRequest.method, handler);
     }
 }
