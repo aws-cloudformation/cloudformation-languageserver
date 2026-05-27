@@ -13,6 +13,7 @@ import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
 import {
     getAuthoredResourceTypesHandler,
+    getAuthoredResourceTypesHandlerV2,
     getRelatedResourceTypesHandler,
     insertRelatedResourcesHandler,
 } from '../handlers/RelatedResourcesHandler';
@@ -245,6 +246,12 @@ export class CfnServer {
 
         this.lsp.relatedResourcesHandlers.onGetAuthoredResourceTypes(
             withTelemetryContext('Related.Resources.Get.Authored', getAuthoredResourceTypesHandler(this.components)),
+        );
+        this.lsp.relatedResourcesHandlers.onGetAuthoredResourceTypesV2(
+            withTelemetryContext(
+                'Related.Resources.Get.Authored.V2',
+                getAuthoredResourceTypesHandlerV2(this.components),
+            ),
         );
         this.lsp.relatedResourcesHandlers.onGetRelatedResourceTypes(
             withTelemetryContext('Related.Resources.Get.Related', getRelatedResourceTypesHandler(this.components)),

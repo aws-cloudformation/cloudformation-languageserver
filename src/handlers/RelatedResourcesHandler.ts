@@ -3,6 +3,7 @@ import { TopLevelSection } from '../context/CloudFormationEnums';
 import { getEntityMap } from '../context/SectionContextBuilder';
 import { Resource } from '../context/semantic/Entity';
 import {
+    AuthoredResource,
     GetRelatedResourceTypesParams,
     InsertRelatedResourcesParams,
     RelatedResourcesCodeAction,
@@ -35,6 +36,32 @@ export function getAuthoredResourceTypesHandler(
                         .filter((type): type is string => type !== undefined && type !== null);
 
                     return [...new Set(resourceTypes)];
+                }
+            }
+
+            return [];
+        } catch (error) {
+            handleLspError(error, 'Failed to get authored resource types');
+        }
+    };
+}
+
+export function getAuthoredResourceTypesHandlerV2(
+    components: ServerComponents,
+): RequestHandler<TemplateUri, AuthoredResource[], void> {
+    return (rawParams) => {
+        try {
+            const templateUri = parseWithPrettyError(parseTemplateUriParams, rawParams);
+            const syntaxTree = components.syntaxTreeManager.getSyntaxTree(templateUri);
+            if (syntaxTree) {
+                const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
+                if (resourcesMap) {
+                    return [...resourcesMap.entries()]
+                        .map(([logicalId, context]) => {
+                            const resource = context.entity as Resource;
+                            return { logicalId, type: resource?.Type };
+                        })
+                        .filter((entry): entry is AuthoredResource => entry.type !== undefined && entry.type !== null);
                 }
             }
 

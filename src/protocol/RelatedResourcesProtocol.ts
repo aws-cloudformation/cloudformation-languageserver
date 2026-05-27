@@ -19,8 +19,17 @@ export interface RelatedResourcesCodeAction extends CodeAction {
     };
 }
 
+export type AuthoredResource = {
+    logicalId: string;
+    type: string;
+};
+
 export const GetAuthoredResourceTypesRequest = new RequestType<TemplateUri, string[], void>(
     'aws/cfn/template/resources/authored',
+);
+
+export const GetAuthoredResourceTypesRequestV2 = new RequestType<TemplateUri, AuthoredResource[], void>(
+    'aws/cfn/template/resources/authored/v2',
 );
 
 export const GetRelatedResourceTypesRequest = new RequestType<GetRelatedResourceTypesParams, string[], void>(
