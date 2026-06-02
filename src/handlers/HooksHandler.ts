@@ -15,6 +15,8 @@ import type {
     ConfigureHookResult,
     ListHooksParams,
     ListHooksResult,
+    ListPublicHooksParams,
+    ListPublicHooksResult,
     DescribeHookParams,
     DescribeHookResult,
     ListHookResultsParams,
@@ -38,6 +40,25 @@ export function listHooksHandler(components: HooksComponents): RequestHandler<Li
             return await components.hooksManager.listHooks(params.loadMore);
         } catch (error) {
             handleLspError(error, 'listHooks');
+        }
+    };
+}
+
+export function listPublicHooksHandler(
+    components: HooksComponents,
+): RequestHandler<ListPublicHooksParams, ListPublicHooksResult, void> {
+    return async (params) => {
+        try {
+            const response = await components.cfnService.listPublicHooks(params);
+            return {
+                hooks: response.hooks.map((h) => ({
+                    typeName: h.TypeName ?? '',
+                    publisherId: h.PublisherId ?? '',
+                    description: h.Description,
+                })),
+            };
+        } catch (error) {
+            handleLspError(error, 'listPublicHooks');
         }
     };
 }

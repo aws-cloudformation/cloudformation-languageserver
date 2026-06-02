@@ -16,6 +16,7 @@ import {
     getHookResultHandler,
     listHookResultsHandler,
     listHooksHandler,
+    listPublicHooksHandler,
     setHookConfigurationHandler,
 } from '../handlers/HooksHandler';
 import { hoverHandler } from '../handlers/HoverHandler';
@@ -318,6 +319,12 @@ export class CfnServer {
             withTelemetryContext(
                 'Hooks.List',
                 withOnlineGuard(this.components.onlineFeatureGuard, listHooksHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListPublicHooks(
+            withTelemetryContext(
+                'Hooks.ListPublic',
+                withOnlineGuard(this.components.onlineFeatureGuard, listPublicHooksHandler(this.components)),
             ),
         );
         this.lsp.hooksHandlers.onDescribeHook(

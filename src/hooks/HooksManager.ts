@@ -1,13 +1,21 @@
 import type { TypeSummary } from '@aws-sdk/client-cloudformation';
 import type { CfnService } from '../services/CfnService';
+import type { HookSchemaStore } from './HookSchemaStore';
 import type { HookSummary, DescribeHookResult, DescribeHookParams, ListHooksResult } from './HooksRequestType';
+
+const StaleDaysThreshold = 7;
+const MsPerDay = 24 * 60 * 60 * 1000;
 
 export class HooksManager {
     private readonly hooksCache: Map<string, HookSummary> = new Map();
     private readonly hookDetailsCache: Map<string, DescribeHookResult> = new Map();
     private nextToken?: string;
 
-    constructor(private readonly cfnService: CfnService) {}
+    constructor(
+        private readonly cfnService: CfnService,
+        private readonly schemaStore?: HookSchemaStore,
+        private readonly staleDaysThreshold: number = StaleDaysThreshold,
+    ) {}
 
     public async listHooks(loadMore?: boolean): Promise<ListHooksResult> {
         if (!loadMore) {
@@ -34,11 +42,22 @@ export class HooksManager {
     public async describeHook(params: DescribeHookParams): Promise<DescribeHookResult> {
         const cacheKey = params.typeName ?? params.arn ?? '';
 
-        const cached = this.hookDetailsCache.get(cacheKey);
-        if (cached) {
-            return cached;
+        // 1. Memory cache (fastest, request-scoped)
+        const memCached = this.hookDetailsCache.get(cacheKey);
+        if (memCached) {
+            return memCached;
         }
 
+        // 2. Persistent cache (across restarts) — only if not stale
+        if (params.typeName && this.schemaStore) {
+            const persisted = this.schemaStore.get(params.typeName);
+            if (persisted && !this.isStale(persisted.lastModifiedMs)) {
+                this.hookDetailsCache.set(cacheKey, persisted.schema);
+                return persisted.schema;
+            }
+        }
+
+        // 3. Cache miss or stale — fetch from CloudFormation
         const response = await this.cfnService.describeHook(params);
         const result: DescribeHookResult = {
             typeName: response.TypeName ?? '',
@@ -52,6 +71,9 @@ export class HooksManager {
         };
 
         this.hookDetailsCache.set(cacheKey, result);
+        if (params.typeName && this.schemaStore) {
+            await this.schemaStore.put(params.typeName, result);
+        }
         return result;
     }
 
@@ -59,6 +81,11 @@ export class HooksManager {
         this.hooksCache.clear();
         this.hookDetailsCache.clear();
         this.nextToken = undefined;
+    }
+
+    private isStale(lastModifiedMs: number): boolean {
+        const ageMs = Date.now() - lastModifiedMs;
+        return ageMs >= this.staleDaysThreshold * MsPerDay;
     }
 
     private mapTypeSummaryToHookSummary(summary: TypeSummary): HookSummary {

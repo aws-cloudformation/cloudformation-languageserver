@@ -151,6 +151,75 @@ describe('HooksManager', () => {
         });
     });
 
+    describe('describeHook() with persistent schema store', () => {
+        let schemaStore: { get: ReturnType<typeof vi.fn>; put: ReturnType<typeof vi.fn> };
+
+        beforeEach(() => {
+            schemaStore = {
+                get: vi.fn(),
+                put: vi.fn().mockResolvedValue(undefined),
+            };
+            manager = new HooksManager(
+                mockCfnService as unknown as CfnService,
+                schemaStore as unknown as import('../../../src/hooks/HookSchemaStore').HookSchemaStore,
+            );
+        });
+
+        it('should return persisted schema if not stale (skips service call)', async () => {
+            schemaStore.get.mockReturnValue({
+                version: 'v1',
+                typeName: 'Hook1',
+                schema: { typeName: 'Hook1', arn: 'arn:1', visibility: 'PRIVATE' },
+                firstCreatedMs: Date.now(),
+                lastModifiedMs: Date.now(),
+            });
+
+            const result = await manager.describeHook({ typeName: 'Hook1' });
+
+            expect(result.typeName).toBe('Hook1');
+            expect(mockCfnService.describeHook).not.toHaveBeenCalled();
+        });
+
+        it('should refetch and update store when persisted record is stale', async () => {
+            const eightDaysAgo = Date.now() - 8 * 24 * 60 * 60 * 1000;
+            schemaStore.get.mockReturnValue({
+                version: 'v1',
+                typeName: 'Hook1',
+                schema: { typeName: 'Hook1', arn: 'arn:old', visibility: 'PRIVATE' },
+                firstCreatedMs: eightDaysAgo,
+                lastModifiedMs: eightDaysAgo,
+            });
+            mockCfnService.describeHook.mockResolvedValue({
+                TypeName: 'Hook1',
+                Arn: 'arn:new',
+                Visibility: 'PRIVATE',
+            });
+
+            const result = await manager.describeHook({ typeName: 'Hook1' });
+
+            expect(result.arn).toBe('arn:new');
+            expect(mockCfnService.describeHook).toHaveBeenCalledOnce();
+            expect(schemaStore.put).toHaveBeenCalledOnce();
+        });
+
+        it('should fetch and persist when no record exists', async () => {
+            schemaStore.get.mockReturnValue(undefined);
+            mockCfnService.describeHook.mockResolvedValue({
+                TypeName: 'Hook1',
+                Arn: 'arn:1',
+                Visibility: 'PRIVATE',
+            });
+
+            await manager.describeHook({ typeName: 'Hook1' });
+
+            expect(mockCfnService.describeHook).toHaveBeenCalledOnce();
+            expect(schemaStore.put).toHaveBeenCalledWith(
+                'Hook1',
+                expect.objectContaining({ typeName: 'Hook1', arn: 'arn:1' }),
+            );
+        });
+    });
+
     describe('clearCache()', () => {
         it('should clear hooks cache so next call refetches', async () => {
             mockCfnService.listHooks.mockResolvedValue({

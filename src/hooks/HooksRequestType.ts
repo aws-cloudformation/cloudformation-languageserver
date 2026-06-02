@@ -21,6 +21,26 @@ export type ListHooksResult = {
 
 export const ListHooksRequest = new RequestType<ListHooksParams, ListHooksResult, void>('aws/cfn/hooks/list');
 
+// --- List Public Hooks ---
+
+export type ListPublicHooksParams = {
+    typeNamePrefix?: string;
+};
+
+export type PublicHookSummary = {
+    typeName: string;
+    publisherId: string;
+    description?: string;
+};
+
+export type ListPublicHooksResult = {
+    hooks: PublicHookSummary[];
+};
+
+export const ListPublicHooksRequest = new RequestType<ListPublicHooksParams, ListPublicHooksResult, void>(
+    'aws/cfn/hooks/listPublic',
+);
+
 // --- Describe Hook ---
 
 export type DescribeHookParams = {

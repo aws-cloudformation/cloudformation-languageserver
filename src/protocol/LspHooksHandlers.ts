@@ -3,6 +3,9 @@ import {
     ListHooksParams,
     ListHooksResult,
     ListHooksRequest,
+    ListPublicHooksParams,
+    ListPublicHooksResult,
+    ListPublicHooksRequest,
     DescribeHookParams,
     DescribeHookResult,
     DescribeHookRequest,
@@ -31,6 +34,10 @@ export class LspHooksHandlers {
 
     onListHooks(handler: RequestHandler<ListHooksParams, ListHooksResult, void>) {
         this.connection.onRequest(ListHooksRequest.method, handler);
+    }
+
+    onListPublicHooks(handler: RequestHandler<ListPublicHooksParams, ListPublicHooksResult, void>) {
+        this.connection.onRequest(ListPublicHooksRequest.method, handler);
     }
 
     onDescribeHook(handler: RequestHandler<DescribeHookParams, DescribeHookResult, void>) {

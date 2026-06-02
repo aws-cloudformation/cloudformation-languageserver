@@ -466,6 +466,21 @@ export class CfnService {
         });
     }
 
+    @Count({ name: 'listPublicHooks', captureErrorAttributes: true })
+    public async listPublicHooks(filters?: { typeNamePrefix?: string }): Promise<{ hooks: TypeSummary[] }> {
+        return await this.withClient(async (client) => {
+            const response = await client.send(
+                new ListTypesCommand({
+                    Type: RegistryType.HOOK,
+                    Visibility: Visibility.PUBLIC,
+                    MaxResults: 100,
+                    Filters: filters?.typeNamePrefix ? { TypeNamePrefix: filters.typeNamePrefix } : undefined,
+                }),
+            );
+            return { hooks: response.TypeSummaries ?? [] };
+        });
+    }
+
     @Count({ name: 'describeHook', captureErrorAttributes: true })
     public async describeHook(params: { typeName?: string; arn?: string }): Promise<DescribeTypeOutput> {
         return await this.withClient((client) =>
