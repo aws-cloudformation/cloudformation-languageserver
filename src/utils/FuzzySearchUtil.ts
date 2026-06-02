@@ -1,5 +1,11 @@
 import Fuse, { IFuseOptions } from 'fuse.js';
 import { CompletionItem } from 'vscode-languageserver';
+import { TelemetryService } from '../telemetry/TelemetryService';
+
+function measureSearch<T>(queryLength: number, fn: () => T): T {
+    const telemetry = TelemetryService.instance.get('FuzzySearch');
+    return telemetry.measure('search', fn, { attributes: { queryLength } });
+}
 
 export type FuzzySearchFunction = (items: CompletionItem[], query: string) => CompletionItem[];
 
@@ -22,7 +28,7 @@ export function fuzzySearch(
     }
 
     const fuse = new Fuse(items, fuseOptions);
-    const results = fuse.search(query);
+    const results = measureSearch(query.length, () => fuse.search(query));
 
     return results.map((result, index) => {
         const item = result.item;
