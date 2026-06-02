@@ -10,9 +10,10 @@ describe('LMDB close guard', () => {
     let store: DataStore;
     const testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-close-guard-tests', v4());
 
-    beforeEach(() => {
+    beforeEach(async () => {
         fs.mkdirSync(testDir, { recursive: true });
         factory = new LMDBStoreFactory(testDir);
+        await factory.initialize();
         store = factory.get(StoreName.public_schemas);
     });
 

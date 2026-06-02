@@ -9,80 +9,67 @@ import { extractErrorMessage } from '../utils/Errors';
 import { formatNumber, toString } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName } from './DataStore';
 import { LMDBStore } from './lmdb/LMDBStore';
+import { LMDBOwnershipTracker } from './lmdb/OwnershipTracker';
 import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
+
+const MetricsIntervalMs = 60 * 1000;
+const CleanupDelayMs = 2 * 60 * 1000;
 
 export class LMDBStoreFactory implements DataStoreFactory {
     private readonly log = LoggerFactory.getLogger('LMDB.Global');
     @Telemetry({ scope: 'LMDB.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly lmdbDir: string;
-    private readonly timeout: NodeJS.Timeout;
-    private readonly metricsInterval: NodeJS.Timeout;
+    private metricsInterval?: NodeJS.Timeout;
+    private cleanupTimeout?: NodeJS.Timeout;
 
-    private env: RootDatabase;
+    private env!: RootDatabase;
     private openPid = processId();
+    private initPromise?: Promise<void>;
     private closed = false;
     private activeOps = 0;
 
     private readonly stores = new Map<StoreName, LMDBStore>();
+    private readonly ownershipTracker: LMDBOwnershipTracker;
 
     constructor(
         rootDir: string,
         public readonly storeNames = PersistedStores,
     ) {
         this.lmdbDir = join(rootDir, 'lmdb');
+        this.ownershipTracker = new LMDBOwnershipTracker(this.lmdbDir);
+    }
 
-        let config: RootDatabaseOptionsWithPath;
-        try {
-            const result = createEnv(this.lmdbDir);
-            this.env = result.env;
-            config = result.config;
-        } catch (e) {
-            this.log.warn(e, 'LMDB corrupted on startup, deleting and recreating');
+    /**
+     * Open the LMDB environment and stores. Idempotent: concurrent and repeat callers
+     * share a single in-flight promise, and a failed attempt is not cached, so a retry
+     * re-runs initialization rather than leaving the factory permanently half-open.
+     */
+    initialize(): Promise<void> {
+        this.initPromise ??= this.runInitialize().catch((error) => {
+            // Allow a later caller to retry instead of caching the rejection forever.
+            this.initPromise = undefined;
+            throw error;
+        });
+        return this.initPromise;
+    }
+
+    private async runInitialize(): Promise<void> {
+        // Record an `opening` marker and recover from a prior startup crash before the
+        // (potentially fatal) env open, so a crash here is detectable on the next start.
+        await this.ownershipTracker.beginStartup(() => {
+            this.log.warn('Detected fatal LMDB startup crash from a previous run, wiping data directory to recover');
+            this.telemetry.count('startup.crashRecovery', 1);
             this.deleteVersionDir();
-            const result = createEnv(this.lmdbDir);
-            this.env = result.env;
-            config = result.config;
-        }
+        });
 
-        try {
-            for (const store of storeNames) {
-                this.addStore(store);
-            }
-        } catch (e) {
-            this.log.warn(e, 'Store corrupted on startup, deleting and recreating');
-            this.stores.clear();
-            void this.env.close();
-            this.deleteVersionDir();
-            this.env = createEnv(this.lmdbDir).env;
-            for (const store of storeNames) {
-                this.addStore(store);
-            }
-        }
+        this.openEnvAndStores();
 
-        this.metricsInterval = setInterval(() => {
-            this.emitMetrics();
-        }, 60 * 1000);
-
-        this.timeout = setTimeout(
-            () => {
-                this.cleanupOldVersions();
-            },
-            2 * 60 * 1000,
-        );
-
-        this.log.info(
-            {
-                path: config.path,
-                maxDbs: config.maxDbs,
-                mapSize: config.mapSize,
-                encoding: config.encoding,
-                noSubdir: config.noSubdir,
-                overlappingSync: config.overlappingSync,
-            },
-            `Initialized LMDB ${Version} with stores: ${toString(storeNames)} and ${formatNumber(stats(this.env).totalSize / (1024 * 1024), 4)} MB`,
-        );
+        // The env and stores opened successfully — promote the marker out of `opening`
+        // so an abrupt kill from now on is not mistaken for a startup crash.
+        this.ownershipTracker.markRunning();
+        this.scheduleBackgroundTasks();
     }
 
     get(store: StoreName): DataStore {
@@ -105,10 +92,80 @@ export class LMDBStoreFactory implements DataStoreFactory {
             this.log.warn({ activeOps: this.activeOps }, 'Closing LMDB with in-flight operations after timeout');
         }
 
-        clearInterval(this.metricsInterval);
-        clearTimeout(this.timeout);
+        if (this.metricsInterval !== undefined) {
+            clearInterval(this.metricsInterval);
+        }
+        if (this.cleanupTimeout !== undefined) {
+            clearTimeout(this.cleanupTimeout);
+        }
         this.stores.clear();
-        await this.env.close();
+
+        // initialize() may have failed or never run, leaving env unset.
+        if ((this.env as RootDatabase | undefined) !== undefined) {
+            await this.env.close();
+        }
+        this.ownershipTracker.release();
+    }
+
+    private openEnvAndStores(): void {
+        const config = this.tryOpen() ?? this.recreateAfterCorruption();
+
+        this.log.info(
+            {
+                path: config.path,
+                maxDbs: config.maxDbs,
+                mapSize: config.mapSize,
+                encoding: config.encoding,
+                noSubdir: config.noSubdir,
+                overlappingSync: config.overlappingSync,
+            },
+            `Initialized LMDB ${Version} with stores: ${toString(this.storeNames)} and ${formatNumber(stats(this.env).totalSize / (1024 * 1024), 4)} MB`,
+        );
+    }
+
+    /**
+     * Open the environment and every store, returning the config on success or
+     * `undefined` if either step throws so the caller can recover.
+     */
+    private tryOpen(): RootDatabaseOptionsWithPath | undefined {
+        try {
+            return this.openEnvAndAddStores();
+        } catch (e) {
+            this.log.warn(e, 'LMDB corrupted on startup, deleting and recreating');
+            return undefined;
+        }
+    }
+
+    /**
+     * Delete the (presumed corrupt) version directory and open a fresh environment and
+     * stores. Unlike {@link tryOpen}, a failure here is fatal and propagates.
+     */
+    private recreateAfterCorruption(): RootDatabaseOptionsWithPath {
+        this.stores.clear();
+        if ((this.env as RootDatabase | undefined) !== undefined) {
+            void this.env.close();
+        }
+        this.deleteVersionDir();
+        return this.openEnvAndAddStores();
+    }
+
+    private openEnvAndAddStores(): RootDatabaseOptionsWithPath {
+        const { env, config } = createEnv(this.lmdbDir);
+        this.env = env;
+        for (const store of this.storeNames) {
+            this.addStore(store);
+        }
+        return config;
+    }
+
+    private scheduleBackgroundTasks(): void {
+        this.metricsInterval = setInterval(() => {
+            this.emitMetrics();
+        }, MetricsIntervalMs);
+
+        this.cleanupTimeout = setTimeout(() => {
+            this.cleanupOldVersions();
+        }, CleanupDelayMs);
     }
 
     private beginOp(): () => void {
@@ -247,10 +304,12 @@ export class LMDBStoreFactory implements DataStoreFactory {
         const entries = readdirSync(this.lmdbDir, { withFileTypes: true });
         for (const entry of entries) {
             try {
-                if (entry.name !== Version) {
-                    this.telemetry.count('oldVersion.cleanup.count', 1);
-                    rmSync(join(this.lmdbDir, entry.name), { recursive: true, force: true });
+                if (entry.name === Version || entry.name === LMDBOwnershipTracker.DirName) {
+                    continue;
                 }
+
+                this.telemetry.count('oldVersion.cleanup.count', 1);
+                rmSync(join(this.lmdbDir, entry.name), { recursive: true, force: true });
             } catch (error) {
                 this.log.error(error, 'Failed to cleanup old LMDB versions');
                 this.telemetry.count('oldVersion.cleanup.error', 1);
@@ -290,7 +349,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 }
 
-const VersionNumber = 5;
+const VersionNumber = 6;
 const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
 const TotalMaxDbSize = 250 * 1024 * 1024; // 250MB max size

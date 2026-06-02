@@ -131,7 +131,7 @@ export class TestExtension implements Closeable {
         this.serverConnection = new LspConnection(
             createConnection(new StreamMessageReader(this.readStream), new StreamMessageWriter(this.writeStream)),
             {
-                onInitialize: (params) => {
+                onInitialize: async (params) => {
                     const lsp = this.serverConnection.components;
                     LoggerFactory.reconfigure('warn');
 
@@ -140,6 +140,7 @@ export class TestExtension implements Closeable {
                         return Promise.resolve(JSON.parse(readFileSync(ffFile, 'utf8')));
                     }, ffFile);
                     const dataStoreFactory = new MultiDataStoreFactoryProvider(featureFlags.get('FileDb'));
+                    await dataStoreFactory.initialize();
                     this.core = new CfnInfraCore(lsp, params, {
                         dataStoreFactory,
                         featureFlags,

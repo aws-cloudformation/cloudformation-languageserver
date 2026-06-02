@@ -10,12 +10,13 @@ describe('LMDB', () => {
     let lmdbStore: DataStore;
     const testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-tests', v4());
 
-    beforeEach(() => {
+    beforeEach(async () => {
         if (!fs.existsSync(testDir)) {
             fs.mkdirSync(testDir, { recursive: true });
         }
 
         lmdbFactory = new LMDBStoreFactory(testDir);
+        await lmdbFactory.initialize();
         lmdbStore = lmdbFactory.get(StoreName.public_schemas);
     });
 
@@ -196,6 +197,7 @@ describe('LMDB', () => {
 
             // Create new instance that should load from the same files
             const newFactory = new LMDBStoreFactory(testDir);
+            await newFactory.initialize();
             const newStore = newFactory.get(StoreName.public_schemas);
             const result = newStore.get<typeof value>(key);
 

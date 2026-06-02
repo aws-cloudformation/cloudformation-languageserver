@@ -94,6 +94,10 @@ export class MemoryStoreFactory implements DataStoreFactory {
         return [...this.stores.keys()];
     }
 
+    initialize(): Promise<void> {
+        return Promise.resolve();
+    }
+
     close(): Promise<void> {
         clearInterval(this.metricsInterval);
         return Promise.resolve();
