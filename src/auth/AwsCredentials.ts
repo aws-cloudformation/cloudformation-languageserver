@@ -51,7 +51,7 @@ export class AwsCredentials {
 
     getIAM(): DeepReadonly<IamCredentials> {
         if (!this.iamCredentials) {
-            throw new CredentialsProviderError();
+            throw new CredentialsProviderError('IAM credentials not configured');
         }
         return structuredClone(this.iamCredentials);
     }

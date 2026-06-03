@@ -1,7 +1,6 @@
 export class CredentialsProviderError extends Error {
-    constructor(message: string = 'IAM credentials not configured') {
+    constructor(message: string) {
         super(message);
         this.name = 'CredentialsProviderError';
-        Object.setPrototypeOf(this, CredentialsProviderError.prototype);
     }
 }
