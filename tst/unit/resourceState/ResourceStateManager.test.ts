@@ -108,6 +108,16 @@ describe('ResourceStateManager', () => {
             expect(result.error).toContain('not authorized to perform');
         });
 
+        it('should return error when credentials are not configured', async () => {
+            const error = new Error('IAM credentials not configured');
+            error.name = 'CredentialsProviderError';
+            vi.mocked(mockCcapiService.getResource).mockRejectedValue(error);
+
+            const result = await manager.getResource('AWS::CloudWatch::Alarm', 'myalarm');
+            expect(result.resource).toBeUndefined();
+            expect(result.error).toContain('IAM credentials not configured');
+        });
+
         it('should return error when S3 bucket verification throws ResourceNotFoundException', async () => {
             vi.mocked(mockS3Service.verifyBucketAccessibleInRegion).mockRejectedValue(
                 new ResourceNotFoundException({

@@ -49,9 +49,7 @@ describe('AwsClient', () => {
         it('should handle credentials provider errors', () => {
             mockComponents.awsCredentials.getIAM.throws(new Error('IAM credentials not configured'));
 
-            expect(() => component.getCloudFormationClient()).toThrow(
-                'AWS credentials not configured. Authentication required for online features.',
-            );
+            expect(() => component.getCloudFormationClient()).toThrow('IAM credentials not configured');
         });
     });
 });

@@ -10,6 +10,7 @@ import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { getRegion } from '../utils/Region';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import { UpdateCredentialsParams, IamCredentials } from './AwsLspAuthTypes';
+import { CredentialsProviderError } from './CredentialsProviderError';
 
 const DecryptedCredentialsSchema = z.object({
     data: z.object({
@@ -50,7 +51,7 @@ export class AwsCredentials {
 
     getIAM(): DeepReadonly<IamCredentials> {
         if (!this.iamCredentials) {
-            throw new Error('IAM credentials not configured');
+            throw new CredentialsProviderError('IAM credentials not configured');
         }
         return structuredClone(this.iamCredentials);
     }
