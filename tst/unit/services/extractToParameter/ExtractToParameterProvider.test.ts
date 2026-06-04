@@ -163,6 +163,13 @@ describe('ExtractToParameterProvider', () => {
             const result = provider.canExtract(mockContext);
             expect(result).toBe(false);
         });
+
+        it('should return true for extractable literal in the Outputs section', () => {
+            (mockContext as any).section = TopLevelSection.Outputs;
+
+            const result = provider.canExtract(mockContext);
+            expect(result).toBe(true);
+        });
     });
 
     describe('generateExtraction method', () => {
@@ -580,157 +587,6 @@ Resources:
         });
     });
 
-    describe('hasMultipleOccurrences method', () => {
-        it('should return true when multiple occurrences exist', () => {
-            const mockTemplateContent = `{
-                "Resources": {
-                    "Bucket1": {
-                        "Type": "AWS::S3::Bucket",
-                        "Properties": {
-                            "BucketName": "my-bucket"
-                        }
-                    },
-                    "Bucket2": {
-                        "Type": "AWS::S3::Bucket",
-                        "Properties": {
-                            "BucketName": "my-bucket"
-                        }
-                    }
-                }
-            }`;
-
-            // Mock the syntax tree to return the template content with proper Resources section structure
-            (mockContext.syntaxNode as any) = {
-                type: 'string',
-                text: '"my-bucket"',
-                startPosition: { row: 0, column: 0 },
-                endPosition: { row: 0, column: 11 },
-                tree: {
-                    rootNode: {
-                        text: mockTemplateContent,
-                        children: [
-                            {
-                                type: 'pair',
-                                startPosition: { row: 0, column: 0 },
-                                endPosition: { row: 0, column: 0 },
-                                childForFieldName: (field: string) => {
-                                    if (field === 'key') {
-                                        return {
-                                            text: '"Resources"',
-                                            startPosition: { row: 0, column: 0 },
-                                            endPosition: { row: 0, column: 0 },
-                                        };
-                                    }
-                                    if (field === 'value') {
-                                        return {
-                                            type: 'object',
-                                            startPosition: { row: 0, column: 0 },
-                                            endPosition: { row: 0, column: 0 },
-                                            children: [
-                                                {
-                                                    type: 'string',
-                                                    text: '"my-bucket"',
-                                                    startPosition: { row: 0, column: 0 },
-                                                    endPosition: { row: 0, column: 11 },
-                                                    children: [],
-                                                },
-                                                {
-                                                    type: 'string',
-                                                    text: '"my-bucket"',
-                                                    startPosition: { row: 1, column: 0 },
-                                                    endPosition: { row: 1, column: 11 },
-                                                    children: [],
-                                                },
-                                            ],
-                                        };
-                                    }
-                                    return null;
-                                },
-                                children: [],
-                            },
-                        ],
-                    },
-                },
-            } as any;
-
-            vi.spyOn(mockContext as any, 'getRootEntityText').mockReturnValue(mockTemplateContent);
-
-            // Setup SyntaxTree mock to return Resources section with multiple occurrences
-            const mockResourcesSection = {
-                type: 'object',
-                children: [
-                    {
-                        type: 'string',
-                        text: '"my-bucket"',
-                        startPosition: { row: 0, column: 0 },
-                        endPosition: { row: 0, column: 11 },
-                        children: [],
-                    },
-                    {
-                        type: 'string',
-                        text: '"my-bucket"',
-                        startPosition: { row: 1, column: 0 },
-                        endPosition: { row: 1, column: 11 },
-                        children: [],
-                    },
-                ],
-            };
-
-            const sectionsMap = new Map([[TopLevelSection.Resources, mockResourcesSection as any]]);
-            mockSyntaxTree.findTopLevelSections.returns(sectionsMap);
-            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
-
-            const result = provider.hasMultipleOccurrences(mockContext, 'file:///test.json');
-            expect(result).toBe(true);
-        });
-
-        it('should return false when only one occurrence exists', () => {
-            const mockTemplateContent = `{
-                "Resources": {
-                    "Bucket1": {
-                        "Type": "AWS::S3::Bucket",
-                        "Properties": {
-                            "BucketName": "unique-bucket"
-                        }
-                    }
-                }
-            }`;
-
-            (mockContext.syntaxNode as any) = {
-                type: 'string',
-                text: '"unique-bucket"',
-                startPosition: { row: 0, column: 0 },
-                endPosition: { row: 0, column: 15 },
-                tree: {
-                    rootNode: {
-                        text: mockTemplateContent,
-                        children: [
-                            {
-                                type: 'string',
-                                text: '"unique-bucket"',
-                                startPosition: { row: 0, column: 0 },
-                                endPosition: { row: 0, column: 15 },
-                                children: [],
-                            },
-                        ],
-                    },
-                },
-            } as any;
-
-            vi.spyOn(mockContext as any, 'getRootEntityText').mockReturnValue(mockTemplateContent);
-
-            const result = provider.hasMultipleOccurrences(mockContext, 'file:///test.json');
-            expect(result).toBe(false);
-        });
-
-        it('should return false for non-extractable contexts', () => {
-            vi.spyOn(mockContext, 'isValue').mockReturnValue(false);
-
-            const result = provider.hasMultipleOccurrences(mockContext, 'file:///test.json');
-            expect(result).toBe(false);
-        });
-    });
-
     describe('generateAllOccurrencesExtraction method', () => {
         it('should generate extraction for all occurrences of a string literal', () => {
             const mockTemplateContent = `{
@@ -842,8 +698,58 @@ Resources:
             expect(result?.parameterDefinition.Type).toBe(ParameterType.String);
             expect(result?.parameterDefinition.Default).toBe('my-bucket');
             expect(result?.replacementEdits).toBeDefined();
-            expect(result?.replacementEdits.length).toBeGreaterThan(0);
+            expect(result?.replacementEdits.length).toBe(2);
             expect(result?.parameterInsertionEdit).toBeDefined();
+        });
+
+        it('should return undefined when the literal occurs only once (real traversal)', () => {
+            const mockTemplateContent = `{
+                "Resources": {
+                    "Bucket1": {
+                        "Type": "AWS::S3::Bucket",
+                        "Properties": { "BucketName": "my-bucket" }
+                    }
+                }
+            }`;
+
+            (mockContext.syntaxNode as any) = {
+                type: 'string',
+                text: '"my-bucket"',
+                startPosition: { row: 0, column: 0 },
+                endPosition: { row: 0, column: 11 },
+                tree: { rootNode: { text: mockTemplateContent, children: [] } },
+            };
+            vi.spyOn(mockContext as any, 'getRootEntityText').mockReturnValue(mockTemplateContent);
+
+            const singleOccurrenceSection = {
+                type: 'object',
+                children: [
+                    {
+                        type: 'string',
+                        text: '"my-bucket"',
+                        startPosition: { row: 0, column: 0 },
+                        endPosition: { row: 0, column: 11 },
+                        children: [],
+                    },
+                ],
+            };
+            mockSyntaxTree.findTopLevelSections.returns(
+                new Map([[TopLevelSection.Resources, singleOccurrenceSection as any]]),
+            );
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            // Spy call-through: proves we reached the occurrence check (past performBaseExtraction)
+            const findSpy = vi.spyOn((provider as any).allOccurrencesFinder, 'findAllOccurrences');
+
+            const result = provider.generateAllOccurrencesExtraction(
+                mockContext,
+                mockRange,
+                mockEditorSettings,
+                'file:///test.json',
+            );
+
+            expect(findSpy).toHaveBeenCalled();
+            expect(result).toBeUndefined();
         });
 
         it('should return undefined for non-extractable contexts', () => {

@@ -65,30 +65,6 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
     }
 
     /**
-     * Checks if there are multiple occurrences of the selected literal value in the template.
-     * Used to determine whether to offer the "Extract All Occurrences" action.
-     */
-    hasMultipleOccurrences(context: Context, uri?: string): boolean {
-        if (!this.canExtract(context)) {
-            return false;
-        }
-
-        const literalInfo = this.literalDetector.detectLiteralValue(context.syntaxNode, context.propertyPath);
-
-        if (!literalInfo) {
-            return false;
-        }
-
-        if (!uri) {
-            return false;
-        }
-
-        const allOccurrences = this.allOccurrencesFinder.findAllOccurrences(uri, literalInfo.value, literalInfo.type);
-
-        return allOccurrences.length > 1;
-    }
-
-    /**
      * Performs the complete extraction workflow including name generation,
      * type inference, and text edit creation.
      */
@@ -141,6 +117,11 @@ export class ExtractToParameterProvider implements IExtractToParameterProvider {
             baseExtraction.literalInfo.value,
             baseExtraction.literalInfo.type,
         );
+
+        // Only offer "extract all" when the literal appears more than once.
+        if (allOccurrences.length <= 1) {
+            return undefined;
+        }
 
         const replacementEdits = allOccurrences.map((occurrenceRange) =>
             this.textEditGenerator.generateLiteralReplacementEdit(
