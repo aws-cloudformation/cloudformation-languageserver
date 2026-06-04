@@ -1,6 +1,7 @@
 import { SyntaxNode } from 'tree-sitter';
 import { Range } from 'vscode-languageserver';
 import { TopLevelSection } from '../../context/CloudFormationEnums';
+import { SyntaxTree } from '../../context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { LiteralValueInfo, LiteralValueType } from './ExtractToParameterTypes';
@@ -43,7 +44,7 @@ export class AllOccurrencesFinder {
         const sections = syntaxTree.findTopLevelSections([TopLevelSection.Resources, TopLevelSection.Outputs]);
 
         for (const sectionNode of sections.values()) {
-            this.traverseForMatches(sectionNode, targetValue, targetType, occurrences, documentUri);
+            this.traverseForMatches(sectionNode, targetValue, targetType, occurrences, syntaxTree);
         }
 
         return occurrences;
@@ -54,15 +55,14 @@ export class AllOccurrencesFinder {
         targetValue: string | number | boolean | unknown[],
         targetType: LiteralValueType,
         occurrences: Range[],
-        documentUri: string,
+        syntaxTree: SyntaxTree,
     ): void {
         // First check without propertyPath for performance
         const literalInfo = this.literalDetector.detectLiteralValue(node);
 
         if (literalInfo && this.isMatchingLiteral(literalInfo, targetValue, targetType)) {
             // Only compute propertyPath for matching literals to check if extractable
-            const syntaxTree = this.syntaxTreeManager.getSyntaxTree(documentUri);
-            const propertyPath = syntaxTree?.getPathAndEntityInfo(node)?.propertyPath;
+            const propertyPath = syntaxTree.getPathAndEntityInfo(node)?.propertyPath;
 
             // Re-check with propertyPath to exclude non-extractable paths
             const literalInfoWithPath = this.literalDetector.detectLiteralValue(node, propertyPath);
@@ -74,7 +74,7 @@ export class AllOccurrencesFinder {
         }
 
         for (const child of node.children) {
-            this.traverseForMatches(child, targetValue, targetType, occurrences, documentUri);
+            this.traverseForMatches(child, targetValue, targetType, occurrences, syntaxTree);
         }
     }
 

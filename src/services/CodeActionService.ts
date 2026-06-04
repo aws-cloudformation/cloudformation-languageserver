@@ -24,7 +24,7 @@ import { Telemetry, Track } from '../telemetry/TelemetryDecorator';
 import { pointToPosition } from '../utils/TypeConverters';
 import { ExtractToParameterProvider } from './extractToParameter/ExtractToParameterProvider';
 
-export interface CodeActionFix {
+interface CodeActionFix {
     title: string;
     kind: string;
     actionType: string;
@@ -536,25 +536,20 @@ export class CodeActionService {
                     this.telemetry.count('refactor.extractToParameterOffered', 1);
                 }
 
-                const hasMultiple = this.telemetry.measure('refactor.hasMultipleOccurrences', () =>
-                    this.extractToParameterProvider.hasMultipleOccurrences(context, params.textDocument.uri),
+                const extractAllAction = this.telemetry.measure('refactor.extractAllToParameter', () =>
+                    this.generateExtractAllOccurrencesToParameterAction(params, context),
                 );
 
-                if (hasMultiple) {
-                    const extractAllAction = this.telemetry.measure('refactor.extractAllToParameter', () =>
-                        this.generateExtractAllOccurrencesToParameterAction(params, context),
-                    );
-
-                    if (extractAllAction) {
-                        refactorActions.push(extractAllAction);
-                        this.telemetry.count('refactor.extractAllToParameterOffered', 1);
-                    }
+                if (extractAllAction) {
+                    refactorActions.push(extractAllAction);
+                    this.telemetry.count('refactor.extractAllToParameterOffered', 1);
                 }
             }
         } catch (error) {
             this.logError('generating refactor actions', error);
         }
 
+        this.telemetry.histogram('refactor.actions', refactorActions.length);
         return refactorActions;
     }
 
