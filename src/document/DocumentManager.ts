@@ -30,7 +30,7 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
     ) {
         this.registerDocumentGauges();
         this.interval = setInterval(() => {
-            this.emitDocSizeMetrics();
+            this.emitDocSize();
         }, 30 * 1000);
     }
 
@@ -148,42 +148,31 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
         this.telemetry.registerGaugeProvider('documents.open.total', () => this.documentMap.size);
 
         for (const type of Object.values(CloudFormationFileType)) {
-            this.telemetry.registerGaugeProvider(`documents.open.cfn.type.${type}`, () =>
-                this.countDocumentsByCfnType(type),
-            );
+            this.telemetry.registerGaugeProvider(`documents.open.cfn.type.${type}`, () => {
+                return [...this.documentMap.values()].filter((doc) => doc.cfnFileType === type).length;
+            });
         }
 
         for (const type of Object.values(DocumentType)) {
-            this.telemetry.registerGaugeProvider(`documents.open.doc.type.${type}`, () =>
-                this.countDocumentsByDocType(type),
-            );
+            this.telemetry.registerGaugeProvider(`documents.open.doc.type.${type}`, () => {
+                return [...this.documentMap.values()].filter((doc) => doc.documentType === type).length;
+            });
         }
 
         for (const ext of ['yaml', 'yml', 'json', 'template', 'cfn', 'txt', '']) {
-            this.telemetry.registerGaugeProvider(`documents.open.extension.type.${ext}`, () =>
-                this.countDocumentsByExtension(ext),
-            );
+            this.telemetry.registerGaugeProvider(`documents.open.extension.type.${ext}`, () => {
+                return [...this.documentMap.values()].filter((doc) => doc.isTemplate() && doc.extension === ext).length;
+            });
         }
     }
 
-    private emitDocSizeMetrics() {
+    private emitDocSize() {
         for (const doc of this.documentMap.values()) {
             if (doc.isTemplate()) {
                 this.telemetry.histogram('documents.template.size.bytes', doc.metadata().sizeBytes, { unit: 'By' });
+                this.telemetry.histogram('documents.template.size.lines', doc.getLineCount());
             }
         }
-    }
-
-    private countDocumentsByCfnType(cfnType: CloudFormationFileType): number {
-        return [...this.documentMap.values()].filter((doc) => doc.cfnFileType === cfnType).length;
-    }
-
-    private countDocumentsByDocType(docType: DocumentType): number {
-        return [...this.documentMap.values()].filter((doc) => doc.documentType === docType).length;
-    }
-
-    private countDocumentsByExtension(extension: string): number {
-        return [...this.documentMap.values()].filter((doc) => doc.isTemplate() && doc.extension === extension).length;
     }
 
     clear() {
