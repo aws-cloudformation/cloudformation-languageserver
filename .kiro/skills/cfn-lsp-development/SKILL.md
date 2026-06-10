@@ -1,298 +1,145 @@
 ---
 name: cfn-lsp-development
 description: >
-  Development workflow for the CFN LSP Project ecosystem. Guides agents through
-  package discovery, implementation, testing, telemetry wiring, and PR creation across the server,
-  clients, and related packages. Use when implementing features, fixing bugs, adding
-  handlers/providers, or making changes to the cloudformation-languageserver or its related packages.
-tags: [skill, ide, lsp, cloudformation, typescript, development]
+  Development workflow for the CloudFormation Language Server. Guides agents through implementation, testing, and PR creation. Use when implementing features, fixing bugs, adding handlers/providers, or making changes to this repository.
 ---
 
-# LSP Development
+# CFN LSP Development Workflow
 
-## Overview
+## Constraints
 
-Guides development agents through implementing changes across the CFN LSP Project ecosystem — from package discovery through PR creation, ensuring all affected packages are covered with proper tests and telemetry.
+These constraints apply to ALL changes in this repository:
 
-## Usage
+- **No backwards-incompatible changes (hard rule)** — Never change or remove existing LSP protocol methods, request types, or response/return types. Additive changes only — breaking the wire contract breaks the already-shipped VS Code and JetBrains clients.
+- **Cross-platform** — All changes must work on macOS, Windows, and Linux
+- **No database locking** — Never lock LMDB or other shared resources; multiple concurrent LSP connections may exist
+- **Performance** — Handlers must respond quickly; avoid blocking the event loop or doing synchronous I/O in request paths. Use `npm run benchmark` to confirm changes haven't regressed latency.
 
-Use this skill when:
-- Implementing a new LSP handler or completion provider
-- Fixing a bug in the language server
-- Wiring telemetry for new features
-- Making client-side changes (VSCode or JetBrains)
-- Any task touching the IDE Experience codebase
+## Developer Tools
 
-## Core Concepts
+### Debugging the syntax tree
 
-### Architecture
+```bash
+npm run debug-tree -- --file <template.yaml|json>
+```
 
-The CFN LSP uses a **Component-Handler** architecture:
-- **Handlers** — one per LSP request (completion, hover, definition, diagnostics)
-- **Components** — internal state/logic (SyntaxTreeManager, ContextManager, SchemaStore, LMDBStore)
-- **Services** — external I/O (CfnLint/Pyodide, Auth, CFN API, Telemetry)
+Runs `tools/debug_tree.ts` — builds a `SyntaxTree`, traverses every node, and emits `Context` objects at key positions. The fastest way to diagnose parse/context problems when working on completion, hover, or definition.
 
-For full architecture details, read `.kiro/steering/CFN_LSP_Architecture_Overview.md`.
+### Benchmarking performance
 
-### Package Ecosystem
+```bash
+npm run benchmark              # default run
+npm run benchmark -- --iterations 100 --templates ./tst/resources --output results.md
+```
 
-| Package | Location | Branch | Purpose |
-|---------|----------|--------|---------|
-| cloudformation-languageserver | github.com/aws-cloudformation/cloudformation-languageserver | main | LSP server (TypeScript/Node.js) |
-| aws-toolkit-vscode | github.com/aws/aws-toolkit-vscode | master | VSCode client (TypeScript) |
-| aws-toolkit-jetbrains | github.com/aws/aws-toolkit-jetbrains | main | JetBrains client (Kotlin) |
+Runs `tools/benchmark.ts` — measures syntax-tree creation and context-lookup latency across iterations. Use this to verify the Performance constraint above.
 
-**Client paths:**
-- VSCode: `packages/core/src/awsService/cloudformation/`
-- JetBrains: `plugins/toolkit/jetbrains-core/src/software/aws/toolkits/jetbrains/services/cfnlsp`
+### Stability testing
+
+```bash
+npm run test:stability
+```
+
+Runs `tools/stability/` — long-running tests that exercise completion and hover under sustained load.
 
 ## Workflow
 
-### Step 1: Package Discovery
-
-Before planning, determine which packages need changes:
-
-1. Read the task requirements
-2. Map requirements to affected packages from the table above
-3. Include the TODO list in your plan with per-package changes
-
-**Decision guide:**
-- New handler/provider → server + tests
-- New LSP capability → server + tests + VSCode client + JetBrains client
-- Bug fix (server only) → server + unit tests
-- Bug fix (client visible) → server + affected client(s) + tests
-
-### Step 2: Workspace Discovery
+### Step 1: Research
 
 Before making changes, locate or set up local workspaces for affected packages:
 
 1. **Search parent directories** for existing checkouts:
-   - Look for `cloudformation-languageserver/`, `aws-toolkit-vscode/`, `aws-toolkit-jetbrains/` in `../`, `../../`, etc.
+   - Look for `cloudformation-languageserver/` in `../`, `../../`, etc.
    - Check `LOCAL_TESTING_SERVER_PATH` env var for an existing server bundle path
 
 2. **If not found**, ask the user:
-   - "Do you have a local checkout of `<package>`? If so, provide the path."
+   - "Do you have a local checkout? If so, provide the path."
    - "Should I clone the repository?"
 
-3. **Set up missing workspaces:**
+3. **Set up missing workspace:**
    - `git clone https://github.com/aws-cloudformation/cloudformation-languageserver.git`
-   - `git clone https://github.com/aws/aws-toolkit-vscode.git`
-   - `git clone https://github.com/aws/aws-toolkit-jetbrains.git`
 
-4. **For testing against local server changes:**
-   - Build the server: `npm run bundle:alpha` (in the language server workspace)
-   - Set path: `LOCAL_TESTING_SERVER_PATH=<path-to-languageserver>/bundle/production`
+Next, browse the source code.
+- Identify conventions: file naming, class structure, test patterns
+- Read files relevant to the task to understand wiring (imports, exports, registration)
+- Check `.kiro/steering/` for architecture guidance when needed
 
-### Step 3: Research
+### Step 2: Plan
 
-For each affected package, browse the live source directly:
+Before writing code:
 
-**GitHub repos (use `web_fetch`):**
-- Server: `https://github.com/aws-cloudformation/cloudformation-languageserver/tree/main/src/` and `tst/`
-- VSCode: `https://github.com/aws/aws-toolkit-vscode/tree/master/packages/core/src/awsService/cloudformation/`
-- JetBrains: `https://github.com/aws/aws-toolkit-jetbrains/tree/main/plugins/toolkit/jetbrains-core/src/software/aws/toolkits/jetbrains/services/cfnlsp`
+1. Read the task requirements
+2. Identify affected source directories (see `structure.md` in steering)
+3. Create an implementation plan
+   a. Create a markdown file at the workspace root: `./<feature-or-fix-name>-plan.md`
+      The plan MUST include:
+      - **Summary** — what is being implemented and why
+      - **Affected packages** — which packages need changes
+      - **Approach** — high-level design decisions
+      - **Task checklist** — every discrete task as a checkbox item, ordered by execution sequence
 
-For each:
-1. Browse existing patterns (handlers, providers, tests) in the live source
-2. Identify conventions: file naming, class structure, test patterns
-3. Read specific files to understand wiring (imports, exports, registration)
-4. Check `.kiro/steering/` for architecture guidance when needed
+4. Present the plan to the user and ask them to review it
+5. **STOP and wait for explicit user approval before writing any code**
+6. As tasks are completed, update the checklist in the plan file (check off items)
 
-### Step 4: Implementation Plan
+### Step 3: Implement
 
-Before writing any code, create an implementation plan:
+1. Create a local branch for your changes
+2. Write unit tests that define expected behavior (they should fail initially)
+3. Implement the minimum code to make tests pass
+4. Follow existing patterns in the relevant feature directory
+5. Refactor for clarity while keeping tests green
 
-1. Create a markdown file at the workspace root: `./<feature-or-fix-name>-plan.md`
-2. The plan MUST include:
-   - **Summary** — what is being implemented and why
-   - **Affected packages** — which packages need changes (from Step 1)
-   - **Approach** — high-level design decisions
-   - **Task checklist** — every discrete task as a checkbox item, ordered by execution sequence
-3. Present the plan to the user and ask them to review it
-4. **STOP and wait for explicit user approval before writing any code**
-5. As tasks are completed, update the checklist in the plan file (check off items)
+### Step 4: Telemetry
 
-**Example plan structure:**
-```markdown
-# Implementation Plan: <title>
-
-## Summary
-<what and why>
-
-## Affected Packages
-- [ ] cloudformation-languageserver (server)
-
-## Approach
-<design decisions, patterns to follow>
-
-## Tasks
-- [ ] Write unit tests for <new handler>
-- [ ] Write integration tests for <new handler>
-- [ ] Implement <handler> following existing patterns
-- [ ] Wire telemetry metrics
-- [ ] Run full test suite and lint
-- [ ] Create PR
-```
-
-### Step 5: Implement (Test-Driven Development)
-
-Follow TDD — write tests first, then implementation:
-
-**Phase 1: Write tests**
-1. Write unit tests that define the expected behavior of the new code
-2. Write integration tests for handler/provider interactions
-3. Run tests — they MUST fail (confirms they test something real)
-
-**Phase 2: Write business logic**
-1. Implement the minimum code to make tests pass
-2. Follow existing patterns per package (see below)
-3. Refactor for clarity while keeping tests green
-
-**Phase 3: Verify**
-1. All new tests pass
-2. All existing tests still pass
-3. npm run lint passes clean
-
-**Per-package implementation guidance:**
-
-**Server (cloudformation-languageserver):**
-
-Source (`src/`) is organized by feature, NOT by architectural layer:
-- `src/app/` — Entry points (standalone.ts, initialize.ts)
-- `src/autocomplete/` — Completion providers
-- `src/hover/` — Hover documentation
-- `src/definition/` — Go-to-definition
-- `src/codeLens/` — CodeLens providers
-- `src/documentSymbol/` — Document symbol/outline
-- `src/handlers/` — LSP request handler wiring
-- `src/context/` — Semantic model (AST, entities, intrinsics)
-- `src/schema/` — CloudFormation type schemas
-- `src/datastore/` — LMDB persistence layer
-- `src/services/` — External services (cfnLint, guard, auth)
-- `src/server/` — LSP server setup
-- `src/stacks/` — Stack operations (deploy, changeset, events)
-- `src/resourceState/` — Cloud Control API resource state
-- `src/relatedResources/` — Related resources feature
-- `src/telemetry/` — OpenTelemetry metrics
-- `src/auth/` — Credential management
-- `src/protocol/` — LSP protocol extensions
-- `src/settings/` — Server settings
-- `src/featureFlag/` — Feature flags
-- `src/artifacts/` — Artifact handling
-- `src/artifactexporter/` — Artifact export
-- `src/s3/` — S3 operations
-- `src/document/` — Document management
-- `src/cfnEnvironments/` — CFN environments
-- `src/usageTracker/` — Usage tracking
-- `src/utils/` — Shared utilities
-
-Tests (`tst/`) mirror this structure:
-- `tst/unit/` — Unit tests (Vitest)
-- `tst/integration/` — Integration tests
-- `tst/e2e/` — End-to-end tests
-- `tst/resources/` — Test fixtures
-- `tst/utils/` — Test utilities
-
-**Before writing new code**, check `src/utils/` and `tst/utils/` for existing reusable methods. If you find a method that fits your task, use it. If you write a method that could be reused, move it to the appropriate utils file, export it, and import where needed.
-
-**Telemetry (cloudformation-languageserver):**
-- Wire new handlers with `ScopedTelemetry.executeWithMetrics()`
-- Emit `{Handler}.duration` and `{Handler}.fault` metrics
-
-**VSCode client (aws-toolkit-vscode):**
-- Monorepo structure — open via `aws-toolkit-vscode.code-workspace`
-- CloudFormation code lives in `packages/core/src/awsService/cloudformation/`
-- Build: `npm run compile`
-- Test commands:
-  - Unit tests: `npm run test` (fast, in `src/test/`, Mocha framework)
-  - Integration tests: `npm run testInteg` (slow, in `src/testInteg/`, full VSCode instance)
-  - Lint: `npm run lint`
-  - Single file: `TEST_FILE=./core/src/test/foo.test.ts npm run test`
-  - Single dir: `TEST_DIR=./core/src/test/foo npm run test`
-- Test philosophy: 90% unit, 10% integration. Tests must be fast. No real network calls.
-- Mocking: mock only inputs (constructor params, function args, injected deps). Never mock internal logic.
-- Use `getTestWindow()` for UI interactions in tests
-- PR title format: `type(scope): subject` (e.g., `feat(cloudformation): add hover for intrinsics`)
-- Follow [CONTRIBUTING.md](https://github.com/aws/aws-toolkit-vscode/blob/master/CONTRIBUTING.md) and [TESTPLAN.md](https://github.com/aws/aws-toolkit-vscode/blob/master/docs/TESTPLAN.md)
-
-**JetBrains client (aws-toolkit-jetbrains):**
-- Kotlin, follows existing patterns in `plugins/toolkit/jetbrains-core/src/software/aws/toolkits/jetbrains/services/cfnlsp`
-- Follow [CONTRIBUTING.md](https://github.com/aws/aws-toolkit-jetbrains/blob/main/CONTRIBUTING.md)
-
-### Step 6: Test
-
-Per package, ALL existing tests MUST pass:
-
-| Package | Test Command | Framework | Coverage Thresholds |
-|---------|-------------|-----------|-------------------|
-| Server | `npm run test` | Vitest | 88% statements, 82% branches, 90% functions |
-| Server lint | `npm run lint -- --fix` | ESLint | Must pass clean |
-| VSCode build | `npm run compile` | TypeScript | Must compile clean |
-| VSCode unit | `npm run test` | Mocha | 90% unit / 10% integ ratio |
-| VSCode integ | `npm run testInteg` | Mocha + VSCode | Must pass |
-| VSCode lint | `npm run lint` | ESLint | Must pass |
-| JetBrains | Package-specific test runner | — | Must pass |
-
-**Test requirements for new code:**
-- Unit tests for all new functions/classes
-- Integration tests for new handlers (LSP request → response)
-- E2E tests for user-facing features
-
-### Step 7: Pre-PR Checklist
-
-Before creating a PR:
-1. `npm run lint -- --fix` (server)
-2. `npm run test` passes (server)
-3. All affected client tests pass
-4. New telemetry metrics are wired
-
-## Quick Reference
-
-### Common Commands (Server)
-
-```bash
-npm ci                    # Install dependencies
-npm run test              # Run unit tests
-npm run test:coverage     # Run with coverage report
-npm run lint -- --fix     # Lint and auto-fix
-npm run bundle:alpha      # Webpack bundle (alpha)
-npm run bundle:beta       # Webpack bundle (beta)
-npm run bundle:prod       # Webpack bundle (production)
-```
-
-### Common Commands (VSCode Client)
-
-```bash
-npm install               # Install dependencies (from repo root)
-npm run compile           # Build
-npm run test              # Unit tests (fast)
-npm run testInteg         # Integration tests (slow, full VSCode)
-npm run lint              # Lint
-TEST_FILE=./core/src/test/foo.test.ts npm run test  # Single file
-```
-
-### Telemetry Pattern
+Wire telemetry for new handlers using `ScopedTelemetry` public methods:
 
 ```typescript
-// Wire a new handler with telemetry
-const result = await this.telemetry.executeWithMetrics(
-  'NewHandler',
-  async () => { /* handler logic */ }
-);
+// Measure duration + count + fault for a handler
+const result = await this.telemetry.measureAsync('HandlerName', async () => {
+  /* handler logic */
+});
+
+// Track execution with response tracking
+const result = this.telemetry.trackExecution('HandlerName', () => {
+  /* handler logic */
+});
+
+// Count-only (no duration)
+const result = await this.telemetry.countExecutionAsync('HandlerName', async () => {
+  /* handler logic */
+});
 ```
 
-### Key Metrics
+**Metrics emitted by these methods:**
+- `{Name}.count` — invocation count
+- `{Name}.duration` — response time (measure/trackExecution only)
+- `{Name}.fault` — unhandled exception
 
-- `{Handler}.duration` — response time
-- `{Handler}.fault` — unhandled exception
-- `LMDB.{op}.duration` — database latency
-- `LMDB.{op}.fault` — database failure
+### Step 5: Verify
 
-## Common Mistakes
+Before creating a PR, **all of these must pass**:
 
-| Mistake | Fix |
-|---------|-----|
-| Forgetting telemetry on new handler | Always wrap with `executeWithMetrics()` |
-| Running tests without `npm run lint -- --fix` first | Lint first, test second |
-| Only testing server, not clients | Check if client changes are needed |
-| Missing package in TODO list | Always run Package Discovery step first |
+```bash
+npm run build             # TypeScript compilation
+npm run lint              # Linting (zero warnings)
+npm run test              # Unit tests + coverage (thresholds: 88% statements, 82% branches, 90% functions, 88% lines)
+```
+
+Coverage runs automatically with `npm run test` (`coverage.enabled: true` in `vitest.config.ts`).
+
+### Step 6: Client-Side Changes
+
+Some changes require corresponding updates in the editor clients (e.g., features that need UX work). See the client repositories for their own build/test/contribution guides:
+
+| Client | Repository | CloudFormation path |
+|--------|-----------|-------------------|
+| VS Code | [`aws/aws-toolkit-vscode`](https://github.com/aws/aws-toolkit-vscode) (branch: `master`) | `packages/core/src/awsService/cloudformation/` |
+| JetBrains | [`aws/aws-toolkit-jetbrains`](https://github.com/aws/aws-toolkit-jetbrains) (branch: `main`) | `plugins/toolkit/jetbrains-core/src/software/aws/toolkits/jetbrains/services/cfnlsp` |
+
+### Step 7: PR
+
+- Ensure new code has unit tests (and integration tests for handlers)
+- Confirm no breaking API changes
+- Confirm cross-platform compatibility (no platform-specific paths, no OS-specific APIs without fallbacks)
+- Note in PR description if client-side changes are also needed
