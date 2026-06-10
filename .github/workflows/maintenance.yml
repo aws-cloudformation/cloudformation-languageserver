@@ -17,7 +17,7 @@ jobs:
     needs: [get-configs]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }}
         uses: actions/setup-node@v6
@@ -38,7 +38,7 @@ jobs:
         run: npm run download-wheels
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           commit-message: 'chore: Maintenance update'
           branch: maintenance/update

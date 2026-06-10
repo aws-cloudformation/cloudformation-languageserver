@@ -30,7 +30,7 @@ jobs:
       tag: ${{ steps.validate-tag.outputs.tag }}
       is-prerelease: ${{ steps.validate-tag.outputs.is-prerelease }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.tag }}
           fetch-tags: true
@@ -85,7 +85,7 @@ jobs:
           - { arch: "arm64", docker-platform: "linux/arm64", go-arch: "arm64", use_qemu: true, node-version: "18" }
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.version-and-tag.outputs.tag }}
           fetch-tags: true
@@ -122,7 +122,7 @@ jobs:
             node:18-buster \
             /bin/bash -c '
               set -e
-          
+
               git config --global --add safe.directory /work
               echo "deb http://archive.debian.org/debian buster main" > /etc/apt/sources.list
               echo "deb http://archive.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
@@ -131,7 +131,7 @@ jobs:
               apt-get update
               apt-get install -y make g++ python3 python3-pip build-essential tar gzip wget tree
               wget -q https://bootstrap.pypa.io/pip/3.7/get-pip.py && python3 get-pip.py
-          
+
               SYS_LIB=$(find /usr/lib -name libstdc++.so.6 | head -n 1)
               SYS_MAX=$(strings "$SYS_LIB" | grep "GLIBCXX_[0-9]" | sort -V | tail -n 1)
               SYS_MIN=$(strings "$SYS_LIB" | grep "GLIBCXX_[0-9]" | sort -V | head -n 1)
@@ -176,7 +176,7 @@ jobs:
             '
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
           path: bundle/production/
@@ -198,7 +198,7 @@ jobs:
           - { os: "windows-11-arm", arch: "arm64", platform: "win32", go-arch: "arm64", node-version: "22.x" }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ needs.version-and-tag.outputs.tag }}
           fetch-tags: true
@@ -271,7 +271,7 @@ jobs:
           echo "ASSET_NAME=${ASSET_NAME}" >> $GITHUB_OUTPUT
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ steps.set-asset-name.outputs.ASSET_NAME }}
           path: bundle/production/
@@ -282,8 +282,10 @@ jobs:
   release:
     needs: [ version-and-tag, bundle-linux-legacy, bundle ]
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
+      id-token: write
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v5
@@ -304,12 +306,72 @@ jobs:
           done
           ls -lh *.zip
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6.2.0
+        with:
+          role-to-assume: ${{ secrets.SIGNING_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Sign artifacts with KMS
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          KMS_KEY_ALIAS: ${{ secrets.KMS_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+
+          for f in artifacts/*; do
+            rm -f digest.bin
+            openssl dgst -sha256 -binary "$f" > digest.bin
+
+            aws kms sign \
+              --region "$AWS_REGION" \
+              --key-id "$KMS_KEY_ALIAS" \
+              --message fileb://digest.bin \
+              --message-type DIGEST \
+              --signing-algorithm RSASSA_PKCS1_V1_5_SHA_256 \
+              --query Signature --output text | base64 -d > "$f.sig"
+
+            echo "signed: $f -> $f.sig"
+          done
+          rm -f digest.bin
+
+      - name: Verify signatures
+        env:
+          SIGNING_PUBLIC_KEY: ${{ secrets.SIGNING_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          printf '%s\n' "$SIGNING_PUBLIC_KEY" > signing-key.pem
+
+          for f in artifacts/*; do
+            case "$f" in *.sig) continue ;; esac
+            echo "Verifying: $f"
+            result=$(openssl dgst -sha256 -verify signing-key.pem -signature "$f.sig" "$f") || true
+            echo "$result"
+            if [ "$result" != "Verified OK" ]; then
+              echo "::error::signature verification failed for $f"
+              exit 1
+            fi
+          done
+          rm -f signing-key.pem
+
+      - name: Add public key to release assets
+        env:
+          SIGNING_PUBLIC_KEY: ${{ secrets.SIGNING_PUBLIC_KEY }}
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$SIGNING_PUBLIC_KEY" > artifacts/signing-key.pem
+          fingerprint=$(openssl pkey -pubin -in artifacts/signing-key.pem -outform DER | openssl dgst -sha256 | awk '{print $NF}')
+          printf '%s\n' "$fingerprint" > artifacts/signing-key.pem.sha256
+          echo "public key SHA-256: $fingerprint"
+
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.version-and-tag.outputs.tag }}
           prerelease: ${{ needs.version-and-tag.outputs.is-prerelease }}
-          files: artifacts/*.zip
+          files: artifacts/*
           generate_release_notes: true
           fail_on_unmatched_files: true
 
