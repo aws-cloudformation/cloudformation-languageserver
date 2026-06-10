@@ -33,10 +33,6 @@ jobs:
             echo "should-run=true" >> $GITHUB_OUTPUT
             echo "duration=4h" >> $GITHUB_OUTPUT
             echo "timeout=360" >> $GITHUB_OUTPUT
-          elif [[ "$TAG" =~ -alpha$ ]]; then
-            echo "should-run=true" >> $GITHUB_OUTPUT
-            echo "duration=20m" >> $GITHUB_OUTPUT
-            echo "timeout=60" >> $GITHUB_OUTPUT
           else
             echo "should-run=true" >> $GITHUB_OUTPUT
             echo "duration=4h" >> $GITHUB_OUTPUT
