@@ -53,6 +53,7 @@ jobs:
   call-release:
     needs: [create-alpha-tag]
     uses: ./.github/workflows/release.yml
+    secrets: inherit
     permissions:
       contents: write
       pull-requests: write

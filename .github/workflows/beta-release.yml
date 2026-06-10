@@ -41,6 +41,7 @@ jobs:
   call-release:
     needs: [create-beta-tag]
     uses: ./.github/workflows/release.yml
+    secrets: inherit
     permissions:
       contents: write
       pull-requests: write
