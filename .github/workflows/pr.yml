@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   get-configs:
     uses: ./.github/workflows/configs.yml
@@ -23,7 +27,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Node.js ${{ needs.get-configs.outputs.node-version }}
         uses: actions/setup-node@v6
@@ -51,7 +55,7 @@ jobs:
         os: [ ubuntu-latest, macos-latest, windows-latest ]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Setup Go ${{ needs.get-configs.outputs.go-version }}
         uses: actions/setup-go@v6

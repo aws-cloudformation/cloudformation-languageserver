@@ -20,7 +20,7 @@ jobs:
     outputs:
       tag: ${{ steps.version-and-tag.outputs.tag }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref || 'main' }}
           fetch-depth: 0
@@ -56,5 +56,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      id-token: write
     with:
       tag: ${{ needs.create-alpha-tag.outputs.tag }}

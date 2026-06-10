@@ -226,3 +226,30 @@ Add to LSP settings:
   }
 }
 ```
+
+## Download and Verify Release Artifacts
+
+Signed artifacts are attached to each GitHub release. A release contains the
+artifacts (`cloudformation-languageserver-*.zip`) for each one, a detached signature
+(`<artifact>.sig`), the public key (`signing-key.pem`), and the key's SHA-256
+fingerprint (`signing-key.pem.sha256`). Artifacts are signed with an AWS KMS RSA
+key (`RSASSA_PKCS1_V1_5_SHA_256`).
+
+Download the artifact you want, its `.sig`, and `signing-key.pem` from the same
+release, then verify the signature:
+
+```bash
+openssl dgst -sha256 -verify signing-key.pem -signature [artifact].sig [artifact]
+# openssl dgst -sha256 -verify signing-key.pem -signature cloudformation-languageserver-1.7.0-darwin-arm64-node22.zip.sig cloudformation-languageserver-1.7.0-darwin-arm64-node22.zip
+```
+
+A valid artifact prints `Verified OK`. Any other output means verification
+failed - do not use the artifact.
+
+Optionally, confirm the bundled key is the real signing key by matching its
+fingerprint against one you trust:
+
+```bash
+openssl pkey -pubin -in signing-key.pem -outform DER | openssl dgst -sha256
+cat signing-key.pem.sha256
+```
