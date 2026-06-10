@@ -50,17 +50,11 @@ jobs:
           if [[ "$TAG" == "v$VERSION" ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=false" >> $GITHUB_OUTPUT
-          elif [[ "$TAG" =~ ^v$VERSION-.*-alpha$ ]]; then
-            echo "tag=$TAG" >> $GITHUB_OUTPUT
-            echo "is-prerelease=true" >> $GITHUB_OUTPUT
-          elif [[ "$TAG" == "v$VERSION-alpha" ]]; then
-            echo "tag=$TAG" >> $GITHUB_OUTPUT
-            echo "is-prerelease=true" >> $GITHUB_OUTPUT
           elif [[ "$TAG" =~ ^v$VERSION-beta$ ]]; then
             echo "tag=$TAG" >> $GITHUB_OUTPUT
             echo "is-prerelease=true" >> $GITHUB_OUTPUT
           else
-            echo "Error: Tag ($TAG) must be v$VERSION, v$VERSION-alpha, v$VERSION-<branch>-alpha, or v$VERSION-beta"
+            echo "Error: Tag ($TAG) must be v$VERSION or v$VERSION-beta"
             exit 1
           fi
 
@@ -100,9 +94,7 @@ jobs:
           NODE_MAJOR=$(echo $NODE_VERSION | cut -d. -f1)
 
           TAG=${{ needs.version-and-tag.outputs.tag }}
-          if [[ "$TAG" =~ -alpha$ ]]; then
-            FILE_NAME="${APP_NAME}-${VERSION}-alpha-linuxglib2.28-${{ matrix.arch }}-node${NODE_MAJOR}"
-          elif [[ "$TAG" =~ -beta$ ]]; then
+          if [[ "$TAG" =~ -beta$ ]]; then
             FILE_NAME="${APP_NAME}-${VERSION}-beta-linuxglib2.28-${{ matrix.arch }}-node${NODE_MAJOR}"
           else
             FILE_NAME="${APP_NAME}-${VERSION}-linuxglib2.28-${{ matrix.arch }}-node${NODE_MAJOR}"
@@ -151,9 +143,7 @@ jobs:
               npm ci
 
               TAG="${{ needs.version-and-tag.outputs.tag }}"
-              if [[ "$TAG" =~ -alpha$ ]]; then
-                npm run bundle:alpha -- --env rebuild=true --env buildTarget=legacy
-              elif [[ "$TAG" =~ -beta$ ]]; then
+              if [[ "$TAG" =~ -beta$ ]]; then
                 npm run bundle:beta -- --env rebuild=true --env buildTarget=legacy
               else
                 npm run bundle:prod -- --env rebuild=true --env buildTarget=legacy
@@ -183,6 +173,7 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
           compression-level: 6
+          retention-days: 1
 
   bundle:
     needs: [ get-configs, version-and-tag, build-and-test ]
@@ -226,9 +217,7 @@ jobs:
         shell: bash
         run: |
           TAG=${{ needs.version-and-tag.outputs.tag }}
-          if [[ "$TAG" =~ -alpha$ ]]; then
-            npm run bundle:alpha
-          elif [[ "$TAG" =~ -beta$ ]]; then
+          if [[ "$TAG" =~ -beta$ ]]; then
             npm run bundle:beta
           else
             npm run bundle:prod
@@ -258,9 +247,7 @@ jobs:
           NODE_MAJOR=$(echo $NODE_VERSION | cut -d. -f1)
           
           TAG=${{ needs.version-and-tag.outputs.tag }}
-          if [[ "$TAG" =~ -alpha$ ]]; then
-            FILE_NAME="${APP_NAME}-${VERSION}-alpha-${PLATFORM}-${ARCH}-node${NODE_MAJOR}"
-          elif [[ "$TAG" =~ -beta$ ]]; then
+          if [[ "$TAG" =~ -beta$ ]]; then
             FILE_NAME="${APP_NAME}-${VERSION}-beta-${PLATFORM}-${ARCH}-node${NODE_MAJOR}"
           else
             FILE_NAME="${APP_NAME}-${VERSION}-${PLATFORM}-${ARCH}-node${NODE_MAJOR}"
@@ -278,6 +265,7 @@ jobs:
           if-no-files-found: error
           include-hidden-files: true
           compression-level: 6
+          retention-days: 1
 
   release:
     needs: [ version-and-tag, bundle-linux-legacy, bundle ]
