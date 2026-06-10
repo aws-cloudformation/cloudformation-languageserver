@@ -57,6 +57,7 @@ jobs:
   call-release:
     needs: [promote-beta-to-prod]
     uses: ./.github/workflows/release.yml
+    secrets: inherit
     permissions:
       contents: write
       pull-requests: write
