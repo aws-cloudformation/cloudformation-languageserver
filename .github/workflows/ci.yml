@@ -12,6 +12,7 @@ jobs:
     uses: ./.github/workflows/build-and-test.yml
     permissions:
       contents: read
+      code-quality: write
     strategy:
       fail-fast: true
       matrix:
@@ -19,3 +20,4 @@ jobs:
     with:
       ref: ${{ github.sha }}
       runs-on: ${{ matrix.os }}
+      upload-coverage: true

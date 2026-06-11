@@ -15,6 +15,12 @@ on:
         required: true
         type: string
 
+      upload-coverage:
+        description: 'Whether to upload the code coverage report (only runs on ubuntu-latest).'
+        required: false
+        type: boolean
+        default: false
+
   workflow_dispatch:
     inputs:
       runs-on:
@@ -28,6 +34,12 @@ on:
         required: true
         type: string
 
+      upload-coverage:
+        description: 'Whether to upload the code coverage report (only runs on ubuntu-latest).'
+        required: false
+        type: boolean
+        default: false
+
 permissions:
   contents: read
 
@@ -38,6 +50,9 @@ jobs:
   build-test-nodejs:
     needs: [ get-configs ]
     runs-on: ${{ inputs.runs-on }}
+    permissions:
+      contents: read
+      code-quality: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -65,6 +80,14 @@ jobs:
 
       - name: Test
         run: npm run test
+
+      - name: Upload coverage report
+        if: inputs.upload-coverage && inputs.runs-on == 'ubuntu-latest'
+        uses: actions/upload-code-coverage@v1
+        with:
+          file: coverage/cobertura-coverage.xml
+          language: TypeScript
+          label: code-coverage/vitest
 
   build-test-go:
     needs: [ get-configs ]
