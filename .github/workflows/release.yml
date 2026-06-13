@@ -105,7 +105,7 @@ jobs:
 
       - name: Set up QEMU
         if: matrix.use_qemu
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
 
       - name: Bundle (${{ matrix.docker-platform }}-${{ matrix.node-version }})
         run: |
@@ -276,7 +276,7 @@ jobs:
       id-token: write
     steps:
       - name: Download all artifacts
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           extract: false
