@@ -1,12 +1,8 @@
 # AWS CloudFormation Language Server
 
-<div align="center">
-
-[![build](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/ci.yml)
-&nbsp;
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Main CI](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/github-code-scanning/codeql/badge.svg?branch=main)](https://github.com/aws-cloudformation/cloudformation-languageserver/actions/workflows/github-code-scanning/codeql)
-
-</div>
 
 The AWS CloudFormation Language Server provides auto-completion, validation, navigation, and refactoring for CloudFormation templates.
 The server implements the Language Server Protocol (LSP) to enable code editors to offer intelligent editing support for JSON and YAML Infrastructure as Code templates.
