@@ -1,7 +1,7 @@
 ---
 name: cfn-lsp-development
-description: >
-  Development workflow for the CloudFormation Language Server. Guides agents through implementation, testing, and PR creation. Use when implementing features, fixing bugs, adding handlers/providers, or making changes to this repository.
+description: Development workflow for the AWS CloudFormation Language Server (this repository). Use when implementing features, fixing bugs, adding tests, or making any code change in cloudformation-languageserver. Covers planning, telemetry, build/lint/test verification, and PR conventions.
+license: Apache-2.0
 ---
 
 # CFN LSP Development Workflow
@@ -10,10 +10,51 @@ description: >
 
 These constraints apply to ALL changes in this repository:
 
-- **No backwards-incompatible changes (hard rule)** — Never change or remove existing LSP protocol methods, request types, or response/return types. Additive changes only — breaking the wire contract breaks the already-shipped VS Code and JetBrains clients.
-- **Cross-platform** — All changes must work on macOS, Windows, and Linux
-- **No database locking** — Never lock LMDB or other shared resources; multiple concurrent LSP connections may exist
-- **Performance** — Handlers must respond quickly; avoid blocking the event loop or doing synchronous I/O in request paths. Use `npm run benchmark` to confirm changes haven't regressed latency.
+- **No backwards-incompatible changes (hard rule)** — Never change or remove existing LSP protocol methods, request
+  types, or response/return types. Additive changes only — breaking the wire contract breaks the already-shipped VS Code
+  and JetBrains clients.
+- **Cross-platform** — All changes must work on macOS, Linux, and Windows. The DataStore layer in particular has two
+  persisted backends (LMDB on macOS / Linux, encrypted file store on Windows or when the `FileDb` feature flag is on);
+  any persistence change must work against both. See `architecture.md`.
+- **No database locking** — Never hold long locks on LMDB or other shared resources; multiple concurrent LSP
+  connections may exist.
+- **Performance** — Handlers must respond quickly; avoid blocking the event loop or doing synchronous I/O in request
+  paths. Use `npm run benchmark` to confirm changes haven't regressed latency.
+
+## Repository Layout
+
+You are working inside the `cloudformation-languageserver` repo. Source lives in `src/`, tests mirror the source tree
+under `tst/`. See `.kiro/steering/structure.md` for directory-level guidance and `.kiro/steering/architecture.md` for
+the component / handler model.
+
+## Scratch Files
+
+Put scratch files, debug scripts, manual repro templates, ad-hoc benchmark scripts, and any other throwaway artifacts
+under `tmp/` at the repo root. `tmp/` (and `tmp-node-modules/`, `tmp-tst/`) is `.gitignore`d, so it will never be
+committed accidentally. Do **not** scatter scratch files across `src/`, `tst/`, or the workspace root.
+
+## Code Quality
+
+Hold every change in this repo to a senior-engineer standard. The full rule sets are bundled with this skill — read
+them when you write or modify code:
+
+- Source code: [`references/source-code-rules.md`](references/source-code-rules.md) — naming, reuse, architecture,
+  SOLID, immutability, error handling, null/thread safety, performance, dependency discipline, and public-API
+  compatibility.
+- Test code: [`references/test-code-rules.md`](references/test-code-rules.md) — meaningful coverage, AAA structure,
+  mock quality, determinism, behavior-not-implementation, edge / failure paths.
+
+The two rules with the highest leverage in this repository:
+
+- **Reuse `src/utils/` and `tst/utils/` before writing new helpers.** Search both directories first
+  (`MockServerComponents`, `TemplateBuilder`, `MockContext`, `Expect`, `SchemaUtils`, `Delayer`, `Retry`,
+  `AwsErrorMapper`, `PathUtils`, `String`, `TypeCheck`, etc.). If a needed helper doesn't exist, add it to the
+  appropriate `utils/` directory rather than co-locating it in a feature folder, so the next caller can find it.
+- **Respect the layer model.** Handlers stay thin and delegate to a Component or Service (see `architecture.md`).
+  Do not let handlers do AWS I/O, file I/O, or schema parsing directly.
+
+Apply both rule sets even when the user doesn't mention "quality" or "best practices" — they are the contract for
+contributing to this repo.
 
 ## Developer Tools
 
@@ -23,7 +64,8 @@ These constraints apply to ALL changes in this repository:
 npm run debug-tree -- --file <template.yaml|json>
 ```
 
-Runs `tools/debug_tree.ts` — builds a `SyntaxTree`, traverses every node, and emits `Context` objects at key positions. The fastest way to diagnose parse/context problems when working on completion, hover, or definition.
+Runs `tools/debug_tree.ts` — builds a `SyntaxTree`, traverses every node, and emits `Context` objects at key positions.
+The fastest way to diagnose parse / context problems when working on completion, hover, or definition.
 
 ### Benchmarking performance
 
@@ -32,114 +74,104 @@ npm run benchmark              # default run
 npm run benchmark -- --iterations 100 --templates ./tst/resources --output results.md
 ```
 
-Runs `tools/benchmark.ts` — measures syntax-tree creation and context-lookup latency across iterations. Use this to verify the Performance constraint above.
-
-### Stability testing
-
-```bash
-npm run test:stability
-```
-
-Runs `tools/stability/` — long-running tests that exercise completion and hover under sustained load.
+Runs `tools/benchmark.ts` — measures syntax-tree creation and context-lookup latency across iterations. Use this to
+verify the Performance constraint above.
 
 ## Workflow
 
 ### Step 1: Research
 
-Before making changes, locate or set up local workspaces for affected packages:
-
-1. **Search parent directories** for existing checkouts:
-   - Look for `cloudformation-languageserver/` in `../`, `../../`, etc.
-   - Check `LOCAL_TESTING_SERVER_PATH` env var for an existing server bundle path
-
-2. **If not found**, ask the user:
-   - "Do you have a local checkout? If so, provide the path."
-   - "Should I clone the repository?"
-
-3. **Set up missing workspace:**
-   - `git clone https://github.com/aws-cloudformation/cloudformation-languageserver.git`
-
-Next, browse the source code.
-- Identify conventions: file naming, class structure, test patterns
-- Read files relevant to the task to understand wiring (imports, exports, registration)
-- Check `.kiro/steering/` for architecture guidance when needed
+Apply "Explore the Project Before Writing" from [`references/source-code-rules.md`](references/source-code-rules.md):
+read the relevant feature directory (`src/<feature>/`), its tests under `tst/`, and the shared helpers in
+`src/utils/` and `tst/utils/` before designing the change. Use `.kiro/steering/architecture.md` and
+`.kiro/steering/structure.md` when you need a map of where things live.
 
 ### Step 2: Plan
 
 Before writing code:
 
-1. Read the task requirements
-2. Identify affected source directories (see `structure.md` in steering)
-3. Create an implementation plan
-   a. Create a markdown file at the workspace root: `./<feature-or-fix-name>-plan.md`
-      The plan MUST include:
-      - **Summary** — what is being implemented and why
-      - **Affected packages** — which packages need changes
-      - **Approach** — high-level design decisions
-      - **Task checklist** — every discrete task as a checkbox item, ordered by execution sequence
-
-4. Present the plan to the user and ask them to review it
-5. **STOP and wait for explicit user approval before writing any code**
-6. As tasks are completed, update the checklist in the plan file (check off items)
+1. Identify the affected source directories (see `structure.md`).
+2. Create an implementation plan as `tmp/<feature-or-fix-name>-plan.md` (under the gitignored `tmp/`), including:
+    - **Summary** — what is being implemented and why
+    - **Affected files / directories**
+    - **Approach** — high-level design decisions and any tradeoffs
+    - **Task checklist** — every discrete task as a checkbox item, ordered by execution sequence
+3. Present the plan to the user.
+4. **STOP and wait for explicit user approval before writing any code.**
+5. As tasks are completed, check off items in the plan file.
 
 ### Step 3: Implement
 
-1. Create a local branch for your changes
-2. Write unit tests that define expected behavior (they should fail initially)
-3. Implement the minimum code to make tests pass
-4. Follow existing patterns in the relevant feature directory
-5. Refactor for clarity while keeping tests green
+1. Create a local branch for your changes.
+2. Write unit tests that define the expected behavior (they should fail initially).
+3. Implement the minimum code to make tests pass.
+4. Follow existing patterns in the relevant feature directory.
+5. Refactor for clarity while keeping tests green.
+
+For new persisted state, decide whether it belongs in `PersistedStores` (survives editor restart) or as a non-persisted
+`MemoryStore`. See `src/datastore/DataStore.ts`.
 
 ### Step 4: Telemetry
 
-Wire telemetry for new handlers using `ScopedTelemetry` public methods:
+Wire telemetry on new handlers and any code path you care about observing in production.
+
+**Prefer the decorators in `src/telemetry/TelemetryDecorator.ts`** over direct `ScopedTelemetry` calls — they keep
+metric scopes consistent and avoid boilerplate:
 
 ```typescript
-// Measure duration + count + fault for a handler
-const result = await this.telemetry.measureAsync('HandlerName', async () => {
-  /* handler logic */
-});
+import {Telemetry, Track} from '../telemetry/TelemetryDecorator';
+import {ScopedTelemetry} from '../telemetry/ScopedTelemetry';
 
-// Track execution with response tracking
-const result = this.telemetry.trackExecution('HandlerName', () => {
-  /* handler logic */
-});
+@Telemetry({scope: 'CompletionRouter'})
+export class CompletionRouter {
+    // Field is injected by @Telemetry — no constructor wiring needed
+    private readonly telemetry!: ScopedTelemetry;
 
-// Count-only (no duration)
-const result = await this.telemetry.countExecutionAsync('HandlerName', async () => {
-  /* handler logic */
-});
+    @Track({name: 'getCompletions', captureErrorAttributes: true})
+    public async getCompletions(params: CompletionParams): Promise<CompletionItem[]> {
+        /* handler logic */
+    }
+}
 ```
 
-**Metrics emitted by these methods:**
-- `{Name}.count` — invocation count
-- `{Name}.duration` — response time (measure/trackExecution only)
-- `{Name}.fault` — unhandled exception
+`@Track` emits `{Name}.count`, `{Name}.duration`, and `{Name}.fault` for each invocation. Use `@Telemetry` once per
+class to bind a scope; use `@Track` on each method you want measured.
+
+Use the imperative `ScopedTelemetry` helpers only when you need to instrument something a decorator can't reach
+(an inline closure, a lambda, a non-class function). The available helpers are:
+
+```typescript
+// Inline async — emits {Name}.count, {Name}.duration, {Name}.fault
+const result = await this.telemetry.measureAsync('Subtask', async () => {
+    /* logic */
+});
+```
 
 ### Step 5: Verify
 
 Before creating a PR, **all of these must pass**:
 
 ```bash
-npm run build             # TypeScript compilation
-npm run lint              # Linting (zero warnings)
-npm run test              # Unit tests + coverage (thresholds: 88% statements, 82% branches, 90% functions, 88% lines)
+npm run build                # TypeScript compilation
+npm run lint                 # Linting (zero warnings — `--max-warnings 0`)
+npm run test                 # Unit + integration + e2e + coverage
 ```
 
-Coverage runs automatically with `npm run test` (`coverage.enabled: true` in `vitest.config.ts`).
+Coverage runs automatically with `npm run test` and thresholds are enforced from `vitest.config.ts`.
+If you only need to run a subset while iterating: `npm run test:unit` or `npm run test:integration`.
+Use `npm run lint:fix` for auto-fixable lint violations.
 
 ### Step 6: Client-Side Changes
 
-Some changes require corresponding updates in the editor clients (e.g., features that need UX work). See the client repositories for their own build/test/contribution guides:
+Some changes (new commands, new code lens actions, new UI surfaces) require corresponding updates in the editor
+clients. See the client repositories for their own build / test / contribution guides:
 
-| Client | Repository | CloudFormation path |
-|--------|-----------|-------------------|
-| VS Code | [`aws/aws-toolkit-vscode`](https://github.com/aws/aws-toolkit-vscode) (branch: `master`) | `packages/core/src/awsService/cloudformation/` |
+| Client    | Repository                                                                                   | CloudFormation path                                                                  |
+|-----------|----------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| VS Code   | [`aws/aws-toolkit-vscode`](https://github.com/aws/aws-toolkit-vscode) (branch: `master`)     | `packages/core/src/awsService/cloudformation/`                                       |
 | JetBrains | [`aws/aws-toolkit-jetbrains`](https://github.com/aws/aws-toolkit-jetbrains) (branch: `main`) | `plugins/toolkit/jetbrains-core/src/software/aws/toolkits/jetbrains/services/cfnlsp` |
 
 ### Step 7: PR
 
-- Ensure new code has unit tests (and integration tests for handlers)
-- Confirm no breaking API changes
-- Confirm cross-platform compatibility (no platform-specific paths, no OS-specific APIs without fallbacks)
-- Note in PR description if client-side changes are also needed
+Re-read the **Constraints** section above and confirm none are violated. Note in the PR description if matching
+client-side changes are needed.

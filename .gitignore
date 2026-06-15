@@ -16,3 +16,9 @@ tools/*
 /jscpd
 /tmp
 /.idea/
+
+.kiro/*
+!.kiro/skills/
+!.kiro/skills/**
+!.kiro/steering/
+!.kiro/steering/**

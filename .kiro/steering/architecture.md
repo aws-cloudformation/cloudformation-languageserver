@@ -2,139 +2,130 @@
 
 ## System Overview
 
-The CloudFormation LSP is a multi-layer system: editor clients communicate with a TypeScript language server over JSON-RPC.
+The CloudFormation LSP is a multi-layer system. Editor clients (VSCode in TypeScript, JetBrains in Kotlin) launch
+the language server and forward editor events over JSON-RPC. The client sends notifications (`didOpen`, `didChange`,
+`didClose`) and requests (`completion`, `hover`, `definition`) over stdio or IPC.
 
-### LSP Layer (Language Clients)
-
-| Component | Technology | Responsibilities |
-|-----------|-----------|-----------------|
-| VSCode Client | TypeScript | Launch server, forward editor events, render UI |
-| JetBrains Client | Kotlin | Same as VSCode, different plugin framework |
-
-The client sends JSON-RPC notifications (`didOpen`, `didChange`, `didClose`) and requests (`completion`, `hover`, `definition`) to the server over stdio or IPC.
-
-### Server Layer (Language Server — TypeScript/Node.js)
+## Server Architecture
 
 The server uses a **Component-Handler** architecture with three pillars:
 
-| Pillar | Role | Examples |
-|--------|------|---------|
-| **Handlers** | One per LSP request. Receives request, returns response. | CompletionRouter, HoverRouter, DefinitionProvider |
-| **Components** | Internal state and logic. No I/O. | SyntaxTreeManager, ContextManager, SchemaStore, LMDBStore |
-| **Services** | External I/O (network, disk, subprocess). | CfnLint (Pyodide), Auth, CFN API, Telemetry |
+| Pillar         | Role                                                     | Examples                                                  |
+|----------------|----------------------------------------------------------|-----------------------------------------------------------|
+| **Handlers**   | One per LSP request. Receives request, returns response. | `completionHandler`, `hoverHandler`, `definitionHandler`  |
+| **Components** | Internal state and logic. No external I/O.               | SyntaxTreeManager, ContextManager, SchemaStore, DataStore |
+| **Services**   | External I/O (network, disk, subprocess).                | CfnLint, Guard, AwsCredentials, CFN API, Telemetry        |
 
 ### Request Data Flow
 
-1. User types in IDE → Client sends `textDocument/didChange`
-2. Server updates AST via SyntaxTreeManager (tree-sitter incremental parse)
-3. ContextManager rebuilds semantic model (entities, references)
-4. If completion requested → CompletionRouter reads Context + Schema → returns suggestions
-5. In parallel, DiagnosticCoordinator sends template to CfnLint worker → publishes diagnostics
+1. User types in IDE → Client sends `textDocument/didChange`.
+2. Server updates AST via `SyntaxTreeManager` (tree-sitter incremental parse).
+3. `ContextManager` resolves the AST node at the cursor into a `Context` object on demand.
+4. If completion requested → `CompletionRouter` reads Context + Schema → returns suggestions.
+5. In parallel, `DiagnosticCoordinator` merges diagnostics from cfn-lint and Guard, debounces (200 ms),
+   then publishes `textDocument/publishDiagnostics`.
 
 ## Core Components
 
 ### SyntaxTreeManager (`src/context/syntaxtree/`)
 
-Parses YAML/JSON templates into a language-agnostic AST using **tree-sitter** (native Node.js N-API bindings).
+Parses YAML/JSON templates into a language-agnostic AST using **tree-sitter**.
 
-- Maintains one AST per open file
+- One `SyntaxTree` per open file
 - Incrementally re-parses only changed regions on `didChange`
-- Error-tolerant: produces partial AST with ERROR nodes so completion/hover still work on valid portions
+- Error-tolerant: produces a partial AST with ERROR nodes so completion/hover still work on valid portions
 
 ### ContextManager (`src/context/`)
 
-Builds semantic understanding on top of the raw AST.
+Builds semantic understanding on top of the raw AST. Resolves the cursor position into a `Context` (current node, path,
+property path, entity root).
 
-Data flow: `didChange` → SyntaxTreeManager → ContextManager → entity building → intrinsic resolution → logical ID reference finding
+- `ContextManager.getContext(params)` → `Context | undefined` for cursor position
+- `IntrinsicContext` resolves `Ref`, `Fn::GetAtt`, `Fn::Sub`, etc.
+- `LogicalIdReferenceFinder` (`src/context/semantic/`) provides reverse-reference lookup for go-to-definition
+- `EntityBuilder` (`src/context/semantic/`) walks the AST and constructs typed `Entity` objects
 
-- `FileContextManager` — per-file state (resources, parameters, outputs, conditions, mappings)
-- `EntityBuilder` (`src/context/semantic/`) — function module that walks AST and constructs typed Entity objects
-- `IntrinsicContext` — resolves `Ref`, `Fn::GetAtt`, `Fn::Sub`, etc.
-- `LogicalIdReferenceFinder` (`src/context/semantic/`) — function module providing reverse-reference map for go-to-definition
+`FileContext` (`src/context/FileContext.ts`) holds per-file parsed sections (resources, parameters, outputs, conditions,
+mappings) with lazy caching. `FileContextManager` is a thin factory that produces `FileContext` instances from the
+`DocumentManager`.
 
 ### SchemaStore (`src/schema/`)
 
-CloudFormation resource type schemas (~1,200 types, ~50,000 properties).
+CloudFormation resource type schemas.
 
-- Downloads schema ZIP from CloudFormation Registry per region on first launch
-- Stored in LMDB for persistence across editor restarts
+- Downloads schema ZIP from the CloudFormation Registry per region on first launch
+- Persisted via the DataStore layer so schemas survive editor restarts
 - Background refresh checks for updates without blocking the user
+- Schema transformers in `src/schema/transformers/` apply common normalizations (remove read-only properties, add
+  required write-only properties, etc.)
 
-### LMDBStore (`src/datastore/lmdb/`)
+### DataStore (`src/datastore/`)
 
-Fast persistent key-value storage (Lightning Memory-Mapped Database).
+Persistent and in-memory key-value storage. The `DataStore` interface (`src/datastore/DataStore.ts`) has **three
+implementations** selected at runtime:
 
-- Database file: `~/.cfn-lsp/lmdb/`
-- Read operations are lock-free (MVCC)
-- Write operations acquire exclusive lock — only one write transaction at a time
-- `FileStoreFactory` (`src/datastore/`) + `KeyedFileStore` (`src/datastore/file/`) with `EncryptedFile`/`Encryption` for encrypted file-based storage on Windows or when `fileDb` feature flag is enabled
+| Implementation           | Module                         | Activation                                           |
+|--------------------------|--------------------------------|------------------------------------------------------|
+| **LMDB store** (default) | `src/datastore/lmdb/`          | All platforms by default (when not Windows / fileDb) |
+| **File store**           | `src/datastore/file/`          | Windows OR `FileDb` feature flag enabled             |
+| **Memory store**         | `src/datastore/MemoryStore.ts` | All non-persisted stores (e.g. `private_schemas`)    |
 
-### CfnLint Service (`src/services/cfnLint/`)
+`MultiDataStoreFactoryProvider` (`src/datastore/DataStore.ts`) chooses LMDB vs File at startup based on platform and
+feature flag, and pairs whichever persisted store is selected with `MemoryStoreFactory` for in-memory stores.
 
-Python linter running in Pyodide (WebAssembly) worker thread.
+- LMDB is the default persisted store on macOS / Linux. Database directory: `<storage-root>/lmdb/v5/`.
+- File store is the encrypted-file alternative used on Windows or when LMDB is disabled. Database directory:
+  `<storage-root>/filedb/v3/`. One `.enc` file per key via `KeyedFileStore`.
+- Memory store is used for `StoreName` values not in `PersistedStores` (currently `private_schemas`), so they are
+  loaded fresh each session.
 
-- No system Python required — Pyodide bundles Python 3.13 in WASM
-- Wheel files in `assets/wheels/` (cfn-lint, boto3, deps)
-- `PyodideWorkerManager` spawns worker, loads runtime, installs wheels
-- Fallback: local wheels → CDN fetch → cfn-lint unavailable (schema-only validation)
+### CfnLint / Guard Services
+
+`src/services/cfnLint/` and `src/services/guard/` produce diagnostics; both flow through `DiagnosticCoordinator`.
+
+### DiagnosticCoordinator (`src/services/DiagnosticCoordinator.ts`)
+
+Merges diagnostics from multiple sources (`cfn-lint`, `guard`, server-side validation) per URI and publishes the
+combined result via `textDocument/publishDiagnostics`. Debounces publishing with a 200 ms `Delayer` to avoid
+spamming the client during keystrokes. **Not** an LSP request handler — it is invoked by the diagnostic-producing
+services.
 
 ### Auth Service (`src/auth/`)
 
-- Credentials passed from client via `aws/credentials/iam/update` notification
-- Stored in memory only (never persisted)
-- Server sends `aws/credentials/iam/expired` on 401/403
-- Supports: IAM Identity Center (SSO), IAM access keys, Builder ID
+- Client → server: `aws/credentials/iam/update` (request) provides credentials; `aws/credentials/iam/delete`
+  (notification) clears them. Stored in memory only.
+- Online features wrap their calls in `withOnlineGuard` (`src/utils/OnlineFeatureWrapper.ts`), which raises
+  `OnlineFeatureErrorCode.ExpiredCredentials` when AWS calls return `ExpiredToken` / `ExpiredTokenException`.
 
 ### Telemetry (`src/telemetry/`)
 
-- OpenTelemetry metrics emitted as CloudWatch EMF
-- Key metrics: `{Handler}.duration`, `{Handler}.fault`, `{Handler}.count`, `LMDB.{op}.duration`, `pyodide.init.success`, `worker.crash`
-- Client-side telemetry is opt-in
+OpenTelemetry metrics exported as CloudWatch EMF. Emit metrics through:
+
+- `@Telemetry({ scope: 'Foo' })` and `@Track({ name: 'method' })` decorators in
+  `src/telemetry/TelemetryDecorator.ts` — preferred for class methods.
+- `ScopedTelemetry` helpers (`measure`, `measureAsync`, `trackExecution`, `countExecution`, …) — for inline closures
+  the decorators can't reach. Each emits `{Name}.count`, `{Name}.fault`, and (for `measure*` / `trackExecution*`)
+  `{Name}.duration`.
+
+Client-side telemetry is opt-in via the `aws.telemetryEnabled` initialization option (default `false`).
 
 ## Handlers
 
-Request handlers are registered in `CfnServer.ts` as functions (e.g., `completionHandler`, `hoverHandler`) backed by implementation classes:
+Request handlers are registered in `CfnServer.ts` (`src/server/`) as functions backed by implementation classes:
 
-| Implementation Class | LSP Method | Function |
-|---------------------|-----------|----------|
-| CompletionRouter | `textDocument/completion` | Context-aware autocomplete |
-| HoverRouter | `textDocument/hover` | Documentation on hover |
-| DefinitionProvider | `textDocument/definition` | Jump to definition |
-| CodeActionService | `textDocument/codeAction` | Quick fixes |
-| DocumentSymbolRouter | `textDocument/documentSymbol` | Template outline |
-| CodeLensProvider | `textDocument/codeLens` | Inline stack actions |
+| LSP Method                    | Handler function        | Implementation                                 |
+|-------------------------------|-------------------------|------------------------------------------------|
+| `textDocument/completion`     | `completionHandler`     | `CompletionRouter` (`src/autocomplete/`)       |
+| `textDocument/hover`          | `hoverHandler`          | `HoverRouter` (`src/hover/`)                   |
+| `textDocument/definition`     | `definitionHandler`     | `DefinitionProvider` (`src/definition/`)       |
+| `textDocument/codeAction`     | `codeActionHandler`     | `CodeActionService` (`src/services/`)          |
+| `textDocument/documentSymbol` | `documentSymbolHandler` | `DocumentSymbolRouter` (`src/documentSymbol/`) |
+| `textDocument/codeLens`       | `codeLensHandler`       | `CodeLensProvider` (`src/codeLens/`)           |
 
-**DiagnosticCoordinator** (`src/services/`) pushes diagnostics via `textDocument/publishDiagnostics` — it is not a request handler but a service that reacts to document changes and publishes results asynchronously.
+`textDocument/publishDiagnostics` is **pushed** by `DiagnosticCoordinator` rather than served via a request handler.
 
 ### Online Handlers (require auth)
 
-| Handler | LSP Method | Function |
-|---------|-----------|----------|
-| StackDeployment | `aws/cfn/stack/deployment/*` | Create/monitor deployments |
-| StackValidation | `aws/cfn/stack/validation/*` | Pre-deployment validation |
-| ChangeSetHandler | `aws/cfn/stack/changeSet/*` | Preview changes |
-| ResourceList | `aws/cfn/resources/list` | Live resource autocomplete |
-| StackEvents | `aws/cfn/stack/events` | Deployment timeline |
-
-## Distribution
-
-### Language Server
-
-- **Repo:** https://github.com/aws-cloudformation/cloudformation-languageserver
-- **Build:** webpack bundles into standalone `cfn-lsp-server-standalone.js`
-- **Release:** GitHub Releases (v1.x.0 prod, v1.x.0-beta, v1.x.0-alpha)
-- **Manifest:** `assets/release-manifest.json` tracks latest versions
-
-### Clients
-
-The language server is bundled with the [AWS Toolkit for VS Code](https://github.com/aws/aws-toolkit-vscode) and [AWS Toolkit for JetBrains](https://github.com/aws/aws-toolkit-jetbrains). See those repositories for client-specific build/test/contribution guides.
-
-## Key Dependencies
-
-| Dependency | Risk |
-|-----------|------|
-| Pyodide CDN (cdn.jsdelivr.net) | Blocked in some environments |
-| CloudFormation Registry schemas | Schema changes can break validation |
-| tree-sitter WASM | Parser bugs affect all features |
-| AWS Toolkit VSCode extension | Client changes need coordination |
-| AWS Toolkit JetBrains plugin | Client changes need coordination |
+`StackHandler` (`aws/cfn/stack/*`), `ResourceHandler` (`aws/cfn/resources/*`), and the validation / change-set /
+events workflows under `aws/cfn/stack/...` are wrapped with `withOnlineGuard` (`src/utils/OnlineFeatureWrapper.ts`),
+which short-circuits when credentials are missing or expired.
