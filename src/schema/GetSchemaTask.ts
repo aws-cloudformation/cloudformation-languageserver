@@ -73,7 +73,9 @@ export class GetPublicSchemaTask extends GetSchemaTask {
             this.logger.info(`${schemas.length} public schemas downloaded for ${this.region} and saved`);
         } catch (error) {
             if (isClientNetworkError(error)) {
-                this.telemetry.count('getSchemas.clientNetworkError', 1, { attributes: { region: this.region } });
+                this.telemetry.error('getSchemas.clientNetworkError', error, undefined, {
+                    attributes: { region: this.region },
+                });
                 this.logger.info(`Skipping public schemas for ${this.region} due to client network error`);
                 return;
             }

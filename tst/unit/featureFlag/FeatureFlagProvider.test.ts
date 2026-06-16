@@ -112,10 +112,10 @@ describe('FeatureFlagProvider', () => {
 
     describe('client network error handling', () => {
         let provider: FeatureFlagProvider;
-        let countSpy: ReturnType<typeof vi.spyOn>;
+        let errorSpy: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
-            countSpy = vi.spyOn(ScopedTelemetry.prototype, 'count');
+            errorSpy = vi.spyOn(ScopedTelemetry.prototype, 'error');
         });
 
         afterEach(() => {
@@ -124,6 +124,7 @@ describe('FeatureFlagProvider', () => {
         });
 
         it('handles client network errors gracefully without throwing', async () => {
+            const error = new Error('self signed certificate in certificate chain');
             provider = new FeatureFlagProvider(
                 () => Promise.reject(new Error('self signed certificate in certificate chain')),
                 join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
@@ -131,7 +132,7 @@ describe('FeatureFlagProvider', () => {
 
             // Trigger refresh by accessing internal method
             await expect((provider as any).getFeatureFlags('alpha')).resolves.not.toThrow();
-            expect(countSpy).toHaveBeenCalledWith('getFeatureFlags.clientNetworkError', 1);
+            expect(errorSpy).toHaveBeenCalledWith('getFeatureFlags.clientNetworkError', error);
         });
 
         it('rethrows non-client network errors', async () => {

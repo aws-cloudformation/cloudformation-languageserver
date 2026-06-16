@@ -45,7 +45,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
             this.logger.info(`${resourceSchemas.size} SAM schemas downloaded and saved`);
         } catch (error) {
             if (isClientNetworkError(error)) {
-                this.telemetry.count('getSchemas.clientNetworkError', 1);
+                this.telemetry.error('getSchemas.clientNetworkError', error);
                 this.logger.info('Skipping SAM schemas due to client network error');
                 return;
             }
