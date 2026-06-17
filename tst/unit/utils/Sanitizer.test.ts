@@ -59,17 +59,17 @@ describe('Sanitizer', () => {
 
     describe('sanitizeMessage - path normalization', () => {
         test('converts double-escaped backslashes to forward slashes', () => {
-            expect(sanitizeMessage(String.raw`C:\\Users\\test\\file.ts`)).toBe('C:/Users/test/file.ts');
+            expect(sanitizeMessage(String.raw`D:\\app\\bin\\file.ts`)).toBe('D:/app/bin/file.ts');
         });
 
         test('converts single backslashes to forward slashes', () => {
-            const input = 'C:\\Users\\test\\file.ts';
-            expect(sanitizeMessage(input)).toBe('C:/Users/test/file.ts');
+            const input = 'D:\\app\\bin\\file.ts';
+            expect(sanitizeMessage(input)).toBe('D:/app/bin/file.ts');
         });
 
         test('handles mixed forward and backslashes', () => {
-            const input = 'C:\\path/to\\file.ts';
-            expect(sanitizeMessage(input)).toBe('C:/path/to/file.ts');
+            const input = 'D:\\app/bin\\file.ts';
+            expect(sanitizeMessage(input)).toBe('D:/app/bin/file.ts');
         });
     });
 

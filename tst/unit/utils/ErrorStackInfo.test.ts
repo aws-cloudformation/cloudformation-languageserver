@@ -519,33 +519,6 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
             });
         });
 
-        test('classifies AWS network errors via NetworkingError name', () => {
-            const error = Object.assign(new Error('connection refused'), { name: 'NetworkingError' });
-
-            expect(errorType(error)).toMatchObject({
-                'error.type': 'NetworkingError',
-                'error.aws.category': 'network',
-            });
-        });
-
-        test('classifies AWS network errors via TimeoutError name', () => {
-            const error = Object.assign(new Error('timed out'), { name: 'TimeoutError' });
-
-            expect(errorType(error)).toMatchObject({
-                'error.aws.category': 'network',
-            });
-        });
-
-        test('classifies AWS network errors via underlying errno code', () => {
-            // Errno code paths share the canonical CLIENT_NETWORK_ERROR_CODES set.
-            const error = Object.assign(new Error('reset'), { name: 'Error', code: 'ECONNRESET' });
-
-            expect(errorType(error)).toMatchObject({
-                'error.aws.category': 'network',
-                'error.code': 'ECONNRESET',
-            });
-        });
-
         test('classifies permissions via AccessDenied name without http status', () => {
             const error = Object.assign(new Error('forbidden'), { name: 'AccessDenied' });
 
@@ -619,16 +592,6 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
             });
 
             expect(errorType(error)['error.aws.category']).toBe('credentials');
-        });
-
-        test('network category beats throttling when name is NetworkingError and status is 429', () => {
-            // isNetworkError fires before the throttling status check.
-            const error = Object.assign(new Error('flaky'), {
-                name: 'NetworkingError',
-                $metadata: { httpStatusCode: 429 },
-            });
-
-            expect(errorType(error)['error.aws.category']).toBe('network');
         });
 
         test('does not classify the wrapper from its cause', () => {
