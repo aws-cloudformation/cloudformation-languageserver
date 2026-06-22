@@ -17,7 +17,7 @@ import { extractErrorMessage } from '../../utils/Errors';
 import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessContributor';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
-import { WorkerNotInitializedError, MountError } from './CfnLintErrors';
+import { InitializationError, WorkerNotInitializedError, MountError } from './CfnLintErrors';
 import { LocalCfnLintExecutor } from './LocalCfnLintExecutor';
 import { PyodideWorkerManager } from './PyodideWorkerManager';
 
@@ -31,6 +31,7 @@ enum STATUS {
     Uninitialized = 0,
     Initializing = 1,
     Initialized = 2,
+    Failed = 3,
 }
 
 /**
@@ -177,17 +178,19 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         this.status = STATUS.Initializing;
 
         const startTime = performance.now();
-        try {
-            if (this.settings.path) {
-                // Local executor doesn't need heavy initialization
-                this.localExecutor = new LocalCfnLintExecutor(this.settings.path);
-                this.status = STATUS.Initialized;
-                this.telemetry.count('init.success', 1, { attributes: { mode: 'local' } });
-                this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
-                return;
-            }
 
-            // Initialize the worker manager
+        if (this.settings.path) {
+            // Local executor doesn't need heavy initialization
+            this.localExecutor = new LocalCfnLintExecutor(this.settings.path);
+            this.status = STATUS.Initialized;
+            this.telemetry.count('init.success', 1, { attributes: { mode: 'local' } });
+            this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
+            return;
+        }
+
+        try {
+            // PyodideWorkerManager.initialize() already retries with exponential backoff
+            // (configured via settings.initialization: maxRetries=3, backoff, 2-min total timeout)
             await this.workerManager.initialize();
 
             // Remount previously mounted folders after worker recovery
@@ -216,8 +219,12 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
                 this.log.warn(`Failed to get cfn-lint version: ${extractErrorMessage(error)}`);
             }
         } catch (error) {
-            this.status = STATUS.Uninitialized;
-            this.telemetry.error('init.fault', error, undefined, { captureErrorType: true });
+            this.status = STATUS.Failed;
+            const phase = error instanceof InitializationError ? error.phase : 'unknown';
+            this.telemetry.error('init.fault', error, undefined, {
+                captureErrorType: true,
+                attributes: { 'init.phase': phase },
+            });
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
             throw new Error(`Failed to initialize Pyodide worker: ${extractErrorMessage(error)}`);
         }
@@ -624,6 +631,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             return;
         }
 
+        if (this.status === STATUS.Failed) {
+            throw new Error('CfnLintService initialization failed permanently. Restart the language server to retry.');
+        }
+
         if (this.status === STATUS.Uninitialized) {
             this.initializationPromise = this.initialize();
         } else if (this.status === STATUS.Initializing) {
@@ -763,6 +774,11 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             }
         }
 
+        if (this.status === STATUS.Failed) {
+            this.telemetry.count('lint.uninitialized', 1);
+            return;
+        }
+
         if (this.status !== STATUS.Initialized) {
             // Create a promise that will be resolved when the queued request is processed
             return await new Promise<void>((resolve, reject) => {
@@ -856,12 +872,12 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         // Cancel all pending delayed requests
         this.delayer.cancelAll();
 
-        if (this.status !== STATUS.Uninitialized) {
+        if (this.status !== STATUS.Uninitialized && this.status !== STATUS.Failed) {
             // Shutdown worker manager
             await this.workerManager.shutdown();
             this.localExecutor = undefined;
-            this.status = STATUS.Uninitialized;
         }
+        this.status = STATUS.Uninitialized;
     }
 
     static create(

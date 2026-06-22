@@ -8,7 +8,7 @@ import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Telemetry } from '../../telemetry/TelemetryDecorator';
 import { extractErrorMessage } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
-import { WorkerNotInitializedError } from './CfnLintErrors';
+import { InitializationError, WorkerNotInitializedError } from './CfnLintErrors';
 
 interface WorkerTask {
     id: string;
@@ -25,6 +25,7 @@ interface WorkerMessage {
     error?: string;
     success?: boolean;
     data?: string;
+    phase?: string;
 }
 
 export class PyodideWorkerManager {
@@ -200,7 +201,10 @@ export class PyodideWorkerManager {
         if (message.success) {
             task.resolve(message.result);
         } else {
-            task.reject(new Error(message.error));
+            const error = message.phase
+                ? new InitializationError(message.error ?? 'Unknown error', message.phase)
+                : new Error(message.error);
+            task.reject(error);
         }
     }
 
