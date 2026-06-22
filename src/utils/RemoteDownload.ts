@@ -21,6 +21,7 @@ export async function downloadFile(url: string): Promise<Buffer> {
         url: url,
         responseType: 'arraybuffer',
         proxy: getProxyConfig(),
+        maxRedirects: 7,
     });
 
     LoggerFactory.getLogger('Remote').info(`Fetching ${url}`);
@@ -33,6 +34,7 @@ export async function downloadJson<T = unknown>(url: string): Promise<T> {
         method: 'get',
         url: url,
         proxy: getProxyConfig(),
+        maxRedirects: 7,
     });
 
     return response.data;

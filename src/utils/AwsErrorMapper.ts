@@ -1,5 +1,5 @@
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { extractErrorMessage } from './Errors';
+import { CLIENT_NETWORK_ERROR_CODES, extractErrorMessage } from './Errors';
 import { createOnlineFeatureError, OnlineFeatureErrorCode } from './OnlineFeatureError';
 
 type AwsError = {
@@ -21,14 +21,9 @@ const CREDENTIAL_ERROR_NAMES = new Set([
     'ExpiredTokenException',
 ]);
 
-const NETWORK_ERROR_NAMES = new Set([
-    'NetworkingError',
-    'TimeoutError',
-    'ENOTFOUND',
-    'ECONNREFUSED',
-    'ETIMEDOUT',
-    'ECONNRESET',
-]);
+const AWS_NETWORK_ERROR_NAMES: ReadonlySet<string> = new Set(['NetworkingError', 'TimeoutError']);
+
+const NETWORK_ERROR_NAMES: ReadonlySet<string> = new Set([...AWS_NETWORK_ERROR_NAMES, ...CLIENT_NETWORK_ERROR_CODES]);
 
 const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 

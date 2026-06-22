@@ -1,404 +1,395 @@
-import { describe, test, expect } from 'vitest';
-import { errorAttributes, errorType, extractLocationFromStack, isClientNetworkError } from '../../../src/utils/Errors';
+import { ErrorCodes, ResponseError } from 'vscode-languageserver';
+import { describe, expect, test } from 'vitest';
+import {
+    DoesNotExist,
+    extractErrorCode,
+    extractErrorMessage,
+    extractHttpStatus,
+    extractRootCause,
+    extractStatusReason,
+    handleLspError,
+    isClientNetworkError,
+} from '../../../src/utils/Errors';
 
-describe('isClientNetworkError', () => {
-    test('returns true for SSL certificate errors', () => {
-        expect(isClientNetworkError(new Error('unable to get local issuer certificate'))).toBe(true);
-        expect(isClientNetworkError(new Error('self signed certificate in certificate chain'))).toBe(true);
-        expect(isClientNetworkError(new Error('unable to verify the first certificate'))).toBe(true);
-        expect(isClientNetworkError(new Error('certificate has expired'))).toBe(true);
-        expect(isClientNetworkError(new Error('Hostname does not match certificate altnames'))).toBe(true);
-        expect(isClientNetworkError(new Error('WRONG_VERSION_NUMBER'))).toBe(true);
-    });
+describe('Errors', () => {
+    describe('isClientNetworkError', () => {
+        test('returns true for SSL certificate errors', () => {
+            expect(isClientNetworkError(new Error('unable to get local issuer certificate'))).toBe(true);
+            expect(isClientNetworkError(new Error('self signed certificate in certificate chain'))).toBe(true);
+            expect(isClientNetworkError(new Error('unable to verify the first certificate'))).toBe(true);
+            expect(isClientNetworkError(new Error('certificate has expired'))).toBe(true);
+            expect(isClientNetworkError(new Error('Hostname does not match certificate altnames'))).toBe(true);
+            expect(isClientNetworkError(new Error('WRONG_VERSION_NUMBER'))).toBe(true);
+        });
 
-    test('returns true for network connectivity errors', () => {
-        expect(isClientNetworkError(new Error('read ECONNRESET'))).toBe(true);
-        expect(isClientNetworkError(new Error('connect ETIMEDOUT'))).toBe(true);
-        expect(isClientNetworkError(new Error('connect ECONNREFUSED'))).toBe(true);
-        expect(isClientNetworkError(new Error('getaddrinfo ENOTFOUND'))).toBe(true);
-        expect(isClientNetworkError(new Error('getaddrinfo EAI_AGAIN'))).toBe(true);
-        expect(isClientNetworkError(new Error('read ECONNABORTED'))).toBe(true);
-        expect(isClientNetworkError(new Error('connect EBADF'))).toBe(true);
-        expect(isClientNetworkError(new Error('socket hang up'))).toBe(true);
-        expect(isClientNetworkError(new Error('network socket disconnected'))).toBe(true);
-        expect(isClientNetworkError(new Error('TOO_MANY_REDIRECTS'))).toBe(true);
-        expect(isClientNetworkError(new Error('Parse Error: Expected HTTP/'))).toBe(true);
-    });
+        test('returns true for network connectivity errors', () => {
+            expect(isClientNetworkError(new Error('read ECONNRESET'))).toBe(true);
+            expect(isClientNetworkError(new Error('connect ETIMEDOUT'))).toBe(true);
+            expect(isClientNetworkError(new Error('connect ECONNREFUSED'))).toBe(true);
+            expect(isClientNetworkError(new Error('getaddrinfo ENOTFOUND'))).toBe(true);
+            expect(isClientNetworkError(new Error('getaddrinfo EAI_AGAIN'))).toBe(true);
+            expect(isClientNetworkError(new Error('read ECONNABORTED'))).toBe(true);
+            expect(isClientNetworkError(new Error('socket hang up'))).toBe(true);
+            expect(isClientNetworkError(new Error('network socket disconnected'))).toBe(true);
+            expect(isClientNetworkError(new Error('TOO_MANY_REDIRECTS'))).toBe(true);
+            expect(isClientNetworkError(new Error('Parse Error: Expected HTTP/'))).toBe(true);
+        });
 
-    test('returns true for proxy authentication errors', () => {
-        expect(isClientNetworkError(new Error('Request failed with status code 407'))).toBe(true);
-    });
+        test('returns true for proxy authentication errors', () => {
+            expect(isClientNetworkError(new Error('Request failed with status code 407'))).toBe(true);
+        });
 
-    test('returns false for server-side errors', () => {
-        expect(isClientNetworkError(new Error('Request failed with status code 500'))).toBe(false);
-        expect(isClientNetworkError(new Error('Request failed with status code 503'))).toBe(false);
-        expect(isClientNetworkError(new Error('Internal server error'))).toBe(false);
-    });
+        test('returns false for server-side errors', () => {
+            expect(isClientNetworkError(new Error('Request failed with status code 500'))).toBe(false);
+            expect(isClientNetworkError(new Error('Request failed with status code 503'))).toBe(false);
+            expect(isClientNetworkError(new Error('Internal server error'))).toBe(false);
+        });
 
-    test('returns false for non-network errors', () => {
-        expect(isClientNetworkError(new Error('Unexpected token'))).toBe(false);
-        expect(isClientNetworkError(new Error('Cannot read property of undefined'))).toBe(false);
-    });
+        test('returns false for non-network errors', () => {
+            expect(isClientNetworkError(new Error('Unexpected token'))).toBe(false);
+            expect(isClientNetworkError(new Error('Cannot read property of undefined'))).toBe(false);
+        });
 
-    test('handles non-Error values', () => {
-        expect(isClientNetworkError('ECONNRESET')).toBe(true);
-        expect(isClientNetworkError('random string')).toBe(false);
-        expect(isClientNetworkError(null)).toBe(false);
-        expect(isClientNetworkError(undefined)).toBe(false);
-    });
-});
+        test('inspects error code in addition to message', () => {
+            const redirectError = Object.assign(new Error('Maximum number of redirects exceeded'), {
+                code: 'ERR_FR_TOO_MANY_REDIRECTS',
+            });
+            expect(isClientNetworkError(redirectError)).toBe(true);
 
-describe('extractLocationFromStack', () => {
-    test('returns empty object when stack is undefined', () => {
-        expect(extractLocationFromStack(undefined)).toEqual({});
-    });
+            const resetByCode = Object.assign(new Error('something went wrong'), { code: 'ECONNRESET' });
+            expect(isClientNetworkError(resetByCode)).toBe(true);
+        });
 
-    test('returns empty object when stack is empty string', () => {
-        expect(extractLocationFromStack('')).toEqual({});
-    });
+        test('does not misclassify a server error that lacks a client-side code or name', () => {
+            const serverError = Object.assign(new Error('Request failed with status code 503'), {
+                code: 'ERR_BAD_RESPONSE',
+                name: 'AxiosError',
+            });
+            expect(isClientNetworkError(serverError)).toBe(false);
+        });
 
-    test('extracts location from stack with parentheses format', () => {
-        const stack = 'Error: test\n    at Object.<anonymous> (/path/to/file.ts:01234:56789)';
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': 'at Object.<anonymous> (/path/to/file.ts:01234:56789)',
+        test('handles non-Error values', () => {
+            expect(isClientNetworkError('ECONNRESET')).toBe(true);
+            expect(isClientNetworkError('random string')).toBe(false);
+            expect(isClientNetworkError(null)).toBe(false);
+            expect(isClientNetworkError(undefined)).toBe(false);
+        });
+
+        test('ignores non-string code and name fields, still inspects the message', () => {
+            // Branch: object error where `code` and `name` are present but not strings —
+            // the function should ignore them and rely on the message.
+            const matchingMessage = Object.assign(new Error('connect ECONNREFUSED 127.0.0.1'), { code: 42, name: 99 });
+            expect(isClientNetworkError(matchingMessage)).toBe(true);
+
+            const nonMatchingMessage = Object.assign(new Error('something completely unrelated'), { code: 1, name: 2 });
+            expect(isClientNetworkError(nonMatchingMessage)).toBe(false);
         });
     });
 
-    test('extracts location from stack without parentheses format', () => {
-        const stack = 'Error: test\n    at /path/to/file.js:01234:56789';
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': 'at /path/to/file.js:01234:56789',
+    describe('extractStatusReason', () => {
+        test('returns the StatusReason from a JSON-encoded error message', () => {
+            const error = new Error(JSON.stringify({ reason: { StatusReason: 'Stack rolled back' } }));
+            expect(extractStatusReason(error)).toBe('Stack rolled back');
+        });
+
+        test('accepts a non-Error string-coerced value as input', () => {
+            const message = JSON.stringify({ reason: { StatusReason: 'invalid template' } });
+            expect(extractStatusReason(message)).toBe('invalid template');
+        });
+
+        test('returns undefined when JSON has no reason field', () => {
+            const error = new Error(JSON.stringify({ other: 'value' }));
+            expect(extractStatusReason(error)).toBeUndefined();
+        });
+
+        test('returns undefined when JSON has reason but no StatusReason', () => {
+            const error = new Error(JSON.stringify({ reason: { something: 'else' } }));
+            expect(extractStatusReason(error)).toBeUndefined();
+        });
+
+        test('returns undefined when StatusReason is the empty string (falsy)', () => {
+            const error = new Error(JSON.stringify({ reason: { StatusReason: '' } }));
+            expect(extractStatusReason(error)).toBeUndefined();
+        });
+
+        test('returns undefined for non-JSON error messages', () => {
+            const error = new Error('plain text message');
+            expect(extractStatusReason(error)).toBeUndefined();
+        });
+
+        test('returns undefined for non-Error / non-JSON inputs', () => {
+            expect(extractStatusReason('not json')).toBeUndefined();
+            expect(extractStatusReason(null)).toBeUndefined();
+            expect(extractStatusReason(undefined)).toBeUndefined();
+            expect(extractStatusReason(42)).toBeUndefined();
         });
     });
 
-    test('extracts filename from Windows path', () => {
-        const stack = 'Error: test\n    at Object.<anonymous> (C:\\path\\to\\file.ts:01234:56789)';
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': `at Object.<anonymous> (C:/path/to/file.ts:01234:56789)`,
+    describe('extractErrorMessage', () => {
+        test('returns the bare message for a base Error', () => {
+            expect(extractErrorMessage(new Error('boom'))).toBe('boom');
+        });
+
+        test('prefixes the name for a non-base Error subclass', () => {
+            expect(extractErrorMessage(new TypeError('not a function'))).toBe('TypeError: not a function');
+        });
+
+        test('prefixes a custom error name', () => {
+            const error = new Error('oops');
+            error.name = 'CustomError';
+            expect(extractErrorMessage(error)).toBe('CustomError: oops');
+        });
+
+        test('stringifies a plain string non-Error', () => {
+            expect(extractErrorMessage('plain string')).toBe('plain string');
+        });
+
+        test('stringifies a number', () => {
+            expect(extractErrorMessage(42)).toBe('42');
+        });
+
+        test('stringifies null', () => {
+            expect(extractErrorMessage(null)).toBe('null');
+        });
+
+        test('stringifies undefined', () => {
+            expect(extractErrorMessage(undefined)).toBe('undefined');
+        });
+
+        test('formats a plain object via toString', () => {
+            const result = extractErrorMessage({ code: 'NotFound' });
+            // toString() pretty-prints objects — assert on the salient content rather than exact whitespace.
+            expect(result).toContain('code');
+            expect(result).toContain('NotFound');
         });
     });
 
-    test('returns just message when no match found', () => {
-        const stack = 'Error: test\n    at something without location';
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': 'at something without location',
+    describe('handleLspError', () => {
+        test('rethrows an existing ResponseError unchanged', () => {
+            const original = new ResponseError(ErrorCodes.InvalidRequest, 'bad request');
+            expect(() => handleLspError(original, 'context')).toThrow(original);
+        });
+
+        test('maps a TypeError to InvalidParams', () => {
+            const typeError = new TypeError('expected a string');
+
+            try {
+                handleLspError(typeError, 'someOperation');
+                expect.fail('handleLspError should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ResponseError);
+                const responseError = err as ResponseError<unknown>;
+                expect(responseError.code).toBe(ErrorCodes.InvalidParams);
+                expect(responseError.message).toBe('expected a string');
+            }
+        });
+
+        test('wraps a generic Error as InternalError with the supplied context message', () => {
+            const error = new Error('disk full');
+
+            try {
+                handleLspError(error, 'Failed to write template');
+                expect.fail('handleLspError should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ResponseError);
+                const responseError = err as ResponseError<unknown>;
+                expect(responseError.code).toBe(ErrorCodes.InternalError);
+                expect(responseError.message).toBe('Failed to write template: disk full');
+            }
+        });
+
+        test('wraps a non-Error value as InternalError using extractErrorMessage', () => {
+            try {
+                handleLspError('string error', 'something failed');
+                expect.fail('handleLspError should have thrown');
+            } catch (err) {
+                expect(err).toBeInstanceOf(ResponseError);
+                const responseError = err as ResponseError<unknown>;
+                expect(responseError.code).toBe(ErrorCodes.InternalError);
+                expect(responseError.message).toBe('something failed: string error');
+            }
         });
     });
 
-    test('extract error from exception', () => {
-        const stack = String.raw`
-Error: Request cancelled for key: SendDocuments
-    at Delayer.cancel (webpack://aws/cloudformation-languageserver/src/utils/Delayer.ts?f28b:145:28)
-    at eval (webpack://aws/cloudformation-languageserver/src/utils/Delayer.ts?f28b:36:18)
-    at new Promise (<anonymous>)
-`;
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: Request cancelled for key: SendDocuments',
-            'error.stack': `at Delayer.cancel (webpack://aws/cloudformation-languageserver/[*]/[*]/Delayer.ts?f28b:145:28)
-at eval (webpack://aws/cloudformation-languageserver/[*]/[*]/Delayer.ts?f28b:36:18)
-at new Promise (<anonymous>)`,
+    describe('extractRootCause', () => {
+        test('returns the lmdb-style commitError when present', () => {
+            const cause = new Error('inner');
+            const wrapper = Object.assign(new Error('outer'), { commitError: cause });
+            expect(extractRootCause(wrapper)).toBe(cause);
+        });
+
+        test('returns the ES2022 cause when present', () => {
+            const cause = new Error('inner');
+            const wrapper = new Error('outer', { cause });
+            expect(extractRootCause(wrapper)).toBe(cause);
+        });
+
+        test('prefers commitError over cause when both are set', () => {
+            const commitCause = new Error('commit');
+            const otherCause = new Error('other');
+            const wrapper = Object.assign(new Error('outer', { cause: otherCause }), { commitError: commitCause });
+            expect(extractRootCause(wrapper)).toBe(commitCause);
+        });
+
+        test('returns undefined when commitError is not an Error instance', () => {
+            const wrapper = Object.assign(new Error('outer'), { commitError: 'not an error' });
+            expect(extractRootCause(wrapper)).toBeUndefined();
+        });
+
+        test('returns undefined when cause is not an Error instance', () => {
+            const wrapper = Object.assign(new Error('outer'), { cause: 'not an error' });
+            expect(extractRootCause(wrapper)).toBeUndefined();
+        });
+
+        test('returns undefined for null', () => {
+            expect(extractRootCause(null)).toBeUndefined();
+        });
+
+        test('returns undefined for non-object values', () => {
+            expect(extractRootCause('string')).toBeUndefined();
+            expect(extractRootCause(42)).toBeUndefined();
+            expect(extractRootCause(undefined)).toBeUndefined();
+        });
+
+        test('returns undefined for objects with no cause fields', () => {
+            expect(extractRootCause({})).toBeUndefined();
+            expect(extractRootCause(new Error('lonely'))).toBeUndefined();
         });
     });
 
-    test('full stack', () => {
-        expect(
-            extractLocationFromStack(String.raw`
-Error: ENOENT: no such file or directory, scandir 'some-dir/cloudformation-languageserver/bundle/development/.aws-cfn-storage/lmdb'
-    at readdirSync (node:fs:1584:26)
-    at node:electron/js2c/node_init:2:16044
-    at LMDBStoreFactory.cleanupOldVersions (webpack://aws/cloudformation-languageserver/src/datastore/LMDB.ts?d928:98:36)
-    at Timeout.eval (webpack://aws/cloudformation-languageserver/src/datastore/LMDB.ts?d928:58:22)
-    at listOnTimeout (node:internal/timers:588:17)
-    at process.processTimers (node:internal/timers:523:7)
-`),
-        ).toEqual({
-            'error.message':
-                "Error: ENOENT: no such file or directory, scandir 'some-dir/cloudformation-languageserver/bundle/development/.aws-cfn-storage/lmdb'",
-            'error.stack': `at readdirSync (node:fs:1584:26)
-at node:electron/js2c/node_init:2:16044
-at LMDBStoreFactory.cleanupOldVersions (webpack://aws/cloudformation-languageserver/[*]/datastore/LMDB.ts?d928:98:36)
-at Timeout.eval (webpack://aws/cloudformation-languageserver/[*]/datastore/LMDB.ts?d928:58:22)
-at listOnTimeout (node:internal/timers:588:17)
-at process.processTimers (node:internal/timers:523:7)`,
+    describe('extractErrorCode', () => {
+        test('returns the lowercase code field', () => {
+            expect(extractErrorCode(Object.assign(new Error('x'), { code: 'ECONNRESET' }))).toBe('ECONNRESET');
+        });
+
+        test('returns the AWS SDK Code field when code is missing', () => {
+            expect(extractErrorCode(Object.assign(new Error('x'), { Code: 'AccessDenied' }))).toBe('AccessDenied');
+        });
+
+        test('returns the upper-case CODE field as a last string fallback', () => {
+            expect(extractErrorCode(Object.assign(new Error('x'), { CODE: 'WEIRD_FORMAT' }))).toBe('WEIRD_FORMAT');
+        });
+
+        test('falls back to errno stringified', () => {
+            expect(extractErrorCode(Object.assign(new Error('x'), { errno: -2 }))).toBe('-2');
+        });
+
+        test('prefers code over Code, CODE, and errno', () => {
+            const error = Object.assign(new Error('x'), {
+                code: 'first',
+                Code: 'second',
+                CODE: 'third',
+                errno: 4,
+            });
+            expect(extractErrorCode(error)).toBe('first');
+        });
+
+        test('returns undefined when no code-like field is present', () => {
+            expect(extractErrorCode(new Error('x'))).toBeUndefined();
+        });
+
+        test('returns undefined for null', () => {
+            expect(extractErrorCode(null)).toBeUndefined();
+        });
+
+        test('returns undefined for non-object values', () => {
+            expect(extractErrorCode('string')).toBeUndefined();
+            expect(extractErrorCode(42)).toBeUndefined();
+            expect(extractErrorCode(undefined)).toBeUndefined();
+        });
+
+        test('ignores non-string code values', () => {
+            // Only strings (and numeric errno) are surfaced.
+            expect(extractErrorCode(Object.assign(new Error('x'), { code: 123 }))).toBeUndefined();
         });
     });
 
-    test('stack trace from GitHub issue', () => {
-        expect(
-            extractLocationFromStack(String.raw`
-Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket hang up)
-    at PeriodicExportingMetricReader._doRun (cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/src/export/PeriodicExportingMetricReader.js:88:19)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async PeriodicExportingMetricReader._runOnce (cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/src/export/PeriodicExportingMetricReader.js:57:13)
-`),
-        ).toEqual({
-            'error.message':
-                'Error: PeriodicExportingMetricReader: metrics export failed (error Error: socket hang up)',
-            'error.stack': `at PeriodicExportingMetricReader._doRun (cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/[*]/export/PeriodicExportingMetricReader.js:88:19)
-at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-at async PeriodicExportingMetricReader._runOnce (cloudformation-languageserver/1.0.0/cloudformation-languageserver-1.0.0-darwin-x64-node22/node_modules/@opentelemetry/sdk-metrics/build/[*]/export/PeriodicExportingMetricReader.js:57:13)`,
+    describe('extractHttpStatus', () => {
+        test('returns AWS SDK $metadata.httpStatusCode when present', () => {
+            const error = Object.assign(new Error('x'), { $metadata: { httpStatusCode: 403 } });
+            expect(extractHttpStatus(error)).toBe(403);
+        });
+
+        test('returns axios-style response.status when $metadata is missing', () => {
+            const error = Object.assign(new Error('x'), { response: { status: 503 } });
+            expect(extractHttpStatus(error)).toBe(503);
+        });
+
+        test('returns plain status when neither $metadata nor response is present', () => {
+            const error = Object.assign(new Error('x'), { status: 404 });
+            expect(extractHttpStatus(error)).toBe(404);
+        });
+
+        test('prefers $metadata over response and status', () => {
+            const error = Object.assign(new Error('x'), {
+                $metadata: { httpStatusCode: 401 },
+                response: { status: 500 },
+                status: 200,
+            });
+            expect(extractHttpStatus(error)).toBe(401);
+        });
+
+        test('prefers response over status when $metadata is missing', () => {
+            const error = Object.assign(new Error('x'), { response: { status: 502 }, status: 200 });
+            expect(extractHttpStatus(error)).toBe(502);
+        });
+
+        test('returns undefined when no http status is present', () => {
+            expect(extractHttpStatus(new Error('x'))).toBeUndefined();
+        });
+
+        test('returns undefined when status fields are not numbers', () => {
+            const error = Object.assign(new Error('x'), {
+                $metadata: { httpStatusCode: '500' },
+                response: { status: '500' },
+                status: '500',
+            });
+            expect(extractHttpStatus(error)).toBeUndefined();
+        });
+
+        test('returns undefined for null', () => {
+            expect(extractHttpStatus(null)).toBeUndefined();
+        });
+
+        test('returns undefined for primitive values', () => {
+            expect(extractHttpStatus('string')).toBeUndefined();
+            expect(extractHttpStatus(42)).toBeUndefined();
+            expect(extractHttpStatus(undefined)).toBeUndefined();
         });
     });
 
-    test('handles Windows backslash paths', () => {
-        const stack = String.raw`Error: test
-    at Object.<anonymous> (C:\testuser\cloudformation-languageserver\\src\file.ts:10:5)`;
-
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': 'at Object.<anonymous> (C:/testuser/cloudformation-languageserver/[*]/file.ts:10:5)',
-        });
-    });
-
-    test('handles mixed path separators', () => {
-        const stack = String.raw`Error: test
-    at func (C:\cloudformation-languageserver\src/file.ts:10:5)`;
-
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': 'at func (C:/cloudformation-languageserver/[*]/file.ts:10:5)',
-        });
-    });
-
-    test('handles stack with no file location', () => {
-        const stack = 'Error: test\n    at <anonymous>';
-
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': 'at <anonymous>',
-        });
-    });
-
-    test('skips empty lines in stack', () => {
-        const stack = 'Error: test\n    at func1 (file.ts:1:1)\n    at \n    at func2 (file.ts:2:2)';
-
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': `at func1 (file.ts:1:1)
-at
-at func2 (file.ts:2:2)`,
-        });
-    });
-
-    test('handles node internal modules', () => {
-        const stack = `Error: test
-    at Module._compile (node:internal/modules/cjs/loader:1159:14)
-    at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`;
-
-        expect(extractLocationFromStack(stack)).toEqual({
-            'error.message': 'Error: test',
-            'error.stack': `at Module._compile (node:internal/modules/cjs/loader:1159:14)
-at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
-        });
-    });
-});
-
-describe('extractLocationFromStack - sensitive data sanitization', () => {
-    test('sanitizes IAM user ARN with account ID', () => {
-        const stack = 'AccessDenied: User: arn:aws:iam::123456789012:user/test-user is not authorized';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('AccessDenied: User: arn:aws:<REDACTED> is not authorized');
-        expect(result['error.message']).not.toContain('123456789012');
-        expect(result['error.message']).not.toContain('test-user');
-    });
-
-    test('sanitizes STS assumed role ARN', () => {
-        const stack = 'arn:aws:sts::123456789012:assumed-role/MyRole/session-name';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('arn:aws:<REDACTED>');
-        expect(result['error.message']).not.toContain('123456789012');
-        expect(result['error.message']).not.toContain('MyRole');
-    });
-
-    test('sanitizes IAM role ARN', () => {
-        const stack = 'arn:aws:iam::111122223333:role/AdminRole not found';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('arn:aws:<REDACTED> not found');
-        expect(result['error.message']).not.toContain('111122223333');
-        expect(result['error.message']).not.toContain('AdminRole');
-    });
-
-    test('sanitizes standalone 12-digit account ID', () => {
-        const stack = 'Account 123456789012 not found';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('Account <ACCOUNT_ID> not found');
-    });
-
-    test('does not sanitize S3 ARN without account ID', () => {
-        const stack = 'arn:aws:s3:::my-bucket';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('arn:aws:s3:::my-bucket');
-    });
-
-    test('sanitizes multiple ARNs in same message', () => {
-        const stack = 'User arn:aws:iam::111111111111:user/user-a cannot access arn:aws:iam::222222222222:role/role-b';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('User arn:aws:<REDACTED> cannot access arn:aws:<REDACTED>');
-    });
-
-    test('sanitizes real AWS AccessDenied error message format', () => {
-        const stack = `AccessDenied: User: arn:aws:iam::123456789012:user/some-user is not authorized to perform: cloudformation:ListTypes because no identity-based policy allows the cloudformation:ListTypes action
-    at ProtocolLib.getErrorSchemaOrThrowBaseException (webpack://aws/cloudformation-languageserver/node_modules/@aws-sdk/client-cloudformation/node_modules/@aws-sdk/core/dist-es/submodules/protocols/ProtocolLib.js:60:1)`;
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).not.toMatch(/\d{12}/);
-        expect(result['error.message']).toContain('AccessDenied');
-        expect(result['error.message']).toContain('arn:aws:<REDACTED>');
-    });
-
-    test('sanitizes regionalized EC2 ARN', () => {
-        const stack = 'Error: arn:aws:ec2:us-east-1:123456789012:instance/i-0abcdef1234567890';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
-    });
-
-    test('sanitizes aws-cn partition ARN', () => {
-        const stack = 'Error: arn:aws-cn:lambda:cn-north-1:123456789012:function:my-func';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
-    });
-
-    test('sanitizes aws-us-gov partition ARN', () => {
-        const stack = 'Error: arn:aws-us-gov:rds:us-gov-west-1:123456789012:db:my-db';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
-    });
-
-    test('sanitizes aws-iso partition ARN', () => {
-        const stack = 'Error: arn:aws-iso:ec2:us-iso-east-1:123456789012:instance/i-abc';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
-    });
-
-    test('sanitizes global IAM ARN from aws-cn partition', () => {
-        const stack = 'Error: arn:aws-cn:iam::123456789012:user/test-user';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
-    });
-
-    test('sanitizes CloudFront distribution ARN (global service)', () => {
-        const stack = 'Error: arn:aws:cloudfront::123456789012:distribution/EDFDVBD632BHDS';
-        const result = extractLocationFromStack(stack);
-        expect(result['error.message']).toBe('Error: arn:aws:<REDACTED>');
-    });
-});
-
-describe('errorAttributes', () => {
-    test('returns attributes for Error with stack and default origin', () => {
-        const error = new Error('test message');
-        error.stack = 'Error: test message\n    at func (file.ts:10:5)';
-
-        const result = errorAttributes(error);
-
-        expect(result).toEqual({
-            'error.origin': 'Unknown',
-            'error.message': 'Error: test message',
-            'error.stack': 'at func (file.ts:10:5)',
+    describe('DoesNotExist', () => {
+        test('formats the message with the supplied resource name', () => {
+            const error = new DoesNotExist('Stack arn');
+            expect(error.message).toBe('Stack arn does not exist');
         });
 
-        expect(errorType(error)).toEqual({
-            'error.code': 'Unknown',
-            'error.type': 'Error',
-        });
-    });
-
-    test('returns attributes for custom Error type', () => {
-        const error = new TypeError('type error');
-        error.stack = 'TypeError: type error\n    at func (file.ts:1:1)';
-        (error as NodeJS.ErrnoException).code = 'SomeCode';
-
-        const result = errorAttributes(error);
-
-        expect(result).toEqual({
-            'error.origin': 'Unknown',
-            'error.message': 'TypeError: type error',
-            'error.stack': 'at func (file.ts:1:1)',
+        test('sets the error name to DoesNotExist', () => {
+            expect(new DoesNotExist('thing').name).toBe('DoesNotExist');
         });
 
-        expect(errorType(error)).toEqual({
-            'error.code': 'SomeCode',
-            'error.type': 'TypeError',
-        });
-    });
-
-    test('returns attributes with uncaughtException origin', () => {
-        const error = new Error('test');
-        error.stack = 'Error: test\n    at x (x.ts:1:1)';
-
-        const result = errorAttributes(error, 'uncaughtException');
-
-        expect(result).toEqual({
-            'error.origin': 'uncaughtException',
-            'error.message': 'Error: test',
-            'error.stack': 'at x (x.ts:1:1)',
+        test('survives instanceof Error', () => {
+            expect(new DoesNotExist('thing')).toBeInstanceOf(Error);
         });
 
-        expect(errorType(error)).toEqual({
-            'error.code': 'Unknown',
-            'error.type': 'Error',
-        });
-    });
-
-    test('returns attributes with unhandledRejection origin', () => {
-        const error = new Error('test');
-        error.stack = 'Error: test\n    at x (x.ts:1:1)';
-
-        const result = errorAttributes(error, 'unhandledRejection');
-
-        expect(result).toEqual({
-            'error.origin': 'unhandledRejection',
-            'error.message': 'Error: test',
-            'error.stack': 'at x (x.ts:1:1)',
+        test('survives instanceof DoesNotExist (prototype chain preserved)', () => {
+            expect(new DoesNotExist('thing')).toBeInstanceOf(DoesNotExist);
         });
 
-        expect(errorType(error)).toEqual({
-            'error.code': 'Unknown',
-            'error.type': 'Error',
-        });
-    });
-
-    test('returns attributes for non-Error string value', () => {
-        const error = 'string error';
-        const result = errorAttributes(error);
-
-        expect(result).toEqual({
-            'error.origin': 'Unknown',
+        test('preserves the cause from ErrorOptions', () => {
+            const cause = new Error('underlying io error');
+            const error = new DoesNotExist('Stack arn', { cause });
+            expect(error.cause).toBe(cause);
         });
 
-        expect(errorType(error)).toEqual({
-            'error.code': 'Unknown',
-            'error.type': 'string',
-        });
-    });
-
-    test('returns attributes for non-Error null value', () => {
-        const error = null;
-        const result = errorAttributes(error);
-
-        expect(result).toEqual({
-            'error.origin': 'Unknown',
-        });
-
-        expect(errorType(error)).toEqual({
-            'error.code': 'Unknown',
-            'error.type': 'object',
-        });
-    });
-
-    test('returns attributes for non-Error undefined value', () => {
-        const error = undefined;
-        const result = errorAttributes(error);
-
-        expect(result).toEqual({
-            'error.origin': 'Unknown',
-        });
-
-        expect(errorType(error)).toEqual({
-            'error.code': 'Unknown',
-            'error.type': 'undefined',
+        test('is throwable and catchable as an Error', () => {
+            try {
+                throw new DoesNotExist('Resource X');
+            } catch (err) {
+                expect(err).toBeInstanceOf(DoesNotExist);
+                expect(err).toBeInstanceOf(Error);
+                expect((err as Error).message).toBe('Resource X does not exist');
+            }
         });
     });
 });

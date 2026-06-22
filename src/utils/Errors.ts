@@ -1,32 +1,58 @@
-import { Attributes } from '@opentelemetry/api';
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { determineSensitiveInfo } from './ErrorStackInfo';
 import { toString } from './String';
 
-const CLIENT_NETWORK_ERROR_PATTERNS = [
-    'unable to get local issuer certificate',
-    'self signed certificate',
-    'unable to verify the first certificate',
-    'certificate has expired',
-    'does not match certificate',
-    'WRONG_VERSION_NUMBER',
-    'ECONNRESET',
-    'ETIMEDOUT',
-    'ECONNREFUSED',
-    'ENOTFOUND',
-    'EAI_AGAIN',
-    'ECONNABORTED',
-    'EBADF',
-    'socket hang up',
-    'network socket disconnected',
-    'TOO_MANY_REDIRECTS',
-    'Parse Error: Expected HTTP',
-    'status code 407',
+export const CLIENT_NETWORK_ERROR_CODES: ReadonlySet<string> = new Set([
+    'ECONNRESET', // Peer reset the connection mid-stream
+    'ETIMEDOUT', // Operation exceeded its timeout
+    'ECONNREFUSED', // Server actively refused (port closed / not listening)
+    'ENOTFOUND', // DNS resolution failed
+    'EAI_AGAIN', // Transient DNS resolver failure (retry-eligible)
+    'ECONNABORTED', // Local socket aborted (often an axios timeout)
+    'EPIPE', // Wrote to a socket the peer already closed
+    'EHOSTUNREACH', // No route to host (firewall / unreachable)
+    'ENETUNREACH', // Network unreachable (offline / interface down)
+    'NGHTTP2_REFUSED_STREAM', // HTTP/2 server refused a new stream (transient)
+]);
+
+const CLIENT_NETWORK_ERROR_MESSAGE_PATTERNS = [
+    'unable to get local issuer certificate', // Cert chain root not in client trust store
+    'self signed certificate', // Peer presented a self-signed certificate
+    'unable to verify the first certificate', // Incomplete server cert chain
+    'certificate has expired', // Server cert past validity window
+    'does not match certificate', // Hostname / SAN mismatch
+    'WRONG_VERSION_NUMBER', // TLS version mismatch (often plaintext on a TLS port)
+    'socket hang up', // Peer closed connection before responding
+    'network socket disconnected', // Underlying socket dropped mid-request
+    'TOO_MANY_REDIRECTS', // Client exceeded redirect limit (e.g. ERR_FR_TOO_MANY_REDIRECTS)
+    'Parse Error: Expected HTTP', // Non-HTTP response on HTTP port (proxy / wrong protocol)
+    'status code 407', // Proxy Authentication Required
 ];
 
 export function isClientNetworkError(error: unknown): boolean {
-    const message = error instanceof Error ? error.message : String(error);
-    return CLIENT_NETWORK_ERROR_PATTERNS.some((pattern) => message.toLowerCase().includes(pattern.toLowerCase()));
+    const parts: string[] = [extractErrorMessage(error)];
+
+    if (typeof error === 'object' && error !== null) {
+        const { code, name } = error as { code?: unknown; name?: unknown };
+        if (typeof code === 'string') {
+            parts.push(code);
+        }
+        if (typeof name === 'string') {
+            parts.push(name);
+        }
+    }
+
+    const haystack = parts.join(' ').toLowerCase();
+
+    // Match canonical codes (errno-style) and free-form message patterns
+    for (const code of CLIENT_NETWORK_ERROR_CODES) {
+        if (haystack.includes(code.toLowerCase())) {
+            return true;
+        }
+    }
+
+    return CLIENT_NETWORK_ERROR_MESSAGE_PATTERNS.some((pattern) => {
+        return haystack.includes(pattern.toLowerCase());
+    });
 }
 
 export function extractStatusReason(error: unknown): string | undefined {
@@ -60,62 +86,74 @@ export function handleLspError(error: unknown, contextMessage: string): never {
     throw new ResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`);
 }
 
-/**
- * Best effort extraction of location of exception based on stack trace
- */
-export function extractLocationFromStack(stack?: string): Record<string, string> {
-    if (!stack) return {};
-
-    const lines = stack
-        .trim()
-        .split('\n')
-        .map((line) => {
-            let newLine = line.trim();
-            for (const word of determineSensitiveInfo()) {
-                if (word !== 'aws' && word !== 'cloudformation-languageserver') {
-                    newLine = newLine.replaceAll(word, '[*]');
-                }
-            }
-
-            return newLine.replaceAll('\\\\', '/').replaceAll('\\', '/');
-        })
-        .map((line) => {
-            return sanitizeErrorMessage(line);
-        });
-
-    if (lines.length === 0) {
-        return {};
+export function extractRootCause(error: unknown): Error | undefined {
+    if (error === null || typeof error !== 'object') {
+        return undefined;
     }
 
-    return {
-        ['error.message']: lines[0],
-        ['error.stack']: lines.slice(1).join('\n'),
-    };
+    const errorAs = error as { commitError?: unknown; cause?: unknown };
+
+    if (errorAs.commitError instanceof Error) {
+        return errorAs.commitError;
+    }
+
+    if (errorAs.cause instanceof Error) {
+        return errorAs.cause;
+    }
+
+    return undefined;
 }
 
-function sanitizeErrorMessage(message: string): string {
-    return message
-        .replaceAll(/arn:aws[^:\s]*:\S+\d{12}\S*/gi, 'arn:aws:<REDACTED>')
-        .replaceAll(/\b\d{12}\b/g, '<ACCOUNT_ID>');
+export function extractErrorCode(error: unknown): string | undefined {
+    if (error === null || typeof error !== 'object') {
+        return undefined;
+    }
+
+    const { code, Code, CODE, errno } = error as { code?: unknown; Code?: unknown; CODE?: unknown; errno?: number };
+
+    if (typeof code === 'string') {
+        return code;
+    }
+
+    if (typeof Code === 'string') {
+        return Code;
+    }
+
+    if (typeof CODE === 'string') {
+        return CODE;
+    }
+
+    if (typeof errno === 'number') {
+        return `${errno}`;
+    }
+
+    return undefined;
 }
 
-export function errorAttributes(error: unknown, origin?: 'uncaughtException' | 'unhandledRejection'): Attributes {
-    const location = error instanceof Error ? extractLocationFromStack(error.stack) : {};
+export function extractHttpStatus(error: unknown): number | undefined {
+    if (error === null || typeof error !== 'object') {
+        return undefined;
+    }
 
-    return {
-        'error.origin': origin ?? 'Unknown',
-        ...location,
+    const candidate = error as {
+        $metadata?: { httpStatusCode?: number };
+        response?: { status?: number };
+        status?: number;
     };
-}
 
-export function errorType(error: unknown): Attributes {
-    const type = error instanceof Error ? error.name : typeof error;
-    const code = error !== null && typeof error === 'object' ? (error as NodeJS.ErrnoException).code : undefined;
+    if (typeof candidate.$metadata?.httpStatusCode === 'number') {
+        return candidate.$metadata?.httpStatusCode;
+    }
 
-    return {
-        'error.type': type,
-        'error.code': code ?? 'Unknown',
-    };
+    if (typeof candidate.response?.status === 'number') {
+        return candidate.response?.status;
+    }
+
+    if (typeof candidate.status === 'number') {
+        return candidate.status;
+    }
+
+    return undefined;
 }
 
 export class DoesNotExist extends Error {

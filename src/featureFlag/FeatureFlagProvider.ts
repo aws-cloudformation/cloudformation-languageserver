@@ -84,13 +84,13 @@ export class FeatureFlagProvider implements Closeable {
         this.log();
     }
 
-    @Measure({ name: 'getFeatureFlags' })
+    @Measure({ name: 'getFeatureFlags', captureErrorAttributes: true })
     private async getFeatureFlags(env: string): Promise<unknown> {
         try {
             return await this.getLatestFeatureFlags(env);
         } catch (error) {
             if (isClientNetworkError(error)) {
-                this.telemetry.count('getFeatureFlags.clientNetworkError', 1);
+                this.telemetry.error('getFeatureFlags.clientNetworkError', error);
                 log.info('Skipping feature flag refresh due to client network error');
                 return this.config;
             }

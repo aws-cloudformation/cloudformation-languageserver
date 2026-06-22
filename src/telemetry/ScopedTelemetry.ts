@@ -11,7 +11,7 @@ import {
     ValueType,
 } from '@opentelemetry/api';
 import { Closeable } from '../utils/Closeable';
-import { errorAttributes, errorType } from '../utils/Errors';
+import { errorAttributes, errorType } from '../utils/ErrorStackInfo';
 import { hasSuppressFault } from '../utils/FaultSuppression';
 import { typeOf } from '../utils/TypeCheck';
 import { TelemetryContext } from './TelemetryContext';
@@ -56,19 +56,12 @@ export class ScopedTelemetry implements Closeable {
     }
 
     error(name: string, error: unknown, origin?: 'uncaughtException' | 'unhandledRejection', config?: MetricConfig) {
-        if (config?.captureErrorAttributes) {
-            config.attributes = {
-                ...config.attributes,
-                ...errorType(error),
-                ...errorAttributes(error, origin),
-            };
-        } else if (config?.captureErrorType) {
-            config.attributes = {
-                ...config.attributes,
-                ...errorType(error),
-            };
-        }
-        this.count(name, 1, config);
+        const attributes: Attributes = {
+            ...config?.attributes,
+            ...errorType(error),
+            ...(config?.captureErrorAttributes ? errorAttributes(error, origin) : {}),
+        };
+        this.count(name, 1, { ...config, attributes });
     }
 
     registerGaugeProvider(name: string, provider: () => number, config?: MetricConfig): void {
