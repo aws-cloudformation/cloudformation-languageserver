@@ -93,11 +93,22 @@ if (parentPort) {
                     id,
                     error: extractErrorMessage(error),
                     success: false,
+                    phase: action === 'initialize' ? currentInitPhase : undefined,
                 });
             }
         }
     });
 }
+
+type InitPhase =
+    | 'pyodide_load'
+    | 'micropip_load'
+    | 'ssl_load'
+    | 'packages_load'
+    | 'cfn_lint_install'
+    | 'cfn_lint_setup';
+
+let currentInitPhase: InitPhase = 'pyodide_load';
 
 // Initialize Pyodide with cfn-lint
 async function initializePyodide(): Promise<InitializeResult> {
@@ -113,6 +124,7 @@ async function initializePyodide(): Promise<InitializeResult> {
 
     try {
         // Load Pyodide with explicit stdout/stderr handlers
+        currentInitPhase = 'pyodide_load';
         pyodide = await loadPyodide({
             stdout: customStdout,
             stderr: customStderr,
@@ -134,11 +146,13 @@ async function initializePyodide(): Promise<InitializeResult> {
         // Load bootstrap packages — micropip is required for fallback installs
         // loadPackage fetches from JsDelivr CDN which can silently fail
         // Set CFN_LSP_OFFLINE=1 to skip CDN and test local wheel fallback
+        currentInitPhase = 'micropip_load';
         const offlineMode = process.env.CFN_LSP_OFFLINE === '1';
         if (!offlineMode) {
             await pyodide.loadPackage('micropip');
         }
         // ssl is a system shared library — must always use loadPackage (can't install via micropip)
+        currentInitPhase = 'ssl_load';
         await pyodide.loadPackage('ssl');
 
         // Verify micropip is available; fall back to local wheel if CDN failed
@@ -168,6 +182,7 @@ async function initializePyodide(): Promise<InitializeResult> {
 
         // Load packages with verification and local wheel/micropip fallback
         // Define the package mapping once, used for both verification and cfn-lint skip logic
+        currentInitPhase = 'packages_load';
         const pyodidePackages = ['pyyaml', 'regex', 'rpds-py', 'pydantic', 'pydantic-core'];
         if (!offlineMode) {
             for (const pkg of pyodidePackages) {
@@ -211,6 +226,7 @@ async function initializePyodide(): Promise<InitializeResult> {
      `);
 
         // Install cfn-lint with local wheel fallback
+        currentInitPhase = 'cfn_lint_install';
         // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const installResult = await pyodide.runPythonAsync(`
       import micropip
@@ -256,6 +272,7 @@ async function initializePyodide(): Promise<InitializeResult> {
     `);
 
         // Setup Python functions for linting
+        currentInitPhase = 'cfn_lint_setup';
         await pyodide.runPythonAsync(`
       import json
       from cfnlint.version import __version__
