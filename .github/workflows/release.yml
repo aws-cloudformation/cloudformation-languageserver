@@ -60,6 +60,9 @@ jobs:
 
   build-and-test:
     needs: [ get-configs, version-and-tag ]
+    permissions:
+      contents: read
+      code-quality: write
     uses: ./.github/workflows/build-and-test.yml
     strategy:
       fail-fast: true
