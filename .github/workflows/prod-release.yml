@@ -62,5 +62,6 @@ jobs:
       contents: write
       pull-requests: write
       id-token: write
+      code-quality: write
     with:
       tag: ${{ needs.promote-beta-to-prod.outputs.tag }}
