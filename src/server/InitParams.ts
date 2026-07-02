@@ -8,8 +8,8 @@ export type ClientInfo = DeepReadonly<_InitializeParams['clientInfo']>;
 
 type _AwsMetadata = {
     clientInfo?: {
-        extension: ClientInfo;
-        clientId: string;
+        extension?: ClientInfo;
+        clientId?: string;
     };
     encryption?: {
         key: string;
