@@ -19,6 +19,7 @@ import {
     UpdateGeneratedTemplateCommandInput,
 } from '@aws-sdk/client-cloudformation';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { Count } from '../telemetry/TelemetryDecorator';
 import { markIfClientError } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
@@ -38,6 +39,7 @@ export class IacGeneratorService {
         }
     }
 
+    @Count({ name: 'startResourceScan' })
     public async startResourceScan(types?: string[]): Promise<string | undefined> {
         return await this.withClient(async (client) => {
             let input: StartResourceScanInput = {};
@@ -51,6 +53,7 @@ export class IacGeneratorService {
         });
     }
 
+    @Count({ name: 'listResourceScanResources' })
     public async listResourceScanResources(scanId: string): Promise<ScannedResource[]> {
         return await this.withClient(async (client) => {
             const input: ListResourceScanResourcesInput = {
@@ -70,6 +73,7 @@ export class IacGeneratorService {
         });
     }
 
+    @Count({ name: 'listResourceScans' })
     public async listResourceScans(): Promise<ResourceScanSummary[]> {
         return await this.withClient(async (client) => {
             const input: ListResourceScansInput = {};
@@ -87,30 +91,35 @@ export class IacGeneratorService {
         });
     }
 
+    @Count({ name: 'describeResourceScan' })
     public async describeResourceScan(scanId: string) {
         return await this.withClient(async (client) => {
             return await client.send(new DescribeResourceScanCommand({ ResourceScanId: scanId }));
         });
     }
 
+    @Count({ name: 'createGeneratedTemplate' })
     public async createGeneratedTemplate(input: CreateGeneratedTemplateCommandInput) {
         return await this.withClient(async (client) => {
             return await client.send(new CreateGeneratedTemplateCommand(input));
         });
     }
 
+    @Count({ name: 'updateGeneratedTemplate' })
     public async updateGeneratedTemplate(input: UpdateGeneratedTemplateCommandInput) {
         return await this.withClient(async (client) => {
             return await client.send(new UpdateGeneratedTemplateCommand(input));
         });
     }
 
+    @Count({ name: 'describeGeneratedTemplate' })
     public async describeGeneratedTemplate(input: DescribeGeneratedTemplateCommandInput) {
         return await this.withClient(async (client) => {
             return await client.send(new DescribeGeneratedTemplateCommand(input));
         });
     }
 
+    @Count({ name: 'getGeneratedTemplate' })
     public async getGeneratedTemplate(input: GetGeneratedTemplateCommandInput) {
         return await this.withClient(async (client) => {
             return await client.send(new GetGeneratedTemplateCommand(input));
