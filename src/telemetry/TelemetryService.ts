@@ -29,7 +29,9 @@ export class TelemetryService implements Closeable {
             this.metricsReader = metricsReader;
             this.sdk = sdk;
             this.sdk.start();
-            this.logger.info(`Telemetry enabled for ${id}`);
+            this.logger.info(
+                `Telemetry enabled for ${id} [${metadata?.clientInfo?.clientId ? 'PROVIDED' : 'GENERATED'}]`,
+            );
             this.registerSystemMetrics();
         } else {
             this.logger.info('Telemetry disabled');

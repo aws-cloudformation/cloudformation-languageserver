@@ -12,7 +12,7 @@ import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('CcapiService');
 
-export interface ListResourcesOptions {
+interface ListResourcesOptions {
     nextToken?: string;
     maxResults?: number;
 }

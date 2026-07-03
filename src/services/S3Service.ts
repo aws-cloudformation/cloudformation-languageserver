@@ -10,7 +10,8 @@ import {
 } from '@aws-sdk/client-s3';
 import { GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { Measure } from '../telemetry/TelemetryDecorator';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { classifyAwsError } from '../utils/AwsErrorMapper';
 import { markIfClientError } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
@@ -18,6 +19,9 @@ import { AwsClient } from './AwsClient';
 const log = LoggerFactory.getLogger('S3Service');
 
 export class S3Service {
+    @Telemetry()
+    private readonly telemetry!: ScopedTelemetry;
+
     public constructor(private readonly awsClient: AwsClient) {}
 
     protected async withClient<T>(request: (client: S3Client) => Promise<T>): Promise<T> {
@@ -93,9 +97,11 @@ export class S3Service {
                 );
 
                 if (response.BucketRegion !== region) {
+                    this.telemetry.count('verifyBucketAccessibleInRegion.inccessible', 1);
                     return `Bucket "${bucketName}" is in region ${response.BucketRegion}, not ${region}`;
                 }
 
+                this.telemetry.count('verifyBucketAccessibleInRegion.accessible', 1);
                 return;
             } catch (error) {
                 // 403 (cross-account or wrong owner) and 404 (doesn't exist) both mean the bucket
@@ -104,6 +110,7 @@ export class S3Service {
                 // (network, credentials, throttling, 5xx) propagate unchanged.
                 const { httpStatus } = classifyAwsError(error);
                 if (httpStatus === 403 || httpStatus === 404) {
+                    this.telemetry.count('verifyBucketAccessibleInRegion.inccessible', 1);
                     throw new ResourceNotFoundException({
                         message: `Resource of type 'AWS::S3::Bucket' with identifier '${bucketName}' was not found`,
                         $metadata: { httpStatusCode: httpStatus },

@@ -53,7 +53,6 @@ import { CfnService } from '../../src/services/CfnService';
 import { CodeActionService } from '../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import { GuardService } from '../../src/services/guard/GuardService';
-import { IacGeneratorService } from '../../src/services/IacGeneratorService';
 import { OnlineStatus } from '../../src/services/OnlineStatus';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { S3Service } from '../../src/services/S3Service';
@@ -201,10 +200,6 @@ export function createMockCcapiService() {
 
 export function createMockStackManagementInfoProvider() {
     return stubInterface<StackManagementInfoProvider>();
-}
-
-export function createMockIacGeneratorService() {
-    return stubInterface<IacGeneratorService>();
 }
 
 export function createMockResourceStateManager() {
@@ -382,7 +377,6 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         awsClient: overrides.awsClient ?? createMockAwsApiClientComponent(),
         cfnService: overrides.cfnService ?? createMockCfnService(),
         ccapiService: overrides.ccapiService ?? createMockCcapiService(),
-        iacGeneratorService: overrides.iacGeneratorService ?? createMockIacGeneratorService(),
         schemaStore: overrides.schemaStore ?? createMockSchemaStore(),
         schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
         schemaReadiness: overrides.schemaReadiness ?? stubInterface(),

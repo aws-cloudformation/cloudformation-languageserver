@@ -60,19 +60,36 @@ import {
     ChangeSetType,
 } from '@aws-sdk/client-cloudformation';
 import type { WaiterConfiguration, WaiterResult } from '@smithy/util-waiter';
+import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../settings/ISettingsSubscriber';
 import { AwsClientSettings, DefaultSettings } from '../settings/Settings';
 import { DeploymentMode } from '../stacks/actions/StackActionRequestType';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { Count, Measure } from '../telemetry/TelemetryDecorator';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Count, Measure, Telemetry } from '../telemetry/TelemetryDecorator';
+import { Closeable } from '../utils/Closeable';
 import { markIfClientError } from '../utils/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('CfnService');
 
-export class CfnService {
-    private readonly awsClientSettings: AwsClientSettings = DefaultSettings.awsClient;
+export class CfnService implements SettingsConfigurable, Closeable {
+    @Telemetry()
+    private readonly telemetry!: ScopedTelemetry;
+
+    private settingsSubscription?: SettingsSubscription;
+    private awsClientSettings: AwsClientSettings = DefaultSettings.awsClient;
 
     public constructor(private readonly awsClient: AwsClient) {}
+
+    configure(settingsManager: ISettingsSubscriber): void {
+        if (this.settingsSubscription) {
+            this.settingsSubscription.unsubscribe();
+        }
+
+        this.settingsSubscription = settingsManager.subscribe('awsClient', (newSettings) => {
+            this.awsClientSettings = newSettings;
+        });
+    }
 
     protected async withClient<T>(request: (client: CloudFormationClient) => Promise<T>): Promise<T> {
         try {
@@ -85,6 +102,7 @@ export class CfnService {
         }
     }
 
+    @Count({ name: 'listStacks' })
     public async listStacks(
         statusToInclude?: StackStatus[],
         statusToExclude?: StackStatus[],
@@ -112,6 +130,7 @@ export class CfnService {
         });
     }
 
+    @Count({ name: 'createStack' })
     public async createStack(params: {
         StackName: string;
         TemplateBody?: string;
@@ -130,6 +149,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DescribeStacksCommand(params ?? {})));
     }
 
+    @Count({ name: 'getTemplate' })
     public async getTemplate(params: { StackName: string }): Promise<string | undefined> {
         const response = await this.withClient((client) => client.send(new GetTemplateCommand(params)));
         return response.TemplateBody;
@@ -239,6 +259,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DescribeStackResourcesCommand(params)));
     }
 
+    @Count({ name: 'describeStackResource' })
     public async describeStackResource(params: {
         StackName: string;
         LogicalResourceId: string;
@@ -246,6 +267,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DescribeStackResourceCommand(params)));
     }
 
+    @Count({ name: 'listStackResources' })
     public async listStackResources(params: {
         StackName: string;
         NextToken?: string;
@@ -264,6 +286,7 @@ export class CfnService {
         return await this.withClient((client) => client.send(new DescribeStackResourceDriftsCommand(params)));
     }
 
+    @Count({ name: 'getAllPrivateResourceSchemas' })
     public async getAllPrivateResourceSchemas(): Promise<DescribeTypeOutput[]> {
         return await this.withClient(async (client) => {
             const privateResourceSchemas: DescribeTypeOutput[] = [];
@@ -288,6 +311,7 @@ export class CfnService {
         });
     }
 
+    @Count({ name: 'getAllPrivateResourceTypes' })
     private async getAllPrivateResourceTypes(): Promise<TypeSummary[]> {
         return await this.withClient(async (client) => {
             const allTypeSummaries: TypeSummary[] = [];
@@ -429,9 +453,15 @@ export class CfnService {
                     nextToken: response.NextToken,
                 };
             });
-        } catch {
+        } catch (error) {
+            this.telemetry.error('listChangeSets.error', error);
             return { changeSets: [] };
         }
+    }
+
+    close(): void {
+        this.settingsSubscription?.unsubscribe();
+        this.settingsSubscription = undefined;
     }
 }
 

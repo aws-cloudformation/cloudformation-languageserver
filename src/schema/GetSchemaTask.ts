@@ -94,7 +94,7 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
         super();
     }
 
-    @Measure({ name: 'getSchemas', captureErrorAttributes: true })
+    @Measure({ name: 'getSchemas' })
     protected override async runImpl(dataStore: DataStore) {
         try {
             const schemas: DescribeTypeOutput[] = await this.getSchemas();
@@ -111,16 +111,14 @@ export class GetPrivateSchemasTask extends GetSchemaTask {
 
             this.logger.info(`${schemas.length} private schemas retrieved`);
         } catch (error) {
-            const { category, httpStatus } = classifyAwsError(error);
+            const { category } = classifyAwsError(error);
 
             if (category === 'permissions' || category === 'credentials') {
+                this.telemetry.error('getSchemas.error', error);
                 this.logger.info(`Skipping private schemas due to ${category} issue`);
                 return;
             }
 
-            this.telemetry.count('getSchemas.error', 1, {
-                attributes: { category, httpStatus },
-            });
             this.logger.error(error, 'Failed to get private schemas');
             throw error;
         }
