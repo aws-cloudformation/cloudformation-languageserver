@@ -36,11 +36,7 @@ import { ResourceSectionCompletionProvider } from './ResourceSectionCompletionPr
 import { TopLevelSectionCompletionProvider } from './TopLevelSectionCompletionProvider';
 
 export type CompletionProviderType =
-    | 'TopLevelSection'
-    | 'IntrinsicFunction'
-    | 'IntrinsicFunctionArgument'
-    | 'ParameterTypeValue'
-    | EntityType;
+    'TopLevelSection' | 'IntrinsicFunction' | 'IntrinsicFunctionArgument' | 'ParameterTypeValue' | EntityType;
 
 export class CompletionRouter implements SettingsConfigurable, Closeable {
     private completionSettings: CompletionSettings = DefaultSettings.completion;

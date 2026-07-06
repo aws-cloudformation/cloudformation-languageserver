@@ -16,7 +16,7 @@ describe('RemoveReadonlyPropertiesTransformer', () => {
                 DomainName: 'my-bucket.s3.amazonaws.com',
                 DualStackDomainName: 'my-bucket.s3.dualstack.us-east-1.amazonaws.com',
                 RegionalDomainName: 'my-bucket.s3.us-east-1.amazonaws.com',
-                WebsiteURL: 'http://my-bucket.s3-website-us-east-1.amazonaws.com',
+                WebsiteURL: 'https://my-bucket.s3-website-us-east-1.amazonaws.com',
             },
             expectedAfterTransform: {
                 BucketName: 'my-bucket',

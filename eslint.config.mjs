@@ -116,6 +116,10 @@ export default tseslint.config([
                 },
             ],
             'unicorn/prefer-string-replace-all': 'warn',
+            'unicorn/prefer-split-limit': 'off',
+            'unicorn/better-dom-traversing': 'off',
+            'unicorn/consistent-compound-words': 'off',
+            'unicorn/prefer-includes-over-repeated-comparisons': 'off',
 
             'security/detect-object-injection': 'off',
             'security/detect-non-literal-fs-filename': 'off',

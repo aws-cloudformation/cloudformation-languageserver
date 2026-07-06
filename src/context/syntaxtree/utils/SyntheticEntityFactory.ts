@@ -1,7 +1,7 @@
 import { Point, SyntaxNode, TreeCursor } from 'tree-sitter';
 import { CommonNodeTypes } from './TreeSitterTypes';
 
-/* eslint-disable unicorn/no-null */
+/* eslint-disable unicorn/no-null, unicorn/no-this-outside-of-class */
 export function createSyntheticNode(
     text: string,
     startPosition: Point,

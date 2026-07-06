@@ -23,7 +23,7 @@ describe('ResourceEdgeCaseTransformer', () => {
         const schema = schemas.schemas.get('AWS::WAFv2::IPSet')!;
         const resourceProperties = {
             Name: 'test-ipset',
-            Description: '   ',
+            Description: ' '.repeat(3),
             Scope: 'REGIONAL',
         };
 

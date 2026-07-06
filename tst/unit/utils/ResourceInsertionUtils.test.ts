@@ -144,7 +144,7 @@ Parameters:
             const doc = stubInterface<Document>();
             doc.documentType = DocumentType.JSON;
             doc.getLineCount.returns(3);
-            doc.getLine.returns('   ');
+            doc.getLine.returns(' '.repeat(3));
 
             const mockNode = { endPosition: { row: 2, column: 0 } } as any;
 

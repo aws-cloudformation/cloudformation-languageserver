@@ -463,7 +463,7 @@ class DebugTreeTool {
         result += `${prefix}${connector}${node.type}${namedIndicator}${errorIndicator} @ ${position}\n`;
 
         if (textPreview.trim()) {
-            const textPrefix = prefix + (isLast ? '    ' : '│   ');
+            const textPrefix = prefix + (isLast ? ' '.repeat(4) : '│   ');
             result += `${textPrefix}📝 "${textPreview}"\n`;
         }
 
@@ -475,7 +475,7 @@ class DebugTreeTool {
         for (let i = 0; i < children.length; i++) {
             const child = children[i];
             const isLastChild = i === children.length - 1;
-            const childPrefix = prefix + (isLast ? '    ' : '│   ');
+            const childPrefix = prefix + (isLast ? ' '.repeat(4) : '│   ');
 
             result += this.renderTreeNode(child, nodeMap, childPrefix, isLastChild, new Set(visited));
         }
@@ -625,5 +625,3 @@ async function main() {
 if (require.main === module) {
     main().catch(console.error);
 }
-
-export { DebugTreeTool, DebugOptions, DebugResults };
