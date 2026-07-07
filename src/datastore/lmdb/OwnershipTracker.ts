@@ -3,10 +3,20 @@ import { join } from 'path';
 import { lock } from 'proper-lockfile';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { processId } from '../../utils/Environment';
+import { readFileIfExists } from '../../utils/File';
 import { LOCK_OPTIONS } from '../../utils/LocalFile';
 
 const OWNER_MARKER_PREFIX = 'owner.';
 const COORDINATION_FILE_NAME = 'coordination';
+
+/**
+ * An `opening` marker older than this is treated as a crashed startup regardless of whether its
+ * PID is currently alive. A real LMDB open completes in seconds, so this is set well beyond any
+ * plausible open duration: the margin absorbs slow disks and corruption-retry reopens while still
+ * breaking a recycled-PID crash loop within a couple of minutes. It exists because `isProcessAlive`
+ * cannot tell a crashed opener apart from an unrelated process the OS later assigned the same PID.
+ */
+const OPENING_MARKER_STALE_MS = 5 * 60 * 1000;
 
 /**
  * Lifecycle phase encoded in each owner marker's file name.
@@ -45,6 +55,12 @@ interface MarkerScan {
  *   2. a dead owner is still in the `opening` phase (its startup died mid-open).
  * A dead `running` marker is a healthy process killed abruptly, so reboots/force-quits
  * preserve the cache.
+ *
+ * Liveness is a PID check, which cannot distinguish a crashed opener from an unrelated
+ * process the OS later assigned the same PID. So an `opening` marker older than
+ * {@link OPENING_MARKER_STALE_MS} is treated as a dead crashed startup regardless of PID
+ * liveness (a genuine in-progress open is never that old), using the timestamp each marker
+ * persists in its body. This closes the window where a recycled PID keeps a crash loop alive.
  *
  * The scan, wipe, and marker claim share one `proper-lockfile` lock so concurrent
  * startups can't both wipe or open a directory another is wiping. Every step is
@@ -133,20 +149,29 @@ export class LMDBOwnershipTracker {
         }
 
         const scan: MarkerScan = { liveOwners: 0, removableFiles: [], crashedStartups: 0 };
+        const now = Date.now();
 
         for (const fileName of entries) {
             if (!fileName.startsWith(OWNER_MARKER_PREFIX)) {
                 continue;
             }
 
-            const marker = parseMarker(fileName);
+            const marker = parseMarker(fileName, this.readMarkerBody(fileName));
             if (marker === undefined) {
                 scan.removableFiles.push(fileName);
                 continue;
             }
 
             const isOwnMarker = marker.pid === this.pid;
-            const isLive = !isOwnMarker && isProcessAlive(marker.pid);
+            // An `opening` marker older than the threshold is a crashed startup even when its PID
+            // reads as alive: liveness is only a PID probe, which a PID the OS recycled to an
+            // unrelated process would pass, but a real open never lasts this long. Trusting the
+            // persisted age over `isProcessAlive` here is what defeats PID recycling.
+            const isStaleOpening =
+                marker.phase === OwnershipPhase.opening &&
+                marker.startedAt !== undefined &&
+                now - marker.startedAt > OPENING_MARKER_STALE_MS;
+            const isLive = !isOwnMarker && !isStaleOpening && isProcessAlive(marker.pid);
             if (isLive) {
                 scan.liveOwners++;
                 continue;
@@ -164,6 +189,15 @@ export class LMDBOwnershipTracker {
         }
 
         return scan;
+    }
+
+    /** Read a marker's body (best-effort); returns '' if it vanished or cannot be read. */
+    private readMarkerBody(fileName: string): string {
+        try {
+            return readFileIfExists(join(this.markersDir, fileName));
+        } catch {
+            return '';
+        }
     }
 
     private writeOwnMarker(phase: OwnershipPhase): void {
@@ -190,22 +224,40 @@ export class LMDBOwnershipTracker {
 interface ParsedMarker {
     pid: number;
     phase: OwnershipPhase;
+    /** When the marker was written (ms since epoch), or undefined if the body has no valid timestamp. */
+    startedAt: number | undefined;
 }
 
-function parseMarker(fileName: string): ParsedMarker | undefined {
-    const body = fileName.slice(OWNER_MARKER_PREFIX.length);
-    const separator = body.lastIndexOf('.');
+/**
+ * Parse a marker from its file name (authoritative for pid/phase) and, when available, the
+ * timestamp persisted in its body. `body` is the marker's file contents (`<pid>\n<ISO timestamp>`
+ * per {@link LMDBOwnershipTracker.writeOwnMarker}); an unreadable/legacy body simply yields no
+ * timestamp, leaving pid/phase detection unaffected.
+ */
+function parseMarker(fileName: string, body: string): ParsedMarker | undefined {
+    const nameBody = fileName.slice(OWNER_MARKER_PREFIX.length);
+    const separator = nameBody.lastIndexOf('.');
     if (separator <= 0) {
         return undefined;
     }
 
-    const pid = Number(body.slice(0, separator));
-    const phase = body.slice(separator + 1);
+    const pid = Number(nameBody.slice(0, separator));
+    const phase = nameBody.slice(separator + 1);
     if (!Number.isInteger(pid) || pid <= 0 || !isOwnershipPhase(phase)) {
         return undefined;
     }
 
-    return { pid, phase };
+    return { pid, phase, startedAt: parseTimestamp(body) };
+}
+
+/** Extract the ISO timestamp from a marker body (`<pid>\n<ISO timestamp>`), or undefined if absent/invalid. */
+function parseTimestamp(body: string): number | undefined {
+    const isoLine = body.split('\n', 2)[1]?.trim();
+    if (isoLine === undefined || isoLine === '') {
+        return undefined;
+    }
+    const parsed = Date.parse(isoLine);
+    return Number.isNaN(parsed) ? undefined : parsed;
 }
 
 function isOwnershipPhase(value: string): value is OwnershipPhase {

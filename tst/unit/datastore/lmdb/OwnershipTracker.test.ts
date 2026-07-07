@@ -10,6 +10,11 @@ function markerName(pid: number, phase: OwnershipPhase): string {
     return `${OWNER_MARKER_PREFIX}${pid}.${phase}`;
 }
 
+/** Marker body in the format writeOwnMarker persists: `<pid>\n<ISO timestamp>`, dated `ageMs` ago. */
+function markerBody(pid: number, ageMs: number): string {
+    return `${pid}\n${new Date(Date.now() - ageMs).toISOString()}`;
+}
+
 describe('LMDBOwnershipTracker', () => {
     let testRoot: string;
     let lmdbDir: string;
@@ -166,6 +171,89 @@ describe('LMDBOwnershipTracker', () => {
 
             expect(onCrash).toHaveBeenCalledTimes(1);
             expect(ownerMarkers()).toEqual([markerName(process.pid, OwnershipPhase.opening)]);
+        });
+
+        it('reports a crash for a stale opening marker whose recycled PID reads as alive', async () => {
+            // The crashed opener's PID was recycled to an unrelated, still-live process, so
+            // isProcessAlive would say "alive". The marker's age (well past any real open)
+            // proves it is a crashed startup, so recovery must still fire.
+            mkdirSync(markersDir, { recursive: true });
+            const recycledPid = 99994;
+            writeFileSync(
+                join(markersDir, markerName(recycledPid, OwnershipPhase.opening)),
+                markerBody(recycledPid, 10 * 60 * 1000),
+            );
+            vi.spyOn(process, 'kill').mockImplementation((pid: number) => {
+                if (pid === recycledPid || pid === process.pid) return true; // recycled PID appears alive
+                throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' });
+            });
+
+            const tracker = new LMDBOwnershipTracker(lmdbDir);
+            await tracker.beginStartup(onCrash);
+
+            expect(onCrash).toHaveBeenCalledTimes(1);
+            // The stale marker must be cleared, not left to suppress future scans.
+            expect(existsSync(join(markersDir, markerName(recycledPid, OwnershipPhase.opening)))).toBe(false);
+        });
+
+        it('treats a live PID with a fresh opening marker as a live owner (sibling still opening)', async () => {
+            // A genuine in-progress open is recent, so a fresh opening marker on a live PID is a
+            // real sibling and its data must be preserved — the age override must not misfire.
+            mkdirSync(markersDir, { recursive: true });
+            const liveForeignPid = 99993;
+            writeFileSync(
+                join(markersDir, markerName(liveForeignPid, OwnershipPhase.opening)),
+                markerBody(liveForeignPid, 1000),
+            );
+            vi.spyOn(process, 'kill').mockImplementation((pid: number) => {
+                if (pid === liveForeignPid || pid === process.pid) return true;
+                throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' });
+            });
+
+            const tracker = new LMDBOwnershipTracker(lmdbDir);
+            await tracker.beginStartup(onCrash);
+
+            expect(onCrash).not.toHaveBeenCalled();
+            expect(existsSync(join(markersDir, markerName(liveForeignPid, OwnershipPhase.opening)))).toBe(true);
+        });
+
+        it('does not treat a stale running marker on a live PID as a crash', async () => {
+            // The age override applies only to the opening phase; a running marker means the env
+            // opened successfully, so an old one on a live PID is just a long-lived healthy sibling.
+            mkdirSync(markersDir, { recursive: true });
+            const liveForeignPid = 99992;
+            writeFileSync(
+                join(markersDir, markerName(liveForeignPid, OwnershipPhase.running)),
+                markerBody(liveForeignPid, 10 * 60 * 1000),
+            );
+            vi.spyOn(process, 'kill').mockImplementation((pid: number) => {
+                if (pid === liveForeignPid || pid === process.pid) return true;
+                throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' });
+            });
+
+            const tracker = new LMDBOwnershipTracker(lmdbDir);
+            await tracker.beginStartup(onCrash);
+
+            expect(onCrash).not.toHaveBeenCalled();
+            expect(existsSync(join(markersDir, markerName(liveForeignPid, OwnershipPhase.running)))).toBe(true);
+        });
+
+        it('falls back to PID liveness for an opening marker whose body has no timestamp', async () => {
+            // Legacy/unreadable bodies carry no timestamp, so the age override cannot apply and the
+            // scan must behave exactly as before: a live PID is a live owner, no crash reported.
+            mkdirSync(markersDir, { recursive: true });
+            const liveForeignPid = 99991;
+            writeFileSync(join(markersDir, markerName(liveForeignPid, OwnershipPhase.opening)), 'legacy-no-timestamp');
+            vi.spyOn(process, 'kill').mockImplementation((pid: number) => {
+                if (pid === liveForeignPid || pid === process.pid) return true;
+                throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' });
+            });
+
+            const tracker = new LMDBOwnershipTracker(lmdbDir);
+            await tracker.beginStartup(onCrash);
+
+            expect(onCrash).not.toHaveBeenCalled();
+            expect(existsSync(join(markersDir, markerName(liveForeignPid, OwnershipPhase.opening)))).toBe(true);
         });
 
         it('does not report a crash on retry from its own earlier opening marker', async () => {

@@ -158,6 +158,32 @@ describe('LMDB startup crash detection', () => {
         await factory.close();
     });
 
+    it('should wipe version directory when a stale opening marker PID was recycled to a live process', async () => {
+        // Reproduces the PID-recycling gap: a mid-open crash left an opening marker whose PID the
+        // OS later handed to an unrelated, still-live process. A bare liveness check would count it
+        // as a live owner and suppress recovery; the marker's stale timestamp proves it is a crash.
+        fs.mkdirSync(versionDir, { recursive: true });
+        fs.writeFileSync(join(versionDir, 'stale-data.mdb'), 'pretend-corrupt');
+        fs.mkdirSync(markersDir, { recursive: true });
+        const recycledPid = 99994;
+        const staleIso = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+        fs.writeFileSync(
+            join(markersDir, markerName(recycledPid, OwnershipPhase.opening)),
+            `${recycledPid}\n${staleIso}`,
+        );
+        vi.spyOn(process, 'kill').mockImplementation((pid: number) => {
+            if (pid === recycledPid || pid === process.pid) return true; // recycled PID reads as alive
+            throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' });
+        });
+
+        const factory = new LMDBStoreFactory(testDir);
+        await factory.initialize();
+
+        expect(fs.existsSync(join(versionDir, 'stale-data.mdb'))).toBe(false);
+
+        await factory.close();
+    });
+
     it('should preserve version directory when a dead owner shut down healthily', async () => {
         fs.mkdirSync(versionDir, { recursive: true });
         const sentinel = join(versionDir, 'must-not-be-wiped');
