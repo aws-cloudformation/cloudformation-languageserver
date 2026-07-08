@@ -37,6 +37,10 @@ export class AwsClient {
         return new STSClient(this.iamClientConfig());
     }
 
+    public getRegion(): string {
+        return this.credentialsProvider.getIAM().region;
+    }
+
     private iamClientConfig(): IamClientConfig {
         const credential = this.credentialsProvider.getIAM();
         return {

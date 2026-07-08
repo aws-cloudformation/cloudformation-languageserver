@@ -24,6 +24,7 @@ import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage, extractStatusReason } from '../../utils/Errors';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
+import { toHttpsPathStyleS3Url } from '../../utils/S3Url';
 import { toString } from '../../utils/String';
 import { pointToPosition } from '../../utils/TypeConverters';
 import {
@@ -120,7 +121,7 @@ export async function processChangeSet(
         if (params.s3Bucket && params.s3Key) {
             const putResult = await s3Service.putObjectContent(templateBody, params.s3Bucket, params.s3Key);
             expectedETag = putResult.ETag;
-            templateS3Url = `https://s3.amazonaws.com/${params.s3Bucket}/${params.s3Key}`;
+            templateS3Url = toHttpsPathStyleS3Url(s3Service.getRegion(), params.s3Bucket, params.s3Key);
         }
     } catch (error) {
         logger.error(error, 'Failed to upload to S3');

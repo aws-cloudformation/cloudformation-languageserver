@@ -7,6 +7,7 @@ import { dump } from 'js-yaml';
 import { detectDocumentType } from '../document/DocumentUtils';
 import { S3Service } from '../services/S3Service';
 import { readFileIfExists } from '../utils/File';
+import { toHttpsPathStyleS3Url } from '../utils/S3Url';
 import { ArtifactExporter } from './ArtifactExporter';
 
 export function isS3Url(url: string): boolean {
@@ -265,9 +266,10 @@ class CloudFormationStackResource extends Resource {
 
         const key = getS3Key(s3KeyPrefix, templateAbsPath);
         await this.s3Service.putObjectContent(exportedTemplateStr, bucketName, key);
-        const s3Url = `s3://${bucketName}/${key}`;
 
-        resourcePropertyDict[this.propertyName] = s3Url;
+        // CloudFormation requires an HTTPS URL for nested-template locations (TemplateURL / Location);
+        // a s3:// URI is rejected with "Domain name specified in <bucket> is not a valid S3 domain".
+        resourcePropertyDict[this.propertyName] = toHttpsPathStyleS3Url(this.s3Service.getRegion(), bucketName, key);
     }
 }
 
