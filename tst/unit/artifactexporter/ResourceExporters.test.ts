@@ -73,6 +73,7 @@ describe('ResourceExporters', () => {
         mockS3Service = {
             putObject: vi.fn().mockResolvedValue({ VersionId: 'version123' }),
             putObjectContent: vi.fn().mockResolvedValue({}),
+            getRegion: vi.fn().mockReturnValue('us-east-1'),
         } as any;
     });
 
@@ -171,6 +172,70 @@ describe('ResourceExporters', () => {
                 expect(resource.resourceType).toBe(resourceType);
                 expect(resource.propertyName).toBeDefined();
             }
+        });
+    });
+
+    describe('CloudFormationStackResource', () => {
+        // Regression test for https://github.com/aws-cloudformation/cloudformation-languageserver/issues/624:
+        // nested-stack TemplateURL must be an HTTPS URL, not an s3:// URI, otherwise CloudFormation
+        // rejects it with "Domain name specified in <bucket> is not a valid S3 domain".
+        beforeEach(() => {
+            vi.mocked(existsSync).mockReturnValue(true);
+            vi.mocked(statSync).mockReturnValue({ isFile: () => true, isDirectory: () => false } as any);
+        });
+
+        it('should set TemplateURL to an HTTPS path-style S3 URL, not an s3:// URI', async () => {
+            const ResourceClass = RESOURCE_EXPORTER_MAP.get('AWS::CloudFormation::Stack')!;
+            const resource = new ResourceClass(mockS3Service);
+            const resourceDict: Record<string, unknown> = { TemplateURL: './nested.yaml' };
+
+            await resource.doExport(resourceDict, '/abs/nested.yaml', 'test-bucket', 'prefix');
+
+            const templateUrl = resourceDict.TemplateURL as string;
+            expect(templateUrl.startsWith('https://')).toBe(true);
+            expect(templateUrl.startsWith('s3://')).toBe(false);
+            expect(templateUrl).toMatch(
+                /^https:\/\/s3\.us-east-1\.amazonaws\.com\/test-bucket\/prefix\/artifact\/nested-\d+\.yaml$/,
+            );
+            expect(mockS3Service.putObjectContent).toHaveBeenCalledWith(
+                'exported template',
+                'test-bucket',
+                expect.any(String),
+            );
+        });
+
+        it('should set Serverless::Application Location to an HTTPS URL', async () => {
+            const ResourceClass = RESOURCE_EXPORTER_MAP.get('AWS::Serverless::Application')!;
+            const resource = new ResourceClass(mockS3Service);
+            const resourceDict: Record<string, unknown> = { Location: './app.yaml' };
+
+            await resource.doExport(resourceDict, '/abs/app.yaml', 'test-bucket', '');
+
+            const location = resourceDict.Location as string;
+            expect(location.startsWith('https://')).toBe(true);
+            expect(location.startsWith('s3://')).toBe(false);
+        });
+
+        it('should use the china endpoint suffix for cn regions', async () => {
+            vi.mocked(mockS3Service.getRegion).mockReturnValue('cn-north-1');
+            const ResourceClass = RESOURCE_EXPORTER_MAP.get('AWS::CloudFormation::Stack')!;
+            const resource = new ResourceClass(mockS3Service);
+            const resourceDict: Record<string, unknown> = { TemplateURL: './nested.yaml' };
+
+            await resource.doExport(resourceDict, '/abs/nested.yaml', 'test-bucket', '');
+
+            expect(resourceDict.TemplateURL).toContain('https://s3.cn-north-1.amazonaws.com.cn/');
+        });
+
+        it('should throw when the template path is not a local file', async () => {
+            vi.mocked(existsSync).mockReturnValue(false);
+            const ResourceClass = RESOURCE_EXPORTER_MAP.get('AWS::CloudFormation::Stack')!;
+            const resource = new ResourceClass(mockS3Service);
+            const resourceDict: Record<string, unknown> = { TemplateURL: './missing.yaml' };
+
+            await expect(resource.doExport(resourceDict, '/abs/missing.yaml', 'test-bucket', '')).rejects.toThrow(
+                'Invalid template path',
+            );
         });
     });
 

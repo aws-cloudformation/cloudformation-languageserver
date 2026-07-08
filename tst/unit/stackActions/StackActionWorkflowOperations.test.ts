@@ -74,7 +74,9 @@ describe('StackActionWorkflowOperations', () => {
             getLine: vi.fn(),
         } as any;
 
-        mockS3Service = {} as any;
+        mockS3Service = {
+            getRegion: vi.fn().mockReturnValue('us-east-1'),
+        } as any;
 
         vi.clearAllMocks();
     });
@@ -152,7 +154,7 @@ describe('StackActionWorkflowOperations', () => {
                 StackName: 'test-stack',
                 ChangeSetName: expect.stringContaining(ExtensionName.replaceAll(' ', '-')),
                 TemplateBody: undefined,
-                TemplateURL: 'https://s3.amazonaws.com/test-bucket/template.yaml',
+                TemplateURL: 'https://s3.us-east-1.amazonaws.com/test-bucket/template.yaml',
                 Parameters: undefined,
                 Capabilities: undefined,
                 ChangeSetType: 'CREATE',

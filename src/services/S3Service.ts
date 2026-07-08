@@ -24,6 +24,10 @@ export class S3Service {
 
     public constructor(private readonly awsClient: AwsClient) {}
 
+    getRegion(): string {
+        return this.awsClient.getRegion();
+    }
+
     protected async withClient<T>(request: (client: S3Client) => Promise<T>): Promise<T> {
         try {
             const client = this.awsClient.getS3Client();
