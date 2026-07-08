@@ -268,7 +268,7 @@ class CloudFormationStackResource extends Resource {
         await this.s3Service.putObjectContent(exportedTemplateStr, bucketName, key);
 
         // CloudFormation requires an HTTPS URL for nested-template locations (TemplateURL / Location);
-        // an s3:// URI is rejected with "Domain name specified in <bucket> is not a valid S3 domain".
+        // a s3:// URI is rejected with "Domain name specified in <bucket> is not a valid S3 domain".
         resourcePropertyDict[this.propertyName] = toHttpsPathStyleS3Url(this.s3Service.getRegion(), bucketName, key);
     }
 }
