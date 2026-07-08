@@ -21,7 +21,9 @@ const RETRIABLE_RENAME_CODES = new Set(['EPERM', 'EACCES', 'EBUSY']);
 function wrapReadEnoentError(path: PathLike, err: unknown): never {
     if (isFileNotFoundError(err)) {
         const pathStr = toString(path);
-        log.warn(err, `${pathStr} does not exist`);
+
+        const code = (err as NodeJS.ErrnoException).code ?? 'Unknown';
+        log.warn({ code }, `${pathStr} does not exist`);
         throw new DoesNotExist(pathStr);
     }
 
