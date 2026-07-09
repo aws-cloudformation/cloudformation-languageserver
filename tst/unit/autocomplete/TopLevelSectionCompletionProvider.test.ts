@@ -97,7 +97,7 @@ describe('TopLevelSectionCompletionProvider', () => {
     test('should handle context with whitespace-only text', () => {
         mockSyntaxTree.topLevelSections.returns([]);
 
-        const mockContext = createTopLevelContext('Unknown', { text: '    ' });
+        const mockContext = createTopLevelContext('Unknown', { text: ' '.repeat(4) });
 
         const result = provider.getCompletions(mockContext, mockParams);
 

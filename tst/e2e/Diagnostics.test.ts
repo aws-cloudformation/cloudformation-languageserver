@@ -204,7 +204,7 @@ Resources:
 
             // Wait for empty diagnostics to be published for the closed URI
             await WaitFor.waitFor(() => {
-                const clearEvent = client.receivedDiagnostics.find(
+                const clearEvent = client.receivedDiagnostics.some(
                     (d: any) => d.uri === uri && d.diagnostics.length === 0,
                 );
                 if (!clearEvent) {

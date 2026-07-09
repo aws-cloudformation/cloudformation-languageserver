@@ -573,7 +573,7 @@ describe('Extract to Parameter - JSON Tests', () => {
 
                 // Verify formatting is preserved (4-space indentation)
                 const parameterEdit = changes?.find(
-                    (change: TextEdit) => change.newText.includes('    '), // 4-space indentation
+                    (change: TextEdit) => change.newText.includes(' '.repeat(4)), // 4-space indentation
                 );
                 expect(parameterEdit).toBeDefined();
             });

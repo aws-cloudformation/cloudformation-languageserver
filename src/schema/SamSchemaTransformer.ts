@@ -26,6 +26,7 @@ export type CloudFormationResourceSchema = {
     attributes?: Record<string, unknown>;
 };
 
+/* eslint-disable unicorn/no-this-outside-of-class */
 export const SamSchemaTransformer = {
     transformSamSchema(samSchema: SamSchema): Map<string, CloudFormationResourceSchema> {
         const resourceSchemas = new Map<string, CloudFormationResourceSchema>();

@@ -633,7 +633,7 @@ Resources:
                 const edit = extractAction?.edit;
                 const changes = edit?.changes?.[uri];
                 const parameterEdit = changes?.find(
-                    (change: TextEdit) => change.newText.includes('    '), // 4-space indentation
+                    (change: TextEdit) => change.newText.includes(' '.repeat(4)), // 4-space indentation
                 );
 
                 expect(parameterEdit).toBeDefined();

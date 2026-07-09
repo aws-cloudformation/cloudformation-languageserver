@@ -9,15 +9,15 @@ describe('FeatureFlagProvider', () => {
     const alphaConfigPath = join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json');
 
     it('can parse feature flags', () => {
-        [
+        for (const path of [
             join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
             join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'beta.json'),
             join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'prod.json'),
-        ].map((path) => {
+        ]) {
             const file = readFileSync(path, 'utf8');
             expect(file).toBeDefined();
             expect(FeatureFlagConfigSchema.parse(JSON.parse(file))).toBeDefined();
-        });
+        }
     });
 
     it('handles missing config file gracefully', () => {

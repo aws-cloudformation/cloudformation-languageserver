@@ -201,7 +201,7 @@ export function combinedSchemas(
 
 export function createSchemaFrom(schema: ResourceSchema, newName: string, changes: any): typeof Schemas.S3Bucket {
     return {
-        fileName: `${newName.toLowerCase().split('::').join('-')}.json`,
+        fileName: `${newName.toLowerCase().replaceAll('::', '-')}.json`,
         contents: JSON.stringify({
             ...schema.toJSON(),
             ...changes,

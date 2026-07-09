@@ -84,7 +84,7 @@ describe('ResourceExporters', () => {
         });
 
         it('should return false for invalid S3 URLs', () => {
-            expect(isS3Url('http://example.com')).toBe(false);
+            expect(isS3Url('https://example.com')).toBe(false);
             expect(isS3Url('s3://bucket')).toBe(false);
             expect(isS3Url('bucket/key')).toBe(false);
             expect(isS3Url('')).toBe(false);

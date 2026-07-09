@@ -101,12 +101,7 @@ if (parentPort) {
 }
 
 type InitPhase =
-    | 'pyodide_load'
-    | 'micropip_load'
-    | 'ssl_load'
-    | 'packages_load'
-    | 'cfn_lint_install'
-    | 'cfn_lint_setup';
+    'pyodide_load' | 'micropip_load' | 'ssl_load' | 'packages_load' | 'cfn_lint_install' | 'cfn_lint_setup';
 
 let currentInitPhase: InitPhase = 'pyodide_load';
 

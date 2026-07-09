@@ -87,6 +87,7 @@ function fetchReleases(): GHRelease[] {
     });
 }
 
+// eslint-disable-next-line unicorn/no-exports-in-scripts
 export function parseTarget(filename: string): { platform: string; arch: string; nodejs?: string } | null {
     // eslint-disable-next-line security/detect-unsafe-regex
     const match = filename.match(/^cloudformation-languageserver-(.*)-(.*)-(x64|arm64)(?:-node(\d+))?\.zip$/);

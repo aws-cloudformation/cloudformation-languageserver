@@ -31,8 +31,8 @@ describe('IndentationUtils', () => {
                     detectIndentation: true,
                 };
 
-                expect(getIndentationString(editorSettings4, DocumentType.YAML)).toBe('    '); // 4 spaces
-                expect(getIndentationString(editorSettings8, DocumentType.YAML)).toBe('        '); // 8 spaces
+                expect(getIndentationString(editorSettings4, DocumentType.YAML)).toBe(' '.repeat(4)); // 4 spaces
+                expect(getIndentationString(editorSettings8, DocumentType.YAML)).toBe(' '.repeat(8)); // 8 spaces
             });
         });
 
@@ -46,7 +46,7 @@ describe('IndentationUtils', () => {
 
                 const result = getIndentationString(editorSettings, DocumentType.JSON);
 
-                expect(result).toBe('    '); // 4 spaces
+                expect(result).toBe(' '.repeat(4)); // 4 spaces
             });
 
             test('should return single tab for JSON when insertSpaces is false', () => {

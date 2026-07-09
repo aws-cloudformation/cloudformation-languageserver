@@ -5,18 +5,19 @@
 export const PlaceholderConstants = {
     /** Common prefix for all placeholders */
     PREFIX: '__PLACEHOLDER__',
-
     /** Placeholder purposes */
     WRITE_ONLY_REQUIRED: 'WRITE_ONLY_REQUIRED',
     CLONE_INPUT_REQUIRED: 'CLONE_INPUT_REQUIRED',
 
     /** Generate placeholder text with logical ID */
     createPlaceholder(purpose: string, logicalId: string): string {
+        // eslint-disable-next-line unicorn/no-this-outside-of-class
         return `${this.PREFIX}${purpose}__${logicalId}`;
     },
 
     /** Check if text contains any placeholder */
     hasPlaceholders(text: string): boolean {
+        // eslint-disable-next-line unicorn/no-this-outside-of-class
         return text.includes(this.PREFIX);
     },
 } as const;

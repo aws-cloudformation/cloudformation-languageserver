@@ -3,6 +3,7 @@
         "module": "CommonJS",
         "target": "ES2022",
         "moduleResolution": "node",
+        "ignoreDeprecations": "6.0",
         "lib": ["ES2023"],
         "declaration": true,
         "rootDir": ".",
