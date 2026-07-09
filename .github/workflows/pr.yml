@@ -79,3 +79,57 @@ jobs:
       - name: Test
         shell: bash
         run: GOPROXY=direct go test -C ./cfn-init -v -cover ./...
+
+  detect-changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      release-manifest: ${{ steps.filter.outputs.release-manifest }}
+      feature-flags: ${{ steps.filter.outputs.feature-flags }}
+    steps:
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            release-manifest:
+              - 'assets/release-manifest.json'
+            feature-flags:
+              - 'assets/featureFlag/*.json'
+
+  validate-release-manifest:
+    needs: [ detect-changes ]
+    if: needs.detect-changes.outputs.release-manifest == 'true'
+    uses: ./.github/workflows/validate-release-manifest.yml
+
+  validate-feature-flags:
+    needs: [ detect-changes ]
+    if: needs.detect-changes.outputs.feature-flags == 'true'
+    uses: ./.github/workflows/validate-feature-flags.yml
+
+  # Single always-running gate so branch protection can require one stable
+  # check. The validate-* jobs are conditional and report "skipped" on PRs that
+  # don't touch their paths; a skipped job used directly as a required check
+  # would leave the PR pending forever. This job runs unconditionally and only
+  # fails if an upstream job actually failed or was cancelled (skipped is OK).
+  # Make "PR Checks" the single required status check in branch protection.
+  pr-checks:
+    name: PR Checks
+    needs: [ detect-changes, validate-release-manifest, validate-feature-flags ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify no required check failed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Upstream job results: $RESULTS"
+          for result in $RESULTS; do
+            if [[ "$result" == "failure" || "$result" == "cancelled" ]]; then
+              echo "::error::A required PR check did not pass (result: $result)"
+              exit 1
+            fi
+          done
+          echo "All required PR checks passed or were skipped as expected."
