@@ -4,17 +4,19 @@ import { join } from 'path';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { StoreName } from '../../../src/datastore/DataStore';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDBStoreFactory';
+import { LMDBOwnershipTracker } from '../../../src/datastore/lmdb/OwnershipTracker';
 
 describe('LMDB fork detection and recovery', () => {
     let testDir: string;
     let factory: LMDBStoreFactory;
     let originalPid: number;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-recovery-test', v4());
         originalPid = process.pid;
         fs.mkdirSync(testDir, { recursive: true });
         factory = new LMDBStoreFactory(testDir);
+        await factory.initialize();
     });
 
     afterEach(async () => {
@@ -217,6 +219,7 @@ describe('LMDB fork detection and recovery', () => {
             fs.rmSync(testDir, { recursive: true, force: true });
 
             const newFactory = new LMDBStoreFactory(testDir);
+            await newFactory.initialize();
 
             await expect(newFactory.close()).resolves.not.toThrow();
         });
@@ -234,6 +237,18 @@ describe('LMDB fork detection and recovery', () => {
             expect(fs.existsSync(join(lmdbDir, 'v2'))).toBe(true);
 
             await factory.close();
+        });
+
+        it('should remove old version directories but preserve the markers directory', () => {
+            const lmdbDir = join(testDir, 'lmdb');
+            const markersDir = join(lmdbDir, LMDBOwnershipTracker.DirName);
+            fs.mkdirSync(join(lmdbDir, 'v1'), { recursive: true });
+
+            (factory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
+
+            expect(fs.existsSync(join(lmdbDir, 'v1'))).toBe(false);
+            expect(fs.existsSync(markersDir)).toBe(true);
+            expect(fs.existsSync(join(lmdbDir, 'v6'))).toBe(true);
         });
     });
 });

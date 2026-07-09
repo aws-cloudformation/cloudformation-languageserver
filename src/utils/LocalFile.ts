@@ -20,7 +20,7 @@ import {
 
 const log = LoggerFactory.getLogger('LocalFile');
 
-const LOCK_OPTIONS: LockOptions = {
+export const LOCK_OPTIONS: LockOptions = {
     stale: 10_000, // A lock older than this (ms) is considered abandoned and can be stolen by another process
     realpath: false, // Use path.resolve instead of fs.realpath so locking works on files that don't exist yet (first write)
     retries: {

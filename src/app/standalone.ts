@@ -16,6 +16,7 @@ async function onInitialize(params: ExtendedInitializeParams) {
     // Dynamically load these modules so that OTEL can instrument all the libraries first
     const { CfnInfraCore } = await import('../server/CfnInfraCore');
     const core = new CfnInfraCore(lsp.components, params);
+    await core.dataStoreFactory.initialize();
 
     const { CfnServer } = await import('../server/CfnServer');
     server = new CfnServer(lsp.components, core);

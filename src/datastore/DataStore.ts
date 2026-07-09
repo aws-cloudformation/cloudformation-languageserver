@@ -36,11 +36,15 @@ export interface DataStoreFactory extends Closeable {
 
     storeNames: ReadonlyArray<string>;
 
+    initialize(): Promise<void>;
+
     close(): Promise<void>;
 }
 
 export interface DataStoreFactoryProvider extends Closeable {
     get(store: StoreName, persistence: Persistence): DataStore;
+
+    initialize(): Promise<void>;
 }
 
 export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider {
@@ -52,6 +56,10 @@ export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider 
 
     getMemoryStore(store: StoreName): DataStore {
         return this.memoryStoreFactory.get(store);
+    }
+
+    initialize(): Promise<void> {
+        return this.memoryStoreFactory.initialize();
     }
 
     close(): Promise<void> {
@@ -78,6 +86,11 @@ export class MultiDataStoreFactoryProvider implements DataStoreFactoryProvider {
             return this.memoryStoreFactory.get(store);
         }
         return this.persistedStore.get(store);
+    }
+
+    async initialize(): Promise<void> {
+        await this.memoryStoreFactory.initialize();
+        await this.persistedStore.initialize();
     }
 
     close(): Promise<void> {

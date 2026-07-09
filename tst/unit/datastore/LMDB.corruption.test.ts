@@ -24,10 +24,11 @@ describe('LMDB error recovery', () => {
     let testDir: string;
     let factory: LMDBStoreFactory;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-corruption-recovery-test', `test-${Date.now()}`);
         fs.mkdirSync(testDir, { recursive: true });
         factory = new LMDBStoreFactory(testDir);
+        await factory.initialize();
     });
 
     afterEach(async () => {

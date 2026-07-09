@@ -9,10 +9,11 @@ describe('LMDB retry after recovery', () => {
     let testDir: string;
     let factory: LMDBStoreFactory;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-retry-test', v4());
         fs.mkdirSync(testDir, { recursive: true });
         factory = new LMDBStoreFactory(testDir);
+        await factory.initialize();
     });
 
     afterEach(async () => {

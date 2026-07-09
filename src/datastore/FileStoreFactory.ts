@@ -60,6 +60,10 @@ export class FileStoreFactory implements DataStoreFactory {
         return val;
     }
 
+    initialize(): Promise<void> {
+        return Promise.resolve();
+    }
+
     close(): Promise<void> {
         if (this.closed) return Promise.resolve();
         this.closed = true;
