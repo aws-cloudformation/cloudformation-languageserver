@@ -2,7 +2,8 @@ import { randomUUID as v4 } from 'crypto';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync, readdirSync, unlinkSync, utimesSync } from 'fs';
 import { join } from 'path';
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
-import { LocalFile } from '../../../src/utils/LocalFile';
+import { LocalFile, LOCK_OPTIONS } from '../../../src/utils/LocalFile';
+import { LoggerFactory } from '../../../src/telemetry/LoggerFactory';
 import { waitFor } from '../../utils/Utils';
 
 describe('LocalFile', () => {
@@ -228,6 +229,27 @@ describe('LocalFile', () => {
             // No orphaned tmp files should remain
             const tmpFiles = readdirSync(testDir).filter((f: string) => f.endsWith('.tmp'));
             expect(tmpFiles).toHaveLength(0);
+        });
+    });
+
+    describe('LOCK_OPTIONS onCompromised', () => {
+        const staleLockError = () => new Error('Unable to update lock within the stale threshold');
+
+        it('should not rethrow when the advisory lock is compromised', () => {
+            const { onCompromised } = LOCK_OPTIONS;
+            expect(onCompromised).toBeDefined();
+            expect(() => onCompromised?.(staleLockError())).not.toThrow();
+        });
+
+        it('should log the compromise with the original error instead of failing', () => {
+            const logger = LoggerFactory.getLogger('LocalFile');
+            const warnSpy = vi.spyOn(logger, 'warn');
+            const error = staleLockError();
+
+            LOCK_OPTIONS.onCompromised?.(error);
+
+            expect(warnSpy).toHaveBeenCalledWith(error, expect.any(String));
+            warnSpy.mockRestore();
         });
     });
 });

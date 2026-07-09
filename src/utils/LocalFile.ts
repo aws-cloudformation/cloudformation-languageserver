@@ -30,6 +30,12 @@ export const LOCK_OPTIONS: LockOptions = {
         maxTimeout: 2000, // Maximum delay (ms) cap for any single retry
         randomize: true, // Add jitter to retry delays to avoid contention between concurrent writes
     },
+    onCompromised: (error) => {
+        log.warn(
+            error,
+            'Advisory file lock compromised (host sleep/suspend exceeded the stale window, or a concurrent process stole the stale lock); writes are atomic and reads are lockless, so continuing without failing',
+        );
+    },
 };
 const STALE_TMP_FILE_THRESHOLD_MS = 30 * 60 * 1000;
 
