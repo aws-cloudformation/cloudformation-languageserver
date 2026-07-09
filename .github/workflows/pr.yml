@@ -116,7 +116,6 @@ jobs:
   # fails if an upstream job actually failed or was cancelled (skipped is OK).
   # Make "PR Checks" the single required status check in branch protection.
   pr-checks:
-    name: PR Checks
     needs: [ detect-changes, validate-release-manifest, validate-feature-flags ]
     if: always()
     runs-on: ubuntu-latest
