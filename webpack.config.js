@@ -30,6 +30,10 @@ const KEEP_FILES = [
 ];
 const IGNORE_PATHS = ['/bin/', '/test/', '/benchmarks/', '/examples/'];
 
+// Never externalize these — they must be bundled inline to avoid
+// version mismatches when consumed by bundled dependencies (e.g. proper-lockfile)
+const NEVER_EXTERNALIZE = ['signal-exit', 'glob', 'minimatch'];
+
 function generateExternals() {
     const externals = [...ExternalsDeps, ...UnusedDeps];
     const collected = new Set(externals);
@@ -52,6 +56,11 @@ function generateExternals() {
     for (const dep of NativePrebuilds) {
         collected.add(dep);
     }
+
+    for (const dep of NEVER_EXTERNALIZE) {
+        collected.delete(dep);
+    }
+
     return Array.from(collected).sort();
 }
 
