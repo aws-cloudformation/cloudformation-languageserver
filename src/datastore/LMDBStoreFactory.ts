@@ -166,6 +166,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
         this.cleanupTimeout = setTimeout(() => {
             this.cleanupOldVersions();
         }, CleanupDelayMs);
+
+        this.metricsInterval.unref();
+        this.cleanupTimeout.unref();
     }
 
     private beginOp(): () => void {

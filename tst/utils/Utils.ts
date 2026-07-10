@@ -15,7 +15,6 @@ export class WaitFor {
     ) {}
 
     async wait(block: () => void | Promise<void>): Promise<void> {
-        let lastError: Error | null = null;
         const start = performance.now();
 
         while (performance.now() - start <= this.maxWaitMs) {
@@ -24,16 +23,20 @@ export class WaitFor {
                 return;
             } catch (e) {
                 const error = e as Error;
-                if (this.throwableTypesToExpect.some((type) => error instanceof type)) {
-                    lastError = error;
-                } else {
+                if (!this.throwableTypesToExpect.some((type) => error instanceof type)) {
                     throw error;
                 }
             }
             await flushAllPromises();
             await new Promise((resolve) => setTimeout(resolve, this.delayIntervalMs));
         }
-        throw lastError!;
+
+        // The deadline is wall-clock (performance.now). On a loaded runner a scheduling or
+        // GC stall can consume the whole budget *after* the awaited condition already became
+        // true, so the loop would otherwise throw a stale error for an operation that has in
+        // fact completed. Evaluate the condition one final time before giving up: if it now
+        // passes we return, and if it genuinely still fails this rethrows the current error.
+        await block();
     }
 
     static async waitFor(

@@ -99,24 +99,23 @@ jobs:
             feature-flags:
               - 'assets/featureFlag/*.json'
 
-  validate-release-manifest:
+  validate-release-manifest-file:
     needs: [ detect-changes ]
     if: needs.detect-changes.outputs.release-manifest == 'true'
     uses: ./.github/workflows/validate-release-manifest.yml
 
-  validate-feature-flags:
+  validate-feature-flag-files:
     needs: [ detect-changes ]
     if: needs.detect-changes.outputs.feature-flags == 'true'
     uses: ./.github/workflows/validate-feature-flags.yml
 
-  # Single always-running gate so branch protection can require one stable
-  # check. The validate-* jobs are conditional and report "skipped" on PRs that
+  # Single always-running gate for file changes
+  # The validate file jobs are conditional and report "skipped" on PRs that
   # don't touch their paths; a skipped job used directly as a required check
   # would leave the PR pending forever. This job runs unconditionally and only
   # fails if an upstream job actually failed or was cancelled (skipped is OK).
-  # Make "PR Checks" the single required status check in branch protection.
-  pr-checks:
-    needs: [ detect-changes, validate-release-manifest, validate-feature-flags ]
+  file-change-checks:
+    needs: [ detect-changes, validate-release-manifest-file, validate-feature-flag-files ]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -131,4 +130,4 @@ jobs:
               exit 1
             fi
           done
-          echo "All required PR checks passed or were skipped as expected."
+          echo "All file change checks passed or were skipped as expected."

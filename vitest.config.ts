@@ -25,9 +25,11 @@ export default defineConfig({
                 'src/services/guard/assets/**',
             ],
         },
-        isolate: true, // Ensure each test file runs in isolation
+        isolate: true,
+        pool: 'forks',
         maxWorkers: 4,
         execArgv: ['--max-old-space-size=4096'],
-        testTimeout: 30000, // Increase timeout for longer-running tests
+        testTimeout: 10_000,
+        teardownTimeout: 15_000,
     },
 });
