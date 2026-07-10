@@ -195,4 +195,34 @@ describe('ResourceSectionCompletionProvider', () => {
 
         expect(result).toEqual([]);
     });
+
+    test('should not trigger resource-state autocomplete on Invoked completion in Properties', () => {
+        // Regression (V2237347760): the as-you-type CCAPI GetResource path was removed.
+        // An Invoked completion inside a resource's Properties must return only schema
+        // property completions synchronously — previously this returned a Promise that
+        // merged live resource-state completions fetched via Cloud Control API.
+        const mockContext = createResourceContext('MyBucket', {
+            text: '',
+            propertyPath: ['Resources', 'MyBucket', 'Properties', ''],
+            data: {
+                Type: 'AWS::S3::Bucket',
+                Properties: { BucketName: 'existing-bucket' },
+            },
+        });
+
+        const invokedParams: CompletionParams = {
+            ...mockParams,
+            context: { triggerKind: CompletionTriggerKind.Invoked },
+        };
+
+        const propertyProvider = resourceProviders.get('Property' as any)!;
+        const mockCompletions = [{ label: 'AccessControl', kind: CompletionItemKind.Property }];
+        const spy = vi.spyOn(propertyProvider, 'getCompletions').mockReturnValue(mockCompletions);
+
+        const result = provider.getCompletions(mockContext, invokedParams);
+
+        expect(result).not.toBeInstanceOf(Promise);
+        expect(result).toEqual(mockCompletions);
+        spy.mockRestore();
+    });
 });
