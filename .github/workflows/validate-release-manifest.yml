@@ -1,11 +1,7 @@
 name: Validate Release Manifest
-run-name: Validate Release Manifest
 
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'assets/release-manifest.json'
+  workflow_call:
 
 permissions:
   contents: read
