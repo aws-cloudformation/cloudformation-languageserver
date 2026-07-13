@@ -15,6 +15,7 @@ import { encryptionStrategy } from './lmdb/Utils';
 
 const MetricsIntervalMs = 60 * 1000;
 const CleanupDelayMs = 2 * 60 * 1000;
+const CorruptionEscalationWindowMs = 30 * 1000;
 
 export class LMDBStoreFactory implements DataStoreFactory {
     private readonly log = LoggerFactory.getLogger('LMDB.Global');
@@ -29,6 +30,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private initPromise?: Promise<void>;
     private closed = false;
     private activeOps = 0;
+    private lastCorruptionAt = 0;
 
     private readonly stores = new Map<StoreName, LMDBStore>();
     private readonly ownershipTracker: LMDBOwnershipTracker;
@@ -189,6 +191,8 @@ export class LMDBStoreFactory implements DataStoreFactory {
         try {
             if (msg.includes('MDB_BAD_RSLOT') || msg.includes("doesn't match env pid")) {
                 this.recoverFromFork();
+            } else if (isCorruptionError(msg)) {
+                this.recoverFromCorruption();
             } else {
                 this.recoverFromError();
             }
@@ -227,6 +231,20 @@ export class LMDBStoreFactory implements DataStoreFactory {
         } catch {
             this.log.warn('Fork recovery failed, deleting and recreating');
             this.deleteAndRecreate();
+        }
+    }
+
+    private recoverFromCorruption(): void {
+        const now = Date.now();
+        const recurring = now - this.lastCorruptionAt < CorruptionEscalationWindowMs;
+        this.lastCorruptionAt = now;
+        this.telemetry.count('corruption.detected', 1);
+
+        if (recurring) {
+            this.telemetry.count('corruption.recreate', 1);
+            this.deleteAndRecreate();
+        } else {
+            this.recoverFromError();
         }
     }
 
@@ -384,4 +402,14 @@ function createEnv(lmdbDir: string) {
 
 function createDB(env: RootDatabase, name: string) {
     return env.openDB<unknown, string>({ name, encoding: Encoding });
+}
+
+function isCorruptionError(msg: string): boolean {
+    return (
+        msg.includes('MDB_CORRUPTED') ||
+        msg.includes('MDB_PAGE_NOTFOUND') ||
+        msg.includes('MDB_BAD_VALSIZE') ||
+        msg.includes('MDB_CURSOR_FULL') ||
+        msg.includes('MDB_BAD_TXN')
+    );
 }

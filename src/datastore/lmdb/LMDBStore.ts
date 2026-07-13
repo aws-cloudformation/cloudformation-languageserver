@@ -54,6 +54,10 @@ export class LMDBStore implements DataStore {
                     this.validateDatabase();
                     return await fn();
                 } catch (e) {
+                    const commitError = (e as { commitError?: unknown }).commitError;
+                    if (commitError instanceof Promise) {
+                        commitError.catch((cause) => this.onError(cause));
+                    }
                     this.onError(e);
                     this.telemetry.count(`retry.${op}`, 1);
                     this.validateDatabase();
