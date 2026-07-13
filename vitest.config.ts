@@ -26,8 +26,10 @@ export default defineConfig({
             ],
         },
         isolate: true, // Ensure each test file runs in isolation
+        pool: 'forks',
         maxWorkers: 4,
         execArgv: ['--max-old-space-size=4096'],
         testTimeout: 30000, // Increase timeout for longer-running tests
+        teardownTimeout: 15000,
     },
 });

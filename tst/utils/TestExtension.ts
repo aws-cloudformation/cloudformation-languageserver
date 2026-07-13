@@ -259,6 +259,7 @@ export class TestExtension implements Closeable {
         await this.clientConnection.sendRequest(ShutdownRequest.type);
         await this.clientConnection.sendNotification(ExitNotification.type);
         this.clientConnection.dispose();
+        await this.server?.close();
     }
 
     // ====================================================================
