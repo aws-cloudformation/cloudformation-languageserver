@@ -36,7 +36,9 @@ export const LOCK_OPTIONS: LockOptions = {
             error,
             'Advisory file lock compromised (host sleep/suspend exceeded the stale window, or a concurrent process stole the stale lock); writes are atomic and reads are lockless, so continuing without failing',
         );
-        TelemetryService.instance.get('LocalFile').count('lock.compromised', 1);
+        TelemetryService.instance
+            .get('LocalFile')
+            .error('lock.compromised', error, undefined, { captureErrorAttributes: true });
     },
 };
 const STALE_TMP_FILE_THRESHOLD_MS = 30 * 60 * 1000;

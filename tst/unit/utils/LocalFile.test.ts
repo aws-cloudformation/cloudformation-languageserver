@@ -253,14 +253,17 @@ describe('LocalFile', () => {
             warnSpy.mockRestore();
         });
 
-        it('should emit a lock.compromised metric', () => {
+        it('should emit a lock.compromised error metric carrying the compromise error', () => {
             const telemetry = TelemetryService.instance.get('LocalFile');
-            const countSpy = vi.spyOn(telemetry, 'count');
+            const errorSpy = vi.spyOn(telemetry, 'error');
+            const error = staleLockError();
 
-            LOCK_OPTIONS.onCompromised?.(staleLockError());
+            LOCK_OPTIONS.onCompromised?.(error);
 
-            expect(countSpy).toHaveBeenCalledWith('lock.compromised', 1);
-            countSpy.mockRestore();
+            expect(errorSpy).toHaveBeenCalledWith('lock.compromised', error, undefined, {
+                captureErrorAttributes: true,
+            });
+            errorSpy.mockRestore();
         });
     });
 });
