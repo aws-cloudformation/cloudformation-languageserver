@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ScopedTelemetry } from '../../../src/telemetry/ScopedTelemetry';
-import { markSuppressFault } from '../../../src/utils/FaultSuppression';
+import { markSuppressFault } from '../../../src/utils/errors/FaultSuppression';
 
 describe('ScopedTelemetry', () => {
     let mockMeter: any;

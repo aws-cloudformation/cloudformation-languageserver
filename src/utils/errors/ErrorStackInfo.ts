@@ -1,7 +1,7 @@
 import { Attributes } from '@opentelemetry/api';
+import { sanitizeMessage } from '../Sanitizer';
 import { classifyAwsError } from './AwsErrorMapper';
-import { extractRootCause, extractErrorCode, extractHttpStatus } from './Errors';
-import { sanitizeMessage } from './Sanitizer';
+import { extractRootCause, extractErrorCode, extractHttpStatus } from './ErrorUtils';
 
 /**
  * Best effort extraction of location of exception based on stack trace

@@ -23,7 +23,7 @@ import { GetStackTemplateParams, GetStackTemplateResult } from '../stacks/StackR
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { EventType } from '../usageTracker/UsageTracker';
-import { extractErrorMessage } from '../utils/Errors';
+import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 const log = LoggerFactory.getLogger('ResourceHandler');

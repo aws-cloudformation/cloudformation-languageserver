@@ -34,7 +34,7 @@ import { mockClient } from 'aws-sdk-client-mock';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AwsClient } from '../../../src/services/AwsClient';
 import { CfnService } from '../../../src/services/CfnService';
-import { hasSuppressFault } from '../../../src/utils/FaultSuppression';
+import { hasSuppressFault } from '../../../src/utils/errors/FaultSuppression';
 import { TEST_CONSTANTS, MOCK_RESPONSES } from './CfnServiceTestConstants';
 
 // Mock the waiter functions

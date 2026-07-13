@@ -1,3 +1,28 @@
+export class CredentialsProviderError extends Error {
+    constructor(message: string, options?: ErrorOptions) {
+        super(message, options);
+        this.name = 'CredentialsProviderError';
+        Object.setPrototypeOf(this, CredentialsProviderError.prototype);
+    }
+}
+
+export class RequestCancellationError extends Error {
+    constructor(key: string, options?: ErrorOptions) {
+        super(`Request cancelled for key: ${key}`, options);
+        this.name = 'CancellationError';
+        Object.setPrototypeOf(this, RequestCancellationError.prototype);
+    }
+}
+
+export class DoesNotExist extends Error {
+    constructor(resource: string, options?: ErrorOptions) {
+        super(`${resource} does not exist`, options);
+        this.name = this.constructor.name;
+        Object.setPrototypeOf(this, DoesNotExist.prototype);
+    }
+}
+
+// ======= CFN LINT Errors =======
 export class WorkerNotInitializedError extends Error {
     constructor(message: string = 'Worker not initialized', options?: ErrorOptions) {
         super(message, options);

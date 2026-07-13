@@ -1,5 +1,5 @@
 import { ZipFile, fromBuffer, Entry } from 'yauzl';
-import { extractErrorMessage } from '../utils/Errors';
+import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { AwsRegion } from '../utils/Region';
 import { SchemaFileType } from './RegionalSchemas';
 

@@ -4,7 +4,7 @@ import {
     markIfClientError,
     markSuppressFault,
     SUPPRESS_FAULT,
-} from '../../../src/utils/FaultSuppression';
+} from '../../../../src/utils/errors/FaultSuppression';
 
 describe('FaultSuppression', () => {
     describe('markSuppressFault', () => {

@@ -2,7 +2,7 @@ import { DataStore } from '../datastore/DataStore';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
-import { isClientNetworkError } from '../utils/Errors';
+import { isClientNetworkError } from '../utils/errors/ErrorUtils';
 import { downloadJson } from '../utils/RemoteDownload';
 import { GetSchemaTask } from './GetSchemaTask';
 import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ResponseError } from 'vscode-languageserver';
-import { OnlineFeatureErrorCode } from '../../../src/utils/OnlineFeatureError';
+import { OnlineFeatureErrorCode } from '../../../src/utils/errors/OnlineFeatureError';
 import { withOnlineGuard } from '../../../src/utils/OnlineFeatureWrapper';
 
 describe('withOnlineGuard', () => {
