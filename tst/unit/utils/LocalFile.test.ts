@@ -4,6 +4,7 @@ import { join } from 'path';
 import { describe, it, expect, afterEach, beforeEach, vi } from 'vitest';
 import { LocalFile, LOCK_OPTIONS } from '../../../src/utils/LocalFile';
 import { LoggerFactory } from '../../../src/telemetry/LoggerFactory';
+import { TelemetryService } from '../../../src/telemetry/TelemetryService';
 import { waitFor } from '../../utils/Utils';
 
 describe('LocalFile', () => {
@@ -250,6 +251,16 @@ describe('LocalFile', () => {
 
             expect(warnSpy).toHaveBeenCalledWith(error, expect.any(String));
             warnSpy.mockRestore();
+        });
+
+        it('should emit a lock.compromised metric', () => {
+            const telemetry = TelemetryService.instance.get('LocalFile');
+            const countSpy = vi.spyOn(telemetry, 'count');
+
+            LOCK_OPTIONS.onCompromised?.(staleLockError());
+
+            expect(countSpy).toHaveBeenCalledWith('lock.compromised', 1);
+            countSpy.mockRestore();
         });
     });
 });

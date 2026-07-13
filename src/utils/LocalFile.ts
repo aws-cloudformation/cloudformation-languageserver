@@ -5,6 +5,7 @@ import { Stream } from 'node:stream';
 import { basename, dirname, join } from 'path';
 import { LockOptions, lock } from 'proper-lockfile';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { TelemetryService } from '../telemetry/TelemetryService';
 import { processId } from './Environment';
 import { DoesNotExist } from './Errors';
 import {
@@ -35,6 +36,7 @@ export const LOCK_OPTIONS: LockOptions = {
             error,
             'Advisory file lock compromised (host sleep/suspend exceeded the stale window, or a concurrent process stole the stale lock); writes are atomic and reads are lockless, so continuing without failing',
         );
+        TelemetryService.instance.get('LocalFile').count('lock.compromised', 1);
     },
 };
 const STALE_TMP_FILE_THRESHOLD_MS = 30 * 60 * 1000;
