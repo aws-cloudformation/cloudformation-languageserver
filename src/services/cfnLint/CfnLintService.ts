@@ -14,7 +14,7 @@ import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
 import { Delayer } from '../../utils/Delayer';
 import {
-    InitializationError,
+    CfnLintInitializationError,
     WorkerNotInitializedError,
     MountError,
     RequestCancellationError,
@@ -225,7 +225,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             }
         } catch (error) {
             this.status = STATUS.Failed;
-            const phase = error instanceof InitializationError ? error.phase : 'unknown';
+            const phase = error instanceof CfnLintInitializationError ? error.phase : 'unknown';
             this.telemetry.error('init.fault', error, undefined, {
                 captureErrorType: true,
                 attributes: { 'init.phase': phase },

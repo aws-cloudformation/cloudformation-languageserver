@@ -1,5 +1,7 @@
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { CLIENT_NETWORK_ERROR_CODES, extractErrorMessage } from './ErrorUtils';
+import { CredentialsProviderError } from './ErrorClasses';
+import { extractErrorCode, extractErrorMessage } from './ErrorUtils';
+import { isClientNetworkError } from './GenericErrorMapper';
 import { createOnlineFeatureError, OnlineFeatureErrorCode } from './OnlineFeatureError';
 
 type AwsError = {
@@ -12,7 +14,7 @@ type AwsError = {
 };
 
 const CREDENTIAL_ERROR_NAMES = new Set([
-    'CredentialsProviderError',
+    CredentialsProviderError.name,
     'InvalidSignatureException',
     'SignatureDoesNotMatch',
     'InvalidClientTokenId',
@@ -21,41 +23,127 @@ const CREDENTIAL_ERROR_NAMES = new Set([
     'ExpiredTokenException',
 ]);
 
-const AWS_NETWORK_ERROR_NAMES: ReadonlySet<string> = new Set(['NetworkingError', 'TimeoutError']);
+const AWS_NETWORK_ERROR_NAMES = new Set(['NetworkingError', 'TimeoutError']);
 
-const NETWORK_ERROR_NAMES: ReadonlySet<string> = new Set([...AWS_NETWORK_ERROR_NAMES, ...CLIENT_NETWORK_ERROR_CODES]);
+const PERMISSION_ERROR_NAMES = new Set([
+    'AccessDenied',
+    'AccessDeniedException',
+    'ForbiddenException',
+    'NotAuthorizedException',
+    'OperationNotPermittedException',
+    'UnauthorizedException',
+    'UnauthorizedOperation',
+]);
 
+const THROTTLING_ERROR_NAMES = new Set([
+    'BandwidthLimitExceeded',
+    'EC2ThrottledException',
+    'ProvisionedThroughputExceededException',
+    'RequestLimitExceeded',
+    'RequestThrottled',
+    'RequestThrottledException',
+    'SlowDown',
+    'Throttling',
+    'ThrottlingException',
+    'TooManyRequestsException',
+]);
+
+const NOT_FOUND_ERROR_NAMES = new Set([
+    'ChangeSetNotFoundException',
+    'NoSuchBucket',
+    'NoSuchEntity',
+    'NoSuchEntityException',
+    'NoSuchKey',
+    'NotFound',
+    'NotFoundException',
+    'ResourceNotFoundException',
+    'StackNotFoundException',
+    'TypeNotFoundException',
+]);
+
+const CONFLICT_ERROR_NAMES = new Set([
+    'AlreadyExistsException',
+    'ConcurrentModificationException',
+    'ConflictException',
+    'OperationInProgressException',
+    'ResourceConflictException',
+]);
+
+const VALIDATION_ERROR_NAMES = new Set([
+    'BadRequestException',
+    'InvalidInputException',
+    'InvalidParameterCombination',
+    'InvalidParameterException',
+    'InvalidParameterValueException',
+    'InvalidRequestException',
+    'MalformedPolicyDocument',
+    'MalformedPolicyDocumentException',
+    'SerializationException',
+    'UnknownAction',
+    'ValidationError',
+    'ValidationException',
+]);
+
+const KNOWN_AWS_ERROR_NAMES = new Set([
+    ...CREDENTIAL_ERROR_NAMES,
+    ...AWS_NETWORK_ERROR_NAMES,
+    ...PERMISSION_ERROR_NAMES,
+    ...THROTTLING_ERROR_NAMES,
+    ...NOT_FOUND_ERROR_NAMES,
+    ...CONFLICT_ERROR_NAMES,
+    ...VALIDATION_ERROR_NAMES,
+]);
+
+const VALIDATION_STATUS_CODES = new Set([400, 422]);
 const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
 
-function isAwsError(error: unknown): error is AwsError {
+function isErrorLike(error: unknown): error is AwsError {
     return typeof error === 'object' && error !== null && ('name' in error || '$metadata' in error);
 }
 
-function isCredentialError(error: AwsError): boolean {
-    if (
-        (error.name && CREDENTIAL_ERROR_NAMES.has(error.name)) ||
-        (error.code && CREDENTIAL_ERROR_NAMES.has(error.code))
-    ) {
-        return true;
+function hasErrorIdentifier(error: AwsError, identifiers: Set<string>): boolean {
+    const code = extractErrorCode(error);
+    return (error.name !== undefined && identifiers.has(error.name)) || (code !== undefined && identifiers.has(code));
+}
+
+function isAwsError(error: unknown): error is AwsError {
+    if (!isErrorLike(error)) {
+        return false;
     }
 
-    const statusCode = error.$metadata?.httpStatusCode;
-    return statusCode === 401;
+    return '$metadata' in error || hasErrorIdentifier(error, KNOWN_AWS_ERROR_NAMES);
+}
+
+function isCredentialError(error: AwsError): boolean {
+    return hasErrorIdentifier(error, CREDENTIAL_ERROR_NAMES) || error.$metadata?.httpStatusCode === 401;
+}
+
+function isAwsNetworkError(error: AwsError): boolean {
+    return hasErrorIdentifier(error, AWS_NETWORK_ERROR_NAMES);
 }
 
 function isNetworkError(error: AwsError): boolean {
-    return (
-        (error.name !== undefined && NETWORK_ERROR_NAMES.has(error.name)) ||
-        (error.code !== undefined && NETWORK_ERROR_NAMES.has(error.code))
-    );
+    return isAwsNetworkError(error) || isClientNetworkError(error);
 }
 
 function isRetryableAwsError(error: AwsError): boolean {
     const statusCode = error.$metadata?.httpStatusCode;
-    return statusCode !== undefined && RETRYABLE_STATUS_CODES.has(statusCode);
+    return (
+        classifyAwsError(error).category === 'throttling' ||
+        (statusCode !== undefined && RETRYABLE_STATUS_CODES.has(statusCode))
+    );
 }
 
-export type AwsErrorCategory = 'credentials' | 'network' | 'permissions' | 'throttling' | 'service' | 'unknown';
+export type AwsErrorCategory =
+    | 'conflict'
+    | 'credentials'
+    | 'network'
+    | 'not_found'
+    | 'permissions'
+    | 'service'
+    | 'throttling'
+    | 'unknown'
+    | 'validation';
 
 export function classifyAwsError(error: unknown): { category: AwsErrorCategory; httpStatus?: number } {
     if (!isAwsError(error)) {
@@ -67,14 +155,23 @@ export function classifyAwsError(error: unknown): { category: AwsErrorCategory; 
     if (isCredentialError(error)) {
         return { category: 'credentials', httpStatus };
     }
-    if (isNetworkError(error)) {
+    if (isAwsNetworkError(error)) {
         return { category: 'network', httpStatus };
     }
-    if (error.name === 'AccessDeniedException' || error.name === 'AccessDenied' || httpStatus === 403) {
+    if (hasErrorIdentifier(error, PERMISSION_ERROR_NAMES) || httpStatus === 403) {
         return { category: 'permissions', httpStatus };
     }
-    if (error.name === 'ThrottlingException' || httpStatus === 429) {
+    if (hasErrorIdentifier(error, THROTTLING_ERROR_NAMES) || httpStatus === 429) {
         return { category: 'throttling', httpStatus };
+    }
+    if (hasErrorIdentifier(error, NOT_FOUND_ERROR_NAMES) || httpStatus === 404) {
+        return { category: 'not_found', httpStatus };
+    }
+    if (hasErrorIdentifier(error, CONFLICT_ERROR_NAMES) || httpStatus === 409) {
+        return { category: 'conflict', httpStatus };
+    }
+    if (hasErrorIdentifier(error, VALIDATION_ERROR_NAMES) || (httpStatus && VALIDATION_STATUS_CODES.has(httpStatus))) {
+        return { category: 'validation', httpStatus };
     }
     if (httpStatus !== undefined) {
         return { category: 'service', httpStatus };
@@ -83,7 +180,14 @@ export function classifyAwsError(error: unknown): { category: AwsErrorCategory; 
     return { category: 'unknown' };
 }
 
-const CLIENT_FAULT_CATEGORIES: ReadonlySet<AwsErrorCategory> = new Set(['credentials', 'network', 'permissions']);
+const CLIENT_FAULT_CATEGORIES: ReadonlySet<AwsErrorCategory> = new Set([
+    'conflict',
+    'credentials',
+    'network',
+    'not_found',
+    'permissions',
+    'validation',
+]);
 
 export function isClientError(error: unknown): boolean {
     const { category, httpStatus } = classifyAwsError(error);
@@ -93,7 +197,7 @@ export function isClientError(error: unknown): boolean {
     if (category === 'service') {
         return httpStatus !== undefined && httpStatus < 500;
     }
-    return false;
+    return category === 'unknown' && isClientNetworkError(error);
 }
 
 export function mapAwsErrorToLspError(error: unknown): ResponseError<unknown> {
@@ -101,7 +205,7 @@ export function mapAwsErrorToLspError(error: unknown): ResponseError<unknown> {
         return error;
     }
 
-    if (isAwsError(error)) {
+    if (isErrorLike(error)) {
         if (isCredentialError(error)) {
             return createOnlineFeatureError(
                 OnlineFeatureErrorCode.ExpiredCredentials,

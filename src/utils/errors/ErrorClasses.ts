@@ -31,14 +31,14 @@ export class WorkerNotInitializedError extends Error {
     }
 }
 
-export class InitializationError extends Error {
+export class CfnLintInitializationError extends Error {
     public readonly phase: string;
 
     constructor(message: string, phase?: string, options?: ErrorOptions) {
         super(message, options);
-        this.name = 'InitializationError';
+        this.name = 'CfnLintInitializationError';
         this.phase = phase ?? 'unknown';
-        Object.setPrototypeOf(this, InitializationError.prototype);
+        Object.setPrototypeOf(this, CfnLintInitializationError.prototype);
     }
 }
 
