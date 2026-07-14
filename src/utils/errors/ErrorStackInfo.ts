@@ -22,7 +22,7 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
     };
 }
 
-export function errorAttributes(error: unknown, origin?: 'uncaughtException' | 'unhandledRejection'): Attributes {
+export function errorAttributes(error: unknown, origin?: string): Attributes {
     const location = error instanceof Error ? extractLocationFromStack(error.stack) : {};
     const cause = extractRootCause(error);
     const causeLocation = cause ? extractLocationFromStack(cause.stack) : {};
