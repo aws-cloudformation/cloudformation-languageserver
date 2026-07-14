@@ -1,10 +1,4 @@
-export class CancellationError extends Error {
-    constructor(key: string, options?: ErrorOptions) {
-        super(`Request cancelled for key: ${key}`, options);
-        this.name = 'CancellationError';
-        Object.setPrototypeOf(this, CancellationError.prototype);
-    }
-}
+import { RequestCancellationError } from './errors/ErrorClasses';
 
 interface DelayedRequest<T> {
     executor: () => Promise<T>;
@@ -150,7 +144,7 @@ export class Delayer<T> {
 
         if (request) {
             this.pendingRequests.delete(key);
-            request.reject(new CancellationError(key));
+            request.reject(new RequestCancellationError(key));
         }
 
         // Note: We don't cancel running requests as they can't be safely cancelled
@@ -171,7 +165,7 @@ export class Delayer<T> {
 
         // Reject all pending requests
         for (const [key, request] of this.pendingRequests.entries()) {
-            request.reject(new CancellationError(key));
+            request.reject(new RequestCancellationError(key));
         }
         this.pendingRequests.clear();
 

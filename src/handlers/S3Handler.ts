@@ -2,7 +2,7 @@ import { ErrorCodes, RequestHandler, ResponseError } from 'vscode-languageserver
 import { parseUploadFileParams } from '../s3/S3RequestParser';
 import { UploadFileParams } from '../s3/S3RequestType';
 import { ServerComponents } from '../server/ServerComponents';
-import { extractErrorMessage } from '../utils/Errors';
+import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 export function uploadFileToS3Handler(components: ServerComponents): RequestHandler<UploadFileParams, void, void> {

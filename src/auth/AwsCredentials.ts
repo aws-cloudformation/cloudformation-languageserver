@@ -7,10 +7,10 @@ import { SettingsManager } from '../settings/SettingsManager';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { CredentialsProviderError } from '../utils/errors/ErrorClasses';
 import { getRegion } from '../utils/Region';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import { UpdateCredentialsParams, IamCredentials } from './AwsLspAuthTypes';
-import { CredentialsProviderError } from './CredentialsProviderError';
 
 const DecryptedCredentialsSchema = z.object({
     data: z.object({

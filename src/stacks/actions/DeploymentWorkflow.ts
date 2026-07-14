@@ -7,7 +7,7 @@ import { CfnInfraCore } from '../../server/CfnInfraCore';
 import { CfnService } from '../../services/CfnService';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { Measure } from '../../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../../utils/Errors';
+import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import {
     waitForDeployment,
     processWorkflowUpdates,

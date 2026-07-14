@@ -8,7 +8,7 @@ import {
 } from '../cfnEnvironments/CfnEnvironmentRequestType';
 import { DocumentType } from '../document/Document';
 import { TelemetryService } from '../telemetry/TelemetryService';
-import { handleLspError } from '../utils/Errors';
+import { handleLspError } from '../utils/errors/ErrorUtils';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 export function parseCfnEnvironmentFilesHandler(): RequestHandler<

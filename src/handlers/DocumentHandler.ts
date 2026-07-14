@@ -10,7 +10,7 @@ import { LintTrigger } from '../services/cfnLint/CfnLintService';
 import { ValidationTrigger } from '../services/guard/GuardService';
 import { publishValidationDiagnostics } from '../stacks/actions/StackActionOperations';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { CancellationError } from '../utils/Delayer';
+import { RequestCancellationError } from '../utils/errors/ErrorClasses';
 
 const log = LoggerFactory.getLogger('DocumentHandler');
 
@@ -180,7 +180,7 @@ function triggerValidation(
     debounce?: boolean,
 ): void {
     components.cfnLintService.lintDelayed(content, uri, lintTrigger, debounce).catch((reason) => {
-        if (reason instanceof CancellationError) {
+        if (reason instanceof RequestCancellationError) {
             // Do nothing - cancellation is expected behavior
         } else {
             log.error(reason, `Linting error for ${uri}`);

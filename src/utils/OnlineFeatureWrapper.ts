@@ -1,5 +1,5 @@
 import { LoggerFactory } from '../telemetry/LoggerFactory';
-import { mapAwsErrorToLspError } from './AwsErrorMapper';
+import { mapAwsErrorToLspError } from './errors/AwsErrorMapper';
 import { OnlineFeatureGuard } from './OnlineFeatureGuard';
 
 const log = LoggerFactory.getLogger('withOnlineGuard');

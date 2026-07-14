@@ -12,12 +12,17 @@ import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
-import { CancellationError, Delayer } from '../../utils/Delayer';
-import { extractErrorMessage } from '../../utils/Errors';
+import { Delayer } from '../../utils/Delayer';
+import {
+    InitializationError,
+    WorkerNotInitializedError,
+    MountError,
+    RequestCancellationError,
+} from '../../utils/errors/ErrorClasses';
+import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessContributor';
 import { byteSize } from '../../utils/String';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
-import { InitializationError, WorkerNotInitializedError, MountError } from './CfnLintErrors';
 import { LocalCfnLintExecutor } from './LocalCfnLintExecutor';
 import { PyodideWorkerManager } from './PyodideWorkerManager';
 
@@ -812,7 +817,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             }
         } catch (error) {
             // Suppress cancellation errors as they are expected behavior
-            if (error instanceof CancellationError) {
+            if (error instanceof RequestCancellationError) {
                 this.telemetry.count('lint.cancelled', 1);
                 return;
             }

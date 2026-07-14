@@ -12,8 +12,8 @@ import { GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
-import { classifyAwsError } from '../utils/AwsErrorMapper';
-import { markIfClientError } from '../utils/FaultSuppression';
+import { classifyAwsError } from '../utils/errors/AwsErrorMapper';
+import { markIfClientError } from '../utils/errors/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('S3Service');

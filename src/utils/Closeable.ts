@@ -1,4 +1,4 @@
-import { extractErrorMessage } from './Errors';
+import { extractErrorMessage } from './errors/ErrorUtils';
 
 export interface Closeable<T = void | Promise<void>> {
     close(): T;

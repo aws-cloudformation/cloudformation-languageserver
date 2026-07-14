@@ -7,7 +7,7 @@ import {
 } from '@aws-sdk/client-cloudcontrol';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
-import { markIfClientError } from '../utils/FaultSuppression';
+import { markIfClientError } from '../utils/errors/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('CcapiService');

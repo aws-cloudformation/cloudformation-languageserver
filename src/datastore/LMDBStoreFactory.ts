@@ -5,7 +5,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { isWindows, processId } from '../utils/Environment';
-import { extractErrorMessage } from '../utils/Errors';
+import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { formatNumber, toString } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName } from './DataStore';
 import { LMDBStore } from './lmdb/LMDBStore';

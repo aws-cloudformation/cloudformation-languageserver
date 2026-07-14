@@ -18,7 +18,7 @@ import { HoverRouter } from '../../src/hover/HoverRouter';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
 import { GuardService } from '../../src/services/guard/GuardService';
 import { UsageTracker } from '../../src/usageTracker/UsageTracker';
-import { extractErrorMessage } from '../../src/utils/Errors';
+import { extractErrorMessage } from '../../src/utils/errors/ErrorUtils';
 import { expectThrow } from './Expect';
 import {
     createMockComponents,

@@ -1,7 +1,7 @@
 import { RequestHandler } from 'vscode-languageserver';
 import { GetSystemStatusResponse } from '../protocol/LspSystemHandlers';
 import { ServerComponents } from '../server/ServerComponents';
-import { handleLspError } from '../utils/Errors';
+import { handleLspError } from '../utils/errors/ErrorUtils';
 
 export function getSystemStatusHandler(
     components: ServerComponents,

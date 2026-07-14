@@ -6,12 +6,12 @@ import { describe, expect, beforeEach, afterEach, vi, Mock, test } from 'vitest'
 import { WorkspaceFolder, DiagnosticSeverity } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CloudFormationFileType, Document } from '../../../../src/document/Document';
-import { WorkerNotInitializedError } from '../../../../src/services/cfnLint/CfnLintErrors';
 import { CfnLintService, LintTrigger, sleep } from '../../../../src/services/cfnLint/CfnLintService';
 import { PyodideWorkerManager } from '../../../../src/services/cfnLint/PyodideWorkerManager';
 import { SettingsState } from '../../../../src/settings/Settings';
 import { Delayer } from '../../../../src/utils/Delayer';
 import { createMockComponents, createMockSettingsManager } from '../../../utils/MockServerComponents';
+import { WorkerNotInitializedError } from '../../../../src/utils/errors/ErrorClasses';
 
 // Helper functions for special test cases that need different configurations
 const createServiceWithFileType = (fileType: CloudFormationFileType) => {

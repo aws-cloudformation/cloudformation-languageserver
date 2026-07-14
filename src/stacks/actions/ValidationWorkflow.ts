@@ -11,7 +11,7 @@ import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { Measure } from '../../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../../utils/Errors';
+import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import {
     cleanupReviewStack,
     deleteChangeSet,

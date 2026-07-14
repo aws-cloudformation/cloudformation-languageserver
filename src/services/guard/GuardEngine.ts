@@ -1,7 +1,7 @@
 import { OutputFormatType, ShowSummaryType, ValidateBuilder } from 'cfn-guard/guard';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../../utils/Errors';
+import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 
 /**
  * Represents a Guard rule violation found during validation
