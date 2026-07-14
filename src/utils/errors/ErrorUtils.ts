@@ -1,5 +1,5 @@
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { toString } from './String';
+import { toString } from '../String';
 
 export const CLIENT_NETWORK_ERROR_CODES: ReadonlySet<string> = new Set([
     'ECONNRESET', // Peer reset the connection mid-stream
@@ -154,14 +154,4 @@ export function extractHttpStatus(error: unknown): number | undefined {
     }
 
     return undefined;
-}
-
-export class DoesNotExist extends Error {
-    constructor(resource: string, options?: ErrorOptions) {
-        super(`${resource} does not exist`, options);
-        this.name = this.constructor.name;
-
-        // Explicitly set the prototype, to ensure that `instanceof` checks work correctly
-        Object.setPrototypeOf(this, DoesNotExist.prototype);
-    }
 }

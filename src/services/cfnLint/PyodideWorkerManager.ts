@@ -6,9 +6,9 @@ import { CfnLintInitializationSettings, CfnLintSettings } from '../../settings/S
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Telemetry } from '../../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../../utils/Errors';
+import { InitializationError, WorkerNotInitializedError } from '../../utils/errors/ErrorClasses';
+import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
-import { InitializationError, WorkerNotInitializedError } from './CfnLintErrors';
 
 interface WorkerTask {
     id: string;

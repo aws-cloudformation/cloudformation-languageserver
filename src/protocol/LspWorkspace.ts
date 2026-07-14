@@ -6,7 +6,7 @@ import {
     WorkspaceFolder,
 } from 'vscode-languageserver';
 import { NotificationHandler } from 'vscode-languageserver-protocol';
-import { extractErrorMessage } from '../utils/Errors';
+import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 
 export class LspWorkspace {
     private isInitialized = false;

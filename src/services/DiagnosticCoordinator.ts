@@ -9,7 +9,8 @@ import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
-import { CancellationError, Delayer } from '../utils/Delayer';
+import { Delayer } from '../utils/Delayer';
+import { RequestCancellationError } from '../utils/errors/ErrorClasses';
 
 type SourceToDiagnostics = Map<string, Diagnostic[]>;
 
@@ -66,7 +67,7 @@ export class DiagnosticCoordinator {
             await this.delayer.delay(uri, () => this.publishToLsp(uri));
         } catch (error) {
             // Suppress cancellation errors as they are expected behavior
-            if (error instanceof CancellationError) {
+            if (error instanceof RequestCancellationError) {
                 return;
             }
             this.log.error(error, `Failed to publish diagnostics for source ${source}, URI ${uri}`);

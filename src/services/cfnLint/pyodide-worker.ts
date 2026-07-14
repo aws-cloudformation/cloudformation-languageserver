@@ -3,7 +3,7 @@ import { parentPort } from 'worker_threads';
 import { loadPyodide, type PyodideInterface } from 'pyodide';
 import { PublishDiagnosticsParams } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
-import { extractErrorMessage } from '../../utils/Errors';
+import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 
 // Instead of sending stdout/stderr messages back to the main thread,
 // we'll just log them in the worker thread

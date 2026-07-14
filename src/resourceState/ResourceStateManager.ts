@@ -13,9 +13,9 @@ import { DefaultSettings, ProfileSettings } from '../settings/Settings';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure, Count } from '../telemetry/TelemetryDecorator';
-import { isClientError } from '../utils/AwsErrorMapper';
 import { Closeable } from '../utils/Closeable';
-import { extractErrorMessage } from '../utils/Errors';
+import { isClientError } from '../utils/errors/AwsErrorMapper';
+import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { NO_LIST_SUPPORT, REQUIRES_RESOURCE_MODEL } from './ListResourcesExclusionTypes';
 import { ListResourcesResult, RefreshResourcesResult } from './ResourceStateTypes';
 

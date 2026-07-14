@@ -1,5 +1,5 @@
 import { Logger } from 'pino';
-import { extractErrorMessage } from './Errors';
+import { extractErrorMessage } from './errors/ErrorUtils';
 
 export type RetryOptions = {
     maxRetries?: number;

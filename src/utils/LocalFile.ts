@@ -6,7 +6,7 @@ import { basename, dirname, join } from 'path';
 import { LockOptions, lock } from 'proper-lockfile';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { processId } from './Environment';
-import { DoesNotExist } from './Errors';
+import { DoesNotExist } from './errors/ErrorClasses';
 import {
     asyncDirSync,
     asyncFileSync,

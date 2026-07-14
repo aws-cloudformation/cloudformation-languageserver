@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { errorAttributes, errorType, extractLocationFromStack } from '../../../src/utils/ErrorStackInfo';
+import { errorAttributes, errorType, extractLocationFromStack } from '../../../../src/utils/errors/ErrorStackInfo';
 
 describe('ErrorStackInfo', () => {
     describe('extractLocationFromStack', () => {

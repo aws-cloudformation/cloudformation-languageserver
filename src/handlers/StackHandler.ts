@@ -54,7 +54,7 @@ import {
 } from '../stacks/StackRequestType';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { EventType } from '../usageTracker/UsageTracker';
-import { handleLspError } from '../utils/Errors';
+import { handleLspError } from '../utils/errors/ErrorUtils';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 
 export function getParametersHandler(

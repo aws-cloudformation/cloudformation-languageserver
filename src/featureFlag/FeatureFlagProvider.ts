@@ -4,7 +4,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
-import { isClientNetworkError } from '../utils/Errors';
+import { isClientNetworkError } from '../utils/errors/ErrorUtils';
 import { LocalFile } from '../utils/LocalFile';
 import { downloadJson } from '../utils/RemoteDownload';
 import { DynamicRefreshIntervalMs } from './DynamicFeatureFlag';

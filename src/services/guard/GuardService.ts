@@ -10,8 +10,9 @@ import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Count, Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
-import { CancellationError, Delayer } from '../../utils/Delayer';
-import { extractErrorMessage } from '../../utils/Errors';
+import { Delayer } from '../../utils/Delayer';
+import { RequestCancellationError } from '../../utils/errors/ErrorClasses';
+import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import { readFileIfExistsAsync } from '../../utils/File';
 import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessContributor';
 import { byteSize } from '../../utils/String';
@@ -440,7 +441,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
             }
         } catch (error) {
             // Suppress cancellation errors as they are expected behavior
-            if (error instanceof CancellationError) {
+            if (error instanceof RequestCancellationError) {
                 return;
             }
             // For other errors, re-throw to be handled by caller

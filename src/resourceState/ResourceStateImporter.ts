@@ -16,7 +16,7 @@ import { CfnLspProviders } from '../server/CfnLspProviders';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Measure } from '../telemetry/TelemetryDecorator';
-import { extractErrorMessage } from '../utils/Errors';
+import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { getIndentationString } from '../utils/IndentationUtils';
 import { ResourceStateManager } from './ResourceStateManager';
 import {

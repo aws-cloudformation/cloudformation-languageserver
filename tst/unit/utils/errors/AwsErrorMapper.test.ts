@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { classifyAwsError, isClientError, mapAwsErrorToLspError } from '../../../src/utils/AwsErrorMapper';
-import { OnlineFeatureErrorCode } from '../../../src/utils/OnlineFeatureError';
+import { classifyAwsError, isClientError, mapAwsErrorToLspError } from '../../../../src/utils/errors/AwsErrorMapper';
+import { OnlineFeatureErrorCode } from '../../../../src/utils/errors/OnlineFeatureError';
 
 describe('mapAwsErrorToLspError', () => {
     it('should return ResponseError as-is', () => {
