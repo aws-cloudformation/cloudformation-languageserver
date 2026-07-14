@@ -487,11 +487,11 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
 
     describe('errorType generic classification attributes', () => {
         test('emits a generic network category with unknown AWS category', () => {
-            const error = Object.assign(new Error('getaddrinfo failed'), { code: 'ENOTFOUND' });
+            const error = Object.assign(new Error('getaddrinfo failed'), { code: 'CERT_HAS_EXPIRED' });
 
             expect(errorType(error)).toMatchObject({
-                'error.category': 'network',
-                'error.code': 'ENOTFOUND',
+                'error.category': 'tls',
+                'error.code': 'CERT_HAS_EXPIRED',
             });
         });
 
