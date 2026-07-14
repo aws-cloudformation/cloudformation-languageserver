@@ -5,7 +5,7 @@ import { join } from 'path';
 import { PublishDiagnosticsParams, DiagnosticSeverity } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { extractErrorMessage } from '../../utils/Errors';
+import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 
 interface CfnLintDiagnostic {
     Level: string;

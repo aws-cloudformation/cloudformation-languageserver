@@ -67,7 +67,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Count, Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
-import { markIfClientError } from '../utils/FaultSuppression';
+import { markIfClientError } from '../utils/errors/FaultSuppression';
 import { AwsClient } from './AwsClient';
 
 const log = LoggerFactory.getLogger('CfnService');

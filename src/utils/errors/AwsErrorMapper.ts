@@ -1,5 +1,5 @@
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
-import { CLIENT_NETWORK_ERROR_CODES, extractErrorMessage } from './Errors';
+import { CLIENT_NETWORK_ERROR_CODES, extractErrorMessage } from './ErrorUtils';
 import { createOnlineFeatureError, OnlineFeatureErrorCode } from './OnlineFeatureError';
 
 type AwsError = {

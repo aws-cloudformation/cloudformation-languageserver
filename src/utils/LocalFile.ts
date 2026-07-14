@@ -7,7 +7,7 @@ import { LockOptions, lock } from 'proper-lockfile';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { processId } from './Environment';
-import { DoesNotExist } from './Errors';
+import { DoesNotExist } from './errors/ErrorClasses';
 import {
     asyncDirSync,
     asyncFileSync,

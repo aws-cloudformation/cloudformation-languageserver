@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-return,@typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-function-type */
 import { Connection } from 'vscode-languageserver';
 import { NotificationHandler } from 'vscode-languageserver-protocol';
-import { extractErrorMessage } from '../utils/Errors';
+import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 
 /**
  * Wraps a VSCode Language Server connection to allow multiple handlers per event.

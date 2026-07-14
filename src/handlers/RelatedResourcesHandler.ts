@@ -10,7 +10,7 @@ import {
     TemplateUri,
 } from '../protocol/RelatedResourcesProtocol';
 import { ServerComponents } from '../server/ServerComponents';
-import { handleLspError } from '../utils/Errors';
+import { handleLspError } from '../utils/errors/ErrorUtils';
 import { parseWithPrettyError } from '../utils/ZodErrorWrapper';
 import {
     parseGetRelatedResourceTypesParams,

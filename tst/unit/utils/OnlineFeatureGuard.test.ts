@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { AwsCredentials } from '../../../src/auth/AwsCredentials';
-import { OnlineFeatureErrorCode } from '../../../src/utils/OnlineFeatureError';
+import { OnlineFeatureErrorCode } from '../../../src/utils/errors/OnlineFeatureError';
 import { OnlineFeatureGuard } from '../../../src/utils/OnlineFeatureGuard';
 
 describe('OnlineFeatureGuard', () => {

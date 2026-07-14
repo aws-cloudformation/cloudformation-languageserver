@@ -1,5 +1,5 @@
 import { AwsCredentials } from '../auth/AwsCredentials';
-import { createOnlineFeatureError, OnlineFeatureErrorCode } from './OnlineFeatureError';
+import { createOnlineFeatureError, OnlineFeatureErrorCode } from './errors/OnlineFeatureError';
 
 export class OnlineFeatureGuard {
     constructor(private readonly awsCredentials: AwsCredentials) {}

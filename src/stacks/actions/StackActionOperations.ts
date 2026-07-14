@@ -22,7 +22,7 @@ import { CfnService } from '../../services/CfnService';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { extractErrorMessage, extractStatusReason } from '../../utils/Errors';
+import { extractErrorMessage, extractStatusReason } from '../../utils/errors/ErrorUtils';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { toHttpsPathStyleS3Url } from '../../utils/S3Url';
 import { toString } from '../../utils/String';

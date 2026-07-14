@@ -2,7 +2,7 @@ import { readFileSync, PathLike } from 'fs'; // eslint-disable-line no-restricte
 import { readFile, rename, unlink, open } from 'fs/promises'; // eslint-disable-line no-restricted-imports
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { isWindows } from './Environment';
-import { DoesNotExist } from './Errors';
+import { DoesNotExist } from './errors/ErrorClasses';
 import { calculateDelay, sleep } from './Retry';
 import { toString } from './String';
 
