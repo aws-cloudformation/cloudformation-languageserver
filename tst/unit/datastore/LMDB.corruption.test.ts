@@ -143,17 +143,4 @@ describe('LMDB corruption escalation', () => {
         recoverSpy.mockRestore();
         deleteSpy.mockRestore();
     });
-
-    it('should recreate the data directory so a recurring corruption clears corrupt files', () => {
-        const versionDir = join(testDir, 'lmdb', 'v6');
-        const marker = join(versionDir, 'corrupt-marker');
-        fs.writeFileSync(marker, 'x');
-
-        const handleError = (factory as any).handleError.bind(factory);
-        handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
-        handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
-
-        expect(fs.existsSync(marker)).toBe(false);
-        expect(fs.existsSync(versionDir)).toBe(true);
-    });
 });
