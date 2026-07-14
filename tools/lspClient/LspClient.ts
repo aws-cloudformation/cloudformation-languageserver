@@ -115,19 +115,38 @@ export class LspClient implements LspConnection {
     }
 
     private readonly onServerOutput = (data: Buffer) => {
-        if (this.isShutdown) return;
+        if (this.isShutdown) {
+            return;
+        }
 
-        const output = data.toString().trim().split('\n').join(' ').replace(/\s+/g, ' ');
+        const output = data
+            .toString()
+            .trim()
+            .split('\n')
+            .join(' ')
+            .replace(/\s+/g, ' ')
+            .replaceAll(' FATAL:', '')
+            .replaceAll(' ERROR:', '')
+            .replaceAll(' WARN:', '')
+            .replaceAll(' INFO:', '')
+            .replaceAll(' DEBUG:', '')
+            .replaceAll(' TRACE:', '');
         const lower = data.toString().trim().toLowerCase();
 
-        if (lower.includes('error')) {
+        if (lower.includes('fatal:')) {
+            this.serverLogger.fatal(output);
+        } else if (lower.includes('error:')) {
             this.serverLogger.error(output);
-        } else if (lower.includes('warn')) {
+        } else if (lower.includes('warn:')) {
             this.serverLogger.warn(output);
-        } else if (lower.includes('info') || lower.includes('initializing')) {
+        } else if (lower.includes('initializing')) {
             this.serverLogger.info(output);
-        } else {
+        } else if (lower.includes('debug:')) {
             this.serverLogger.debug(output);
+        } else if (lower.includes('trace:')) {
+            this.serverLogger.trace(output);
+        } else {
+            this.serverLogger.info(output);
         }
     };
 
