@@ -8,6 +8,8 @@ import { nextDocumentVersion, resetDocumentVersion } from './testers/TesterUtils
 import { AwsRegion } from '../../src/utils/Region';
 import { WaitFor } from '../../tst/utils/Utils';
 import { existsSync } from 'fs';
+import { join } from 'path';
+import { randomUUID as v4 } from 'node:crypto';
 
 export class TestOrchestrator {
     private client!: LspClient;
@@ -52,6 +54,8 @@ export class TestOrchestrator {
                     },
                 },
                 telemetryEnabled: true,
+                storageDir: join(process.cwd(), 'node_modules', '.cache', 'lsp-stability', v4()),
+                logLevel: 'warn',
             },
         });
 

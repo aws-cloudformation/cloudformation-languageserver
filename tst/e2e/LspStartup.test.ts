@@ -3,13 +3,13 @@ import { existsSync } from 'fs';
 import { join, resolve } from 'path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { LspClient } from '../../tools/lspClient/LspClient';
+import { randomUUID as v4 } from 'node:crypto';
 
 describe('LSP standalone bundle startup', () => {
     const repoRoot = resolve(__dirname, '..', '..');
     const standalonePath = join(repoRoot, 'bundle', 'production', 'cfn-lsp-server-standalone.js');
 
     const BUILD_TIMEOUT_MS = 10 * 60 * 1000;
-    const READY_TIMEOUT_MS = 3 * 60 * 1_000;
     const TEST_TIMEOUT_MS = 4 * 60 * 1000;
     const SHUTDOWN_TIMEOUT_MS = 30 * 1000;
 
@@ -49,12 +49,14 @@ describe('LSP standalone bundle startup', () => {
                         },
                     },
                     telemetryEnabled: false,
+                    storageDir: join(process.cwd(), 'node_modules', '.cache', 'lsp-startup', v4()),
+                    logLevel: 'info',
                 },
             });
 
             await expect(client.initialize()).resolves.not.toThrow();
 
-            await expect(client.waitForSystemReady(READY_TIMEOUT_MS)).resolves.not.toThrow();
+            await expect(client.waitForSystemReady()).resolves.not.toThrow();
 
             const status = await client.getSystemStatus();
             expect(status.settingsReady.ready).toBe(true);
