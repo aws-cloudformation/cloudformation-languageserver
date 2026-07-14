@@ -1,4 +1,5 @@
-import { ClientInfo, AwsMetadata } from '../../src/server/InitParams';
+import { AwsMetadata } from '../../src/server/InitParams';
+import { _InitializeParams } from 'vscode-languageserver-protocol/lib/common/protocol';
 
 export interface LspConnection {
     initialize(): Promise<void>;
@@ -12,12 +13,9 @@ export interface LspConnection {
 export type LspClientConfig = {
     serverPath: string;
     mode: 'stdio' | 'ipc';
-    clientId: string;
-    clientInfo: ClientInfo;
-    extensionInfo: ClientInfo;
-    telemetryEnabled: boolean;
-    featureFlags: NonNullable<AwsMetadata['featureFlags']>;
-    storageDir?: string;
+    clientConfig: _InitializeParams['clientInfo'];
+    awsConfig: AwsMetadata;
     env?: NodeJS.ProcessEnv;
     suppressLogLevels?: string[];
+    workspaceConfig?: Record<string, unknown>[];
 };

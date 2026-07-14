@@ -39,17 +39,20 @@ export class TestOrchestrator {
         this.client = new LspClient({
             serverPath: this.config.path,
             mode: 'ipc',
-            clientId: 'stability-test',
-            clientInfo: {
-                name: 'CFN LSP Stability Test',
+            clientConfig: {
+                name: 'CFN LSP Stability Test (Canary)',
                 version: '1.0.0',
             },
-            extensionInfo: {
-                name: 'aws.cloudformation.lsp.stability-test',
-                version: '1.0.0',
+            awsConfig: {
+                clientInfo: {
+                    clientId: 'stability-test',
+                    extension: {
+                        name: 'aws.cloudformation.stability-test',
+                        version: '1.0.0',
+                    },
+                },
+                telemetryEnabled: true,
             },
-            telemetryEnabled: false,
-            featureFlags: {},
         });
 
         await this.client.initialize();
@@ -63,21 +66,7 @@ export class TestOrchestrator {
 
         // Wait for all system components to be ready
         console.log('Waiting for system components to be ready...');
-        await WaitFor.waitFor(
-            async () => {
-                const status = await this.client.getSystemStatus();
-                if (
-                    !status.settingsReady.ready ||
-                    !status.schemasReady.ready ||
-                    !status.cfnLintReady.ready ||
-                    !status.cfnGuardReady.ready
-                ) {
-                    throw new Error('System not ready');
-                }
-            },
-            30_000,
-            1000,
-        );
+        await this.client.waitForSystemReady();
         console.log('All system components ready');
 
         await this.loadAllRegionSchemas();
