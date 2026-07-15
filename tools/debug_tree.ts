@@ -19,7 +19,7 @@ import { toString } from '../src/utils/String';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { DocumentManager } from '../src/document/DocumentManager';
-import { TextDocuments } from 'vscode-languageserver/node';
+import { TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
 /**

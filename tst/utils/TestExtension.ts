@@ -46,7 +46,7 @@ import {
     CodeLensRequest,
     InitializeParams,
 } from 'vscode-languageserver';
-import { createConnection } from 'vscode-languageserver/node';
+import { createConnection } from 'vscode-languageserver/node'; // eslint-disable-line no-restricted-imports
 import { IamCredentialsUpdateRequest, IamCredentialsDeleteNotification } from '../../src/auth/AuthProtocol';
 import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { UpdateCredentialsParams } from '../../src/auth/AwsLspAuthTypes';

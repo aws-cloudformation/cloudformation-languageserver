@@ -1,7 +1,7 @@
 import { Logger } from 'pino';
 import { SinonStub, stub } from 'sinon';
 import { StubbedInstance, stubInterface } from 'ts-sinon';
-import { RemoteConsole } from 'vscode-languageserver/node';
+import { RemoteConsole } from 'vscode-languageserver';
 import { AwsCredentials } from '../../src/auth/AwsCredentials';
 import { CompletionRouter } from '../../src/autocomplete/CompletionRouter';
 import { ResourceEntityCompletionProvider } from '../../src/autocomplete/ResourceEntityCompletionProvider';

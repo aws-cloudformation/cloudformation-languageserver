@@ -1,7 +1,6 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { RemoteClient, RemoteConsole, RemoteWorkspace } from 'vscode-languageserver/lib/common/server';
-import { Connection, ClientCapabilities } from 'vscode-languageserver/node';
+import { RemoteClient, RemoteConsole, RemoteWorkspace, Connection, ClientCapabilities } from 'vscode-languageserver';
 import { WorkspaceFolder } from 'vscode-languageserver-protocol';
 import { LspWorkspace } from '../../../src/protocol/LspWorkspace';
 

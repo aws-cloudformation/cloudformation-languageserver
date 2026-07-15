@@ -1,6 +1,6 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { TextDocuments } from 'vscode-languageserver/node';
+import { TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { CloudFormationFileType, Document } from '../../../src/document/Document';
 import { DocumentManager } from '../../../src/document/DocumentManager';

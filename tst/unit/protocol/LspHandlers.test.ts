@@ -1,6 +1,6 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Connection } from 'vscode-languageserver/node';
+import { Connection } from 'vscode-languageserver';
 import { LspHandlers } from '../../../src/protocol/LspHandlers';
 
 describe('LspHandlers', () => {

@@ -1,5 +1,5 @@
 /* eslint-disable security/detect-non-literal-regexp, unicorn/prefer-string-slice */
-import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
+import { TextDocumentPositionParams } from 'vscode-languageserver-protocol';
 import { EntityType, TopLevelSections, TopLevelSectionsWithLogicalIds } from '../../src/context/CloudFormationEnums';
 import { ContextManager } from '../../src/context/ContextManager';
 import { Condition, Mapping, Metadata, Transform } from '../../src/context/semantic/Entity';
