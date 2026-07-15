@@ -53,6 +53,7 @@ export class LspClient implements LspConnection {
         this.serverProcess = spawn('node', [this.config.serverPath, ...args], {
             stdio: this.config.mode === 'ipc' ? ['pipe', 'pipe', 'pipe', 'ipc'] : ['pipe', 'pipe', 'pipe'],
             env: { ...process.env, ...this.config.env },
+            cwd: this.config.cwd,
         });
         this.clientLogger.info(`Server process spawned with PID: ${this.serverProcess.pid}`);
         this.attachOutputListeners();

@@ -52,7 +52,28 @@ function generateExternals() {
     for (const dep of NativePrebuilds) {
         collected.add(dep);
     }
-    return Array.from(collected).sort();
+
+    // When a package is externalized, webpack emits `require("pkg")` and expects
+    // it to exist at `bundle/production/node_modules/pkg/` at runtime.
+    //
+    // The transitive walk above can collect packages like "minimatch" that appear
+    // in the lockfile only as a dev dependency at the top level (e.g. v10 for eslint),
+    // while the production copy lives nested (e.g. glob/node_modules/minimatch v9).
+    // The bundle's node_modules/ (built with --omit=dev) won't have them at the
+    // top level, so `require("minimatch")` fails at runtime.
+    //
+    // Fix: exclude any transitively-collected dep whose top-level lockfile entry
+    // is dev-only. Webpack will bundle it inline instead.
+    const filtered = Array.from(collected).filter((dep) => {
+        const topLevelInfo = PackageLock.packages?.[`node_modules/${dep}`];
+        if (topLevelInfo?.dev && !ExternalsDeps.includes(dep) && !UnusedDeps.includes(dep) && !NativePrebuilds.includes(dep)) {
+            console.warn(`[generateExternals] Excluding "${dep}" - dev-only at top level, would not resolve at runtime`);
+            return false;
+        }
+        return true;
+    });
+
+    return filtered.sort();
 }
 
 const EXTERNALS = generateExternals();

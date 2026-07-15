@@ -42,6 +42,7 @@ export type LspClientConfig = {
     mode: 'stdio' | 'ipc';
     clientConfig: _InitializeParams['clientInfo'];
     awsConfig: AwsMetadata;
+    cwd?: string;
     env?: NodeJS.ProcessEnv;
     workspaceConfig?: Record<string, unknown>[];
     clientLogger?: Logger;
