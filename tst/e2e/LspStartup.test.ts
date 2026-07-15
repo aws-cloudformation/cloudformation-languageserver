@@ -16,9 +16,9 @@ describe('LSP standalone bundle startup', () => {
     let client: LspClient | undefined;
 
     beforeAll(() => {
-        execSync('npm run bundle:alpha -- --env skipWheels=true --env quiet=true > /dev/null 2>&1', {
+        execSync('npm run bundle:alpha -- --env skipWheels=true', {
             cwd: repoRoot,
-            stdio: 'inherit',
+            stdio: 'ignore',
         });
 
         if (!existsSync(standalonePath)) {
