@@ -1,6 +1,6 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Connection } from 'vscode-languageserver/node';
+import { Connection } from 'vscode-languageserver';
 import { DiagnosticSeverity, PublishDiagnosticsParams } from 'vscode-languageserver-protocol';
 import { LspDiagnostics } from '../../../src/protocol/LspDiagnostics';
 

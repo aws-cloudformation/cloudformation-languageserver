@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TextDocuments } from 'vscode-languageserver/node';
+import { TextDocuments } from 'vscode-languageserver';
 import { TextDocument, TextEdit } from 'vscode-languageserver-textdocument';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentType } from '../../../src/document/Document';

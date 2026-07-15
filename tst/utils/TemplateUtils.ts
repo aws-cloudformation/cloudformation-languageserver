@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { Point } from 'tree-sitter';
-import { TextDocumentPositionParams } from 'vscode-languageserver-protocol/lib/common/protocol';
-import { Position } from 'vscode-languageserver-textdocument/lib/esm/main';
+import { TextDocumentPositionParams } from 'vscode-languageserver-protocol';
+import { Position } from 'vscode-languageserver-textdocument';
 
 const cache = new Map<string, string>();
 const loadTemplate = (name: string) => {

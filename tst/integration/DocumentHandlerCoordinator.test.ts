@@ -1,8 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Range } from 'vscode-languageserver';
-import { TextDocumentChangeEvent } from 'vscode-languageserver/lib/common/textDocuments';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { DocumentUri } from 'vscode-languageserver-textdocument/lib/esm/main';
+import { Range, TextDocumentChangeEvent } from 'vscode-languageserver';
+import { TextDocument, DocumentUri } from 'vscode-languageserver-textdocument';
 import { didCloseHandler } from '../../src/handlers/DocumentHandler';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import {

@@ -88,7 +88,7 @@ staticInitialize(awsMetadata?.clientInfo?.extension, awsMetadata);
 
 import { generatePositions, TestPosition, discoverTemplateFiles } from './utils';
 import { DocumentManager } from '../src/document/DocumentManager';
-import { TextDocuments } from 'vscode-languageserver/node';
+import { TextDocuments } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import {
     createMockLspDiagnostics,

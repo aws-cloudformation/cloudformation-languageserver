@@ -1,9 +1,5 @@
-import { CompletionParams, Location, DefinitionParams, Diagnostic } from 'vscode-languageserver';
-import { TextDocuments } from 'vscode-languageserver/node';
-import {
-    TextDocumentContentChangeEvent,
-    TextDocumentPositionParams,
-} from 'vscode-languageserver-protocol/lib/common/protocol';
+import { CompletionParams, Location, DefinitionParams, Diagnostic, TextDocuments } from 'vscode-languageserver';
+import { TextDocumentContentChangeEvent, TextDocumentPositionParams } from 'vscode-languageserver-protocol';
 import { Position, Range, TextDocument } from 'vscode-languageserver-textdocument';
 import { CompletionRouter, createCompletionProviders } from '../../src/autocomplete/CompletionRouter';
 import { TopLevelSection } from '../../src/context/CloudFormationEnums';

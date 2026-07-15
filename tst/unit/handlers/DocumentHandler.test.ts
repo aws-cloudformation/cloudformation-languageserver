@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { DidChangeTextDocumentParams, Range } from 'vscode-languageserver';
-import { TextDocument } from 'vscode-languageserver-textdocument';
-import { DocumentUri } from 'vscode-languageserver-textdocument/lib/esm/main';
+import { TextDocument, DocumentUri } from 'vscode-languageserver-textdocument';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { Document, CloudFormationFileType } from '../../../src/document/Document';
 import { createEdit } from '../../../src/document/DocumentUtils';

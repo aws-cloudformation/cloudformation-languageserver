@@ -228,6 +228,21 @@ export default tseslint.config([
             'unicorn/switch-case-braces': 'off',
             'unicorn/no-useless-undefined': 'off',
             'unicorn/numeric-separators-style': 'off',
+            'no-restricted-imports': [
+                'error',
+                {
+                    patterns: [
+                        {
+                            group: [
+                                'vscode-languageserver/*',
+                                'vscode-languageserver-protocol/*',
+                                'vscode-languageserver-textdocument/*',
+                            ],
+                            message: 'Import from main package only, not subpaths.',
+                        },
+                    ],
+                },
+            ],
         },
     },
     {

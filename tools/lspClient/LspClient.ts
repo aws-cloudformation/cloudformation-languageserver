@@ -1,15 +1,17 @@
 import { ChildProcess, spawn } from 'child_process';
 import {
-    ConfigurationParams,
-    createMessageConnection,
-    DidChangeConfigurationParams,
-    IPCMessageReader,
-    IPCMessageWriter,
-    MessageConnection,
     StreamMessageReader,
     StreamMessageWriter,
+    createMessageConnection,
+    IPCMessageReader,
+    IPCMessageWriter,
+} from 'vscode-jsonrpc/node';
+import {
+    ConfigurationParams,
+    DidChangeConfigurationParams,
+    MessageConnection,
     TextDocumentContentChangeEvent,
-} from 'vscode-languageserver-protocol/node';
+} from 'vscode-languageserver-protocol';
 import { randomBytes } from 'crypto';
 import { CompactEncrypt } from 'jose';
 import { LspClientConfig, LspConnection } from './LspConnection';
@@ -19,8 +21,8 @@ import { GetSystemStatusResponse } from '../../src/protocol/LspSystemHandlers';
 import { WaitFor } from '../../tst/utils/Utils';
 import { createLspClientLogger, createLspServerLogger } from './LspLogger';
 import { DocumentMetadata } from '../../src/document/DocumentProtocol';
-import { Diagnostic } from 'vscode-languageserver';
 import { Logger } from 'pino';
+import { CompletionItem, CompletionList, Diagnostic, Hover } from 'vscode-languageserver-types';
 
 /**
  * Common LSP client for CloudFormation Language Server testing.
@@ -215,7 +217,7 @@ export class LspClient implements LspConnection {
         return this.connection.sendRequest(method, params);
     }
 
-    sendNotification(method: string, params: unknown) {
+    sendNotification(method: string, params: unknown): Promise<void> {
         return this.connection.sendNotification(method, params);
     }
 
@@ -227,7 +229,7 @@ export class LspClient implements LspConnection {
         this.connection.onRequest(method, handler);
     }
 
-    openDocument(uri: string, content: string) {
+    openDocument(uri: string, content: string): Promise<void> {
         return this.connection.sendNotification('textDocument/didOpen', {
             textDocument: {
                 uri,
@@ -238,7 +240,7 @@ export class LspClient implements LspConnection {
         });
     }
 
-    updateDocument(uri: string, version: number, changes: string | TextDocumentContentChangeEvent[]) {
+    updateDocument(uri: string, version: number, changes: string | TextDocumentContentChangeEvent[]): Promise<void> {
         const contentChanges =
             typeof changes === 'string'
                 ? [{ text: changes }] // Full replacement
@@ -253,27 +255,27 @@ export class LspClient implements LspConnection {
         });
     }
 
-    closeDocument(uri: string) {
+    closeDocument(uri: string): Promise<void> {
         return this.connection.sendNotification('textDocument/didClose', {
             textDocument: { uri },
         });
     }
 
-    hover(uri: string, line: number, character: number) {
+    hover(uri: string, line: number, character: number): Promise<Hover | null> {
         return this.connection.sendRequest('textDocument/hover', {
             textDocument: { uri },
             position: { line, character },
         });
     }
 
-    completion(uri: string, line: number, character: number) {
+    completion(uri: string, line: number, character: number): Promise<CompletionList | CompletionItem[] | null> {
         return this.connection.sendRequest('textDocument/completion', {
             textDocument: { uri },
             position: { line, character },
         });
     }
 
-    changeConfiguration(params: DidChangeConfigurationParams) {
+    changeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
         // Store the new configuration
         if (params.settings) {
             const currentConfig = this.workspaceConfig[0] ?? {};
