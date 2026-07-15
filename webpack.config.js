@@ -12,7 +12,7 @@ const Package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const PackageLock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
 const ExternalsDeps = Package.externalDependencies;
 const NativePrebuilds = Package.nativePrebuilds;
-const UnusedDeps = Package.unusedDependencies;
+const RequiredPeerDeps = Package.requiredPeerDeps;
 
 const COPY_FILES = ['LICENSE', 'NOTICE', 'THIRD-PARTY-LICENSES.txt', 'README.md'];
 const KEEP_FILES = [
@@ -31,7 +31,7 @@ const KEEP_FILES = [
 const IGNORE_PATHS = ['/bin/', '/test/', '/benchmarks/', '/examples/'];
 
 function generateExternals() {
-    const externals = [...ExternalsDeps, ...UnusedDeps];
+    const externals = [...ExternalsDeps, ...RequiredPeerDeps];
     const collected = new Set(externals);
     const queue = [...externals];
 
@@ -66,7 +66,7 @@ function generateExternals() {
     // is dev-only. Webpack will bundle it inline instead.
     const filtered = Array.from(collected).filter((dep) => {
         const topLevelInfo = PackageLock.packages?.[`node_modules/${dep}`];
-        if (topLevelInfo?.dev && !ExternalsDeps.includes(dep) && !UnusedDeps.includes(dep) && !NativePrebuilds.includes(dep)) {
+        if (topLevelInfo?.dev && !ExternalsDeps.includes(dep) && !RequiredPeerDeps.includes(dep) && !NativePrebuilds.includes(dep)) {
             console.warn(`[generateExternals] Excluding "${dep}" - dev-only at top level, would not resolve at runtime`);
             return false;
         }
@@ -161,6 +161,12 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                         delete tmpPkg['devDependencies'];
                         delete tmpPkg['externalDependencies'];
                         delete tmpPkg['nativePrebuilds'];
+                        delete tmpPkg['requiredPeerDeps'];
+                        delete tmpPkg['rebuildDependencies'];
+
+                        tmpPkg['scripts'] = {
+                            start: `node ./${BUNDLE_NAME}.js --stdio`,
+                        };
 
                         console.log('[InstallDependencies] Cleaning temp directory...');
                         if (fs.existsSync(tmpDir)) {

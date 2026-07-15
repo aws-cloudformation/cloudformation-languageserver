@@ -176,7 +176,7 @@
         "@msgpackr-extract/msgpackr-extract-linux-x64",
         "@msgpackr-extract/msgpackr-extract-win32-x64"
     ],
-    "unusedDependencies": [
+    "requiredPeerDeps": [
         "cbor-x"
     ],
     "rebuildDependencies": [
