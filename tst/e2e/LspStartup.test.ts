@@ -16,7 +16,7 @@ describe('LSP standalone bundle startup', () => {
     let client: LspClient | undefined;
 
     beforeAll(() => {
-        execSync('npm run bundle:alpha -- --env skipWheels=true --env quiet=true', {
+        execSync('npm run bundle:alpha -- --env skipWheels=true --env quiet=true > /dev/null 2>&1', {
             cwd: repoRoot,
             stdio: 'inherit',
         });
@@ -63,6 +63,8 @@ describe('LSP standalone bundle startup', () => {
             expect(status.schemasReady.ready).toBe(true);
             expect(status.cfnLintReady.ready).toBe(true);
             expect(status.cfnGuardReady.ready).toBe(true);
+
+            await client.shutdown();
         },
         TEST_TIMEOUT_MS,
     );
