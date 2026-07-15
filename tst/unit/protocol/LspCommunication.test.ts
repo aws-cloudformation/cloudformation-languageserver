@@ -1,6 +1,6 @@
 import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Connection, RemoteConsole } from 'vscode-languageserver/node';
+import { Connection, RemoteConsole } from 'vscode-languageserver';
 import {
     ShowMessageParams,
     ShowMessageRequestParams,

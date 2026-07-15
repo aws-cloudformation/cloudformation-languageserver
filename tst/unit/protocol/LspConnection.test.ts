@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { InitializeParams, InitializeResult } from 'vscode-languageserver/node';
+import { InitializeParams, InitializeResult } from 'vscode-languageserver';
 import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspConnection } from '../../../src/protocol/LspConnection';
 
@@ -13,8 +13,8 @@ vi.mock('../../../src/protocol/LspDocuments', () => ({
     }),
 }));
 
-vi.mock('vscode-languageserver/node', async () => {
-    const actual = await vi.importActual('vscode-languageserver/node');
+vi.mock('vscode-languageserver', async () => {
+    const actual = await vi.importActual('vscode-languageserver');
     return {
         ...actual,
         createConnection: vi.fn(() => mockConnection),

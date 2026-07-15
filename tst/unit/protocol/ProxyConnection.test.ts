@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { Connection } from 'vscode-languageserver/node';
+import { Connection } from 'vscode-languageserver';
 import { ProxyConnection } from '../../../src/protocol/ProxyConnection';
 
 describe('ProxyConnection', () => {

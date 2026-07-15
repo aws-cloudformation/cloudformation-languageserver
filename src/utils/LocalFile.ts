@@ -5,6 +5,7 @@ import { Stream } from 'node:stream';
 import { basename, dirname, join } from 'path';
 import { LockOptions, lock } from 'proper-lockfile';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { TelemetryService } from '../telemetry/TelemetryService';
 import { processId } from './Environment';
 import { DoesNotExist } from './errors/ErrorClasses';
 import {
@@ -29,6 +30,15 @@ export const LOCK_OPTIONS: LockOptions = {
         minTimeout: 50, // Minimum delay (ms) before the first retry
         maxTimeout: 2000, // Maximum delay (ms) cap for any single retry
         randomize: true, // Add jitter to retry delays to avoid contention between concurrent writes
+    },
+    onCompromised: (error) => {
+        log.warn(
+            error,
+            'Advisory file lock compromised (host sleep/suspend exceeded the stale window, or a concurrent process stole the stale lock); writes are atomic and reads are lockless, so continuing without failing',
+        );
+        TelemetryService.instance
+            .get('LocalFile')
+            .error('lock.compromised', error, undefined, { captureErrorAttributes: true });
     },
 };
 const STALE_TMP_FILE_THRESHOLD_MS = 30 * 60 * 1000;

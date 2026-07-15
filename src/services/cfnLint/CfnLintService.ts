@@ -219,7 +219,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             try {
                 const version = await this.workerManager.getCfnLintVersion();
                 this.telemetry.count('init.version', 1, { attributes: { version } });
-                this.log.info(`cfn-lint version: ${version}`);
+                this.log.info(`cfn-lint version: ${version} (initialized)`);
             } catch (error) {
                 this.log.warn(`Failed to get cfn-lint version: ${extractErrorMessage(error)}`);
             }
