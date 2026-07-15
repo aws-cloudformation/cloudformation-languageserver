@@ -24,15 +24,11 @@ import { DocumentMetadata } from '../../src/document/DocumentProtocol';
 import { Logger } from 'pino';
 import { CompletionItem, CompletionList, Diagnostic, Hover } from 'vscode-languageserver-types';
 
-/**
- * Common LSP client for CloudFormation Language Server testing.
- * Handles server startup, LSP protocol communication, and external service initialization detection.
- */
 export class LspClient implements LspConnection {
     private readonly serverProcess!: ChildProcess;
     private connection!: MessageConnection;
 
-    private readonly encryptionKey: Buffer = randomBytes(32);
+    public readonly encryptionKey: Buffer;
     private isShutdown = false;
     private workspaceConfig: Record<string, unknown>[];
 
@@ -46,6 +42,7 @@ export class LspClient implements LspConnection {
         this.workspaceConfig = config.workspaceConfig ?? [];
         this.clientLogger = config.clientLogger ?? createLspClientLogger();
         this.serverLogger = config.serverLogger ?? createLspServerLogger();
+        this.encryptionKey = config.encryptionKey ?? randomBytes(32);
 
         const args = this.config.mode === 'ipc' ? ['--node-ipc'] : ['--stdio'];
         this.clientLogger.info(`Spawning server with args: node ${this.config.serverPath} ${args.join(' ')}`);
@@ -142,7 +139,7 @@ export class LspClient implements LspConnection {
             this.serverLogger.error(output);
         } else if (lower.includes('warn:')) {
             this.serverLogger.warn(output);
-        } else if (lower.includes('initializing')) {
+        } else if (lower.includes('initializing') || lower.includes('listening') || lower.includes('launched')) {
             this.serverLogger.info(output);
         } else if (lower.includes('debug:')) {
             this.serverLogger.debug(output);

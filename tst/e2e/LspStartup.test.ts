@@ -12,8 +12,7 @@ describe('LSP standalone bundle startup', () => {
 
     // Run the bundle from an isolated temp directory outside the project tree.
     // This prevents Node's module resolution from walking up to the project
-    // root's node_modules/, which would mask missing externals that cause
-    // failures in canary/Hydra environments.
+    // root's node_modules/, which would mask missing dependencies issues
     const isolatedDir = join(tmpdir(), `cfn-lsp-startup-test-${v4()}`);
     const standalonePath = join(isolatedDir, 'cfn-lsp-server-standalone.js');
 
