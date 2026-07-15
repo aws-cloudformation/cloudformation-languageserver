@@ -122,6 +122,8 @@ export class SettingsManager implements ISettingsSubscriber, ReadinessContributo
      */
     @Measure({ name: 'settingsUpdate', captureErrorAttributes: true })
     private validateAndUpdate(newSettings: Settings): void {
+        this.settingsReady = false;
+
         const oldSettings = this.settingsState.toSettings();
 
         newSettings.diagnostics.cfnLint.initialization.maxDelayMs = clipNumber(
@@ -173,6 +175,8 @@ export class SettingsManager implements ISettingsSubscriber, ReadinessContributo
                 logger.error(error, 'Failed to update settings');
             }
         }
+
+        this.settingsReady = true;
     }
 
     private registerSettingsGauges(): void {
