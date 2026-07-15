@@ -6,7 +6,7 @@ import { CfnLintInitializationSettings, CfnLintSettings } from '../../settings/S
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Telemetry } from '../../telemetry/TelemetryDecorator';
-import { InitializationError, WorkerNotInitializedError } from '../../utils/errors/ErrorClasses';
+import { CfnLintInitializationError, WorkerNotInitializedError } from '../../utils/errors/ErrorClasses';
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 
@@ -202,7 +202,7 @@ export class PyodideWorkerManager {
             task.resolve(message.result);
         } else {
             const error = message.phase
-                ? new InitializationError(message.error ?? 'Unknown error', message.phase)
+                ? new CfnLintInitializationError(message.error ?? 'Unknown error', message.phase)
                 : new Error(message.error);
             task.reject(error);
         }

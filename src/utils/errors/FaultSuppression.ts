@@ -1,5 +1,5 @@
 import { isClientError } from './AwsErrorMapper';
-import { isClientNetworkError } from './ErrorUtils';
+import { isClientNetworkError } from './GenericErrorMapper';
 
 export const SUPPRESS_FAULT = Symbol('SUPPRESS_FAULT');
 

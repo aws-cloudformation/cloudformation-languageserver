@@ -368,6 +368,23 @@ describe('ScopedTelemetry', () => {
             });
         });
 
+        it('captures a generic error category by default', () => {
+            const error = Object.assign(new Error('certificate verification failed'), {
+                code: 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+            });
+
+            scopedTelemetry.error('test.error', error);
+
+            expect(mockAdd).toHaveBeenCalledWith(
+                1,
+                expect.objectContaining({
+                    'error.type': 'Error',
+                    'error.code': 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
+                    'error.category': 'tls',
+                }),
+            );
+        });
+
         it('captures structured error type but not message or stack when captureErrorAttributes is false', () => {
             const error = new Error('test error');
 

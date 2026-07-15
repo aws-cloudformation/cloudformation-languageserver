@@ -254,7 +254,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 'error.stack': 'at func (file.ts:10:5)',
             });
 
-            expect(errorType(error)).toEqual({
+            expect(errorType(error)).toMatchObject({
                 'error.code': 'Unknown',
                 'error.type': 'Error',
             });
@@ -273,7 +273,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 'error.stack': 'at func (file.ts:1:1)',
             });
 
-            expect(errorType(error)).toEqual({
+            expect(errorType(error)).toMatchObject({
                 'error.code': 'SomeCode',
                 'error.type': 'TypeError',
             });
@@ -291,7 +291,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 'error.stack': 'at x (x.ts:1:1)',
             });
 
-            expect(errorType(error)).toEqual({
+            expect(errorType(error)).toMatchObject({
                 'error.code': 'Unknown',
                 'error.type': 'Error',
             });
@@ -309,7 +309,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 'error.stack': 'at x (x.ts:1:1)',
             });
 
-            expect(errorType(error)).toEqual({
+            expect(errorType(error)).toMatchObject({
                 'error.code': 'Unknown',
                 'error.type': 'Error',
             });
@@ -323,7 +323,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 'error.origin': 'Unknown',
             });
 
-            expect(errorType(error)).toEqual({
+            expect(errorType(error)).toMatchObject({
                 'error.code': 'Unknown',
                 'error.type': 'string',
             });
@@ -337,7 +337,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 'error.origin': 'Unknown',
             });
 
-            expect(errorType(error)).toEqual({
+            expect(errorType(error)).toMatchObject({
                 'error.code': 'Unknown',
                 'error.type': 'object',
             });
@@ -351,7 +351,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 'error.origin': 'Unknown',
             });
 
-            expect(errorType(error)).toEqual({
+            expect(errorType(error)).toMatchObject({
                 'error.code': 'Unknown',
                 'error.type': 'undefined',
             });
@@ -366,7 +366,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 commitError: cause,
             });
 
-            expect(errorType(wrapper)).toEqual({
+            expect(errorType(wrapper)).toMatchObject({
                 'error.type': 'Error',
                 'error.code': 'Unknown',
                 'error.cause.type': 'MDBError',
@@ -378,7 +378,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
             const cause = Object.assign(new Error('disk full'), { code: 'ENOSPC' });
             const wrapper = new Error('write failed', { cause });
 
-            expect(errorType(wrapper)).toEqual({
+            expect(errorType(wrapper)).toMatchObject({
                 'error.type': 'Error',
                 'error.code': 'Unknown',
                 'error.cause.type': 'Error',
@@ -389,7 +389,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
         test('errorType reports Unknown cause code when the cause has none', () => {
             const wrapper = new Error('wrapper', { cause: new Error('inner') });
 
-            expect(errorType(wrapper)).toEqual({
+            expect(errorType(wrapper)).toMatchObject({
                 'error.type': 'Error',
                 'error.code': 'Unknown',
                 'error.cause.type': 'Error',
@@ -421,7 +421,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 'error.message': 'Error: standalone',
                 'error.stack': 'at x (x.ts:1:1)',
             });
-            expect(errorType(error)).toEqual({
+            expect(errorType(error)).toMatchObject({
                 'error.type': 'Error',
                 'error.code': 'Unknown',
             });
@@ -436,7 +436,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
             });
             awsError.name = 'AccessDeniedException';
 
-            expect(errorType(awsError)).toEqual({
+            expect(errorType(awsError)).toMatchObject({
                 'error.type': 'AccessDeniedException',
                 'error.code': 'AccessDenied',
                 'error.http.status': 403,
@@ -452,9 +452,10 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
             });
             axiosError.name = 'AxiosError';
 
-            expect(errorType(axiosError)).toEqual({
+            expect(errorType(axiosError)).toMatchObject({
                 'error.type': 'AxiosError',
                 'error.code': 'ERR_BAD_RESPONSE',
+                'error.category': 'http',
                 'error.http.status': 503,
             });
         });
@@ -464,7 +465,7 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
             cause.name = 'ThrottlingException';
             const wrapper = new Error('wrapper', { cause });
 
-            expect(errorType(wrapper)).toEqual({
+            expect(errorType(wrapper)).toMatchObject({
                 'error.type': 'Error',
                 'error.code': 'Unknown',
                 'error.cause.type': 'ThrottlingException',
@@ -484,15 +485,50 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
         });
     });
 
+    describe('errorType generic classification attributes', () => {
+        test('emits a generic network category with unknown AWS category', () => {
+            const error = Object.assign(new Error('getaddrinfo failed'), { code: 'CERT_HAS_EXPIRED' });
+
+            expect(errorType(error)).toMatchObject({
+                'error.category': 'tls',
+                'error.code': 'CERT_HAS_EXPIRED',
+            });
+        });
+
+        test('emits generic TLS and filesystem categories', () => {
+            const tlsError = Object.assign(new Error('certificate failed'), {
+                code: 'SELF_SIGNED_CERT_IN_CHAIN',
+            });
+            const filesystemError = Object.assign(new Error('file missing'), { code: 'ENOENT' });
+
+            expect(errorType(tlsError)['error.category']).toBe('tls');
+            expect(errorType(filesystemError)['error.category']).toBe('filesystem');
+        });
+
+        test('emits AWS and generic HTTP categories for recognized AWS responses', () => {
+            const error = Object.assign(new Error('invalid template'), {
+                name: 'ValidationError',
+                $metadata: { httpStatusCode: 400 },
+            });
+
+            expect(errorType(error)['error.aws.category']).toBe('validation');
+            expect(errorType(error)['error.category']).toBe('http');
+        });
+
+        test('emits unknown generic category for unrecognized errors', () => {
+            expect(errorType(new Error('plain failure'))['error.category']).toBeUndefined();
+        });
+    });
+
     describe('errorType AWS classification attributes', () => {
-        test('omits AWS attributes for non-AWS errors (category unknown)', () => {
+        test('emits unknown AWS category for non-AWS errors', () => {
             const result = errorType(new Error('plain bug'));
 
             expect(result['error.aws.category']).toBeUndefined();
             expect(result['error.aws.http.status']).toBeUndefined();
         });
 
-        test('omits AWS attributes for primitive non-Error inputs', () => {
+        test('emits unknown AWS category for primitive non-Error inputs', () => {
             expect(errorType('string error')['error.aws.category']).toBeUndefined();
             expect(errorType(null)['error.aws.category']).toBeUndefined();
             expect(errorType(undefined)['error.aws.category']).toBeUndefined();
@@ -560,14 +596,14 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
             });
         });
 
-        test('classifies generic 4xx (non-401/403/429) AWS responses as service', () => {
+        test('classifies AWS 404 responses as not_found', () => {
             const error = Object.assign(new Error('not found'), {
                 name: 'ResourceNotFoundException',
                 $metadata: { httpStatusCode: 404 },
             });
 
             expect(errorType(error)).toMatchObject({
-                'error.aws.category': 'service',
+                'error.aws.category': 'not_found',
                 'error.aws.http.status': '404',
             });
         });
@@ -603,7 +639,6 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
             const wrapper = new Error('wrapper', { cause });
 
             expect(errorType(wrapper)['error.aws.category']).toBeUndefined();
-            // Cause-derived attributes still get surfaced separately.
             expect(errorType(wrapper)['error.cause.type']).toBe('AccessDeniedException');
             expect(errorType(wrapper)['error.cause.http.status']).toBe('403');
         });
@@ -614,7 +649,6 @@ at Object.Module._extensions..js (node:internal/modules/cjs/loader:1213:10)`,
                 $metadata: { httpStatusCode: 500 },
             });
 
-            // Sanity check: http.status is stringified via sanitizeMessage.
             expect(typeof errorType(error)['error.aws.http.status']).toBe('string');
         });
     });

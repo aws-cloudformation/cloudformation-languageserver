@@ -2,6 +2,7 @@ import { Attributes } from '@opentelemetry/api';
 import { sanitizeMessage } from '../Sanitizer';
 import { classifyAwsError } from './AwsErrorMapper';
 import { extractRootCause, extractErrorCode, extractHttpStatus } from './ErrorUtils';
+import { classifyGenericError } from './GenericErrorMapper';
 
 /**
  * Best effort extraction of location of exception based on stack trace
@@ -21,7 +22,7 @@ export function extractLocationFromStack(stack?: string): Record<string, string>
     };
 }
 
-export function errorAttributes(error: unknown, origin?: 'uncaughtException' | 'unhandledRejection'): Attributes {
+export function errorAttributes(error: unknown, origin?: string): Attributes {
     const location = error instanceof Error ? extractLocationFromStack(error.stack) : {};
     const cause = extractRootCause(error);
     const causeLocation = cause ? extractLocationFromStack(cause.stack) : {};
@@ -47,14 +48,20 @@ export function errorType(error: unknown): Attributes {
     if (awsClassification.category !== 'unknown') {
         awsAttr['error.aws.category'] = sanitizeMessage(awsClassification.category);
     }
-    if (awsClassification.httpStatus) {
+    if (awsClassification.httpStatus !== undefined) {
         awsAttr['error.aws.http.status'] = sanitizeMessage(`${awsClassification.httpStatus}`);
+    }
+
+    const genericCategory = classifyGenericError(error);
+    const genericAttr: Record<string, string> = {};
+    if (genericCategory !== undefined) {
+        genericAttr['error.category'] = sanitizeMessage(genericCategory);
     }
 
     return {
         'error.type': sanitizeMessage(type),
         'error.code': sanitizeMessage(code ?? 'Unknown'),
-
+        ...genericAttr,
         ...(status !== undefined && { 'error.http.status': status }),
         ...(cause && {
             'error.cause.type': sanitizeMessage(cause.name),

@@ -6,7 +6,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { classifyAwsError } from '../utils/errors/AwsErrorMapper';
-import { isClientNetworkError } from '../utils/errors/ErrorUtils';
+import { isClientNetworkError } from '../utils/errors/GenericErrorMapper';
 import { AwsRegion } from '../utils/Region';
 import { downloadFile } from '../utils/RemoteDownload';
 import { PrivateSchemas, PrivateSchemasType, PrivateStoreKey } from './PrivateSchemas';

@@ -55,7 +55,7 @@ export class ScopedTelemetry implements Closeable {
         this.getOrCreateHistogram(name, options)?.record(value, attributes);
     }
 
-    error(name: string, error: unknown, origin?: 'uncaughtException' | 'unhandledRejection', config?: MetricConfig) {
+    error(name: string, error: unknown, origin?: string, config?: MetricConfig) {
         const attributes: Attributes = {
             ...config?.attributes,
             ...errorType(error),
