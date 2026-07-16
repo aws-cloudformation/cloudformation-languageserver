@@ -12,10 +12,10 @@ import {
     MessageConnection,
     TextDocumentContentChangeEvent,
 } from 'vscode-languageserver-protocol';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID as v4 } from 'crypto';
 import { CompactEncrypt } from 'jose';
 import { LspClientConfig, LspConnection } from './LspConnection';
-import { ExtendedInitializeParams } from '../../src/server/InitParams';
+import { AwsMetadata, ExtendedInitializeParams } from '../../src/server/InitParams';
 import { IamCredentials } from '../../src/auth/AwsLspAuthTypes';
 import { GetSystemStatusResponse } from '../../src/protocol/LspSystemHandlers';
 import { WaitFor } from '../../tst/utils/Utils';
@@ -29,6 +29,7 @@ export class LspClient implements LspConnection {
     private connection!: MessageConnection;
 
     public readonly encryptionKey: Buffer;
+    public readonly clientId: string;
     private isShutdown = false;
     private workspaceConfig: Record<string, unknown>[];
 
@@ -43,6 +44,7 @@ export class LspClient implements LspConnection {
         this.clientLogger = config.clientLogger ?? createLspClientLogger();
         this.serverLogger = config.serverLogger ?? createLspServerLogger();
         this.encryptionKey = config.encryptionKey ?? randomBytes(32);
+        this.clientId = config.awsConfig.clientInfo?.clientId ?? v4();
 
         const args = this.config.mode === 'ipc' ? ['--node-ipc'] : ['--stdio'];
         this.clientLogger.info(`Spawning server with args: node ${this.config.serverPath} ${args.join(' ')}`);
@@ -84,6 +86,17 @@ export class LspClient implements LspConnection {
     }
 
     private async performHandshake(): Promise<void> {
+        const awsConfig: AwsMetadata = {
+            ...this.config.awsConfig,
+            clientInfo: {
+                ...this.config.awsConfig.clientInfo,
+                clientId: this.clientId,
+            },
+            encryption: {
+                key: this.encryptionKey.toString('base64'),
+                mode: 'JWT',
+            },
+        };
         const initParams: ExtendedInitializeParams = {
             processId: process.pid,
             rootUri: 'file:///test/workspace',
@@ -96,13 +109,7 @@ export class LspClient implements LspConnection {
             clientInfo: this.config.clientConfig,
             workspaceFolders: [],
             initializationOptions: {
-                aws: {
-                    ...this.config.awsConfig,
-                    encryption: {
-                        key: this.encryptionKey.toString('base64'),
-                        mode: 'JWT',
-                    },
-                },
+                aws: awsConfig,
             },
         };
 
@@ -285,17 +292,18 @@ export class LspClient implements LspConnection {
     }
 
     async waitForSystemReady(timeoutMs = 30_000, pollMs = 250): Promise<void> {
+        let lastStatus: GetSystemStatusResponse;
         await WaitFor.waitFor(
             async () => {
                 const status = await this.getSystemStatus();
-                this.clientLogger.info(status, 'System status');
+                lastStatus = status;
                 if (
                     !status.settingsReady.ready ||
                     !status.schemasReady.ready ||
                     !status.cfnLintReady.ready ||
                     !status.cfnGuardReady.ready
                 ) {
-                    throw new Error('System not ready');
+                    throw new Error(`System not ready - ${JSON.stringify(lastStatus)}`);
                 }
             },
             timeoutMs,
@@ -321,6 +329,8 @@ export class LspClient implements LspConnection {
 
     async shutdown(): Promise<void> {
         if (this.isShutdown) return;
+
+        this.clientLogger.info('LSP connection shutting down');
         this.isShutdown = true;
 
         try {
