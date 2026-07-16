@@ -58,7 +58,7 @@ export class LspClient implements LspConnection {
         this.attachOutputListeners();
     }
 
-    async initialize(): Promise<void> {
+    async initialize() {
         this.clientLogger.info('Starting initialization...');
 
         // 1. Create LSP connection
@@ -85,7 +85,7 @@ export class LspClient implements LspConnection {
         await this.performHandshake();
     }
 
-    private async performHandshake(): Promise<void> {
+    private async performHandshake() {
         const awsConfig: AwsMetadata = {
             ...this.config.awsConfig,
             clientInfo: {
@@ -222,7 +222,7 @@ export class LspClient implements LspConnection {
         return this.connection.sendRequest(method, params);
     }
 
-    sendNotification(method: string, params: unknown): Promise<void> {
+    sendNotification(method: string, params: unknown) {
         return this.connection.sendNotification(method, params);
     }
 
@@ -234,7 +234,7 @@ export class LspClient implements LspConnection {
         this.connection.onRequest(method, handler);
     }
 
-    openDocument(uri: string, content: string): Promise<void> {
+    openDocument(uri: string, content: string) {
         return this.connection.sendNotification('textDocument/didOpen', {
             textDocument: {
                 uri,
@@ -245,7 +245,7 @@ export class LspClient implements LspConnection {
         });
     }
 
-    updateDocument(uri: string, version: number, changes: string | TextDocumentContentChangeEvent[]): Promise<void> {
+    updateDocument(uri: string, version: number, changes: string | TextDocumentContentChangeEvent[]) {
         const contentChanges =
             typeof changes === 'string'
                 ? [{ text: changes }] // Full replacement
@@ -260,7 +260,7 @@ export class LspClient implements LspConnection {
         });
     }
 
-    closeDocument(uri: string): Promise<void> {
+    closeDocument(uri: string) {
         return this.connection.sendNotification('textDocument/didClose', {
             textDocument: { uri },
         });
@@ -280,7 +280,7 @@ export class LspClient implements LspConnection {
         });
     }
 
-    changeConfiguration(params: DidChangeConfigurationParams): Promise<void> {
+    changeConfiguration(params: DidChangeConfigurationParams) {
         // Store the new configuration
         if (params.settings) {
             const currentConfig = this.workspaceConfig[0] ?? {};
@@ -291,7 +291,7 @@ export class LspClient implements LspConnection {
         return this.sendNotification('workspace/didChangeConfiguration', params);
     }
 
-    async waitForSystemReady(timeoutMs = 30_000, pollMs = 250): Promise<void> {
+    async waitForSystemReady(timeoutMs = 30_000, pollMs = 250) {
         let lastStatus: GetSystemStatusResponse;
         await WaitFor.waitFor(
             async () => {
@@ -311,7 +311,7 @@ export class LspClient implements LspConnection {
         );
     }
 
-    async updateCredentials(credentials: IamCredentials): Promise<void> {
+    async updateCredentials(credentials: IamCredentials) {
         const payload = new TextEncoder().encode(JSON.stringify({ data: credentials }));
         const jwt = await new CompactEncrypt(payload)
             .setProtectedHeader({ alg: 'dir', enc: 'A256GCM' })
@@ -327,7 +327,7 @@ export class LspClient implements LspConnection {
         return (await this.sendRequest('aws/system/status', {})) as GetSystemStatusResponse;
     }
 
-    async shutdown(): Promise<void> {
+    async shutdown() {
         if (this.isShutdown) return;
 
         this.clientLogger.info('LSP connection shutting down');
