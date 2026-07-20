@@ -380,13 +380,17 @@ async function initializePyodide(): Promise<InitializeResult> {
           return match_to_diagnostics(lint(template_str, config=ManualArgs(**config) if config else None), uri)
 
       def lint_uri(lint_path, uri, lint_type, settings=None):
+          import glob
           config = parse_cfn_lint_settings(settings)
           path = Path(lint_path)
-          
+
+          # cfn-lint expands these paths with glob.glob and raises ValueError when
+          # nothing matches, so escape glob metacharacters (e.g. [, ], *, ?) to make
+          # sure the path is treated literally.
           if lint_type == "template":
-              config["templates"] = [str(path)]
+              config["templates"] = [glob.escape(str(path))]
           elif lint_type == "gitsync-deployment":
-              config["deployment_files"] = [str(path)]
+              config["deployment_files"] = [glob.escape(str(path))]
 
           return match_to_diagnostics(lint_by_config(ManualArgs(**config)), uri)
     `);
