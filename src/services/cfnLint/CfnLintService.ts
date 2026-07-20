@@ -252,9 +252,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             return;
         }
 
-        const folderName =
-            folder.name.length > 0 ? folder.name : (folder.uri.replace('file://', '').split('/').pop() ?? '');
-        folder.name = folderName; // Update folder name to ensure consistent mounting and path resolution
+        folder.name = this.resolveFolderName(folder); // Update folder name to ensure consistent mounting and path resolution
 
         const fsDir = URI.parse(folder.uri).fsPath;
         const mountDir = '/'.concat(folder.name);
@@ -280,6 +278,45 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             });
             throw new MountError(`Failed to mount folder ${mountDir}`, error instanceof Error ? error : undefined);
         }
+    }
+
+    /**
+     * Resolve the display name for a workspace folder.
+     *
+     * Falls back to the last segment of the decoded URI path when the folder has no name,
+     * so percent-encoded characters (e.g. `%20`) never end up in the mount directory name.
+     *
+     * @param folder The workspace folder
+     * @returns The folder name
+     */
+    private resolveFolderName(folder: WorkspaceFolder): string {
+        if (folder.name.length > 0) {
+            return folder.name;
+        }
+        return URI.parse(folder.uri).path.split('/').findLast(Boolean) ?? '';
+    }
+
+    /**
+     * Convert a document URI to its path inside the Pyodide mount for its workspace folder.
+     *
+     * Both URIs are decoded via URI.parse before computing the relative path, so
+     * percent-encoded characters (e.g. `%20` for spaces) are translated to the real
+     * filesystem characters. Passing the raw URI suffix would make cfn-lint's
+     * glob-based file resolution fail for paths containing spaces or other
+     * percent-encoded characters (aws/aws-toolkit-vscode#8829).
+     *
+     * @param uri The document URI (percent-encoded)
+     * @param folder The workspace folder containing the document
+     * @returns The decoded path of the document under `/<folder.name>`
+     */
+    private toMountRelativePath(uri: string, folder: WorkspaceFolder): string {
+        const documentPath = URI.parse(uri).path;
+        let folderPath = URI.parse(folder.uri).path;
+        if (folderPath.endsWith('/')) {
+            folderPath = folderPath.slice(0, -1);
+        }
+        const suffix = documentPath.startsWith(folderPath) ? documentPath.slice(folderPath.length) : documentPath;
+        return `/${folder.name}${suffix}`;
     }
 
     /**
@@ -476,11 +513,8 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
                 throw error;
             }
 
-            const folderName =
-                folder.name.length > 0 ? folder.name : (folder.uri.replace('file://', '').split('/').pop() ?? '');
-
-            folder.name = folderName; // Update folder name to ensure consistent mounting and path resolution
-            const relativePath = uri.replace(folder.uri, '/'.concat(folder.name));
+            folder.name = this.resolveFolderName(folder); // Update folder name to ensure consistent mounting and path resolution
+            const relativePath = this.toMountRelativePath(uri, folder);
 
             let diagnosticPayloads;
             if (this.localExecutor) {

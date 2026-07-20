@@ -106,7 +106,8 @@ vi.mock('pyodide', () => ({
 vi.mock('vscode-uri', () => ({
     URI: {
         parse: vi.fn().mockImplementation((uri: string) => ({
-            fsPath: uri.replace('file://', '/path/to'),
+            fsPath: decodeURIComponent(uri.replace('file://', '/path/to')),
+            path: decodeURIComponent(uri.replace('file://', '')),
         })),
         file: vi.fn().mockImplementation((path: string) => path),
     },
@@ -409,6 +410,71 @@ describe('CfnLintService', () => {
                 ),
             ).toBe(true);
             expect(mockComponents.diagnosticCoordinator.publishDiagnostics.called).toBe(true);
+        });
+
+        test('should decode percent-encoded characters in workspace file paths (aws-toolkit-vscode#8829)', async () => {
+            const folderWithSpaces: WorkspaceFolder = {
+                uri: 'file:///workspace/Gemini%20TF%20AWS%20EKS%20Code',
+                name: 'Gemini TF AWS EKS Code',
+            };
+            const uriWithSpaces = 'file:///workspace/Gemini%20TF%20AWS%20EKS%20Code/CloudFormation%20Example.yaml';
+            mockComponents.workspace.getWorkspaceFolder.returns(folderWithSpaces);
+
+            await service.lint(mockTemplate, uriWithSpaces);
+
+            // Mounted with the decoded filesystem path and decoded mount dir
+            expect(
+                mockWorkerManager.mountFolder.calledWith(
+                    '/path/to/workspace/Gemini TF AWS EKS Code',
+                    '/Gemini TF AWS EKS Code',
+                ),
+            ).toBe(true);
+            // Linted with the decoded path — no %20 leaking into the filesystem path
+            expect(
+                mockWorkerManager.lintFile.calledWith(
+                    '/Gemini TF AWS EKS Code/CloudFormation Example.yaml',
+                    uriWithSpaces,
+                    CloudFormationFileType.Template,
+                ),
+            ).toBe(true);
+        });
+
+        test('should derive decoded folder name for percent-encoded folders without a name', async () => {
+            const unnamedFolderWithSpaces: WorkspaceFolder = {
+                uri: 'file:///workspace/My%20Project',
+                name: '',
+            };
+            const uriInFolder = 'file:///workspace/My%20Project/template.yaml';
+            mockComponents.workspace.getWorkspaceFolder.returns(unnamedFolderWithSpaces);
+
+            await service.lint(mockTemplate, uriInFolder);
+
+            expect(mockWorkerManager.mountFolder.calledWith('/path/to/workspace/My Project', '/My Project')).toBe(true);
+            expect(
+                mockWorkerManager.lintFile.calledWith(
+                    '/My Project/template.yaml',
+                    uriInFolder,
+                    CloudFormationFileType.Template,
+                ),
+            ).toBe(true);
+        });
+
+        test('should handle workspace folder URIs with a trailing slash', async () => {
+            const folderWithTrailingSlash: WorkspaceFolder = {
+                uri: 'file:///workspace/project/',
+                name: 'project',
+            };
+            mockComponents.workspace.getWorkspaceFolder.returns(folderWithTrailingSlash);
+
+            await service.lint(mockTemplate, mockUri);
+
+            expect(
+                mockWorkerManager.lintFile.calledWith(
+                    '/project/template.yaml',
+                    mockUri,
+                    CloudFormationFileType.Template,
+                ),
+            ).toBe(true);
         });
 
         test('should handle templates with triple quotes', async () => {
