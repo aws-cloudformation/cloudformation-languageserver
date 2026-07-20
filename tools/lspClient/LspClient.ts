@@ -293,6 +293,7 @@ export class LspClient implements LspConnection {
 
     async waitForSystemReady(timeoutMs = 30_000, pollMs = 250) {
         let lastStatus: GetSystemStatusResponse;
+        const startTime = performance.now();
         await WaitFor.waitFor(
             async () => {
                 const status = await this.getSystemStatus();
@@ -304,6 +305,8 @@ export class LspClient implements LspConnection {
                     !status.cfnGuardReady.ready
                 ) {
                     throw new Error(`System not ready - ${JSON.stringify(lastStatus)}`);
+                } else {
+                    this.clientLogger.info(`System ready in ${performance.now() - startTime}ms`);
                 }
             },
             timeoutMs,
