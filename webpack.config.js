@@ -282,6 +282,8 @@ const baseConfig = {
     entry: {
         [BUNDLE_NAME]: './src/app/standalone.ts',
         'pyodide-worker': './src/services/cfnLint/pyodide-worker.ts',
+        'cfn-lsp-proxy': './src/app/cfn-lsp-proxy.ts',
+        'cfn-lsp-proxy-client': './src/app/cfn-lsp-proxy-client.ts',
     },
     resolve: {
         extensions: ['.ts', '.js', '.node'],

@@ -63,7 +63,18 @@ describe('AwsCredentials', () => {
             const result = await awsCredentials.handleIamCredentialsUpdate({ data: 'invalid-data' });
 
             expect(result).toBe(false);
-            expect(mockSettingsManager.updateProfileSettings).toHaveBeenCalledWith('default', 'us-east-1');
+            // A failed update must NOT reset profile settings (Gap 3 fix)
+            expect(mockSettingsManager.updateProfileSettings).not.toHaveBeenCalled();
+        });
+
+        test('keeps previous valid credentials after a failed update', async () => {
+            await awsCredentials.handleIamCredentialsUpdate(await encryptData(testCredentials));
+
+            const result = await awsCredentials.handleIamCredentialsUpdate({ data: 'invalid-data' });
+
+            expect(result).toBe(false);
+            // Previous credentials survive the failed push (Gap 3 fix)
+            expect(() => awsCredentials.getIAM()).not.toThrow();
         });
 
         test('handles malformed JSON in encrypted data', async () => {
@@ -89,6 +100,8 @@ describe('AwsCredentials', () => {
             awsCredentials.handleIamCredentialsDelete();
 
             expect(() => awsCredentials.getIAM()).toThrow('IAM credentials not configured');
+            // Explicit sign-out resets profile settings to defaults (Gap 3 fix)
+            expect(mockSettingsManager.updateProfileSettings).toHaveBeenCalledWith('default', 'us-east-1');
         });
     });
 

@@ -908,6 +908,29 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
     }
 
     /**
+     * Tear down the Pyodide worker to reclaim its memory (JS heap + WASM
+     * linear memory, the server's largest pool). Called by the MemoryMonitor
+     * when process RSS exceeds its budget.
+     *
+     * The service returns to Uninitialized: the next lint request queues and
+     * triggers lazy re-initialization (see lintDelayed/ensureInitialized),
+     * which reloads Pyodide and remounts previously mounted folders. Until
+     * then the freed memory stays freed.
+     */
+    public async restartWorker(reason: string): Promise<void> {
+        if (this.localExecutor || this.status !== STATUS.Initialized) {
+            return; // nothing heavy to reclaim
+        }
+        this.log.warn(`Restarting cfn-lint worker to reclaim memory: ${reason}`);
+        this.telemetry.count('worker.memoryRestart', 1);
+
+        // Cancel in-flight delayed lints — their worker is going away
+        this.delayer.cancelAll();
+        await this.workerManager.shutdown();
+        this.status = STATUS.Uninitialized;
+    }
+
+    /**
      * Shutdown the cfn-lint service and clean up resources.
      *
      * This method:

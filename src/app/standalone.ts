@@ -58,11 +58,9 @@ process.on('uncaughtException', (error, origin) => {
 });
 
 // Exit when the client abandons the connection, regardless of handshake state.
-// Without this, an abandoned restart leaves a full-sized immortal process: the
-// Pyodide worker thread and OTEL timers keep the event loop alive, the exit
-// notification never arrives, and the parent-PID watchdog doesn't fire because
-// the IDE JVM is still running (see docs/memory-investigation.md).
-// eslint-disable-next-line unicorn/no-process-exit -- intentional: clean exit when the client abandons the connection
-process.stdin.on('end', () => process.exit(0));
-// eslint-disable-next-line unicorn/no-process-exit -- intentional: clean exit when the client abandons the connection
+// Exit when the client drops the connection — without this, active
+// handles keep the event loop alive and the process leaks.
+// This only fires when the client abandons the handshake; normal
+// shutdown flushes telemetry correctly and exits via the library before stdin closes.
+// eslint-disable-next-line unicorn/no-process-exit
 process.stdin.on('close', () => process.exit(0));

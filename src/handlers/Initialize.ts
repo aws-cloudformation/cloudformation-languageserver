@@ -6,6 +6,10 @@ const logger = LoggerFactory.getLogger('InitializedHandler');
 
 export function initializedHandler(workspace: LspWorkspace, components: ServerComponents): () => void {
     return (): void => {
+        // Begin watching process RSS (covers main heap, worker heap, and
+        // Pyodide WASM memory — all in this process)
+        components.memoryMonitor.start();
+
         components.settingsManager
             .syncConfiguration()
             .then(() => {

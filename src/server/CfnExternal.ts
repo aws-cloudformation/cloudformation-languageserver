@@ -10,6 +10,7 @@ import { CcapiService } from '../services/CcapiService';
 import { CfnLintService } from '../services/cfnLint/CfnLintService';
 import { CfnService } from '../services/CfnService';
 import { GuardService } from '../services/guard/GuardService';
+import { MemoryMonitor } from '../services/MemoryMonitor';
 import { OnlineStatus } from '../services/OnlineStatus';
 import { S3Service } from '../services/S3Service';
 import { Closeable, closeSafely } from '../utils/Closeable';
@@ -38,6 +39,7 @@ export class CfnExternal implements Configurables, Closeable {
     readonly onlineStatus: OnlineStatus;
     readonly featureFlags: FeatureFlagProvider;
     readonly onlineFeatureGuard: OnlineFeatureGuard;
+    readonly memoryMonitor: MemoryMonitor;
 
     constructor(lsp: LspComponents, core: CfnInfraCore, overrides: Omit<Partial<CfnExternal>, 'featureFlags'> = {}) {
         this.awsClient =
@@ -70,6 +72,21 @@ export class CfnExternal implements Configurables, Closeable {
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus();
         this.featureFlags = core.featureFlags;
         this.onlineFeatureGuard = overrides.onlineFeatureGuard ?? new OnlineFeatureGuard(core.awsCredentials);
+        // RSS watchdog — restarts the Pyodide worker (or exits) on runaway
+        // memory growth, and guards the main V8 heap (non-Pyodide pool) by
+        // dropping rebuildable caches / exiting gracefully before V8 aborts.
+        // Started from the initialized handler.
+        this.memoryMonitor =
+            overrides.memoryMonitor ??
+            new MemoryMonitor(
+                (reason) => this.cfnLintService.restartWorker(reason),
+                {},
+                (): Promise<void> => {
+                    // Combined schema cache rebuilds on the next schema lookup
+                    this.schemaStore.invalidate();
+                    return Promise.resolve();
+                },
+            );
     }
 
     configurables(): Configurable[] {
@@ -77,6 +94,12 @@ export class CfnExternal implements Configurables, Closeable {
     }
 
     async close() {
-        return await closeSafely(this.cfnLintService, this.guardService, this.schemaRetriever, this.onlineStatus);
+        return await closeSafely(
+            this.memoryMonitor,
+            this.cfnLintService,
+            this.guardService,
+            this.schemaRetriever,
+            this.onlineStatus,
+        );
     }
 }

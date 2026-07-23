@@ -52,6 +52,7 @@ import { CfnService } from '../../src/services/CfnService';
 import { CodeActionService } from '../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import { GuardService } from '../../src/services/guard/GuardService';
+import { MemoryMonitor } from '../../src/services/MemoryMonitor';
 import { OnlineStatus } from '../../src/services/OnlineStatus';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { S3Service } from '../../src/services/S3Service';
@@ -372,6 +373,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         guardService: overrides.guardService ?? createMockGuardService(),
         s3Service: overrides.s3Service ?? stubInterface(),
         onlineStatus: overrides.onlineStatus ?? stubInterface<OnlineStatus>(),
+        memoryMonitor: overrides.memoryMonitor ?? stubInterface<MemoryMonitor>(),
         featureFlags: overrides.featureFlags ?? stubInterface<FeatureFlagProvider>(),
         onlineFeatureGuard: overrides.onlineFeatureGuard ?? createMockOnlineFeatureGuard(),
         close: () => Promise.resolve(),

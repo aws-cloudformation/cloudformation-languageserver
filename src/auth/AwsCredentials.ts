@@ -85,10 +85,9 @@ export class AwsCredentials {
             return true;
         } catch (error) {
             this.telemetry.count('update.fault', 1);
-            this.iamCredentials = undefined;
-
+            // Keep the previous valid credentials — a failed *new* credential push
+            // must not destroy a working session (memory-investigation.md, Gap 3).
             this.logger.error(error, `Failed to update IAM credentials`);
-            this.settingsManager.updateProfileSettings(DefaultSettings.profile.profile, DefaultSettings.profile.region);
             return false;
         }
     }
@@ -96,5 +95,7 @@ export class AwsCredentials {
     handleIamCredentialsDelete() {
         this.logger.info('IAM credentials deleted');
         this.iamCredentials = undefined;
+        // Explicit sign-out: subscribers drop the stale profile settings.
+        this.settingsManager.updateProfileSettings(DefaultSettings.profile.profile, DefaultSettings.profile.region);
     }
 }

@@ -1622,3 +1622,35 @@ describe('CfnLintService', () => {
         });
     });
 });
+
+describe('restartWorker (memory reclaim)', () => {
+    test('shuts down the worker and returns to Uninitialized when initialized', async () => {
+        const { service, workerManager } = createTestServiceWithState({ status: 2 /* Initialized */ });
+        workerManager.shutdown.resolves();
+
+        await service.restartWorker('test: soft limit exceeded');
+
+        expect(workerManager.shutdown.calledOnce).toBe(true);
+        expect(service.isInitialized()).toBe(false);
+        // Lazy re-init path: isReady stays truthful (not ready until next lint re-initializes)
+        expect(service.isReady().ready).toBe(false);
+    });
+
+    test('is a no-op when the service is not initialized', async () => {
+        const { service, workerManager } = createTestServiceWithState({ status: 0 /* Uninitialized */ });
+
+        await service.restartWorker('test');
+
+        expect(workerManager.shutdown.called).toBe(false);
+    });
+
+    test('is a no-op when using the local executor (no Pyodide to reclaim)', async () => {
+        const { service, workerManager } = createTestServiceWithState({ status: 2 });
+        (service as any).localExecutor = {};
+
+        await service.restartWorker('test');
+
+        expect(workerManager.shutdown.called).toBe(false);
+        expect(service.isInitialized()).toBe(true);
+    });
+});
