@@ -124,8 +124,10 @@ describe('PyodideWorkerManager', () => {
             // Start initialization
             const initPromise = workerManager.initialize();
 
-            // Verify worker was created
-            expect(workerConstructor).toHaveBeenCalledWith(expect.stringContaining('pyodide-worker.js'));
+            // Verify worker was created with a heap cap on the worker thread
+            expect(workerConstructor).toHaveBeenCalledWith(expect.stringContaining('pyodide-worker.js'), {
+                resourceLimits: { maxOldGenerationSizeMb: 128 },
+            });
 
             // Verify event handlers were set up
             expect(mockWorker.on.calledWith('message', sinon.match.func)).toBe(true);
@@ -270,8 +272,10 @@ describe('PyodideWorkerManager', () => {
             // Skip path.join check since we're having trouble making it a spy
             // expect(path.join).toHaveBeenCalledWith(expect.any(String), 'pyodide-worker.js');
 
-            // Verify Worker constructor was called with a string path
-            expect(workerConstructor).toHaveBeenCalledWith(expect.any(String));
+            // Verify Worker constructor was called with a string path and resource limits
+            expect(workerConstructor).toHaveBeenCalledWith(expect.any(String), {
+                resourceLimits: { maxOldGenerationSizeMb: 128 },
+            });
         });
     });
 

@@ -9,7 +9,7 @@ import { staticInitialize } from './initialize';
 
 let server: unknown;
 
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, no-console */
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, no-console */
 async function onInitialize(params: ExtendedInitializeParams) {
     staticInitialize(params.clientInfo, params.initializationOptions?.['aws']);
 
@@ -30,7 +30,11 @@ function onInitialized(params: InitializedParams) {
 
 function onShutdown() {
     console.error(`${ExtensionName} shutting down...`);
-    return (server as any).close();
+    // Respond even if close() hangs (e.g. a stalled telemetry flush) — an
+    // unanswered shutdown makes the client abandon the handshake and spawn a
+    // replacement, leaking this process (see docs/memory-investigation.md,
+    // "Orphaned Server Processes").
+    return Promise.race([(server as any).close(), new Promise((resolve) => setTimeout(resolve, 5000))]);
 }
 
 function onExit() {
@@ -52,3 +56,13 @@ process.on('unhandledRejection', (reason, _promise) => {
 process.on('uncaughtException', (error, origin) => {
     console.error(error, `Unhandled exception ${origin}`);
 });
+
+// Exit when the client abandons the connection, regardless of handshake state.
+// Without this, an abandoned restart leaves a full-sized immortal process: the
+// Pyodide worker thread and OTEL timers keep the event loop alive, the exit
+// notification never arrives, and the parent-PID watchdog doesn't fire because
+// the IDE JVM is still running (see docs/memory-investigation.md).
+// eslint-disable-next-line unicorn/no-process-exit -- intentional: clean exit when the client abandons the connection
+process.stdin.on('end', () => process.exit(0));
+// eslint-disable-next-line unicorn/no-process-exit -- intentional: clean exit when the client abandons the connection
+process.stdin.on('close', () => process.exit(0));

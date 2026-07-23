@@ -86,7 +86,14 @@ export class PyodideWorkerManager {
                 // Use a path relative to the current file
                 const workerPath = path.join(__dirname, 'pyodide-worker.js');
                 this.log.info(`Loading worker from: ${workerPath}`);
-                this.worker = new Worker(workerPath);
+                // Cap the worker's JS heap — NODE_OPTIONS --max-old-space-size is NOT
+                // inherited by worker threads. A worker exceeding the cap is terminated
+                // and restarted cleanly, converting a leak into a recoverable event.
+                // Note: this bounds the V8 heap only; Pyodide's WASM linear memory
+                // (~200-300MB) is allocated outside V8 and cannot be capped here.
+                this.worker = new Worker(workerPath, {
+                    resourceLimits: { maxOldGenerationSizeMb: 128 },
+                });
 
                 // Add exit event handler to detect crashes
                 this.worker.on('exit', (code) => {

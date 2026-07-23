@@ -176,6 +176,14 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * @throws Error if initialization fails at any step
      */
     public async initialize(): Promise<void> {
+        // Respect the enabled setting — skip Pyodide entirely if disabled.
+        // Without this check users with cfnLint.enabled=false still pay the
+        // ~250-300MB Pyodide cost (docs/memory-investigation.md, Option 0).
+        if (!this.settings.enabled) {
+            this.log.info('cfn-lint is disabled, skipping Pyodide initialization');
+            return;
+        }
+
         if (this.status !== STATUS.Uninitialized) {
             return;
         }
@@ -243,6 +251,12 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * @throws Error if the service is not initialized or mounting fails
      */
     public async mountFolder(folder: WorkspaceFolder): Promise<void> {
+        // When cfn-lint is disabled, Pyodide is never initialized (see initialize())
+        // so there is nothing to mount into.
+        if (!this.settings.enabled) {
+            return;
+        }
+
         if (this.status === STATUS.Uninitialized) {
             throw new Error('CfnLintService not initialized. Call initialize() first.');
         }
