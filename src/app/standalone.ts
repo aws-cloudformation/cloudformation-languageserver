@@ -52,3 +52,9 @@ process.on('unhandledRejection', (reason, _promise) => {
 process.on('uncaughtException', (error, origin) => {
     console.error(error, `Unhandled exception ${origin}`);
 });
+
+// Exit when the client drops the connection. Without this, active
+// handles keep the event loop alive and the process leaks.
+// Normal shutdown flushes telemetry and exits via the library before stdin closes.
+// eslint-disable-next-line unicorn/no-process-exit
+process.stdin.on('close', () => process.exit(0));

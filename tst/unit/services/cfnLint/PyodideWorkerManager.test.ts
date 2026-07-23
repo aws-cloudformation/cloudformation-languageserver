@@ -125,7 +125,9 @@ describe('PyodideWorkerManager', () => {
             const initPromise = workerManager.initialize();
 
             // Verify worker was created
-            expect(workerConstructor).toHaveBeenCalledWith(expect.stringContaining('pyodide-worker.js'));
+            expect(workerConstructor).toHaveBeenCalledWith(expect.stringContaining('pyodide-worker.js'), {
+                resourceLimits: { maxOldGenerationSizeMb: 128 },
+            });
 
             // Verify event handlers were set up
             expect(mockWorker.on.calledWith('message', sinon.match.func)).toBe(true);
@@ -271,7 +273,9 @@ describe('PyodideWorkerManager', () => {
             // expect(path.join).toHaveBeenCalledWith(expect.any(String), 'pyodide-worker.js');
 
             // Verify Worker constructor was called with a string path
-            expect(workerConstructor).toHaveBeenCalledWith(expect.any(String));
+            expect(workerConstructor).toHaveBeenCalledWith(expect.any(String), {
+                resourceLimits: { maxOldGenerationSizeMb: 128 },
+            });
         });
     });
 

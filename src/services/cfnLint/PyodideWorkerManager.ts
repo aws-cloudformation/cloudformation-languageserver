@@ -86,7 +86,9 @@ export class PyodideWorkerManager {
                 // Use a path relative to the current file
                 const workerPath = path.join(__dirname, 'pyodide-worker.js');
                 this.log.info(`Loading worker from: ${workerPath}`);
-                this.worker = new Worker(workerPath);
+                this.worker = new Worker(workerPath, {
+                    resourceLimits: { maxOldGenerationSizeMb: 128 },
+                });
 
                 // Add exit event handler to detect crashes
                 this.worker.on('exit', (code) => {
