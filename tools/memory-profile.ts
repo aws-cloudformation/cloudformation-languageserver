@@ -287,7 +287,7 @@ function generateNestedTemplate(resourceCount: number): string {
             i % 3 === 0 ? `    Condition: Condition${i % 5}` : '',
             hasDependency ? `    DependsOn: Resource${i - 1}` : '',
             `    Metadata:`,
-            `      Comment: !Sub "Resource ${i} in \${AWS::StackName}"`,
+            `      Comment: !Sub 'Resource ${i} in \${AWS::StackName}'`,
             `      Nested:`,
             `        Level1:`,
             `          Level2:`,
@@ -301,7 +301,7 @@ function generateNestedTemplate(resourceCount: number): string {
                 `    Value: !Ref Resource${i}`,
                 `    Condition: Condition${i % 5}`,
                 `    Export:`,
-                `      Name: !Sub "\${AWS::StackName}-output-${i}"`,
+                `      Name: !Sub '\${AWS::StackName}-output-${i}'`,
             ].join('\n'));
         }
     }
