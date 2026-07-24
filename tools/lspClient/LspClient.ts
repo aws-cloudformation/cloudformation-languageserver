@@ -328,6 +328,10 @@ export class LspClient implements LspConnection {
         return (await this.sendRequest('aws/system/status', {})) as GetSystemStatusResponse;
     }
 
+    async getMemoryStats(): Promise<{ rss_mb: number; heap_used_mb: number; heap_total_mb: number; heap_limit_mb: number; external_mb: number; array_buffers_mb: number; wasm_mb: number }> {
+        return (await this.connection.sendRequest('aws/debug/memory')) as any;
+    }
+
     async shutdown() {
         if (this.isShutdown) return;
 

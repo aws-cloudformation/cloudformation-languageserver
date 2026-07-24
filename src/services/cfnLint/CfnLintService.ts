@@ -907,6 +907,13 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         return this.status === STATUS.Initialized;
     }
 
+    public async getWasmMemoryBytes(): Promise<number> {
+        if (this.status !== STATUS.Initialized || this.localExecutor) {
+            return 0;
+        }
+        return this.workerManager.getWasmMemoryBytes();
+    }
+
     /**
      * Tear down the Pyodide worker to reclaim its memory (JS heap + WASM
      * linear memory, the server's largest pool). Called by the MemoryMonitor

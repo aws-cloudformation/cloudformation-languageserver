@@ -77,6 +77,12 @@ if (parentPort) {
                     result = await getVersion();
                     break;
                 }
+                case 'getWasmMemory': {
+                    result = pyodide
+                        ? { bytes: (pyodide as any)._module.HEAPU8.length }
+                        : { bytes: 0 };
+                    break;
+                }
                 default: {
                     throw new Error(`Unknown action: ${action}`);
                 }

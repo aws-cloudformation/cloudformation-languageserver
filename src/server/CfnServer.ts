@@ -121,6 +121,10 @@ export class CfnServer {
             withTelemetryContext('SystemStatus', getSystemStatusHandler(this.components)),
         );
 
+        this.lsp.systemHandlers.registerMemoryStats(
+            () => this.external.cfnLintService.getWasmMemoryBytes(),
+        );
+
         this.lsp.authHandlers.onIamCredentialsUpdate(
             withTelemetryContext('Auth.Update', iamCredentialsUpdateHandler(this.components)),
         );

@@ -232,6 +232,11 @@ export class PyodideWorkerManager {
         return await this.executeTask<string>('getVersion', {});
     }
 
+    public async getWasmMemoryBytes(): Promise<number> {
+        const result = await this.executeTask<{ bytes: number }>('getWasmMemory', {});
+        return result.bytes;
+    }
+
     public async lintFile(
         path: string,
         uri: string,
