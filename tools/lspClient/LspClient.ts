@@ -291,20 +291,21 @@ export class LspClient implements LspConnection {
         return this.sendNotification('workspace/didChangeConfiguration', params);
     }
 
-    async waitForSystemReady(timeoutMs = 30_000, pollMs = 250) {
+    async waitForSystemReady(timeoutMs = 30_000, pollMs = 250, requireCfnLint = false) {
         const startTime = performance.now();
         await WaitFor.waitFor(
             async () => {
                 const status = await this.getSystemStatus();
-                if (
+                const required =
                     !status.settingsReady.ready ||
                     !status.schemasReady.ready ||
-                    !status.cfnLintReady.ready ||
-                    !status.cfnGuardReady.ready
-                ) {
+                    !status.cfnGuardReady.ready;
+                const lintMissing = !status.cfnLintReady.ready;
+                if (required || (requireCfnLint && lintMissing)) {
                     throw new Error(`System not ready - ${JSON.stringify(status)}`);
                 } else {
-                    this.clientLogger.info(`System ready in ${performance.now() - startTime}ms`);
+                    const lintNote = lintMissing ? ' (cfnLint not ready - skipped)' : '';
+                    this.clientLogger.info(`System ready in ${performance.now() - startTime}ms${lintNote}`);
                 }
             },
             timeoutMs,

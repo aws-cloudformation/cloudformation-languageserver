@@ -356,7 +356,7 @@ async function createClient(config: ProfileConfig): Promise<LspClient> {
     });
 
     await client.initialize();
-    await client.waitForSystemReady();
+    await client.waitForSystemReady(120_000, 250, true);
     return client;
 }
 
@@ -501,7 +501,7 @@ const scenarios: Record<number, { name: string; fn: ScenarioFn }> = {
             });
 
             await client.initialize();
-            await client.waitForSystemReady();
+            await client.waitForSystemReady(120_000, 250, true);
             const pid = getPid(client);
 
             let peakRssKb = 0;
@@ -755,7 +755,7 @@ const scenarios: Record<number, { name: string; fn: ScenarioFn }> = {
                 env,
             });
             await client.initialize();
-            await client.waitForSystemReady();
+            await client.waitForSystemReady(120_000, 250, true);
             const pid = getPid(client);
 
             let peakRssKb = 0;
@@ -808,7 +808,7 @@ const scenarios: Record<number, { name: string; fn: ScenarioFn }> = {
                 env,
             });
             await client.initialize();
-            await client.waitForSystemReady();
+            await client.waitForSystemReady(120_000, 250, true);
             const pid = getPid(client);
 
             let peakRssKb = 0;
@@ -859,7 +859,7 @@ const scenarios: Record<number, { name: string; fn: ScenarioFn }> = {
                 env,
             });
             await client.initialize();
-            await client.waitForSystemReady();
+            await client.waitForSystemReady(120_000, 250, true);
             const pid = getPid(client);
 
             let peakRssKb = 0;
