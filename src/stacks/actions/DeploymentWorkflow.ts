@@ -13,6 +13,8 @@ import {
     processWorkflowUpdates,
     mapChangesToStackChanges,
     isStackInReview,
+    extractHookFailures,
+    isFailedHookStatus,
 } from './StackActionOperations';
 import {
     StackActionPhase,
@@ -110,6 +112,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
             ...this.getStatus(params),
             DeploymentEvents: workflow.deploymentEvents,
             FailureReason: workflow.failureReason,
+            HookFailures: workflow.hookFailures,
         };
     }
 
@@ -136,6 +139,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: deploymentResult.phase,
                 state: deploymentResult.state,
+                failureReason: deploymentResult.failureReason,
             });
         } catch (error) {
             this.log.error(error, `Deployment workflow threw exception ${workflowId}`);
@@ -186,8 +190,14 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
                     DetailedStatus: event.DetailedStatus,
                 })) ?? [];
 
+            const hookFailures =
+                existingWorkflow.state === StackActionState.FAILED ? extractHookFailures(allEvents) : [];
             processWorkflowUpdates(this.workflows, existingWorkflow, {
                 deploymentEvents: deploymentEvents,
+                ...(existingWorkflow.state === StackActionState.FAILED && !existingWorkflow.failureReason
+                    ? { failureReason: this.deriveFailureReasonFromEvents(allEvents) }
+                    : {}),
+                ...(hookFailures.length > 0 ? { hookFailures } : {}),
             });
         } catch (error) {
             this.log.error(error, `Failed to process deployment events ${stackName}`);
@@ -202,6 +212,31 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
 
     static create(core: CfnInfraCore, external: CfnExternal): DeploymentWorkflow {
         return new DeploymentWorkflow(external.cfnService, core.documentManager);
+    }
+
+    /**
+     * Build a human-readable failure reason from stack events. Prefers hook failure
+     * reasons (most specific, e.g. "the following rule(s) failed: X"), then falls back to
+     * resource *_FAILED reasons, skipping the generic "Rollback requested by user" line.
+     */
+    private deriveFailureReasonFromEvents(events: StackEvent[]): string | undefined {
+        const hookReasons: string[] = [];
+        const resourceReasons: string[] = [];
+        for (const event of events) {
+            const id = event.LogicalResourceId ? `${event.LogicalResourceId}: ` : '';
+            if (isFailedHookStatus(event.HookStatus) && event.HookStatusReason) {
+                hookReasons.push(`${id}${event.HookStatusReason}`);
+            } else if (
+                event.ResourceStatus?.endsWith('_FAILED') &&
+                event.ResourceStatusReason &&
+                !/Rollback requested by user/i.test(event.ResourceStatusReason)
+            ) {
+                resourceReasons.push(`${id}${event.ResourceStatusReason}`);
+            }
+        }
+        const chosen = hookReasons.length > 0 ? hookReasons : resourceReasons;
+        const unique = [...new Set(chosen)];
+        return unique.length > 0 ? unique.join('; ') : undefined;
     }
 
     private async determineChangeSetType(

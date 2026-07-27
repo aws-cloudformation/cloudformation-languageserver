@@ -2,6 +2,7 @@ import { randomUUID as uuidv4 } from 'crypto';
 import {
     Change,
     ChangeSetType,
+    ChangeSetHook,
     StackStatus,
     OnStackFailure,
     EventType,
@@ -27,6 +28,7 @@ import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { toHttpsPathStyleS3Url } from '../../utils/S3Url';
 import { toString } from '../../utils/String';
 import { pointToPosition } from '../../utils/TypeConverters';
+import { ChangeSetHookInfo } from '../StackRequestType';
 import {
     StackChange,
     StackActionPhase,
@@ -35,6 +37,7 @@ import {
     ValidationDetail,
     DeploymentMode,
     ResourceToImport,
+    HookFailure,
 } from './StackActionRequestType';
 import {
     StackActionWorkflowState,
@@ -46,8 +49,81 @@ import { CFN_VALIDATION_SOURCE } from './ValidationWorkflow';
 
 const logger = LoggerFactory.getLogger('StackActionOperations');
 
+export type HookEventLike = {
+    HookType?: string;
+    HookStatus?: string;
+    HookStatusReason?: string;
+    LogicalResourceId?: string;
+};
+
+export function isFailedHookStatus(status: string | undefined): boolean {
+    return status === 'HOOK_COMPLETE_FAILED' || status === 'HOOK_FAILED';
+}
+
+export function extractHookFailures(events: HookEventLike[]): HookFailure[] {
+    const failures: HookFailure[] = [];
+    const seen = new Set<string>();
+    for (const event of events) {
+        if (isFailedHookStatus(event.HookStatus)) {
+            if (!event.HookType) {
+                continue;
+            }
+            const key = `${event.HookType}::${event.LogicalResourceId ?? ''}::${event.HookStatusReason ?? ''}`;
+            if (seen.has(key)) {
+                continue;
+            }
+            seen.add(key);
+            failures.push({
+                typeName: event.HookType,
+                status: event.HookStatus as string,
+                reason: event.HookStatusReason,
+                logicalResourceId: event.LogicalResourceId,
+            });
+        }
+    }
+    return failures;
+}
+
 function logCleanupError(error: unknown, workflowId: string, changeSetName: string, operation: string): void {
     logger.warn(error, `Failed to cleanup ${operation} ${workflowId} ${changeSetName}`);
+}
+
+export function hookFailuresToValidationDetails(hookFailures: HookFailure[]): ValidationDetail[] {
+    return hookFailures.map((failure) => ({
+        ValidationName: failure.typeName,
+        LogicalId: failure.logicalResourceId,
+        Severity: 'ERROR',
+        Message: failure.reason
+            ? `Hook ${failure.typeName}: ${failure.reason}`
+            : `Hook ${failure.typeName} failed (${failure.status})`,
+        ValidationStatusReason: failure.reason,
+    }));
+}
+
+export function resolveHookFailureTargets(
+    hookFailures: HookFailure[],
+    changeSetHooks: ChangeSetHookInfo[],
+): HookFailure[] {
+    const resolved: HookFailure[] = [];
+    for (const failure of hookFailures) {
+        if (failure.logicalResourceId) {
+            resolved.push(failure);
+            continue;
+        }
+        const targets = new Set(
+            changeSetHooks
+                .filter((hook) => hook.typeName === failure.typeName && hook.targetName)
+                .map((hook) => hook.targetName as string),
+        );
+        if (targets.size === 0) {
+            resolved.push(failure);
+        } else {
+            for (const logicalResourceId of targets) {
+                resolved.push({ ...failure, logicalResourceId });
+            }
+        }
+    }
+    return resolved;
 }
 
 export function computeEligibleDeploymentMode(
@@ -329,6 +405,19 @@ export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | un
                 : undefined,
         };
     });
+}
+
+export function mapChangeSetHooks(hooks?: ChangeSetHook[]): ChangeSetHookInfo[] {
+    return (hooks ?? [])
+        .filter((hook) => hook.TypeName)
+        .map((hook) => ({
+            typeName: hook.TypeName as string,
+            invocationPoint: hook.InvocationPoint,
+            failureMode: hook.FailureMode,
+            targetType: hook.TargetDetails?.TargetType,
+            targetName: hook.TargetDetails?.ResourceTargetDetails?.LogicalResourceId,
+            targetAction: hook.TargetDetails?.ResourceTargetDetails?.ResourceAction,
+        }));
 }
 
 export function processWorkflowUpdates(

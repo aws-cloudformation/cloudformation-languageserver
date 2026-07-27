@@ -7,7 +7,7 @@ import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
-import { mapChangesToStackChanges } from '../stacks/actions/StackActionOperations';
+import { mapChangesToStackChanges, mapChangeSetHooks } from '../stacks/actions/StackActionOperations';
 import {
     parseCreateDeploymentParams,
     parseDeleteChangeSetParams,
@@ -409,6 +409,11 @@ export function describeChangeSetHandler(
             StackName: params.stackName,
         })) as any; // TODO: Remove 'as any' once SDK is released
 
+        const hooksResult = await components.cfnService.describeChangeSetHooks({
+            ChangeSetName: params.changeSetName,
+            StackName: params.stackName,
+        });
+
         return {
             changeSetName: params.changeSetName,
             stackName: params.stackName,
@@ -417,6 +422,8 @@ export function describeChangeSetHandler(
             description: result.Description,
             changes: mapChangesToStackChanges(result.Changes),
             deploymentMode: result.DeploymentMode,
+            hooks: mapChangeSetHooks(hooksResult.Hooks),
+            hookStatus: hooksResult.Status,
         };
     };
 }

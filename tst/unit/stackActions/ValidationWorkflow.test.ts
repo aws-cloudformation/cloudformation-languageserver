@@ -17,6 +17,10 @@ import {
     isStackInReview,
     parseValidationEvents,
     publishValidationDiagnostics,
+    extractHookFailures,
+    hookFailuresToValidationDetails,
+    mapChangeSetHooks,
+    resolveHookFailureTargets,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateValidationParams,
@@ -70,6 +74,10 @@ describe('ValidationWorkflow', () => {
             mockAwsCredentials,
         );
         vi.clearAllMocks();
+        (extractHookFailures as any).mockReturnValue([]);
+        (hookFailuresToValidationDetails as any).mockReturnValue([]);
+        (mapChangeSetHooks as any).mockReturnValue([]);
+        (resolveHookFailureTargets as any).mockImplementation((failures: any) => failures);
     });
 
     describe('start', () => {

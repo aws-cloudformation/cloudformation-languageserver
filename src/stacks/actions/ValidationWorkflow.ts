@@ -22,6 +22,10 @@ import {
     publishValidationDiagnostics,
     isStackInReview,
     formatValidationDetailsMessage,
+    extractHookFailures,
+    hookFailuresToValidationDetails,
+    mapChangeSetHooks,
+    resolveHookFailureTargets,
 } from './StackActionOperations';
 import {
     CreateValidationParams,
@@ -141,6 +145,7 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
             ...this.getStatus(params),
             ValidationDetails: workflow.validationDetails,
             FailureReason: workflow.failureReason,
+            HookFailures: workflow.hookFailures,
             deploymentMode: workflow.deploymentMode,
         };
     }
@@ -186,8 +191,23 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
                 const allEvents = await this.fetchAllFailedEvents(changeSetName, stackName);
                 const validationDetails = parseValidationEvents(allEvents, VALIDATION_NAME);
 
+                const hookFailures = result.state === StackActionState.FAILED ? extractHookFailures(allEvents) : [];
+                let resolvedHookFailures = hookFailures;
+                if (hookFailures.length > 0) {
+                    try {
+                        const hooksResult = await this.cfnService.describeChangeSetHooks({
+                            ChangeSetName: changeSetName,
+                            StackName: stackName,
+                        });
+                        const changeSetHooks = mapChangeSetHooks(hooksResult.Hooks);
+                        resolvedHookFailures = resolveHookFailureTargets(hookFailures, changeSetHooks);
+                    } catch (error) {
+                        this.log.warn(error, `Failed to resolve hook targets for ${changeSetName}`);
+                    }
+                }
                 existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                     validationDetails: validationDetails,
+                    ...(resolvedHookFailures.length > 0 ? { hookFailures: resolvedHookFailures } : {}),
                 });
 
                 // If validation failed and we have detailed events, format them as the failure reason
@@ -198,10 +218,14 @@ export class ValidationWorkflow implements StackActionWorkflow<CreateValidationP
                     });
                 }
 
-                validation.setValidationDetails(validationDetails);
+                const diagnosticDetails = [
+                    ...validationDetails,
+                    ...hookFailuresToValidationDetails(resolvedHookFailures),
+                ];
+                validation.setValidationDetails(diagnosticDetails);
                 await publishValidationDiagnostics(
                     uri,
-                    validationDetails,
+                    diagnosticDetails,
                     this.syntaxTreeManager,
                     this.diagnosticCoordinator,
                 );

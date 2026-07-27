@@ -55,10 +55,21 @@ export type ListChangeSetResult = {
     nextToken?: string;
 };
 
+export type ChangeSetHookInfo = {
+    typeName: string;
+    invocationPoint?: string;
+    failureMode?: string;
+    targetName?: string;
+    targetType?: string;
+    targetAction?: string;
+};
+
 export type DescribeChangeSetResult = ChangeSetSummary & {
     stackName: string;
     changes?: StackChange[];
     deploymentMode?: DeploymentMode;
+    hooks?: ChangeSetHookInfo[];
+    hookStatus?: string;
 };
 
 export const ListChangeSetRequest = new RequestType<ListChangeSetParams, ListChangeSetResult, void>(

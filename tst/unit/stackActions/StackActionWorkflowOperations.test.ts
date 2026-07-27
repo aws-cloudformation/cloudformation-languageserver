@@ -28,6 +28,11 @@ import {
     publishValidationDiagnostics,
     isStackInReview,
     computeEligibleDeploymentMode,
+    extractHookFailures,
+    hookFailuresToValidationDetails,
+    mapChangeSetHooks,
+    resolveHookFailureTargets,
+    HookEventLike,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateValidationParams,
@@ -773,6 +778,177 @@ describe('StackActionWorkflowOperations', () => {
                 OnStackFailure.DO_NOTHING,
             );
             expect(result).toBeUndefined();
+        });
+    });
+
+    describe('extractHookFailures', () => {
+        it('returns an empty array when there are no hook failures', () => {
+            expect(extractHookFailures([])).toEqual([]);
+            expect(extractHookFailures([{ LogicalResourceId: 'MyResource' }])).toEqual([]);
+        });
+
+        it('extracts failed hook events with type, status, reason, and resource', () => {
+            const events: HookEventLike[] = [
+                {
+                    HookType: 'Private::Guard::S3',
+                    HookStatus: 'HOOK_COMPLETE_FAILED',
+                    HookStatusReason: 'Encryption required',
+                    LogicalResourceId: 'MyBucket',
+                },
+            ];
+            expect(extractHookFailures(events)).toEqual([
+                {
+                    typeName: 'Private::Guard::S3',
+                    status: 'HOOK_COMPLETE_FAILED',
+                    reason: 'Encryption required',
+                    logicalResourceId: 'MyBucket',
+                },
+            ]);
+        });
+
+        it('ignores hook events that did not fail', () => {
+            const events: HookEventLike[] = [
+                { HookType: 'Private::Guard::S3', HookStatus: 'HOOK_COMPLETE_SUCCEEDED' },
+                { HookType: 'Private::Guard::S3', HookStatus: 'HOOK_IN_PROGRESS' },
+            ];
+            expect(extractHookFailures(events)).toEqual([]);
+        });
+
+        it('deduplicates identical hook failures', () => {
+            const dup: HookEventLike = {
+                HookType: 'Private::Guard::S3',
+                HookStatus: 'HOOK_COMPLETE_FAILED',
+                HookStatusReason: 'nope',
+                LogicalResourceId: 'B',
+            };
+            expect(extractHookFailures([dup, { ...dup }])).toHaveLength(1);
+        });
+
+        it('skips failed hook events with no type name', () => {
+            const events: HookEventLike[] = [{ HookStatus: 'HOOK_COMPLETE_FAILED', HookStatusReason: 'x' }];
+            expect(extractHookFailures(events)).toEqual([]);
+        });
+    });
+
+    describe('hookFailuresToValidationDetails', () => {
+        it('maps a hook failure with a reason and resource to an ERROR detail', () => {
+            const details = hookFailuresToValidationDetails([
+                {
+                    typeName: 'Private::Guard::S3',
+                    status: 'HOOK_COMPLETE_FAILED',
+                    reason: 'Encryption required',
+                    logicalResourceId: 'MyBucket',
+                },
+            ]);
+            expect(details).toEqual([
+                {
+                    ValidationName: 'Private::Guard::S3',
+                    LogicalId: 'MyBucket',
+                    Severity: 'ERROR',
+                    Message: 'Hook Private::Guard::S3: Encryption required',
+                    ValidationStatusReason: 'Encryption required',
+                },
+            ]);
+        });
+
+        it('falls back to the status when there is no reason', () => {
+            const details = hookFailuresToValidationDetails([
+                { typeName: 'Private::Guard::S3', status: 'HOOK_FAILED' },
+            ]);
+            expect(details[0].Message).toBe('Hook Private::Guard::S3 failed (HOOK_FAILED)');
+            expect(details[0].LogicalId).toBeUndefined();
+        });
+
+        it('returns an empty array for no failures', () => {
+            expect(hookFailuresToValidationDetails([])).toEqual([]);
+        });
+    });
+
+    describe('mapChangeSetHooks', () => {
+        it('returns an empty array for undefined or empty input', () => {
+            expect(mapChangeSetHooks(undefined)).toEqual([]);
+            expect(mapChangeSetHooks([])).toEqual([]);
+        });
+
+        it('maps a change-set hook with resource target details', () => {
+            const mapped = mapChangeSetHooks([
+                {
+                    TypeName: 'Private::Guard::S3',
+                    InvocationPoint: 'PRE_PROVISION',
+                    FailureMode: 'FAIL',
+                    TargetDetails: {
+                        TargetType: 'RESOURCE',
+                        ResourceTargetDetails: { LogicalResourceId: 'MyBucket', ResourceAction: 'CREATE' },
+                    },
+                },
+            ] as never);
+            expect(mapped).toEqual([
+                {
+                    typeName: 'Private::Guard::S3',
+                    invocationPoint: 'PRE_PROVISION',
+                    failureMode: 'FAIL',
+                    targetType: 'RESOURCE',
+                    targetName: 'MyBucket',
+                    targetAction: 'CREATE',
+                },
+            ]);
+        });
+
+        it('skips hooks without a type name', () => {
+            expect(mapChangeSetHooks([{ InvocationPoint: 'PRE_PROVISION' }] as never)).toEqual([]);
+        });
+    });
+
+    describe('resolveHookFailureTargets', () => {
+        it('leaves a failure that already has a resource unchanged', () => {
+            const failures = [
+                { typeName: 'Private::Guard::S3', status: 'HOOK_COMPLETE_FAILED', logicalResourceId: 'MyBucket' },
+            ];
+            expect(resolveHookFailureTargets(failures, [])).toEqual(failures);
+        });
+
+        it('expands a resourceless failure to one per matching change-set hook target', () => {
+            const resolved = resolveHookFailureTargets(
+                [{ typeName: 'Private::Guard::S3', status: 'HOOK_COMPLETE_FAILED', reason: 'nope' }],
+                [
+                    { typeName: 'Private::Guard::S3', targetName: 'BucketA' },
+                    { typeName: 'Private::Guard::S3', targetName: 'BucketB' },
+                    { typeName: 'Private::Guard::Other', targetName: 'BucketC' },
+                ],
+            );
+            expect(resolved).toEqual([
+                {
+                    typeName: 'Private::Guard::S3',
+                    status: 'HOOK_COMPLETE_FAILED',
+                    reason: 'nope',
+                    logicalResourceId: 'BucketA',
+                },
+                {
+                    typeName: 'Private::Guard::S3',
+                    status: 'HOOK_COMPLETE_FAILED',
+                    reason: 'nope',
+                    logicalResourceId: 'BucketB',
+                },
+            ]);
+        });
+
+        it('keeps a resourceless failure when no target matches', () => {
+            const failures = [{ typeName: 'Private::Guard::S3', status: 'HOOK_FAILED' }];
+            expect(
+                resolveHookFailureTargets(failures, [{ typeName: 'Private::Guard::Other', targetName: 'X' }]),
+            ).toEqual(failures);
+        });
+
+        it('de-duplicates repeated target names', () => {
+            const resolved = resolveHookFailureTargets(
+                [{ typeName: 'Private::Guard::S3', status: 'HOOK_COMPLETE_FAILED' }],
+                [
+                    { typeName: 'Private::Guard::S3', targetName: 'BucketA' },
+                    { typeName: 'Private::Guard::S3', targetName: 'BucketA' },
+                ],
+            );
+            expect(resolved).toHaveLength(1);
+            expect(resolved[0].logicalResourceId).toBe('BucketA');
         });
     });
 });

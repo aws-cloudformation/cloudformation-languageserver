@@ -95,6 +95,7 @@ vi.mock('../../../src/stacks/actions/CapabilityAnalyzer', () => ({
 
 vi.mock('../../../src/stacks/actions/StackActionOperations', () => ({
     mapChangesToStackChanges: vi.fn(),
+    mapChangeSetHooks: vi.fn(() => []),
 }));
 
 describe('StackActionHandler', () => {
@@ -853,6 +854,7 @@ describe('StackActionHandler', () => {
             ];
 
             mockComponents.cfnService.describeChangeSet.resolves(mockChangeSetResponse);
+            mockComponents.cfnService.describeChangeSetHooks.resolves({ Hooks: [], Status: undefined } as any);
             vi.mocked(mapChangesToStackChanges).mockReturnValue(mockMappedChanges);
 
             const handler = describeChangeSetHandler(mockComponents);
@@ -870,6 +872,7 @@ describe('StackActionHandler', () => {
                 creationTime: '2023-01-01T00:00:00.000Z',
                 description: 'Test changeset',
                 changes: mockMappedChanges,
+                hooks: [],
             });
 
             expect(
@@ -892,6 +895,7 @@ describe('StackActionHandler', () => {
             };
 
             mockComponents.cfnService.describeChangeSet.resolves(mockChangeSetResponse);
+            mockComponents.cfnService.describeChangeSetHooks.resolves({ Hooks: [], Status: undefined } as any);
             vi.mocked(mapChangesToStackChanges).mockReturnValue([]);
 
             const handler = describeChangeSetHandler(mockComponents);
@@ -909,6 +913,7 @@ describe('StackActionHandler', () => {
                 creationTime: undefined,
                 description: undefined,
                 changes: [],
+                hooks: [],
             });
         });
 
