@@ -35,7 +35,10 @@ import {
     describeEventsHandler,
 } from '../../../src/handlers/StackHandler';
 import { analyzeCapabilities } from '../../../src/stacks/actions/CapabilityAnalyzer';
-import { mapChangesToStackChanges } from '../../../src/stacks/actions/StackActionOperations';
+import {
+    mapChangesToStackChanges,
+    describeChangeSetHooksOrUndefined,
+} from '../../../src/stacks/actions/StackActionOperations';
 import {
     TemplateUri,
     GetCapabilitiesResult,
@@ -95,6 +98,8 @@ vi.mock('../../../src/stacks/actions/CapabilityAnalyzer', () => ({
 
 vi.mock('../../../src/stacks/actions/StackActionOperations', () => ({
     mapChangesToStackChanges: vi.fn(),
+    mapChangeSetHooks: vi.fn(() => []),
+    describeChangeSetHooksOrUndefined: vi.fn(),
 }));
 
 describe('StackActionHandler', () => {
@@ -240,7 +245,7 @@ describe('StackActionHandler', () => {
             const handler = createValidationHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.validationWorkflowService.start.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -253,7 +258,7 @@ describe('StackActionHandler', () => {
             const handler = createValidationHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
-            await expect(handler(params, {} as any)).rejects.toThrow(responseError);
+            await expect(handler(params, CancellationToken.None)).rejects.toThrow(responseError);
         });
 
         it('should wrap other errors as InternalError', async () => {
@@ -262,7 +267,7 @@ describe('StackActionHandler', () => {
             const handler = createValidationHandler(mockComponents);
             const params = { id: 'test-id', uri: 'file:///test.yaml', stackName: 'test-stack' };
 
-            await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
+            await expect(handler(params, CancellationToken.None)).rejects.toThrow(ResponseError);
         });
     });
 
@@ -274,7 +279,7 @@ describe('StackActionHandler', () => {
             const handler = createDeploymentHandler(mockComponents);
             const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'test-change-set' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.deploymentWorkflowService.start.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -293,7 +298,7 @@ describe('StackActionHandler', () => {
             const handler = getValidationStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.validationWorkflowService.getStatus.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -312,7 +317,7 @@ describe('StackActionHandler', () => {
             const handler = getDeploymentStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.deploymentWorkflowService.getStatus.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -332,7 +337,7 @@ describe('StackActionHandler', () => {
             const handler = describeValidationStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.validationWorkflowService.describeStatus.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -352,7 +357,7 @@ describe('StackActionHandler', () => {
             const handler = describeDeploymentStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.deploymentWorkflowService.describeStatus.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -367,7 +372,7 @@ describe('StackActionHandler', () => {
             const handler = deleteChangeSetHandler(mockComponents);
             const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.changeSetDeletionWorkflowService.start.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -380,7 +385,7 @@ describe('StackActionHandler', () => {
             const handler = deleteChangeSetHandler(mockComponents);
             const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
 
-            await expect(handler(params, {} as any)).rejects.toThrow(responseError);
+            await expect(handler(params, CancellationToken.None)).rejects.toThrow(responseError);
         });
 
         it('should wrap other errors as InternalError', async () => {
@@ -389,7 +394,7 @@ describe('StackActionHandler', () => {
             const handler = deleteChangeSetHandler(mockComponents);
             const params = { id: 'test-id', stackName: 'test-stack', changeSetName: 'cs-123' };
 
-            await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
+            await expect(handler(params, CancellationToken.None)).rejects.toThrow(ResponseError);
         });
     });
 
@@ -405,7 +410,7 @@ describe('StackActionHandler', () => {
             const handler = getChangeSetDeletionStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.changeSetDeletionWorkflowService.getStatus.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -424,7 +429,7 @@ describe('StackActionHandler', () => {
             const handler = describeChangeSetDeletionStatusHandler(mockComponents);
             const params = { id: 'test-id' };
 
-            const result = await handler(params, {} as any);
+            const result = await handler(params, CancellationToken.None);
 
             expect(mockComponents.changeSetDeletionWorkflowService.describeStatus.calledWith(params)).toBe(true);
             expect(result).toEqual(mockResult);
@@ -550,7 +555,7 @@ describe('StackActionHandler', () => {
 
             const handler = listStackResourcesHandler(mockComponents);
             const params = { stackName: 'test-stack', nextToken: 'token123' };
-            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
+            const result = (await handler(params, CancellationToken.None)) as ListStackResourcesResult;
 
             expect(result.resources).toEqual(mockResources);
             expect(result.nextToken).toBe('nextToken456');
@@ -568,7 +573,7 @@ describe('StackActionHandler', () => {
             const handler = listStackResourcesHandler(mockComponents);
             const params = { stackName: 'test-stack' };
 
-            await expect(handler(params, {} as any)).rejects.toThrow('API Error');
+            await expect(handler(params, CancellationToken.None)).rejects.toThrow('API Error');
         });
 
         it('should handle undefined StackResourceSummaries', async () => {
@@ -576,7 +581,7 @@ describe('StackActionHandler', () => {
 
             const handler = listStackResourcesHandler(mockComponents);
             const params = { stackName: 'test-stack' };
-            const result = (await handler(params, {} as any)) as ListStackResourcesResult;
+            const result = (await handler(params, CancellationToken.None)) as ListStackResourcesResult;
 
             expect(result.resources).toEqual([]);
             expect(result.nextToken).toBeUndefined();
@@ -780,7 +785,7 @@ describe('StackActionHandler', () => {
             } as any);
 
             const handler = describeStackHandler(mockComponents);
-            const result = (await handler(params, {} as any)) as DescribeStackResult;
+            const result = (await handler(params, CancellationToken.None)) as DescribeStackResult;
 
             expect(result.stack?.Outputs).toHaveLength(2);
             expect(result.stack?.Outputs?.[0].OutputKey).toBe('BucketName');
@@ -799,7 +804,7 @@ describe('StackActionHandler', () => {
             } as any);
 
             const handler = describeStackHandler(mockComponents);
-            const result = (await handler(params, {} as any)) as DescribeStackResult;
+            const result = (await handler(params, CancellationToken.None)) as DescribeStackResult;
 
             expect(result.stack).toBeUndefined();
         });
@@ -809,7 +814,7 @@ describe('StackActionHandler', () => {
 
             const handler = describeStackHandler(mockComponents);
 
-            await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
+            await expect(handler(params, CancellationToken.None)).rejects.toThrow(ResponseError);
         });
 
         it('throws ResponseError when API call fails', async () => {
@@ -819,7 +824,7 @@ describe('StackActionHandler', () => {
 
             const handler = describeStackHandler(mockComponents);
 
-            await expect(handler(params, {} as any)).rejects.toThrow(ResponseError);
+            await expect(handler(params, CancellationToken.None)).rejects.toThrow(ResponseError);
         });
     });
 
@@ -853,6 +858,7 @@ describe('StackActionHandler', () => {
             ];
 
             mockComponents.cfnService.describeChangeSet.resolves(mockChangeSetResponse);
+            vi.mocked(describeChangeSetHooksOrUndefined).mockResolvedValue({ Hooks: [], Status: undefined } as any);
             vi.mocked(mapChangesToStackChanges).mockReturnValue(mockMappedChanges);
 
             const handler = describeChangeSetHandler(mockComponents);
@@ -861,7 +867,7 @@ describe('StackActionHandler', () => {
                 stackName: 'test-stack',
             };
 
-            const result = (await handler(params, {} as any)) as DescribeChangeSetResult;
+            const result = (await handler(params, CancellationToken.None)) as DescribeChangeSetResult;
 
             expect(result).toEqual({
                 changeSetName: 'test-changeset',
@@ -870,6 +876,7 @@ describe('StackActionHandler', () => {
                 creationTime: '2023-01-01T00:00:00.000Z',
                 description: 'Test changeset',
                 changes: mockMappedChanges,
+                hooks: [],
             });
 
             expect(
@@ -892,6 +899,7 @@ describe('StackActionHandler', () => {
             };
 
             mockComponents.cfnService.describeChangeSet.resolves(mockChangeSetResponse);
+            vi.mocked(describeChangeSetHooksOrUndefined).mockResolvedValue({ Hooks: [], Status: undefined } as any);
             vi.mocked(mapChangesToStackChanges).mockReturnValue([]);
 
             const handler = describeChangeSetHandler(mockComponents);
@@ -900,7 +908,7 @@ describe('StackActionHandler', () => {
                 stackName: 'test-stack',
             };
 
-            const result = (await handler(params, {} as any)) as DescribeChangeSetResult;
+            const result = (await handler(params, CancellationToken.None)) as DescribeChangeSetResult;
 
             expect(result).toEqual({
                 changeSetName: 'test-changeset',
@@ -909,6 +917,7 @@ describe('StackActionHandler', () => {
                 creationTime: undefined,
                 description: undefined,
                 changes: [],
+                hooks: [],
             });
         });
 
@@ -922,7 +931,42 @@ describe('StackActionHandler', () => {
                 stackName: 'test-stack',
             };
 
-            await expect(handler(params, {} as any)).rejects.toThrow('ChangeSet not found');
+            await expect(handler(params, CancellationToken.None)).rejects.toThrow('ChangeSet not found');
+        });
+
+        it('should carry undefined hooks when the hooks lookup is unavailable', async () => {
+            const mockChangeSetResponse = {
+                Status: ChangeSetStatus.CREATE_COMPLETE,
+                CreationTime: new Date('2023-01-01T00:00:00Z'),
+                Description: 'Test changeset',
+                Changes: undefined,
+                $metadata: {},
+            };
+
+            mockComponents.cfnService.describeChangeSet.resolves(mockChangeSetResponse);
+            vi.mocked(describeChangeSetHooksOrUndefined).mockResolvedValue(undefined);
+            vi.mocked(mapChangesToStackChanges).mockReturnValue([]);
+
+            const handler = describeChangeSetHandler(mockComponents);
+            const params: DescribeChangeSetParams = {
+                changeSetName: 'test-changeset',
+                stackName: 'test-stack',
+            };
+
+            const result = (await handler(params, CancellationToken.None)) as DescribeChangeSetResult;
+
+            expect(result).toEqual({
+                changeSetName: 'test-changeset',
+                stackName: 'test-stack',
+                status: ChangeSetStatus.CREATE_COMPLETE,
+                creationTime: '2023-01-01T00:00:00.000Z',
+                description: 'Test changeset',
+                changes: [],
+                hooks: undefined,
+                hookStatus: undefined,
+            });
+            expect(result.hooks).toBeUndefined();
+            expect(result.hookStatus).toBeUndefined();
         });
     });
 
