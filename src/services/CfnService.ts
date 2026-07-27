@@ -581,7 +581,6 @@ export class CfnService implements SettingsConfigurable, Closeable {
     @Count({ name: 'listHookResults' })
     public async listHookResults(params: {
         typeArn?: string;
-        status?: string;
         targetId?: string;
         targetType?: string;
         nextToken?: string;

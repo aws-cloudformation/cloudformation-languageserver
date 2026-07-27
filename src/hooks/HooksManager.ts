@@ -83,6 +83,8 @@ export class HooksManager {
     private readonly hooksCache: Map<string, HookSummary> = new Map();
     private readonly hookDetailsCache: Map<string, DescribeHookResult> = new Map();
     private readonly inFlightDescribes: Map<string, Promise<DescribeHookResult>> = new Map();
+    private readonly hookUpdateChains: Map<string, Promise<unknown>> = new Map();
+    private inFlightListAllDetailed?: Promise<DetailedHook[]>;
     private nextToken?: string;
 
     constructor(
@@ -124,8 +126,57 @@ export class HooksManager {
         return { hooks: detailed, nextToken: listed.nextToken };
     }
 
+    public async listAllHooksDetailed(): Promise<DetailedHook[]> {
+        const inFlight = this.inFlightListAllDetailed;
+        if (inFlight) {
+            return await inFlight;
+        }
+
+        const pending = this.drainAllHooksDetailed();
+        this.inFlightListAllDetailed = pending;
+        try {
+            return await pending;
+        } finally {
+            this.inFlightListAllDetailed = undefined;
+        }
+    }
+
+    private async drainAllHooksDetailed(): Promise<DetailedHook[]> {
+        const accumulated = new Map<string, DetailedHook>();
+        let result = await this.listHooksDetailed();
+        for (const hook of result.hooks) {
+            accumulated.set(hook.typeName, hook);
+        }
+        let previousToken: string | undefined;
+        while (result.nextToken !== undefined && result.nextToken !== previousToken) {
+            previousToken = result.nextToken;
+            result = await this.listHooksDetailed(true);
+            for (const hook of result.hooks) {
+                accumulated.set(hook.typeName, hook);
+            }
+        }
+        return [...accumulated.values()];
+    }
+
+    public async runExclusiveForType<T>(typeName: string, task: () => Promise<T>): Promise<T> {
+        const previous = this.hookUpdateChains.get(typeName);
+        const run = previous ? previous.then(task, task) : task();
+        this.hookUpdateChains.set(typeName, run);
+        try {
+            return await run;
+        } finally {
+            if (this.hookUpdateChains.get(typeName) === run) {
+                this.hookUpdateChains.delete(typeName);
+            }
+        }
+    }
+
     public async getCachedRuleContent(ruleUri: string, loader: () => Promise<string>): Promise<string> {
         return await this.hookCache.getRuleContent(ruleUri, loader);
+    }
+
+    public invalidateRuleContent(ruleUri: string): void {
+        this.hookCache.invalidateRuleContent(ruleUri);
     }
 
     public async listHooks(loadMore?: boolean): Promise<ListHooksResult> {

@@ -113,14 +113,16 @@ describe('HooksParser', () => {
         it('should accept combined filters', () => {
             const result = parseListHookResultsParams({
                 typeArn: 'arn:aws:...',
-                status: 'HOOK_COMPLETE_FAILED',
                 targetType: 'STACK',
             });
             expect(result).toEqual({
                 typeArn: 'arn:aws:...',
-                status: 'HOOK_COMPLETE_FAILED',
                 targetType: 'STACK',
             });
+        });
+
+        it('should reject an unknown status filter', () => {
+            expect(() => parseListHookResultsParams({ status: 'HOOK_COMPLETE_FAILED' })).toThrow();
         });
     });
 

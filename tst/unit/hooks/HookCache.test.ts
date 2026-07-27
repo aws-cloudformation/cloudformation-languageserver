@@ -38,6 +38,36 @@ describe('HookCache', () => {
         expect(ruleLoader).toHaveBeenCalledTimes(2);
     });
 
+    it('invalidateRuleContent forces the next rule load without touching cached configurations', async () => {
+        const cache = new HookCache({ ttlMs: 1000, maxEntries: 10, now });
+        const cfgLoader = vi.fn().mockResolvedValue('cfg');
+        const ruleLoader = vi.fn().mockResolvedValue('rule');
+
+        await cache.getRuleContent('s3://b/r', ruleLoader);
+        await cache.getConfiguration('T', cfgLoader);
+        cache.invalidateRuleContent('s3://b/r');
+        await cache.getRuleContent('s3://b/r', ruleLoader);
+        await cache.getConfiguration('T', cfgLoader);
+
+        expect(ruleLoader).toHaveBeenCalledTimes(2);
+        expect(cfgLoader).toHaveBeenCalledTimes(1);
+    });
+
+    it('invalidateRuleContent only evicts the matching rule uri', async () => {
+        const cache = new HookCache({ ttlMs: 1000, maxEntries: 10, now });
+        const loaderA = vi.fn().mockResolvedValue('a');
+        const loaderB = vi.fn().mockResolvedValue('b');
+
+        await cache.getRuleContent('s3://b/a', loaderA);
+        await cache.getRuleContent('s3://b/b', loaderB);
+        cache.invalidateRuleContent('s3://b/a');
+        await cache.getRuleContent('s3://b/a', loaderA);
+        await cache.getRuleContent('s3://b/b', loaderB);
+
+        expect(loaderA).toHaveBeenCalledTimes(2);
+        expect(loaderB).toHaveBeenCalledTimes(1);
+    });
+
     it('applies the configured ttl to both namespaces', async () => {
         const cache = new HookCache({ ttlMs: 100, maxEntries: 10, now });
         const cfgLoader = vi.fn().mockResolvedValue('cfg');

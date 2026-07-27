@@ -5,6 +5,8 @@ import type {
     DescribeHookParams,
     ListHookResultsParams,
     GetHookResultParams,
+    ListPublicHooksParams,
+    ListS3ObjectsParams,
     ConfigureHookParams,
     SetInvocationStatusParams,
     CreateGuardHookParams,
@@ -41,7 +43,6 @@ const TargetTypeEnum = z.enum(['CHANGE_SET', 'STACK', 'RESOURCE', 'CLOUD_CONTROL
 const ListHookResultsParamsSchema = z
     .object({
         typeArn: z.string().optional(),
-        status: z.string().optional(),
         targetId: z.string().optional(),
         targetType: TargetTypeEnum.optional(),
         nextToken: z.string().optional(),
@@ -255,4 +256,25 @@ const PreviewGuardHooksParamsSchema = z
 
 export function parsePreviewGuardHooksParams(input: unknown): PreviewGuardHooksParams {
     return PreviewGuardHooksParamsSchema.parse(input);
+}
+
+const ListPublicHooksParamsSchema = z
+    .object({
+        typeNamePrefix: NonEmptyZodString.optional(),
+    })
+    .strict();
+
+export function parseListPublicHooksParams(input: unknown): ListPublicHooksParams {
+    return ListPublicHooksParamsSchema.parse(input);
+}
+
+const ListS3ObjectsParamsSchema = z
+    .object({
+        bucketName: NonEmptyZodString,
+        prefix: z.string().optional(),
+    })
+    .strict();
+
+export function parseListS3ObjectsParams(input: unknown): ListS3ObjectsParams {
+    return ListS3ObjectsParamsSchema.parse(input);
 }
