@@ -205,4 +205,60 @@ rule S3_BUCKET_ENCRYPTION when %s3_buckets !empty {
             expect(ruleWithMessage.content).not.toContain('>>');
         });
     });
+
+    describe('validateRule syntactic pre-check', () => {
+        it('rejects a rule with an unclosed brace', () => {
+            const result = guardEngine.validateRule('rule R when Resources !empty {\n  Resources.Foo exists');
+            expect(result.valid).toBe(false);
+            expect(result.parseErrors[0]).toMatch(/Unclosed/i);
+        });
+
+        it('rejects an empty rule', () => {
+            const result = guardEngine.validateRule('   \n  ');
+            expect(result.valid).toBe(false);
+            expect(result.parseErrors[0]).toMatch(/empty/i);
+        });
+
+        it('rejects a comments-only rule (e.g. the untouched starter)', () => {
+            const result = guardEngine.validateRule('# just a comment\n# another line');
+            expect(result.valid).toBe(false);
+            expect(result.parseErrors[0]).toMatch(/empty/i);
+        });
+
+        it('rejects mismatched brackets', () => {
+            const result = guardEngine.validateRule('rule R { Resources.Foo exists )');
+            expect(result.valid).toBe(false);
+            expect(result.parseErrors[0]).toMatch(/Mismatched/i);
+        });
+
+        it('accepts a well-formed rule', () => {
+            const result = guardEngine.validateRule('rule R when Resources !empty {\n  Resources.Foo exists\n}');
+            expect(result.valid).toBe(true);
+            expect(result.parseErrors).toHaveLength(0);
+        });
+
+        it('ignores brackets inside strings', () => {
+            const result = guardEngine.validateRule("rule R when Resources !empty {\n  Resources.Name == 'a}b{c'\n}");
+            expect(result.valid).toBe(true);
+        });
+
+        it('does not treat # inside a string as a comment', () => {
+            const result = guardEngine.validateRule(
+                'rule R when Resources !empty {\n  Resources.Tag == "color#red"\n}',
+            );
+            expect(result.valid).toBe(true);
+        });
+
+        it('handles escaped quotes inside a string', () => {
+            const result = guardEngine.validateRule('rule R when Resources !empty {\n  Resources.Name == "a\\"b"\n}');
+            expect(result.valid).toBe(true);
+        });
+
+        it('ignores brackets inside a regex literal', () => {
+            const result = guardEngine.validateRule(
+                'rule R when Resources !empty {\n  Resources.Arn == /arn:aws[a-z0-9]*/\n}',
+            );
+            expect(result.valid).toBe(true);
+        });
+    });
 });

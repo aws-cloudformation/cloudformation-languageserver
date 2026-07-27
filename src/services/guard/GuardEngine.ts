@@ -65,6 +65,122 @@ export class GuardEngine {
         }
     }
 
+    /**
+     * Validate a single Guard rule for syntax/compilation and, optionally, evaluate it
+     * against a sample template. A parse/compile failure is reported as invalid; a rule
+     * that builds successfully is valid, and any violations against the sample template
+     * are returned for informational preview.
+     */
+    validateRule(
+        ruleContent: string,
+        sampleData?: string,
+    ): { valid: boolean; parseErrors: string[]; violations: GuardViolation[] } {
+        const rule: GuardRule = {
+            name: 'candidate-rule',
+            description: 'Candidate Guard rule',
+            severity: DiagnosticSeverity.Error,
+            content: ruleContent,
+            tags: ['candidate'],
+            pack: 'candidate',
+        };
+        const data = sampleData && sampleData.trim().length > 0 ? sampleData : '{"Resources":{}}';
+
+        // cfn-guard's WASM binding silently swallows parse/compile errors (it returns an
+        // empty result set for malformed, empty, or garbage rules — indistinguishable from
+        // a clean pass). Run a lightweight syntactic pre-check so obviously-invalid rules
+        // are rejected instead of being uploaded as-is.
+        const syntaxError = this.syntacticPreCheck(ruleContent);
+        if (syntaxError) {
+            return { valid: false, parseErrors: [syntaxError], violations: [] };
+        }
+
+        try {
+            const violations = this.validateTemplate(data, [rule], DiagnosticSeverity.Error);
+            return { valid: true, parseErrors: [], violations };
+        } catch (error) {
+            return { valid: false, parseErrors: [extractErrorMessage(error)], violations: [] };
+        }
+    }
+
+    /**
+     * Best-effort syntactic validation of a Guard rule. cfn-guard's WASM entry point does
+     * not surface parse errors, so this catches the common failure modes: empty content,
+     * and unbalanced/mismatched brackets (e.g. a rule block missing its closing brace).
+     * String contents are ignored so brackets inside quotes don't trip the check.
+     */
+    private syntacticPreCheck(ruleContent: string): string | undefined {
+        const closers: Record<string, string> = { '}': '{', ')': '(', ']': '[' };
+        const stack: string[] = [];
+        let inString: string | undefined;
+        let inRegex = false;
+        let hasContent = false;
+        for (let i = 0; i < ruleContent.length; i++) {
+            const char = ruleContent[i];
+            if (inString) {
+                if (char === '\\') {
+                    i++;
+                    continue;
+                }
+                if (char === inString) {
+                    inString = undefined;
+                }
+                continue;
+            }
+            if (inRegex) {
+                if (char === '\\') {
+                    i++;
+                    continue;
+                }
+                if (char === '/' || char === '\n') {
+                    inRegex = false;
+                }
+                continue;
+            }
+            if (char === '#') {
+                while (i < ruleContent.length && ruleContent[i] !== '\n') {
+                    i++;
+                }
+                continue;
+            }
+            if (char.trim().length > 0) {
+                hasContent = true;
+            }
+            switch (char) {
+                case '"':
+                case "'": {
+                    inString = char;
+                    break;
+                }
+                case '/': {
+                    inRegex = true;
+                    break;
+                }
+                case '{':
+                case '(':
+                case '[': {
+                    stack.push(char);
+                    break;
+                }
+                case '}':
+                case ')':
+                case ']': {
+                    if (stack.pop() !== closers[char]) {
+                        return `Mismatched '${char}' in the Guard rule. Check your rule blocks and brackets.`;
+                    }
+                    break;
+                }
+                // No default
+            }
+        }
+        if (!hasContent) {
+            return 'The Guard rule is empty. Define at least one `rule <name> { ... }` block.';
+        }
+        if (stack.length > 0) {
+            return `Unclosed '${stack[stack.length - 1]}' in the Guard rule — a block is missing its closing bracket.`;
+        }
+        return undefined;
+    }
+
     private convertSarifToViolations(
         sarifResult: string,
         rules: GuardRule[],
