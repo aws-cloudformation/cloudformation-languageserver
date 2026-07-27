@@ -89,12 +89,26 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
         this.ruleConfiguration.updateFromSettings(this.settings);
 
         // Load initial rules
+        this.loadRulesUnlessDisabled();
+    }
+
+    private loadRulesUnlessDisabled() {
+        if (!this.settings.enabled) {
+            this.enabledRules = [];
+            this.log.info(`cfn-guard is disabled, skipping rules load`);
+            return;
+        }
+
+        this.isLoadingRules = true;
         this.getEnabledRulesByConfiguration()
             .then((rules) => {
                 this.enabledRules = rules;
             })
             .catch((error) => {
-                this.log.error(`Failed to load initial rules: ${extractErrorMessage(error)}`);
+                this.log.error(`Failed to load rules: ${extractErrorMessage(error)}`);
+            })
+            .finally(() => {
+                this.isLoadingRules = false;
             });
     }
 
@@ -118,13 +132,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
         this.settings = settingsManager.getCurrentSettings().diagnostics.cfnGuard;
 
         // Load rules with current settings
-        this.getEnabledRulesByConfiguration()
-            .then((rules) => {
-                this.enabledRules = rules;
-            })
-            .catch((error) => {
-                this.log.error(`Failed to load rules during configuration: ${extractErrorMessage(error)}`);
-            });
+        this.loadRulesUnlessDisabled();
 
         // Subscribe to diagnostics settings changes
         this.settingsSubscription = settingsManager.subscribe('diagnostics', (newDiagnosticsSettings) => {
@@ -145,37 +153,16 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
             !previousSettings.enabledRulePacks.every((pack, index) => pack === newSettings.enabledRulePacks[index]);
 
         const rulesFileChanged = previousSettings.rulesFile !== newSettings.rulesFile;
+        const enabledChanged = previousSettings.enabled !== newSettings.enabled;
 
-        if (packListChanged || rulesFileChanged) {
-            // Clear maps only when rule configuration actually changes
-            this.ruleToPacksMap.clear();
-            this.ruleCustomMessages.clear();
-
-            // Track async rule loading
-            this.isLoadingRules = true;
-            this.getEnabledRulesByConfiguration()
-                .then((rules) => {
-                    this.enabledRules = rules;
-                })
-                .catch((error) => {
-                    this.log.error(`Failed to preload rules after settings change: ${extractErrorMessage(error)}`);
-                })
-                .finally(() => {
-                    this.isLoadingRules = false;
-                });
-            this.revalidateAllDocuments();
+        if (!packListChanged && !rulesFileChanged && !enabledChanged) {
+            return;
         }
-    }
 
-    /**
-     * Re-validate all open documents
-     * Note: This is a simplified implementation that doesn't access all documents
-     * since DocumentManager doesn't expose a getAllDocuments method.
-     * In practice, document validation is triggered by document events.
-     */
-    private revalidateAllDocuments(): void {
-        // Note: We don't have access to all open documents from DocumentManager
-        // Document validation will be triggered by normal document events (onChange, onSave, etc.)
+        // Rule metadata is rebuilt by the load below, or dropped entirely while disabled.
+        this.ruleToPacksMap.clear();
+        this.ruleCustomMessages.clear();
+        this.loadRulesUnlessDisabled();
     }
 
     /**
@@ -187,6 +174,13 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
      */
     @Count({ name: 'validate', captureErrorType: true })
     async validate(content: string, uri: string, _forceUseContent?: boolean): Promise<void> {
+        if (!this.settings.enabled) {
+            // Keeps the cfn-guard WASM module and rule packs out of memory when the feature is off.
+            this.telemetry.count('validate.disabled', 1);
+            this.publishDiagnostics(uri, []);
+            return;
+        }
+
         const fileType = this.documentManager.get(uri)?.cfnFileType;
 
         if (
