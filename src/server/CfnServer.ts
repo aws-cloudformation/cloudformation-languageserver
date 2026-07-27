@@ -9,6 +9,31 @@ import { definitionHandler } from '../handlers/DefinitionHandler';
 import { didChangeHandler, didCloseHandler, didOpenHandler, didSaveHandler } from '../handlers/DocumentHandler';
 import { documentSymbolHandler } from '../handlers/DocumentSymbolHandler';
 import { executionHandler } from '../handlers/ExecutionHandler';
+import {
+    activateHookHandler,
+    deactivateHookHandler,
+    configureHookHandler,
+    setInvocationStatusHandler,
+    createGuardHookHandler,
+    listIamRolesHandler,
+    listS3BucketsHandler,
+    listS3ObjectsHandler,
+    listProactiveControlsHandler,
+    createHookExecutionRoleHandler,
+    createS3BucketHandler,
+    describeHookHandler,
+    getHookResultHandler,
+    listHookResultsHandler,
+    listHooksHandler,
+    listHooksDetailedHandler,
+    listPublicHooksHandler,
+    setHookConfigurationHandler,
+    getHookConfigurationHandler,
+    getRuleContentHandler,
+    validateRuleHandler,
+    uploadRuleHandler,
+    previewGuardHooksHandler,
+} from '../handlers/HooksHandler';
 import { hoverHandler } from '../handlers/HoverHandler';
 import { initializedHandler } from '../handlers/Initialize';
 import {
@@ -301,6 +326,141 @@ export class CfnServer {
             withTelemetryContext(
                 'S3.Upload.File',
                 withOnlineGuard(this.components.onlineFeatureGuard, uploadFileToS3Handler(this.components)),
+            ),
+        );
+
+        // Hooks
+        this.lsp.hooksHandlers.onListHooks(
+            withTelemetryContext(
+                'Hooks.List',
+                withOnlineGuard(this.components.onlineFeatureGuard, listHooksHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListHooksDetailed(
+            withTelemetryContext(
+                'Hooks.ListDetailed',
+                withOnlineGuard(this.components.onlineFeatureGuard, listHooksDetailedHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListPublicHooks(
+            withTelemetryContext(
+                'Hooks.ListPublic',
+                withOnlineGuard(this.components.onlineFeatureGuard, listPublicHooksHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onDescribeHook(
+            withTelemetryContext(
+                'Hooks.Describe',
+                withOnlineGuard(this.components.onlineFeatureGuard, describeHookHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListHookResults(
+            withTelemetryContext(
+                'Hooks.Results.List',
+                withOnlineGuard(this.components.onlineFeatureGuard, listHookResultsHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onGetHookResult(
+            withTelemetryContext(
+                'Hooks.Result.Get',
+                withOnlineGuard(this.components.onlineFeatureGuard, getHookResultHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onConfigureHook(
+            withTelemetryContext(
+                'Hooks.Configure',
+                withOnlineGuard(this.components.onlineFeatureGuard, configureHookHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onSetInvocationStatus(
+            withTelemetryContext(
+                'Hooks.SetInvocationStatus',
+                withOnlineGuard(this.components.onlineFeatureGuard, setInvocationStatusHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onCreateGuardHook(
+            withTelemetryContext(
+                'Hooks.CreateGuardHook',
+                withOnlineGuard(this.components.onlineFeatureGuard, createGuardHookHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListIamRoles(
+            withTelemetryContext(
+                'Hooks.ListIamRoles',
+                withOnlineGuard(this.components.onlineFeatureGuard, listIamRolesHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListS3Buckets(
+            withTelemetryContext(
+                'Hooks.ListS3Buckets',
+                withOnlineGuard(this.components.onlineFeatureGuard, listS3BucketsHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListS3Objects(
+            withTelemetryContext(
+                'Hooks.ListS3Objects',
+                withOnlineGuard(this.components.onlineFeatureGuard, listS3ObjectsHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onListProactiveControls(
+            withTelemetryContext(
+                'Hooks.ListProactiveControls',
+                withOnlineGuard(this.components.onlineFeatureGuard, listProactiveControlsHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onCreateS3Bucket(
+            withTelemetryContext(
+                'Hooks.CreateS3Bucket',
+                withOnlineGuard(this.components.onlineFeatureGuard, createS3BucketHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onCreateHookExecutionRole(
+            withTelemetryContext(
+                'Hooks.CreateHookExecutionRole',
+                withOnlineGuard(this.components.onlineFeatureGuard, createHookExecutionRoleHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onActivateHook(
+            withTelemetryContext(
+                'Hooks.Activate',
+                withOnlineGuard(this.components.onlineFeatureGuard, activateHookHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onDeactivateHook(
+            withTelemetryContext(
+                'Hooks.Deactivate',
+                withOnlineGuard(this.components.onlineFeatureGuard, deactivateHookHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onSetHookConfiguration(
+            withTelemetryContext(
+                'Hooks.SetConfiguration',
+                withOnlineGuard(this.components.onlineFeatureGuard, setHookConfigurationHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onGetHookConfiguration(
+            withTelemetryContext(
+                'Hooks.GetConfiguration',
+                withOnlineGuard(this.components.onlineFeatureGuard, getHookConfigurationHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onGetRuleContent(
+            withTelemetryContext(
+                'Hooks.GetRuleContent',
+                withOnlineGuard(this.components.onlineFeatureGuard, getRuleContentHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onValidateRule(withTelemetryContext('Hooks.ValidateRule', validateRuleHandler()));
+        this.lsp.hooksHandlers.onUploadRule(
+            withTelemetryContext(
+                'Hooks.UploadRule',
+                withOnlineGuard(this.components.onlineFeatureGuard, uploadRuleHandler(this.components)),
+            ),
+        );
+        this.lsp.hooksHandlers.onPreviewGuardHooks(
+            withTelemetryContext(
+                'Hooks.PreviewGuardHooks',
+                withOnlineGuard(this.components.onlineFeatureGuard, previewGuardHooksHandler(this.components)),
             ),
         );
     }

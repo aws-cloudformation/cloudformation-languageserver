@@ -118,6 +118,7 @@ import { LspResourceHandlers } from '../src/protocol/LspResourceHandlers';
 import { LspRelatedResourcesHandlers } from '../src/protocol/LspRelatedResourcesHandlers';
 import { LspS3Handlers } from '../src/protocol/LspS3Handlers';
 import { LspSystemHandlers } from '../src/protocol/LspSystemHandlers';
+import { LspHooksHandlers } from '../src/protocol/LspHooksHandlers';
 import { RelationshipSchemaService } from '../src/services/RelationshipSchemaService';
 import { LspCfnEnvironmentHandlers } from '../src/protocol/LspCfnEnvironmentHandlers';
 import { TelemetryService } from '../src/telemetry/TelemetryService';
@@ -188,6 +189,7 @@ function main() {
         stubInterface<LspRelatedResourcesHandlers>(),
         stubInterface<LspS3Handlers>(),
         stubInterface<LspSystemHandlers>(),
+        stubInterface<LspHooksHandlers>(),
     );
 
     const featureFlags = new FeatureFlagProvider(getFromGitHub, featureFlagLocalFile(join(__dirname, '..')));

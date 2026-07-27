@@ -4,6 +4,7 @@ import { LspCommunication } from './LspCommunication';
 import { LspDiagnostics } from './LspDiagnostics';
 import { LspDocuments } from './LspDocuments';
 import { LspHandlers } from './LspHandlers';
+import { LspHooksHandlers } from './LspHooksHandlers';
 import { LspRelatedResourcesHandlers } from './LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from './LspResourceHandlers';
 import { LspS3Handlers } from './LspS3Handlers';
@@ -25,5 +26,6 @@ export class LspComponents {
         public readonly relatedResourcesHandlers: LspRelatedResourcesHandlers,
         public readonly s3Handlers: LspS3Handlers,
         public readonly systemHandlers: LspSystemHandlers,
+        public readonly hooksHandlers: LspHooksHandlers,
     ) {}
 }

@@ -18,6 +18,7 @@ import { DocumentSymbolRouter } from '../../src/documentSymbol/DocumentSymbolRou
 import { FeatureFlag } from '../../src/featureFlag/FeatureFlagI';
 import { FeatureFlagProvider } from '../../src/featureFlag/FeatureFlagProvider';
 import { HoverRouter } from '../../src/hover/HoverRouter';
+import { HooksManager } from '../../src/hooks/HooksManager';
 import { LspAuthHandlers } from '../../src/protocol/LspAuthHandlers';
 import { LspCfnEnvironmentHandlers } from '../../src/protocol/LspCfnEnvironmentHandlers';
 import { LspCommunication } from '../../src/protocol/LspCommunication';
@@ -25,6 +26,7 @@ import { LspComponents } from '../../src/protocol/LspComponents';
 import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
 import { LspDocuments } from '../../src/protocol/LspDocuments';
 import { LspHandlers } from '../../src/protocol/LspHandlers';
+import { LspHooksHandlers } from '../../src/protocol/LspHooksHandlers';
 import { LspRelatedResourcesHandlers } from '../../src/protocol/LspRelatedResourcesHandlers';
 import { LspResourceHandlers } from '../../src/protocol/LspResourceHandlers';
 import { LspS3Handlers } from '../../src/protocol/LspS3Handlers';
@@ -52,6 +54,8 @@ import { CfnService } from '../../src/services/CfnService';
 import { CodeActionService } from '../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import { GuardService } from '../../src/services/guard/GuardService';
+import { IamService } from '../../src/services/IamService';
+import { ControlCatalogService } from '../../src/services/ControlCatalogService';
 import { OnlineStatus } from '../../src/services/OnlineStatus';
 import { RelationshipSchemaService } from '../../src/services/RelationshipSchemaService';
 import { S3Service } from '../../src/services/S3Service';
@@ -341,6 +345,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         relatedResourcesHandlers: overrides.relatedResourcesHandlers ?? stubInterface<LspRelatedResourcesHandlers>(),
         s3Handlers: overrides.s3Handlers ?? stubInterface<LspS3Handlers>(),
         systemHandlers: overrides.systemHandlers ?? stubInterface<LspSystemHandlers>(),
+        hooksHandlers: overrides.hooksHandlers ?? stubInterface<LspHooksHandlers>(),
     };
 
     const core: MockInfraCoreComponents = {
@@ -365,6 +370,8 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         awsClient: overrides.awsClient ?? createMockAwsApiClientComponent(),
         cfnService: overrides.cfnService ?? createMockCfnService(),
         ccapiService: overrides.ccapiService ?? createMockCcapiService(),
+        iamService: overrides.iamService ?? stubInterface<IamService>(),
+        controlCatalogService: overrides.controlCatalogService ?? stubInterface<ControlCatalogService>(),
         schemaStore: overrides.schemaStore ?? createMockSchemaStore(),
         schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
         schemaReadiness: overrides.schemaReadiness ?? stubInterface(),
@@ -399,6 +406,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         codeActionService: overrides.codeActionService ?? createMockCodeActionService(),
         documentSymbolRouter: overrides.documentSymbolRouter ?? createMockDocumentSymbolRouter(),
         codeLensProvider: overrides.codeLensProvider ?? stubInterface<CodeLensProvider>(),
+        hooksManager: overrides.hooksManager ?? stubInterface<HooksManager>(),
         close: () => Promise.resolve(),
         configurables: () => [],
     };
