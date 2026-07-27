@@ -4,7 +4,11 @@ import { ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
 import {
     S3Client,
     PutObjectCommand,
+    GetObjectCommand,
     ListBucketsCommand,
+    ListObjectsV2Command,
+    CreateBucketCommand,
+    BucketLocationConstraint,
     HeadObjectCommand,
     HeadBucketCommand,
 } from '@aws-sdk/client-s3';
@@ -56,6 +60,74 @@ export class S3Service {
         });
     }
 
+    /**
+     * List all bucket names in the account (across regions), paginating up to `maxBuckets`.
+     * Used to populate a bucket picker.
+     */
+    @Measure({ name: 'listAllBucketNames' })
+    async listAllBucketNames(maxBuckets = 1000): Promise<string[]> {
+        const region = this.awsClient.getRegion();
+        return await this.withClient(async (client) => {
+            const names: string[] = [];
+            let continuationToken: string | undefined;
+            do {
+                const response = await client.send(
+                    new ListBucketsCommand({ BucketRegion: region, ContinuationToken: continuationToken }),
+                );
+                for (const bucket of response.Buckets ?? []) {
+                    if (bucket.Name) {
+                        names.push(bucket.Name);
+                    }
+                }
+                continuationToken = response.ContinuationToken;
+            } while (continuationToken && names.length < maxBuckets);
+            return names;
+        });
+    }
+
+    @Measure({ name: 'listObjects' })
+    async listObjects(bucketName: string, prefix?: string, maxKeys = 1000): Promise<string[]> {
+        return await this.withClient(async (client) => {
+            const keys: string[] = [];
+            let continuationToken: string | undefined;
+            do {
+                const response = await client.send(
+                    new ListObjectsV2Command({
+                        Bucket: bucketName,
+                        Prefix: prefix,
+                        ContinuationToken: continuationToken,
+                    }),
+                );
+                for (const object of response.Contents ?? []) {
+                    if (object.Key !== undefined) {
+                        keys.push(object.Key);
+                    }
+                }
+                continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+            } while (continuationToken && keys.length < maxKeys);
+            return keys.slice(0, maxKeys);
+        });
+    }
+
+    /**
+     * Create a bucket in the client's region. us-east-1 must NOT send a LocationConstraint
+     * (it's the default and specifying it errors); every other region must.
+     */
+    @Measure({ name: 'createBucket' })
+    async createBucket(bucketName: string): Promise<void> {
+        const region = this.awsClient.getRegion();
+        await this.withClient(async (client) => {
+            await client.send(
+                new CreateBucketCommand({
+                    Bucket: bucketName,
+                    ...(region && region !== 'us-east-1'
+                        ? { CreateBucketConfiguration: { LocationConstraint: region as BucketLocationConstraint } }
+                        : {}),
+                }),
+            );
+        });
+    }
+
     @Measure({ name: 'putObject' })
     async putObjectContent(content: string | Buffer, bucketName: string, key: string) {
         return await this.withClient(async (client) => {
@@ -66,6 +138,19 @@ export class S3Service {
                     Body: content,
                 }),
             );
+        });
+    }
+
+    @Measure({ name: 'getObject' })
+    async getObjectContent(bucketName: string, key: string): Promise<string> {
+        return await this.withClient(async (client) => {
+            const response = await client.send(
+                new GetObjectCommand({
+                    Bucket: bucketName,
+                    Key: key,
+                }),
+            );
+            return (await response.Body?.transformToString()) ?? '';
         });
     }
 
