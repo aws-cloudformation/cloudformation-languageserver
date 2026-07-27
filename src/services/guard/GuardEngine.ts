@@ -31,6 +31,12 @@ export interface GuardRule {
     message?: string; // pre-extracted violation message from rule content
 }
 
+export type RuleEvaluation = {
+    valid: boolean;
+    parseErrors: string[];
+    violations: GuardViolation[];
+};
+
 /**
  * GuardEngine handles the execution of Guard validation using the official cfn-guard TypeScript library
  */
@@ -63,6 +69,145 @@ export class GuardEngine {
         } catch (error) {
             throw new Error(`Guard validation failed: ${extractErrorMessage(error)}`);
         }
+    }
+
+    evaluateRule(params: {
+        ruleContent: string;
+        data: string;
+        severity?: DiagnosticSeverity;
+        name?: string;
+    }): RuleEvaluation {
+        const syntaxError = this.findSyntaxError(params.ruleContent);
+        if (syntaxError) {
+            return { valid: false, parseErrors: [syntaxError], violations: [] };
+        }
+
+        const name = params.name ?? 'candidate-rule';
+        const severity = params.severity ?? DiagnosticSeverity.Error;
+        const rule: GuardRule = {
+            name,
+            description: name,
+            severity,
+            content: params.ruleContent,
+            tags: [],
+            pack: name,
+        };
+
+        try {
+            const violations = this.validateTemplate(params.data, [rule], severity);
+            return { valid: true, parseErrors: [], violations };
+        } catch (error) {
+            this.log.warn(error, `Guard rule evaluation failed for ${name}`);
+            return { valid: false, parseErrors: [extractErrorMessage(error)], violations: [] };
+        }
+    }
+
+    validateRule(
+        ruleContent: string,
+        sampleData?: string,
+    ): { valid: boolean; parseErrors: string[]; violations: GuardViolation[] } {
+        const data = sampleData && sampleData.trim().length > 0 ? sampleData : '{"Resources":{}}';
+        return this.evaluateRule({ ruleContent, data, severity: DiagnosticSeverity.Error, name: 'candidate-rule' });
+    }
+
+    private findSyntaxError(ruleContent: string): string | undefined {
+        const closers: Record<string, string> = { '}': '{', ')': '(', ']': '[' };
+        const stack: string[] = [];
+        let inString: string | undefined;
+        let inRegex = false;
+        let inRegexClass = false;
+        let hasContent = false;
+
+        for (let i = 0; i < ruleContent.length; i++) {
+            const char = ruleContent[i];
+            const rangeEnd = findRangeLiteralEnd(ruleContent, i);
+            const isRangeLiteral = rangeEnd > -1;
+
+            if (inString) {
+                if (char === '\\' && ruleContent[i + 1] !== '\n') {
+                    i++;
+                } else if (char === '\n' || char === inString) {
+                    inString = undefined;
+                }
+            } else if (inRegex) {
+                switch (char) {
+                    case '\\': {
+                        i++;
+
+                        break;
+                    }
+                    case '[': {
+                        inRegexClass = true;
+
+                        break;
+                    }
+                    case ']': {
+                        inRegexClass = false;
+
+                        break;
+                    }
+                    case '\n': {
+                        inRegex = false;
+                        inRegexClass = false;
+
+                        break;
+                    }
+                    default: {
+                        if (char === '/' && !inRegexClass) {
+                            inRegex = false;
+                        }
+                    }
+                }
+            } else if (char === '<' && ruleContent[i + 1] === '<') {
+                const messageEnd = ruleContent.indexOf('>>', i + 2);
+                i = messageEnd === -1 ? ruleContent.length : messageEnd + 1;
+            } else if (char === '#') {
+                while (i < ruleContent.length && ruleContent[i] !== '\n') {
+                    i++;
+                }
+            } else if (isRangeLiteral) {
+                hasContent = true;
+                i = rangeEnd;
+            } else {
+                if (char.trim().length > 0) {
+                    hasContent = true;
+                }
+
+                switch (char) {
+                    case '"':
+                    case "'": {
+                        inString = char;
+                        break;
+                    }
+                    case '/': {
+                        inRegex = true;
+                        break;
+                    }
+                    case '{':
+                    case '(':
+                    case '[': {
+                        stack.push(char);
+                        break;
+                    }
+                    case '}':
+                    case ')':
+                    case ']': {
+                        if (stack.pop() !== closers[char]) {
+                            return `Mismatched '${char}' in the Guard rule. Check your rule blocks and brackets.`;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!hasContent) {
+            return 'The Guard rule is empty. Define at least one `rule <name> { ... }` block.';
+        }
+        if (stack.length > 0) {
+            return `Unclosed '${stack[stack.length - 1]}' in the Guard rule — a block is missing its closing bracket.`;
+        }
+        return undefined;
     }
 
     private convertSarifToViolations(
@@ -154,4 +299,30 @@ export class GuardEngine {
         const messageMatch = ruleContent.match(/<<\s*([\s\S]*?)\s*>>/);
         return messageMatch ? messageMatch[1].trim() : undefined;
     }
+}
+
+const RangeBodyPattern = /[\s\d,.'"+-]|[A-Za-z]/;
+
+function findRangeLiteralEnd(ruleContent: string, index: number): number {
+    if (ruleContent[index] !== 'r') {
+        return -1;
+    }
+    const previous = ruleContent[index - 1];
+    if (previous !== undefined && /[\w.]/.test(previous)) {
+        return -1;
+    }
+    const opener = ruleContent[index + 1];
+    if (opener !== '[' && opener !== '(') {
+        return -1;
+    }
+    for (let i = index + 2; i < ruleContent.length; i++) {
+        const char = ruleContent[i];
+        if (char === ']' || char === ')') {
+            return i;
+        }
+        if (!RangeBodyPattern.test(char) || char === '\n') {
+            return -1;
+        }
+    }
+    return -1;
 }

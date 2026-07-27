@@ -378,7 +378,6 @@ export type GuardHookPreviewViolation = {
     message: string;
     line: number;
     column: number;
-    path?: string;
 };
 
 export type GuardHookPreviewEntry = {
