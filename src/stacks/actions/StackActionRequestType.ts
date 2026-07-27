@@ -130,6 +130,7 @@ export type ValidationDetail = {
     Message: string;
     ValidationStatusReason?: string;
     diagnosticId?: string;
+    isHook?: boolean;
 };
 
 export type DeploymentEvent = {
@@ -141,8 +142,16 @@ export type DeploymentEvent = {
     DetailedStatus?: DetailedStatus;
 };
 
+export type HookFailure = {
+    typeName: string;
+    status: string;
+    reason?: string;
+    logicalResourceId?: string;
+};
+
 export type Failable = {
     FailureReason?: string;
+    HookFailures?: HookFailure[];
 };
 
 export type DescribeValidationStatusResult = GetStackActionStatusResult &

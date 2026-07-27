@@ -5,6 +5,7 @@ import {
     StackEvent,
     Stack,
     OperationEvent,
+    ChangeSetHooksStatus,
 } from '@aws-sdk/client-cloudformation';
 import { RequestType } from 'vscode-languageserver-protocol';
 import { ChangeSetReference, DeploymentMode, StackChange } from './actions/StackActionRequestType';
@@ -55,10 +56,21 @@ export type ListChangeSetResult = {
     nextToken?: string;
 };
 
+export type ChangeSetHookInfo = {
+    typeName: string;
+    invocationPoint?: string;
+    failureMode?: string;
+    targetName?: string;
+    targetType?: string;
+    targetAction?: string;
+};
+
 export type DescribeChangeSetResult = ChangeSetSummary & {
     stackName: string;
     changes?: StackChange[];
     deploymentMode?: DeploymentMode;
+    hooks?: ChangeSetHookInfo[];
+    hookStatus?: ChangeSetHooksStatus;
 };
 
 export const ListChangeSetRequest = new RequestType<ListChangeSetParams, ListChangeSetResult, void>(

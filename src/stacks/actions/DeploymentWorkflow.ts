@@ -13,6 +13,8 @@ import {
     processWorkflowUpdates,
     mapChangesToStackChanges,
     isStackInReview,
+    extractHookFailures,
+    deriveHookFailureReason,
 } from './StackActionOperations';
 import {
     StackActionPhase,
@@ -110,6 +112,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
             ...this.getStatus(params),
             DeploymentEvents: workflow.deploymentEvents,
             FailureReason: workflow.failureReason,
+            HookFailures: workflow.hookFailures,
         };
     }
 
@@ -136,6 +139,7 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
             existingWorkflow = processWorkflowUpdates(this.workflows, existingWorkflow, {
                 phase: deploymentResult.phase,
                 state: deploymentResult.state,
+                ...(deploymentResult.failureReason ? { failureReason: deploymentResult.failureReason } : {}),
             });
         } catch (error) {
             this.log.error(error, `Deployment workflow threw exception ${workflowId}`);
@@ -186,8 +190,14 @@ export class DeploymentWorkflow implements StackActionWorkflow<CreateDeploymentP
                     DetailedStatus: event.DetailedStatus,
                 })) ?? [];
 
+            const hookFailures =
+                existingWorkflow.state === StackActionState.FAILED ? extractHookFailures(allEvents) : [];
             processWorkflowUpdates(this.workflows, existingWorkflow, {
                 deploymentEvents: deploymentEvents,
+                ...(existingWorkflow.state === StackActionState.FAILED && !existingWorkflow.failureReason
+                    ? { failureReason: deriveHookFailureReason(hookFailures) }
+                    : {}),
+                ...(hookFailures.length > 0 ? { hookFailures } : {}),
             });
         } catch (error) {
             this.log.error(error, `Failed to process deployment events ${stackName}`);
