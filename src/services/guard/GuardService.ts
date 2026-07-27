@@ -95,7 +95,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
     private loadRulesUnlessDisabled() {
         if (!this.settings.enabled) {
             this.enabledRules = [];
-            this.log.info(`cfn-guard is disabled, skipping rule load`);
+            this.log.info(`cfn-guard is disabled, skipping rules load`);
             return;
         }
 
@@ -105,7 +105,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
                 this.enabledRules = rules;
             })
             .catch((error) => {
-                this.log.error(`Failed to load rules during ${extractErrorMessage(error)}`);
+                this.log.error(`Failed to load rules: ${extractErrorMessage(error)}`);
             })
             .finally(() => {
                 this.isLoadingRules = false;
@@ -163,21 +163,6 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
         this.ruleToPacksMap.clear();
         this.ruleCustomMessages.clear();
         this.loadRulesUnlessDisabled();
-
-        if (newSettings.enabled) {
-            this.revalidateAllDocuments();
-        }
-    }
-
-    /**
-     * Re-validate all open documents
-     * Note: This is a simplified implementation that doesn't access all documents
-     * since DocumentManager doesn't expose a getAllDocuments method.
-     * In practice, document validation is triggered by document events.
-     */
-    private revalidateAllDocuments(): void {
-        // Note: We don't have access to all open documents from DocumentManager
-        // Document validation will be triggered by normal document events (onChange, onSave, etc.)
     }
 
     /**
