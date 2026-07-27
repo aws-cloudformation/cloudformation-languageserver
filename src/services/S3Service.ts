@@ -4,17 +4,21 @@ import { ResourceNotFoundException } from '@aws-sdk/client-cloudcontrol';
 import {
     S3Client,
     PutObjectCommand,
+    GetObjectCommand,
     ListBucketsCommand,
+    ListObjectsV2Command,
+    CreateBucketCommand,
+    BucketLocationConstraint,
     HeadObjectCommand,
     HeadBucketCommand,
 } from '@aws-sdk/client-s3';
-import { GetCallerIdentityCommand } from '@aws-sdk/client-sts';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { classifyAwsError } from '../utils/errors/AwsErrorMapper';
 import { markIfClientError } from '../utils/errors/FaultSuppression';
 import { AwsClient } from './AwsClient';
+import { getCallerAccountId } from './CallerIdentity';
 
 const log = LoggerFactory.getLogger('S3Service');
 
@@ -56,6 +60,66 @@ export class S3Service {
         });
     }
 
+    @Measure({ name: 'listAllBucketNames' })
+    async listAllBucketNames(maxBuckets = 1000): Promise<string[]> {
+        const region = this.awsClient.getRegion();
+        return await this.withClient(async (client) => {
+            const names: string[] = [];
+            let continuationToken: string | undefined;
+            do {
+                const response = await client.send(
+                    new ListBucketsCommand({ BucketRegion: region, ContinuationToken: continuationToken }),
+                );
+                for (const bucket of response.Buckets ?? []) {
+                    if (bucket.Name) {
+                        names.push(bucket.Name);
+                    }
+                }
+                continuationToken = response.ContinuationToken;
+            } while (continuationToken && names.length < maxBuckets);
+            return names;
+        });
+    }
+
+    @Measure({ name: 'listObjects' })
+    async listObjects(bucketName: string, prefix?: string, maxKeys = 1000): Promise<string[]> {
+        return await this.withClient(async (client) => {
+            const keys: string[] = [];
+            let continuationToken: string | undefined;
+            do {
+                const response = await client.send(
+                    new ListObjectsV2Command({
+                        Bucket: bucketName,
+                        Prefix: prefix,
+                        ContinuationToken: continuationToken,
+                    }),
+                );
+                for (const object of response.Contents ?? []) {
+                    if (object.Key !== undefined) {
+                        keys.push(object.Key);
+                    }
+                }
+                continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+            } while (continuationToken && keys.length < maxKeys);
+            return keys.slice(0, maxKeys);
+        });
+    }
+
+    @Measure({ name: 'createBucket' })
+    async createBucket(bucketName: string): Promise<void> {
+        const region = this.awsClient.getRegion();
+        await this.withClient(async (client) => {
+            await client.send(
+                new CreateBucketCommand({
+                    Bucket: bucketName,
+                    ...(region && region !== 'us-east-1'
+                        ? { CreateBucketConfiguration: { LocationConstraint: region as BucketLocationConstraint } }
+                        : {}),
+                }),
+            );
+        });
+    }
+
     @Measure({ name: 'putObject' })
     async putObjectContent(content: string | Buffer, bucketName: string, key: string) {
         return await this.withClient(async (client) => {
@@ -66,6 +130,19 @@ export class S3Service {
                     Body: content,
                 }),
             );
+        });
+    }
+
+    @Measure({ name: 'getObject' })
+    async getObjectContent(bucketName: string, key: string): Promise<string> {
+        return await this.withClient(async (client) => {
+            const response = await client.send(
+                new GetObjectCommand({
+                    Bucket: bucketName,
+                    Key: key,
+                }),
+            );
+            return (await response.Body?.transformToString()) ?? '';
         });
     }
 
@@ -83,7 +160,7 @@ export class S3Service {
 
     @Measure({ name: 'verifyBucketAccessibleInRegion' })
     async verifyBucketAccessibleInRegion(bucketName: string, region: string): Promise<string | undefined> {
-        const expectedOwner = await this.getCallerAccountId();
+        const expectedOwner = await getCallerAccountId(this.awsClient);
 
         return await this.withClient(async (client) => {
             try {
@@ -123,21 +200,6 @@ export class S3Service {
                 throw error;
             }
         });
-    }
-
-    private async getCallerAccountId(): Promise<string> {
-        const sts = this.awsClient.getStsClient();
-        try {
-            const identity = await sts.send(new GetCallerIdentityCommand({}));
-            if (!identity.Account) {
-                throw new Error('STS GetCallerIdentity did not return an account ID');
-            }
-            return identity.Account;
-        } catch (error) {
-            log.error(error, 'Failed to resolve caller account ID via STS');
-            markIfClientError(error);
-            throw error;
-        }
     }
 
     async putObject(localFilePath: string, s3Url: string) {
