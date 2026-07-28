@@ -1,17 +1,20 @@
 import { existsSync, readdirSync, rmSync } from 'fs';
 import { join } from 'path';
-import { open, RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
+import { Database, open, RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { diskUsage } from '../utils/DiskSpace';
 import { isWindows, processId } from '../utils/Environment';
+import { LMDBCrashError } from '../utils/errors/ErrorClasses';
 import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { formatNumber, toString } from '../utils/String';
-import { DataStore, DataStoreFactory, PersistedStores, StoreName } from './DataStore';
+import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatastoreSize } from './DataStore';
 import { LMDBStore } from './lmdb/LMDBStore';
 import { LMDBOwnershipTracker } from './lmdb/OwnershipTracker';
 import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
+import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
 
 const MetricsIntervalMs = 60 * 1000;
 const CleanupDelayMs = 2 * 60 * 1000;
@@ -21,6 +24,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     @Telemetry({ scope: 'LMDB.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly lmdbDir: string;
+    private readonly lmdbVersionDir: string;
     private metricsInterval?: NodeJS.Timeout;
     private cleanupTimeout?: NodeJS.Timeout;
 
@@ -38,6 +42,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
         public readonly storeNames = PersistedStores,
     ) {
         this.lmdbDir = join(rootDir, 'lmdb');
+        this.lmdbVersionDir = join(this.lmdbDir, Version);
         this.ownershipTracker = new LMDBOwnershipTracker(this.lmdbDir);
     }
 
@@ -61,10 +66,21 @@ export class LMDBStoreFactory implements DataStoreFactory {
         await this.ownershipTracker.beginStartup(() => {
             this.log.warn('Detected fatal LMDB startup crash from a previous run, wiping data directory to recover');
             this.telemetry.count('startup.crashRecovery', 1);
-            this.deleteVersionDir();
+            this.deleteVersionDir(new LMDBCrashError());
         });
 
-        this.openEnvAndStores();
+        const config = this.initialLmdbOpen();
+        this.log.info(
+            {
+                path: config.path,
+                maxDbs: config.maxDbs,
+                mapSize: config.mapSize,
+                encoding: config.encoding,
+                noSubdir: config.noSubdir,
+                overlappingSync: config.overlappingSync,
+            },
+            `Initialized LMDB ${Version} with stores: ${toString(this.storeNames)} and ${formatNumber(stats(this.env).totalSize / (1024 * 1024), 4)} MB`,
+        );
 
         // The env and stores opened successfully — promote the marker out of `opening`
         // so an abrupt kill from now on is not mistaken for a startup crash.
@@ -80,95 +96,51 @@ export class LMDBStoreFactory implements DataStoreFactory {
         return val;
     }
 
-    async close(): Promise<void> {
-        if (this.closed) return;
-        this.closed = true;
-
-        const deadline = Date.now() + 2000;
-        while (this.activeOps > 0 && Date.now() < deadline) {
-            await new Promise((resolve) => setTimeout(resolve, 5));
-        }
-        if (this.activeOps > 0) {
-            this.log.warn({ activeOps: this.activeOps }, 'Closing LMDB with in-flight operations after timeout');
-        }
-
-        if (this.metricsInterval !== undefined) {
-            clearInterval(this.metricsInterval);
-        }
-        if (this.cleanupTimeout !== undefined) {
-            clearTimeout(this.cleanupTimeout);
-        }
-        this.stores.clear();
-
-        // initialize() may have failed or never run, leaving env unset.
-        if ((this.env as RootDatabase | undefined) !== undefined) {
-            await this.env.close();
-        }
-        this.ownershipTracker.release();
-    }
-
-    private openEnvAndStores(): void {
-        const config = this.tryOpen() ?? this.recreateAfterCorruption();
-
-        this.log.info(
-            {
-                path: config.path,
-                maxDbs: config.maxDbs,
-                mapSize: config.mapSize,
-                encoding: config.encoding,
-                noSubdir: config.noSubdir,
-                overlappingSync: config.overlappingSync,
-            },
-            `Initialized LMDB ${Version} with stores: ${toString(this.storeNames)} and ${formatNumber(stats(this.env).totalSize / (1024 * 1024), 4)} MB`,
-        );
-    }
-
     /**
-     * Open the environment and every store, returning the config on success or
-     * `undefined` if either step throws so the caller can recover.
+     * Open the environment and every store, returning the config on success
+     * or, deleting the directory and retrying
      */
-    private tryOpen(): RootDatabaseOptionsWithPath | undefined {
+    private initialLmdbOpen(): RootDatabaseOptionsWithPath {
         try {
-            return this.openEnvAndAddStores();
+            return this.createEnvAndStores();
         } catch (e) {
-            this.log.warn(e, 'LMDB corrupted on startup, deleting and recreating');
-            return undefined;
+            recordOutOfDiskFailure(this.telemetry, StoreOperation.constructor, e);
+
+            this.log.warn(e, 'LMDB unreadable on startup, deleting and recreating');
+            return this.deleteAndRecreate(e);
         }
     }
 
-    /**
-     * Delete the (presumed corrupt) version directory and open a fresh environment and
-     * stores. Unlike {@link tryOpen}, a failure here is fatal and propagates.
-     */
-    private recreateAfterCorruption(): RootDatabaseOptionsWithPath {
-        this.stores.clear();
-        if ((this.env as RootDatabase | undefined) !== undefined) {
-            void this.env.close();
-        }
-        this.deleteVersionDir();
-        return this.openEnvAndAddStores();
-    }
-
-    private openEnvAndAddStores(): RootDatabaseOptionsWithPath {
-        const { env, config } = createEnv(this.lmdbDir);
+    private createEnvAndStores(): RootDatabaseOptionsWithPath {
+        const { env, config } = createEnv(this.lmdbVersionDir);
         this.env = env;
-        for (const store of this.storeNames) {
-            this.addStore(store);
+        this.openPid = processId();
+
+        for (const name of this.storeNames) {
+            const store = createDB(this.env, name);
+            const existing = this.stores.get(name);
+
+            if (existing) {
+                existing.updateStore(store);
+            } else {
+                this.stores.set(
+                    name,
+                    new LMDBStore(
+                        name,
+                        store,
+                        (e, op) => this.handleError(e, op),
+                        () => {
+                            if (processId() !== this.openPid) {
+                                this.recoverFromFork();
+                            }
+                        },
+                        () => this.beginOp(),
+                    ),
+                );
+            }
         }
+
         return config;
-    }
-
-    private scheduleBackgroundTasks(): void {
-        this.metricsInterval = setInterval(() => {
-            this.emitMetrics();
-        }, MetricsIntervalMs);
-
-        this.cleanupTimeout = setTimeout(() => {
-            this.cleanupOldVersions();
-        }, CleanupDelayMs);
-
-        this.metricsInterval.unref();
-        this.cleanupTimeout.unref();
     }
 
     private beginOp(): () => void {
@@ -182,7 +154,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
         };
     }
 
-    private handleError(error: unknown): void {
+    private handleError(error: unknown, op: StoreOperation) {
+        recordOutOfDiskFailure(this.telemetry, op, error);
+
         if (this.closed) return;
         const msg = extractErrorMessage(error);
 
@@ -193,65 +167,40 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 this.recoverFromError();
             }
         } catch (recoveryError) {
-            this.log.error(recoveryError, 'LMDB recovery failed, disabling database');
+            this.log.error(recoveryError, 'LMDB recovery failed');
             this.telemetry.count('recovery.failed', 1);
         }
     }
 
-    private ensureValidEnv(): void {
-        if (processId() !== this.openPid) {
-            this.telemetry.count('process.forked', 1);
-            this.log.warn({ oldPid: this.openPid, newPid: processId() }, 'Process fork detected, reopening LMDB');
-
-            try {
-                this.reopenEnv();
-
-                // Update all stores with new handles
-                for (const store of this.storeNames) {
-                    this.stores.get(store)?.updateStore(createDB(this.env, store));
-                }
-            } catch (e) {
-                this.log.error(e, 'Failed to reopen LMDB after fork');
-                this.deleteAndRecreate();
-            }
-        }
-    }
-
     private recoverFromFork(): void {
-        this.telemetry.count('forked.recover', 1);
+        this.telemetry.count('process.forked', 1);
         this.log.warn({ oldPid: this.openPid, newPid: processId() }, 'Process fork detected, reopening LMDB');
 
         try {
             this.reopenEnv();
-            this.recreateStores();
-        } catch {
-            this.log.warn('Fork recovery failed, deleting and recreating');
-            this.deleteAndRecreate();
+        } catch (e) {
+            this.deleteAndRecreate(e);
         }
     }
 
     private recoverFromError(): void {
         this.telemetry.count('error.recover', 1);
-        this.log.warn('Error detected, attempting to reopen LMDB');
 
         try {
             this.reopenEnv();
-            this.recreateStores();
-            this.log.info('Successfully recovered by reopening LMDB');
-        } catch {
-            this.log.warn('Reopen failed, deleting database');
-            this.deleteAndRecreate();
+        } catch (e) {
+            this.deleteAndRecreate(e);
         }
     }
 
-    private deleteAndRecreate(): void {
+    private deleteAndRecreate(cause: unknown) {
         try {
-            this.deleteVersionDir();
-            this.reopenEnv();
-            this.recreateStores();
+            this.deleteVersionDir(cause);
+            return this.reopenEnv();
         } catch (e) {
             this.log.error(e, 'Failed to recreate LMDB after deletion');
             this.telemetry.count('recovery.failed', 1);
+            throw e;
         }
     }
 
@@ -260,45 +209,78 @@ export class LMDBStoreFactory implements DataStoreFactory {
      * fail on the old env, but execAsync's retry logic will recover using the new
      * store handle (updated by recreateStores). Unlike close(), we don't drain
      * activeOps because the env is being replaced, not destroyed.
+     *
+     * The previous handle is closed *after* the replacement is open: `open()` on an
+     * already-open path attaches to the same underlying environment, so keeping the new handle
+     * open first keeps the data available across the swap. Closing the old handle is what
+     * actually releases it — without this, every reopen leaked an environment handle and a
+     * reader slot, and `maxReaders` is finite.
      */
-    private reopenEnv(): void {
+    private reopenEnv(): RootDatabaseOptionsWithPath {
         this.telemetry.count('env.reopen', 1);
-        this.env = createEnv(this.lmdbDir).env;
-        this.openPid = processId();
+        const previousEnv = this.env as RootDatabase | undefined;
+        const previousDatabases = [...this.stores.values()].map((store) => store.currentDatabase());
+
+        const rootDb = this.createEnvAndStores();
+
+        this.releasePreviousEnv(previousEnv, previousDatabases);
         this.log.warn('Recreated LMDB environment');
+        return rootDb;
     }
 
-    private recreateStores(): void {
-        for (const name of this.storeNames) {
-            const existing = this.stores.get(name);
-            if (existing) {
-                existing.updateStore(createDB(this.env, name));
-            } else {
-                this.addStore(name);
+    /**
+     * Closes the environment being replaced. Without this, every reopen leaked an environment handle
+     * and a reader slot, and `maxReaders` is finite.
+     *
+     * Deferred to a later macrotask for two reasons: callers swap their store handles synchronously
+     * after `reopenEnv()` returns, and lmdb-js schedules `resetReadTxn` on a `setTimeout(0)` after
+     * every read which throws if its environment closed first. Running later lets those pending
+     * resets complete, and each outgoing database is reset explicitly before the close.
+     */
+    private releasePreviousEnv(previousEnv: RootDatabase | undefined, previousDatabases: Database[]) {
+        if (previousEnv === undefined) {
+            return;
+        }
+
+        setTimeout(() => {
+            for (const database of previousDatabases) {
+                try {
+                    database.resetReadTxn();
+                } catch (error) {
+                    this.log.warn(error, 'Failed to reset a read transaction on the outgoing LMDB store');
+                }
             }
-        }
+
+            void previousEnv
+                .close()
+                .then(() => {
+                    this.telemetry.count('env.reopen.closed', 1);
+                })
+                .catch((error: unknown) => {
+                    // A handle we cannot close is a leak, not a data problem: the replacement
+                    // environment is already serving reads and writes.
+                    this.log.warn(error, 'Failed to close the previous LMDB environment after reopen');
+                    this.telemetry.count('env.reopen.closeFault', 1);
+                });
+        }, 0).unref();
     }
 
-    private addStore(name: StoreName): void {
-        const database = createDB(this.env, name);
-        this.stores.set(
-            name,
-            new LMDBStore(
-                name,
-                database,
-                (e) => this.handleError(e),
-                () => this.ensureValidEnv(),
-                () => this.beginOp(),
-            ),
-        );
+    private deleteVersionDir(cause: unknown) {
+        recordDiscardedData(this.telemetry, cause);
+        rmSync(this.lmdbVersionDir, { recursive: true, force: true });
     }
 
-    private deleteVersionDir(): void {
-        try {
-            rmSync(join(this.lmdbDir, Version), { recursive: true, force: true });
-        } catch (e) {
-            this.log.error(e, 'Failed to delete LMDB version directory');
-        }
+    private scheduleBackgroundTasks(): void {
+        this.metricsInterval = setInterval(() => {
+            this.emitMetrics();
+        }, MetricsIntervalMs);
+
+        this.cleanupTimeout = setTimeout(() => {
+            this.cleanupOldVersions();
+        }, CleanupDelayMs);
+
+        this.metricsInterval.unref();
+        this.cleanupTimeout.unref();
     }
 
     private cleanupOldVersions(): void {
@@ -344,24 +326,55 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 totalBytes += stat.totalSize;
             }
 
-            this.telemetry.histogram('total.usage', 100 * (totalBytes / TotalMaxDbSize), { unit: '%' });
+            this.telemetry.histogram('total.usage', 100 * (totalBytes / TotalMaxDatastoreSize), { unit: '%' });
             this.telemetry.histogram('total.size.bytes', totalBytes, { unit: 'By' });
+
+            const usage = diskUsage(this.lmdbDir);
+            if (usage !== undefined) {
+                recordDiskUsage(this.telemetry, usage);
+            }
         } catch (e) {
-            this.handleError(e);
+            this.handleError(e, StoreOperation.stats);
         }
+    }
+
+    async close(): Promise<void> {
+        if (this.closed) return;
+        this.closed = true;
+
+        const deadline = Date.now() + 2000;
+        while (this.activeOps > 0 && Date.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 5));
+        }
+        if (this.activeOps > 0) {
+            this.log.warn({ activeOps: this.activeOps }, 'Closing LMDB with in-flight operations after timeout');
+        }
+
+        if (this.metricsInterval !== undefined) {
+            clearInterval(this.metricsInterval);
+        }
+        if (this.cleanupTimeout !== undefined) {
+            clearTimeout(this.cleanupTimeout);
+        }
+        this.stores.clear();
+
+        // initialize() may have failed or never run, leaving env unset.
+        if ((this.env as RootDatabase | undefined) !== undefined) {
+            await this.env.close();
+        }
+        this.ownershipTracker.release();
     }
 }
 
 const VersionNumber = 6;
 const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
-const TotalMaxDbSize = 250 * 1024 * 1024; // 250MB max size
 
-function createEnv(lmdbDir: string) {
+function createEnv(lmdbVersionDir: string) {
     const config: RootDatabaseOptionsWithPath = {
-        path: join(lmdbDir, Version),
+        path: lmdbVersionDir,
         maxDbs: 10,
-        mapSize: TotalMaxDbSize,
+        mapSize: TotalMaxDatastoreSize,
         encoding: Encoding,
         encryptionKey: encryptionStrategy(VersionNumber),
         // Forces use of the last safely flushed transaction on open, rather than the last committed

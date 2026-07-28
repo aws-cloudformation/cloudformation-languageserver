@@ -5,6 +5,7 @@ import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
 import { stableHashCode } from '../../utils/StableHash';
 import { DataStore } from '../DataStore';
+import { recordOutOfDiskFailure, StoreOperation } from '../Utils';
 import { EncryptedFile } from './EncryptedFile';
 
 export class KeyedFileStore implements DataStore {
@@ -24,83 +25,94 @@ export class KeyedFileStore implements DataStore {
     }
 
     get<T>(key: string): T | undefined {
-        return this.telemetry.measure('get', () => this.keysToFiles.get(key)?.get<T>(), {
-            captureErrorAttributes: true,
-        });
+        return this.exec(StoreOperation.get, () => this.keysToFiles.get(key)?.get<T>());
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
-        return this.telemetry.measureAsync(
-            'put',
-            async () => {
-                await this.getOrCreate(key).put(value);
-                return true;
-            },
-            { captureErrorAttributes: true },
-        );
+        return this.execAsync(StoreOperation.put, async () => {
+            return await this.getOrCreate(key).put(value);
+        });
     }
 
     remove(key: string): Promise<boolean> {
-        return this.telemetry.measureAsync(
-            'remove',
-            async () => {
-                const file = this.keysToFiles.get(key);
-                if (!file) {
-                    return false;
-                }
+        return this.execAsync(StoreOperation.clear, async () => {
+            const file = this.keysToFiles.get(key);
+            if (!file) {
+                return false;
+            }
 
-                this.keysToFiles.delete(key);
-                await file.remove();
-                return true;
-            },
-            { captureErrorAttributes: true },
-        );
+            this.keysToFiles.delete(key);
+            await file.remove();
+            return true;
+        });
     }
 
     clear(): Promise<void> {
-        return this.telemetry.measureAsync(
-            'clear',
-            async () => {
-                this.loadAllFiles();
-                const files = [...this.keysToFiles.values()];
-                this.keysToFiles.clear();
-                for (const file of files) {
-                    await file.remove();
+        return this.execAsync(StoreOperation.clear, async () => {
+            this.loadAllFiles();
+            const files = [...this.keysToFiles.values()];
+            this.keysToFiles.clear();
+            for (const file of files) {
+                await file.remove();
+            }
+        });
+    }
+
+    keys(limit: number): ReadonlyArray<string> {
+        return this.exec(StoreOperation.keys, () => {
+            this.loadAllFiles();
+            return [...this.keysToFiles.keys()].slice(0, limit);
+        });
+    }
+
+    stats(): FileStoreStats {
+        return this.exec(StoreOperation.stats, () => {
+            this.loadAllFiles();
+            let entries = 0;
+            let totalSize = 0;
+            for (const store of this.keysToFiles.values()) {
+                entries++;
+                totalSize += store.fileSize();
+            }
+            return { entries, totalSize };
+        });
+    }
+
+    private exec<T>(op: StoreOperation, fn: () => T): T {
+        return this.telemetry.measure(
+            op,
+            () => {
+                try {
+                    return fn();
+                } catch (e) {
+                    recordOutOfDiskFailure(this.telemetry, op, e);
+                    throw e;
                 }
             },
             { captureErrorAttributes: true },
         );
     }
 
-    keys(limit: number): ReadonlyArray<string> {
-        return this.telemetry.measure(
-            'keys',
-            () => {
-                this.loadAllFiles();
-                return [...this.keysToFiles.keys()].slice(0, limit);
+    private async execAsync<T>(op: StoreOperation, fn: () => Promise<T>): Promise<T> {
+        return await this.telemetry.measureAsync(
+            op,
+            async () => {
+                try {
+                    return await fn();
+                } catch (e) {
+                    recordOutOfDiskFailure(this.telemetry, op, e);
+                    throw e;
+                }
             },
-            {
-                captureErrorAttributes: true,
-            },
+            { captureErrorAttributes: true },
         );
-    }
-
-    stats(): FileStoreStats {
-        this.loadAllFiles();
-        let entries = 0;
-        let totalSize = 0;
-        for (const store of this.keysToFiles.values()) {
-            entries++;
-            totalSize += store.fileSize();
-        }
-        return { entries, totalSize };
     }
 
     private getOrCreate(key: string): EncryptedFile {
         let store = this.keysToFiles.get(key);
         if (!store) {
             const fileName = keyStoreToFileName(this.storeName, key);
-            store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir);
+            store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir, this.telemetry);
 
             const existing = store.entry();
             if (existing && existing.key !== key) {
@@ -135,7 +147,13 @@ export class KeyedFileStore implements DataStore {
         }
 
         try {
-            const store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir);
+            const store = new EncryptedFile(
+                this.encryptionKey,
+                this.storeName,
+                fileName,
+                this.fileDbDir,
+                this.telemetry,
+            );
             const entry = store.entry();
             if (entry?.key) {
                 store.setKey(entry.key);

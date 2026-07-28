@@ -25,6 +25,9 @@ export class SchemaStore {
     private regionalSchemaKey?: string;
     private regionalSchemas?: RegionalSchemasType;
 
+    private readonly publicLastModifiedMs = new Map<string, number>();
+    private samLastModifiedMs?: number;
+
     private combined?: CombinedSchemas;
 
     constructor(private readonly dataStoreFactory: DataStoreFactoryProvider) {}
@@ -78,7 +81,12 @@ export class SchemaStore {
     }
 
     getPublicSchemas(region: string): RegionalSchemasType | undefined {
-        return this.publicSchemas.get<RegionalSchemasType>(getRegion(region));
+        const resolvedRegion = getRegion(region);
+        const schemas = this.publicSchemas.get<RegionalSchemasType>(resolvedRegion);
+        if (schemas !== undefined) {
+            this.publicLastModifiedMs.set(resolvedRegion, schemas.lastModifiedMs);
+        }
+        return schemas;
     }
 
     getPublicSchemaRegions(): ReadonlyArray<string> {
@@ -90,35 +98,37 @@ export class SchemaStore {
     }
 
     getSamSchemas(): SamSchemasType | undefined {
-        return this.samSchemas.get<SamSchemasType>(SamStoreKey);
+        const schemas = this.samSchemas.get<SamSchemasType>(SamStoreKey);
+        if (schemas !== undefined) {
+            this.samLastModifiedMs = schemas.lastModifiedMs;
+        }
+        return schemas;
     }
 
     getSamSchemaAge(): number {
-        const existingValue = this.getSamSchemas();
-        if (!existingValue) {
-            return 0;
+        if (this.samLastModifiedMs === undefined) {
+            this.getSamSchemas();
         }
 
-        return DateTime.now().diff(DateTime.fromMillis(existingValue.lastModifiedMs)).toMillis();
+        return ageMs(this.samLastModifiedMs) ?? Number.MAX_SAFE_INTEGER;
     }
 
     getPublicSchemasMaxAge(): number {
-        const regions = this.getPublicSchemaRegions();
-        if (regions.length === 0) {
+        if (this.publicLastModifiedMs.size === 0) {
+            for (const region of this.getPublicSchemaRegions()) {
+                this.getPublicSchemas(region);
+            }
+        }
+
+        if (this.publicLastModifiedMs.size === 0) {
             return 0;
         }
 
         let maxAge: number | undefined;
-        for (const key of regions) {
-            const lastModifiedMs = this.getPublicSchemas(key)?.lastModifiedMs;
-
-            if (lastModifiedMs) {
-                const age = DateTime.now().diff(DateTime.fromMillis(lastModifiedMs)).toMillis();
-                if (maxAge === undefined) {
-                    maxAge = age;
-                } else {
-                    maxAge = Math.max(maxAge, age);
-                }
+        for (const lastModifiedMs of this.publicLastModifiedMs.values()) {
+            const age = ageMs(lastModifiedMs);
+            if (age !== undefined) {
+                maxAge = maxAge === undefined ? age : Math.max(maxAge, age);
             }
         }
 
@@ -128,5 +138,15 @@ export class SchemaStore {
     invalidate() {
         this.telemetry.count('invalidate', 1);
         this.combined = undefined;
+        this.publicLastModifiedMs.clear();
+        this.samLastModifiedMs = undefined;
     }
+}
+
+function ageMs(lastModifiedMs: number | undefined): number | undefined {
+    if (lastModifiedMs === undefined) {
+        return undefined;
+    }
+
+    return DateTime.now().diff(DateTime.fromMillis(lastModifiedMs)).toMillis();
 }

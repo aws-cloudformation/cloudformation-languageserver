@@ -1,8 +1,9 @@
 import { join } from 'path';
 import { Logger } from 'pino';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { TelemetryService } from '../../telemetry/TelemetryService';
+import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { LocalFile } from '../../utils/LocalFile';
+import { recordDiscardedData } from '../Utils';
 import { decrypt, encrypt } from './Encryption';
 
 /**
@@ -25,6 +26,7 @@ export class EncryptedFile {
         storeName: string,
         fileName: string,
         fileDbDir: string,
+        private readonly telemetry: ScopedTelemetry,
     ) {
         this.log = LoggerFactory.getLogger(`EncryptedFile.${storeName}`);
         this.file = new LocalFile(join(fileDbDir, fileName));
@@ -32,8 +34,7 @@ export class EncryptedFile {
         try {
             this.content = this.readFile();
         } catch (error) {
-            this.log.error(error, 'Failed to decrypt, deleting file');
-            TelemetryService.instance.get(`FileStore.${storeName}`).count('filestore.recreate', 1);
+            recordDiscardedData(this.telemetry, error);
             this.file.unsafeRemove();
         }
     }

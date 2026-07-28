@@ -1,16 +1,17 @@
 import { existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
 import { join } from 'path';
-import { Logger } from 'pino';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
+import { diskUsage } from '../utils/DiskSpace';
 import { formatNumber } from '../utils/String';
-import { DataStore, DataStoreFactory, PersistedStores, StoreName } from './DataStore';
+import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatastoreSize } from './DataStore';
 import { encryptionKey } from './file/Encryption';
 import { KeyedFileStore } from './file/KeyedFileStore';
+import { recordDiskUsage } from './Utils';
 
 export class FileStoreFactory implements DataStoreFactory {
-    private readonly log: Logger;
+    private readonly log = LoggerFactory.getLogger('FileStore.Global');
     @Telemetry({ scope: 'FileStore.Global' }) private readonly telemetry!: ScopedTelemetry;
 
     private readonly stores = new Map<StoreName, KeyedFileStore>();
@@ -25,8 +26,6 @@ export class FileStoreFactory implements DataStoreFactory {
         rootDir: string,
         public readonly storeNames = PersistedStores,
     ) {
-        this.log = LoggerFactory.getLogger('FileStore.Global');
-
         this.fileDbRoot = join(rootDir, 'filedb');
         this.fileDbDir = join(this.fileDbRoot, Version);
 
@@ -87,9 +86,16 @@ export class FileStoreFactory implements DataStoreFactory {
             });
         }
 
-        this.telemetry.histogram('total.size.bytes', this.totalBytes(), {
+        const totalBytes = this.totalBytes();
+        this.telemetry.histogram('total.size.bytes', totalBytes, {
             unit: 'By',
         });
+        this.telemetry.histogram('total.usage', 100 * (totalBytes / TotalMaxDatastoreSize), { unit: '%' });
+
+        const usage = diskUsage(this.fileDbRoot);
+        if (usage !== undefined) {
+            recordDiskUsage(this.telemetry, usage);
+        }
     }
 
     private cleanupOldVersions(): void {

@@ -96,9 +96,9 @@ export class CfnInfraCore implements Configurables, Closeable {
     async close() {
         return await closeSafely(
             this.documentManager,
-            this.dataStoreFactory,
             this.featureFlags,
             TelemetryService.instance,
+            this.dataStoreFactory, // This must be closed last
         );
     }
 }

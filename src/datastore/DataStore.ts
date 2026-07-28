@@ -6,6 +6,8 @@ import { FileStoreFactory } from './FileStoreFactory';
 import { LMDBStoreFactory } from './LMDBStoreFactory';
 import { MemoryStoreFactory } from './MemoryStore';
 
+export const TotalMaxDatastoreSize = 250 * 1024 * 1024; // 250MB max size
+
 export enum Persistence {
     memory = 'memory',
     local = 'local',
