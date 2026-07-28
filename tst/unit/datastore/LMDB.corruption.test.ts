@@ -43,7 +43,7 @@ describe('LMDB error recovery', () => {
     it('should call recoverFromError for MDB_CORRUPTED errors', () => {
         const recoverSpy = vi.spyOn(factory as any, 'recoverFromError');
         const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
-        const recreateSpy = vi.spyOn(factory as any, 'recreateStores').mockImplementation(() => {});
+        const recreateSpy = vi.spyOn(factory as any, 'createEnvAndStores').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
@@ -56,7 +56,7 @@ describe('LMDB error recovery', () => {
     it('should call recoverFromError for MDB_PAGE_NOTFOUND errors', () => {
         const recoverSpy = vi.spyOn(factory as any, 'recoverFromError');
         const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
-        const recreateSpy = vi.spyOn(factory as any, 'recreateStores').mockImplementation(() => {});
+        const recreateSpy = vi.spyOn(factory as any, 'createEnvAndStores').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_PAGE_NOTFOUND: Requested page not found'));
@@ -69,7 +69,7 @@ describe('LMDB error recovery', () => {
     it('should call recoverFromError for MDB_PANIC errors', () => {
         const recoverSpy = vi.spyOn(factory as any, 'recoverFromError');
         const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
-        const recreateSpy = vi.spyOn(factory as any, 'recreateStores').mockImplementation(() => {});
+        const recreateSpy = vi.spyOn(factory as any, 'createEnvAndStores').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_PANIC: Update of meta page failed'));
@@ -82,7 +82,7 @@ describe('LMDB error recovery', () => {
     it('should call recoverFromError for transient errors', () => {
         const recoverSpy = vi.spyOn(factory as any, 'recoverFromError');
         const reopenSpy = vi.spyOn(factory as any, 'reopenEnv').mockImplementation(() => {});
-        const recreateSpy = vi.spyOn(factory as any, 'recreateStores').mockImplementation(() => {});
+        const recreateSpy = vi.spyOn(factory as any, 'createEnvAndStores').mockImplementation(() => {});
 
         const handleError = (factory as any).handleError.bind(factory);
         handleError(new Error('MDB_BAD_TXN: Transaction must abort'));

@@ -155,23 +155,23 @@ describe('LMDB fork detection and recovery', () => {
             reopenSpy.mockRestore();
         });
 
-        it('should preserve object identity of stores after recreateStores', () => {
+        it('should preserve object identity of stores when handles are recreated', () => {
             const refBefore = factory.get(StoreName.public_schemas);
             const samRefBefore = factory.get(StoreName.sam_schemas);
 
-            // Directly call recreateStores
-            (factory as any).recreateStores();
+            // Reopens the environment and swaps every store's underlying database handle.
+            (factory as any).createEnvAndStores();
 
             // factory.get() must return the exact same object
             expect(factory.get(StoreName.public_schemas)).toBe(refBefore);
             expect(factory.get(StoreName.sam_schemas)).toBe(samRefBefore);
         });
 
-        it('should allow reads and writes on cached reference after recreateStores', async () => {
+        it('should allow reads and writes on cached reference after handles are recreated', async () => {
             const cachedRef = factory.get(StoreName.public_schemas);
             await cachedRef.put('key', 'value');
 
-            (factory as any).recreateStores();
+            (factory as any).createEnvAndStores();
 
             // Cached ref should still read/write correctly
             expect(cachedRef.get('key')).toBe('value');

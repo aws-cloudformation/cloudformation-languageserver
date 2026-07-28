@@ -19,7 +19,7 @@ describe('EncryptedFile', () => {
 
     describe('put and get', () => {
         it('should round-trip a value through encrypt/write/read/decrypt', async () => {
-            const file = new EncryptedFile(key, 'test', 'data.enc', testDir, mock);
+            const file = new EncryptedFile(key, 'test', 'data.enc', testDir);
             file.setKey('my-key');
 
             await file.put({ region: 'us-east-1' });

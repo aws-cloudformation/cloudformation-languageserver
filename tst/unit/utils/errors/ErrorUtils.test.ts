@@ -304,11 +304,11 @@ describe('ErrorUtils', () => {
             expect(errorCauseChain(error)).toEqual([error, commitError]);
         });
 
-        test('prefers cause over commitError when both are present', () => {
-            const cause = new Error('cause');
-            const error = Object.assign(new Error('outer'), { cause, commitError: new Error('commit') });
+        test('prefers commitError over cause when both are present', () => {
+            const commitError = new Error('commit');
+            const error = Object.assign(new Error('outer', { cause: new Error('cause') }), { commitError });
 
-            expect(errorCauseChain(error)).toEqual([error, cause]);
+            expect(errorCauseChain(error)).toEqual([error, commitError]);
         });
 
         test('ignores a promise-valued commitError, which carries no readable message', () => {

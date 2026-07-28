@@ -33,21 +33,8 @@ export function handleLspError(error: unknown, contextMessage: string): never {
 }
 
 export function extractRootCause(error: unknown): Error | undefined {
-    if (error === null || typeof error !== 'object') {
-        return undefined;
-    }
-
-    const errorAs = error as { commitError?: unknown; cause?: unknown };
-
-    if (errorAs.commitError instanceof Error) {
-        return errorAs.commitError;
-    }
-
-    if (errorAs.cause instanceof Error) {
-        return errorAs.cause;
-    }
-
-    return undefined;
+    const [, cause] = errorCauseChain(error);
+    return cause instanceof Error ? cause : undefined;
 }
 
 const MaxCauseDepth = 8;
@@ -74,7 +61,7 @@ export function errorCauseChain(error: unknown): unknown[] {
         const { cause, commitError } = current as { cause?: unknown; commitError?: unknown };
         // A promise-valued `commitError` carries no synchronously readable message; only a resolved
         // one (see `attachCommitCause`) is useful here.
-        current = cause ?? (commitError instanceof Error ? commitError : undefined);
+        current = (commitError instanceof Error ? commitError : undefined) ?? cause;
     }
 
     return chain;

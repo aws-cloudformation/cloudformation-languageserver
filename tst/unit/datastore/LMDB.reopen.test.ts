@@ -47,7 +47,6 @@ describe('LMDB environment reopen', () => {
         const store = factory.get(StoreName.public_schemas);
 
         (factory as unknown as ReopenableFactory).reopenEnv();
-        (factory as unknown as { recreateStores: () => void }).recreateStores();
 
         await expect(store.put('us-west-2', 'more schemas')).resolves.toBe(true);
         expect(store.get<string>('us-west-2')).toBe('more schemas');

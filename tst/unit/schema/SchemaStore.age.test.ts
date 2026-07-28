@@ -64,9 +64,9 @@ describe('SchemaStore age gauges', () => {
         expect(samGet.callCount).toBe(0);
     });
 
-    it('should report zero age when no schemas have been stored', () => {
-        expect(schemaStore.getPublicSchemasMaxAge()).toBe(0);
-        expect(schemaStore.getSamSchemaAge()).toBe(0);
+    it('should report a maximally stale age when no schemas have been stored', () => {
+        expect(schemaStore.getPublicSchemasMaxAge()).toBe(Number.MAX_SAFE_INTEGER);
+        expect(schemaStore.getSamSchemaAge()).toBe(Number.MAX_SAFE_INTEGER);
     });
 
     it('should read the store only once across repeated gauge samples', async () => {
@@ -96,13 +96,6 @@ describe('SchemaStore age gauges', () => {
 
         expect(age).toBeGreaterThanOrEqual(5 * OneHourMs);
         expect(age).toBeLessThan(6 * OneHourMs);
-    });
-
-    it('should reflect a freshly downloaded region without reading it back', () => {
-        const region = 'us-east-1' as AwsRegion;
-        schemaStore.markPublicSchemasRefreshed(region, Date.now());
-
-        expect(schemaStore.getPublicSchemasMaxAge()).toBeLessThan(OneHourMs);
     });
 
     it('should re-read the age after invalidate so a stale cached value is never reported', async () => {

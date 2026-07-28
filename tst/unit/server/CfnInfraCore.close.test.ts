@@ -47,6 +47,6 @@ describe('CfnInfraCore shutdown order', () => {
     it('should close every registered component', async () => {
         await core.close();
 
-        expect(closeOrder).toEqual(['documentManager', 'telemetry', 'dataStore', 'featureFlags']);
+        expect(closeOrder).toEqual(['documentManager', 'featureFlags', 'telemetry', 'dataStore']);
     });
 });
