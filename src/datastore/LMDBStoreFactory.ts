@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, rmSync } from 'fs';
 import { join } from 'path';
-import { Database, open, RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
+import { open, RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
@@ -19,6 +19,8 @@ import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOper
 const MetricsIntervalMs = 60 * 1000;
 const CleanupDelayMs = 2 * 60 * 1000;
 
+type OpenedEnv = { config: RootDatabaseOptionsWithPath; env: RootDatabase };
+
 export class LMDBStoreFactory implements DataStoreFactory {
     private readonly log = LoggerFactory.getLogger('LMDB.Global');
     @Telemetry({ scope: 'LMDB.Global' }) private readonly telemetry!: ScopedTelemetry;
@@ -28,7 +30,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private metricsInterval?: NodeJS.Timeout;
     private cleanupTimeout?: NodeJS.Timeout;
 
-    private env!: RootDatabase;
+    private env: RootDatabase | undefined;
     private openPid = processId();
     private initPromise?: Promise<void>;
     private closed = false;
@@ -69,7 +71,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             this.deleteVersionDir(new LMDBCrashError());
         });
 
-        const config = this.initialLmdbOpen();
+        const { config, env } = await this.initialLmdbOpen();
         this.log.info(
             {
                 path: config.path,
@@ -79,7 +81,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 noSubdir: config.noSubdir,
                 overlappingSync: config.overlappingSync,
             },
-            `Initialized LMDB ${Version} with stores: ${toString(this.storeNames)} and ${formatNumber(stats(this.env).totalSize / (1024 * 1024), 4)} MB`,
+            `Initialized LMDB ${Version} with stores: ${toString(this.storeNames)} and ${formatNumber(stats(env).totalSize / (1024 * 1024), 4)} MB`,
         );
 
         // The env and stores opened successfully — promote the marker out of `opening`
@@ -100,12 +102,14 @@ export class LMDBStoreFactory implements DataStoreFactory {
      * Open the environment and every store, returning the config on success
      * or, deleting the directory and retrying
      */
-    private initialLmdbOpen(): RootDatabaseOptionsWithPath {
+    private async initialLmdbOpen(): Promise<OpenedEnv> {
         try {
             try {
                 return this.createEnvAndStores();
             } catch (e) {
                 recordOutOfDiskFailure(this.telemetry, StoreOperation.constructor, e);
+
+                await this.releaseEnv(this.env);
 
                 this.log.warn(e, 'LMDB unreadable on startup, deleting and recreating');
                 return this.deleteAndRecreate(e);
@@ -116,7 +120,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
         }
     }
 
-    private createEnvAndStores(): RootDatabaseOptionsWithPath {
+    private createEnvAndStores(): OpenedEnv {
         const { env, config } = createEnv(this.lmdbVersionDir);
         this.env = env;
         this.openPid = processId();
@@ -145,7 +149,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             }
         }
 
-        return config;
+        return { config, env };
     }
 
     private beginOp(): () => void {
@@ -198,7 +202,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
         }
     }
 
-    private deleteAndRecreate(cause: unknown) {
+    private deleteAndRecreate(cause: unknown): OpenedEnv {
         try {
             this.deleteVersionDir(cause);
             return this.reopenEnv();
@@ -221,53 +225,44 @@ export class LMDBStoreFactory implements DataStoreFactory {
      * actually releases it — without this, every reopen leaked an environment handle and a
      * reader slot, and `maxReaders` is finite.
      */
-    private reopenEnv(): RootDatabaseOptionsWithPath {
+    private reopenEnv(): OpenedEnv {
         this.telemetry.count('env.reopen', 1);
-        const previousEnv = this.env as RootDatabase | undefined;
-        const previousDatabases = [...this.stores.values()].map((store) => store.currentDatabase());
+        const previousEnv = this.env;
 
-        const rootDb = this.createEnvAndStores();
+        const opened = this.createEnvAndStores();
 
-        this.releasePreviousEnv(previousEnv, previousDatabases);
+        void this.releaseEnv(previousEnv);
         this.log.warn('Recreated LMDB environment');
-        return rootDb;
+        return opened;
     }
 
     /**
      * Closes the environment being replaced. Without this, every reopen leaked an environment handle
      * and a reader slot, and `maxReaders` is finite.
      *
-     * Deferred to a later macrotask for two reasons: callers swap their store handles synchronously
-     * after `reopenEnv()` returns, and lmdb-js schedules `resetReadTxn` on a `setTimeout(0)` after
-     * every read which throws if its environment closed first. Running later lets those pending
-     * resets complete, and each outgoing database is reset explicitly before the close.
+     * `close()` synchronously aborts the read transaction and clears lmdb's pending
+     * `setTimeout(resetReadTxn, 0)`, then drains outstanding reads and writes before releasing the
+     * handle. Callers that delete the data directory await it, since an open handle blocks `rmSync`
+     * on Windows.
      */
-    private releasePreviousEnv(previousEnv: RootDatabase | undefined, previousDatabases: Database[]) {
-        if (previousEnv === undefined) {
+    private async releaseEnv(env: RootDatabase | undefined): Promise<void> {
+        if (env === undefined) {
             return;
         }
 
-        setTimeout(() => {
-            for (const database of previousDatabases) {
-                try {
-                    database.resetReadTxn();
-                } catch (error) {
-                    this.log.warn(error, 'Failed to reset a read transaction on the outgoing LMDB store');
-                }
-            }
+        if (this.env === env) {
+            this.env = undefined;
+        }
 
-            void previousEnv
-                .close()
-                .then(() => {
-                    this.telemetry.count('env.reopen.closed', 1);
-                })
-                .catch((error: unknown) => {
-                    // A handle we cannot close is a leak, not a data problem: the replacement
-                    // environment is already serving reads and writes.
-                    this.log.warn(error, 'Failed to close the previous LMDB environment after reopen');
-                    this.telemetry.count('env.reopen.closeFault', 1);
-                });
-        }, 0).unref();
+        try {
+            await env.close();
+            this.telemetry.count('env.release.closed', 1);
+        } catch (error) {
+            this.log.warn(error, 'Failed to close the previous LMDB environment after reopen');
+            this.telemetry.error('env.release.close', error, undefined, {
+                captureErrorAttributes: true,
+            });
+        }
     }
 
     private deleteVersionDir(cause: unknown) {
@@ -308,7 +303,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private emitMetrics(): void {
-        if (this.closed) return;
+        if (this.closed || this.env === undefined) {
+            return;
+        }
 
         try {
             const staleLocks = this.env.readerCheck();
@@ -344,7 +341,10 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     async close(): Promise<void> {
-        if (this.closed) return;
+        if (this.closed) {
+            return;
+        }
+
         this.closed = true;
 
         const deadline = Date.now() + 2000;
@@ -363,10 +363,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
         }
         this.stores.clear();
 
-        // initialize() may have failed or never run, leaving env unset.
-        if ((this.env as RootDatabase | undefined) !== undefined) {
-            await this.env.close();
-        }
+        await this.env?.close();
         this.ownershipTracker.release();
     }
 }
