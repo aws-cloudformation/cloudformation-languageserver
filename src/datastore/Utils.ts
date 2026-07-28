@@ -1,7 +1,7 @@
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
-import { DiskUsage, isOutOfDiskError } from '../utils/DiskSpace';
+import { DiskUsage, isInaccessibleError, isOutOfDiskError } from '../utils/Disk';
 import { LMDBCrashError } from '../utils/errors/ErrorClasses';
-import { extractErrorCode, extractErrorMessage } from '../utils/errors/ErrorUtils';
+import { errorCauseChain, extractErrorCode, extractErrorMessage } from '../utils/errors/ErrorUtils';
 
 export const StoreMetric = {
     outOfDisk: 'enospc',
@@ -41,6 +41,18 @@ export enum DiscardReason {
     FormatInvalid = 'formatInvalid',
     /** The store reports structural damage to its own pages. */
     Corrupted = 'corrupted',
+    /**
+     * Discarded as a precaution after the previous run died during startup, not because anything was
+     * found to be wrong with the data. Kept separate so a precautionary wipe never inflates the
+     * corruption signal.
+     */
+    PriorCrash = 'priorCrash',
+    /** The filesystem is full. Environmental, and says nothing about the data already stored. */
+    OutOfDisk = 'outOfDisk',
+    /** The filesystem refused access — permissions, read-only mount, descriptor limits. */
+    Inaccessible = 'inaccessible',
+    /** A store limit was reached (map size, readers, transaction size), not damage. */
+    CapacityExceeded = 'capacityExceeded',
     /** Unreadable for a reason that could not be attributed. */
     Unknown = 'unknown',
 }
@@ -52,40 +64,108 @@ export enum DiscardReason {
  */
 const TruncationErrorCodes = new Set(['ERR_CRYPTO_INVALID_IV', 'ERR_CRYPTO_INVALID_AUTH_TAG']);
 
+/** Node surfaces a key the cipher will not accept with these codes, before any data is touched. */
+const DecryptionErrorCodes = new Set([
+    'ERR_CRYPTO_INVALID_KEYLEN',
+    'ERR_CRYPTO_INVALID_KEYTYPE',
+    'ERR_CRYPTO_UNKNOWN_CIPHER',
+]);
+
 /**
- * LMDB prefixes every message with its symbolic error name (`mdb_errstr`, mdb.c:1860), so matching the
- * name is exact rather than a guess at prose. Ordered most specific first.
+ * LMDB prefixes every message with its symbolic error name, so matching the name is exact rather
+ * than a guess at prose. Every entry below is verified present in the shipped native module
+ * (`node.napi.node` under `@lmdb`); the trailing text after the colon is LMDB's own description.
  */
 const LmdbReasonsByErrorName: ReadonlyArray<readonly [string, DiscardReason]> = [
+    // "Environment encryption mismatch" — the env was written under a different key.
     ['MDB_ENV_ENCRYPTION', DiscardReason.KeyMismatch],
+    // "Page encryption or decryption failed"
     ['MDB_CRYPTO_FAIL', DiscardReason.DecryptionFailed],
+    // "Page checksum mismatch" — wrong key and damaged bytes are indistinguishable.
     ['MDB_BAD_CHECKSUM', DiscardReason.IntegrityCheckFailed],
+    // "Database environment version mismatch"
     ['MDB_VERSION_MISMATCH', DiscardReason.FormatInvalid],
+    // "File is not an LMDB file"
     ['MDB_INVALID', DiscardReason.FormatInvalid],
+    // "Located page was wrong type"
     ['MDB_CORRUPTED', DiscardReason.Corrupted],
+    // "Requested page not found"
     ['MDB_PAGE_NOTFOUND', DiscardReason.Corrupted],
+    // "Update of meta page failed or environment had fatal error"
     ['MDB_PANIC', DiscardReason.Corrupted],
+    // "Unexpected problem - txn should abort"
     ['MDB_PROBLEM', DiscardReason.Corrupted],
-    ['MDB_PROBLEM', DiscardReason.Corrupted],
-    [LMDBCrashError.message, DiscardReason.Corrupted],
+    // Limits rather than damage: map size, reader slots, dirty pages, dbi count.
+    ['MDB_MAP_FULL', DiscardReason.CapacityExceeded],
+    ['MDB_MAP_RESIZED', DiscardReason.CapacityExceeded],
+    ['MDB_READERS_FULL', DiscardReason.CapacityExceeded],
+    ['MDB_TXN_FULL', DiscardReason.CapacityExceeded],
+    ['MDB_DBS_FULL', DiscardReason.CapacityExceeded],
 ];
 
 /** AES-GCM reports a failed tag check with this message and no error code. */
-const AuthenticationFailureFragment = 'unable to authenticate data';
-const UnparseablePayloadFragment = 'is not valid json';
+const AuthenticationFailureFragment = 'unsupported state or unable to authenticate data';
+
+/**
+ * msgpackr (LMDB's `msgpack` encoding) distinguishes a short buffer from a well-formed prefix
+ * followed by junk, so the two map to different reasons.
+ */
+const MsgpackTruncationFragment = 'unexpected end of messagepack data';
+const MsgpackMalformedFragment = 'end of buffer not reached';
+
+const JsonErrorName = 'SyntaxError';
+const JsonFailureFragments = ['is not valid json', 'unexpected end of json input', 'in json at position'];
 
 /**
  * Classifies why stored data could not be read back, for either store.
  *
  * Both stores are encrypted with a machine-derived key and both can fail for the same underlying
- * reasons, so they share one classifier and therefore one set of metric values. Anything that cannot
- * be attributed is reported as {@link DiscardReason.Unknown} rather than being folded into a more
- * specific bucket — over-claiming here would make the metric confirm whatever it was pointed at.
+ * reasons, so they share one classifier and therefore one set of metric values.
+ *
+ * The whole cause chain is examined, outermost first, and the first link that can be attributed
+ * wins. This matters because lmdb-js reports write-thread failures as an opaque
+ * `Commit failed (see commitError for details)` wrapper and puts the real errno one hop away
+ * (see `attachCommitCause`) — classifying only the outermost error would report every LMDB commit
+ * failure as {@link DiscardReason.Unknown}.
+ *
+ * Anything that still cannot be attributed is reported as {@link DiscardReason.Unknown} rather than
+ * folded into a more specific bucket — over-claiming here would make the metric confirm whatever it
+ * was pointed at.
  */
-function discardReason(error: unknown): DiscardReason {
+export function discardReason(error: unknown): DiscardReason {
+    for (const link of errorCauseChain(error)) {
+        const reason = classifyLink(link);
+        if (reason !== undefined) {
+            return reason;
+        }
+    }
+
+    return DiscardReason.Unknown;
+}
+
+function classifyLink(error: unknown): DiscardReason | undefined {
+    // An explicit internal sentinel, so identity beats any message matching.
+    if (error instanceof LMDBCrashError) {
+        return DiscardReason.PriorCrash;
+    }
+
+    // Environmental failures first: a full or unreadable disk says nothing about the stored bytes,
+    // and must never be reported as corruption.
+    if (isOutOfDiskError(error)) {
+        return DiscardReason.OutOfDisk;
+    }
+    if (isInaccessibleError(error)) {
+        return DiscardReason.Inaccessible;
+    }
+
     const code = extractErrorCode(error);
-    if (code !== undefined && TruncationErrorCodes.has(code)) {
-        return DiscardReason.Truncated;
+    if (code !== undefined) {
+        if (TruncationErrorCodes.has(code)) {
+            return DiscardReason.Truncated;
+        }
+        if (DecryptionErrorCodes.has(code)) {
+            return DiscardReason.DecryptionFailed;
+        }
     }
 
     const message = extractErrorMessage(error);
@@ -100,20 +180,39 @@ function discardReason(error: unknown): DiscardReason {
         return DiscardReason.IntegrityCheckFailed;
     }
 
-    if (error instanceof SyntaxError || lowerCased.includes(UnparseablePayloadFragment)) {
+    if (lowerCased.includes(MsgpackTruncationFragment)) {
+        return DiscardReason.Truncated;
+    }
+
+    if (lowerCased.includes(MsgpackMalformedFragment)) {
         return DiscardReason.MalformedContent;
     }
 
-    return DiscardReason.Unknown;
+    if (isJsonParseFailure(error, lowerCased)) {
+        return DiscardReason.MalformedContent;
+    }
+
+    return undefined;
+}
+
+function isJsonParseFailure(error: unknown, lowerCasedMessage: string): boolean {
+    if (error instanceof SyntaxError) {
+        return true;
+    }
+
+    if (error !== null && typeof error === 'object' && (error as { name?: unknown }).name === JsonErrorName) {
+        return true;
+    }
+
+    return JsonFailureFragments.some((fragment) => lowerCasedMessage.includes(fragment));
 }
 
 /**
  * Records a write that failed because the filesystem is full. Counted separately from store faults
- * because an out-of-disk failure is neither retryable nor recoverable by the store
+ * because an out-of-disk failure is neither retryable nor recoverable by the store.
  */
 export function recordOutOfDiskFailure(telemetry: ScopedTelemetry, operation: StoreOperation, error: unknown) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
-    if (isOutOfDiskError(error) || isOutOfDiskError((error as any).cause)) {
+    if (discardReason(error) === DiscardReason.OutOfDisk) {
         telemetry.count(`${operation}.${StoreMetric.outOfDisk}`, 1);
         telemetry.error(StoreMetric.outOfDisk, error, undefined, {
             captureErrorAttributes: true,

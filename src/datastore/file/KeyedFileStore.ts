@@ -35,7 +35,7 @@ export class KeyedFileStore implements DataStore {
     }
 
     remove(key: string): Promise<boolean> {
-        return this.execAsync(StoreOperation.clear, async () => {
+        return this.execAsync(StoreOperation.remove, async () => {
             const file = this.keysToFiles.get(key);
             if (!file) {
                 return false;
@@ -112,7 +112,7 @@ export class KeyedFileStore implements DataStore {
         let store = this.keysToFiles.get(key);
         if (!store) {
             const fileName = keyStoreToFileName(this.storeName, key);
-            store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir, this.telemetry);
+            store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir);
 
             const existing = store.entry();
             if (existing && existing.key !== key) {
@@ -147,13 +147,7 @@ export class KeyedFileStore implements DataStore {
         }
 
         try {
-            const store = new EncryptedFile(
-                this.encryptionKey,
-                this.storeName,
-                fileName,
-                this.fileDbDir,
-                this.telemetry,
-            );
+            const store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir);
             const entry = store.entry();
             if (entry?.key) {
                 store.setKey(entry.key);

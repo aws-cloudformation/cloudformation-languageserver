@@ -54,10 +54,9 @@ export class MountError extends Error {
 
 export class LMDBCrashError extends Error {
     public override readonly cause?: Error;
-    public static message = 'Prior startup crash';
 
-    constructor(options?: ErrorOptions) {
-        super(LMDBCrashError.message, options);
+    constructor(message?: string, options?: ErrorOptions) {
+        super(message, options);
         this.name = 'LMDBCrashError';
         Object.setPrototypeOf(this, LMDBCrashError.prototype);
     }

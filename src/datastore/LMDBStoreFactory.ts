@@ -4,7 +4,7 @@ import { Database, open, RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb'
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
-import { diskUsage } from '../utils/DiskSpace';
+import { diskUsage } from '../utils/Disk';
 import { isWindows, processId } from '../utils/Environment';
 import { LMDBCrashError } from '../utils/errors/ErrorClasses';
 import { extractErrorMessage } from '../utils/errors/ErrorUtils';
@@ -102,12 +102,17 @@ export class LMDBStoreFactory implements DataStoreFactory {
      */
     private initialLmdbOpen(): RootDatabaseOptionsWithPath {
         try {
-            return this.createEnvAndStores();
-        } catch (e) {
-            recordOutOfDiskFailure(this.telemetry, StoreOperation.constructor, e);
+            try {
+                return this.createEnvAndStores();
+            } catch (e) {
+                recordOutOfDiskFailure(this.telemetry, StoreOperation.constructor, e);
 
-            this.log.warn(e, 'LMDB unreadable on startup, deleting and recreating');
-            return this.deleteAndRecreate(e);
+                this.log.warn(e, 'LMDB unreadable on startup, deleting and recreating');
+                return this.deleteAndRecreate(e);
+            }
+        } catch (e) {
+            this.ownershipTracker.release();
+            throw e;
         }
     }
 

@@ -50,6 +50,36 @@ export function extractRootCause(error: unknown): Error | undefined {
     return undefined;
 }
 
+const MaxCauseDepth = 8;
+
+export function errorCauseChain(error: unknown): unknown[] {
+    const chain: unknown[] = [];
+    const seen = new Set<unknown>();
+    let current: unknown = error;
+
+    while (current !== undefined && current !== null && chain.length < MaxCauseDepth) {
+        if (typeof current === 'object') {
+            if (seen.has(current)) {
+                break;
+            }
+            seen.add(current);
+        }
+
+        chain.push(current);
+
+        if (typeof current !== 'object') {
+            break;
+        }
+
+        const { cause, commitError } = current as { cause?: unknown; commitError?: unknown };
+        // A promise-valued `commitError` carries no synchronously readable message; only a resolved
+        // one (see `attachCommitCause`) is useful here.
+        current = cause ?? (commitError instanceof Error ? commitError : undefined);
+    }
+
+    return chain;
+}
+
 export function extractErrorCode(error: unknown): string | undefined {
     if (error === null || typeof error !== 'object') {
         return undefined;

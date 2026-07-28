@@ -1,7 +1,6 @@
 import { join } from 'path';
-import { Logger } from 'pino';
-import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
+import { TelemetryService } from '../../telemetry/TelemetryService';
 import { LocalFile } from '../../utils/LocalFile';
 import { recordDiscardedData } from '../Utils';
 import { decrypt, encrypt } from './Encryption';
@@ -16,7 +15,7 @@ export type EncryptedEntry<T = unknown> = {
 };
 
 export class EncryptedFile {
-    private readonly log: Logger;
+    private readonly telemetry: ScopedTelemetry;
     private readonly file: LocalFile;
     private key: string | undefined;
     private content: EncryptedEntry | undefined = undefined;
@@ -26,9 +25,8 @@ export class EncryptedFile {
         storeName: string,
         fileName: string,
         fileDbDir: string,
-        private readonly telemetry: ScopedTelemetry,
     ) {
-        this.log = LoggerFactory.getLogger(`EncryptedFile.${storeName}`);
+        this.telemetry = TelemetryService.instance.get(`FileStore.${storeName}`);
         this.file = new LocalFile(join(fileDbDir, fileName));
 
         try {

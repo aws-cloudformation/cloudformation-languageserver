@@ -120,10 +120,6 @@ export class SchemaStore {
             }
         }
 
-        if (this.publicLastModifiedMs.size === 0) {
-            return 0;
-        }
-
         let maxAge: number | undefined;
         for (const lastModifiedMs of this.publicLastModifiedMs.values()) {
             const age = ageMs(lastModifiedMs);
