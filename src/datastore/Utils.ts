@@ -23,6 +23,17 @@ export enum StoreOperation {
 
 export type ErrorHandler = (error: unknown, op: StoreOperation) => void | Promise<void>;
 
+/**
+ * A value was rejected by LMDB for exceeding its per-value/page size limits
+ * (`MDB_BAD_VALSIZE`). This is deterministic: retrying the same write, even after env
+ * recovery, fails identically, so callers should skip the generic retry/recovery path for
+ * this error rather than pay for a reopen that cannot help. Checks the whole cause chain
+ * since lmdb-js often wraps this behind a `Commit failed` error (see `CommitError.ts`).
+ */
+export function isValueTooLarge(error: unknown): boolean {
+    return errorCauseChain(error).some((link) => extractErrorMessage(link).includes('MDB_BAD_VALSIZE'));
+}
+
 /** Why stored data could not be read back. Reported as a suffix on {@link StoreMetric.dataDiscarded}. */
 export enum DiscardReason {
     /** Too short to hold a complete record — a write that never finished. */
