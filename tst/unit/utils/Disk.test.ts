@@ -22,6 +22,17 @@ describe('isOutOfDiskError', () => {
         expect(isOutOfDiskError(new Error('Disk Full while flushing'))).toBe(true);
     });
 
+    it('should detect the numeric POSIX errno lmdb reports instead of a symbolic code', () => {
+        // lmdb's native layer sets `code: 28` with no `errno` and no mention of the code in the message,
+        // so detection must not depend on the message wording alone.
+        expect(isOutOfDiskError(Object.assign(new Error('writing page failed'), { code: 28 }))).toBe(true);
+        expect(isOutOfDiskError(Object.assign(new Error('writing page failed'), { errno: -28 }))).toBe(true);
+    });
+
+    it('should not classify an unrelated numeric code as out of disk', () => {
+        expect(isOutOfDiskError(Object.assign(new Error('bad thing'), { code: 13 }))).toBe(false);
+    });
+
     it('should not classify an unrelated store failure as out of disk', () => {
         expect(isOutOfDiskError(new Error('MDB_BAD_TXN: Transaction must abort'))).toBe(false);
         expect(isOutOfDiskError(Object.assign(new Error('denied'), { code: 'EACCES' }))).toBe(false);
