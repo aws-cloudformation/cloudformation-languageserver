@@ -87,6 +87,7 @@ export class FileStoreFactory implements DataStoreFactory {
         this.telemetry.histogram('version', VersionNumber);
         this.telemetry.histogram('env.entries', this.stores.size);
 
+        let totalBytes = 0;
         for (const [name, store] of this.stores.entries()) {
             const stats = store.stats();
 
@@ -94,9 +95,10 @@ export class FileStoreFactory implements DataStoreFactory {
             this.telemetry.histogram(`store.${name}.size.bytes`, stats.totalSize, {
                 unit: 'By',
             });
+
+            totalBytes += stats.totalSize;
         }
 
-        const totalBytes = this.totalBytes();
         this.telemetry.histogram('total.size.bytes', totalBytes, {
             unit: 'By',
         });

@@ -124,11 +124,17 @@ const JsonFailureFragments = ['is not valid json', 'unexpected end of json input
  * Both stores are encrypted with a machine-derived key and both can fail for the same underlying
  * reasons, so they share one classifier and therefore one set of metric values.
  *
- * The whole cause chain is examined, outermost first, and the first link that can be attributed
- * wins. This matters because lmdb-js reports write-thread failures as an opaque
+ * The whole cause chain is examined, outermost first, and the first link that can be attributed wins.
+ * This matters because lmdb-js reports write-thread failures as an opaque
  * `Commit failed (see commitError for details)` wrapper and puts the real errno one hop away
  * (see `attachCommitCause`) — classifying only the outermost error would report every LMDB commit
  * failure as {@link DiscardReason.Unknown}.
+ *
+ * One exception to "outermost wins": {@link DiscardReason.OutOfDisk} and
+ * {@link DiscardReason.Inaccessible} are searched across the *whole* remaining chain for every link, so
+ * an ENOSPC nested under an `MDB_CORRUPTED` wrapper still reports as out of disk. That is deliberate —
+ * an environmental failure says nothing about the stored bytes and must never be reported as
+ * corruption, no matter how it was wrapped.
  *
  * Anything that still cannot be attributed is reported as {@link DiscardReason.Unknown} rather than
  * folded into a more specific bucket — over-claiming here would make the metric confirm whatever it

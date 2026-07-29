@@ -1,8 +1,8 @@
 import { statfsSync } from 'fs';
 import { errorCauseChain, extractErrorCode, extractErrorMessage } from './errors/ErrorUtils';
 
-const NoSpaceErrorCode = 'ENOSPC';
-const NoSpaceMessageFragments = [NoSpaceErrorCode, 'no space left on device', 'disk full'];
+const NoSpaceErrorCodes = new Set(['ENOSPC', '28', '-28']);
+const NoSpaceMessageFragments = ['ENOSPC', 'no space left on device', 'disk full'];
 
 const InaccessibleErrorCodes = new Set([
     'EACCES', // Permission denied
@@ -27,7 +27,8 @@ export function isInaccessibleError(error: unknown): boolean {
 }
 
 function isOutOfDiskLink(error: unknown): boolean {
-    if (extractErrorCode(error) === NoSpaceErrorCode) {
+    const code = extractErrorCode(error);
+    if (code !== undefined && NoSpaceErrorCodes.has(code.toUpperCase())) {
         return true;
     }
 

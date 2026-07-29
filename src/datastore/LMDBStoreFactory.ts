@@ -229,7 +229,19 @@ export class LMDBStoreFactory implements DataStoreFactory {
         this.telemetry.count('env.reopen', 1);
         const previousEnv = this.env;
 
-        const opened = this.createEnvAndStores();
+        let opened: OpenedEnv;
+        try {
+            opened = this.createEnvAndStores();
+        } catch (e) {
+            // createEnvAndStores may have already assigned a new (unusable) handle to this.env before
+            // throwing. Release both, or each failed reopen orphans a handle and a finite reader slot.
+            const partial = this.env;
+            if (partial !== undefined && partial !== previousEnv) {
+                void this.releaseEnv(partial);
+            }
+            void this.releaseEnv(previousEnv);
+            throw e;
+        }
 
         void this.releaseEnv(previousEnv);
         this.log.warn('Recreated LMDB environment');

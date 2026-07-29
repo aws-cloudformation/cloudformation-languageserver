@@ -46,8 +46,10 @@ export class EncryptedFile {
             throw new Error('File key is not set');
         }
 
-        this.content = { key: this.key, value };
-        return await this.file.write(encrypt(this.encryptionKey, JSON.stringify(this.content)));
+        const entry = { key: this.key, value };
+        const written = await this.file.write(encrypt(this.encryptionKey, JSON.stringify(entry)));
+        this.content = entry;
+        return written;
     }
 
     async remove() {

@@ -74,20 +74,16 @@ export function extractErrorCode(error: unknown): string | undefined {
 
     const { code, Code, CODE, errno } = error as { code?: unknown; Code?: unknown; CODE?: unknown; errno?: number };
 
-    if (typeof code === 'string') {
-        return code;
+    for (const val of [code, Code, CODE]) {
+        if (typeof val === 'string') {
+            return val;
+        }
     }
 
-    if (typeof Code === 'string') {
-        return Code;
-    }
-
-    if (typeof CODE === 'string') {
-        return CODE;
-    }
-
-    if (typeof errno === 'number') {
-        return `${errno}`;
+    for (const val of [code, errno]) {
+        if (typeof val === 'number') {
+            return `${val}`;
+        }
     }
 
     return undefined;
