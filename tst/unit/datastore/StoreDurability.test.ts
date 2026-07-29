@@ -99,25 +99,36 @@ describe('LMDBStoreFactory shutdown and recovery', () => {
     function markers(): ReadonlyArray<string> {
         return readdirSync(join(dir, 'lmdb', 'markers')).filter((name) => name.startsWith('owner.'));
     }
-
-    it('should return from close even when the environment never finishes closing', async () => {
-        // lmdb flushes outstanding writes before releasing the handle, which never completes on a full
-        // disk. An unbounded wait here wedges the LSP shutdown request.
+    it('should retain the ownership marker until the environment finishes closing', async () => {
         const env = (factory as unknown as { env: RootDatabase }).env;
-        vi.spyOn(env, 'close').mockImplementation(() => new Promise<void>(() => {}));
+        let finishClose!: () => void;
+        vi.spyOn(env, 'close').mockImplementation(
+            () =>
+                new Promise<void>((resolve) => {
+                    finishClose = resolve;
+                }),
+        );
 
-        await expect(factory.close()).resolves.toBeUndefined();
-    }, 15000);
+        const closePromise = factory.close();
 
-    it('should release the ownership marker even when closing the environment fails', async () => {
-        const env = (factory as unknown as { env: RootDatabase }).env;
-        vi.spyOn(env, 'close').mockRejectedValue(new Error('close failed'));
-
-        await factory.close();
-
+        expect(markers()).toHaveLength(1);
+        finishClose();
+        await closePromise;
         expect(markers()).toEqual([]);
     });
 
+    it('should retain the ownership marker when closing the environment fails', async () => {
+        const env = (factory as unknown as { env: RootDatabase }).env;
+        const closeSpy = vi.spyOn(env, 'close').mockRejectedValue(new Error('close failed'));
+
+        try {
+            await expect(factory.close()).rejects.toThrow('close failed');
+            expect(markers()).toHaveLength(1);
+        } finally {
+            closeSpy.mockRestore();
+            await env.close();
+        }
+    });
     it('should keep working normally when the environment closes cleanly', async () => {
         const store = factory.get(StoreName.public_schemas);
         await store.put('us-east-1', 'schemas');
