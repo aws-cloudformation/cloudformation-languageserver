@@ -92,3 +92,55 @@ describe('LMDB error recovery', () => {
         recreateSpy.mockRestore();
     });
 });
+
+describe('LMDB corruption escalation', () => {
+    let testDir: string;
+    let factory: LMDBStoreFactory;
+
+    beforeEach(async () => {
+        testDir = join(
+            process.cwd(),
+            'node_modules',
+            '.cache',
+            'lmdb-corruption-escalation-test',
+            `test-${Date.now()}`,
+        );
+        fs.mkdirSync(testDir, { recursive: true });
+        factory = new LMDBStoreFactory(testDir);
+        await factory.initialize();
+    });
+
+    afterEach(async () => {
+        await factory.close();
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        if (fs.existsSync(testDir)) {
+            fs.rmSync(testDir, { recursive: true, force: true });
+        }
+    });
+
+    it('should reopen without deleting on the first corruption error', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromError').mockImplementation(() => {});
+        const deleteSpy = vi.spyOn(factory as any, 'deleteAndRecreate').mockImplementation(() => {});
+
+        (factory as any).handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
+
+        expect(recoverSpy).toHaveBeenCalledTimes(1);
+        expect(deleteSpy).not.toHaveBeenCalled();
+        recoverSpy.mockRestore();
+        deleteSpy.mockRestore();
+    });
+
+    it('should delete and recreate when corruption recurs within the escalation window', () => {
+        const recoverSpy = vi.spyOn(factory as any, 'recoverFromError').mockImplementation(() => {});
+        const deleteSpy = vi.spyOn(factory as any, 'deleteAndRecreate').mockImplementation(() => {});
+
+        const handleError = (factory as any).handleError.bind(factory);
+        handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
+        handleError(new Error('MDB_CORRUPTED: Located page was wrong type'));
+
+        expect(recoverSpy).toHaveBeenCalledTimes(1);
+        expect(deleteSpy).toHaveBeenCalledTimes(1);
+        recoverSpy.mockRestore();
+        deleteSpy.mockRestore();
+    });
+});

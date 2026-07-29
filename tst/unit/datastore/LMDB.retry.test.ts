@@ -141,4 +141,30 @@ describe('LMDB retry after recovery', () => {
             expect(store.get<string>('key2')).toBe('value2');
         });
     });
+
+    describe('lmdb commit rejection handling', () => {
+        it('should consume the commitError promise and route its cause to recovery', async () => {
+            const store = factory.get(StoreName.public_schemas);
+            const realStore = (store as any).store;
+
+            const rootCause = new Error('MDB_CORRUPTED: Located page was wrong type');
+            let rejectCommit!: (reason: unknown) => void;
+            const commitError = new Promise((_resolve, reject) => {
+                rejectCommit = reject;
+            });
+            const wrapper = Object.assign(new Error('Commit failed (see commitError for details)'), { commitError });
+
+            const handleErrorSpy = vi.spyOn(factory as any, 'handleError').mockImplementation(() => {});
+            realStore.put = () => Promise.reject(wrapper);
+
+            const put = store.put('key', 'value');
+            await expect(put).rejects.toBe(wrapper);
+
+            rejectCommit(rootCause);
+            await new Promise((resolve) => setImmediate(resolve));
+
+            expect(handleErrorSpy).toHaveBeenCalledWith(rootCause);
+            handleErrorSpy.mockRestore();
+        });
+    });
 });
