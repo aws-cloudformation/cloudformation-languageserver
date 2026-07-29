@@ -26,7 +26,6 @@ export class SchemaStore {
     private regionalSchemas?: RegionalSchemasType;
 
     private readonly publicLastModifiedMs = new Map<string, number>();
-    private samLastModifiedMs?: number;
 
     private combined?: CombinedSchemas;
 
@@ -77,16 +76,14 @@ export class SchemaStore {
             this.telemetry.histogram('sam.size', this.combined.samSchemas?.schemas.size ?? 0);
         }
 
+        if (this.combined.regionalSchemas?.lastModifiedMs !== undefined) {
+            this.publicLastModifiedMs.set(region, this.combined.regionalSchemas?.lastModifiedMs);
+        }
         return this.combined;
     }
 
     getPublicSchemas(region: string): RegionalSchemasType | undefined {
-        const resolvedRegion = getRegion(region);
-        const schemas = this.publicSchemas.get<RegionalSchemasType>(resolvedRegion);
-        if (schemas !== undefined) {
-            this.publicLastModifiedMs.set(resolvedRegion, schemas.lastModifiedMs);
-        }
-        return schemas;
+        return this.publicSchemas.get<RegionalSchemasType>(getRegion(region));
     }
 
     getPublicSchemaRegions(): ReadonlyArray<string> {
@@ -98,25 +95,21 @@ export class SchemaStore {
     }
 
     getSamSchemas(): SamSchemasType | undefined {
-        const schemas = this.samSchemas.get<SamSchemasType>(SamStoreKey);
-        if (schemas !== undefined) {
-            this.samLastModifiedMs = schemas.lastModifiedMs;
-        }
-        return schemas;
+        return this.samSchemas.get<SamSchemasType>(SamStoreKey);
     }
 
     getSamSchemaAge(): number {
-        if (this.samLastModifiedMs === undefined) {
-            this.getSamSchemas();
-        }
-
-        return ageMs(this.samLastModifiedMs) ?? Number.MAX_SAFE_INTEGER;
+        const schemas = this.combined?.samSchemas ?? this.getSamSchemas();
+        return ageMs(schemas?.lastModifiedMs) ?? Number.MAX_SAFE_INTEGER;
     }
 
     getPublicSchemasMaxAge(): number {
         if (this.publicLastModifiedMs.size === 0) {
             for (const region of this.getPublicSchemaRegions()) {
-                this.getPublicSchemas(region);
+                const schema = this.getPublicSchemas(region);
+                if (schema) {
+                    this.publicLastModifiedMs.set(region, schema.lastModifiedMs);
+                }
             }
         }
 
@@ -135,7 +128,6 @@ export class SchemaStore {
         this.telemetry.count('invalidate', 1);
         this.combined = undefined;
         this.publicLastModifiedMs.clear();
-        this.samLastModifiedMs = undefined;
     }
 }
 
