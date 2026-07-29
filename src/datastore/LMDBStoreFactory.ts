@@ -259,7 +259,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             this.telemetry.count('env.release.closed', 1);
         } catch (error) {
             this.log.warn(error, 'Failed to close the previous LMDB environment after reopen');
-            this.telemetry.error('env.release.close', error, undefined, {
+            this.telemetry.error('env.release.close.error', error, undefined, {
                 captureErrorAttributes: true,
             });
         }
@@ -267,7 +267,15 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
     private deleteVersionDir(cause: unknown) {
         recordDiscardedData(this.telemetry, cause);
-        rmSync(this.lmdbVersionDir, { recursive: true, force: true });
+
+        try {
+            rmSync(this.lmdbVersionDir, { recursive: true, force: true });
+        } catch (e) {
+            this.telemetry.error('delete.versions.error', e, undefined, {
+                captureErrorAttributes: true,
+            });
+            this.log.error(e, 'Failed to delete LMDB version directory');
+        }
     }
 
     private scheduleBackgroundTasks(): void {
