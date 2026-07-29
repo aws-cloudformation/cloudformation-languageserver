@@ -109,8 +109,6 @@ describe('LMDBStoreFactory shutdown and recovery', () => {
                 }),
         );
 
-        const closePromise = factory.close();
-
         try {
             const closePromise = factory.close();
 
@@ -122,11 +120,6 @@ describe('LMDBStoreFactory shutdown and recovery', () => {
             closeSpy.mockRestore();
             await env.close();
         }
-
-        expect(markers()).toHaveLength(1);
-        finishClose();
-        await closePromise;
-        expect(markers()).toEqual([]);
     });
 
     it('should retain the ownership marker when closing the environment fails', async () => {
