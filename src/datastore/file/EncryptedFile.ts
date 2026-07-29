@@ -1,8 +1,5 @@
 import { join } from 'path';
-import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
-import { TelemetryService } from '../../telemetry/TelemetryService';
 import { LocalFile } from '../../utils/LocalFile';
-import { recordDiscardedData } from '../Utils';
 import { decrypt, encrypt } from './Encryption';
 
 /**
@@ -15,26 +12,14 @@ export type EncryptedEntry<T = unknown> = {
 };
 
 export class EncryptedFile {
-    private readonly telemetry: ScopedTelemetry;
-    private readonly file: LocalFile;
     private key: string | undefined;
     private content: EncryptedEntry | undefined = undefined;
 
     constructor(
         private readonly encryptionKey: Buffer,
-        storeName: string,
-        fileName: string,
-        fileDbDir: string,
+        private readonly file: LocalFile,
     ) {
-        this.telemetry = TelemetryService.instance.get(`FileStore.${storeName}`);
-        this.file = new LocalFile(join(fileDbDir, fileName));
-
-        try {
-            this.content = this.readFile();
-        } catch (error) {
-            recordDiscardedData(this.telemetry, error);
-            this.file.unsafeRemove();
-        }
+        this.content = this.readFile();
     }
 
     setKey(key: string) {
@@ -66,8 +51,9 @@ export class EncryptedFile {
     }
 
     async remove() {
+        const removed = await this.file.remove();
         this.content = undefined;
-        return await this.file.remove();
+        return removed;
     }
 
     fileSize(): number {
@@ -81,5 +67,9 @@ export class EncryptedFile {
         }
 
         return;
+    }
+
+    static createFromPath(encryptionKey: Buffer, fileName: string, fileDir: string) {
+        return new EncryptedFile(encryptionKey, new LocalFile(join(fileDir, fileName)));
     }
 }

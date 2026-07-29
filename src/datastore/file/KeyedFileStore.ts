@@ -1,11 +1,13 @@
 import { readdirSync } from 'fs';
+import { join } from 'path';
 import { Logger } from 'pino';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
+import { LocalFile } from '../../utils/LocalFile';
 import { stableHashCode } from '../../utils/StableHash';
 import { DataStore } from '../DataStore';
-import { recordOutOfDiskFailure, StoreOperation } from '../Utils';
+import { ErrorHandler, StoreOperation } from '../Utils';
 import { EncryptedFile } from './EncryptedFile';
 
 export class KeyedFileStore implements DataStore {
@@ -18,6 +20,8 @@ export class KeyedFileStore implements DataStore {
         private readonly encryptionKey: Buffer,
         private readonly storeName: string,
         private readonly fileDbDir: string,
+        private readonly onError: ErrorHandler,
+        private readonly onDiscard: (error: unknown) => void,
     ) {
         this.log = LoggerFactory.getLogger(`KeyedFileStore.${storeName}`);
         this.telemetry = TelemetryService.instance.get(`FileStore.${storeName}`);
@@ -41,8 +45,8 @@ export class KeyedFileStore implements DataStore {
                 return false;
             }
 
-            this.keysToFiles.delete(key);
             await file.remove();
+            this.keysToFiles.delete(key);
             return true;
         });
     }
@@ -51,10 +55,10 @@ export class KeyedFileStore implements DataStore {
         return this.execAsync(StoreOperation.clear, async () => {
             this.loadAllFiles();
             const files = [...this.keysToFiles.values()];
-            this.keysToFiles.clear();
             for (const file of files) {
                 await file.remove();
             }
+            this.keysToFiles.clear();
         });
     }
 
@@ -85,7 +89,7 @@ export class KeyedFileStore implements DataStore {
                 try {
                     return fn();
                 } catch (e) {
-                    recordOutOfDiskFailure(this.telemetry, op, e);
+                    this.onError(e, op);
                     throw e;
                 }
             },
@@ -100,7 +104,7 @@ export class KeyedFileStore implements DataStore {
                 try {
                     return await fn();
                 } catch (e) {
-                    recordOutOfDiskFailure(this.telemetry, op, e);
+                    this.onError(e, op);
                     throw e;
                 }
             },
@@ -112,7 +116,7 @@ export class KeyedFileStore implements DataStore {
         let store = this.keysToFiles.get(key);
         if (!store) {
             const fileName = keyStoreToFileName(this.storeName, key);
-            store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir);
+            store = this.createEncryptedFile(fileName);
 
             const existing = store.entry();
             if (existing && existing.key !== key) {
@@ -147,7 +151,7 @@ export class KeyedFileStore implements DataStore {
         }
 
         try {
-            const store = new EncryptedFile(this.encryptionKey, this.storeName, fileName, this.fileDbDir);
+            const store = this.createEncryptedFile(fileName);
             const entry = store.entry();
             if (entry?.key) {
                 store.setKey(entry.key);
@@ -156,6 +160,19 @@ export class KeyedFileStore implements DataStore {
             }
         } catch (error) {
             this.log.warn(error, `Failed to recover key from ${fileName}`);
+        }
+    }
+
+    private createEncryptedFile(fileName: string) {
+        const file = new LocalFile(join(this.fileDbDir, fileName));
+
+        try {
+            return new EncryptedFile(this.encryptionKey, file);
+        } catch (e) {
+            this.onDiscard(e);
+            file.unsafeRemove();
+
+            return new EncryptedFile(this.encryptionKey, file);
         }
     }
 }

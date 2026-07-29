@@ -21,6 +21,8 @@ export enum StoreOperation {
     stats = 'stats',
 }
 
+export type ErrorHandler = (error: unknown, op: StoreOperation) => void;
+
 /** Why stored data could not be read back. Reported as a suffix on {@link StoreMetric.dataDiscarded}. */
 export enum DiscardReason {
     /** Too short to hold a complete record — a write that never finished. */

@@ -6,6 +6,7 @@ import { promisify } from 'util';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DataStore, StoreName } from '../../../src/datastore/DataStore';
 import { decrypt, encryptionKey } from '../../../src/datastore/file/Encryption';
+import { EncryptedFile } from '../../../src/datastore/file/EncryptedFile';
 import { KeyedFileStore } from '../../../src/datastore/file/KeyedFileStore';
 import { FileStoreFactory } from '../../../src/datastore/FileStoreFactory';
 import { stableHashCode } from '../../../src/utils/StableHash';
@@ -14,10 +15,14 @@ describe('FileStore', () => {
     let fileFactory: FileStoreFactory;
     let fileStore: DataStore;
     const testDir = join(process.cwd(), 'node_modules', '.cache', 'filedb-tests', v4());
+    const errorHandler = vi.fn();
+    const onDiscard = vi.fn();
 
     beforeEach(() => {
         fileFactory = new FileStoreFactory(testDir);
         fileStore = fileFactory.get(StoreName.public_schemas);
+        errorHandler.mockReset();
+        onDiscard.mockReset();
     });
 
     afterEach(async () => {
@@ -41,11 +46,11 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store1 = new KeyedFileStore(key, 'test', encTestDir);
+            const store1 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store1.put('key1', 'value1');
 
             // store2 loads key1 from disk in constructor
-            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+            const store2 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             expect(store2.get('key1')).toBe('value1');
 
             // store1 writes key2 to disk — store2 doesn't see it via get()
@@ -54,7 +59,7 @@ describe('FileStore', () => {
             expect(store2.get('key2')).toBeUndefined();
 
             // A new instance sees both keys from disk
-            const store3 = new KeyedFileStore(key, 'test', encTestDir);
+            const store3 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             expect(store3.get('key1')).toBe('value1');
             expect(store3.get('key2')).toBe('value2');
         });
@@ -78,11 +83,11 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store1 = new KeyedFileStore(key, 'test', encTestDir);
+            const store1 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store1.put('key1', 'from-store1');
 
             // store2 loads from disk in constructor, sees key1
-            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+            const store2 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
 
             // store1 writes key2 — this goes to disk
             await store1.put('key2', 'from-store1');
@@ -91,7 +96,7 @@ describe('FileStore', () => {
             await store2.put('key3', 'from-store2');
 
             // Verify store2's file has all three keys
-            const store3 = new KeyedFileStore(key, 'test', encTestDir);
+            const store3 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             expect(store3.get('key1')).toBe('from-store1');
             expect(store3.get('key2')).toBe('from-store1');
             expect(store3.get('key3')).toBe('from-store2');
@@ -148,6 +153,56 @@ describe('FileStore', () => {
 
             expect(schemaStore.get('key')).toBeUndefined();
             expect(samStore.get('key')).toBe('sam-value');
+        });
+    });
+
+    /**
+     * A failed delete must leave the in-memory view matching disk. These pin the ordering inside
+     * `remove` and `clear`: both mutate `keysToFiles` only after the unlink succeeds. When the
+     * bookkeeping ran first, a failed unlink left the file on disk but dropped from the map — and
+     * because `fileNames` still held the name, `loadAllFiles` skipped it, so `keys` and `stats`
+     * under-reported for the rest of the session.
+     */
+    describe('state after a failed delete', () => {
+        const key = encryptionKey(2);
+        let encTestDir: string;
+        let store: KeyedFileStore;
+
+        beforeEach(() => {
+            encTestDir = join(testDir, `failed-delete-${v4()}`);
+            mkdirSync(encTestDir, { recursive: true });
+            store = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
+        });
+
+        afterEach(() => {
+            vi.restoreAllMocks();
+        });
+
+        function encFiles(): ReadonlyArray<string> {
+            return readdirSync(encTestDir).filter((file) => file.endsWith('.enc'));
+        }
+
+        it('should still report a key whose file could not be deleted', async () => {
+            await store.put('doomed', 'value');
+            vi.spyOn(EncryptedFile.prototype, 'remove').mockRejectedValue(new Error('unlink failed'));
+
+            await expect(store.remove('doomed')).rejects.toThrow('unlink failed');
+
+            expect(encFiles()).toHaveLength(1);
+            expect(store.keys(10)).toContain('doomed');
+            expect(store.stats().entries).toBe(1);
+        });
+
+        it('should not report an empty store when clear could not delete', async () => {
+            await store.put('a', 'value-a');
+            await store.put('b', 'value-b');
+            vi.spyOn(EncryptedFile.prototype, 'remove').mockRejectedValue(new Error('unlink failed'));
+
+            await expect(store.clear()).rejects.toThrow('unlink failed');
+
+            expect(encFiles()).toHaveLength(2);
+            expect(store.keys(10)).toEqual(expect.arrayContaining(['a', 'b']));
+            expect(store.stats().entries).toBe(2);
         });
     });
 
@@ -208,11 +263,11 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store1 = new KeyedFileStore(key, 'test', encTestDir);
+            const store1 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store1.put('key1', 'value1');
 
             // Fresh instance writes key2 — key1 must survive
-            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+            const store2 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store2.put('key2', 'value2');
 
             expect(store2.get('key1')).toBe('value1');
@@ -245,7 +300,7 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store = new KeyedFileStore(key, 'test', encTestDir);
+            const store = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
 
             for (let i = 0; i < 5; i++) {
                 await store.put(`key${i}`, `value${i}`);
@@ -267,7 +322,7 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store = new KeyedFileStore(key, 'test', encTestDir);
+            const store = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
 
             expect(readdirSync(encTestDir)).toEqual([]);
 
@@ -285,18 +340,19 @@ describe('FileStore', () => {
             const corruptedFile = join(encTestDir, 'test.enc');
             writeFileSync(corruptedFile, 'corrupted-not-encrypted-data');
 
-            const store = new KeyedFileStore(key, 'test', encTestDir);
+            const store = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
 
             // Should start empty after recovery
             expect(store.get('anyKey')).toBeUndefined();
             expect(store.keys(10)).toHaveLength(0);
+            expect(onDiscard).toHaveBeenCalled();
 
             // Should be fully functional
             await store.put('newKey', 'newValue');
             expect(store.get('newKey')).toBe('newValue');
 
             // Data persists after reload
-            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+            const store2 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             expect(store2.get('newKey')).toBe('newValue');
         });
 
@@ -306,7 +362,7 @@ describe('FileStore', () => {
             const key = encryptionKey(2);
 
             // Write valid data first
-            const store1 = new KeyedFileStore(key, 'test', encTestDir);
+            const store1 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store1.put('key', 'value');
 
             // Truncate the file to simulate crash mid-write (pre-atomic-write scenario)
@@ -315,7 +371,7 @@ describe('FileStore', () => {
             writeFileSync(filePath, original.subarray(0, 10));
 
             // Should recover gracefully
-            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+            const store2 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             expect(store2.get('key')).toBeUndefined();
 
             await store2.put('recovered', 'yes');
@@ -328,7 +384,7 @@ describe('FileStore', () => {
             const key = encryptionKey(2);
 
             writeFileSync(join(encTestDir, 'test.enc'), 'garbage');
-            new KeyedFileStore(key, 'test', encTestDir);
+            new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
 
             const files = readdirSync(encTestDir);
             expect(files.filter((f) => f.endsWith('.tmp'))).toHaveLength(0);
@@ -392,7 +448,7 @@ describe('FileStore', () => {
 
             // Verify all writes from all workers are present — no data lost
             const key = encryptionKey(2);
-            const store = new KeyedFileStore(key, 'test', encTestDir);
+            const store = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
 
             for (let w = 0; w < numWorkers; w++) {
                 for (let k = 0; k < numWrites; k++) {
@@ -437,6 +493,15 @@ describe('FileStore', () => {
             clearTimeoutSpy.mockRestore();
         });
 
+        it('should not hold the event loop open with its background timers', () => {
+            // Both are unref'd, so a host process can exit without waiting on the metrics interval
+            // or the cleanup timeout.
+            const factory = fileFactory as unknown as { metricsInterval: NodeJS.Timeout; timeout: NodeJS.Timeout };
+
+            expect(factory.metricsInterval.hasRef()).toBe(false);
+            expect(factory.timeout.hasRef()).toBe(false);
+        });
+
         it('should cleanup old version directories', () => {
             const fileDbRoot = join(testDir, 'filedb');
 
@@ -474,7 +539,7 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store = new KeyedFileStore(key, 'test', encTestDir);
+            const store = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store.put('secret', 'sensitive-data');
 
             const raw = readFileSync(encodedFilePath(encTestDir, 'test', 'secret').filePath);
@@ -495,7 +560,7 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store = new KeyedFileStore(key, 'test', encTestDir);
+            const store = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store.put('key1', 'value1');
 
             const keysToFiles = (store as any).keysToFiles as Map<string, unknown>;
@@ -514,11 +579,11 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store1 = new KeyedFileStore(key, 'test', encTestDir);
+            const store1 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store1.put('x', 'val');
 
             // Constructor loads existing files from disk into fileNames
-            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+            const store2 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             const keysToFiles = (store2 as any).keysToFiles as Map<string, unknown>;
             const mapSetSpy = vi.spyOn(keysToFiles, 'set');
 
@@ -533,10 +598,10 @@ describe('FileStore', () => {
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
 
-            const store1 = new KeyedFileStore(key, 'test', encTestDir);
+            const store1 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store1.put('before', 'v1');
 
-            const store2 = new KeyedFileStore(key, 'test', encTestDir);
+            const store2 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
 
             // Write a new file that store2 doesn't know about yet
             await store1.put('after', 'v2');

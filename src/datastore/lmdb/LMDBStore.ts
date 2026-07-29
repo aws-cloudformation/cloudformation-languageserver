@@ -2,11 +2,9 @@ import { Database } from 'lmdb';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
 import { DataStore, StoreName } from '../DataStore';
-import { StoreOperation } from '../Utils';
+import { ErrorHandler, StoreOperation } from '../Utils';
 import { attachCommitCause, resolveCommitError } from './CommitError';
 import { stats, StoreStatsType } from './Stats';
-
-type ErrorHandler = (error: unknown, op: StoreOperation) => void;
 
 export class LMDBStore implements DataStore {
     private readonly telemetry: ScopedTelemetry;

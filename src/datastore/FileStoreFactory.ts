@@ -8,7 +8,7 @@ import { formatNumber } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatastoreSize } from './DataStore';
 import { encryptionKey } from './file/Encryption';
 import { KeyedFileStore } from './file/KeyedFileStore';
-import { recordDiskUsage } from './Utils';
+import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
 
 export class FileStoreFactory implements DataStoreFactory {
     private readonly log = LoggerFactory.getLogger('FileStore.Global');
@@ -34,7 +34,18 @@ export class FileStoreFactory implements DataStoreFactory {
         }
 
         for (const store of storeNames) {
-            this.stores.set(store, new KeyedFileStore(encryptionKey(VersionNumber), store, this.fileDbDir));
+            this.stores.set(
+                store,
+                new KeyedFileStore(
+                    encryptionKey(VersionNumber),
+                    store,
+                    this.fileDbDir,
+                    (e, op) => this.onError(e, op),
+                    (e) => {
+                        recordDiscardedData(this.telemetry, e);
+                    },
+                ),
+            );
         }
 
         this.metricsInterval = setInterval(() => {
@@ -47,6 +58,9 @@ export class FileStoreFactory implements DataStoreFactory {
             },
             2 * 60 * 1000,
         );
+
+        this.metricsInterval.unref();
+        this.timeout.unref();
 
         this.log.info(`Initialized FileDB ${Version} and ${formatNumber(this.totalBytes() / (1024 * 1024), 4)} MB`);
     }
@@ -63,12 +77,8 @@ export class FileStoreFactory implements DataStoreFactory {
         return Promise.resolve();
     }
 
-    close(): Promise<void> {
-        if (this.closed) return Promise.resolve();
-        this.closed = true;
-        clearTimeout(this.timeout);
-        clearInterval(this.metricsInterval);
-        return Promise.resolve();
+    private onError(error: unknown, op: StoreOperation) {
+        recordOutOfDiskFailure(this.telemetry, op, error);
     }
 
     private emitMetrics(): void {
@@ -123,6 +133,17 @@ export class FileStoreFactory implements DataStoreFactory {
         }
 
         return totalBytes;
+    }
+
+    close(): Promise<void> {
+        if (this.closed) {
+            return Promise.resolve();
+        }
+
+        this.closed = true;
+        clearTimeout(this.timeout);
+        clearInterval(this.metricsInterval);
+        return Promise.resolve();
     }
 }
 
