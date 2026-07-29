@@ -12,7 +12,7 @@ export const StoreMetric = {
 } as const;
 
 export enum StoreOperation {
-    constructor = 'constructor',
+    open = 'open',
     get = 'get',
     put = 'put',
     remove = 'remove',

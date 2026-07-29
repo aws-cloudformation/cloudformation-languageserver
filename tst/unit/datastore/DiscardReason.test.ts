@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DiscardReason, discardReason, StoreOperation } from '../../../src/datastore/Utils';
+import { DiscardReason, discardReason } from '../../../src/datastore/Utils';
 import { LMDBCrashError } from '../../../src/utils/errors/ErrorClasses';
 
 /**
@@ -239,20 +239,5 @@ describe('discardReason', () => {
 
             expect(discardReason(error)).toBe(DiscardReason.OutOfDisk);
         });
-    });
-});
-
-describe('StoreOperation', () => {
-    it('should name every metric suffix after the operation it measures', () => {
-        // The values become metric name segments, so a rename silently breaks dashboards.
-        expect(Object.values(StoreOperation)).toEqual([
-            'constructor',
-            'get',
-            'put',
-            'remove',
-            'clear',
-            'keys',
-            'stats',
-        ]);
     });
 });

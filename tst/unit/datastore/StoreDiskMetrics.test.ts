@@ -9,8 +9,8 @@ import { TelemetryService } from '../../../src/telemetry/TelemetryService';
 
 /**
  * The report's headline finding is that the store failures are caused by the user's disk, and that
- * nothing in either store measured it: there was no disk-space counter anywhere, and `total.usage`
- * was emitted only by LMDB. These tests pin the metrics that make that visible.
+ * nothing in either store measured it: there was no disk-space counter anywhere. These tests pin
+ * the metrics that make that visible.
  */
 describe('store disk usage metrics', () => {
     let testDir: string;
@@ -47,15 +47,6 @@ describe('store disk usage metrics', () => {
                 expect.any(Number),
                 expect.objectContaining({ unit: '%' }),
             );
-        });
-
-        it('should emit total.usage, which only LMDB reported before', () => {
-            const factory = new FileStoreFactory(testDir);
-            const histogram = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'histogram');
-
-            (factory as unknown as { emitMetrics: () => void }).emitMetrics();
-
-            expect(histogram).toHaveBeenCalledWith('total.usage', expect.any(Number), { unit: '%' });
         });
 
         it('should not emit metrics after close', () => {

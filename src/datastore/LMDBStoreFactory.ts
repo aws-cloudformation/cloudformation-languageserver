@@ -107,7 +107,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
             try {
                 return this.createEnvAndStores();
             } catch (e) {
-                recordOutOfDiskFailure(this.telemetry, StoreOperation.constructor, e);
+                recordOutOfDiskFailure(this.telemetry, StoreOperation.open, e);
 
                 await this.releaseEnv(this.env);
 
