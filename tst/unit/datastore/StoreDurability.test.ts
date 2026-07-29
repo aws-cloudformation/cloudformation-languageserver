@@ -102,7 +102,7 @@ describe('LMDBStoreFactory shutdown and recovery', () => {
     it('should retain the ownership marker until the environment finishes closing', async () => {
         const env = (factory as unknown as { env: RootDatabase }).env;
         let finishClose!: () => void;
-        vi.spyOn(env, 'close').mockImplementation(
+        const closeSpy = vi.spyOn(env, 'close').mockImplementation(
             () =>
                 new Promise<void>((resolve) => {
                     finishClose = resolve;
@@ -110,6 +110,18 @@ describe('LMDBStoreFactory shutdown and recovery', () => {
         );
 
         const closePromise = factory.close();
+
+        try {
+            const closePromise = factory.close();
+
+            expect(markers()).toHaveLength(1);
+            finishClose();
+            await closePromise;
+            expect(markers()).toEqual([]);
+        } finally {
+            closeSpy.mockRestore();
+            await env.close();
+        }
 
         expect(markers()).toHaveLength(1);
         finishClose();
