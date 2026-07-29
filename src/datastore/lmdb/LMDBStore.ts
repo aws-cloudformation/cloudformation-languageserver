@@ -26,10 +26,6 @@ export class LMDBStore implements DataStore {
         this.store = store;
     }
 
-    currentDatabase(): Database<unknown, string> {
-        return this.store;
-    }
-
     private exec<T>(op: StoreOperation, fn: () => T): T {
         return this.telemetry.measure(
             op,
