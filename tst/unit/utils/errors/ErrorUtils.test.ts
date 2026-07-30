@@ -1,6 +1,7 @@
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
 import { describe, expect, test } from 'vitest';
 import {
+    errorCauseChain,
     extractErrorCode,
     extractErrorMessage,
     extractHttpStatus,
@@ -222,9 +223,24 @@ describe('ErrorUtils', () => {
             expect(extractErrorCode(undefined)).toBeUndefined();
         });
 
-        test('ignores non-string code values', () => {
-            // Only strings (and numeric errno) are surfaced.
-            expect(extractErrorCode(Object.assign(new Error('x'), { code: 123 }))).toBeUndefined();
+        test('stringifies a numeric code, which is how native addons report a raw errno', () => {
+            // lmdb's out-of-disk error is exactly this shape: a numeric `code` and no `errno`.
+            const error = Object.assign(new Error('No space left on device: writing page'), { code: 28 });
+
+            expect(extractErrorCode(error)).toBe('28');
+        });
+
+        test('prefers a symbolic string code over a numeric one', () => {
+            const error = Object.assign(new Error('ENOSPC: no space left on device'), {
+                code: 'ENOSPC',
+                errno: -28,
+            });
+
+            expect(extractErrorCode(error)).toBe('ENOSPC');
+        });
+
+        test('still falls back to errno when there is no code', () => {
+            expect(extractErrorCode(Object.assign(new Error('x'), { errno: 28 }))).toBe('28');
         });
     });
 
@@ -279,6 +295,75 @@ describe('ErrorUtils', () => {
             expect(extractHttpStatus('string')).toBeUndefined();
             expect(extractHttpStatus(42)).toBeUndefined();
             expect(extractHttpStatus(undefined)).toBeUndefined();
+        });
+    });
+
+    describe('errorCauseChain', () => {
+        test('returns the error itself for an error that wraps nothing', () => {
+            const error = new Error('standalone');
+            expect(errorCauseChain(error)).toEqual([error]);
+        });
+
+        test('returns the chain outermost first', () => {
+            const root = new Error('root');
+            const middle = new Error('middle', { cause: root });
+            const outer = new Error('outer', { cause: middle });
+
+            expect(errorCauseChain(outer)).toEqual([outer, middle, root]);
+        });
+
+        test('follows an Error-valued commitError, which lmdb-js uses instead of cause', () => {
+            const commitError = new Error('No space left on device');
+            const error = Object.assign(new Error('Commit failed (see commitError for details)'), { commitError });
+
+            expect(errorCauseChain(error)).toEqual([error, commitError]);
+        });
+
+        test('prefers commitError over cause when both are present', () => {
+            const commitError = new Error('commit');
+            const error = Object.assign(new Error('outer', { cause: new Error('cause') }), { commitError });
+
+            expect(errorCauseChain(error)).toEqual([error, commitError]);
+        });
+
+        test('ignores a promise-valued commitError, which carries no readable message', () => {
+            const commitError = Promise.reject(new Error('hidden')).catch(() => undefined);
+            const error = Object.assign(new Error('Commit failed'), { commitError });
+
+            expect(errorCauseChain(error)).toEqual([error]);
+        });
+
+        test('terminates on a cyclic chain instead of looping forever', () => {
+            const first = new Error('first') as Error & { cause?: unknown };
+            const second = new Error('second') as Error & { cause?: unknown };
+            first.cause = second;
+            second.cause = first;
+
+            expect(errorCauseChain(first)).toEqual([first, second]);
+        });
+
+        test('caps an unbounded chain at eight links', () => {
+            let error = new Error('depth-0');
+            for (let depth = 1; depth < 20; depth++) {
+                error = new Error(`depth-${depth}`, { cause: error });
+            }
+
+            expect(errorCauseChain(error)).toHaveLength(8);
+        });
+
+        test('includes a non-object cause but does not try to walk past it', () => {
+            const error = Object.assign(new Error('outer'), { cause: 'a string cause' });
+
+            expect(errorCauseChain(error)).toEqual([error, 'a string cause']);
+        });
+
+        test('returns an empty chain for absent values', () => {
+            expect(errorCauseChain(undefined)).toEqual([]);
+            expect(errorCauseChain(null)).toEqual([]);
+        });
+
+        test('returns a single-element chain for a primitive', () => {
+            expect(errorCauseChain('ENOSPC')).toEqual(['ENOSPC']);
         });
     });
 });

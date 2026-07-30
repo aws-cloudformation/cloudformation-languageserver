@@ -49,6 +49,7 @@ export class GetSchemaTaskManager {
 
         this.isRunning = true;
         task.run(this.schemas.publicSchemas)
+            .then(() => this.schemas.invalidate())
             .catch((err) => {
                 this.log.error(err);
                 this.tasks.push(task);

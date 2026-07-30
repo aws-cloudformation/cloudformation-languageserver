@@ -73,11 +73,14 @@ export class MemoryStoreFactory implements DataStoreFactory {
 
     private readonly metricsInterval: NodeJS.Timeout;
     private readonly stores = new Map<StoreName, MemoryStore>();
+    private closed = false;
 
     constructor() {
         this.metricsInterval = setInterval(() => {
             this.emitMetrics();
         }, 60 * 1000);
+
+        this.metricsInterval.unref();
     }
 
     get(store: StoreName): DataStore {
@@ -99,11 +102,20 @@ export class MemoryStoreFactory implements DataStoreFactory {
     }
 
     close(): Promise<void> {
+        if (this.closed) {
+            return Promise.resolve();
+        }
+
+        this.closed = true;
         clearInterval(this.metricsInterval);
         return Promise.resolve();
     }
 
     private emitMetrics(): void {
+        if (this.closed) {
+            return;
+        }
+
         this.telemetry.histogram('env.entries', this.stores.size);
 
         for (const [name, store] of this.stores.entries()) {

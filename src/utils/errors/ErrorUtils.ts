@@ -33,21 +33,38 @@ export function handleLspError(error: unknown, contextMessage: string): never {
 }
 
 export function extractRootCause(error: unknown): Error | undefined {
-    if (error === null || typeof error !== 'object') {
-        return undefined;
+    const [, cause] = errorCauseChain(error);
+    return cause instanceof Error ? cause : undefined;
+}
+
+const MaxCauseDepth = 8;
+
+export function errorCauseChain(error: unknown): unknown[] {
+    const chain: unknown[] = [];
+    const seen = new Set<unknown>();
+    let current: unknown = error;
+
+    while (current !== undefined && current !== null && chain.length < MaxCauseDepth) {
+        if (typeof current === 'object') {
+            if (seen.has(current)) {
+                break;
+            }
+            seen.add(current);
+        }
+
+        chain.push(current);
+
+        if (typeof current !== 'object') {
+            break;
+        }
+
+        const { cause, commitError } = current as { cause?: unknown; commitError?: unknown };
+        // A promise-valued `commitError` carries no synchronously readable message; only a resolved
+        // one (see `attachCommitCause`) is useful here.
+        current = (commitError instanceof Error ? commitError : undefined) ?? cause;
     }
 
-    const errorAs = error as { commitError?: unknown; cause?: unknown };
-
-    if (errorAs.commitError instanceof Error) {
-        return errorAs.commitError;
-    }
-
-    if (errorAs.cause instanceof Error) {
-        return errorAs.cause;
-    }
-
-    return undefined;
+    return chain;
 }
 
 export function extractErrorCode(error: unknown): string | undefined {
@@ -57,20 +74,16 @@ export function extractErrorCode(error: unknown): string | undefined {
 
     const { code, Code, CODE, errno } = error as { code?: unknown; Code?: unknown; CODE?: unknown; errno?: number };
 
-    if (typeof code === 'string') {
-        return code;
+    for (const val of [code, Code, CODE]) {
+        if (typeof val === 'string') {
+            return val;
+        }
     }
 
-    if (typeof Code === 'string') {
-        return Code;
-    }
-
-    if (typeof CODE === 'string') {
-        return CODE;
-    }
-
-    if (typeof errno === 'number') {
-        return `${errno}`;
+    for (const val of [code, errno]) {
+        if (typeof val === 'number') {
+            return `${val}`;
+        }
     }
 
     return undefined;

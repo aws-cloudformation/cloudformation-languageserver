@@ -1,7 +1,5 @@
 import { join } from 'path';
-import { Logger } from 'pino';
-import { LoggerFactory } from '../../telemetry/LoggerFactory';
-import { TelemetryService } from '../../telemetry/TelemetryService';
+import { DataStoreError } from '../../utils/errors/ErrorClasses';
 import { LocalFile } from '../../utils/LocalFile';
 import { decrypt, encrypt } from './Encryption';
 
@@ -15,32 +13,19 @@ export type EncryptedEntry<T = unknown> = {
 };
 
 export class EncryptedFile {
-    private readonly log: Logger;
-    private readonly file: LocalFile;
     private key: string | undefined;
     private content: EncryptedEntry | undefined = undefined;
 
     constructor(
         private readonly encryptionKey: Buffer,
-        storeName: string,
-        fileName: string,
-        fileDbDir: string,
+        private readonly file: LocalFile,
     ) {
-        this.log = LoggerFactory.getLogger(`EncryptedFile.${storeName}`);
-        this.file = new LocalFile(join(fileDbDir, fileName));
-
-        try {
-            this.content = this.readFile();
-        } catch (error) {
-            this.log.error(error, 'Failed to decrypt, deleting file');
-            TelemetryService.instance.get(`FileStore.${storeName}`).count('filestore.recreate', 1);
-            this.file.unsafeRemove();
-        }
+        this.content = this.readFile();
     }
 
     setKey(key: string) {
         if (this.key !== undefined) {
-            throw new Error('File key was already set');
+            throw new DataStoreError('File key was already set');
         }
         this.key = key;
     }
@@ -59,16 +44,19 @@ export class EncryptedFile {
 
     async put<T>(value: T): Promise<boolean> {
         if (this.key === undefined) {
-            throw new Error('File key is not set');
+            throw new DataStoreError('File key is not set');
         }
 
-        this.content = { key: this.key, value };
-        return await this.file.write(encrypt(this.encryptionKey, JSON.stringify(this.content)));
+        const entry = { key: this.key, value };
+        const written = await this.file.write(encrypt(this.encryptionKey, JSON.stringify(entry)));
+        this.content = entry;
+        return written;
     }
 
     async remove() {
+        const removed = await this.file.remove();
         this.content = undefined;
-        return await this.file.remove();
+        return removed;
     }
 
     fileSize(): number {
@@ -82,5 +70,9 @@ export class EncryptedFile {
         }
 
         return;
+    }
+
+    static createFromPath(encryptionKey: Buffer, fileName: string, fileDir: string) {
+        return new EncryptedFile(encryptionKey, new LocalFile(join(fileDir, fileName)));
     }
 }
