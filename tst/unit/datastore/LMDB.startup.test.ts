@@ -89,6 +89,45 @@ describe('LMDB startup corruption recovery', () => {
         await factory.close();
     });
 
+    it('should close the partially opened environment before deleting the version directory', async () => {
+        // An open handle keeps data.mdb locked, so deleting first fails with EBUSY on Windows.
+        const actual = await vi.importActual<typeof import('lmdb')>('lmdb');
+        const order: string[] = [];
+        let firstEnv = true;
+
+        mockedOpen.mockImplementation((config: any) => {
+            const env = actual.open(config);
+            if (firstEnv) {
+                firstEnv = false;
+                const realClose = env.close.bind(env);
+                env.close = async () => {
+                    order.push('close');
+                    return await realClose();
+                };
+                const realOpenDB = env.openDB.bind(env);
+                env.openDB = () => {
+                    env.openDB = realOpenDB;
+                    throw new Error('MDB_CORRUPTED: Located page was wrong type');
+                };
+            }
+            return env;
+        });
+
+        const factory = new LMDBStoreFactory(testDir);
+        const internals = factory as unknown as { deleteVersionDir: (cause: unknown) => void };
+        const realDelete = internals.deleteVersionDir.bind(factory);
+        internals.deleteVersionDir = (cause: unknown) => {
+            order.push('delete');
+            realDelete(cause);
+        };
+
+        await factory.initialize();
+
+        expect(order).toEqual(['close', 'delete']);
+
+        await factory.close();
+    });
+
     it('should delete the version directory during env recovery', async () => {
         const actual = await vi.importActual<typeof import('lmdb')>('lmdb');
         const versionDir = join(testDir, 'lmdb', 'v6');
