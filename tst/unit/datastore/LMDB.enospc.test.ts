@@ -34,7 +34,7 @@ describe('LMDB out-of-disk metrics', () => {
         fs.rmSync(testDir, { recursive: true, force: true });
     });
 
-    function failNextWriteWith(error: Error): void {
+    function failAllWritesWith(error: Error): void {
         const store = factory.get(StoreName.public_schemas);
         const underlyingStore = (store as unknown as { store: { put: () => Promise<boolean> } }).store;
         underlyingStore.put = () => {
@@ -44,7 +44,7 @@ describe('LMDB out-of-disk metrics', () => {
 
     it('should count an out-of-disk write under its own metric', async () => {
         const count = vi.spyOn(TelemetryService.instance.get('LMDB.Global'), 'count');
-        failNextWriteWith(commitFailure(OutOfDiskMessage));
+        failAllWritesWith(commitFailure(OutOfDiskMessage));
 
         await factory.get(StoreName.public_schemas).put('us-east-1', 'schemas');
 
@@ -65,7 +65,7 @@ describe('LMDB out-of-disk metrics', () => {
 
     it('should not count a transient commit failure as out of disk', async () => {
         const count = vi.spyOn(TelemetryService.instance.get('LMDB.Global'), 'count');
-        failNextWriteWith(commitFailure('MDB_BAD_TXN: Transaction must abort'));
+        failAllWritesWith(commitFailure('MDB_BAD_TXN: Transaction must abort'));
 
         await factory.get(StoreName.public_schemas).put('us-east-1', 'schemas');
 
@@ -75,7 +75,7 @@ describe('LMDB out-of-disk metrics', () => {
     it('should not count an out-of-disk write as a discarded database', async () => {
         // A full disk leaves the stored bytes intact, so it must not inflate the corruption signal.
         const count = vi.spyOn(TelemetryService.instance.get('LMDB.Global'), 'count');
-        failNextWriteWith(commitFailure(OutOfDiskMessage));
+        failAllWritesWith(commitFailure(OutOfDiskMessage));
 
         await factory.get(StoreName.public_schemas).put('us-east-1', 'schemas');
 
@@ -84,7 +84,7 @@ describe('LMDB out-of-disk metrics', () => {
 
     it('should report the real errno rather than the opaque commit wrapper', async () => {
         const error = vi.spyOn(TelemetryService.instance.get('LMDB.Global'), 'error');
-        failNextWriteWith(commitFailure(OutOfDiskMessage));
+        failAllWritesWith(commitFailure(OutOfDiskMessage));
 
         await factory.get(StoreName.public_schemas).put('us-east-1', 'schemas');
 
@@ -98,7 +98,7 @@ describe('LMDB out-of-disk metrics', () => {
 
     it('should detect an out-of-disk failure reported directly as an ENOSPC error', async () => {
         const count = vi.spyOn(TelemetryService.instance.get('LMDB.Global'), 'count');
-        failNextWriteWith(Object.assign(new Error('write failed'), { code: 'ENOSPC' }));
+        failAllWritesWith(Object.assign(new Error('write failed'), { code: 'ENOSPC' }));
 
         await factory.get(StoreName.public_schemas).put('us-east-1', 'schemas');
 
@@ -110,7 +110,7 @@ describe('LMDB out-of-disk metrics', () => {
 
         // Recovery replaces the store handle, so the retry runs against a fresh database rather
         // than this stub — the observable result is that the write lands despite the first failure.
-        failNextWriteWith(commitFailure('MDB_BAD_TXN: Transaction must abort'));
+        failAllWritesWith(commitFailure('MDB_BAD_TXN: Transaction must abort'));
 
         await expect(store.put('us-east-1', 'schemas')).resolves.toBe(true);
         expect(store.get<string>('us-east-1')).toBe('schemas');

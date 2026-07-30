@@ -145,6 +145,9 @@ export class KeyedFileStore implements DataStore {
             }
         } catch (error) {
             this.log.warn(error, 'Failed to scan existing keyed files');
+            this.telemetry.error('files.scan.error', error, undefined, {
+                captureErrorAttributes: true,
+            });
         }
     }
 
@@ -163,6 +166,9 @@ export class KeyedFileStore implements DataStore {
             }
         } catch (error) {
             this.log.warn(error, `Failed to recover key from ${fileName}`);
+            this.telemetry.error('file.recovery.error', error, undefined, {
+                captureErrorAttributes: true,
+            });
         }
     }
 
