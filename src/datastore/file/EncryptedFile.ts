@@ -1,4 +1,5 @@
 import { join } from 'path';
+import { DataStoreError } from '../../utils/errors/ErrorClasses';
 import { LocalFile } from '../../utils/LocalFile';
 import { decrypt, encrypt } from './Encryption';
 
@@ -24,7 +25,7 @@ export class EncryptedFile {
 
     setKey(key: string) {
         if (this.key !== undefined) {
-            throw new Error('File key was already set');
+            throw new DataStoreError('File key was already set');
         }
         this.key = key;
     }
@@ -43,7 +44,7 @@ export class EncryptedFile {
 
     async put<T>(value: T): Promise<boolean> {
         if (this.key === undefined) {
-            throw new Error('File key is not set');
+            throw new DataStoreError('File key is not set');
         }
 
         const entry = { key: this.key, value };

@@ -21,7 +21,7 @@ export enum StoreOperation {
     stats = 'stats',
 }
 
-export type ErrorHandler = (error: unknown, op: StoreOperation) => void;
+export type ErrorHandler = (error: unknown, op: StoreOperation) => void | Promise<void>;
 
 /** Why stored data could not be read back. Reported as a suffix on {@link StoreMetric.dataDiscarded}. */
 export enum DiscardReason {

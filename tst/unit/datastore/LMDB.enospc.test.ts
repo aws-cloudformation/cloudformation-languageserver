@@ -115,4 +115,16 @@ describe('LMDB out-of-disk metrics', () => {
         await expect(store.put('us-east-1', 'schemas')).resolves.toBe(true);
         expect(store.get<string>('us-east-1')).toBe('schemas');
     });
+
+    it('should fail only the current handle before retrying on its replacement', async () => {
+        const store = factory.get(StoreName.public_schemas);
+        const underlyingStore = (store as unknown as { store: { put: () => Promise<boolean> } }).store;
+        const failCurrentHandle = vi.fn(() => Promise.reject(commitFailure('MDB_BAD_TXN: Transaction must abort')));
+        underlyingStore.put = failCurrentHandle;
+
+        await expect(store.put('us-east-1', 'schemas')).resolves.toBe(true);
+
+        expect(failCurrentHandle).toHaveBeenCalledOnce();
+        expect(store.get<string>('us-east-1')).toBe('schemas');
+    });
 });

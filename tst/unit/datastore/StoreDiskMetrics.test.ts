@@ -26,7 +26,7 @@ describe('store disk usage metrics', () => {
     });
 
     describe('FileStoreFactory', () => {
-        it('should report free disk space alongside its own size', () => {
+        it('should report free disk space and the established total usage metric', () => {
             const factory = new FileStoreFactory(testDir);
             const histogram = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'histogram');
 
@@ -47,6 +47,7 @@ describe('store disk usage metrics', () => {
                 expect.any(Number),
                 expect.objectContaining({ unit: '%' }),
             );
+            expect(histogram).toHaveBeenCalledWith('total.usage', expect.any(Number), { unit: '%' });
         });
 
         it('should not emit metrics after close', () => {

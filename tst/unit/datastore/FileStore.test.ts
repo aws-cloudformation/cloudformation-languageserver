@@ -204,6 +204,52 @@ describe('FileStore', () => {
             expect(store.keys(10)).toEqual(expect.arrayContaining(['a', 'b']));
             expect(store.stats().entries).toBe(2);
         });
+
+        it('should forget only files successfully deleted before clear fails', async () => {
+            await store.put('removed', 'removed-value');
+            await store.put('retained', 'retained-value');
+            const filesByKey = (store as unknown as { keysToFiles: Map<string, EncryptedFile> }).keysToFiles;
+            const retainedFile = filesByKey.get('retained');
+            expect(retainedFile).toBeDefined();
+            vi.spyOn(retainedFile!, 'remove').mockRejectedValue(new Error('unlink failed'));
+
+            await expect(store.clear()).rejects.toThrow('unlink failed');
+
+            expect(encFiles()).toHaveLength(1);
+            expect(store.get('removed')).toBeUndefined();
+            expect(store.get('retained')).toBe('retained-value');
+            expect(store.keys(10)).toEqual(['retained']);
+            expect(store.stats().entries).toBe(1);
+        });
+
+        it('should continue scanning after a corrupt file cannot be removed', async () => {
+            const recoveryDir = join(testDir, `failed-recovery-${v4()}`);
+            mkdirSync(recoveryDir, { recursive: true });
+            const firstFile = join(recoveryDir, 'test.first.enc');
+            const secondFile = join(recoveryDir, 'test.second.enc');
+            writeFileSync(firstFile, 'corrupt');
+            writeFileSync(secondFile, 'corrupt');
+            const { LocalFile } = await import('../../../src/utils/LocalFile');
+            let removalAttempts = 0;
+            const unsafeRemove = vi.spyOn(LocalFile.prototype, 'unsafeRemove').mockImplementation(() => {
+                removalAttempts++;
+                if (removalAttempts === 1) {
+                    throw Object.assign(new Error('file is busy'), { code: 'EBUSY' });
+                }
+                return true;
+            });
+
+            try {
+                expect(() => new KeyedFileStore(key, 'test', recoveryDir, errorHandler, onDiscard)).not.toThrow();
+
+                expect(removalAttempts).toBe(2);
+                expect(existsSync(firstFile)).toBe(true);
+                expect(existsSync(secondFile)).toBe(true);
+                expect(onDiscard).toHaveBeenCalledTimes(2);
+            } finally {
+                unsafeRemove.mockRestore();
+            }
+        });
     });
 
     describe('keys', () => {

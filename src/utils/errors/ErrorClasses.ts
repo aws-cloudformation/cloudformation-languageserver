@@ -52,9 +52,25 @@ export class MountError extends Error {
     }
 }
 
-export class LMDBCrashError extends Error {
+export class DataStoreError extends Error {
     public override readonly cause?: Error;
 
+    constructor(message?: string, options?: ErrorOptions) {
+        super(message, options);
+        this.name = 'DataStoreError';
+        Object.setPrototypeOf(this, DataStoreError.prototype);
+    }
+}
+
+export class LMDBError extends DataStoreError {
+    constructor(message?: string, options?: ErrorOptions) {
+        super(message, options);
+        this.name = 'LMDBError';
+        Object.setPrototypeOf(this, LMDBError.prototype);
+    }
+}
+
+export class LMDBCrashError extends LMDBError {
     constructor(message?: string, options?: ErrorOptions) {
         super(message, options);
         this.name = 'LMDBCrashError';

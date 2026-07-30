@@ -6,7 +6,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { diskUsage } from '../utils/Disk';
 import { isWindows, processId } from '../utils/Environment';
-import { LMDBCrashError } from '../utils/errors/ErrorClasses';
+import { DataStoreError, LMDBCrashError } from '../utils/errors/ErrorClasses';
 import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { formatNumber, toString } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatastoreSize } from './DataStore';
@@ -33,6 +33,8 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private env: RootDatabase | undefined;
     private openPid = processId();
     private initPromise?: Promise<void>;
+    private pendingEnvRelease = Promise.resolve();
+    private destructiveRecovery?: Promise<void>;
     private closed = false;
     private activeOps = 0;
 
@@ -93,7 +95,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
     get(store: StoreName): DataStore {
         const val = this.stores.get(store);
         if (val === undefined) {
-            throw new Error(`Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`);
+            throw new DataStoreError(
+                `Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`,
+            );
         }
         return val;
     }
@@ -112,7 +116,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 await this.releaseEnv(this.env);
 
                 this.log.warn(e, 'LMDB unreadable on startup, deleting and recreating');
-                return this.deleteAndRecreate(e);
+                return await this.deleteAndRecreate(e);
             }
         } catch (e) {
             this.ownershipTracker.release();
@@ -140,7 +144,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
                         (e, op) => this.handleError(e, op),
                         () => {
                             if (processId() !== this.openPid) {
-                                this.recoverFromFork();
+                                return this.recoverFromFork();
                             }
                         },
                         () => this.beginOp(),
@@ -155,7 +159,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private beginOp(): () => void {
         // Safe: JS is single-threaded, so closed check + increment is atomic within a tick
         if (this.closed) {
-            throw new Error('Database is closed');
+            throw new DataStoreError('Database is closed');
         }
         this.activeOps++;
         return () => {
@@ -163,7 +167,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
         };
     }
 
-    private handleError(error: unknown, op: StoreOperation) {
+    private handleError(error: unknown, op: StoreOperation): Promise<void> | undefined {
         recordOutOfDiskFailure(this.telemetry, op, error);
 
         if (this.closed) return;
@@ -171,39 +175,64 @@ export class LMDBStoreFactory implements DataStoreFactory {
 
         try {
             if (msg.includes('MDB_BAD_RSLOT') || msg.includes("doesn't match env pid")) {
-                this.recoverFromFork();
-            } else {
-                this.recoverFromError();
+                return this.recoverFromFork();
             }
+            return this.recoverFromError();
         } catch (recoveryError) {
             this.log.error(recoveryError, 'LMDB recovery failed');
             this.telemetry.count('recovery.failed', 1);
         }
     }
 
-    private recoverFromFork(): void {
+    private recoverFromFork(): Promise<void> | undefined {
+        if (this.destructiveRecovery !== undefined) {
+            return this.destructiveRecovery;
+        }
+
         this.telemetry.count('process.forked', 1);
         this.log.warn({ oldPid: this.openPid, newPid: processId() }, 'Process fork detected, reopening LMDB');
 
         try {
             this.reopenEnv();
         } catch (e) {
-            this.deleteAndRecreate(e);
+            return this.recoverByRecreating(e);
         }
     }
 
-    private recoverFromError(): void {
+    private recoverFromError(): Promise<void> | undefined {
+        if (this.destructiveRecovery !== undefined) {
+            return this.destructiveRecovery;
+        }
+
         this.telemetry.count('error.recover', 1);
 
         try {
             this.reopenEnv();
         } catch (e) {
-            this.deleteAndRecreate(e);
+            return this.recoverByRecreating(e);
         }
     }
 
-    private deleteAndRecreate(cause: unknown): OpenedEnv {
+    private recoverByRecreating(cause: unknown): Promise<void> {
+        const recovery = this.deleteAndRecreate(cause).then(() => {});
+        this.destructiveRecovery = recovery;
+
+        const clearRecovery = () => {
+            if (this.destructiveRecovery === recovery) {
+                this.destructiveRecovery = undefined;
+            }
+        };
+
+        void recovery.then(clearRecovery, clearRecovery);
+        return recovery;
+    }
+
+    private async deleteAndRecreate(cause: unknown): Promise<OpenedEnv> {
         try {
+            await this.pendingEnvRelease;
+            if (this.closed) {
+                throw new DataStoreError('Database is closed');
+            }
             this.deleteVersionDir(cause);
             return this.reopenEnv();
         } catch (e) {
@@ -237,15 +266,20 @@ export class LMDBStoreFactory implements DataStoreFactory {
             // throwing. Release both, or each failed reopen orphans a handle and a finite reader slot.
             const partial = this.env;
             if (partial !== undefined && partial !== previousEnv) {
-                void this.releaseEnv(partial);
+                this.trackEnvRelease(partial);
             }
-            void this.releaseEnv(previousEnv);
+            this.trackEnvRelease(previousEnv);
             throw e;
         }
 
-        void this.releaseEnv(previousEnv);
+        this.trackEnvRelease(previousEnv);
         this.log.warn('Recreated LMDB environment');
         return opened;
+    }
+
+    private trackEnvRelease(env: RootDatabase | undefined): void {
+        const release = this.releaseEnv(env);
+        this.pendingEnvRelease = Promise.all([this.pendingEnvRelease, release]).then(() => {});
     }
 
     /**
@@ -356,7 +390,11 @@ export class LMDBStoreFactory implements DataStoreFactory {
                 recordDiskUsage(this.telemetry, usage);
             }
         } catch (e) {
-            this.handleError(e, StoreOperation.stats);
+            this.handleError(e, StoreOperation.stats)?.catch((e) => {
+                this.telemetry.error('metrics.error', e, undefined, {
+                    captureErrorAttributes: true,
+                });
+            });
         }
     }
 
@@ -383,7 +421,9 @@ export class LMDBStoreFactory implements DataStoreFactory {
         }
         this.stores.clear();
 
-        await this.env?.close();
+        const closeCurrentEnv = this.env?.close();
+        await this.pendingEnvRelease;
+        await closeCurrentEnv;
         this.ownershipTracker.release();
     }
 }

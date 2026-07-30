@@ -1,6 +1,7 @@
 import { Database } from 'lmdb';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
+import { LMDBError } from '../../utils/errors/ErrorClasses';
 import { DataStore, StoreName } from '../DataStore';
 import { ErrorHandler, StoreOperation } from '../Utils';
 import { attachCommitCause, resolveCommitError } from './CommitError';
@@ -13,7 +14,7 @@ export class LMDBStore implements DataStore {
         public readonly name: StoreName,
         private store: Database<unknown, string>,
         private readonly onError: ErrorHandler,
-        private readonly validateDatabase: () => void,
+        private readonly validateDatabase: () => void | Promise<void>,
         // eslint-disable-next-line unicorn/consistent-function-scoping
         private readonly beginOp: () => () => void = () => () => {},
     ) {
@@ -30,13 +31,26 @@ export class LMDBStore implements DataStore {
             () => {
                 const release = this.beginOp();
                 try {
-                    this.validateDatabase();
-                    return fn();
-                } catch (e) {
-                    this.onError(e, op);
-                    this.telemetry.count(`retry.${op}`, 1);
-                    this.validateDatabase();
-                    return fn();
+                    const initialRecovery = this.validateDatabase();
+                    if (initialRecovery !== undefined) {
+                        throw new LMDBError('Database recovery is in progress');
+                    }
+
+                    try {
+                        return fn();
+                    } catch (e) {
+                        const recovery = this.onError(e, op);
+                        if (recovery !== undefined) {
+                            throw e;
+                        }
+
+                        this.telemetry.count(`retry.${op}`, 1);
+                        const retryRecovery = this.validateDatabase();
+                        if (retryRecovery !== undefined) {
+                            throw e;
+                        }
+                        return fn();
+                    }
                 } finally {
                     release();
                 }
@@ -51,16 +65,19 @@ export class LMDBStore implements DataStore {
             async () => {
                 const release = this.beginOp();
                 try {
-                    this.validateDatabase();
-                    return await fn();
-                } catch (e) {
-                    const cause = await resolveCommitError(e);
-                    attachCommitCause(e, cause);
+                    await this.validateDatabase();
 
-                    this.onError(e, op);
-                    this.telemetry.count(`retry.${op}`, 1);
-                    this.validateDatabase();
-                    return await fn();
+                    try {
+                        return await fn();
+                    } catch (e) {
+                        const cause = await resolveCommitError(e);
+                        attachCommitCause(e, cause);
+
+                        await this.onError(e, op);
+                        this.telemetry.count(`retry.${op}`, 1);
+                        await this.validateDatabase();
+                        return await fn();
+                    }
                 } finally {
                     release();
                 }

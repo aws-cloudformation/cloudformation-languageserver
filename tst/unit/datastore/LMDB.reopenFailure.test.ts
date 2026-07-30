@@ -82,4 +82,40 @@ describe('LMDB failed reopen', () => {
         expect(internals.env).toBeDefined();
         expect(internals.env).not.toBe(previousEnv);
     });
+
+    it('should finish closing the previous handle before deleting after a failed reopen', async () => {
+        const internals = factory as any;
+        const previousEnv = internals.env as RootDatabase;
+        const realClose = previousEnv.close.bind(previousEnv);
+        const events: string[] = [];
+        let finishClose!: () => void;
+        const closeGate = new Promise<void>((resolve) => {
+            finishClose = resolve;
+        });
+
+        vi.spyOn(previousEnv, 'close').mockImplementation(async () => {
+            events.push('close started');
+            await closeGate;
+            await realClose();
+            events.push('close finished');
+        });
+        vi.spyOn(internals, 'createEnvAndStores').mockImplementationOnce(() => {
+            throw new Error('MDB_CORRUPTED: replacement open failed');
+        });
+        const deleteVersionDir = vi.spyOn(internals, 'deleteVersionDir').mockImplementation(() => {
+            events.push('delete');
+        });
+
+        const recovery = internals.recoverFromError();
+        await vi.waitFor(() => expect(events).toContain('close started'));
+
+        try {
+            expect(deleteVersionDir).not.toHaveBeenCalled();
+        } finally {
+            finishClose();
+        }
+
+        await recovery;
+        expect(events).toEqual(['close started', 'close finished', 'delete']);
+    });
 });

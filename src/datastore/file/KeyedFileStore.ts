@@ -4,6 +4,7 @@ import { Logger } from 'pino';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
+import { DataStoreError } from '../../utils/errors/ErrorClasses';
 import { LocalFile } from '../../utils/LocalFile';
 import { stableHashCode } from '../../utils/StableHash';
 import { DataStore } from '../DataStore';
@@ -54,11 +55,10 @@ export class KeyedFileStore implements DataStore {
     clear(): Promise<void> {
         return this.execAsync(StoreOperation.clear, async () => {
             this.loadAllFiles();
-            const files = [...this.keysToFiles.values()];
-            for (const file of files) {
+            for (const [key, file] of this.keysToFiles) {
                 await file.remove();
+                this.keysToFiles.delete(key);
             }
-            this.keysToFiles.clear();
         });
     }
 
@@ -89,7 +89,10 @@ export class KeyedFileStore implements DataStore {
                 try {
                     return fn();
                 } catch (e) {
-                    this.onError(e, op);
+                    const recovery = this.onError(e, op);
+                    if (recovery !== undefined) {
+                        throw e;
+                    }
                     throw e;
                 }
             },
@@ -104,7 +107,7 @@ export class KeyedFileStore implements DataStore {
                 try {
                     return await fn();
                 } catch (e) {
-                    this.onError(e, op);
+                    await this.onError(e, op);
                     throw e;
                 }
             },
@@ -120,7 +123,7 @@ export class KeyedFileStore implements DataStore {
 
             const existing = store.entry();
             if (existing && existing.key !== key) {
-                throw new Error(
+                throw new DataStoreError(
                     `Hash collision in ${this.storeName}: key "${key}" maps to same file as "${existing.key}"`,
                 );
             }

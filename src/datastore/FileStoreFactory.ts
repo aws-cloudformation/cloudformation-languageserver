@@ -4,6 +4,7 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { diskUsage } from '../utils/Disk';
+import { DataStoreError } from '../utils/errors/ErrorClasses';
 import { formatNumber } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatastoreSize } from './DataStore';
 import { encryptionKey } from './file/Encryption';
@@ -68,7 +69,9 @@ export class FileStoreFactory implements DataStoreFactory {
     get(store: StoreName): DataStore {
         const val = this.stores.get(store);
         if (val === undefined) {
-            throw new Error(`Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`);
+            throw new DataStoreError(
+                `Store ${store} not found. Available stores: ${[...this.stores.keys()].join(', ')}`,
+            );
         }
         return val;
     }
