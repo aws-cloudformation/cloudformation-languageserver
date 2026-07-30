@@ -1,10 +1,12 @@
 import { FeatureFlag } from '../featureFlag/FeatureFlagI';
-import { Closeable } from '../utils/Closeable';
+import { Closeable, closeSafely } from '../utils/Closeable';
 import { isWindows } from '../utils/Environment';
 import { pathToStorage } from '../utils/Storage';
 import { FileStoreFactory } from './FileStoreFactory';
 import { LMDBStoreFactory } from './LMDBStoreFactory';
 import { MemoryStoreFactory } from './MemoryStore';
+
+export const TotalMaxDatastoreSize = 250 * 1024 * 1024; // 250MB max size
 
 export enum Persistence {
     memory = 'memory',
@@ -98,7 +100,7 @@ export class MultiDataStoreFactoryProvider implements DataStoreFactoryProvider {
         await this.persistedStore.initialize();
     }
 
-    close(): Promise<void> {
-        return this.persistedStore.close();
+    async close(): Promise<void> {
+        await closeSafely(this.memoryStoreFactory, this.persistedStore);
     }
 }

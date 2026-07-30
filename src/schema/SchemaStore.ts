@@ -25,6 +25,8 @@ export class SchemaStore {
     private regionalSchemaKey?: string;
     private regionalSchemas?: RegionalSchemasType;
 
+    private readonly publicLastModifiedMs = new Map<string, number>();
+
     private combined?: CombinedSchemas;
 
     constructor(private readonly dataStoreFactory: DataStoreFactoryProvider) {}
@@ -74,6 +76,9 @@ export class SchemaStore {
             this.telemetry.histogram('sam.size', this.combined.samSchemas?.schemas.size ?? 0);
         }
 
+        if (this.combined.regionalSchemas?.lastModifiedMs !== undefined) {
+            this.publicLastModifiedMs.set(region, this.combined.regionalSchemas?.lastModifiedMs);
+        }
         return this.combined;
     }
 
@@ -94,31 +99,25 @@ export class SchemaStore {
     }
 
     getSamSchemaAge(): number {
-        const existingValue = this.getSamSchemas();
-        if (!existingValue) {
-            return 0;
-        }
-
-        return DateTime.now().diff(DateTime.fromMillis(existingValue.lastModifiedMs)).toMillis();
+        const schemas = this.combined?.samSchemas ?? this.getSamSchemas();
+        return ageMs(schemas?.lastModifiedMs) ?? Number.MAX_SAFE_INTEGER;
     }
 
     getPublicSchemasMaxAge(): number {
-        const regions = this.getPublicSchemaRegions();
-        if (regions.length === 0) {
-            return 0;
+        if (this.publicLastModifiedMs.size === 0) {
+            for (const region of this.getPublicSchemaRegions()) {
+                const schema = this.getPublicSchemas(region);
+                if (schema) {
+                    this.publicLastModifiedMs.set(region, schema.lastModifiedMs);
+                }
+            }
         }
 
         let maxAge: number | undefined;
-        for (const key of regions) {
-            const lastModifiedMs = this.getPublicSchemas(key)?.lastModifiedMs;
-
-            if (lastModifiedMs) {
-                const age = DateTime.now().diff(DateTime.fromMillis(lastModifiedMs)).toMillis();
-                if (maxAge === undefined) {
-                    maxAge = age;
-                } else {
-                    maxAge = Math.max(maxAge, age);
-                }
+        for (const lastModifiedMs of this.publicLastModifiedMs.values()) {
+            const age = ageMs(lastModifiedMs);
+            if (age !== undefined) {
+                maxAge = maxAge === undefined ? age : Math.max(maxAge, age);
             }
         }
 
@@ -128,5 +127,14 @@ export class SchemaStore {
     invalidate() {
         this.telemetry.count('invalidate', 1);
         this.combined = undefined;
+        this.publicLastModifiedMs.clear();
     }
+}
+
+function ageMs(lastModifiedMs: number | undefined): number | undefined {
+    if (lastModifiedMs === undefined) {
+        return undefined;
+    }
+
+    return DateTime.now().diff(DateTime.fromMillis(lastModifiedMs)).toMillis();
 }

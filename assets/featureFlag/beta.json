@@ -45,7 +45,7 @@
             ]
         },
         "FileDb": {
-            "enabled": false,
+            "enabled": true,
             "fleetPercentage": 100
         }
     }

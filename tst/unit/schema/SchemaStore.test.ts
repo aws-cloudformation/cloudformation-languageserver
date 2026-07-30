@@ -307,8 +307,8 @@ describe('SchemaStore', () => {
             expect(Math.abs(schemaStore.getSamSchemaAge() - expectedAge)).toBeLessThanOrEqual(60 * 1000);
         });
 
-        it('should return 0 when no SAM schemas exist', () => {
-            expect(schemaStore.getSamSchemaAge()).toBe(0);
+        it('should report a maximally stale age when no SAM schemas exist', () => {
+            expect(schemaStore.getSamSchemaAge()).toBe(Number.MAX_SAFE_INTEGER);
         });
     });
 
@@ -337,8 +337,8 @@ describe('SchemaStore', () => {
             expect(Math.abs(schemaStore.getPublicSchemasMaxAge() - expectedAge)).toBeLessThanOrEqual(60 * 1000);
         });
 
-        it('should return 0 when no public schemas exist', () => {
-            expect(schemaStore.getPublicSchemasMaxAge()).toBe(0);
+        it('should report a maximally stale age when no public schemas exist', () => {
+            expect(schemaStore.getPublicSchemasMaxAge()).toBe(Number.MAX_SAFE_INTEGER);
         });
     });
 

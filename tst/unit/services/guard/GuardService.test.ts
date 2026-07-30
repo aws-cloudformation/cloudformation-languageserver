@@ -7,7 +7,7 @@ import { getAvailableRulePacks } from '../../../../src/services/guard/GeneratedG
 import { GuardEngine, GuardViolation } from '../../../../src/services/guard/GuardEngine';
 import { GuardService, ValidationTrigger } from '../../../../src/services/guard/GuardService';
 import { RuleConfiguration } from '../../../../src/services/guard/RuleConfiguration';
-import { GuardSettings, DefaultSettings } from '../../../../src/settings/Settings';
+import { GuardSettings, DefaultSettings, DiagnosticsSettings } from '../../../../src/settings/Settings';
 import { Delayer } from '../../../../src/utils/Delayer';
 import { createMockComponents, createMockSettingsManager } from '../../../utils/MockServerComponents';
 
@@ -425,6 +425,72 @@ describe('GuardService', () => {
             await guardService.validateDelayed('content', 'file:///test.yaml', 'unknown' as ValidationTrigger);
 
             expect(mockDelayer.delay.called).toBe(false);
+        });
+    });
+
+    describe('when cfn-guard is disabled', () => {
+        const disabledSettings: GuardSettings = { ...defaultSettings, enabled: false };
+        const templateUri = 'file:///template.yaml';
+        const templateContent = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket\n';
+        const loadedRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+
+        /**
+         * Configures the service and returns the diagnostics-settings listener it registered, so
+         * runtime settings changes are driven through the same path the settings manager uses.
+         */
+        function configureWith(settings: GuardSettings): (diagnostics: DiagnosticsSettings) => void {
+            const mockSettingsManager = createMockSettingsManager({
+                diagnostics: { cfnGuard: settings },
+            } as any);
+            guardService.configure(mockSettingsManager);
+            const [, notifyDiagnosticsChanged] = mockSettingsManager.subscribe.firstCall.args as [
+                string,
+                (diagnostics: DiagnosticsSettings) => void,
+            ];
+            return notifyDiagnosticsChanged;
+        }
+
+        it('should report ready while disabled', () => {
+            configureWith(disabledSettings);
+
+            expect(guardService.isReady()).toEqual({ ready: true });
+        });
+
+        it('should publish empty diagnostics without invoking the Guard engine while disabled', async () => {
+            configureWith(disabledSettings);
+            mockGuardEngine.validateTemplate.resetHistory();
+
+            await guardService.validate(templateContent, templateUri);
+
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
+            expect(
+                mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith('cfn-guard', templateUri, []),
+            ).toBe(true);
+        });
+
+        it('should stop invoking the Guard engine once disabled at runtime', async () => {
+            stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(loadedRules);
+            const notifyDiagnosticsChanged = configureWith(defaultSettings);
+            await guardService.validate(templateContent, templateUri);
+            expect(mockGuardEngine.validateTemplate.called).toBe(true);
+
+            notifyDiagnosticsChanged({ cfnGuard: disabledSettings } as DiagnosticsSettings);
+            mockGuardEngine.validateTemplate.resetHistory();
+            await guardService.validate(templateContent, templateUri);
+
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
+            expect(guardService.isReady()).toEqual({ ready: true });
+        });
+
+        it('should invoke the Guard engine again once re-enabled at runtime', async () => {
+            stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(loadedRules);
+            const notifyDiagnosticsChanged = configureWith(disabledSettings);
+
+            notifyDiagnosticsChanged({ cfnGuard: defaultSettings } as DiagnosticsSettings);
+            mockGuardEngine.validateTemplate.resetHistory();
+            await guardService.validate(templateContent, templateUri);
+
+            expect(mockGuardEngine.validateTemplate.calledWith(templateContent, loadedRules as any)).toBe(true);
         });
     });
 

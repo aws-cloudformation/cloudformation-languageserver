@@ -1,10 +1,11 @@
 import { Database } from 'lmdb';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
+import { LMDBError } from '../../utils/errors/ErrorClasses';
 import { DataStore, StoreName } from '../DataStore';
+import { ErrorHandler, StoreOperation } from '../Utils';
+import { attachCommitCause, resolveCommitError } from './CommitError';
 import { stats, StoreStatsType } from './Stats';
-
-type ErrorHandler = (error: unknown) => void;
 
 export class LMDBStore implements DataStore {
     private readonly telemetry: ScopedTelemetry;
@@ -13,7 +14,7 @@ export class LMDBStore implements DataStore {
         public readonly name: StoreName,
         private store: Database<unknown, string>,
         private readonly onError: ErrorHandler,
-        private readonly validateDatabase: () => void,
+        private readonly validateDatabase: () => void | Promise<void>,
         // eslint-disable-next-line unicorn/consistent-function-scoping
         private readonly beginOp: () => () => void = () => () => {},
     ) {
@@ -24,19 +25,32 @@ export class LMDBStore implements DataStore {
         this.store = store;
     }
 
-    private exec<T>(op: string, fn: () => T): T {
+    private exec<T>(op: StoreOperation, fn: () => T): T {
         return this.telemetry.measure(
             op,
             () => {
                 const release = this.beginOp();
                 try {
-                    this.validateDatabase();
-                    return fn();
-                } catch (e) {
-                    this.onError(e);
-                    this.telemetry.count(`retry.${op}`, 1);
-                    this.validateDatabase();
-                    return fn();
+                    const initialRecovery = this.validateDatabase();
+                    if (initialRecovery !== undefined) {
+                        throw new LMDBError('Database recovery is in progress');
+                    }
+
+                    try {
+                        return fn();
+                    } catch (e) {
+                        const recovery = this.onError(e, op);
+                        if (recovery !== undefined) {
+                            throw e;
+                        }
+
+                        this.telemetry.count(`retry.${op}`, 1);
+                        const retryRecovery = this.validateDatabase();
+                        if (retryRecovery !== undefined) {
+                            throw e;
+                        }
+                        return fn();
+                    }
                 } finally {
                     release();
                 }
@@ -45,19 +59,25 @@ export class LMDBStore implements DataStore {
         );
     }
 
-    private async execAsync<T>(op: string, fn: () => Promise<T>): Promise<T> {
+    private async execAsync<T>(op: StoreOperation, fn: () => Promise<T>): Promise<T> {
         return await this.telemetry.measureAsync(
             op,
             async () => {
                 const release = this.beginOp();
                 try {
-                    this.validateDatabase();
-                    return await fn();
-                } catch (e) {
-                    this.onError(e);
-                    this.telemetry.count(`retry.${op}`, 1);
-                    this.validateDatabase();
-                    return await fn();
+                    await this.validateDatabase();
+
+                    try {
+                        return await fn();
+                    } catch (e) {
+                        const cause = await resolveCommitError(e);
+                        attachCommitCause(e, cause);
+
+                        await this.onError(e, op);
+                        this.telemetry.count(`retry.${op}`, 1);
+                        await this.validateDatabase();
+                        return await fn();
+                    }
                 } finally {
                     release();
                 }
@@ -67,26 +87,26 @@ export class LMDBStore implements DataStore {
     }
 
     get<T>(key: string): T | undefined {
-        return this.exec('get', () => this.store.get(key) as T | undefined);
+        return this.exec(StoreOperation.get, () => this.store.get(key) as T | undefined);
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
-        return this.execAsync('put', () => this.store.put(key, value));
+        return this.execAsync(StoreOperation.put, () => this.store.put(key, value));
     }
 
     remove(key: string): Promise<boolean> {
-        return this.execAsync('remove', () => this.store.remove(key));
+        return this.execAsync(StoreOperation.remove, () => this.store.remove(key));
     }
 
     clear(): Promise<void> {
-        return this.execAsync('clear', () => this.store.clearAsync());
+        return this.execAsync(StoreOperation.clear, () => this.store.clearAsync());
     }
 
     keys(limit: number): ReadonlyArray<string> {
-        return this.exec('keys', () => [...this.store.getKeys({ limit })]);
+        return this.exec(StoreOperation.keys, () => [...this.store.getKeys({ limit })]);
     }
 
     stats(): StoreStatsType {
-        return this.exec('stats', () => stats(this.store));
+        return this.exec(StoreOperation.stats, () => stats(this.store));
     }
 }

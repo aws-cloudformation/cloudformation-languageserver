@@ -16,7 +16,13 @@ async function main() {
     const { KeyedFileStore } = await import('../../../src/datastore/file/KeyedFileStore');
 
     const key = encryptionKey(2);
-    const store = new KeyedFileStore(key, 'test', encTestDir);
+    const store = new KeyedFileStore(
+        key,
+        'test',
+        encTestDir,
+        () => {},
+        () => {},
+    );
 
     for (let i = 0; i < Number.parseInt(numWrites); i++) {
         await store.put(`worker${workerId}_key${i}`, `worker${workerId}_value${i}`);
