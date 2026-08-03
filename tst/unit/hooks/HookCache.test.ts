@@ -69,6 +69,20 @@ describe('HookCache', () => {
         expect(loaders.get('c')).toHaveBeenCalledTimes(2);
     });
 
+    it('coalesces concurrent loads of the same key into one call', async () => {
+        const cache = new HookCache({ ttlMs: 100, maxEntries: 10, now });
+        let resolveLoad!: (value: string) => void;
+        const loader = vi.fn().mockReturnValue(new Promise<string>((resolve) => (resolveLoad = resolve)));
+
+        const first = cache.getConfiguration('T', loader);
+        const second = cache.getConfiguration('T', loader);
+        resolveLoad('cfg');
+
+        expect(await first).toBe('cfg');
+        expect(await second).toBe('cfg');
+        expect(loader).toHaveBeenCalledTimes(1);
+    });
+
     it('does not cache a rejected load', async () => {
         const cache = new HookCache({ ttlMs: 100, maxEntries: 10, now });
         const loader = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce('ok');
