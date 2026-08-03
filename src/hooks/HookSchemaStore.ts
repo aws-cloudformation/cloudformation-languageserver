@@ -18,7 +18,7 @@ export class HookSchemaStore {
         dataStoreFactory: DataStoreFactoryProvider,
         private readonly now: () => number = Date.now,
     ) {
-        this.store = dataStoreFactory.get(StoreName.hook_schemas, Persistence.local);
+        this.store = dataStoreFactory.get(StoreName.hook_schemas, Persistence.memory);
     }
 
     get(typeName: string): HookSchemaRecord | undefined {

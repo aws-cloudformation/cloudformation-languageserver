@@ -171,7 +171,6 @@ export const SetInvocationStatusRequest = new RequestType<SetInvocationStatusPar
 );
 
 export type CreateGuardHookParams = {
-    /** JSON string of the AWS::CloudFormation::GuardHook DesiredState. */
     desiredState: string;
 };
 

@@ -3,12 +3,13 @@ interface CacheEntry<T> {
     expiresAt: number;
 }
 
-export class TtlCache<T> {
+class TtlCache<T> {
     private readonly entries = new Map<string, CacheEntry<T>>();
     private readonly inflight = new Map<string, Promise<T>>();
 
     constructor(
         private readonly ttlMs: number,
+        private readonly maxEntries: number,
         private readonly now: () => number = Date.now,
     ) {}
 
@@ -29,8 +30,7 @@ export class TtlCache<T> {
         const load = loader()
             .then((value) => {
                 if (this.inflight.get(key) === load) {
-                    this.prune();
-                    this.entries.set(key, { value, expiresAt: this.now() + this.ttlMs });
+                    this.store(key, value);
                 }
                 return value;
             })
@@ -55,11 +55,6 @@ export class TtlCache<T> {
         return undefined;
     }
 
-    set(key: string, value: T): void {
-        this.prune();
-        this.entries.set(key, { value, expiresAt: this.now() + this.ttlMs });
-    }
-
     invalidate(key: string): void {
         this.entries.delete(key);
         this.inflight.delete(key);
@@ -70,6 +65,23 @@ export class TtlCache<T> {
         this.inflight.clear();
     }
 
+    get size(): number {
+        this.prune();
+        return this.entries.size;
+    }
+
+    private store(key: string, value: T): void {
+        this.prune();
+        while (this.entries.size >= this.maxEntries) {
+            const oldest = this.entries.keys().next();
+            if (oldest.done) {
+                break;
+            }
+            this.entries.delete(oldest.value);
+        }
+        this.entries.set(key, { value, expiresAt: this.now() + this.ttlMs });
+    }
+
     private prune(): void {
         const now = this.now();
         for (const [key, entry] of this.entries) {
@@ -78,27 +90,30 @@ export class TtlCache<T> {
             }
         }
     }
-
-    get size(): number {
-        let count = 0;
-        for (const entry of this.entries.values()) {
-            if (entry.expiresAt > this.now()) {
-                count++;
-            }
-        }
-        return count;
-    }
 }
 
-const DEFAULT_TTL_MS = 60_000;
+const DefaultTtlMs = 60_000;
+const DefaultMaxEntries = 100;
+
+export type HookCacheOptions = {
+    ttlMs?: number;
+    maxEntries?: number;
+    now?: () => number;
+};
+
+export type HookCacheSizes = {
+    configs: number;
+    rules: number;
+};
 
 export class HookCache {
     private readonly configs: TtlCache<string>;
     private readonly rules: TtlCache<string>;
 
-    constructor(ttlMs: number = DEFAULT_TTL_MS, now: () => number = Date.now) {
-        this.configs = new TtlCache<string>(ttlMs, now);
-        this.rules = new TtlCache<string>(ttlMs, now);
+    constructor({ ttlMs = DefaultTtlMs, maxEntries = DefaultMaxEntries, now = Date.now }: HookCacheOptions = {}) {
+        const cap = Math.max(1, maxEntries);
+        this.configs = new TtlCache<string>(ttlMs, cap, now);
+        this.rules = new TtlCache<string>(ttlMs, cap, now);
     }
 
     async getConfiguration(typeName: string, loader: () => Promise<string>): Promise<string> {
@@ -128,5 +143,9 @@ export class HookCache {
     invalidateAll(): void {
         this.configs.clear();
         this.rules.clear();
+    }
+
+    get sizes(): HookCacheSizes {
+        return { configs: this.configs.size, rules: this.rules.size };
     }
 }
