@@ -17,7 +17,6 @@ export enum StoreName {
     public_schemas = 'public_schemas',
     sam_schemas = 'sam_schemas',
     private_schemas = 'private_schemas',
-    hook_schemas = 'hook_schemas',
 }
 
 export const PersistedStores: ReadonlyArray<StoreName> = [StoreName.public_schemas, StoreName.sam_schemas];
