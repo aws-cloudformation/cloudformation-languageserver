@@ -133,16 +133,19 @@ describe('GuardService', () => {
             ).toBe(true);
         });
 
-        it('should publish empty diagnostics for GitSync deployment files', async () => {
+        it('should publish empty diagnostics without loading rules for a GitSync deployment file', async () => {
             const mockFile = stubInterface<Document>();
             Object.defineProperty(mockFile, 'cfnFileType', {
                 value: CloudFormationFileType.GitSyncDeployment,
                 writable: true,
             });
             mockComponents.documentManager.get.returns(mockFile);
+            mockComponents.documentManager.hasFilesOfType.returns(false);
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').resolves([]);
 
             await guardService.validate('content', 'file:///deployment.json');
 
+            expect(loadRules.called).toBe(false);
             expect(
                 mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
                     'cfn-guard',
@@ -153,7 +156,7 @@ describe('GuardService', () => {
         });
 
         it('should skip rule loading and validation when no valid template is open', async () => {
-            mockComponents.documentManager.hasTemplateFiles.returns(false);
+            mockComponents.documentManager.hasFilesOfType.returns(false);
             const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').resolves([]);
 
             await guardService.validate('content', 'file:///template.yaml');
@@ -627,7 +630,7 @@ describe('GuardService', () => {
             } as any);
             guardService.configure(mockSettingsManager);
             const settingsCallback = mockSettingsManager.subscribe.getCall(0).args[1];
-            mockComponents.documentManager.hasTemplateFiles.returns(false);
+            mockComponents.documentManager.hasFilesOfType.returns(false);
 
             settingsCallback({
                 cfnGuard: {
@@ -638,7 +641,7 @@ describe('GuardService', () => {
             await Promise.resolve();
             expect(loadRules.called).toBe(false);
 
-            mockComponents.documentManager.hasTemplateFiles.returns(true);
+            mockComponents.documentManager.hasFilesOfType.returns(true);
             await guardService.validate('content', 'file:///template.yaml');
 
             expect(loadRules.calledOnce).toBe(true);
@@ -813,7 +816,7 @@ rule S3_BUCKET_ENCRYPTION {
         });
 
         it('should return ready when no valid template is open', () => {
-            mockComponents.documentManager.hasTemplateFiles.returns(false);
+            mockComponents.documentManager.hasFilesOfType.returns(false);
             const service = GuardService.create(mockComponents, mockGuardEngine, mockRuleConfiguration, mockDelayer);
 
             expect(service.isReady()).toEqual({ ready: true });

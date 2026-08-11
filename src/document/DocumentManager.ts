@@ -166,10 +166,9 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
         }
     }
 
-    hasTemplateFiles() {
-        return [...this.documentMap.values()].some((doc) => {
-            return doc.isTemplate();
-        });
+    hasFilesOfType(...fileTypes: CloudFormationFileType[]): boolean {
+        const supportedFileTypes = new Set(fileTypes);
+        return [...this.documentMap.values()].some((document) => supportedFileTypes.has(document.cfnFileType));
     }
 
     private emitDocSize() {

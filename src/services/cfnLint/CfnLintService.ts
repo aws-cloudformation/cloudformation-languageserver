@@ -109,7 +109,11 @@ export class CfnLintService
     ) {
         super(
             () => this.settings.enabled,
-            documentManager,
+            () =>
+                documentManager.hasFilesOfType(
+                    CloudFormationFileType.Template,
+                    CloudFormationFileType.GitSyncDeployment,
+                ),
             async () => await this.initializeRuntime(),
         );
         this.settings = DefaultSettings.diagnostics.cfnLint;

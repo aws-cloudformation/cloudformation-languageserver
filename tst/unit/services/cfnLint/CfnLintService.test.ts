@@ -273,7 +273,7 @@ describe('CfnLintService', () => {
         });
 
         test('should defer initialization and remain ready when no valid template is open', async () => {
-            mockComponents.documentManager.hasTemplateFiles.returns(false);
+            mockComponents.documentManager.hasFilesOfType.returns(false);
 
             await service.initialize();
 
@@ -342,7 +342,7 @@ describe('CfnLintService', () => {
         });
 
         test('should defer mounting when no valid template is open', async () => {
-            mockComponents.documentManager.hasTemplateFiles.returns(false);
+            mockComponents.documentManager.hasFilesOfType.returns(false);
 
             await service.mountFolder(mockWorkspaceFolder);
 
@@ -664,7 +664,7 @@ describe('CfnLintService', () => {
             const nonTemplateFile = stubInterface<Document>();
             (nonTemplateFile as any).cfnFileType = CloudFormationFileType.Other;
             mockComponents.documentManager.get.returns(nonTemplateFile);
-            mockComponents.documentManager.hasTemplateFiles.returns(false);
+            mockComponents.documentManager.hasFilesOfType.returns(false);
 
             await service.lintDelayed('name: example', mockUri, ValidationTrigger.OnOpen);
 
@@ -674,18 +674,32 @@ describe('CfnLintService', () => {
             );
         });
 
-        test('should clear GitSync diagnostics without initialization when no valid template is open', async () => {
+        test('should lazily initialize and lint a GitSync deployment file when no template is open', async () => {
             const deploymentFile = stubInterface<Document>();
             (deploymentFile as any).cfnFileType = CloudFormationFileType.GitSyncDeployment;
             mockComponents.documentManager.get.returns(deploymentFile);
-            mockComponents.documentManager.hasTemplateFiles.returns(false);
-
-            await service.lintDelayed('{"template-file-path":"template.yaml"}', mockUri, ValidationTrigger.OnOpen);
-
-            expect(mockWorkerManager.initialize.called).toBe(false);
-            expect(mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith('cfn-lint', mockUri, [])).toBe(
-                true,
+            mockComponents.documentManager.hasFilesOfType.callsFake((...fileTypes) =>
+                fileTypes.includes(CloudFormationFileType.GitSyncDeployment),
             );
+            mockComponents.workspace.getWorkspaceFolder.returns(mockWorkspaceFolder);
+
+            await service.lintDelayed(mockDeploymentFile, mockUri, ValidationTrigger.OnOpen);
+
+            expect(
+                mockComponents.documentManager.hasFilesOfType.calledWith(
+                    CloudFormationFileType.Template,
+                    CloudFormationFileType.GitSyncDeployment,
+                ),
+            ).toBe(true);
+            expect(mockWorkerManager.initialize.calledOnce).toBe(true);
+            expect(mockWorkerManager.mountFolder.calledWith('/path/to/workspace/project', '/project')).toBe(true);
+            expect(
+                mockWorkerManager.lintFile.calledWith(
+                    '/project/template.yaml',
+                    mockUri,
+                    CloudFormationFileType.GitSyncDeployment,
+                ),
+            ).toBe(true);
         });
 
         test('should provide delayed linting functionality', async () => {

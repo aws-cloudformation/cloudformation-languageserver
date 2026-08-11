@@ -10,7 +10,7 @@ import {
     didCloseHandler,
     didSaveHandler,
 } from '../../../src/handlers/DocumentHandler';
-import { LintTrigger } from '../../../src/services/cfnLint/CfnLintService';
+import { ValidationTrigger } from '../../../src/utils/ValidationUtils';
 import { createMockComponents, MockedServerComponents } from '../../utils/MockServerComponents';
 import { Templates } from '../../utils/TemplateUtils';
 import { flushAllPromises } from '../../utils/Utils';
@@ -68,9 +68,9 @@ describe('DocumentHandler', () => {
             const handler = didOpenHandler(mockServices);
             handler(createEvent());
 
-            expect(mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, LintTrigger.OnOpen)).toBe(
-                true,
-            );
+            expect(
+                mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, ValidationTrigger.OnOpen),
+            ).toBe(true);
             expect(mockServices.guardService.validateDelayed.calledWith(testContent, testUri)).toBe(true);
         });
 
@@ -84,9 +84,9 @@ describe('DocumentHandler', () => {
             const handler = didOpenHandler(mockServices);
             handler(createEvent());
 
-            expect(mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, LintTrigger.OnOpen)).toBe(
-                true,
-            );
+            expect(
+                mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, ValidationTrigger.OnOpen),
+            ).toBe(true);
         });
 
         it('should handle errors when adding syntax tree', () => {
@@ -151,7 +151,7 @@ describe('DocumentHandler', () => {
                 mockServices.cfnLintService.lintDelayed.calledWith(
                     expectedContent,
                     testUri,
-                    LintTrigger.OnChange,
+                    ValidationTrigger.OnChange,
                     true,
                 ),
             ).toBe(true);
@@ -267,7 +267,12 @@ describe('DocumentHandler', () => {
 
             expect(mockServices.syntaxTreeManager.add.calledWith(testUri, newContent)).toBe(true);
             expect(
-                mockServices.cfnLintService.lintDelayed.calledWith(newContent, testUri, LintTrigger.OnChange, true),
+                mockServices.cfnLintService.lintDelayed.calledWith(
+                    newContent,
+                    testUri,
+                    ValidationTrigger.OnChange,
+                    true,
+                ),
             ).toBe(true);
             expect(mockServices.guardService.validateDelayed.calledWith(newContent, testUri)).toBe(true);
         });
@@ -422,9 +427,9 @@ describe('DocumentHandler', () => {
             const handler = didSaveHandler(mockServices);
             handler(createEvent());
 
-            expect(mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, LintTrigger.OnSave)).toBe(
-                true,
-            );
+            expect(
+                mockServices.cfnLintService.lintDelayed.calledWith(testContent, testUri, ValidationTrigger.OnSave),
+            ).toBe(true);
             expect(mockServices.guardService.validateDelayed.calledWith(testContent, testUri)).toBe(true);
         });
 

@@ -1,5 +1,3 @@
-import { DocumentManager } from '../document/DocumentManager';
-
 export enum InitializationStatus {
     Uninitialized = 0,
     Initializing = 1,
@@ -20,12 +18,12 @@ export abstract class DeferredValidationInitializer {
 
     protected constructor(
         private readonly isEnabled: () => boolean,
-        private readonly validationDocumentManager: DocumentManager,
+        private readonly hasValidationDocuments: () => boolean,
         private readonly initializeValidation: () => Promise<void>,
     ) {}
 
     protected isInitializationRequired(): boolean {
-        return this.isEnabled() && this.validationDocumentManager.hasTemplateFiles();
+        return this.isEnabled() && this.hasValidationDocuments();
     }
 
     protected async initializeIfRequired(): Promise<boolean> {

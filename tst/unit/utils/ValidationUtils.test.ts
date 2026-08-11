@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { DocumentManager } from '../../../src/document/DocumentManager';
 import { DeferredValidationInitializer, InitializationStatus } from '../../../src/utils/ValidationUtils';
 
 class TestValidationInitializer extends DeferredValidationInitializer {
-    constructor(isEnabled: () => boolean, documentManager: DocumentManager, initializeValidation: () => Promise<void>) {
-        super(isEnabled, documentManager, initializeValidation);
+    constructor(
+        isEnabled: () => boolean,
+        hasValidationDocuments: () => boolean,
+        initializeValidation: () => Promise<void>,
+    ) {
+        super(isEnabled, hasValidationDocuments, initializeValidation);
     }
 
     initialize(): Promise<boolean> {
@@ -20,10 +23,8 @@ class TestValidationInitializer extends DeferredValidationInitializer {
     }
 }
 
-function createDocumentManager(hasValidTemplate: boolean): DocumentManager {
-    return {
-        hasValidTemplate: vi.fn(() => hasValidTemplate),
-    } as unknown as DocumentManager;
+function createValidationDocumentPredicate(hasValidTemplate: boolean): () => boolean {
+    return () => hasValidTemplate;
 }
 
 describe('DeferredValidationInitializer', () => {
@@ -31,7 +32,7 @@ describe('DeferredValidationInitializer', () => {
         const initializeValidation = vi.fn<() => Promise<void>>().mockResolvedValue();
         const initializer = new TestValidationInitializer(
             () => true,
-            createDocumentManager(false),
+            createValidationDocumentPredicate(false),
             initializeValidation,
         );
 
@@ -48,7 +49,7 @@ describe('DeferredValidationInitializer', () => {
         const initializeValidation = vi.fn<() => Promise<void>>().mockReturnValue(initialization);
         const initializer = new TestValidationInitializer(
             () => true,
-            createDocumentManager(true),
+            createValidationDocumentPredicate(true),
             initializeValidation,
         );
 
@@ -74,7 +75,7 @@ describe('DeferredValidationInitializer', () => {
             .mockResolvedValueOnce();
         const initializer = new TestValidationInitializer(
             () => true,
-            createDocumentManager(true),
+            createValidationDocumentPredicate(true),
             initializeValidation,
         );
 

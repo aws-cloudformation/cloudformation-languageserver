@@ -77,7 +77,7 @@ export class GuardService
     ) {
         super(
             () => this.settings.enabled,
-            documentManager,
+            () => documentManager.hasFilesOfType(CloudFormationFileType.Template),
             async () => await this.loadRulesUnlessDisabled(),
         );
         this.settings = DefaultSettings.diagnostics.cfnGuard;
