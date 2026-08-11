@@ -19,7 +19,7 @@ import { LspWorkspace } from './LspWorkspace';
 type LspConnectionHandlers = {
     onInitialize?: (params: InitializeParams) => Promise<InitializeResult> | InitializeResult;
     onInitialized?: (params: InitializedParams) => unknown;
-    onShutdown?: () => void | Promise<void>;
+    onShutdown?: () => unknown;
     onExit?: () => unknown;
 };
 
