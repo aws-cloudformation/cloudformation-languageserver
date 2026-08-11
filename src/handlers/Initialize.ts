@@ -9,8 +9,7 @@ export function initializedHandler(workspace: LspWorkspace, components: ServerCo
         components.settingsManager
             .syncConfiguration()
             .then(() => {
-                components.schemaRetriever.initialize();
-                return components.cfnLintService.initialize();
+                return components.schemaRetriever.initialize();
             })
             .then(async () => {
                 // Process folders sequentially to avoid overwhelming the system

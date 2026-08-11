@@ -22,9 +22,8 @@ describe('InitializeHandler', () => {
         vi.spyOn(mockServices.settingsManager, 'syncConfiguration').mockResolvedValue();
     });
 
-    test('should sync configuration and initialize cfnLintService', async () => {
+    test('should sync configuration and defer cfnLintService initialization', async () => {
         mockServices.workspace.getAllWorkspaceFolders.returns([mockWorkspaceFolder]);
-        mockServices.cfnLintService.initialize.returns(Promise.resolve());
 
         const syncConfigSpy = vi.spyOn(mockServices.settingsManager, 'syncConfiguration').mockResolvedValue();
 
@@ -35,7 +34,7 @@ describe('InitializeHandler', () => {
         await flushAllPromises();
 
         expect(syncConfigSpy).toHaveBeenCalled();
-        expect(mockServices.cfnLintService.initialize.called).toBe(true);
+        expect(mockServices.cfnLintService.initialize.called).toBe(false);
         expect(mockServices.cfnLintService.mountFolder.calledWith(mockWorkspaceFolder)).toBe(true);
     });
 });

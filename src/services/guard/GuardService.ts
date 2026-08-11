@@ -4,7 +4,7 @@ import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
 import { CloudFormationFileType } from '../../document/Document';
 import { DocumentManager } from '../../document/DocumentManager';
 import { ServerComponents } from '../../server/ServerComponents';
-import { SettingsConfigurable, ISettingsSubscriber, SettingsSubscription } from '../../settings/ISettingsSubscriber';
+import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../../settings/ISettingsSubscriber';
 import { DefaultSettings, GuardSettings } from '../../settings/Settings';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
@@ -16,16 +16,11 @@ import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import { readFileIfExistsAsync } from '../../utils/File';
 import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessContributor';
 import { byteSize } from '../../utils/String';
+import { DeferredValidationInitializer, InitializationStatus, ValidationTrigger } from '../../utils/ValidationUtils';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
-import { getRulesForPack, getAvailableRulePacks, GuardRuleData } from './GeneratedGuardRules';
-import { GuardEngine, GuardViolation, GuardRule } from './GuardEngine';
+import { getAvailableRulePacks, getRulesForPack, GuardRuleData } from './GeneratedGuardRules';
+import { GuardEngine, GuardRule, GuardViolation } from './GuardEngine';
 import { RuleConfiguration } from './RuleConfiguration';
-
-export enum ValidationTrigger {
-    OnOpen = 'onOpen',
-    OnChange = 'onChange',
-    OnSave = 'onSave',
-}
 
 /**
  * GuardService provides policy-as-code validation for CloudFormation templates
@@ -43,7 +38,10 @@ interface ValidationQueueEntry {
     reject: (error: Error) => void;
 }
 
-export class GuardService implements SettingsConfigurable, Closeable, ReadinessContributor {
+export class GuardService
+    extends DeferredValidationInitializer
+    implements SettingsConfigurable, Closeable, ReadinessContributor
+{
     private static readonly CFN_GUARD_SOURCE = 'cfn-guard';
 
     private settings: GuardSettings;
@@ -62,9 +60,6 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
     // Cache loaded rules
     private enabledRules: GuardRule[] = [];
 
-    // Track async rule loading state
-    private isLoadingRules = false;
-
     // Validation queuing for concurrent requests
     private readonly validationQueue: ValidationQueueEntry[] = [];
     private readonly activeValidations = new Map<string, Promise<GuardViolation[]>>();
@@ -80,6 +75,11 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
         ruleConfiguration?: RuleConfiguration,
         delayer?: Delayer<void>,
     ) {
+        super(
+            () => this.settings.enabled,
+            documentManager,
+            async () => await this.loadRulesUnlessDisabled(),
+        );
         this.settings = DefaultSettings.diagnostics.cfnGuard;
         this.delayer = delayer ?? new Delayer<void>(this.settings.delayMs);
         this.guardEngine = guardEngine ?? new GuardEngine();
@@ -87,36 +87,46 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
 
         // Initialize rule configuration with current settings
         this.ruleConfiguration.updateFromSettings(this.settings);
-
-        // Load initial rules
-        this.loadRulesUnlessDisabled();
     }
 
-    private loadRulesUnlessDisabled() {
-        if (!this.settings.enabled) {
-            this.enabledRules = [];
-            this.log.info(`cfn-guard is disabled, skipping rules load`);
-            return;
+    private async loadRulesUnlessDisabled(): Promise<void> {
+        const settingsAtLoadStart = this.settings;
+        const enabledRules = await this.getEnabledRulesByConfiguration();
+        if (this.settings === settingsAtLoadStart) {
+            this.enabledRules = enabledRules;
         }
+        this.rebuildRuleCustomMessages();
+    }
 
-        this.isLoadingRules = true;
-        this.getEnabledRulesByConfiguration()
-            .then((rules) => {
-                this.enabledRules = rules;
-            })
-            .catch((error) => {
-                this.log.error(`Failed to load rules: ${extractErrorMessage(error)}`);
-            })
-            .finally(() => {
-                this.isLoadingRules = false;
-            });
+    private rebuildRuleCustomMessages(): void {
+        this.ruleCustomMessages.clear();
+        for (const rule of this.enabledRules) {
+            if (rule.message) {
+                this.ruleCustomMessages.set(rule.name, rule.message);
+            }
+            this.recordCustomMessages(rule.content);
+        }
+    }
+
+    private recordCustomMessages(content: string): void {
+        const ruleBlockMatches = content.matchAll(
+            // eslint-disable-next-line security/detect-unsafe-regex
+            /^rule\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:when\s+[^{]+)?\s*\{([\s\S]*?)^\}/gm,
+        );
+        for (const match of ruleBlockMatches) {
+            const ruleName = match[1];
+            const extractedMessage = GuardEngine.extractRuleMessage(match[0]);
+            if (extractedMessage) {
+                this.ruleCustomMessages.set(ruleName, extractedMessage);
+            }
+        }
     }
 
     public isReady(): ReadinessStatus {
-        if (!this.settings.enabled) {
+        if (!this.isInitializationRequired()) {
             return { ready: true };
         }
-        return { ready: !this.isLoadingRules && this.enabledRules.length > 0 };
+        return { ready: this.status === InitializationStatus.Initialized && this.enabledRules.length > 0 };
     }
 
     /**
@@ -130,9 +140,6 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
         }
 
         this.settings = settingsManager.getCurrentSettings().diagnostics.cfnGuard;
-
-        // Load rules with current settings
-        this.loadRulesUnlessDisabled();
 
         // Subscribe to diagnostics settings changes
         this.settingsSubscription = settingsManager.subscribe('diagnostics', (newDiagnosticsSettings) => {
@@ -159,10 +166,13 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
             return;
         }
 
-        // Rule metadata is rebuilt by the load below, or dropped entirely while disabled.
         this.ruleToPacksMap.clear();
         this.ruleCustomMessages.clear();
-        this.loadRulesUnlessDisabled();
+        this.enabledRules = [];
+        this.resetInitialization();
+        void this.initializeIfRequired().catch((error) => {
+            this.log.error(`Failed to reload rules: ${extractErrorMessage(error)}`);
+        });
     }
 
     /**
@@ -170,11 +180,11 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
      *
      * @param content The template content as a string
      * @param uri The document URI
-     * @param forceUseContent If true, always use the provided content (for consistency with CfnLintService)
+     * @param _forceUseContent If true, always use the provided content (for consistency with CfnLintService)
      */
     @Count({ name: 'validate', captureErrorType: true })
     async validate(content: string, uri: string, _forceUseContent?: boolean): Promise<void> {
-        if (!this.settings.enabled) {
+        if (!this.isInitializationRequired()) {
             // Keeps the cfn-guard WASM module and rule packs out of memory when the feature is off.
             this.telemetry.count('validate.disabled', 1);
             this.publishDiagnostics(uri, []);
@@ -209,6 +219,8 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
         const sizeCategory = doc?.getTemplateSizeCategory() ?? 'unknown';
 
         try {
+            await this.initializeIfRequired();
+
             // Validate rule configuration against available packs
             const availablePacks = getAvailableRulePacks();
             const validationErrors = this.validateRuleConfiguration(availablePacks);
@@ -649,6 +661,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
     private async ensureRulesLoaded(): Promise<void> {
         if (this.enabledRules.length === 0) {
             this.enabledRules = await this.getEnabledRulesByConfiguration();
+            this.rebuildRuleCustomMessages();
         }
     }
 
@@ -746,18 +759,7 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
         }
 
         // Extract messages from rule blocks and store them
-        const ruleBlockMatches = content.matchAll(
-            // eslint-disable-next-line security/detect-unsafe-regex
-            /^rule\s+([A-Za-z_][A-Za-z0-9_]*)\s*(?:when\s+[^{]+)?\s*\{([\s\S]*?)^\}/gm,
-        );
-        for (const match of ruleBlockMatches) {
-            const ruleName = match[1];
-            const ruleContent = match[0];
-            const extractedMessage = GuardEngine.extractRuleMessage(ruleContent);
-            if (extractedMessage) {
-                this.ruleCustomMessages.set(ruleName, extractedMessage);
-            }
-        }
+        this.recordCustomMessages(content);
 
         if (ruleNames.length === 0) {
             this.log.warn(`No valid rules found in file '${filePath}'`);
@@ -786,27 +788,6 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
     }
 
     /**
-     * Parse a single rule block
-     */
-    private parseRuleBlock(ruleName: string, fullRuleContent: string): GuardRule | null {
-        // Extract message from rule content if available
-        const extractedMessage = GuardEngine.extractRuleMessage(fullRuleContent);
-
-        const description = `Custom rule ${ruleName}`;
-        const message = extractedMessage ?? undefined; // Let Guard engine handle default messaging
-
-        return {
-            name: ruleName,
-            content: fullRuleContent,
-            description,
-            severity: this.getDefaultSeverity(),
-            tags: ['custom', 'file'],
-            pack: 'custom',
-            message,
-        };
-    }
-
-    /**
      * Convert GuardRuleData to GuardRule format expected by GuardEngine
      */
     private convertRuleDataToGuardRule(ruleData: GuardRuleData): GuardRule {
@@ -819,29 +800,6 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
             pack: 'generated', // All rules are from generated data
             message: ruleData.message,
         };
-    }
-
-    /**
-     * Convert severity string to DiagnosticSeverity enum
-     */
-    private convertSeverityStringToDiagnosticSeverity(severity: string): DiagnosticSeverity {
-        switch (severity.toUpperCase()) {
-            case 'ERROR': {
-                return DiagnosticSeverity.Error;
-            }
-            case 'WARNING': {
-                return DiagnosticSeverity.Warning;
-            }
-            case 'INFO': {
-                return DiagnosticSeverity.Information;
-            }
-            case 'HINT': {
-                return DiagnosticSeverity.Hint;
-            }
-            default: {
-                return DiagnosticSeverity.Error;
-            }
-        }
     }
 
     /**
@@ -865,6 +823,8 @@ export class GuardService implements SettingsConfigurable, Closeable, ReadinessC
 
         // Clear active validations (don't wait for them to complete)
         this.activeValidations.clear();
+        this.enabledRules = [];
+        this.resetInitialization();
     }
 
     /**

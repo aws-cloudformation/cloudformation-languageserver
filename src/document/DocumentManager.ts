@@ -166,6 +166,12 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
         }
     }
 
+    hasTemplateFiles() {
+        return [...this.documentMap.values()].some((doc) => {
+            return doc.isTemplate();
+        });
+    }
+
     private emitDocSize() {
         for (const doc of this.documentMap.values()) {
             if (doc.isTemplate()) {
