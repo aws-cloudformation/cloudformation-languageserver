@@ -40,6 +40,14 @@ export function sleep(ms: number): Promise<void> {
     });
 }
 
+interface QueuedLintRequest {
+    content: string;
+    forceUseContent: boolean;
+    timestamp: number;
+    resolve: () => void;
+    reject: (reason: unknown) => void;
+}
+
 export class CfnLintService
     extends DeferredValidationInitializer
     implements SettingsConfigurable, Closeable, ReadinessContributor
@@ -89,16 +97,7 @@ export class CfnLintService
     }
 
     // Request queue for handling requests during initialization
-    private readonly requestQueue = new Map<
-        string,
-        {
-            content: string;
-            forceUseContent: boolean;
-            timestamp: number;
-            resolve: () => void;
-            reject: (reason: unknown) => void;
-        }
-    >();
+    private readonly requestQueue = new Map<string, QueuedLintRequest>();
 
     constructor(
         private readonly documentManager: DocumentManager,
@@ -748,32 +747,66 @@ export class CfnLintService
         }
     }
 
+    private removeQueuedRequest(uri: string, expectedRequest?: QueuedLintRequest): QueuedLintRequest | undefined {
+        const request = this.requestQueue.get(uri);
+        if (!request || (expectedRequest !== undefined && request !== expectedRequest)) {
+            return;
+        }
+
+        this.requestQueue.delete(uri);
+        this.telemetry.countUpDown('lint.queue.depth', -1);
+        return request;
+    }
+
+    private takeQueuedRequests(): [string, QueuedLintRequest][] {
+        const requests = [...this.requestQueue.entries()];
+        if (requests.length === 0) {
+            return requests;
+        }
+
+        this.requestQueue.clear();
+        this.telemetry.countUpDown('lint.queue.depth', -requests.length);
+        return requests;
+    }
+
+    private cancelQueuedRequest(uri: string): void {
+        this.removeQueuedRequest(uri)?.reject(new RequestCancellationError(uri));
+    }
+
+    private cancelAllQueuedRequests(): void {
+        for (const [uri, request] of this.takeQueuedRequests()) {
+            request.reject(new RequestCancellationError(uri));
+        }
+    }
+
+    private rejectQueuedRequest(uri: string, expectedRequest: QueuedLintRequest, reason: unknown): void {
+        this.removeQueuedRequest(uri, expectedRequest)?.reject(reason);
+    }
+
     /**
      * Process all queued requests after initialization completes
      */
     private processQueuedRequests(): void {
-        if (this.requestQueue.size === 0) {
+        const queuedRequests = this.takeQueuedRequests();
+        if (queuedRequests.length === 0) {
             return;
         }
 
-        this.telemetry.count('lint.queue.processed', this.requestQueue.size);
+        this.telemetry.count('lint.queue.processed', queuedRequests.length);
 
-        // Process each queued request through the delayer
-        for (const [uri, request] of this.requestQueue.entries()) {
-            // Use delayer for queued requests too, to maintain debouncing behavior
+        for (const [uri, request] of queuedRequests) {
             this.delayer
                 .delay(uri, () => this.lint(request.content, uri, request.forceUseContent))
                 .then(() => {
                     request.resolve();
                 })
                 .catch((reason: unknown) => {
-                    this.logError(`processing queued request for ${uri}`, reason);
+                    if (!(reason instanceof RequestCancellationError)) {
+                        this.logError(`processing queued request for ${uri}`, reason);
+                    }
                     request.reject(reason);
                 });
         }
-
-        // Clear the queue
-        this.requestQueue.clear();
     }
 
     /**
@@ -828,25 +861,36 @@ export class CfnLintService
         }
 
         if (this.status !== InitializationStatus.Initialized) {
-            // Create a promise that will be resolved when the queued request is processed
-            return await new Promise<void>((resolve, reject) => {
-                // Queue the request (overwrites previous request for same URI - "last request wins")
-                this.requestQueue.set(uri, {
-                    content,
-                    forceUseContent,
-                    timestamp: Date.now(),
-                    resolve,
-                    reject,
-                });
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    this.cancelQueuedRequest(uri);
+                    const request: QueuedLintRequest = {
+                        content,
+                        forceUseContent,
+                        timestamp: Date.now(),
+                        resolve,
+                        reject,
+                    };
+                    this.requestQueue.set(uri, request);
 
-                this.telemetry.count('lint.queue.enqueued', 1);
-                this.telemetry.countUpDown('lint.queue.depth', this.requestQueue.size, { unit: '1' });
+                    this.telemetry.count('lint.queue.enqueued', 1);
+                    this.telemetry.countUpDown('lint.queue.depth', 1);
 
-                // Trigger initialization if needed (but don't await it here)
-                this.ensureInitialized().catch((error) => {
-                    this.logError('ensuring initialization', error);
+                    void this.ensureInitialized().catch((error: unknown) => {
+                        const initializationError =
+                            error instanceof Error ? error : new Error(extractErrorMessage(error));
+                        this.logError('ensuring initialization', initializationError);
+                        this.rejectQueuedRequest(uri, request, initializationError);
+                    });
                 });
-            });
+            } catch (error) {
+                if (error instanceof RequestCancellationError) {
+                    this.telemetry.count('lint.cancelled', 1);
+                    return;
+                }
+                throw error;
+            }
+            return;
         }
 
         // Service is ready, process based on trigger type
@@ -875,6 +919,7 @@ export class CfnLintService
      */
     public cancelDelayedLinting(uri: string): void {
         this.delayer.cancel(uri);
+        this.cancelQueuedRequest(uri);
     }
 
     /**
@@ -882,6 +927,7 @@ export class CfnLintService
      */
     public cancelAllDelayedLinting(): void {
         this.delayer.cancelAll();
+        this.cancelAllQueuedRequests();
     }
 
     /**
@@ -917,14 +963,15 @@ export class CfnLintService
             this.settingsSubscription = undefined;
         }
 
-        // Cancel all pending delayed requests
-        this.delayer.cancelAll();
+        // Cancel all pending requests
+        this.cancelAllDelayedLinting();
 
         if (this.status !== InitializationStatus.Uninitialized && this.status !== InitializationStatus.Failed) {
             // Shutdown worker manager
             await this.workerManager.shutdown();
             this.localExecutor = undefined;
         }
+        this.initializationPromise = undefined;
         this.resetInitialization();
     }
 

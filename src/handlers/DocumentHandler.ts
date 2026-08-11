@@ -179,8 +179,8 @@ function triggerValidation(
     });
 
     components.guardService.validateDelayed(content, uri, validationTrigger, debounce).catch((reason) => {
-        if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-            // Do nothing
+        if (reason instanceof RequestCancellationError) {
+            // Do nothing - cancellation is expected behavior
         } else {
             log.error(reason, `Guard validation error for ${uri}`);
         }

@@ -10,6 +10,7 @@ import {
     didCloseHandler,
     didSaveHandler,
 } from '../../../src/handlers/DocumentHandler';
+import { RequestCancellationError } from '../../../src/utils/errors/ErrorClasses';
 import { ValidationTrigger } from '../../../src/utils/ValidationUtils';
 import { createMockComponents, MockedServerComponents } from '../../utils/MockServerComponents';
 import { Templates } from '../../utils/TemplateUtils';
@@ -305,8 +306,8 @@ describe('DocumentHandler', () => {
         it('should handle linting and Guard validation cancellation gracefully', async () => {
             const textDocument = createTextDocument();
             mockDocuments({ get: vi.fn().mockReturnValue(textDocument) });
-            mockServices.cfnLintService.lintDelayed.rejects(new Error('Request cancelled'));
-            mockServices.guardService.validateDelayed.rejects(new Error('Request cancelled'));
+            mockServices.cfnLintService.lintDelayed.rejects(new RequestCancellationError(testUri));
+            mockServices.guardService.validateDelayed.rejects(new RequestCancellationError(testUri));
 
             const handler = didChangeHandler(mockServices.documents, mockServices);
 

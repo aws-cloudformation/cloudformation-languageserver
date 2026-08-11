@@ -30,8 +30,9 @@ describe('GuardService', () => {
     };
 
     beforeEach(() => {
-        // Create mock components
+        // Create mock components with an open template by default
         mockComponents = createMockComponents();
+        mockComponents.documentManager.hasFilesOfType.returns(true);
 
         // Create mock GuardEngine
         mockGuardEngine = stubInterface<GuardEngine>();

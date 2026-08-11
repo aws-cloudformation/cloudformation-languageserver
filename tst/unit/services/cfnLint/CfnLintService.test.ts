@@ -14,9 +14,15 @@ import { createMockComponents, createMockSettingsManager } from '../../../utils/
 import { WorkerNotInitializedError } from '../../../../src/utils/errors/ErrorClasses';
 import { ValidationTrigger } from '../../../../src/utils/ValidationUtils';
 
+function createMockComponentsWithOpenTemplate(): ReturnType<typeof createMockComponents> {
+    const components = createMockComponents();
+    components.documentManager.hasFilesOfType.returns(true);
+    return components;
+}
+
 // Helper functions for special test cases that need different configurations
 const createServiceWithFileType = (fileType: CloudFormationFileType) => {
-    const components = createMockComponents();
+    const components = createMockComponentsWithOpenTemplate();
     components.diagnostics.publishDiagnostics.resolves();
     const mockFile = stubInterface<Document>();
     (mockFile as any).cfnFileType = fileType;
@@ -40,7 +46,7 @@ const createTestServiceWithState = (
         initializationPromise?: Promise<void>;
     } = {},
 ) => {
-    const components = createMockComponents();
+    const components = createMockComponentsWithOpenTemplate();
     components.diagnostics.publishDiagnostics.resolves();
 
     const workerManager = stubInterface<PyodideWorkerManager>();
@@ -82,7 +88,7 @@ const createGitSyncService = (lintFileResult: any[] = []) => {
     gitSyncWorkerManager.initialize.resolves();
     gitSyncWorkerManager.lintFile.resolves(lintFileResult);
 
-    const gitSyncComponents = createMockComponents();
+    const gitSyncComponents = createMockComponentsWithOpenTemplate();
     gitSyncComponents.diagnostics.publishDiagnostics.resolves();
     const mockFile = stubInterface<Document>();
     (mockFile as any).cfnFileType = CloudFormationFileType.GitSyncDeployment;
@@ -222,7 +228,7 @@ describe('CfnLintService', () => {
         };
 
         // Use createMockComponents for consistent mocking
-        mockComponents = createMockComponents();
+        mockComponents = createMockComponentsWithOpenTemplate();
 
         // Set up the publishDiagnostics mock to return a Promise
         mockComponents.diagnostics.publishDiagnostics.resolves();
@@ -595,7 +601,7 @@ describe('CfnLintService', () => {
             gitSyncWorkerManager.initialize.resolves();
             gitSyncWorkerManager.lintFile.resolves([]); // Empty results to trigger the GitSync logic
 
-            const gitSyncComponents = createMockComponents();
+            const gitSyncComponents = createMockComponentsWithOpenTemplate();
             gitSyncComponents.diagnostics.publishDiagnostics.resolves();
             const mockFile = stubInterface<Document>();
             (mockFile as any).cfnFileType = CloudFormationFileType.GitSyncDeployment;
@@ -728,7 +734,7 @@ describe('CfnLintService', () => {
             const uninitializedDelayer = stubObject<Delayer<void>>(new Delayer<void>(1000));
 
             const uninitializedService = CfnLintService.create(
-                createMockComponents(),
+                createMockComponentsWithOpenTemplate(),
                 uninitializedWorkerManager,
                 uninitializedDelayer,
             );
@@ -756,6 +762,143 @@ describe('CfnLintService', () => {
             await lintPromise;
 
             ensureSpy.mockRestore();
+        });
+
+        test('should settle a superseded queued request and retain the latest request', async () => {
+            const pendingInitialization = new Promise<void>(() => {});
+            const ensureSpy = vi.spyOn(service as any, 'ensureInitialized').mockReturnValue(pendingInitialization);
+
+            const firstLint = service.lintDelayed('first content', mockUri, ValidationTrigger.OnOpen);
+            const firstRequest = (service as any).requestQueue.get(mockUri);
+            const firstRejectSpy = sinon.spy(firstRequest, 'reject');
+
+            const secondLint = service.lintDelayed('latest content', mockUri, ValidationTrigger.OnOpen);
+
+            expect(firstRejectSpy.calledOnce).toBe(true);
+            expect(firstRejectSpy.firstCall.args[0]).toMatchObject({
+                name: 'CancellationError',
+                message: `Request cancelled for key: ${mockUri}`,
+            });
+            await expect(firstLint).resolves.toBeUndefined();
+            expect((service as any).requestQueue.get(mockUri).content).toBe('latest content');
+
+            service.cancelDelayedLinting(mockUri);
+            await expect(secondLint).resolves.toBeUndefined();
+            expect((service as any).requestQueue.size).toBe(0);
+            ensureSpy.mockRestore();
+        });
+
+        test('should not let a stale initialization failure reject a replacement request', async () => {
+            let rejectFirstInitialization!: (reason: unknown) => void;
+            let rejectSecondInitialization!: (reason: unknown) => void;
+            const firstInitialization = new Promise<void>((_resolve, reject) => {
+                rejectFirstInitialization = reject;
+            });
+            const secondInitialization = new Promise<void>((_resolve, reject) => {
+                rejectSecondInitialization = reject;
+            });
+            const ensureSpy = vi
+                .spyOn(service as any, 'ensureInitialized')
+                .mockReturnValueOnce(firstInitialization)
+                .mockReturnValueOnce(secondInitialization);
+
+            const firstLint = service.lintDelayed('first content', mockUri, ValidationTrigger.OnOpen);
+            const secondLint = service.lintDelayed('latest content', mockUri, ValidationTrigger.OnOpen);
+            const secondOutcome = secondLint.then(
+                () => undefined,
+                (error: unknown) => error,
+            );
+
+            await expect(firstLint).resolves.toBeUndefined();
+
+            const staleInitializationError = new Error('Stale initialization failure');
+            rejectFirstInitialization(staleInitializationError);
+            await expect(firstInitialization).rejects.toBe(staleInitializationError);
+
+            expect((service as any).requestQueue.get(mockUri)?.content).toBe('latest content');
+
+            const currentInitializationError = new Error('Current initialization failure');
+            rejectSecondInitialization(currentInitializationError);
+            await expect(secondInitialization).rejects.toBe(currentInitializationError);
+            await expect(secondOutcome).resolves.toBe(currentInitializationError);
+            expect((service as any).requestQueue.size).toBe(0);
+            ensureSpy.mockRestore();
+        });
+
+        test('should reject every queued request when initialization fails', async () => {
+            const initializationError = new Error('Initialization failed');
+            const ensureSpy = vi.spyOn(service as any, 'ensureInitialized').mockRejectedValue(initializationError);
+
+            const firstLint = service.lintDelayed('first content', 'file:///first.yaml', ValidationTrigger.OnOpen);
+            const secondLint = service.lintDelayed('second content', 'file:///second.yaml', ValidationTrigger.OnOpen);
+
+            await expect(firstLint).rejects.toBe(initializationError);
+            await expect(secondLint).rejects.toBe(initializationError);
+            expect((service as any).requestQueue.size).toBe(0);
+            ensureSpy.mockRestore();
+        });
+
+        test('should settle a queued request when linting for its URI is cancelled', async () => {
+            const ensureSpy = vi
+                .spyOn(service as any, 'ensureInitialized')
+                .mockReturnValue(new Promise<void>(() => {}));
+            const lintPromise = service.lintDelayed(mockTemplate, mockUri, ValidationTrigger.OnOpen);
+
+            service.cancelDelayedLinting(mockUri);
+
+            await expect(lintPromise).resolves.toBeUndefined();
+            expect((service as any).requestQueue.has(mockUri)).toBe(false);
+            ensureSpy.mockRestore();
+        });
+
+        test('should settle all queued requests when delayed linting is cancelled', async () => {
+            const ensureSpy = vi
+                .spyOn(service as any, 'ensureInitialized')
+                .mockReturnValue(new Promise<void>(() => {}));
+            const firstLint = service.lintDelayed('first content', 'file:///first.yaml', ValidationTrigger.OnOpen);
+            const secondLint = service.lintDelayed('second content', 'file:///second.yaml', ValidationTrigger.OnOpen);
+
+            service.cancelAllDelayedLinting();
+
+            await expect(firstLint).resolves.toBeUndefined();
+            await expect(secondLint).resolves.toBeUndefined();
+            expect((service as any).requestQueue.size).toBe(0);
+            ensureSpy.mockRestore();
+        });
+
+        test('should settle queued requests when the service closes', async () => {
+            const ensureSpy = vi
+                .spyOn(service as any, 'ensureInitialized')
+                .mockReturnValue(new Promise<void>(() => {}));
+            const lintPromise = service.lintDelayed(mockTemplate, mockUri, ValidationTrigger.OnOpen);
+
+            await service.close();
+
+            await expect(lintPromise).resolves.toBeUndefined();
+            expect((service as any).requestQueue.size).toBe(0);
+            ensureSpy.mockRestore();
+        });
+
+        test('should remove queued requests before dispatching them', async () => {
+            const queuedRequest = {
+                content: mockTemplate,
+                forceUseContent: false,
+                timestamp: Date.now(),
+                resolve: sinon.stub(),
+                reject: sinon.stub(),
+            };
+            (service as any).requestQueue.set(mockUri, queuedRequest);
+            const lintStub = sinon.stub(service, 'lint').resolves();
+            mockDelayer.delay.callsFake((_key, callback) => {
+                expect((service as any).requestQueue.size).toBe(0);
+                return callback();
+            });
+
+            (service as any).processQueuedRequests();
+            await Promise.resolve();
+
+            expect(lintStub.calledOnce).toBe(true);
+            expect(queuedRequest.resolve.calledOnce).toBe(true);
         });
 
         test('should process requests through delayer when initialized', async () => {
@@ -1096,7 +1239,10 @@ describe('CfnLintService', () => {
             test('should wait and resolve when initialization completes', async () => {
                 // Create a new service instance that's initializing
                 mockComponents.diagnostics.publishDiagnostics.resolves();
-                const initializingService = CfnLintService.create(createMockComponents(), mockWorkerManager);
+                const initializingService = CfnLintService.create(
+                    createMockComponentsWithOpenTemplate(),
+                    mockWorkerManager,
+                );
 
                 // Set status to initializing
                 (initializingService as any).status = 1; // STATUS.Initializing
@@ -1142,7 +1288,10 @@ describe('CfnLintService', () => {
             test('should throw on timeout', async () => {
                 // Create a new service instance that's initializing
                 mockComponents.diagnostics.publishDiagnostics.resolves();
-                const initializingService = CfnLintService.create(createMockComponents(), mockWorkerManager);
+                const initializingService = CfnLintService.create(
+                    createMockComponentsWithOpenTemplate(),
+                    mockWorkerManager,
+                );
 
                 // Set status to initializing
                 (initializingService as any).status = 1; // STATUS.Initializing
@@ -1180,7 +1329,10 @@ describe('CfnLintService', () => {
             test('should resolve when initialization completes', async () => {
                 // Create a new service instance that's initializing
                 mockComponents.diagnostics.publishDiagnostics.resolves();
-                const initializingService = CfnLintService.create(createMockComponents(), mockWorkerManager);
+                const initializingService = CfnLintService.create(
+                    createMockComponentsWithOpenTemplate(),
+                    mockWorkerManager,
+                );
 
                 // Set status to initializing
                 (initializingService as any).status = 1; // STATUS.Initializing
@@ -1215,7 +1367,10 @@ describe('CfnLintService', () => {
             test('should throw on timeout', async () => {
                 // Create a new service instance that's initializing
                 mockComponents.diagnostics.publishDiagnostics.resolves();
-                const initializingService = CfnLintService.create(createMockComponents(), mockWorkerManager);
+                const initializingService = CfnLintService.create(
+                    createMockComponentsWithOpenTemplate(),
+                    mockWorkerManager,
+                );
 
                 // Set status to initializing
                 (initializingService as any).status = 1; // STATUS.Initializing
@@ -1250,7 +1405,10 @@ describe('CfnLintService', () => {
             test('should throw if initialization fails', async () => {
                 // Create a new service instance that's initializing
                 mockComponents.diagnostics.publishDiagnostics.resolves();
-                const initializingService = CfnLintService.create(createMockComponents(), mockWorkerManager);
+                const initializingService = CfnLintService.create(
+                    createMockComponentsWithOpenTemplate(),
+                    mockWorkerManager,
+                );
 
                 // Set status to initializing
                 (initializingService as any).status = 1; // STATUS.Initializing
@@ -1303,7 +1461,7 @@ describe('CfnLintService', () => {
                 mockWorkerManager.lintTemplate.resolves([]);
 
                 // Create a new service instance
-                const testService = CfnLintService.create(createMockComponents(), mockWorkerManager);
+                const testService = CfnLintService.create(createMockComponentsWithOpenTemplate(), mockWorkerManager);
                 (testService as any).workerManager = mockWorkerManager;
 
                 // Set the service status to initialized (skip the initialize call)
@@ -1382,7 +1540,7 @@ describe('CfnLintService', () => {
                 mockWorkerManager.lintTemplate.resolves([]);
 
                 // Create a new service instance
-                const testService = CfnLintService.create(createMockComponents(), mockWorkerManager);
+                const testService = CfnLintService.create(createMockComponentsWithOpenTemplate(), mockWorkerManager);
                 (testService as any).workerManager = mockWorkerManager;
 
                 // Set the service status to initialized (skip the initialize call)
@@ -1452,7 +1610,7 @@ describe('CfnLintService', () => {
                 mockWorkerManager.lintTemplate.rejects(new Error('Linting failed'));
 
                 // Create a new service instance
-                const testService = CfnLintService.create(createMockComponents(), mockWorkerManager);
+                const testService = CfnLintService.create(createMockComponentsWithOpenTemplate(), mockWorkerManager);
                 (testService as any).workerManager = mockWorkerManager;
 
                 // Set the service status to initialized (skip the initialize call)
@@ -1502,7 +1660,7 @@ describe('CfnLintService', () => {
 
     describe('trigger settings', () => {
         test('should respect lintOnChange setting', async () => {
-            const service = CfnLintService.create(createMockComponents(), mockWorkerManager);
+            const service = CfnLintService.create(createMockComponentsWithOpenTemplate(), mockWorkerManager);
             await service.initialize();
 
             // Create base settings and disable lintOnChange
@@ -1532,7 +1690,7 @@ describe('CfnLintService', () => {
         });
 
         test('should lint on open and save when cfnlint is enabled', async () => {
-            const service = CfnLintService.create(createMockComponents(), mockWorkerManager);
+            const service = CfnLintService.create(createMockComponentsWithOpenTemplate(), mockWorkerManager);
             await service.initialize();
 
             // Use default settings where cfnlint is enabled
@@ -1550,7 +1708,7 @@ describe('CfnLintService', () => {
         });
 
         test('should not lint on open and save when cfnlint is disabled', async () => {
-            const service = CfnLintService.create(createMockComponents(), mockWorkerManager);
+            const service = CfnLintService.create(createMockComponentsWithOpenTemplate(), mockWorkerManager);
             await service.initialize();
 
             // Create settings with cfnlint disabled
@@ -1584,7 +1742,11 @@ describe('CfnLintService', () => {
             mockDelayer.delay.callsFake((key, callback, _delayMs) => callback());
             mockDelayer.cancel.returns();
 
-            const service = CfnLintService.create(createMockComponents(), mockWorkerManager, mockDelayer);
+            const service = CfnLintService.create(
+                createMockComponentsWithOpenTemplate(),
+                mockWorkerManager,
+                mockDelayer,
+            );
             await service.initialize();
 
             const lintStub = sinon.stub(service, 'lint').resolves();
@@ -1618,7 +1780,7 @@ describe('CfnLintService', () => {
 
     describe('local cfn-lint path functionality', () => {
         test('should switch to local executor when path is set', () => {
-            const components = createMockComponents();
+            const components = createMockComponentsWithOpenTemplate();
             const service = CfnLintService.create(components);
             const baseSettings = new SettingsState().toSettings();
             const settingsWithPath = {
@@ -1640,7 +1802,7 @@ describe('CfnLintService', () => {
         });
 
         test('should switch to local executor on settings change', () => {
-            const components = createMockComponents();
+            const components = createMockComponentsWithOpenTemplate();
             const service = CfnLintService.create(components);
             const settingsManager = createMockSettingsManager();
 
@@ -1661,7 +1823,7 @@ describe('CfnLintService', () => {
         });
 
         test('should switch back to pyodide when path is cleared', () => {
-            const components = createMockComponents();
+            const components = createMockComponentsWithOpenTemplate();
             const service = CfnLintService.create(components);
             const settingsManager = createMockSettingsManager();
 
@@ -1690,7 +1852,7 @@ describe('CfnLintService', () => {
         });
 
         test('should initialize immediately when using local executor', async () => {
-            const components = createMockComponents();
+            const components = createMockComponentsWithOpenTemplate();
             const baseSettings = new SettingsState().toSettings();
             const settingsWithPath = {
                 ...baseSettings,

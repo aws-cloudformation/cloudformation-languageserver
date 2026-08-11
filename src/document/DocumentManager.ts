@@ -7,6 +7,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { Delayer } from '../utils/Delayer';
+import { RequestCancellationError } from '../utils/errors/ErrorClasses';
 import { CloudFormationFileType, Document, DocumentType } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
@@ -102,7 +103,7 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
                 delay,
             )
             .catch((error) => {
-                if (error instanceof Error && error.message.includes('Request cancelled')) {
+                if (error instanceof RequestCancellationError) {
                     return;
                 }
                 this.log.error(error, 'Failed to send document metadata');
