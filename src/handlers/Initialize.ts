@@ -7,7 +7,9 @@ export function initializedHandler(components: ServerComponents): () => void {
     return (): void => {
         components.settingsManager
             .syncConfiguration()
-            .then(() => components.schemaRetriever.initialize())
+            .then(() => {
+                return components.schemaRetriever.initialize();
+            })
             .catch((error: unknown) => {
                 logger.error(error, `Failed to initialize server`);
             });
