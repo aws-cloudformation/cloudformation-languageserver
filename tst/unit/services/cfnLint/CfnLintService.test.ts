@@ -11,7 +11,7 @@ import { PyodideWorkerManager } from '../../../../src/services/cfnLint/PyodideWo
 import { SettingsState } from '../../../../src/settings/Settings';
 import { Delayer } from '../../../../src/utils/Delayer';
 import { createMockComponents, createMockSettingsManager } from '../../../utils/MockServerComponents';
-import { WorkerNotInitializedError } from '../../../../src/utils/errors/ErrorClasses';
+import { MountError, WorkerNotInitializedError } from '../../../../src/utils/errors/ErrorClasses';
 import { ValidationTrigger } from '../../../../src/utils/ValidationUtils';
 
 function createMockComponentsWithOpenTemplate(): ReturnType<typeof createMockComponents> {
@@ -373,6 +373,52 @@ describe('CfnLintService', () => {
             // Mount same folder again - should not call worker
             await service.mountFolder(mockWorkspaceFolder);
             expect(mockWorkerManager.mountFolder.callCount).toBe(1);
+        });
+
+        test('should share one mount between concurrent callers for the same folder', async () => {
+            let resolveMount!: () => void;
+            const pendingMount = new Promise<void>((resolve) => {
+                resolveMount = resolve;
+            });
+            mockWorkerManager.mountFolder.returns(pendingMount);
+            await service.initialize();
+
+            const firstMount = service.mountFolder({ ...mockWorkspaceFolder });
+            const secondMount = service.mountFolder({ ...mockWorkspaceFolder });
+
+            await vi.waitFor(() => expect(mockWorkerManager.mountFolder.calledOnce).toBe(true));
+            resolveMount();
+            await Promise.all([firstMount, secondMount]);
+
+            expect(mockWorkerManager.mountFolder.calledOnce).toBe(true);
+        });
+
+        test('should share mount failures between concurrent callers and allow retry', async () => {
+            let rejectMount!: (error: Error) => void;
+            const pendingMount = new Promise<void>((_resolve, reject) => {
+                rejectMount = reject;
+            });
+            mockWorkerManager.mountFolder.returns(pendingMount);
+            await service.initialize();
+
+            const firstMountOutcome = service
+                .mountFolder({ ...mockWorkspaceFolder })
+                .then(undefined, (error: unknown) => error);
+            const secondMountOutcome = service
+                .mountFolder({ ...mockWorkspaceFolder })
+                .then(undefined, (error: unknown) => error);
+
+            await vi.waitFor(() => expect(mockWorkerManager.mountFolder.calledOnce).toBe(true));
+            rejectMount(new Error('Mount failed'));
+            const [firstError, secondError] = await Promise.all([firstMountOutcome, secondMountOutcome]);
+
+            expect(firstError).toBeInstanceOf(MountError);
+            expect(secondError).toBe(firstError);
+            expect(mockWorkerManager.mountFolder.calledOnce).toBe(true);
+
+            mockWorkerManager.mountFolder.resolves();
+            await service.mountFolder({ ...mockWorkspaceFolder });
+            expect(mockWorkerManager.mountFolder.callCount).toBe(2);
         });
 
         test('should remount folders after worker recovery', async () => {

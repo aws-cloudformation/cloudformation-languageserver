@@ -219,7 +219,11 @@ export class GuardService
         const sizeCategory = doc?.getTemplateSizeCategory() ?? 'unknown';
 
         try {
-            await this.initializeIfRequired();
+            if (!(await this.initializeIfRequired())) {
+                this.telemetry.count('validate.disabled', 1);
+                this.publishDiagnostics(uri, []);
+                return;
+            }
 
             // Validate rule configuration against available packs
             const availablePacks = getAvailableRulePacks();
@@ -228,9 +232,6 @@ export class GuardService
                 this.log.warn(`Rule configuration errors: ${validationErrors.join(', ')}`);
                 // Continue with validation but log the issues
             }
-
-            // Wait for rules to be loaded if they're still loading
-            await this.ensureRulesLoaded();
 
             if (this.enabledRules.length === 0) {
                 this.publishDiagnostics(uri, []);
@@ -653,16 +654,6 @@ export class GuardService
         }
 
         return errors;
-    }
-
-    /**
-     * Ensure rules are loaded before validation
-     */
-    private async ensureRulesLoaded(): Promise<void> {
-        if (this.enabledRules.length === 0) {
-            this.enabledRules = await this.getEnabledRulesByConfiguration();
-            this.rebuildRuleCustomMessages();
-        }
     }
 
     /**

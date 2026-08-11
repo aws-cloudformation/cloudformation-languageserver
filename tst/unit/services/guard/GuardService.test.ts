@@ -202,6 +202,44 @@ describe('GuardService', () => {
             expect(mockGuardEngine.validateTemplate.callCount).toBe(2);
         });
 
+        it('should stop an in-flight validation when Guard is disabled during rule initialization', async () => {
+            const settingsManager = createMockSettingsManager({
+                diagnostics: {
+                    cfnGuard: defaultSettings,
+                },
+            } as any);
+            guardService.configure(settingsManager);
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            let resolveRules!: (rules: typeof mockRules) => void;
+            const rulesPromise = new Promise<typeof mockRules>((resolve) => {
+                resolveRules = resolve;
+            });
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').returns(rulesPromise);
+
+            const validation = guardService.validate('content', 'file:///template.yaml');
+            expect(loadRules.calledOnce).toBe(true);
+
+            const settingsCallback = settingsManager.subscribe.getCall(0).args[1];
+            settingsCallback({
+                cfnGuard: {
+                    ...defaultSettings,
+                    enabled: false,
+                },
+            } as DiagnosticsSettings);
+            resolveRules(mockRules);
+            await validation;
+
+            expect(loadRules.calledOnce).toBe(true);
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
+            expect(
+                mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
+                    'cfn-guard',
+                    'file:///template.yaml',
+                    [],
+                ),
+            ).toBe(true);
+        });
+
         it('should validate template and publish diagnostics for violations', async () => {
             const mockFile = stubInterface<Document>();
             Object.defineProperty(mockFile, 'cfnFileType', {

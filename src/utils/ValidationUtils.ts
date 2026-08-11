@@ -13,6 +13,7 @@ export enum ValidationTrigger {
 
 export abstract class DeferredValidationInitializer {
     private initPromise?: Promise<void>;
+    private initializationError?: Error;
     private initializationGeneration = 0;
     protected status = InitializationStatus.Uninitialized;
 
@@ -27,41 +28,78 @@ export abstract class DeferredValidationInitializer {
     }
 
     protected async initializeIfRequired(): Promise<boolean> {
-        if (!this.isInitializationRequired()) {
-            return false;
-        }
+        while (this.isInitializationRequired()) {
+            switch (this.status) {
+                case InitializationStatus.Uninitialized: {
+                    const generation = this.initializationGeneration;
+                    this.status = InitializationStatus.Initializing;
+                    this.initializationError = undefined;
 
-        if (this.status === InitializationStatus.Uninitialized) {
-            const generation = this.initializationGeneration;
-            this.status = InitializationStatus.Initializing;
-            const initializationPromise = this.initializeValidation();
-            this.initPromise = initializationPromise;
+                    let initializationPromise: Promise<void>;
+                    try {
+                        initializationPromise = this.initializeValidation();
+                    } catch (error) {
+                        if (generation === this.initializationGeneration) {
+                            const initializationError = this.toInitializationError(error);
+                            this.status = InitializationStatus.Failed;
+                            this.initializationError = initializationError;
+                            throw initializationError;
+                        }
+                        continue;
+                    }
 
-            try {
-                await initializationPromise;
-                if (generation === this.initializationGeneration) {
-                    this.status = InitializationStatus.Initialized;
+                    this.initPromise = initializationPromise;
+                    await this.awaitInitialization(generation, initializationPromise);
+                    break;
                 }
-            } catch (error) {
-                if (generation === this.initializationGeneration) {
-                    this.status = InitializationStatus.Failed;
+                case InitializationStatus.Initializing: {
+                    if (!this.initPromise) {
+                        throw new Error('Validation initialization is in progress without an initialization promise.');
+                    }
+                    await this.awaitInitialization(this.initializationGeneration, this.initPromise);
+                    break;
                 }
-                throw error;
-            } finally {
-                if (this.initPromise === initializationPromise) {
-                    this.initPromise = undefined;
+                case InitializationStatus.Initialized: {
+                    return true;
+                }
+                case InitializationStatus.Failed: {
+                    throw this.initializationError ?? new Error('Validation initialization failed.');
                 }
             }
-        } else if (this.status === InitializationStatus.Initializing && this.initPromise) {
-            await this.initPromise;
         }
 
-        return true;
+        return false;
+    }
+
+    private async awaitInitialization(generation: number, initializationPromise: Promise<void>): Promise<void> {
+        try {
+            await initializationPromise;
+            if (generation === this.initializationGeneration) {
+                this.status = InitializationStatus.Initialized;
+                this.initializationError = undefined;
+            }
+        } catch (error) {
+            if (generation === this.initializationGeneration) {
+                const initializationError = this.toInitializationError(error);
+                this.status = InitializationStatus.Failed;
+                this.initializationError = initializationError;
+                throw initializationError;
+            }
+        } finally {
+            if (this.initPromise === initializationPromise) {
+                this.initPromise = undefined;
+            }
+        }
+    }
+
+    private toInitializationError(error: unknown): Error {
+        return error instanceof Error ? error : new Error(String(error));
     }
 
     protected resetInitialization(): void {
         this.initializationGeneration += 1;
         this.initPromise = undefined;
+        this.initializationError = undefined;
         this.status = InitializationStatus.Uninitialized;
     }
 }

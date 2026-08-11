@@ -62,6 +62,7 @@ export class CfnLintService
     private localExecutor?: LocalCfnLintExecutor;
     private readonly log = LoggerFactory.getLogger(CfnLintService);
     private readonly mountedFolders = new Map<string, WorkspaceFolder>();
+    private readonly folderMountsInProgress = new Map<string, Promise<void>>();
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
@@ -256,11 +257,28 @@ export class CfnLintService
         const fsDir = URI.parse(folder.uri).fsPath;
         const mountDir = '/'.concat(folder.name);
 
-        // Check if already mounted
         if (this.mountedFolders.has(mountDir)) {
             return;
         }
 
+        const existingMount = this.folderMountsInProgress.get(mountDir);
+        if (existingMount) {
+            await existingMount;
+            return;
+        }
+
+        const mount = this.mountFolderInWorker(fsDir, mountDir, folder);
+        this.folderMountsInProgress.set(mountDir, mount);
+        try {
+            await mount;
+        } finally {
+            if (this.folderMountsInProgress.get(mountDir) === mount) {
+                this.folderMountsInProgress.delete(mountDir);
+            }
+        }
+    }
+
+    private async mountFolderInWorker(fsDir: string, mountDir: string, folder: WorkspaceFolder): Promise<void> {
         try {
             const startTime = performance.now();
             await this.workerManager.mountFolder(fsDir, mountDir);
