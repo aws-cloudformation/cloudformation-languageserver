@@ -6,7 +6,11 @@ import { CfnLintInitializationSettings, CfnLintSettings } from '../../settings/S
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Telemetry } from '../../telemetry/TelemetryDecorator';
-import { CfnLintInitializationError, WorkerNotInitializedError } from '../../utils/errors/ErrorClasses';
+import {
+    CfnLintInitializationError,
+    WorkerNotInitializedError,
+    WorkerShutdownError,
+} from '../../utils/errors/ErrorClasses';
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 
@@ -34,6 +38,8 @@ export class PyodideWorkerManager {
     private readonly tasks = new Map<string, WorkerTask>();
     private initialized = false;
     private initializationPromise: Promise<void> | undefined = undefined;
+    private closed = false;
+    private shutdownPromise: Promise<void> | undefined = undefined;
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
@@ -44,6 +50,10 @@ export class PyodideWorkerManager {
     ) {}
 
     public async initialize(): Promise<void> {
+        if (this.closed) {
+            throw new WorkerShutdownError();
+        }
+
         if (this.initialized) {
             return;
         }
@@ -60,6 +70,10 @@ export class PyodideWorkerManager {
         let attemptCount = 0;
         return await retryWithExponentialBackoff(
             async () => {
+                if (this.closed) {
+                    throw new WorkerShutdownError();
+                }
+
                 if (attemptCount > 0) {
                     this.telemetry.count('worker.restart', 1, { attributes: { attempt: attemptCount.toString() } });
                 }
@@ -74,6 +88,7 @@ export class PyodideWorkerManager {
                 jitterFactor: 0.1, // Add 10% jitter to prevent synchronized retry storms
                 operationName: 'Pyodide initialization',
                 totalTimeoutMs: this.retryConfig.totalTimeoutMs,
+                shouldRetry: (error) => !this.closed && !(error instanceof WorkerShutdownError),
             },
             this.log,
         );
@@ -92,6 +107,10 @@ export class PyodideWorkerManager {
 
                 // Add exit event handler to detect crashes
                 this.worker.on('exit', (code) => {
+                    if (this.closed) {
+                        return;
+                    }
+
                     if (code !== 0) {
                         this.log.error(`Worker exited unexpectedly with code ${code}`);
                         this.telemetry.count('worker.crash', 1, { attributes: { exitCode: code.toString() } });
@@ -290,22 +309,41 @@ export class PyodideWorkerManager {
     }
 
     public async shutdown(): Promise<void> {
-        if (this.worker) {
-            // Reject all pending tasks
-            for (const task of this.tasks.values()) {
-                task.reject(new Error('Worker shutdown'));
-            }
-            this.tasks.clear();
+        if (!this.shutdownPromise) {
+            this.closed = true;
+            this.shutdownPromise = this.releaseResources();
+        }
 
-            // Terminate worker and wait for completion
+        await this.shutdownPromise;
+    }
+
+    private async releaseResources(): Promise<void> {
+        const workerToTerminate = this.worker;
+        const initializationToSettle = this.initializationPromise;
+
+        this.worker = undefined;
+        this.initialized = false;
+        this.initializationPromise = undefined;
+
+        for (const task of this.tasks.values()) {
+            task.reject(new WorkerShutdownError());
+        }
+        this.tasks.clear();
+
+        if (initializationToSettle) {
+            void initializationToSettle.catch((error: unknown) => {
+                if (!(error instanceof WorkerShutdownError)) {
+                    this.log.error(error, 'Worker initialization failed while shutting down');
+                }
+            });
+        }
+
+        if (workerToTerminate) {
             try {
-                await this.worker.terminate();
+                await workerToTerminate.terminate();
             } catch (error) {
                 this.log.error(error, 'Error terminating worker');
             }
-            this.worker = undefined;
-            this.initialized = false;
-            this.initializationPromise = undefined;
         }
     }
 }

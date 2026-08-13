@@ -219,6 +219,10 @@ export class GuardService
         const sizeCategory = doc?.getTemplateSizeCategory() ?? 'unknown';
 
         try {
+            if (this.status === InitializationStatus.Failed) {
+                this.resetInitialization();
+            }
+
             if (!(await this.initializeIfRequired())) {
                 this.telemetry.count('validate.disabled', 1);
                 this.publishDiagnostics(uri, []);
@@ -797,6 +801,8 @@ export class GuardService
      * Shutdown the Guard service and clean up resources
      */
     close(): void {
+        this.markClosed();
+
         // Unsubscribe from settings changes
         if (this.settingsSubscription) {
             this.settingsSubscription.unsubscribe();
@@ -815,7 +821,6 @@ export class GuardService
         // Clear active validations (don't wait for them to complete)
         this.activeValidations.clear();
         this.enabledRules = [];
-        this.resetInitialization();
     }
 
     /**

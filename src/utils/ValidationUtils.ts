@@ -12,6 +12,7 @@ export enum ValidationTrigger {
 }
 
 export abstract class DeferredValidationInitializer {
+    private isClosed = false;
     private initPromise?: Promise<void>;
     private initializationError?: Error;
     private initializationGeneration = 0;
@@ -24,7 +25,7 @@ export abstract class DeferredValidationInitializer {
     ) {}
 
     protected isInitializationRequired(): boolean {
-        return this.isEnabled() && this.hasValidationDocuments();
+        return !this.isClosed && this.isEnabled() && this.hasValidationDocuments();
     }
 
     protected async initializeIfRequired(): Promise<boolean> {
@@ -94,6 +95,15 @@ export abstract class DeferredValidationInitializer {
 
     private toInitializationError(error: unknown): Error {
         return error instanceof Error ? error : new Error(String(error));
+    }
+
+    protected markClosed(): void {
+        if (this.isClosed) {
+            return;
+        }
+
+        this.isClosed = true;
+        this.resetInitialization();
     }
 
     protected resetInitialization(): void {

@@ -9,6 +9,7 @@ export type RetryOptions = {
     jitterFactor?: number;
     operationName: string;
     totalTimeoutMs: number;
+    shouldRetry?: (error: Error) => boolean;
 };
 
 export function sleep(ms: number): Promise<void> {
@@ -48,9 +49,7 @@ export async function retryWithExponentialBackoff<T>(
     fn: () => Promise<T>,
     options: RetryOptions,
     log: Logger,
-    sleepFn: (ms: number) => Promise<void> = (ms: number) => {
-        return sleep(ms);
-    },
+    sleepFn: (ms: number) => Promise<void> = sleep,
 ): Promise<T> {
     const {
         maxRetries = DefaultRetryOptions.maxRetries,
@@ -60,6 +59,7 @@ export async function retryWithExponentialBackoff<T>(
         jitterFactor = DefaultRetryOptions.jitterFactor,
         operationName,
         totalTimeoutMs,
+        shouldRetry,
     } = options;
 
     if (backoffMultiplier < 1) {
@@ -86,6 +86,10 @@ export async function retryWithExponentialBackoff<T>(
             return await fn();
         } catch (error) {
             lastError = error instanceof Error ? error : new Error(extractErrorMessage(error));
+            if (shouldRetry && !shouldRetry(lastError)) {
+                throw lastError;
+            }
+
             if (attemptIdx === attempts - 1) {
                 throw new Error(`${operationName} failed after ${attempts} attempts. Last error: ${lastError.message}`);
             }

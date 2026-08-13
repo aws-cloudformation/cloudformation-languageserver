@@ -5,6 +5,7 @@ import { describe, expect, beforeEach, vi, test, Mock } from 'vitest';
 import { CloudFormationFileType } from '../../../../src/document/Document';
 import { PyodideWorkerManager } from '../../../../src/services/cfnLint/PyodideWorkerManager';
 import { CfnLintSettings } from '../../../../src/settings/Settings';
+import { WorkerShutdownError } from '../../../../src/utils/errors/ErrorClasses';
 import * as RetryModule from '../../../../src/utils/Retry';
 import { mockLogger } from '../../../utils/MockServerComponents';
 
@@ -510,6 +511,75 @@ describe('PyodideWorkerManager', () => {
         });
     });
 
+    describe('shutdown during initialization', () => {
+        test('should terminate the in-flight worker and stop initialization retries', async () => {
+            mockWorker.postMessage.callsFake((message: { id: string }) => {
+                if (message.id !== '1') {
+                    queueMicrotask(() => {
+                        messageHandler({
+                            id: message.id,
+                            error: 'Unexpected retry after shutdown',
+                            success: false,
+                        });
+                    });
+                }
+            });
+            const retryingWorkerManager = new PyodideWorkerManager(
+                {
+                    maxRetries: 1,
+                    initialDelayMs: 0,
+                    maxDelayMs: 0,
+                    backoffMultiplier: 1,
+                    totalTimeoutMs: 5000,
+                },
+                createDefaultCfnLintSettings(),
+                mockLogging,
+            );
+
+            const initialization = retryingWorkerManager.initialize();
+            const shutdown = retryingWorkerManager.shutdown();
+
+            await expect(initialization).rejects.toBeInstanceOf(WorkerShutdownError);
+            await shutdown;
+            expect(workerConstructor).toHaveBeenCalledTimes(1);
+            expect(mockWorker.terminate.calledOnce).toBe(true);
+        });
+
+        test('should not create a worker after shutdown during retry backoff', async () => {
+            workerConstructor.mockImplementationOnce(function () {
+                throw new Error('Initial worker creation failed');
+            });
+            mockWorker.postMessage.callsFake((message: { id: string }) => {
+                queueMicrotask(() => {
+                    messageHandler({
+                        id: message.id,
+                        error: 'Unexpected worker creation after shutdown',
+                        success: false,
+                    });
+                });
+            });
+            const retryingWorkerManager = new PyodideWorkerManager(
+                {
+                    maxRetries: 1,
+                    initialDelayMs: 100,
+                    maxDelayMs: 100,
+                    backoffMultiplier: 1,
+                    totalTimeoutMs: 5000,
+                },
+                createDefaultCfnLintSettings(),
+                mockLogging,
+            );
+
+            const initialization = retryingWorkerManager.initialize();
+            const initializationResult = initialization.catch((error: unknown) => error);
+            await waitUntil(() => mockLogging.warn.calledOnce, { timeout: 1000 });
+
+            await retryingWorkerManager.shutdown();
+            await expect(initializationResult).resolves.toBeInstanceOf(WorkerShutdownError);
+            expect(workerConstructor).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('shutdown', () => {
         beforeEach(async () => {
             // Initialize the worker manager
@@ -554,6 +624,22 @@ describe('PyodideWorkerManager', () => {
             expect((workerManager as any).worker).toBeUndefined();
             expect((workerManager as any).initialized).toBe(false);
             expect((workerManager as any).initializationPromise).toBeUndefined();
+        });
+
+        test('should reject initialization after shutdown', async () => {
+            await workerManager.shutdown();
+            mockWorker.postMessage.callsFake((message: { id: string }) => {
+                queueMicrotask(() => {
+                    messageHandler({
+                        id: message.id,
+                        error: 'Unexpected worker creation after shutdown',
+                        success: false,
+                    });
+                });
+            });
+
+            await expect(workerManager.initialize()).rejects.toBeInstanceOf(WorkerShutdownError);
+            expect(workerConstructor).toHaveBeenCalledTimes(1);
         });
 
         test('should do nothing if not initialized', async () => {
@@ -759,6 +845,7 @@ describe('PyodideWorkerManager', () => {
                     totalTimeoutMs: 9999,
                     jitterFactor: 0.1,
                     operationName: 'Pyodide initialization',
+                    shouldRetry: expect.any(Function),
                 }),
                 expect.anything(),
             );

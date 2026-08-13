@@ -31,6 +31,14 @@ export class WorkerNotInitializedError extends Error {
     }
 }
 
+export class WorkerShutdownError extends Error {
+    constructor(options?: ErrorOptions) {
+        super('Worker shutdown', options);
+        this.name = 'WorkerShutdownError';
+        Object.setPrototypeOf(this, WorkerShutdownError.prototype);
+    }
+}
+
 export class CfnLintInitializationError extends Error {
     public readonly phase: string;
 

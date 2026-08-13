@@ -975,6 +975,8 @@ export class CfnLintService
      * - Resets the service status to uninitialized
      */
     public async close(): Promise<void> {
+        this.markClosed();
+
         // Unsubscribe from settings changes
         if (this.settingsSubscription) {
             this.settingsSubscription.unsubscribe();
@@ -984,13 +986,9 @@ export class CfnLintService
         // Cancel all pending requests
         this.cancelAllDelayedLinting();
 
-        if (this.status !== InitializationStatus.Uninitialized && this.status !== InitializationStatus.Failed) {
-            // Shutdown worker manager
-            await this.workerManager.shutdown();
-            this.localExecutor = undefined;
-        }
+        await this.workerManager.shutdown();
+        this.localExecutor = undefined;
         this.initializationPromise = undefined;
-        this.resetInitialization();
     }
 
     static create(

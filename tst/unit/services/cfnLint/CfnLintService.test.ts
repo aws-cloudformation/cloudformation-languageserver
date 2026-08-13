@@ -1137,12 +1137,33 @@ describe('CfnLintService', () => {
             expect(mockWorkerManager.shutdown.called).toBe(true);
         });
 
-        test('should do nothing when not initialized', async () => {
+        test('should not reinitialize when an in-flight initialization settles after close', async () => {
+            let resolveInitialization!: () => void;
+            const initializationResult = new Promise<void>((resolve) => {
+                resolveInitialization = resolve;
+            });
+            mockWorkerManager.initialize.onFirstCall().returns(initializationResult);
+            mockWorkerManager.initialize.onSecondCall().resolves();
+
+            const initialization = service.initialize();
+            expect(mockWorkerManager.initialize.calledOnce).toBe(true);
+
+            await service.close();
+            resolveInitialization();
+            await initialization;
+
+            expect(mockWorkerManager.initialize.calledOnce).toBe(true);
+            expect(mockWorkerManager.shutdown.calledOnce).toBe(true);
+            expect(service.isInitialized()).toBe(false);
+        });
+
+        test('should close the worker manager when not initialized', async () => {
             expect(service.isInitialized()).toBe(false);
 
             await service.close();
 
             expect(service.isInitialized()).toBe(false);
+            expect(mockWorkerManager.shutdown.calledOnce).toBe(true);
         });
     });
 

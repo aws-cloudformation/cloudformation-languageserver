@@ -18,6 +18,10 @@ class TestValidationInitializer extends DeferredValidationInitializer {
         this.resetInitialization();
     }
 
+    close(): void {
+        this.markClosed();
+    }
+
     getStatus(): InitializationStatus {
         return this.status;
     }
@@ -142,5 +146,30 @@ describe('DeferredValidationInitializer', () => {
         await expect(Promise.all([staleInitialization, replacement])).resolves.toEqual([true, true]);
         expect(initializer.getStatus()).toBe(InitializationStatus.Initialized);
         expect(initializeValidation).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not reinitialize when an in-flight initialization settles after close', async () => {
+        let resolveInitialization!: () => void;
+        const initialization = new Promise<void>((resolve) => {
+            resolveInitialization = resolve;
+        });
+        const initializeValidation = vi
+            .fn<() => Promise<void>>()
+            .mockReturnValueOnce(initialization)
+            .mockResolvedValueOnce();
+        const initializer = new TestValidationInitializer(
+            () => true,
+            createValidationDocumentPredicate(true),
+            initializeValidation,
+        );
+
+        const inFlightInitialization = initializer.initialize();
+        initializer.close();
+        resolveInitialization();
+
+        await expect(inFlightInitialization).resolves.toBe(false);
+        await expect(initializer.initialize()).resolves.toBe(false);
+        expect(initializeValidation).toHaveBeenCalledTimes(1);
+        expect(initializer.getStatus()).toBe(InitializationStatus.Uninitialized);
     });
 });

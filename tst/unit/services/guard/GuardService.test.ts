@@ -184,6 +184,26 @@ describe('GuardService', () => {
             expect(mockGuardEngine.validateTemplate.callCount).toBe(2);
         });
 
+        it('should retry a transient rule-load failure on the next validation', async () => {
+            const initializationError = new Error('Temporary rules-file read failure');
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration');
+            loadRules.onFirstCall().rejects(initializationError);
+            loadRules.onSecondCall().resolves(mockRules);
+
+            await guardService.validate('content', 'file:///template.yaml');
+
+            expect(loadRules.calledOnce).toBe(true);
+            expect((guardService as any).status).toBe(InitializationStatus.Failed);
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
+
+            await guardService.validate('content', 'file:///template.yaml');
+
+            expect(loadRules.calledTwice).toBe(true);
+            expect((guardService as any).status).toBe(InitializationStatus.Initialized);
+            expect(mockGuardEngine.validateTemplate.calledOnce).toBe(true);
+        });
+
         it('should share rule initialization between concurrent validations', async () => {
             const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
             let resolveRules!: (rules: typeof mockRules) => void;
@@ -619,6 +639,26 @@ describe('GuardService', () => {
 
             expect(mockUnsubscribe.called).toBe(true);
             expect(mockDelayer.cancelAll.called).toBe(true);
+        });
+
+        it('should not reload rules when an in-flight load settles after close', async () => {
+            let resolveRuleLoad!: (rules: never[]) => void;
+            const firstRuleLoad = new Promise<never[]>((resolve) => {
+                resolveRuleLoad = resolve;
+            });
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration');
+            loadRules.onFirstCall().returns(firstRuleLoad);
+            loadRules.onSecondCall().resolves([]);
+
+            const validation = guardService.validate('content', 'file:///template.yaml');
+            expect(loadRules.calledOnce).toBe(true);
+
+            guardService.close();
+            resolveRuleLoad([]);
+            await validation;
+
+            expect(loadRules.calledOnce).toBe(true);
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
         });
     });
 
