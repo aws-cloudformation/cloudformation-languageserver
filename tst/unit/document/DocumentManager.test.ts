@@ -48,6 +48,28 @@ describe('DocumentManager', () => {
         });
     });
 
+    describe('hasFilesOfType', () => {
+        it('should detect tracked templates and GitSync deployment files independently', () => {
+            const template = new Document(
+                TextDocument.create(
+                    'file:///template.yaml',
+                    'yaml',
+                    1,
+                    'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket',
+                ),
+            );
+            const deployment = new Document(
+                TextDocument.create('file:///deployment.json', 'json', 1, '{"template-file-path":"template.yaml"}'),
+            );
+            documentManager.updateDocument(template.uri, template);
+            documentManager.updateDocument(deployment.uri, deployment);
+
+            expect(documentManager.hasFilesOfType(CloudFormationFileType.Template)).toBe(true);
+            expect(documentManager.hasFilesOfType(CloudFormationFileType.GitSyncDeployment)).toBe(true);
+            expect(documentManager.hasFilesOfType(CloudFormationFileType.Other)).toBe(false);
+        });
+    });
+
     describe('updateDocument', () => {
         it('should update cached document', () => {
             const uri = 'file:///template.yaml';

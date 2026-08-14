@@ -31,6 +31,7 @@ export class LspClient implements LspConnection {
     public readonly encryptionKey: Buffer;
     public readonly clientId: string;
     private isShutdown = false;
+    private isServerProcessClosed = false;
     private workspaceConfig: Record<string, unknown>[];
 
     private documentMetadata: DocumentMetadata[] = [];
@@ -171,6 +172,10 @@ export class LspClient implements LspConnection {
             } else {
                 this.serverLogger.info(`Process exited with code ${code}`);
             }
+        });
+
+        this.serverProcess.on('close', () => {
+            this.isServerProcessClosed = true;
         });
     }
 
@@ -328,11 +333,22 @@ export class LspClient implements LspConnection {
         return (await this.sendRequest('aws/system/status', {})) as GetSystemStatusResponse;
     }
 
+    private waitForServerProcessClose(): Promise<void> {
+        if (this.isServerProcessClosed) {
+            return Promise.resolve();
+        }
+
+        return new Promise<void>((resolve) => {
+            this.serverProcess.once('close', () => resolve());
+        });
+    }
+
     async shutdown() {
         if (this.isShutdown) return;
 
         this.clientLogger.info('LSP connection shutting down');
         this.isShutdown = true;
+        const serverProcessClose = this.waitForServerProcessClose();
 
         try {
             await this.connection.sendRequest('shutdown', {});
@@ -342,6 +358,9 @@ export class LspClient implements LspConnection {
         }
 
         this.connection.dispose();
-        this.serverProcess.kill();
+        if (!this.isServerProcessClosed) {
+            this.serverProcess.kill();
+        }
+        await serverProcessClose;
     }
 }

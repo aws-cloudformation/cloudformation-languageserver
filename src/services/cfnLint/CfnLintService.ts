@@ -22,22 +22,10 @@ import {
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessContributor';
 import { byteSize } from '../../utils/String';
+import { DeferredValidationInitializer, InitializationStatus, ValidationTrigger } from '../../utils/ValidationUtils';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
 import { LocalCfnLintExecutor } from './LocalCfnLintExecutor';
 import { PyodideWorkerManager } from './PyodideWorkerManager';
-
-export enum LintTrigger {
-    OnOpen = 'onOpen',
-    OnChange = 'onChange',
-    OnSave = 'onSave',
-}
-
-enum STATUS {
-    Uninitialized = 0,
-    Initializing = 1,
-    Initialized = 2,
-    Failed = 3,
-}
 
 /**
  * Sleep utility function for async delays
@@ -52,10 +40,20 @@ export function sleep(ms: number): Promise<void> {
     });
 }
 
-export class CfnLintService implements SettingsConfigurable, Closeable, ReadinessContributor {
+interface QueuedLintRequest {
+    content: string;
+    forceUseContent: boolean;
+    timestamp: number;
+    resolve: () => void;
+    reject: (reason: unknown) => void;
+}
+
+export class CfnLintService
+    extends DeferredValidationInitializer
+    implements SettingsConfigurable, Closeable, ReadinessContributor
+{
     private static readonly CFN_LINT_SOURCE = 'cfn-lint';
 
-    private status: STATUS = STATUS.Uninitialized;
     private readonly delayer: Delayer<void>;
     private settings: CfnLintSettings;
     private settingsSubscription?: SettingsSubscription;
@@ -64,6 +62,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
     private localExecutor?: LocalCfnLintExecutor;
     private readonly log = LoggerFactory.getLogger(CfnLintService);
     private readonly mountedFolders = new Map<string, WorkspaceFolder>();
+    private readonly folderMountsInProgress = new Map<string, Promise<void>>();
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
@@ -99,16 +98,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
     }
 
     // Request queue for handling requests during initialization
-    private readonly requestQueue = new Map<
-        string,
-        {
-            content: string;
-            forceUseContent: boolean;
-            timestamp: number;
-            resolve: () => void;
-            reject: (reason: unknown) => void;
-        }
-    >();
+    private readonly requestQueue = new Map<string, QueuedLintRequest>();
 
     constructor(
         private readonly documentManager: DocumentManager,
@@ -117,6 +107,15 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         workerManager?: PyodideWorkerManager,
         delayer?: Delayer<void>,
     ) {
+        super(
+            () => this.settings.enabled,
+            () =>
+                documentManager.hasFilesOfType(
+                    CloudFormationFileType.Template,
+                    CloudFormationFileType.GitSyncDeployment,
+                ),
+            async () => await this.initializeRuntime(),
+        );
         this.settings = DefaultSettings.diagnostics.cfnLint;
         this.delayer = delayer ?? new Delayer<void>(this.settings.delayMs);
         this.workerManager = workerManager ?? new PyodideWorkerManager(this.settings.initialization, this.settings);
@@ -143,10 +142,10 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
     }
 
     isReady(): ReadinessStatus {
-        if (!this.settings.enabled) {
+        if (!this.isInitializationRequired()) {
             return { ready: true };
         }
-        return { ready: this.status === STATUS.Initialized };
+        return { ready: this.status === InitializationStatus.Initialized };
     }
 
     private onSettingsChanged(newSettings: CfnLintSettings): void {
@@ -176,23 +175,17 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * @throws Error if initialization fails at any step
      */
     public async initialize(): Promise<void> {
-        if (!this.settings.enabled) {
-            this.log.info('cfn-lint is disabled, skipping Pyodide initialization');
-            return;
+        if (!(await this.initializeIfRequired())) {
+            this.log.info('cfn-lint is disabled or there are no templates, skipping Pyodide initialization');
         }
+    }
 
-        if (this.status !== STATUS.Uninitialized) {
-            return;
-        }
-
-        this.status = STATUS.Initializing;
-
+    private async initializeRuntime(): Promise<void> {
         const startTime = performance.now();
 
         if (this.settings.path) {
             // Local executor doesn't need heavy initialization
             this.localExecutor = new LocalCfnLintExecutor(this.settings.path);
-            this.status = STATUS.Initialized;
             this.telemetry.count('init.success', 1, { attributes: { mode: 'local' } });
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
             return;
@@ -216,7 +209,6 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
                 }
             }
 
-            this.status = STATUS.Initialized;
             this.telemetry.count('init.success', 1);
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
 
@@ -229,7 +221,6 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
                 this.log.warn(`Failed to get cfn-lint version: ${extractErrorMessage(error)}`);
             }
         } catch (error) {
-            this.status = STATUS.Failed;
             const phase = error instanceof CfnLintInitializationError ? error.phase : 'unknown';
             this.telemetry.error('init.fault', error, undefined, {
                 captureErrorType: true,
@@ -248,11 +239,11 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * @throws Error if the service is not initialized or mounting fails
      */
     public async mountFolder(folder: WorkspaceFolder): Promise<void> {
-        if (!this.settings.enabled) {
+        if (!(await this.initializeIfRequired())) {
             return;
         }
 
-        if (this.status === STATUS.Uninitialized) {
+        if (this.status !== InitializationStatus.Initialized) {
             throw new Error('CfnLintService not initialized. Call initialize() first.');
         }
 
@@ -266,11 +257,28 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         const fsDir = URI.parse(folder.uri).fsPath;
         const mountDir = '/'.concat(folder.name);
 
-        // Check if already mounted
         if (this.mountedFolders.has(mountDir)) {
             return;
         }
 
+        const existingMount = this.folderMountsInProgress.get(mountDir);
+        if (existingMount) {
+            await existingMount;
+            return;
+        }
+
+        const mount = this.mountFolderInWorker(fsDir, mountDir, folder);
+        this.folderMountsInProgress.set(mountDir, mount);
+        try {
+            await mount;
+        } finally {
+            if (this.folderMountsInProgress.get(mountDir) === mount) {
+                this.folderMountsInProgress.delete(mountDir);
+            }
+        }
+    }
+
+    private async mountFolderInWorker(fsDir: string, mountDir: string, folder: WorkspaceFolder): Promise<void> {
         try {
             const startTime = performance.now();
             await this.workerManager.mountFolder(fsDir, mountDir);
@@ -341,11 +349,11 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         maxDelayMs: number = 5000,
     ): Promise<void> {
         // Check if already initialized
-        if (this.status === STATUS.Initialized) {
+        if (this.status === InitializationStatus.Initialized) {
             return; // Service is ready
         }
 
-        if (this.status === STATUS.Uninitialized) {
+        if (this.status === InitializationStatus.Uninitialized) {
             throw new Error('CfnLintService is not initialized and not being initialized.');
         }
 
@@ -355,7 +363,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
 
         while (DateTime.now() < timeoutTime) {
             // @ts-expect-error: This comparison is intentional to check if initialization completed while waiting
-            if (this.status === STATUS.Initialized) {
+            if (this.status === InitializationStatus.Initialized) {
                 return; // Service is ready
             }
 
@@ -421,6 +429,9 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      */
     @Count({ name: 'lint.standaloneFile', captureErrorType: true })
     private async lintStandaloneFile(content: string, uri: string, fileType: CloudFormationFileType): Promise<void> {
+        if (!(await this.initializeIfRequired())) {
+            return;
+        }
         const startTime = performance.now();
         const doc = this.documentManager.get(uri);
         const sizeCategory = doc?.getTemplateSizeCategory() ?? 'unknown';
@@ -446,7 +457,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             }
             this.telemetry.count('lint.success', 1, { attributes: { fileType } });
         } catch (error) {
-            this.status = STATUS.Uninitialized;
+            this.resetInitialization();
             this.logError(`linting ${fileType} by string`, error);
             this.publishErrorDiagnostics(uri, error);
 
@@ -561,7 +572,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             }
             this.telemetry.count('lint.success', 1, { attributes: { fileType } });
         } catch (error) {
-            this.status = STATUS.Uninitialized;
+            this.resetInitialization();
             this.logError(`linting ${fileType} by file`, error);
             this.publishErrorDiagnostics(uri, error);
 
@@ -623,6 +634,12 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             return;
         }
 
+        if (!this.isInitializationRequired()) {
+            this.telemetry.count('lint.file.skipped', 1);
+            this.publishDiagnostics(uri, []);
+            return;
+        }
+
         // Track file type being linted
         this.telemetry.count(`lint.file.${fileType}`, 1);
 
@@ -636,7 +653,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         }
 
         // Redundant check but clears up TypeScript errors
-        if (this.status === STATUS.Uninitialized) {
+        if (this.status === InitializationStatus.Uninitialized) {
             this.telemetry.count('lint.uninitialized', 1);
             throw new Error('CfnLintService not initialized. Call initialize() first.');
         }
@@ -675,17 +692,17 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * @throws Error if initialization fails or times out
      */
     private async ensureInitialized(timeoutMs: number = 120_000): Promise<void> {
-        if (this.status === STATUS.Initialized) {
+        if (this.status === InitializationStatus.Initialized) {
             return;
         }
 
-        if (this.status === STATUS.Failed) {
+        if (this.status === InitializationStatus.Failed) {
             throw new Error('CfnLintService initialization failed permanently. Restart the language server to retry.');
         }
 
-        if (this.status === STATUS.Uninitialized) {
+        if (this.status === InitializationStatus.Uninitialized) {
             this.initializationPromise = this.initialize();
-        } else if (this.status === STATUS.Initializing) {
+        } else if (this.status === InitializationStatus.Initializing) {
             // If initialization is in progress but we don't have a promise, create one
             this.initializationPromise ??= this.pollForInitialization();
         }
@@ -733,47 +750,81 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
         const startTime = DateTime.now();
         const timeoutTime = startTime.plus({ milliseconds: timeoutMs });
 
-        while (this.status === STATUS.Initializing && DateTime.now() < timeoutTime) {
+        while (this.status === InitializationStatus.Initializing && DateTime.now() < timeoutTime) {
             await sleep(50); // Wait 50ms between checks
         }
 
         // Check if we timed out
-        if (DateTime.now() >= timeoutTime && this.status === STATUS.Initializing) {
+        if (DateTime.now() >= timeoutTime && this.status === InitializationStatus.Initializing) {
             const elapsedMs = DateTime.now().diff(startTime).as('milliseconds');
             throw new Error(`Initialization polling timeout after ${elapsedMs.toFixed(0)}ms`);
         }
 
-        if (this.status !== STATUS.Initialized) {
-            throw new Error(`Initialization failed, status: ${STATUS[this.status]}`);
+        if (this.status !== InitializationStatus.Initialized) {
+            throw new Error(`Initialization failed, status: ${InitializationStatus[this.status]}`);
         }
+    }
+
+    private removeQueuedRequest(uri: string, expectedRequest?: QueuedLintRequest): QueuedLintRequest | undefined {
+        const request = this.requestQueue.get(uri);
+        if (!request || (expectedRequest !== undefined && request !== expectedRequest)) {
+            return;
+        }
+
+        this.requestQueue.delete(uri);
+        this.telemetry.countUpDown('lint.queue.depth', -1);
+        return request;
+    }
+
+    private takeQueuedRequests(): [string, QueuedLintRequest][] {
+        const requests = [...this.requestQueue.entries()];
+        if (requests.length === 0) {
+            return requests;
+        }
+
+        this.requestQueue.clear();
+        this.telemetry.countUpDown('lint.queue.depth', -requests.length);
+        return requests;
+    }
+
+    private cancelQueuedRequest(uri: string): void {
+        this.removeQueuedRequest(uri)?.reject(new RequestCancellationError(uri));
+    }
+
+    private cancelAllQueuedRequests(): void {
+        for (const [uri, request] of this.takeQueuedRequests()) {
+            request.reject(new RequestCancellationError(uri));
+        }
+    }
+
+    private rejectQueuedRequest(uri: string, expectedRequest: QueuedLintRequest, reason: unknown): void {
+        this.removeQueuedRequest(uri, expectedRequest)?.reject(reason);
     }
 
     /**
      * Process all queued requests after initialization completes
      */
     private processQueuedRequests(): void {
-        if (this.requestQueue.size === 0) {
+        const queuedRequests = this.takeQueuedRequests();
+        if (queuedRequests.length === 0) {
             return;
         }
 
-        this.telemetry.count('lint.queue.processed', this.requestQueue.size);
+        this.telemetry.count('lint.queue.processed', queuedRequests.length);
 
-        // Process each queued request through the delayer
-        for (const [uri, request] of this.requestQueue.entries()) {
-            // Use delayer for queued requests too, to maintain debouncing behavior
+        for (const [uri, request] of queuedRequests) {
             this.delayer
                 .delay(uri, () => this.lint(request.content, uri, request.forceUseContent))
                 .then(() => {
                     request.resolve();
                 })
                 .catch((reason: unknown) => {
-                    this.logError(`processing queued request for ${uri}`, reason);
+                    if (!(reason instanceof RequestCancellationError)) {
+                        this.logError(`processing queued request for ${uri}`, reason);
+                    }
                     request.reject(reason);
                 });
         }
-
-        // Clear the queue
-        this.requestQueue.clear();
     }
 
     /**
@@ -795,7 +846,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
     public async lintDelayed(
         content: string,
         uri: string,
-        trigger: LintTrigger,
+        trigger: ValidationTrigger,
         forceUseContent: boolean = false,
     ): Promise<void> {
         if (!this.settings.enabled) {
@@ -804,13 +855,13 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
 
         // Check trigger-specific settings
         switch (trigger) {
-            case LintTrigger.OnOpen:
-            case LintTrigger.OnSave: {
+            case ValidationTrigger.OnOpen:
+            case ValidationTrigger.OnSave: {
                 // OnOpen and OnSave are controlled only by cfnlint.enabled
                 // No additional configuration needed
                 break;
             }
-            case LintTrigger.OnChange: {
+            case ValidationTrigger.OnChange: {
                 if (!this.settings.lintOnChange) {
                     return;
                 }
@@ -822,36 +873,47 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
             }
         }
 
-        if (this.status === STATUS.Failed) {
+        if (this.status === InitializationStatus.Failed) {
             this.telemetry.count('lint.uninitialized', 1);
             return;
         }
 
-        if (this.status !== STATUS.Initialized) {
-            // Create a promise that will be resolved when the queued request is processed
-            return await new Promise<void>((resolve, reject) => {
-                // Queue the request (overwrites previous request for same URI - "last request wins")
-                this.requestQueue.set(uri, {
-                    content,
-                    forceUseContent,
-                    timestamp: Date.now(),
-                    resolve,
-                    reject,
-                });
+        if (this.status !== InitializationStatus.Initialized) {
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    this.cancelQueuedRequest(uri);
+                    const request: QueuedLintRequest = {
+                        content,
+                        forceUseContent,
+                        timestamp: Date.now(),
+                        resolve,
+                        reject,
+                    };
+                    this.requestQueue.set(uri, request);
 
-                this.telemetry.count('lint.queue.enqueued', 1);
-                this.telemetry.countUpDown('lint.queue.depth', this.requestQueue.size, { unit: '1' });
+                    this.telemetry.count('lint.queue.enqueued', 1);
+                    this.telemetry.countUpDown('lint.queue.depth', 1);
 
-                // Trigger initialization if needed (but don't await it here)
-                this.ensureInitialized().catch((error) => {
-                    this.logError('ensuring initialization', error);
+                    void this.ensureInitialized().catch((error: unknown) => {
+                        const initializationError =
+                            error instanceof Error ? error : new Error(extractErrorMessage(error));
+                        this.logError('ensuring initialization', initializationError);
+                        this.rejectQueuedRequest(uri, request, initializationError);
+                    });
                 });
-            });
+            } catch (error) {
+                if (error instanceof RequestCancellationError) {
+                    this.telemetry.count('lint.cancelled', 1);
+                    return;
+                }
+                throw error;
+            }
+            return;
         }
 
         // Service is ready, process based on trigger type
         try {
-            if (trigger === LintTrigger.OnSave) {
+            if (trigger === ValidationTrigger.OnSave) {
                 // For save operations: execute immediately (0ms delay)
                 await this.delayer.delay(uri, () => this.lint(content, uri, forceUseContent), 0);
             } else {
@@ -875,6 +937,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      */
     public cancelDelayedLinting(uri: string): void {
         this.delayer.cancel(uri);
+        this.cancelQueuedRequest(uri);
     }
 
     /**
@@ -882,6 +945,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      */
     public cancelAllDelayedLinting(): void {
         this.delayer.cancelAll();
+        this.cancelAllQueuedRequests();
     }
 
     /**
@@ -899,7 +963,7 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * @returns true if the service is initialized and ready, false otherwise
      */
     public isInitialized(): boolean {
-        return this.status === STATUS.Initialized;
+        return this.status === InitializationStatus.Initialized;
     }
 
     /**
@@ -911,21 +975,20 @@ export class CfnLintService implements SettingsConfigurable, Closeable, Readines
      * - Resets the service status to uninitialized
      */
     public async close(): Promise<void> {
+        this.markClosed();
+
         // Unsubscribe from settings changes
         if (this.settingsSubscription) {
             this.settingsSubscription.unsubscribe();
             this.settingsSubscription = undefined;
         }
 
-        // Cancel all pending delayed requests
-        this.delayer.cancelAll();
+        // Cancel all pending requests
+        this.cancelAllDelayedLinting();
 
-        if (this.status !== STATUS.Uninitialized && this.status !== STATUS.Failed) {
-            // Shutdown worker manager
-            await this.workerManager.shutdown();
-            this.localExecutor = undefined;
-        }
-        this.status = STATUS.Uninitialized;
+        await this.workerManager.shutdown();
+        this.localExecutor = undefined;
+        this.initializationPromise = undefined;
     }
 
     static create(

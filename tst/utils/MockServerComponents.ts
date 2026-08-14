@@ -73,6 +73,7 @@ export function createMockDocumentManager(customSettings?: Settings) {
     const mock = stubInterface<DocumentManager>();
     const settings = customSettings ?? DefaultSettings;
     mock.getEditorSettingsForDocument.returns(settings.editor);
+    mock.hasFilesOfType.returns(false);
     return mock;
 }
 
