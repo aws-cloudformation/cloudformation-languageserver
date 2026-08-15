@@ -20,7 +20,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-darwin-arm64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-darwin-arm64-node22.zip",
               "hashes": [],
-              "bytes": 58045621
+              "bytes": 58590004
             }
           ]
         },
@@ -33,7 +33,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-darwin-x64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-darwin-x64-node22.zip",
               "hashes": [],
-              "bytes": 58197631
+              "bytes": 58742000
             }
           ]
         },
@@ -46,7 +46,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-linux-arm64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-linux-arm64-node22.zip",
               "hashes": [],
-              "bytes": 62496703
+              "bytes": 63041083
             }
           ]
         },
@@ -59,7 +59,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-linux-x64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-linux-x64-node22.zip",
               "hashes": [],
-              "bytes": 62770361
+              "bytes": 63314743
             }
           ]
         },
@@ -72,7 +72,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-linuxglib2.28-arm64-node18.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-linuxglib2.28-arm64-node18.zip",
               "hashes": [],
-              "bytes": 61641396
+              "bytes": 62185776
             }
           ]
         },
@@ -85,7 +85,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-linuxglib2.28-x64-node18.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-linuxglib2.28-x64-node18.zip",
               "hashes": [],
-              "bytes": 62039518
+              "bytes": 62583903
             }
           ]
         },
@@ -98,7 +98,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-win32-arm64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-win32-arm64-node22.zip",
               "hashes": [],
-              "bytes": 57807279
+              "bytes": 58351659
             }
           ]
         },
@@ -111,7 +111,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-win32-arm64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-win32-arm64-node22.zip",
               "hashes": [],
-              "bytes": 57807279
+              "bytes": 58351659
             }
           ]
         },
@@ -124,7 +124,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-win32-x64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-win32-x64-node22.zip",
               "hashes": [],
-              "bytes": 58218371
+              "bytes": 58762752
             }
           ]
         },
@@ -137,7 +137,7 @@
               "filename": "cloudformation-languageserver-1.9.0-beta-win32-x64-node22.zip",
               "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.9.0-beta/cloudformation-languageserver-1.9.0-beta-win32-x64-node22.zip",
               "hashes": [],
-              "bytes": 58218371
+              "bytes": 58762752
             }
           ]
         }
