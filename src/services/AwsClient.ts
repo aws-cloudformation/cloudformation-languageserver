@@ -1,5 +1,7 @@
 import { CloudControlClient } from '@aws-sdk/client-cloudcontrol';
 import { CloudFormationClient } from '@aws-sdk/client-cloudformation';
+import { ControlCatalogClient } from '@aws-sdk/client-controlcatalog';
+import { IAMClient } from '@aws-sdk/client-iam';
 import { S3Client } from '@aws-sdk/client-s3';
 import { STSClient } from '@aws-sdk/client-sts';
 import { AwsCredentials } from '../auth/AwsCredentials';
@@ -35,6 +37,14 @@ export class AwsClient {
 
     public getStsClient() {
         return new STSClient(this.iamClientConfig());
+    }
+
+    public getIamClient() {
+        return new IAMClient(this.iamClientConfig());
+    }
+
+    public getControlCatalogClient() {
+        return new ControlCatalogClient(this.iamClientConfig());
     }
 
     public getRegion(): string {
