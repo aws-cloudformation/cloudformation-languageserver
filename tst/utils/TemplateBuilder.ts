@@ -248,6 +248,7 @@ export class TemplateBuilder {
 
         // Create syntax tree using proper document detection (like real LSP)
         const document = new Document(textDocument);
+        this.documentManager.updateDocument(this.uri, document);
         this.syntaxTreeManager.addWithTypes(this.uri, document.contents(), document.documentType, document.cfnFileType);
     }
 
@@ -290,6 +291,7 @@ export class TemplateBuilder {
 
         // Update the TextDocuments collection
         (this.textDocuments as any)._syncedDocuments.set(this.uri, updatedDoc);
+        this.documentManager.updateDocument(this.uri, new Document(updatedDoc));
 
         // Update or create syntax tree (simulating didChangeHandler behavior)
         try {

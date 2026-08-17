@@ -192,6 +192,27 @@ describe('retryWithExponentialBackoff', () => {
         expect(sleepFn.args[1][0]).toBe(20); // 10 * 2^1 = 20
     });
 
+    it('should not retry when the failure is non-retryable', async () => {
+        const nonRetryableError = new Error('Operation shut down');
+        const mockFn = vi.fn().mockRejectedValue(nonRetryableError);
+        const shouldRetry = vi.fn().mockReturnValue(false);
+
+        const retryResult = retryWithExponentialBackoff(
+            mockFn,
+            {
+                ...options,
+                shouldRetry,
+            },
+            mockLog,
+            sleepFn,
+        );
+
+        await expect(retryResult).rejects.toBe(nonRetryableError);
+        expect(shouldRetry).toHaveBeenCalledWith(nonRetryableError);
+        expect(mockFn).toHaveBeenCalledTimes(1);
+        expect(sleepFn.callCount).toBe(0);
+    });
+
     it('should log warnings on retry attempts', async () => {
         const mockFn = vi.fn().mockRejectedValueOnce(new Error('Test error')).mockResolvedValue('success');
 

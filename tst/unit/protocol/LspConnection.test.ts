@@ -73,10 +73,15 @@ describe('LspConnection', () => {
     });
 
     describe('shutdown and exit', () => {
-        it('should call custom shutdown handler', () => {
+        it('should return custom shutdown handler result', () => {
+            const expectedResult = Promise.resolve();
+            mockHandlers.onShutdown.mockReturnValue(expectedResult);
             const shutdownHandler = mockConnection.onShutdown.mock.calls[0][0];
-            shutdownHandler();
+
+            const result = shutdownHandler();
+
             expect(mockHandlers.onShutdown).toHaveBeenCalled();
+            expect(result).toBe(expectedResult);
         });
 
         it('should call custom exit handler', () => {

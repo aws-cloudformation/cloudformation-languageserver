@@ -6,11 +6,10 @@ import { CloudFormationFileType, Document } from '../document/Document';
 import { createEdit } from '../document/DocumentUtils';
 import { LspDocuments } from '../protocol/LspDocuments';
 import { ServerComponents } from '../server/ServerComponents';
-import { LintTrigger } from '../services/cfnLint/CfnLintService';
-import { ValidationTrigger } from '../services/guard/GuardService';
 import { publishValidationDiagnostics } from '../stacks/actions/StackActionOperations';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { RequestCancellationError } from '../utils/errors/ErrorClasses';
+import { ValidationTrigger } from '../utils/ValidationUtils';
 
 const log = LoggerFactory.getLogger('DocumentHandler');
 
@@ -33,7 +32,7 @@ export function didOpenHandler(components: ServerComponents): (event: TextDocume
             }
         }
 
-        triggerValidation(components, content, uri, LintTrigger.OnOpen, ValidationTrigger.OnOpen);
+        triggerValidation(components, content, uri, ValidationTrigger.OnOpen);
 
         components.documentManager.sendDocumentMetadata();
     };
@@ -110,14 +109,7 @@ export function didChangeHandler(
             components.syntaxTreeManager.add(documentUri, finalContent);
         }
 
-        triggerValidation(
-            components,
-            finalContent,
-            documentUri,
-            LintTrigger.OnChange,
-            ValidationTrigger.OnChange,
-            true,
-        );
+        triggerValidation(components, finalContent, documentUri, ValidationTrigger.OnChange, true);
 
         // Republish validation diagnostics if available
         const validationDetails = components.validationManager
@@ -165,7 +157,7 @@ export function didSaveHandler(components: ServerComponents): (event: TextDocume
         const documentUri = event.document.uri;
         const documentContent = event.document.getText();
 
-        triggerValidation(components, documentContent, documentUri, LintTrigger.OnSave, ValidationTrigger.OnSave);
+        triggerValidation(components, documentContent, documentUri, ValidationTrigger.OnSave);
 
         components.documentManager.sendDocumentMetadata(0);
     };
@@ -175,11 +167,10 @@ function triggerValidation(
     components: ServerComponents,
     content: string,
     uri: string,
-    lintTrigger: LintTrigger,
     validationTrigger: ValidationTrigger,
     debounce?: boolean,
 ): void {
-    components.cfnLintService.lintDelayed(content, uri, lintTrigger, debounce).catch((reason) => {
+    components.cfnLintService.lintDelayed(content, uri, validationTrigger, debounce).catch((reason) => {
         if (reason instanceof RequestCancellationError) {
             // Do nothing - cancellation is expected behavior
         } else {
@@ -188,8 +179,8 @@ function triggerValidation(
     });
 
     components.guardService.validateDelayed(content, uri, validationTrigger, debounce).catch((reason) => {
-        if (reason instanceof Error && reason.message.includes('Request cancelled')) {
-            // Do nothing
+        if (reason instanceof RequestCancellationError) {
+            // Do nothing - cancellation is expected behavior
         } else {
             log.error(reason, `Guard validation error for ${uri}`);
         }

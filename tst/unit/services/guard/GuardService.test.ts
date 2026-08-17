@@ -5,10 +5,11 @@ import { DiagnosticSeverity } from 'vscode-languageserver';
 import { CloudFormationFileType, Document } from '../../../../src/document/Document';
 import { getAvailableRulePacks } from '../../../../src/services/guard/GeneratedGuardRules';
 import { GuardEngine, GuardViolation } from '../../../../src/services/guard/GuardEngine';
-import { GuardService, ValidationTrigger } from '../../../../src/services/guard/GuardService';
+import { GuardService } from '../../../../src/services/guard/GuardService';
 import { RuleConfiguration } from '../../../../src/services/guard/RuleConfiguration';
 import { GuardSettings, DefaultSettings, DiagnosticsSettings } from '../../../../src/settings/Settings';
 import { Delayer } from '../../../../src/utils/Delayer';
+import { InitializationStatus, ValidationTrigger } from '../../../../src/utils/ValidationUtils';
 import { createMockComponents, createMockSettingsManager } from '../../../utils/MockServerComponents';
 
 describe('GuardService', () => {
@@ -29,8 +30,9 @@ describe('GuardService', () => {
     };
 
     beforeEach(() => {
-        // Create mock components
+        // Create mock components with an open template by default
         mockComponents = createMockComponents();
+        mockComponents.documentManager.hasFilesOfType.returns(true);
 
         // Create mock GuardEngine
         mockGuardEngine = stubInterface<GuardEngine>();
@@ -132,20 +134,127 @@ describe('GuardService', () => {
             ).toBe(true);
         });
 
-        it('should publish empty diagnostics for GitSync deployment files', async () => {
+        it('should publish empty diagnostics without loading rules for a GitSync deployment file', async () => {
             const mockFile = stubInterface<Document>();
             Object.defineProperty(mockFile, 'cfnFileType', {
                 value: CloudFormationFileType.GitSyncDeployment,
                 writable: true,
             });
             mockComponents.documentManager.get.returns(mockFile);
+            mockComponents.documentManager.hasFilesOfType.returns(false);
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').resolves([]);
 
             await guardService.validate('content', 'file:///deployment.json');
 
+            expect(loadRules.called).toBe(false);
             expect(
                 mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
                     'cfn-guard',
                     'file:///deployment.json',
+                    [],
+                ),
+            ).toBe(true);
+        });
+
+        it('should skip rule loading and validation when no valid template is open', async () => {
+            mockComponents.documentManager.hasFilesOfType.returns(false);
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').resolves([]);
+
+            await guardService.validate('content', 'file:///template.yaml');
+
+            expect(loadRules.called).toBe(false);
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
+            expect(
+                mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
+                    'cfn-guard',
+                    'file:///template.yaml',
+                    [],
+                ),
+            ).toBe(true);
+        });
+
+        it('should load rules once and validate repeated requests', async () => {
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(mockRules);
+
+            await guardService.validate('content', 'file:///template.yaml');
+            await guardService.validate('content', 'file:///template.yaml');
+
+            expect(loadRules.calledOnce).toBe(true);
+            expect(mockGuardEngine.validateTemplate.callCount).toBe(2);
+        });
+
+        it('should retry a transient rule-load failure on the next validation', async () => {
+            const initializationError = new Error('Temporary rules-file read failure');
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration');
+            loadRules.onFirstCall().rejects(initializationError);
+            loadRules.onSecondCall().resolves(mockRules);
+
+            await guardService.validate('content', 'file:///template.yaml');
+
+            expect(loadRules.calledOnce).toBe(true);
+            expect((guardService as any).status).toBe(InitializationStatus.Failed);
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
+
+            await guardService.validate('content', 'file:///template.yaml');
+
+            expect(loadRules.calledTwice).toBe(true);
+            expect((guardService as any).status).toBe(InitializationStatus.Initialized);
+            expect(mockGuardEngine.validateTemplate.calledOnce).toBe(true);
+        });
+
+        it('should share rule initialization between concurrent validations', async () => {
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            let resolveRules!: (rules: typeof mockRules) => void;
+            const rulesPromise = new Promise<typeof mockRules>((resolve) => {
+                resolveRules = resolve;
+            });
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').returns(rulesPromise);
+
+            const firstValidation = guardService.validate('content', 'file:///first.yaml');
+            const secondValidation = guardService.validate('content', 'file:///second.yaml');
+
+            expect(loadRules.calledOnce).toBe(true);
+            resolveRules(mockRules);
+            await Promise.all([firstValidation, secondValidation]);
+
+            expect(mockGuardEngine.validateTemplate.callCount).toBe(2);
+        });
+
+        it('should stop an in-flight validation when Guard is disabled during rule initialization', async () => {
+            const settingsManager = createMockSettingsManager({
+                diagnostics: {
+                    cfnGuard: defaultSettings,
+                },
+            } as any);
+            guardService.configure(settingsManager);
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            let resolveRules!: (rules: typeof mockRules) => void;
+            const rulesPromise = new Promise<typeof mockRules>((resolve) => {
+                resolveRules = resolve;
+            });
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').returns(rulesPromise);
+
+            const validation = guardService.validate('content', 'file:///template.yaml');
+            expect(loadRules.calledOnce).toBe(true);
+
+            const settingsCallback = settingsManager.subscribe.getCall(0).args[1];
+            settingsCallback({
+                cfnGuard: {
+                    ...defaultSettings,
+                    enabled: false,
+                },
+            } as DiagnosticsSettings);
+            resolveRules(mockRules);
+            await validation;
+
+            expect(loadRules.calledOnce).toBe(true);
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
+            expect(
+                mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
+                    'cfn-guard',
+                    'file:///template.yaml',
                     [],
                 ),
             ).toBe(true);
@@ -531,6 +640,26 @@ describe('GuardService', () => {
             expect(mockUnsubscribe.called).toBe(true);
             expect(mockDelayer.cancelAll.called).toBe(true);
         });
+
+        it('should not reload rules when an in-flight load settles after close', async () => {
+            let resolveRuleLoad!: (rules: never[]) => void;
+            const firstRuleLoad = new Promise<never[]>((resolve) => {
+                resolveRuleLoad = resolve;
+            });
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration');
+            loadRules.onFirstCall().returns(firstRuleLoad);
+            loadRules.onSecondCall().resolves([]);
+
+            const validation = guardService.validate('content', 'file:///template.yaml');
+            expect(loadRules.calledOnce).toBe(true);
+
+            guardService.close();
+            resolveRuleLoad([]);
+            await validation;
+
+            expect(loadRules.calledOnce).toBe(true);
+            expect(mockGuardEngine.validateTemplate.called).toBe(false);
+        });
     });
 
     describe('rulesFile functionality', () => {
@@ -546,29 +675,104 @@ describe('GuardService', () => {
             guardService.configure(mockSettingsManager);
         });
 
-        it('should trigger revalidation when rulesFile setting changes', () => {
+        it('should reload rules when the rulesFile setting changes', async () => {
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(mockRules);
             const mockSettingsManager = createMockSettingsManager({
                 diagnostics: {
                     cfnGuard: defaultSettings,
                 },
             } as any);
-
-            // Configure with initial settings
             guardService.configure(mockSettingsManager);
-
-            // Get the callback that was registered
             const settingsCallback = mockSettingsManager.subscribe.getCall(0).args[1];
 
-            // Call the callback with new settings that have rulesFile
+            await guardService.validate('content', 'file:///template.yaml');
             settingsCallback({
                 cfnGuard: {
                     ...defaultSettings,
                     rulesFile: '/new/path/rules.guard',
                 },
             } as any);
+            await guardService.validate('content', 'file:///template.yaml');
 
-            // Verify the callback was called (revalidation would be triggered)
-            expect(mockSettingsManager.subscribe.called).toBe(true);
+            expect(loadRules.callCount).toBe(2);
+            expect(mockGuardEngine.validateTemplate.callCount).toBe(2);
+        });
+
+        it('should defer a rulesFile reload until a valid template is open', async () => {
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(mockRules);
+            const mockSettingsManager = createMockSettingsManager({
+                diagnostics: {
+                    cfnGuard: defaultSettings,
+                },
+            } as any);
+            guardService.configure(mockSettingsManager);
+            const settingsCallback = mockSettingsManager.subscribe.getCall(0).args[1];
+            mockComponents.documentManager.hasFilesOfType.returns(false);
+
+            settingsCallback({
+                cfnGuard: {
+                    ...defaultSettings,
+                    rulesFile: '/new/path/rules.guard',
+                },
+            } as any);
+            await Promise.resolve();
+            expect(loadRules.called).toBe(false);
+
+            mockComponents.documentManager.hasFilesOfType.returns(true);
+            await guardService.validate('content', 'file:///template.yaml');
+
+            expect(loadRules.calledOnce).toBe(true);
+            expect(mockGuardEngine.validateTemplate.calledOnce).toBe(true);
+        });
+
+        it('should keep newer custom messages when an older rulesFile load finishes last', async () => {
+            let resolveOldLoad!: () => void;
+            let resolveNewLoad!: () => void;
+            const oldLoad = new Promise<void>((resolve) => {
+                resolveOldLoad = resolve;
+            });
+            const newLoad = new Promise<void>((resolve) => {
+                resolveNewLoad = resolve;
+            });
+            const parseRules = (guardService as any).parseRulesFromContent.bind(guardService);
+            const loadRules = stub(guardService as any, 'getEnabledRulesByConfiguration');
+            loadRules.onFirstCall().callsFake(async () => {
+                await oldLoad;
+                return parseRules(
+                    'rule SHARED_RULE {\n    Resources exists\n    <<\n        Violation: old settings\n    >>\n}',
+                    '/old/rules.guard',
+                );
+            });
+            loadRules.onSecondCall().callsFake(async () => {
+                await newLoad;
+                return parseRules(
+                    'rule SHARED_RULE {\n    Resources exists\n    <<\n        Violation: new settings\n    >>\n}',
+                    '/new/rules.guard',
+                );
+            });
+            const mockSettingsManager = createMockSettingsManager({
+                diagnostics: {
+                    cfnGuard: { ...defaultSettings, rulesFile: '/old/rules.guard' },
+                },
+            } as any);
+            guardService.configure(mockSettingsManager);
+            const settingsCallback = mockSettingsManager.subscribe.getCall(0).args[1];
+
+            const oldValidation = guardService.validate('content', 'file:///old-template.yaml');
+            settingsCallback({
+                cfnGuard: { ...defaultSettings, rulesFile: '/new/rules.guard' },
+            } as any);
+            const newValidation = guardService.validate('content', 'file:///new-template.yaml');
+
+            resolveNewLoad();
+            await newValidation;
+            resolveOldLoad();
+            await oldValidation;
+
+            expect(loadRules.callCount).toBe(2);
+            expect((guardService as any).ruleCustomMessages.get('SHARED_RULE')).toBe('Violation: new settings');
         });
 
         it('should show error diagnostic when rulesFile cannot be read', async () => {
@@ -690,11 +894,16 @@ rule S3_BUCKET_ENCRYPTION {
             expect(result).toEqual({ ready: false });
         });
 
-        it('should return not ready when loading rules', () => {
+        it('should return ready when no valid template is open', () => {
+            mockComponents.documentManager.hasFilesOfType.returns(false);
             const service = GuardService.create(mockComponents, mockGuardEngine, mockRuleConfiguration, mockDelayer);
 
-            // Set the loading state via private property access
-            (service as any).isLoadingRules = true;
+            expect(service.isReady()).toEqual({ ready: true });
+        });
+
+        it('should return not ready while required rule initialization is in progress', () => {
+            const service = GuardService.create(mockComponents, mockGuardEngine, mockRuleConfiguration, mockDelayer);
+            (service as any).status = InitializationStatus.Initializing;
 
             const result = service.isReady();
             expect(result).toEqual({ ready: false });

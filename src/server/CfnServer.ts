@@ -93,7 +93,7 @@ export class CfnServer {
             configurable.configure(this.core.settingsManager);
         }
 
-        initializedHandler(this.lsp.workspace, this.components)();
+        initializedHandler(this.components)();
     }
 
     private setupHandlers() {

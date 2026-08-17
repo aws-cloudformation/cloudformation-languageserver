@@ -7,6 +7,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { Delayer } from '../utils/Delayer';
+import { RequestCancellationError } from '../utils/errors/ErrorClasses';
 import { CloudFormationFileType, Document, DocumentType } from './Document';
 import { DocumentMetadata } from './DocumentProtocol';
 
@@ -102,7 +103,7 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
                 delay,
             )
             .catch((error) => {
-                if (error instanceof Error && error.message.includes('Request cancelled')) {
+                if (error instanceof RequestCancellationError) {
                     return;
                 }
                 this.log.error(error, 'Failed to send document metadata');
@@ -164,6 +165,11 @@ export class DocumentManager implements SettingsConfigurable, Closeable {
                 return [...this.documentMap.values()].filter((doc) => doc.isTemplate() && doc.extension === ext).length;
             });
         }
+    }
+
+    hasFilesOfType(...fileTypes: CloudFormationFileType[]): boolean {
+        const supportedFileTypes = new Set(fileTypes);
+        return [...this.documentMap.values()].some((document) => supportedFileTypes.has(document.cfnFileType));
     }
 
     private emitDocSize() {
