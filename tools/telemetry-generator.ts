@@ -163,7 +163,7 @@ function pickRandom<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function main() {
+async function main() {
     console.log('🚀 Starting Continuous Telemetry Metrics Generator');
     console.log(`⏱️  Interval: ${INTERVAL_MS}ms between iterations`);
     console.log('Press Ctrl+C to stop\n');
@@ -192,6 +192,12 @@ function main() {
 
     const featureFlags = new FeatureFlagProvider(getFromGitHub, featureFlagLocalFile(join(__dirname, '..')));
     const dataStoreFactory = new MultiDataStoreFactoryProvider(featureFlags.get('FileDb'));
+
+    // SchemaStore resolves its stores in field initialisers, so the factory must be initialised
+    // before it is constructed. FileStoreFactory populates its store map in the constructor and
+    // tolerates being used early; LMDBStoreFactory populates it in initialize() and throws without
+    // it. The server does the same await in src/app/standalone.ts before building CfnServer.
+    await dataStoreFactory.initialize();
     const core = new CfnInfraCore(
         lsp,
         {
@@ -255,4 +261,7 @@ function main() {
     });
 }
 
-main();
+main().catch((error) => {
+    console.error(error, 'Telemetry generator failed to start');
+    process.exit(1);
+});
