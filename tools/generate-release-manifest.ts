@@ -52,6 +52,10 @@ const DELISTED_VERSIONS = new Set([
     'v1.4.0-beta',
     'v1.5.0',
     'v1.5.0-beta',
+    'v1.6.0',
+    'v1.6.0-beta',
+    'v1.7.0',
+    'v1.7.0-beta',
 ]);
 
 function getEnvFromTag(tag: string): string {
