@@ -1,7 +1,6 @@
 import { existsSync, statSync, unlinkSync } from 'fs';
 import { unlink, writeFile, readdir, stat } from 'fs/promises';
 import { Stats } from 'node:fs';
-import { Stream } from 'node:stream';
 import { basename, dirname, join } from 'path';
 import { LockOptions, lock } from 'proper-lockfile';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -151,8 +150,7 @@ export class LocalFile {
             | string
             | NodeJS.ArrayBufferView
             | Iterable<string | NodeJS.ArrayBufferView>
-            | AsyncIterable<string | NodeJS.ArrayBufferView>
-            | Stream,
+            | AsyncIterable<string | NodeJS.ArrayBufferView>,
     ): Promise<boolean> {
         const release = await this.tryLock();
         try {

@@ -86,6 +86,15 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
                     },
                 },
             } satisfies ViewOptions,
+            {
+                instrumentName: '*.length',
+                aggregation: {
+                    type: AggregationType.EXPONENTIAL_HISTOGRAM,
+                    options: {
+                        recordMinMax: true,
+                    },
+                },
+            } satisfies ViewOptions,
         ],
         instrumentations: [
             getNodeAutoInstrumentations({

@@ -2,9 +2,12 @@ import Fuse, { IFuseOptions } from 'fuse.js';
 import { CompletionItem } from 'vscode-languageserver';
 import { TelemetryService } from '../telemetry/TelemetryService';
 
-function measureSearch<T>(queryLength: number, fn: () => T): T {
+// Prevent parser-derived document text from reaching Fuse as a completion query.
+export const MAX_FUZZY_QUERY_LENGTH = 256;
+
+function measureSearch<T>(fn: () => T): T {
     const telemetry = TelemetryService.instance.get('FuzzySearch');
-    return telemetry.measure('search', fn, { attributes: { queryLength } });
+    return telemetry.measure('search', fn);
 }
 
 export type FuzzySearchFunction = (items: CompletionItem[], query: string) => CompletionItem[];
@@ -23,12 +26,18 @@ export function fuzzySearch(
     query: string,
     fuseOptions?: Partial<IFuseOptions<CompletionItem>>,
 ): CompletionItem[] {
+    TelemetryService.instance.get('FuzzySearch').count('search.length', items.length);
     if (!query || query.trim().length === 0) {
         return items;
     }
 
+    if (query.length > MAX_FUZZY_QUERY_LENGTH) {
+        TelemetryService.instance.get('FuzzySearch').count('search.skipped', 1);
+        return items;
+    }
+
     const fuse = new Fuse(items, fuseOptions);
-    const results = measureSearch(query.length, () => fuse.search(query));
+    const results = measureSearch(() => fuse.search(query));
 
     return results.map((result, index) => {
         const item = result.item;

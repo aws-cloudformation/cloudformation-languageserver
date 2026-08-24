@@ -4,6 +4,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable } from '../utils/Closeable';
 import { AwsEnv } from '../utils/Environment';
+import { markIfClientError } from '../utils/errors/FaultSuppression';
 import { isClientNetworkError } from '../utils/errors/GenericErrorMapper';
 import { LocalFile } from '../utils/LocalFile';
 import { downloadJson } from '../utils/RemoteDownload';
@@ -69,7 +70,15 @@ export class FeatureFlagProvider implements Closeable {
     }
 
     private async refresh() {
-        const newConfig = await this.getFeatureFlags(AwsEnv);
+        let newConfig;
+        try {
+            newConfig = await this.getFeatureFlags(AwsEnv);
+        } catch (e) {
+            this.telemetry.count('refresh.skipped', 1);
+            log.warn(e, 'Skipping feature flag refresh due to error');
+            return;
+        }
+
         const parsed = FeatureFlagConfigSchema.safeParse(newConfig);
         if (!parsed.success) {
             this.telemetry.count('refresh.parse.error', 1);
@@ -89,10 +98,9 @@ export class FeatureFlagProvider implements Closeable {
         try {
             return await this.getLatestFeatureFlags(env);
         } catch (error) {
+            markIfClientError(error);
             if (isClientNetworkError(error)) {
                 this.telemetry.error('getFeatureFlags.clientNetworkError', error);
-                log.info('Skipping feature flag refresh due to client network error');
-                return this.config;
             }
             throw error;
         }

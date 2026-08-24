@@ -4,6 +4,7 @@ import { InitializedParams } from 'vscode-languageserver-protocol';
 import { LspCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';
 import { ExtendedInitializeParams } from '../server/InitParams';
+import { isExpectedOutputError } from '../utils/errors/ErrorLogs';
 import { ExtensionName } from '../utils/ExtensionConfig';
 import { staticInitialize } from './initialize';
 
@@ -46,10 +47,12 @@ const lsp = new LspConnection(createConnection(ProposedFeatures.all), {
 lsp.listen();
 
 process.on('unhandledRejection', (reason, _promise) => {
+    if (isExpectedOutputError(reason)) return;
     console.error(reason, 'Unhandled promise rejection');
 });
 
 process.on('uncaughtException', (error, origin) => {
+    if (isExpectedOutputError(error)) return;
     console.error(error, `Unhandled exception ${origin}`);
 });
 
