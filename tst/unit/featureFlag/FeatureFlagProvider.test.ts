@@ -1,11 +1,10 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
-import { tmpdir } from 'os';
+import { randomUUID as v4 } from 'crypto';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FeatureFlagConfigSchema } from '../../../src/featureFlag/FeatureFlagBuilder';
 import { featureFlagLocalFile, FeatureFlagProvider } from '../../../src/featureFlag/FeatureFlagProvider';
 import { ScopedTelemetry } from '../../../src/telemetry/ScopedTelemetry';
-import { LocalFile } from '../../../src/utils/LocalFile';
 
 const UPDATED_CONFIG = {
     version: 1,
@@ -55,6 +54,15 @@ const REMOTE_FETCH_FAILURES: ReadonlyArray<{ name: string; error: Error }> = [
 
 describe('FeatureFlagProvider', () => {
     const alphaConfigPath = join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json');
+    const alphaConfigContents = readFileSync(alphaConfigPath, 'utf8');
+    const testDir = join(process.cwd(), 'node_modules', '.cache', 'feature-flag-provider-tests', v4());
+    const localConfigPath = join(testDir, 'config.json');
+
+    beforeEach(() => {
+        rmSync(testDir, { recursive: true, force: true });
+        mkdirSync(testDir, { recursive: true });
+        writeFileSync(localConfigPath, alphaConfigContents);
+    });
 
     it('can parse feature flags', () => {
         for (const path of [
@@ -71,7 +79,7 @@ describe('FeatureFlagProvider', () => {
     it('handles missing config file gracefully', () => {
         const provider = new FeatureFlagProvider(
             () => Promise.resolve({ version: 1, description: 'test', features: {} }),
-            '/nonexistent/path/config.json',
+            join(testDir, 'missing-config.json'),
         );
 
         expect(provider).toBeDefined();
@@ -79,7 +87,7 @@ describe('FeatureFlagProvider', () => {
     });
 
     it('rejects invalid remote config during refresh', async () => {
-        const provider = new FeatureFlagProvider(() => Promise.resolve('invalid string response'), alphaConfigPath);
+        const provider = new FeatureFlagProvider(() => Promise.resolve('invalid string response'), localConfigPath);
 
         // Trigger refresh manually
         await (provider as any).refresh();
@@ -97,7 +105,7 @@ describe('FeatureFlagProvider', () => {
         });
 
         it('returns feature flag by key', () => {
-            provider = new FeatureFlagProvider(() => Promise.resolve({}), alphaConfigPath);
+            provider = new FeatureFlagProvider(() => Promise.resolve({}), localConfigPath);
 
             const flag = provider.get('Constants');
             expect(flag).toBeDefined();
@@ -113,7 +121,7 @@ describe('FeatureFlagProvider', () => {
         });
 
         it('returns targeted feature flag by key', () => {
-            provider = new FeatureFlagProvider(() => Promise.resolve({}), alphaConfigPath);
+            provider = new FeatureFlagProvider(() => Promise.resolve({}), localConfigPath);
 
             const flag = provider.getTargeted('EnhancedDryRun');
             expect(flag).toBeDefined();
@@ -136,7 +144,7 @@ describe('FeatureFlagProvider', () => {
         it('registers gauges for each feature flag', () => {
             provider = new FeatureFlagProvider(
                 () => Promise.resolve({ features: { Constants: { enabled: true } } }),
-                alphaConfigPath,
+                localConfigPath,
             );
 
             expect(registerGaugeProviderSpy).toHaveBeenCalledWith(
@@ -149,7 +157,7 @@ describe('FeatureFlagProvider', () => {
         it('gauge provider reflects current flag state', () => {
             provider = new FeatureFlagProvider(
                 () => Promise.resolve({ features: { Constants: { enabled: false } } }),
-                alphaConfigPath,
+                localConfigPath,
             );
 
             const gaugeProvider = registerGaugeProviderSpy.mock.calls[0][1] as () => number;
@@ -173,10 +181,7 @@ describe('FeatureFlagProvider', () => {
 
         it('handles client network errors gracefully without throwing', async () => {
             const error = new Error('self signed certificate in certificate chain');
-            provider = new FeatureFlagProvider(
-                () => Promise.reject(error),
-                join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
-            );
+            provider = new FeatureFlagProvider(() => Promise.reject(error), localConfigPath);
 
             await expect((provider as any).refresh()).resolves.toBeUndefined();
             expect(errorSpy).toHaveBeenCalledWith('getFeatureFlags.clientNetworkError', error);
@@ -184,10 +189,7 @@ describe('FeatureFlagProvider', () => {
 
         it('rethrows client network errors from getFeatureFlags after recording telemetry', async () => {
             const error = new Error('self signed certificate in certificate chain');
-            provider = new FeatureFlagProvider(
-                () => Promise.reject(error),
-                join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
-            );
+            provider = new FeatureFlagProvider(() => Promise.reject(error), localConfigPath);
 
             await expect((provider as any).getFeatureFlags('alpha')).rejects.toBe(error);
             expect(errorSpy).toHaveBeenCalledWith('getFeatureFlags.clientNetworkError', error);
@@ -196,7 +198,7 @@ describe('FeatureFlagProvider', () => {
         it('rethrows non-client network errors', async () => {
             provider = new FeatureFlagProvider(
                 () => Promise.reject(new Error('Request failed with status code 500')),
-                join(__dirname, '..', '..', '..', 'assets', 'featureFlag', 'alpha.json'),
+                localConfigPath,
             );
 
             await expect((provider as any).getFeatureFlags('alpha')).rejects.toThrow('status code 500');
@@ -207,12 +209,10 @@ describe('FeatureFlagProvider', () => {
         let provider: FeatureFlagProvider;
         let errorSpy: ReturnType<typeof vi.spyOn>;
         let countSpy: ReturnType<typeof vi.spyOn>;
-        let writeSpy: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
             errorSpy = vi.spyOn(ScopedTelemetry.prototype, 'error');
             countSpy = vi.spyOn(ScopedTelemetry.prototype, 'count');
-            writeSpy = vi.spyOn(LocalFile.prototype, 'write').mockResolvedValue(true);
         });
 
         afterEach(() => {
@@ -221,20 +221,21 @@ describe('FeatureFlagProvider', () => {
         });
 
         it.each(REMOTE_FETCH_FAILURES)('retains config and skips persistence for $name', async ({ error }) => {
-            provider = new FeatureFlagProvider(() => Promise.reject(error), alphaConfigPath);
+            const contentsBeforeRefresh = readFileSync(localConfigPath, 'utf8');
+            provider = new FeatureFlagProvider(() => Promise.reject(error), localConfigPath);
             const configBeforeRefresh = (provider as any).config;
 
             await expect((provider as any).refresh()).resolves.toBeUndefined();
 
             expect(countSpy).toHaveBeenCalledWith('refresh.skipped', 1);
-            expect(writeSpy).not.toHaveBeenCalled();
+            expect(readFileSync(localConfigPath, 'utf8')).toBe(contentsBeforeRefresh);
             expect(emittedMetricNames(countSpy)).not.toContain('refresh.local.update');
             expect((provider as any).config).toBe(configBeforeRefresh);
         });
 
         it('emits the existing client-network metric for network failures handled by refresh', async () => {
             const clientError = codedError('ECONNREFUSED', 'connect ECONNREFUSED 127.0.0.1:443');
-            provider = new FeatureFlagProvider(() => Promise.reject(clientError), alphaConfigPath);
+            provider = new FeatureFlagProvider(() => Promise.reject(clientError), localConfigPath);
 
             await expect((provider as any).refresh()).resolves.toBeUndefined();
 
@@ -243,7 +244,7 @@ describe('FeatureFlagProvider', () => {
 
         it('does not emit the client-network metric for non-network failures handled by refresh', async () => {
             const serviceError = httpError(503);
-            provider = new FeatureFlagProvider(() => Promise.reject(serviceError), alphaConfigPath);
+            provider = new FeatureFlagProvider(() => Promise.reject(serviceError), localConfigPath);
 
             await expect((provider as any).refresh()).resolves.toBeUndefined();
 
@@ -251,32 +252,33 @@ describe('FeatureFlagProvider', () => {
         });
 
         it('keeps a parse failure distinct from a handled remote fetch error', async () => {
-            provider = new FeatureFlagProvider(() => Promise.resolve('not a feature flag config'), alphaConfigPath);
+            const contentsBeforeRefresh = readFileSync(localConfigPath, 'utf8');
+            provider = new FeatureFlagProvider(() => Promise.resolve('not a feature flag config'), localConfigPath);
 
             await expect((provider as any).refresh()).resolves.toBeUndefined();
 
             expect(countSpy).toHaveBeenCalledWith('refresh.parse.error', 1);
             expect(emittedMetricNames(countSpy)).not.toContain('refresh.local.update');
-            expect(writeSpy).not.toHaveBeenCalled();
+            expect(readFileSync(localConfigPath, 'utf8')).toBe(contentsBeforeRefresh);
         });
 
         it('keeps a local write failure distinct from a handled remote fetch error', async () => {
-            const writeError = codedError('EACCES', 'EACCES: permission denied, rename');
-            writeSpy.mockRejectedValue(writeError);
-            provider = new FeatureFlagProvider(() => Promise.resolve(UPDATED_CONFIG), alphaConfigPath);
+            provider = new FeatureFlagProvider(() => Promise.resolve(UPDATED_CONFIG), localConfigPath);
+            rmSync(localConfigPath, { force: true });
+            mkdirSync(localConfigPath);
 
-            await expect((provider as any).refresh()).rejects.toBe(writeError);
+            await expect((provider as any).refresh()).rejects.toThrow();
 
             expect(emittedMetricNames(countSpy)).not.toContain('refresh.local.update');
             expect((provider as any).config).toEqual(UPDATED_CONFIG);
         });
 
         it('updates and persists config when the remote fetch succeeds', async () => {
-            provider = new FeatureFlagProvider(() => Promise.resolve(UPDATED_CONFIG), alphaConfigPath);
+            provider = new FeatureFlagProvider(() => Promise.resolve(UPDATED_CONFIG), localConfigPath);
 
             await expect((provider as any).refresh()).resolves.toBeUndefined();
 
-            expect(writeSpy).toHaveBeenCalledWith(JSON.stringify(UPDATED_CONFIG, undefined, 2));
+            expect(readFileSync(localConfigPath, 'utf8')).toBe(JSON.stringify(UPDATED_CONFIG, undefined, 2));
             expect(countSpy).toHaveBeenCalledWith('refresh.local.update', 1);
             expect((provider as any).config).toEqual(UPDATED_CONFIG);
         });
@@ -284,30 +286,27 @@ describe('FeatureFlagProvider', () => {
 
     describe('valid remote config persistence', () => {
         it('writes a valid config to disk and reloads it as the local config', async () => {
-            const tempDir = mkdtempSync(join(tmpdir(), 'cfn-lsp-feature-flags-'));
-            const configPath = join(tempDir, 'config.json');
             const initialConfig = {
                 version: 1,
                 description: 'Initial local feature flags',
                 features: { Constants: { enabled: false } },
             };
-            writeFileSync(configPath, JSON.stringify(initialConfig, undefined, 2));
+            writeFileSync(localConfigPath, JSON.stringify(initialConfig, undefined, 2));
 
-            const provider = new FeatureFlagProvider(() => Promise.resolve(UPDATED_CONFIG), configPath);
+            const provider = new FeatureFlagProvider(() => Promise.resolve(UPDATED_CONFIG), localConfigPath);
             let reloadedProvider: FeatureFlagProvider | undefined;
 
             try {
                 await expect((provider as any).refresh()).resolves.toBeUndefined();
 
-                expect(readFileSync(configPath, 'utf8')).toBe(JSON.stringify(UPDATED_CONFIG, undefined, 2));
+                expect(readFileSync(localConfigPath, 'utf8')).toBe(JSON.stringify(UPDATED_CONFIG, undefined, 2));
 
-                reloadedProvider = new FeatureFlagProvider(() => Promise.resolve(UPDATED_CONFIG), configPath);
+                reloadedProvider = new FeatureFlagProvider(() => Promise.resolve(UPDATED_CONFIG), localConfigPath);
                 expect((reloadedProvider as any).config).toEqual(UPDATED_CONFIG);
                 expect(reloadedProvider.get('Constants').isEnabled()).toBe(true);
             } finally {
                 provider.close();
                 reloadedProvider?.close();
-                rmSync(tempDir, { recursive: true, force: true });
             }
         });
     });
@@ -348,11 +347,9 @@ describe('FeatureFlagProvider', () => {
 
         let provider: FeatureFlagProvider;
         let countSpy: ReturnType<typeof vi.spyOn>;
-        let writeSpy: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
             countSpy = vi.spyOn(ScopedTelemetry.prototype, 'count');
-            writeSpy = vi.spyOn(LocalFile.prototype, 'write').mockResolvedValue(true);
         });
 
         afterEach(() => {
@@ -363,7 +360,8 @@ describe('FeatureFlagProvider', () => {
         it.each(invalidRemoteConfigs)('never writes $name and continues using the local config', async ({ config }) => {
             expect(FeatureFlagConfigSchema.safeParse(config).success).toBe(false);
 
-            provider = new FeatureFlagProvider(() => Promise.resolve(config), alphaConfigPath);
+            const contentsBeforeRefresh = readFileSync(localConfigPath, 'utf8');
+            provider = new FeatureFlagProvider(() => Promise.resolve(config), localConfigPath);
             const configBeforeRefresh = (provider as any).config;
 
             expect(provider.get('Constants').isEnabled()).toBe(false);
@@ -374,7 +372,7 @@ describe('FeatureFlagProvider', () => {
 
             expect(countSpy).toHaveBeenCalledWith('refresh.parse.error', 1);
             expect(emittedMetricNames(countSpy)).not.toContain('refresh.local.update');
-            expect(writeSpy).not.toHaveBeenCalled();
+            expect(readFileSync(localConfigPath, 'utf8')).toBe(contentsBeforeRefresh);
             expect((provider as any).config).toBe(configBeforeRefresh);
             expect(provider.get('Constants').isEnabled()).toBe(false);
             expect(provider.get('FileDb').isEnabled()).toBe(true);
@@ -382,10 +380,8 @@ describe('FeatureFlagProvider', () => {
         });
 
         it('keeps empty defaults usable when the local config is missing and the remote config is invalid', async () => {
-            provider = new FeatureFlagProvider(
-                () => Promise.resolve('invalid string response'),
-                '/nonexistent/feature-flags/config.json',
-            );
+            const missingConfigPath = join(testDir, 'missing', 'config.json');
+            provider = new FeatureFlagProvider(() => Promise.resolve('invalid string response'), missingConfigPath);
             const configBeforeRefresh = (provider as any).config;
 
             expect(configBeforeRefresh).toEqual({
@@ -401,7 +397,7 @@ describe('FeatureFlagProvider', () => {
 
             expect(countSpy).toHaveBeenCalledWith('refresh.parse.error', 1);
             expect(emittedMetricNames(countSpy)).not.toContain('refresh.local.update');
-            expect(writeSpy).not.toHaveBeenCalled();
+            expect(existsSync(missingConfigPath)).toBe(false);
             expect((provider as any).config).toBe(configBeforeRefresh);
             expect(provider.get('Constants').isEnabled()).toBe(false);
             expect(provider.get('FileDb').isEnabled()).toBe(false);

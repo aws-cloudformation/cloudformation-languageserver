@@ -20,7 +20,7 @@ jobs:
   get-versions:
     runs-on: ubuntu-latest
     env:
-      NODE_VERSION: '22.x'
+      NODE_VERSION: '24.x'
       GO_VERSION: '1.25.4'
     outputs:
       node-version: ${{ env.NODE_VERSION }}

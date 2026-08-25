@@ -3,7 +3,7 @@
 ## Language & Runtime
 
 - **TypeScript** on Node.js
-- Target: Node 22+ (`^22.15.0`), npm `>=10.5.0`
+- Target: Node.js 24.x (`>=24.19.0 <25`), npm 11.x (`>=11.17.0 <12`)
 
 ## Build & Tooling
 
