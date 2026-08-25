@@ -7,7 +7,7 @@ import { DocumentManager } from '../document/DocumentManager';
 import { FeatureFlag } from '../featureFlag/FeatureFlagI';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { Measure } from '../telemetry/TelemetryDecorator';
-import { getFuzzySearchFunction } from '../utils/FuzzySearchUtil';
+import { getFuzzySearchFunction, MAX_FUZZY_QUERY_LENGTH } from '../utils/FuzzySearchUtil';
 import { applySnippetIndentation } from '../utils/IndentationUtils';
 import { CompletionFormatter, ExtendedCompletionItem } from './CompletionFormatter';
 import { CompletionProvider } from './CompletionProvider';
@@ -89,9 +89,14 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
 
     @Measure({ name: 'getCompletions' })
     getCompletions(context: Context, params: CompletionParams): CompletionItem[] | undefined {
+        const { query, isComment } = this.resolveSectionQuery(context, params);
+        if (isComment) {
+            return [];
+        }
+
         // Get both regular and snippet completions
         const stringCompletions = this.getTopLevelSectionCompletions();
-        const snippetCompletions = this.getTopLevelSectionSnippetCompletions(context, params);
+        const snippetCompletions = this.getTopLevelSectionSnippetCompletions(context, params, query);
 
         // Combine both types of completions
         let completions = [...stringCompletions, ...snippetCompletions];
@@ -106,11 +111,33 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
             });
         }
 
-        if (context.text?.length > 0) {
-            return this.sectionKeywordFs(completions, context.text);
+        if (query.length > 0) {
+            return this.sectionKeywordFs(completions, query);
         }
 
         return completions;
+    }
+
+    // In malformed templates, Context.text can be an entire syntax node rather than the token at the cursor.
+    private resolveSectionQuery(context: Context, params: CompletionParams): { query: string; isComment: boolean } {
+        const line = this.documentManager.getLine(params.textDocument.uri, params.position.line);
+        if (line !== undefined) {
+            const beforeCursor = line.slice(0, params.position.character);
+            const cursorToken = beforeCursor.match(/[A-Za-z]+$/)?.[0] ?? '';
+            return {
+                query: this.isValidSectionQuery(cursorToken) ? cursorToken : '',
+                isComment: context.documentType === DocumentType.YAML && beforeCursor.trimStart().startsWith('#'),
+            };
+        }
+
+        return {
+            query: this.isValidSectionQuery(context.text) ? context.text : '',
+            isComment: context.documentType === DocumentType.YAML && context.text.trimStart().startsWith('#'),
+        };
+    }
+
+    private isValidSectionQuery(text: string): boolean {
+        return text.length > 0 && text.length <= MAX_FUZZY_QUERY_LENGTH && /^[A-Za-z]+$/.test(text);
     }
 
     private getTopLevelSectionCompletions(): CompletionItem[] {
@@ -132,7 +159,11 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
         });
     }
 
-    private getTopLevelSectionSnippetCompletions(context: Context, params: CompletionParams): CompletionItem[] {
+    private getTopLevelSectionSnippetCompletions(
+        context: Context,
+        params: CompletionParams,
+        query: string,
+    ): CompletionItem[] {
         const snippets: CompletionItem[] = [];
 
         // Add snippets for top level sections
@@ -141,7 +172,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
                 continue;
             }
 
-            snippets.push(this.createSectionSnippet(section as TopLevelSection, context, params));
+            snippets.push(this.createSectionSnippet(section as TopLevelSection, context, params, query));
         }
 
         return snippets;
@@ -151,6 +182,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
         section: TopLevelSection,
         context: Context,
         params: CompletionParams,
+        query: string,
     ): ExtendedCompletionItem {
         const snippetTemplate = this.sectionSnippets[section];
 
@@ -170,7 +202,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
         });
 
         completionItem.insertTextFormat = InsertTextFormat.Snippet;
-        completionItem.filterText = context.text;
+        completionItem.filterText = query;
 
         // Handle JSON quotes if needed
         if (context.documentType === DocumentType.JSON) {
@@ -180,6 +212,7 @@ ${CompletionFormatter.getIndentPlaceholder(1)}\${1:ConditionName}: $2`,
                 params,
                 this.documentManager,
                 TopLevelSectionCompletionProvider.name,
+                query,
             );
         }
 
