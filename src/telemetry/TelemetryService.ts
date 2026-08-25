@@ -36,7 +36,7 @@ export class TelemetryService implements Closeable {
             this.registerSystemMetrics();
         } else {
             this.logger.info('Telemetry disabled');
-            this.sdk?.shutdown().catch(this.logger.error);
+            this.sdk?.shutdown().catch((e) => this.logger.error(e));
         }
     }
 
@@ -60,9 +60,9 @@ export class TelemetryService implements Closeable {
 
     async close(): Promise<void> {
         try {
-            await this.metricsReader?.forceFlush();
+            await this.metricsReader?.forceFlush().catch((e) => this.logger.error(e));
         } finally {
-            await this.sdk?.shutdown().catch(this.logger.error);
+            await this.sdk?.shutdown().catch((e) => this.logger.error(e));
         }
     }
 
@@ -172,7 +172,7 @@ export class TelemetryService implements Closeable {
 
     private flushMetricsBestEffort(): void {
         try {
-            void this.metricsReader?.forceFlush().catch(this.logger.error);
+            void this.metricsReader?.forceFlush().catch((e) => this.logger.error(e));
         } catch {
             // The process is already on an error path and telemetry cannot report its own flush failure.
         }
