@@ -23,8 +23,8 @@
 
 ## Testing
 
-- Framework: **Vitest** (`vitest.config.ts`)
-- Coverage runs automatically with `npm run test`; thresholds are enforced from `vitest.config.ts`
+- Framework: **Vitest** (`vitest.config.mjs`)
+- Coverage runs automatically with `npm run test`; thresholds are enforced from `vitest.config.mjs`
 - Test layout mirrors `src/` under `tst/unit/`, `tst/integration/`, `tst/e2e/`
 - Test fixtures in `tst/resources/`
 - Shared test utilities in `tst/utils/`

@@ -1,10 +1,10 @@
 import { defineConfig } from 'vitest/config';
-import baseConfig from './vitest.config';
+import baseConfig from './vitest.config.mjs';
 
 export default defineConfig({
     ...baseConfig,
     test: {
         ...baseConfig.test,
-        include: ['tst/unit/**/*.test.ts'],
+        include: ['tst/integration/**/*.test.ts', 'tst/e2e/**/*.test.ts'],
     },
 });

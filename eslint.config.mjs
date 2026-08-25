@@ -17,7 +17,7 @@ export default tseslint.config([
         'node_modules/',
         'eslint.config.mjs',
         'webpack.*.js',
-        'vitest.*.ts',
+        'vitest.*',
         '**/*.json',
         '**/*.yaml',
         '**/*.zip',
