@@ -239,16 +239,22 @@ describe('LMDB fork detection and recovery', () => {
             await factory.close();
         });
 
-        it('should remove old version directories but preserve the markers directory', () => {
+        it('should remove older version directories but preserve current, newer, unrelated, and marker directories', () => {
             const lmdbDir = join(testDir, 'lmdb');
             const markersDir = join(lmdbDir, LMDBOwnershipTracker.DirName);
             fs.mkdirSync(join(lmdbDir, 'v1'), { recursive: true });
+            fs.mkdirSync(join(lmdbDir, 'v7'), { recursive: true });
+            fs.mkdirSync(join(lmdbDir, 'backup'), { recursive: true });
+            fs.writeFileSync(join(lmdbDir, 'v2'), 'not a directory');
 
             (factory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
 
             expect(fs.existsSync(join(lmdbDir, 'v1'))).toBe(false);
-            expect(fs.existsSync(markersDir)).toBe(true);
             expect(fs.existsSync(join(lmdbDir, 'v6'))).toBe(true);
+            expect(fs.existsSync(join(lmdbDir, 'v7'))).toBe(true);
+            expect(fs.existsSync(join(lmdbDir, 'backup'))).toBe(true);
+            expect(fs.existsSync(join(lmdbDir, 'v2'))).toBe(true);
+            expect(fs.existsSync(markersDir)).toBe(true);
         });
     });
 });

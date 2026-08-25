@@ -548,22 +548,27 @@ describe('FileStore', () => {
             expect(factory.timeout.hasRef()).toBe(false);
         });
 
-        it('should cleanup old version directories', () => {
+        it('should remove older version directories but preserve current, newer, and unrelated directories', () => {
             const fileDbRoot = join(testDir, 'filedb');
 
-            // Create old version directories
             mkdirSync(join(fileDbRoot, 'v1'), { recursive: true });
             writeFileSync(join(fileDbRoot, 'v1', 'data.enc'), 'old');
+            mkdirSync(join(fileDbRoot, 'v4'), { recursive: true });
+            writeFileSync(join(fileDbRoot, 'v4', 'data.enc'), 'newer');
+            mkdirSync(join(fileDbRoot, 'backup'), { recursive: true });
+            writeFileSync(join(fileDbRoot, 'v2'), 'not a directory');
 
-            // Current version should exist from factory constructor
+            // Current version exists from the factory constructor
             expect(existsSync(join(fileDbRoot, 'v3'))).toBe(true);
-            expect(existsSync(join(fileDbRoot, 'v1'))).toBe(true);
 
             // Trigger cleanup directly (normally runs after 2min timeout)
-            (fileFactory as any).cleanupOldVersions();
+            (fileFactory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
 
             expect(existsSync(join(fileDbRoot, 'v1'))).toBe(false);
             expect(existsSync(join(fileDbRoot, 'v3'))).toBe(true);
+            expect(existsSync(join(fileDbRoot, 'v4'))).toBe(true);
+            expect(existsSync(join(fileDbRoot, 'backup'))).toBe(true);
+            expect(existsSync(join(fileDbRoot, 'v2'))).toBe(true);
         });
 
         it('should handle cleanup when directory does not exist', async () => {
