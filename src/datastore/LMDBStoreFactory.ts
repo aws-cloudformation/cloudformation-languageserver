@@ -344,7 +344,11 @@ export class LMDBStoreFactory implements DataStoreFactory {
         const entries = readdirSync(this.lmdbDir, { withFileTypes: true });
         for (const entry of entries) {
             try {
-                if (entry.isDirectory() && isOlderVersionDirectory(entry.name, VersionNumber)) {
+                if (
+                    entry.isDirectory() &&
+                    isOlderVersionDirectory(entry.name, VersionNumber) &&
+                    entry.name !== LMDBOwnershipTracker.DirName
+                ) {
                     this.telemetry.count('oldVersion.cleanup.count', 1);
                     rmSync(join(this.lmdbDir, entry.name), { recursive: true, force: true });
                 }
