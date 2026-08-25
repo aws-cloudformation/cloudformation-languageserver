@@ -21,7 +21,7 @@ export class FeatureFlagProvider implements Closeable {
     @Telemetry()
     private readonly telemetry!: ScopedTelemetry;
 
-    private config: unknown;
+    private config: FeatureFlagSchemaType;
     private readonly supplier: FeatureFlagSupplier;
 
     private readonly timeout: NodeJS.Timeout;
@@ -86,8 +86,8 @@ export class FeatureFlagProvider implements Closeable {
             return;
         }
 
-        await this.file.write(JSON.stringify(parsed.data, undefined, 2));
         this.config = parsed.data;
+        await this.file.write(JSON.stringify(parsed.data, undefined, 2));
         this.telemetry.count('refresh.local.update', 1);
         log.info('Updated and saved feature flags');
         this.log();
