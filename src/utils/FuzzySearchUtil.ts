@@ -2,7 +2,7 @@ import Fuse, { IFuseOptions } from 'fuse.js';
 import { CompletionItem } from 'vscode-languageserver';
 import { TelemetryService } from '../telemetry/TelemetryService';
 
-// Prevent parser-derived document text from reaching Fuse as a completion query.
+// Fuse processes long patterns in 32-character chunks; this limits parser-derived input to eight chunks.
 export const MAX_FUZZY_QUERY_LENGTH = 256;
 
 function measureSearch<T>(fn: () => T): T {
@@ -26,13 +26,16 @@ export function fuzzySearch(
     query: string,
     fuseOptions?: Partial<IFuseOptions<CompletionItem>>,
 ): CompletionItem[] {
-    TelemetryService.instance.get('FuzzySearch').count('search.length', items.length);
+    const telemetry = TelemetryService.instance.get('FuzzySearch');
+    telemetry.histogram('search.query.length', query.length);
+    telemetry.histogram('search.items.length', items.length);
+
     if (!query || query.trim().length === 0) {
         return items;
     }
 
     if (query.length > MAX_FUZZY_QUERY_LENGTH) {
-        TelemetryService.instance.get('FuzzySearch').count('search.skipped', 1);
+        telemetry.count('search.skipped', 1);
         return items;
     }
 

@@ -59,8 +59,11 @@ export class TelemetryService implements Closeable {
     }
 
     async close(): Promise<void> {
-        await this.metricsReader?.forceFlush().catch(() => {});
-        await this.sdk?.shutdown().catch(this.logger.error);
+        try {
+            await this.metricsReader?.forceFlush();
+        } finally {
+            await this.sdk?.shutdown().catch(this.logger.error);
+        }
     }
 
     private registerSystemMetrics(): void {
@@ -169,7 +172,7 @@ export class TelemetryService implements Closeable {
 
     private flushMetricsBestEffort(): void {
         try {
-            void this.metricsReader?.forceFlush().catch(() => {});
+            void this.metricsReader?.forceFlush().catch(this.logger.error);
         } catch {
             // The process is already on an error path and telemetry cannot report its own flush failure.
         }

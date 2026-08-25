@@ -85,9 +85,9 @@ export class FeatureFlagProvider implements Closeable {
             log.warn(parsed.error, 'Invalid feature flag config from remote, keeping current config');
             return;
         }
-        this.config = newConfig;
 
-        await this.file.write(JSON.stringify(newConfig, undefined, 2));
+        await this.file.write(JSON.stringify(parsed.data, undefined, 2));
+        this.config = parsed.data;
         this.telemetry.count('refresh.local.update', 1);
         log.info('Updated and saved feature flags');
         this.log();
