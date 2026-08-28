@@ -4,6 +4,7 @@ import { MetricReader } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
 import { AwsMetadata, ClientInfo } from '../server/InitParams';
 import { Closeable } from '../utils/Closeable';
+import { isExpectedOutputError } from '../utils/errors/ErrorLogs';
 import { LoggerFactory } from './LoggerFactory';
 import { otelSdk } from './OTELInstrumentation';
 import { ScopedTelemetry } from './ScopedTelemetry';
@@ -35,7 +36,7 @@ export class TelemetryService implements Closeable {
             this.registerSystemMetrics();
         } else {
             this.logger.info('Telemetry disabled');
-            this.sdk?.shutdown().catch(this.logger.error);
+            this.sdk?.shutdown().catch((e) => this.logger.error(e));
         }
     }
 
@@ -58,8 +59,11 @@ export class TelemetryService implements Closeable {
     }
 
     async close(): Promise<void> {
-        await this.metricsReader?.forceFlush();
-        await this.sdk?.shutdown().catch(this.logger.error);
+        try {
+            await this.metricsReader?.forceFlush().catch((e) => this.logger.error(e));
+        } finally {
+            await this.sdk?.shutdown().catch((e) => this.logger.error(e));
+        }
     }
 
     private registerSystemMetrics(): void {
@@ -154,16 +158,24 @@ export class TelemetryService implements Closeable {
 
     private registerErrorHandlers(telemetry: ScopedTelemetry): void {
         process.on('unhandledRejection', (reason, _promise) => {
-            if (LoggerFactory.isPinoStreamError(reason)) return;
+            if (isExpectedOutputError(reason)) return;
             telemetry.error('process.promise.unhandled', reason, undefined, { captureErrorAttributes: true });
-            void this.metricsReader?.forceFlush();
+            this.flushMetricsBestEffort();
         });
 
         process.on('uncaughtException', (error, origin) => {
-            if (LoggerFactory.isPinoStreamError(error)) return;
+            if (isExpectedOutputError(error)) return;
             telemetry.error('process.exception.uncaught', error, origin, { captureErrorAttributes: true });
-            void this.metricsReader?.forceFlush();
+            this.flushMetricsBestEffort();
         });
+    }
+
+    private flushMetricsBestEffort(): void {
+        try {
+            void this.metricsReader?.forceFlush().catch((e) => this.logger.error(e));
+        } catch {
+            // The process is already on an error path and telemetry cannot report its own flush failure.
+        }
     }
 
     public static get instance(): TelemetryService {

@@ -27,6 +27,7 @@ describe('TopLevelSectionCompletionProvider', () => {
 
     beforeEach(() => {
         mockComponents.syntaxTreeManager.getSyntaxTree.reset();
+        mockDocumentManager.getLine.reset();
         mockSyntaxTree.topLevelSections.reset();
         mockComponents.syntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
 
@@ -528,6 +529,116 @@ describe('TopLevelSectionCompletionProvider', () => {
 
             const constantsItem = regularSections.find((item) => item.label === 'Constants');
             expect(constantsItem).toBeUndefined();
+        });
+    });
+
+    describe('Cursor-local query resolution', () => {
+        const wholeDocumentNodeText = Array.from({ length: 1200 }, () => '  SomeKey: SomeVeryLongValueToken').join(
+            '\n',
+        );
+
+        function paramsForLine(line: string): CompletionParams {
+            return {
+                textDocument: { uri: 'file:///test.yaml' },
+                position: { line: 0, character: line.length },
+            };
+        }
+
+        test('ranks with the cursor token when parser context contains a large multiline node', () => {
+            const cursorLine = 'Res';
+            mockSyntaxTree.topLevelSections.returns([]);
+            mockDocumentManager.getLine.returns(cursorLine);
+
+            const mockContext = createTopLevelContext('Unknown', { text: wholeDocumentNodeText });
+
+            const result = provider.getCompletions(mockContext, paramsForLine(cursorLine));
+
+            const resources = result?.find(
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Class,
+            );
+            const resourcesSnippet = result?.find(
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
+            );
+            expect(resources?.preselect).toBe(true);
+            expect(resourcesSnippet?.filterText).toBe(cursorLine);
+        });
+
+        test('ranks with the cursor token when parser context is empty', () => {
+            const cursorLine = 'Par';
+            mockSyntaxTree.topLevelSections.returns([]);
+            mockDocumentManager.getLine.returns(cursorLine);
+
+            const mockContext = createTopLevelContext('Unknown', { text: '' });
+
+            const result = provider.getCompletions(mockContext, paramsForLine(cursorLine));
+
+            const parameters = result?.find(
+                (item) => item.label === 'Parameters' && item.kind === CompletionItemKind.Class,
+            );
+            expect(parameters?.preselect).toBe(true);
+        });
+
+        test('prefers the cursor token over stale short parser context', () => {
+            const cursorLine = 'Res';
+            mockSyntaxTree.topLevelSections.returns([]);
+            mockDocumentManager.getLine.returns(cursorLine);
+
+            const mockContext = createTopLevelContext('Unknown', { text: 'Par' });
+
+            const result = provider.getCompletions(mockContext, paramsForLine(cursorLine));
+
+            const resources = result?.find(
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Class,
+            );
+            expect(resources?.preselect).toBe(true);
+        });
+
+        test('returns no completions when the cursor token is inside a YAML comment', () => {
+            const cursorLine = '    # This mentions Conditions';
+            mockSyntaxTree.topLevelSections.returns([]);
+            mockDocumentManager.getLine.returns(cursorLine);
+
+            const mockContext = createTopLevelContext('Unknown', { text: '', type: DocumentType.YAML });
+
+            expect(provider.getCompletions(mockContext, paramsForLine(cursorLine))).toEqual([]);
+        });
+
+        test('keeps JSON snippet filter text bounded after quote handling', () => {
+            const cursorLine = '    "Res';
+            mockSyntaxTree.topLevelSections.returns([]);
+            mockDocumentManager.getLine.returns(cursorLine);
+
+            const mockContext = createTopLevelContext('Unknown', {
+                text: wholeDocumentNodeText,
+                type: DocumentType.JSON,
+            });
+
+            const result = provider.getCompletions(mockContext, paramsForLine(cursorLine));
+
+            const resourcesSnippet = result?.find(
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
+            );
+            expect(resourcesSnippet?.filterText).toBe('"Res"');
+            expect(result?.every((item) => !item.filterText?.includes(wholeDocumentNodeText))).toBe(true);
+        });
+
+        test('returns useful unranked completions when neither cursor nor context provides a valid query', () => {
+            mockSyntaxTree.topLevelSections.returns([]);
+            mockDocumentManager.getLine.returns(undefined);
+
+            const mockContext = createTopLevelContext('Unknown', { text: wholeDocumentNodeText });
+
+            const result = provider.getCompletions(mockContext, mockParams);
+
+            const resources = result?.find(
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.Class,
+            );
+            const resourcesSnippet = result?.find(
+                (item) => item.label === 'Resources' && item.kind === CompletionItemKind.File,
+            );
+            expect(resources).toBeDefined();
+            expect(resources?.preselect).toBeUndefined();
+            expect(resourcesSnippet?.filterText).toBe('');
         });
     });
 });

@@ -2,9 +2,14 @@ import Fuse, { IFuseOptions } from 'fuse.js';
 import { CompletionItem } from 'vscode-languageserver';
 import { TelemetryService } from '../telemetry/TelemetryService';
 
-function measureSearch<T>(queryLength: number, fn: () => T): T {
+// In a two-week sample of 1.95M searches, 99.19% of queries were at or below 10,000 characters.
+// The 4,097–10,000 bucket averaged 48 ms, versus 180 ms for 10,001–100,000 and 3.4 s above
+// 100,000. Preserve ranking for the observed 99% while bypassing the high-latency tail.
+export const MAX_FUZZY_QUERY_LENGTH = 10_000;
+
+function measureSearch<T>(fn: () => T): T {
     const telemetry = TelemetryService.instance.get('FuzzySearch');
-    return telemetry.measure('search', fn, { attributes: { queryLength } });
+    return telemetry.measure('search', fn);
 }
 
 export type FuzzySearchFunction = (items: CompletionItem[], query: string) => CompletionItem[];
@@ -23,12 +28,21 @@ export function fuzzySearch(
     query: string,
     fuseOptions?: Partial<IFuseOptions<CompletionItem>>,
 ): CompletionItem[] {
+    const telemetry = TelemetryService.instance.get('FuzzySearch');
+    telemetry.histogram('search.query.length', query.length);
+    telemetry.histogram('search.items.length', items.length);
+
     if (!query || query.trim().length === 0) {
         return items;
     }
 
+    if (query.length > MAX_FUZZY_QUERY_LENGTH) {
+        telemetry.count('search.skipped', 1);
+        return items;
+    }
+
     const fuse = new Fuse(items, fuseOptions);
-    const results = measureSearch(query.length, () => fuse.search(query));
+    const results = measureSearch(() => fuse.search(query));
 
     return results.map((result, index) => {
         const item = result.item;

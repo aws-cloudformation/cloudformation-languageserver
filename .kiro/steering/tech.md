@@ -3,7 +3,7 @@
 ## Language & Runtime
 
 - **TypeScript** on Node.js
-- Target: Node 22+ (`^22.15.0`), npm `>=10.5.0`
+- Target: Node.js 24.x (`>=24.19.0 <25`), npm 11.x (`>=11.17.0 <12`)
 
 ## Build & Tooling
 
@@ -23,8 +23,8 @@
 
 ## Testing
 
-- Framework: **Vitest** (`vitest.config.ts`)
-- Coverage runs automatically with `npm run test`; thresholds are enforced from `vitest.config.ts`
+- Framework: **Vitest** (`vitest.config.mjs`)
+- Coverage runs automatically with `npm run test`; thresholds are enforced from `vitest.config.mjs`
 - Test layout mirrors `src/` under `tst/unit/`, `tst/integration/`, `tst/e2e/`
 - Test fixtures in `tst/resources/`
 - Shared test utilities in `tst/utils/`

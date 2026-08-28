@@ -6,7 +6,7 @@ This guide covers installing and configuring the CloudFormation Language Server 
 
 ## Prerequisites
 
-1. [Node.js](https://nodejs.org/en)
+1. [Node.js](https://nodejs.org/en) 24.x (version 24.19.0 or newer) for standard builds. Use Node.js 18.x only with the legacy Linux glibc 2.28 builds listed below.
 
 ## Download
 
@@ -16,20 +16,20 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 | Platform | Architecture | Node Version | Asset |
 |----------|--------------|--------------|-------|
-| macOS | ARM64 (Apple Silicon) | 22 | `cloudformation-languageserver-*-darwin-arm64-node22.zip` |
-| macOS | x64 (Intel) | 22 | `cloudformation-languageserver-*-darwin-x64-node22.zip` |
-| Linux | ARM64 | 22 | `cloudformation-languageserver-*-linux-arm64-node22.zip` |
-| Linux | x64 | 22 | `cloudformation-languageserver-*-linux-x64-node22.zip` |
+| macOS | ARM64 (Apple Silicon) | 24 | `cloudformation-languageserver-*-darwin-arm64-node24.zip` |
+| macOS | x64 (Intel) | 24 | `cloudformation-languageserver-*-darwin-x64-node24.zip` |
+| Linux | ARM64 | 24 | `cloudformation-languageserver-*-linux-arm64-node24.zip` |
+| Linux | x64 | 24 | `cloudformation-languageserver-*-linux-x64-node24.zip` |
 | Linux (glibc 2.28) | ARM64 | 18 | `cloudformation-languageserver-*-linuxglib2.28-arm64-node18.zip` |
 | Linux (glibc 2.28) | x64 | 18 | `cloudformation-languageserver-*-linuxglib2.28-x64-node18.zip` |
-| Windows | ARM64 | 22 | `cloudformation-languageserver-*-win32-arm64-node22.zip` |
-| Windows | x64 | 22 | `cloudformation-languageserver-*-win32-x64-node22.zip` |
+| Windows | ARM64 | 24 | `cloudformation-languageserver-*-win32-arm64-node24.zip` |
+| Windows | x64 | 24 | `cloudformation-languageserver-*-win32-x64-node24.zip` |
 
 ### Example: macOS ARM64
 
 ```bash
 curl -L -o cfn-lsp.zip \
-  https://github.com/aws-cloudformation/cloudformation-languageserver/releases/latest/download/cloudformation-languageserver-darwin-arm64-node22.zip
+  https://github.com/aws-cloudformation/cloudformation-languageserver/releases/latest/download/cloudformation-languageserver-darwin-arm64-node24.zip
 
 unzip cfn-lsp.zip -d /path/to/install-location
 ```

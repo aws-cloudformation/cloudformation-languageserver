@@ -157,7 +157,7 @@ npm run lint                 # Linting (zero warnings — `--max-warnings 0`)
 npm run test                 # Unit + integration + e2e + coverage
 ```
 
-Coverage runs automatically with `npm run test` and thresholds are enforced from `vitest.config.ts`.
+Coverage runs automatically with `npm run test` and thresholds are enforced from `vitest.config.mjs`.
 If you only need to run a subset while iterating: `npm run test:unit` or `npm run test:integration`.
 Use `npm run lint:fix` for auto-fixable lint violations.
 

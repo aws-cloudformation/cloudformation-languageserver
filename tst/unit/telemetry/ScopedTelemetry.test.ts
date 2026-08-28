@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ScopedTelemetry } from '../../../src/telemetry/ScopedTelemetry';
-import { markSuppressFault } from '../../../src/utils/errors/FaultSuppression';
+import { markIfClientError } from '../../../src/utils/errors/FaultSuppression';
 
 describe('ScopedTelemetry', () => {
     let mockMeter: any;
@@ -550,8 +550,8 @@ describe('ScopedTelemetry', () => {
                 return counter;
             });
 
-            const error = new Error('client error');
-            markSuppressFault(error);
+            const error = Object.assign(new Error('client error'), { code: 'ECONNRESET' });
+            markIfClientError(error);
             const fn = vi.fn(() => {
                 throw error;
             });
@@ -570,8 +570,8 @@ describe('ScopedTelemetry', () => {
                 return counter;
             });
 
-            const error = new Error('client error');
-            markSuppressFault(error);
+            const error = Object.assign(new Error('client error'), { code: 'ECONNRESET' });
+            markIfClientError(error);
             const fn = vi.fn(() => {
                 throw error;
             });

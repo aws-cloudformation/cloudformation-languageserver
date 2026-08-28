@@ -64,7 +64,7 @@ export class GetSchemaTaskManager {
         this.privateTask
             .run(this.schemas.privateSchemas)
             .then(() => this.schemas.invalidate())
-            .catch(this.log.error);
+            .catch((e) => this.log.error(e));
     }
 
     runSamTask(firstCreatedMs?: number) {
@@ -72,7 +72,7 @@ export class GetSchemaTaskManager {
             new GetSamSchemaTask(this.getSamSchemas, firstCreatedMs)
                 .run(this.schemas.samSchemas)
                 .then(() => this.schemas.invalidate())
-                .catch(this.log.error);
+                .catch((e) => this.log.error(e));
         }
         this.didSamTaskRun = true;
     }

@@ -46,7 +46,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        node-version: [18, 20, 22]
+        node-version: [18, 20, 22, 24]
     runs-on: ${{ matrix.os }}
     timeout-minutes: ${{ fromJSON(needs.check-release.outputs.timeout) }}
     steps:
@@ -68,11 +68,11 @@ jobs:
               if [[ "${{ matrix.node-version }}" == "18" ]]; then
                 PATTERN="*linuxglib2.28*x64*node18*.zip"
               else
-                PATTERN="*-linux-x64*node22*.zip"
+                PATTERN="*-linux-x64*node24*.zip"
               fi
               ;;
-            windows-latest) PATTERN="*win32*x64*node22*.zip" ;;
-            macos-latest) PATTERN="*darwin*x64*node22*.zip" ;;
+            windows-latest) PATTERN="*win32*x64*node24*.zip" ;;
+            macos-latest) PATTERN="*darwin*x64*node24*.zip" ;;
           esac
           gh release download "$TAG" --pattern "$PATTERN"
 

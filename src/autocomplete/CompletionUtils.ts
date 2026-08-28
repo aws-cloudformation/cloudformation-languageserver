@@ -139,6 +139,7 @@ export function createCompletionItem(
  * @param params The completion parameters
  * @param documentManager The document manager to get line content
  * @param loggerName The name of the logger for warning messages
+ * @param filterText The validated text clients should use to filter this completion
  */
 export function handleSnippetJsonQuotes(
     completionItem: ExtendedCompletionItem,
@@ -146,10 +147,11 @@ export function handleSnippetJsonQuotes(
     params: CompletionParams,
     documentManager: DocumentManager,
     loggerName: string,
+    filterText: string = context.text,
 ): void {
     const log = LoggerFactory.getLogger(loggerName);
     const uri = params.textDocument.uri;
-    const lineContent = documentManager.getLine(uri, context.startPosition.row);
+    const lineContent = documentManager.getLine(uri, params.position.line);
 
     const hasQuotes = lineContent?.includes('"');
 
@@ -161,7 +163,7 @@ export function handleSnippetJsonQuotes(
                 range.start.character += 1;
             }
             completionItem.textEdit = TextEdit.replace(range, `${completionItem.insertText}`);
-            completionItem.filterText = `"${context.text}"`;
+            completionItem.filterText = `"${filterText}"`;
             delete completionItem.insertText;
         } else {
             log.warn(
