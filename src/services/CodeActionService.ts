@@ -15,7 +15,7 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeSearch } from '../context/syntaxtree/utils/NodeSearch';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
-import { TRACK_CODE_ACTION_ACCEPTED } from '../handlers/ExecutionHandler';
+import { getCommands } from '../handlers/ExecutionHandler';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -117,7 +117,7 @@ export class CodeActionService {
                 textEdits: [],
                 command: {
                     title: CodeActionService.REMOVE_ERROR_TITLE,
-                    command: '/command/template/clear-diagnostic',
+                    command: getCommands().clearDiagnostic,
                     arguments: [uri, diagnostic.data],
                 },
             },
@@ -328,7 +328,7 @@ export class CodeActionService {
             } else {
                 codeAction.command = {
                     title: 'Track code action',
-                    command: TRACK_CODE_ACTION_ACCEPTED,
+                    command: getCommands().trackCodeAction,
                     arguments: [fix.actionType],
                 };
             }
@@ -592,7 +592,7 @@ export class CodeActionService {
                         params.textDocument.uri,
                         extractionResult.parameterName,
                         context.documentType,
-                        TRACK_CODE_ACTION_ACCEPTED,
+                        getCommands().trackCodeAction,
                         'extractToParameter',
                     ],
                 },
@@ -644,7 +644,7 @@ export class CodeActionService {
                         params.textDocument.uri,
                         extractionResult.parameterName,
                         context.documentType,
-                        TRACK_CODE_ACTION_ACCEPTED,
+                        getCommands().trackCodeAction,
                         'extractAllToParameter',
                     ],
                 },
