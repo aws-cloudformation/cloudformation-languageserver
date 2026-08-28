@@ -10,6 +10,7 @@ import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatast
 import { encryptionKey } from './file/Encryption';
 import { KeyedFileStore } from './file/KeyedFileStore';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
+import { isOlderVersionDirectory } from './VersionDirectory';
 
 export class FileStoreFactory implements DataStoreFactory {
     private readonly log = LoggerFactory.getLogger('FileStore.Global');
@@ -119,7 +120,7 @@ export class FileStoreFactory implements DataStoreFactory {
         const entries = readdirSync(this.fileDbRoot, { withFileTypes: true });
         for (const entry of entries) {
             try {
-                if (entry.name !== Version) {
+                if (entry.isDirectory() && isOlderVersionDirectory(entry.name, VersionNumber)) {
                     this.telemetry.count('oldVersion.cleanup.count', 1);
                     rmSync(join(this.fileDbRoot, entry.name), { recursive: true, force: true });
                 }

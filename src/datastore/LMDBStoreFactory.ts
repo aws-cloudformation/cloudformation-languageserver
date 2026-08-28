@@ -15,6 +15,7 @@ import { LMDBOwnershipTracker } from './lmdb/OwnershipTracker';
 import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
+import { isOlderVersionDirectory } from './VersionDirectory';
 
 const MetricsIntervalMs = 60 * 1000;
 const CleanupDelayMs = 2 * 60 * 1000;
@@ -343,12 +344,14 @@ export class LMDBStoreFactory implements DataStoreFactory {
         const entries = readdirSync(this.lmdbDir, { withFileTypes: true });
         for (const entry of entries) {
             try {
-                if (entry.name === Version || entry.name === LMDBOwnershipTracker.DirName) {
-                    continue;
+                if (
+                    entry.isDirectory() &&
+                    isOlderVersionDirectory(entry.name, VersionNumber) &&
+                    entry.name !== LMDBOwnershipTracker.DirName
+                ) {
+                    this.telemetry.count('oldVersion.cleanup.count', 1);
+                    rmSync(join(this.lmdbDir, entry.name), { recursive: true, force: true });
                 }
-
-                this.telemetry.count('oldVersion.cleanup.count', 1);
-                rmSync(join(this.lmdbDir, entry.name), { recursive: true, force: true });
             } catch (error) {
                 this.log.error(error, 'Failed to cleanup old LMDB versions');
                 this.telemetry.count('oldVersion.cleanup.error', 1);
