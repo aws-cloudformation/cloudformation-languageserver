@@ -4,7 +4,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { isClientNetworkError } from '../utils/errors/GenericErrorMapper';
 import { downloadJson } from '../utils/RemoteDownload';
-import { GetSchemaTask, persistSchemas } from './GetSchemaTask';
+import { GetSchemaTask } from './GetSchemaTask';
 import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';
 import { CloudFormationResourceSchema, SamSchema, SamSchemaTransformer } from './SamSchemaTransformer';
 
@@ -40,12 +40,7 @@ export class GetSamSchemaTask extends GetSchemaTask {
                 lastModifiedMs: Date.now(),
             };
 
-            const persistenceResult = await persistSchemas(dataStore, SamStoreKey, samSchemasData);
-            if (persistenceResult === 'concurrentWrite') {
-                this.telemetry.count('getSchemas.persistence.lockContention', 1);
-                this.logger.info('Using SAM schemas persisted by another language server process');
-                return;
-            }
+            await dataStore.put(SamStoreKey, samSchemasData);
 
             this.logger.info(`${resourceSchemas.size} SAM schemas downloaded and saved`);
         } catch (error) {

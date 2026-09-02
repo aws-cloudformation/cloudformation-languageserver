@@ -66,46 +66,6 @@ describe('GetSamSchemaTask', () => {
         await expect(task.run(mockDataStore)).rejects.toThrow('SAM schema retrieval failed');
     });
 
-    it('should use a concurrent writer value after ELOCKED', async () => {
-        mockDataStore = {
-            get: vi.fn().mockReturnValue({ schemas: [] }),
-            put: vi.fn().mockRejectedValue(Object.assign(new Error('already locked'), { code: 'ELOCKED' })),
-            remove: vi.fn(),
-            clear: vi.fn(),
-            keys: vi.fn(),
-        };
-        const task = new GetSamSchemaTask(vi.fn().mockResolvedValue(mockSamSchemas));
-
-        await expect(task.run(mockDataStore)).resolves.not.toThrow();
-        expect(mockDataStore.get).toHaveBeenCalledWith(SamStoreKey);
-    });
-
-    it('should rethrow ELOCKED when no concurrent value is available', async () => {
-        mockDataStore = {
-            get: vi.fn().mockReturnValue(undefined),
-            put: vi.fn().mockRejectedValue(Object.assign(new Error('already locked'), { code: 'ELOCKED' })),
-            remove: vi.fn(),
-            clear: vi.fn(),
-            keys: vi.fn(),
-        };
-        const task = new GetSamSchemaTask(vi.fn().mockResolvedValue(mockSamSchemas));
-
-        await expect(task.run(mockDataStore)).rejects.toMatchObject({ code: 'ELOCKED' });
-    });
-
-    it('should rethrow unexpected persistence errors', async () => {
-        mockDataStore = {
-            get: vi.fn(),
-            put: vi.fn().mockRejectedValue(Object.assign(new Error('permission denied'), { code: 'EACCES' })),
-            remove: vi.fn(),
-            clear: vi.fn(),
-            keys: vi.fn(),
-        };
-        const task = new GetSamSchemaTask(vi.fn().mockResolvedValue(mockSamSchemas));
-
-        await expect(task.run(mockDataStore)).rejects.toMatchObject({ code: 'EACCES' });
-    });
-
     it('should convert schemas to correct format', async () => {
         const mockGetSchemas = vi.fn().mockResolvedValue(mockSamSchemas);
         const task = new GetSamSchemaTask(mockGetSchemas);

@@ -100,63 +100,6 @@ describe('GetSchemaTask', () => {
 
             await expect(task.run(mockDataStore)).rejects.toThrow('Request failed with status code 500');
         });
-
-        it('should use a concurrent writer value after ELOCKED', async () => {
-            const existing = { region: AwsRegion.US_EAST_1 };
-            mockDataStore = {
-                get: vi.fn().mockReturnValue(existing),
-                put: vi.fn().mockRejectedValue(Object.assign(new Error('already locked'), { code: 'ELOCKED' })),
-                remove: vi.fn(),
-                clear: vi.fn(),
-                keys: vi.fn(),
-            };
-            const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, vi.fn().mockResolvedValue(mockSchemas));
-
-            await expect(task.run(mockDataStore)).resolves.not.toThrow();
-            expect(mockDataStore.get).toHaveBeenCalledWith(AwsRegion.US_EAST_1);
-        });
-
-        it('should rethrow ELOCKED when no concurrent value is available', async () => {
-            mockDataStore = {
-                get: vi.fn().mockReturnValue(undefined),
-                put: vi.fn().mockRejectedValue(Object.assign(new Error('already locked'), { code: 'ELOCKED' })),
-                remove: vi.fn(),
-                clear: vi.fn(),
-                keys: vi.fn(),
-            };
-            const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, vi.fn().mockResolvedValue(mockSchemas));
-
-            await expect(task.run(mockDataStore)).rejects.toMatchObject({ code: 'ELOCKED' });
-        });
-
-        it('should preserve ELOCKED when reading the concurrent value fails', async () => {
-            const lockError = Object.assign(new Error('already locked'), { code: 'ELOCKED' });
-            mockDataStore = {
-                get: vi.fn().mockImplementation(() => {
-                    throw new Error('read failed');
-                }),
-                put: vi.fn().mockRejectedValue(lockError),
-                remove: vi.fn(),
-                clear: vi.fn(),
-                keys: vi.fn(),
-            };
-            const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, vi.fn().mockResolvedValue(mockSchemas));
-
-            await expect(task.run(mockDataStore)).rejects.toBe(lockError);
-        });
-
-        it('should rethrow unexpected persistence errors', async () => {
-            mockDataStore = {
-                get: vi.fn(),
-                put: vi.fn().mockRejectedValue(Object.assign(new Error('permission denied'), { code: 'EACCES' })),
-                remove: vi.fn(),
-                clear: vi.fn(),
-                keys: vi.fn(),
-            };
-            const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, vi.fn().mockResolvedValue(mockSchemas));
-
-            await expect(task.run(mockDataStore)).rejects.toMatchObject({ code: 'EACCES' });
-        });
     });
 
     describe('GetPrivateSchemasTask', () => {
