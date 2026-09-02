@@ -24,3 +24,8 @@ export function stableMachineSpecificKey(salt: string, info: string, keyLen: num
         return Buffer.from(derivedKey);
     }
 }
+
+export function stableApplicationSpecificKey(salt: string, info: string, keyLen: number): Buffer {
+    const derivedKey = hkdfSync('sha512', ExtensionName, salt, info, keyLen);
+    return Buffer.isBuffer(derivedKey) ? derivedKey : Buffer.from(derivedKey);
+}
