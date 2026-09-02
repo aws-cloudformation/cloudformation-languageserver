@@ -153,5 +153,5 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 }
 
-const VersionNumber = 3;
+const VersionNumber = 4;
 const Version = `v${VersionNumber}`;

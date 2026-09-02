@@ -4,7 +4,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { isClientNetworkError } from '../utils/errors/GenericErrorMapper';
 import { downloadJson } from '../utils/RemoteDownload';
-import { GetSchemaTask } from './GetSchemaTask';
+import { GetSchemaTask, persistSchemas } from './GetSchemaTask';
 import { SamSchemas, SamSchemasType, SamStoreKey } from './SamSchemas';
 import { CloudFormationResourceSchema, SamSchema, SamSchemaTransformer } from './SamSchemaTransformer';
 
@@ -40,7 +40,17 @@ export class GetSamSchemaTask extends GetSchemaTask {
                 lastModifiedMs: Date.now(),
             };
 
-            await dataStore.put(SamStoreKey, samSchemasData);
+            const persistenceResult = await persistSchemas(dataStore, SamStoreKey, samSchemasData);
+            if (persistenceResult === 'outOfDisk') {
+                this.telemetry.count('getSchemas.persistence.enospc', 1);
+                this.logger.warn('Skipping SAM schema persistence because the filesystem is full');
+                return;
+            }
+            if (persistenceResult === 'concurrentWrite') {
+                this.telemetry.count('getSchemas.persistence.lockContention', 1);
+                this.logger.info('Using SAM schemas persisted by another language server process');
+                return;
+            }
 
             this.logger.info(`${resourceSchemas.size} SAM schemas downloaded and saved`);
         } catch (error) {

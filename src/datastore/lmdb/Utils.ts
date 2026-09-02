@@ -1,7 +1,14 @@
-import { stableMachineSpecificKey } from '../../utils/MachineKey';
+import { stableApplicationSpecificKey, stableMachineSpecificKey } from '../../utils/MachineKey';
 
 export function encryptionStrategy(version: number): string | Buffer | undefined {
     switch (version) {
+        case 7: {
+            return stableApplicationSpecificKey(
+                'lmdb-v7-static-salt',
+                'lmdb-v7-encryption-key-derivation',
+                16,
+            ).toString('hex');
+        }
         case 6:
         case 5:
         case 4: {

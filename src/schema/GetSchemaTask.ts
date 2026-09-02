@@ -5,7 +5,9 @@ import { CfnService } from '../services/CfnService';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
+import { isOutOfDiskError } from '../utils/Disk';
 import { classifyAwsError } from '../utils/errors/AwsErrorMapper';
+import { extractErrorCode } from '../utils/errors/ErrorUtils';
 import { isClientNetworkError } from '../utils/errors/GenericErrorMapper';
 import { AwsRegion } from '../utils/Region';
 import { downloadFile } from '../utils/RemoteDownload';
@@ -18,6 +20,29 @@ export abstract class GetSchemaTask {
 
     async run(dataStore: DataStore) {
         await this.runImpl(dataStore);
+    }
+}
+
+export type SchemaPersistenceResult = 'stored' | 'concurrentWrite' | 'outOfDisk';
+
+export async function persistSchemas<T>(dataStore: DataStore, key: string, value: T): Promise<SchemaPersistenceResult> {
+    try {
+        await dataStore.put(key, value);
+        return 'stored';
+    } catch (error) {
+        if (isOutOfDiskError(error)) {
+            return 'outOfDisk';
+        }
+        if (extractErrorCode(error) === 'ELOCKED') {
+            try {
+                if (dataStore.get(key) !== undefined) {
+                    return 'concurrentWrite';
+                }
+            } catch {
+                throw error;
+            }
+        }
+        throw error;
     }
 }
 
@@ -69,7 +94,26 @@ export class GetPublicSchemaTask extends GetSchemaTask {
                 lastModifiedMs: Date.now(),
             };
 
-            await dataStore.put<RegionalSchemasType>(this.region, value);
+            const persistenceResult = await persistSchemas(dataStore, this.region, value);
+            if (persistenceResult === 'outOfDisk') {
+                this.telemetry.count('getSchemas.persistence.enospc', 1, {
+                    attributes: { region: this.region },
+                });
+                this.logger.warn(
+                    `Skipping public schema persistence for ${this.region} because the filesystem is full`,
+                );
+                return;
+            }
+            if (persistenceResult === 'concurrentWrite') {
+                this.telemetry.count('getSchemas.persistence.lockContention', 1, {
+                    attributes: { region: this.region },
+                });
+                this.logger.info(
+                    `Using public schemas for ${this.region} persisted by another language server process`,
+                );
+                return;
+            }
+
             this.logger.info(`${schemas.length} public schemas downloaded for ${this.region} and saved`);
         } catch (error) {
             if (isClientNetworkError(error)) {
