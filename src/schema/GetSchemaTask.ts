@@ -5,7 +5,6 @@ import { CfnService } from '../services/CfnService';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
-import { isOutOfDiskError } from '../utils/Disk';
 import { classifyAwsError } from '../utils/errors/AwsErrorMapper';
 import { extractErrorCode } from '../utils/errors/ErrorUtils';
 import { isClientNetworkError } from '../utils/errors/GenericErrorMapper';
@@ -23,16 +22,13 @@ export abstract class GetSchemaTask {
     }
 }
 
-export type SchemaPersistenceResult = 'stored' | 'concurrentWrite' | 'outOfDisk';
+export type SchemaPersistenceResult = 'stored' | 'concurrentWrite';
 
 export async function persistSchemas<T>(dataStore: DataStore, key: string, value: T): Promise<SchemaPersistenceResult> {
     try {
         await dataStore.put(key, value);
         return 'stored';
     } catch (error) {
-        if (isOutOfDiskError(error)) {
-            return 'outOfDisk';
-        }
         if (extractErrorCode(error) === 'ELOCKED') {
             try {
                 if (dataStore.get(key) !== undefined) {
@@ -95,15 +91,6 @@ export class GetPublicSchemaTask extends GetSchemaTask {
             };
 
             const persistenceResult = await persistSchemas(dataStore, this.region, value);
-            if (persistenceResult === 'outOfDisk') {
-                this.telemetry.count('getSchemas.persistence.enospc', 1, {
-                    attributes: { region: this.region },
-                });
-                this.logger.warn(
-                    `Skipping public schema persistence for ${this.region} because the filesystem is full`,
-                );
-                return;
-            }
             if (persistenceResult === 'concurrentWrite') {
                 this.telemetry.count('getSchemas.persistence.lockContention', 1, {
                     attributes: { region: this.region },

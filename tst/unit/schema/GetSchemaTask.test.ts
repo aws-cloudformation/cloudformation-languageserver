@@ -145,23 +145,6 @@ describe('GetSchemaTask', () => {
             await expect(task.run(mockDataStore)).rejects.toBe(lockError);
         });
 
-        it('should not retry persistence after ENOSPC', async () => {
-            const put = vi.fn().mockRejectedValue(Object.assign(new Error('disk full'), { code: 'ENOSPC' }));
-            mockDataStore = {
-                get: vi.fn(),
-                put,
-                remove: vi.fn(),
-                clear: vi.fn(),
-                keys: vi.fn(),
-            };
-            const getSchemas = vi.fn().mockResolvedValue(mockSchemas);
-            const task = new GetPublicSchemaTask(AwsRegion.US_EAST_1, getSchemas);
-
-            await expect(task.run(mockDataStore)).resolves.not.toThrow();
-            expect(getSchemas).toHaveBeenCalledOnce();
-            expect(put).toHaveBeenCalledOnce();
-        });
-
         it('should rethrow unexpected persistence errors', async () => {
             mockDataStore = {
                 get: vi.fn(),

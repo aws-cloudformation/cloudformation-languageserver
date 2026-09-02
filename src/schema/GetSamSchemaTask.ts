@@ -41,11 +41,6 @@ export class GetSamSchemaTask extends GetSchemaTask {
             };
 
             const persistenceResult = await persistSchemas(dataStore, SamStoreKey, samSchemasData);
-            if (persistenceResult === 'outOfDisk') {
-                this.telemetry.count('getSchemas.persistence.enospc', 1);
-                this.logger.warn('Skipping SAM schema persistence because the filesystem is full');
-                return;
-            }
             if (persistenceResult === 'concurrentWrite') {
                 this.telemetry.count('getSchemas.persistence.lockContention', 1);
                 this.logger.info('Using SAM schemas persisted by another language server process');
