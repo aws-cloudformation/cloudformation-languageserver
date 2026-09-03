@@ -1,14 +1,15 @@
 import { Database } from 'lmdb';
+import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
-import { LMDBError } from '../../utils/errors/ErrorClasses';
 import { DataStore, StoreName } from '../DataStore';
-import { ErrorHandler, StoreOperation } from '../Utils';
+import { ErrorHandler, isValueTooLarge, StoreOperation } from '../Utils';
 import { attachCommitCause, resolveCommitError } from './CommitError';
 import { stats, StoreStatsType } from './Stats';
 
 export class LMDBStore implements DataStore {
     private readonly telemetry: ScopedTelemetry;
+    private readonly log: ReturnType<typeof LoggerFactory.getLogger>;
 
     constructor(
         public readonly name: StoreName,
@@ -19,6 +20,7 @@ export class LMDBStore implements DataStore {
         private readonly beginOp: () => () => void = () => () => {},
     ) {
         this.telemetry = TelemetryService.instance.get(`LMDB.${name}`);
+        this.log = LoggerFactory.getLogger(`LMDB.${name}`);
     }
 
     updateStore(store: Database<unknown, string>) {
@@ -33,7 +35,7 @@ export class LMDBStore implements DataStore {
                 try {
                     const initialRecovery = this.validateDatabase();
                     if (initialRecovery !== undefined) {
-                        throw new LMDBError('Database recovery is in progress');
+                        throw new Error('Database recovery is in progress');
                     }
 
                     try {
@@ -73,6 +75,13 @@ export class LMDBStore implements DataStore {
                         const cause = await resolveCommitError(e);
                         attachCommitCause(e, cause);
 
+                        // MDB_BAD_VALSIZE is deterministic - the same value fails identically after
+                        // recovery, so retrying (and the recovery work itself) is wasted. Skip
+                        // straight to the caller instead of going through the generic retry path.
+                        if (isValueTooLarge(cause ?? e)) {
+                            throw e;
+                        }
+
                         await this.onError(e, op);
                         this.telemetry.count(`retry.${op}`, 1);
                         await this.validateDatabase();
@@ -90,8 +99,20 @@ export class LMDBStore implements DataStore {
         return this.exec(StoreOperation.get, () => this.store.get(key) as T | undefined);
     }
 
-    put<T>(key: string, value: T): Promise<boolean> {
-        return this.execAsync(StoreOperation.put, () => this.store.put(key, value));
+    async put<T>(key: string, value: T): Promise<boolean> {
+        try {
+            return await this.execAsync(StoreOperation.put, () => this.store.put(key, value));
+        } catch (error) {
+            if (isValueTooLarge(error)) {
+                this.telemetry.error('put.valueTooLarge', error, undefined, {
+                    captureErrorAttributes: true,
+                    attributes: { key },
+                });
+                this.log.warn({ store: this.name, key }, 'Skipping cache write: value exceeds LMDB size limits');
+                return false;
+            }
+            throw error;
+        }
     }
 
     remove(key: string): Promise<boolean> {
