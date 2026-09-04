@@ -31,6 +31,7 @@ import { ConditionCompletionProvider } from './ConditionCompletionProvider';
 import { EntityFieldCompletionProvider } from './EntityFieldCompletionProvider';
 import { IntrinsicFunctionArgumentCompletionProvider } from './IntrinsicFunctionArgumentCompletionProvider';
 import { IntrinsicFunctionCompletionProvider } from './IntrinsicFunctionCompletionProvider';
+import { MetadataContextCompletionProvider } from './MetadataContextCompletionProvider';
 import { ParameterTypeValueCompletionProvider } from './ParameterTypeValueCompletionProvider';
 import { ResourceSectionCompletionProvider } from './ResourceSectionCompletionProvider';
 import { TopLevelSectionCompletionProvider } from './TopLevelSectionCompletionProvider';
@@ -83,6 +84,8 @@ export class CompletionRouter implements SettingsConfigurable, Closeable {
             provider = this.completionProviderMap.get(EntityType.Condition);
         } else if (this.isAtParameterTypeValue(context)) {
             provider = this.completionProviderMap.get('ParameterTypeValue');
+        } else if (MetadataContextCompletionProvider.canProvide(context)) {
+            provider = this.completionProviderMap.get(EntityType.Metadata);
         } else if (context.section === TopLevelSection.Resources) {
             provider = this.completionProviderMap.get(EntityType.Resource);
         } else if (context.atEntityKeyLevel()) {
@@ -354,6 +357,7 @@ export function createCompletionProviders(
                 external.featureFlags.get('Constants'),
             ),
         ],
+        [EntityType.Metadata, new MetadataContextCompletionProvider()],
         [EntityType.Resource, new ResourceSectionCompletionProvider(core, external, providers)],
         [EntityType.Condition, new ConditionCompletionProvider(core.syntaxTreeManager)],
         ['IntrinsicFunction', new IntrinsicFunctionCompletionProvider()],
