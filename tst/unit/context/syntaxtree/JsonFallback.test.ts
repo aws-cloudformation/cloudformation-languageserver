@@ -117,6 +117,16 @@ describe('JSON Fallback for Malformed Documents', () => {
             tree.cleanup();
         });
 
+        it('should recover a nested key after multibyte text on the same line', () => {
+            const content = '{"Description":"café ☕","Outer":{"Inner":{"par"';
+            const tree = new JsonSyntaxTree(content);
+            const node = tree.getNodeAtPosition({ line: 0, character: content.indexOf('"par"') + 2 });
+            const pathInfo = tree.getPathAndEntityInfo(node);
+
+            expect(pathInfo.propertyPath).toEqual(['Outer', 'Inner', 'par']);
+            tree.cleanup();
+        });
+
         it('should preserve the property key without adding its partial scalar value', () => {
             const content = `{
   "Outer": {

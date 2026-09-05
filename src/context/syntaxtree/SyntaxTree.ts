@@ -475,25 +475,6 @@ export abstract class SyntaxTree {
         return propertyPath.map((segment) => (typeof segment === 'string' ? segment.trim() : segment));
     }
 
-    private getTextIndexFromPoint(point: Point): number {
-        let textIndex = 0;
-        for (let row = 0; row < point.row; row++) {
-            textIndex += (this.lines[row]?.length ?? 0) + 1;
-        }
-
-        const line = this.lines[point.row] ?? '';
-        let byteColumn = 0;
-        for (const character of line) {
-            const characterBytes = Buffer.byteLength(character, 'utf8');
-            if (byteColumn + characterBytes > point.column) {
-                break;
-            }
-            byteColumn += characterBytes;
-            textIndex += character.length;
-        }
-        return textIndex;
-    }
-
     private mergePropertyPaths(prefix: PropertyPath, suffix: PropertyPath): PropertyPath | undefined {
         if (prefix.length === 0) {
             return suffix;
@@ -760,7 +741,7 @@ export abstract class SyntaxTree {
 
         const text = this.tree.rootNode.text;
         const nodeText = node.text;
-        const nodeIndex = this.getTextIndexFromPoint(node.startPosition);
+        const nodeIndex = node.startIndex;
 
         // Parse the JSON structure up to the node position
         // Track the path using a stack-based approach
