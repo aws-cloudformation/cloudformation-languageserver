@@ -49,7 +49,8 @@ export class MetadataContextQuickFix {
             .trim()
             .toUpperCase()
             .replaceAll(/[-.\s]+/g, '_');
-        if (missingContextDiagnosticCodes.has(normalizedCode)) {
+        const hasMetadataContextCode = missingContextDiagnosticCodes.has(normalizedCode);
+        if (diagnostic.source === MISSING_METADATA_CONTEXT_DIAGNOSTIC_SOURCE && hasMetadataContextCode) {
             return true;
         }
 
@@ -117,6 +118,9 @@ export class MetadataContextQuickFix {
         if (context?.section === TopLevelSection.Resources && context.logicalId) {
             return { scope: 'resource', logicalId: context.logicalId };
         }
+        if (diagnosticData?.scope === 'resource') {
+            return undefined;
+        }
 
         return { scope: 'template' };
     }
@@ -161,19 +165,36 @@ export class MetadataContextQuickFix {
             return undefined;
         }
 
+        const valueNode = NodeType.extractValueFromPair(pairNode, document.documentType);
         const mappingNode = this.getPairMappingValue(pairNode, document.documentType);
         if (mappingNode) {
             return this.insertIntoMapping(mappingNode, propertyName, propertyValue, document);
         }
 
-        if (document.documentType !== DocumentType.YAML) {
+        if (valueNode || document.documentType !== DocumentType.YAML) {
             return undefined;
         }
 
+        return this.insertIntoEmptyYamlPair(pairNode, propertyName, propertyValue, document);
+    }
+
+    private insertIntoEmptyYamlPair(
+        pairNode: SyntaxNode,
+        propertyName: string,
+        propertyValue: unknown,
+        document: Document,
+    ): TextEdit {
         const indentation = ' '.repeat(pairNode.startPosition.column + document.getTabSize());
-        const newText = `\n${this.formatYamlProperty(propertyName, propertyValue, indentation, document.getTabSize())}`;
-        const position = pointToPosition(pairNode.endPosition);
-        return TextEdit.insert(position, newText);
+        const propertyText = this.formatYamlProperty(propertyName, propertyValue, indentation, document.getTabSize());
+        const contents = document.contents();
+        const pairEndOffset = document.offsetAt(pointToPosition(pairNode.endPosition));
+        const lineBreakOffset = contents.indexOf('\n', pairEndOffset);
+
+        if (lineBreakOffset === -1) {
+            return TextEdit.insert(document.positionAt(contents.length), `\n${propertyText}`);
+        }
+
+        return TextEdit.insert(document.positionAt(lineBreakOffset + 1), `${propertyText}\n`);
     }
 
     private getPairMappingValue(pairNode: SyntaxNode, documentType: DocumentType): SyntaxNode | undefined {
@@ -188,10 +209,11 @@ export class MetadataContextQuickFix {
         if (NodeType.isMappingNode(valueNode, documentType)) {
             return valueNode;
         }
+        if (documentType !== DocumentType.YAML) {
+            return undefined;
+        }
 
-        return valueNode.descendantsOfType(
-            documentType === DocumentType.JSON ? ['object'] : ['block_mapping', 'flow_mapping'],
-        )[0];
+        return valueNode.namedChildren.find((child) => NodeType.isMappingNode(child, documentType));
     }
 
     private insertIntoMapping(
