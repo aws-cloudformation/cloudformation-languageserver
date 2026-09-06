@@ -249,6 +249,72 @@ Resources:
         expect(applyWorkspaceEdit(content, [edit!])).toContain('com.aws.cloudformation.Context:');
     });
 
+    test('does not claim an unrelated diagnostic with a generic missing-context code', () => {
+        const content = `Resources:\n  OrderQueue:\n    Type: AWS::SQS::Queue\n`;
+        const { service, uri } = createService(content, DocumentType.YAML);
+        const diagnostic = createDiagnostic(1, 2);
+        diagnostic.source = 'cfn-guard';
+        diagnostic.code = 'MISSING_CONTEXT';
+        diagnostic.message = 'Required application context is missing';
+
+        expect(getCodeActions(service, uri, diagnostic)).toEqual([]);
+    });
+
+    test('does not change unresolved resource scope into a template edit', () => {
+        const content = `Resources:\n  OrderQueue:\n    Type: AWS::SQS::Queue\n`;
+        const { service, uri } = createService(content, DocumentType.YAML);
+        const diagnostic = createDiagnostic(0, 0, { scope: 'resource' });
+
+        expect(getCodeActions(service, uri, diagnostic)).toEqual([]);
+    });
+
+    test.each([
+        {
+            name: 'scalar Metadata',
+            content: `Resources:\n  OrderQueue:\n    Type: AWS::SQS::Queue\n    Metadata: custom-value\n`,
+            line: 1,
+            character: 2,
+        },
+        {
+            name: 'sequence Metadata',
+            content: `Resources:\n  OrderQueue:\n    Type: AWS::SQS::Queue\n    Metadata:\n      - CustomKey: custom-value\n`,
+            line: 1,
+            character: 2,
+        },
+        {
+            name: 'Fn::ForEach resource',
+            content: `Transform: AWS::LanguageExtensions\nResources:\n  Fn::ForEach::Queues:\n    - QueueName\n    - [Primary]\n    - Queue\${QueueName}:\n        Type: AWS::SQS::Queue\n`,
+            line: 5,
+            character: 6,
+        },
+    ])('does not offer an unsafe YAML edit for $name', ({ content, line, character }) => {
+        const { service, uri } = createService(content, DocumentType.YAML);
+
+        expect(getCodeActions(service, uri, createDiagnostic(line, character))).toEqual([]);
+    });
+
+    test('preserves an inline comment when filling empty YAML Metadata', () => {
+        const content = `Resources:\n  OrderQueue:\n    Type: AWS::SQS::Queue\n    Metadata: # preserve metadata explanation\n`;
+        const { service, uri } = createService(content, DocumentType.YAML);
+        const edit = getEdit(service, uri, createDiagnostic(1, 2));
+
+        expect(edit).toBeDefined();
+        expect(applyWorkspaceEdit(content, [edit!])).toBe(
+            `Resources:\n  OrderQueue:\n    Type: AWS::SQS::Queue\n    Metadata: # preserve metadata explanation\n      com.aws.cloudformation.Context:\n        why: ""\n        must: []\n        mutable: review-required\n`,
+        );
+    });
+
+    test('continues adding Context under YAML flow-style Metadata', () => {
+        const content = `Resources:\n  OrderQueue:\n    Type: AWS::SQS::Queue\n    Metadata: { CustomKey: custom-value }\n`;
+        const { service, uri } = createService(content, DocumentType.YAML);
+        const edit = getEdit(service, uri, createDiagnostic(1, 2));
+
+        expect(edit).toBeDefined();
+        const updated = applyWorkspaceEdit(content, [edit!]);
+        expect(updated).toContain('CustomKey: custom-value');
+        expect(updated).toContain(METADATA_CONTEXT_KEY);
+    });
+
     test('does not offer a duplicate fix when Context already exists', () => {
         const content = `Resources:\n  OrderQueue:\n    Type: AWS::SQS::Queue\n    Metadata:\n      com.aws.cloudformation.Context:\n        why: buffer work\n`;
         const { service, uri } = createService(content, DocumentType.YAML);
