@@ -69,4 +69,75 @@ describe('JSON Fallback for Malformed Documents', () => {
             tree.cleanup();
         });
     });
+
+    describe('Invalid top-level keys', () => {
+        it('should not attach an unterminated key to neighboring sections', () => {
+            const content = `{
+  "AWSTemplateFormatVersion": "date",
+  "Hello1
+  "Resources": {
+    "MyBucket": {}
+  }
+}`;
+            const tree = new JsonSyntaxTree(content);
+            const node = tree.getNodeAtPosition({ line: 2, character: 8 });
+            const pathInfo = tree.getPathAndEntityInfo(node);
+
+            expect(pathInfo.propertyPath).toHaveLength(1);
+            expect(String(pathInfo.propertyPath[0]).trim()).toBe('Hello1');
+            tree.cleanup();
+        });
+    });
+
+    describe('Nested ERROR nodes', () => {
+        it('should preserve outer object paths for a partial nested key', () => {
+            const content = `{
+  "Outer": {
+    "Inner": {
+      "par"`;
+            const tree = new JsonSyntaxTree(content);
+            const node = tree.getNodeAtPosition({ line: 3, character: 10 });
+            const pathInfo = tree.getPathAndEntityInfo(node);
+
+            expect(pathInfo.propertyPath).toEqual(['Outer', 'Inner', 'par']);
+            tree.cleanup();
+        });
+
+        it('should recover a nested key after multibyte text', () => {
+            const content = `{
+  "Description": "café ☕",
+  "Outer": {
+    "Inner": {
+      "par"`;
+            const tree = new JsonSyntaxTree(content);
+            const node = tree.getNodeAtPosition({ line: 4, character: 10 });
+            const pathInfo = tree.getPathAndEntityInfo(node);
+
+            expect(pathInfo.propertyPath).toEqual(['Outer', 'Inner', 'par']);
+            tree.cleanup();
+        });
+
+        it('should recover a nested key after multibyte text on the same line', () => {
+            const content = '{"Description":"café ☕","Outer":{"Inner":{"par"';
+            const tree = new JsonSyntaxTree(content);
+            const node = tree.getNodeAtPosition({ line: 0, character: content.indexOf('"par"') + 2 });
+            const pathInfo = tree.getPathAndEntityInfo(node);
+
+            expect(pathInfo.propertyPath).toEqual(['Outer', 'Inner', 'par']);
+            tree.cleanup();
+        });
+
+        it('should preserve the property key without adding its partial scalar value', () => {
+            const content = `{
+  "Outer": {
+    "Inner": {
+      "Setting": "val"`;
+            const tree = new JsonSyntaxTree(content);
+            const node = tree.getNodeAtPosition({ line: 3, character: 21 });
+            const pathInfo = tree.getPathAndEntityInfo(node);
+
+            expect(pathInfo.propertyPath).toEqual(['Outer', 'Inner', 'Setting']);
+            tree.cleanup();
+        });
+    });
 });

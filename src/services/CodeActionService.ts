@@ -23,6 +23,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry, Track } from '../telemetry/TelemetryDecorator';
 import { pointToPosition } from '../utils/TypeConverters';
 import { ExtractToParameterProvider } from './extractToParameter/ExtractToParameterProvider';
+import { MetadataContextQuickFix } from './MetadataContextQuickFix';
 
 interface CodeActionFix {
     title: string;
@@ -37,6 +38,7 @@ export class CodeActionService {
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private static readonly REMOVE_ERROR_TITLE = 'Hide validation error';
     private readonly log = LoggerFactory.getLogger(CodeActionService);
+    private readonly metadataContextQuickFix: MetadataContextQuickFix;
 
     private logError(operation: string, error: unknown): void {
         this.log.error(error, `Error ${operation}`);
@@ -48,6 +50,7 @@ export class CodeActionService {
         private readonly contextManager: ContextManager,
         private readonly extractToParameterProvider: ExtractToParameterProvider,
     ) {
+        this.metadataContextQuickFix = new MetadataContextQuickFix(syntaxTreeManager, documentManager, contextManager);
         this.initializeCounters();
     }
 
@@ -79,6 +82,7 @@ export class CodeActionService {
 
     private initializeCounters(): void {
         this.telemetry.count('quickfix.cfnLintFixOffered', 0);
+        this.telemetry.count('quickfix.metadataContextOffered', 0);
         this.telemetry.count('quickfix.clearDiagnosticOffered', 0);
         this.telemetry.count('refactor.extractToParameterOffered', 0);
         this.telemetry.count('refactor.extractAllToParameterOffered', 0);
@@ -91,7 +95,9 @@ export class CodeActionService {
         const fixes: CodeActionFix[] = [];
 
         try {
-            if (diagnostic.source === 'cfn-lint') {
+            if (MetadataContextQuickFix.isMissingContextDiagnostic(diagnostic)) {
+                fixes.push(...this.generateMetadataContextFix(diagnostic, uri));
+            } else if (diagnostic.source === 'cfn-lint') {
                 fixes.push(...this.generateCfnLintFixes(diagnostic, uri));
             } else if (diagnostic.source === CFN_VALIDATION_SOURCE) {
                 fixes.push(...this.generateCfnValidationFixes(diagnostic, uri));
@@ -101,6 +107,24 @@ export class CodeActionService {
         }
 
         return fixes;
+    }
+
+    private generateMetadataContextFix(diagnostic: Diagnostic, uri: string): CodeActionFix[] {
+        const textEdit = this.metadataContextQuickFix.createTextEdit(uri, diagnostic);
+        if (!textEdit) {
+            return [];
+        }
+
+        this.telemetry.count('quickfix.metadataContextOffered', 1);
+        return [
+            {
+                title: 'Add Metadata.Context',
+                kind: CodeActionKind.QuickFix,
+                actionType: 'addMetadataContext',
+                diagnostic,
+                textEdits: [textEdit],
+            },
+        ];
     }
 
     /**

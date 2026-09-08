@@ -310,6 +310,17 @@ export abstract class SyntaxTree {
         return false;
     }
 
+    private hasErrorNodeInParentChain(node: SyntaxNode): boolean {
+        let current: SyntaxNode | null = node;
+        while (current) {
+            if (NodeType.isNodeType(current, CommonNodeTypes.ERROR)) {
+                return true;
+            }
+            current = current.parent;
+        }
+        return false;
+    }
+
     private tryIncrementalYamlParsing(position: Position): SyntaxNode | undefined {
         const currentLine = this.lines[position.line] ?? '';
         const textBeforeCursor = currentLine.slice(0, Math.max(0, position.character));
@@ -433,21 +444,56 @@ export abstract class SyntaxTree {
             };
         }
 
-        // First try the normal tree traversal approach
         const result = this.getPathAndEntityInfoNormal(node);
+        const hasErrorInPath = this.hasErrorNodeInParentChain(node);
 
-        // If we got a valid result with a non-empty property path, return it
-        if (result.propertyPath.length > 0) {
+        if (result.propertyPath.length > 0 && !hasErrorInPath) {
             return result;
         }
 
-        // If normal traversal failed (likely due to malformed tree), try position-based fallback
-        if (this.type === DocumentType.YAML) {
-            return this.pathAndEntityYamlFallback(node);
+        const fallback =
+            this.type === DocumentType.YAML
+                ? this.pathAndEntityYamlFallback(node)
+                : this.pathAndEntityJsonFallback(node);
+        const normalPath = this.normalizeMalformedPropertyPath(result.propertyPath);
+        const fallbackPath = this.normalizeMalformedPropertyPath(fallback.propertyPath);
+        const recoveredPath = this.mergePropertyPaths(fallbackPath, normalPath);
+        if (!recoveredPath) {
+            return result;
         }
 
-        // JSON fallback for malformed documents
-        return this.pathAndEntityJsonFallback(node);
+        return recoveredPath.length > normalPath.length
+            ? {
+                  path: result.path,
+                  propertyPath: recoveredPath,
+                  entityRootNode: fallback.entityRootNode ?? result.entityRootNode,
+              }
+            : { ...result, propertyPath: normalPath };
+    }
+
+    private normalizeMalformedPropertyPath(propertyPath: PropertyPath): PropertyPath {
+        return propertyPath.map((segment) => (typeof segment === 'string' ? segment.trim() : segment));
+    }
+
+    private mergePropertyPaths(prefix: PropertyPath, suffix: PropertyPath): PropertyPath | undefined {
+        if (prefix.length === 0) {
+            return suffix;
+        }
+        if (suffix.length === 0) {
+            return prefix;
+        }
+
+        const maxOverlap = Math.min(prefix.length, suffix.length);
+        for (let overlap = maxOverlap; overlap > 0; overlap--) {
+            const prefixStart = prefix.length - overlap;
+            const hasMatchingOverlap = suffix
+                .slice(0, overlap)
+                .every((segment, index) => segment === prefix[prefixStart + index]);
+            if (hasMatchingOverlap) {
+                return [...prefix, ...suffix.slice(overlap)];
+            }
+        }
+        return undefined;
     }
 
     // Normal tree traversal approach for well-formed documents
@@ -678,25 +724,24 @@ export abstract class SyntaxTree {
         const propertyPath: (string | number)[] = [];
         let entityRootNode: SyntaxNode | undefined;
 
-        // For JSON, we need to parse the text content to find the context
-        // Walk up to find the ERROR node and extract context from it
-        let errorNode: SyntaxNode | null = node;
-        while (errorNode && !NodeType.isNodeType(errorNode, CommonNodeTypes.ERROR)) {
-            errorNode = errorNode.parent;
+        // Nested ERROR nodes often contain only the innermost property. Use the outermost
+        // error ancestor so the fallback parser retains the complete document path.
+        let currentNode: SyntaxNode | null = node;
+        let errorNode: SyntaxNode | undefined;
+        while (currentNode) {
+            if (NodeType.isNodeType(currentNode, CommonNodeTypes.ERROR)) {
+                errorNode = currentNode;
+            }
+            currentNode = currentNode.parent;
         }
 
         if (!errorNode) {
             return { path, propertyPath, entityRootNode };
         }
 
-        const text = errorNode.text;
+        const text = this.tree.rootNode.text;
         const nodeText = node.text;
-
-        // Find the node's position in the error text
-        const nodeIndex = text.lastIndexOf(nodeText);
-        if (nodeIndex === -1) {
-            return { path, propertyPath, entityRootNode };
-        }
+        const nodeIndex = node.startIndex;
 
         // Parse the JSON structure up to the node position
         // Track the path using a stack-based approach
@@ -796,14 +841,16 @@ export abstract class SyntaxTree {
             pathStack.push(currentKey);
         }
 
-        // Add the node's text if it looks like a key
-        const cleanNodeText = nodeText.replaceAll(/^"|"$/g, '');
-        if (cleanNodeText && !pathStack.includes(cleanNodeText)) {
-            // Check if this is followed by a colon
-            const afterNode = text.slice(nodeIndex + nodeText.length).trim();
-            if (afterNode.startsWith(':') || afterNode === '') {
-                pathStack.push(cleanNodeText);
-            }
+        // Add the current token when it is a complete or partial object key.
+        const cleanNodeText = nodeText.replaceAll(/^"|"$/g, '').trim();
+        const tokenStartIndex =
+            text[nodeIndex] === '"' ? nodeIndex : text[nodeIndex - 1] === '"' ? nodeIndex - 1 : nodeIndex;
+        const previousSignificantCharacter = text.slice(0, tokenStartIndex).trimEnd().at(-1);
+        const startsObjectProperty = previousSignificantCharacter === '{' || previousSignificantCharacter === ',';
+        const afterNode = text.slice(nodeIndex + nodeText.length).trim();
+        const isObjectKey = afterNode.startsWith(':') || startsObjectProperty;
+        if (cleanNodeText && !pathStack.includes(cleanNodeText) && isObjectKey) {
+            pathStack.push(cleanNodeText);
         }
 
         propertyPath.push(...pathStack);

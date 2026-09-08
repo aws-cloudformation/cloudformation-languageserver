@@ -16,6 +16,7 @@ import { HoverProvider } from './HoverProvider';
 import { IntrinsicFunctionArgumentHoverProvider } from './IntrinsicFunctionArgumentHoverProvider';
 import { IntrinsicFunctionHoverProvider } from './IntrinsicFunctionHoverProvider';
 import { MappingHoverProvider } from './MappingHoverProvider';
+import { MetadataContextHoverProvider } from './MetadataContextHoverProvider';
 import { OutputSectionFieldHoverProvider } from './OutputSectionFieldHoverProvider';
 import { ParameterAttributeHoverProvider } from './ParameterAttributeHoverProvider';
 import { ParameterHoverProvider } from './ParameterHoverProvider';
@@ -79,6 +80,13 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
             }
         }
 
+        if (MetadataContextHoverProvider.canProvide(context)) {
+            const doc = this.hoverProviderMap.get(HoverType.MetadataContext)?.getInformation(context);
+            if (doc) {
+                return doc;
+            }
+        }
+
         if (context.isTopLevel) {
             return this.hoverProviderMap.get(HoverType.TopLevelSection)?.getInformation(context);
         } else if (context.isIntrinsicFunc && !this.isInsideForEachResource(context)) {
@@ -136,6 +144,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
     private createHoverProviders(schemaRetriever: SchemaRetriever): Map<HoverType, HoverProvider> {
         return new Map<HoverType, HoverProvider>([
             [HoverType.TopLevelSection, new TemplateSectionHoverProvider(this.constantsFeatureFlag)],
+            [HoverType.MetadataContext, new MetadataContextHoverProvider()],
             [HoverType.ResourceSection, new ResourceSectionHoverProvider(schemaRetriever)],
             [HoverType.Parameter, new ParameterHoverProvider()],
             [HoverType.ParameterAttribute, new ParameterAttributeHoverProvider()],
@@ -203,6 +212,7 @@ export class HoverRouter implements SettingsConfigurable, Closeable {
 
 enum HoverType {
     TopLevelSection,
+    MetadataContext,
     ResourceSection,
     IntrinsicFunction,
     IntrinsicFunctionArgument,
