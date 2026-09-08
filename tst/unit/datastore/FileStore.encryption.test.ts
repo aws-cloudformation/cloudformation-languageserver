@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { decrypt, encrypt, encryptionKey } from '../../../src/datastore/file/Encryption';
 
 describe('Encryption', () => {
-    const key = encryptionKey(3);
+    const key = encryptionKey(4);
 
     describe('encrypt and decrypt', () => {
         it('should round-trip a simple string', () => {
@@ -82,25 +82,30 @@ describe('Encryption', () => {
     });
 
     describe('encryptionKey', () => {
-        it('should return the same key for versions 1, 2, and 3', () => {
-            const k1 = encryptionKey(1);
-            const k2 = encryptionKey(2);
-            const k3 = encryptionKey(3);
-            expect(k1.equals(k2)).toBe(true);
-            expect(k2.equals(k3)).toBe(true);
+        it('should preserve the legacy key for versions 1, 2, and 3', () => {
+            const v1 = encryptionKey(1);
+            const v2 = encryptionKey(2);
+            const v3 = encryptionKey(3);
+
+            expect(v1.equals(v2)).toBe(true);
+            expect(v2.equals(v3)).toBe(true);
         });
 
-        it('should return a 32-byte key', () => {
-            expect(encryptionKey(3)).toHaveLength(32);
+        it('should derive a deterministic current-version key', () => {
+            const first = encryptionKey(4);
+            const second = encryptionKey(4);
+
+            expect(first).toHaveLength(32);
+            expect(first.equals(second)).toBe(true);
         });
 
-        it('should throw for unknown versions', () => {
+        it('should not reuse the legacy key for v4', () => {
+            expect(encryptionKey(4).equals(encryptionKey(3))).toBe(false);
+        });
+
+        it('should reject unknown versions', () => {
             expect(() => encryptionKey(0)).toThrow('Unknown FileDB version 0');
-            expect(() => encryptionKey(99)).toThrow('Unknown FileDB version 99');
-        });
-
-        it('should return deterministic keys across calls', () => {
-            expect(encryptionKey(3).equals(encryptionKey(3))).toBe(true);
+            expect(() => encryptionKey(5)).toThrow('Unknown FileDB version 5');
         });
     });
 });

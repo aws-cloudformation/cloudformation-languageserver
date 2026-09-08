@@ -1,12 +1,21 @@
 import { createCipheriv, createDecipheriv, randomBytes } from 'crypto';
-import { stableMachineSpecificKey } from '../../utils/MachineKey';
+import { stableApplicationSpecificKey, stableMachineSpecificKey } from '../../utils/MachineKey';
+
+const KeyLength = 32;
 
 export function encryptionKey(version: number): Buffer {
     switch (version) {
+        case 4: {
+            return stableApplicationSpecificKey(
+                'filedb-v4-static-salt',
+                'filedb-v4-encryption-key-derivation',
+                KeyLength,
+            );
+        }
         case 3:
         case 2:
         case 1: {
-            return stableMachineSpecificKey('filedb-static-salt', 'filedb-encryption-key-derivation', 32);
+            return stableMachineSpecificKey('filedb-static-salt', 'filedb-encryption-key-derivation', KeyLength);
         }
         default: {
             throw new Error(`Unknown FileDB version ${version}`);

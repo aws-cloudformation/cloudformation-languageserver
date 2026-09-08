@@ -1,4 +1,4 @@
-import { readdirSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { Logger } from 'pino';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
@@ -30,7 +30,13 @@ export class KeyedFileStore implements DataStore {
     }
 
     get<T>(key: string): T | undefined {
-        return this.exec(StoreOperation.get, () => this.keysToFiles.get(key)?.get<T>());
+        return this.exec(StoreOperation.get, () => {
+            const cached = this.keysToFiles.get(key)?.get<T>();
+            if (cached !== undefined) {
+                return cached;
+            }
+            return this.reloadFile(key)?.get<T>();
+        });
     }
 
     put<T>(key: string, value: T): Promise<boolean> {
@@ -71,7 +77,6 @@ export class KeyedFileStore implements DataStore {
 
     stats(): FileStoreStats {
         return this.exec(StoreOperation.stats, () => {
-            this.loadAllFiles();
             let entries = 0;
             let totalSize = 0;
             for (const store of this.keysToFiles.values()) {
@@ -120,19 +125,38 @@ export class KeyedFileStore implements DataStore {
         if (!store) {
             const fileName = keyStoreToFileName(this.storeName, key);
             store = this.createEncryptedFile(fileName);
-
-            const existing = store.entry();
-            if (existing && existing.key !== key) {
-                throw new DataStoreError(
-                    `Hash collision in ${this.storeName}: key "${key}" maps to same file as "${existing.key}"`,
-                );
-            }
-
-            store.setKey(key);
-            this.keysToFiles.set(key, store);
-            this.fileNames.add(fileName);
+            this.cacheFile(key, fileName, store);
         }
         return store;
+    }
+
+    private reloadFile(key: string): EncryptedFile | undefined {
+        const fileName = keyStoreToFileName(this.storeName, key);
+        if (!existsSync(join(this.fileDbDir, fileName))) {
+            return undefined;
+        }
+
+        const file = new LocalFile(join(this.fileDbDir, fileName));
+        const store = new EncryptedFile(this.encryptionKey, file);
+        if (store.entry() === undefined) {
+            return undefined;
+        }
+
+        this.cacheFile(key, fileName, store);
+        return store;
+    }
+
+    private cacheFile(key: string, fileName: string, store: EncryptedFile): void {
+        const existing = store.entry();
+        if (existing && existing.key !== key) {
+            throw new DataStoreError(
+                `Hash collision in ${this.storeName}: key "${key}" maps to same file as "${existing.key}"`,
+            );
+        }
+
+        store.setKey(key);
+        this.keysToFiles.set(key, store);
+        this.fileNames.add(fileName);
     }
 
     private loadAllFiles(): void {

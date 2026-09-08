@@ -41,7 +41,7 @@ describe('FileStore', () => {
             expect(fileStore.get<typeof testValue>('test-key')).toEqual(testValue);
         });
 
-        it('should read from in-memory cache without hitting disk', async () => {
+        it('should reload a deterministic file written by another store on cache miss', async () => {
             const encTestDir = join(testDir, 'get-cache-test');
             mkdirSync(encTestDir, { recursive: true });
             const key = encryptionKey(2);
@@ -49,19 +49,25 @@ describe('FileStore', () => {
             const store1 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             await store1.put('key1', 'value1');
 
-            // store2 loads key1 from disk in constructor
             const store2 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
             expect(store2.get('key1')).toBe('value1');
 
-            // store1 writes key2 to disk — store2 doesn't see it via get()
-            // because each key is loaded at construction time, not on every read
             await store1.put('key2', 'value2');
-            expect(store2.get('key2')).toBeUndefined();
 
-            // A new instance sees both keys from disk
-            const store3 = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
-            expect(store3.get('key1')).toBe('value1');
-            expect(store3.get('key2')).toBe('value2');
+            expect(store2.get('key2')).toBe('value2');
+        });
+
+        it('should not delete an unreadable file encountered on cache miss', () => {
+            const encTestDir = join(testDir, 'get-corrupt-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+            const store = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
+            const corruptFile = encodedFilePath(encTestDir, 'test', 'corrupt').filePath;
+            writeFileSync(corruptFile, 'corrupt');
+
+            expect(() => store.get('corrupt')).toThrow();
+            expect(existsSync(corruptFile)).toBe(true);
+            expect(onDiscard).not.toHaveBeenCalled();
         });
     });
 
@@ -283,6 +289,20 @@ describe('FileStore', () => {
             const stats = store.stats();
             expect(stats.entries).toBe(2);
             expect(stats.totalSize).toBeGreaterThan(emptyStats.totalSize);
+        });
+
+        it('should not reconcile files written by another process', async () => {
+            const encTestDir = join(testDir, 'stats-no-scan-test');
+            mkdirSync(encTestDir, { recursive: true });
+            const key = encryptionKey(2);
+            const writer = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
+            const observer = new KeyedFileStore(key, 'test', encTestDir, errorHandler, onDiscard);
+
+            await writer.put('external', 'value');
+
+            expect(observer.stats().entries).toBe(0);
+            expect(observer.keys(10)).toEqual(['external']);
+            expect(observer.stats().entries).toBe(1);
         });
     });
 
@@ -553,20 +573,21 @@ describe('FileStore', () => {
 
             mkdirSync(join(fileDbRoot, 'v1'), { recursive: true });
             writeFileSync(join(fileDbRoot, 'v1', 'data.enc'), 'old');
-            mkdirSync(join(fileDbRoot, 'v4'), { recursive: true });
-            writeFileSync(join(fileDbRoot, 'v4', 'data.enc'), 'newer');
+            mkdirSync(join(fileDbRoot, 'v3'), { recursive: true });
+            writeFileSync(join(fileDbRoot, 'v3', 'data.enc'), 'previous');
+            mkdirSync(join(fileDbRoot, 'v5'), { recursive: true });
+            writeFileSync(join(fileDbRoot, 'v5', 'data.enc'), 'newer');
             mkdirSync(join(fileDbRoot, 'backup'), { recursive: true });
             writeFileSync(join(fileDbRoot, 'v2'), 'not a directory');
 
-            // Current version exists from the factory constructor
-            expect(existsSync(join(fileDbRoot, 'v3'))).toBe(true);
+            expect(existsSync(join(fileDbRoot, 'v4'))).toBe(true);
 
-            // Trigger cleanup directly (normally runs after 2min timeout)
             (fileFactory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
 
             expect(existsSync(join(fileDbRoot, 'v1'))).toBe(false);
-            expect(existsSync(join(fileDbRoot, 'v3'))).toBe(true);
+            expect(existsSync(join(fileDbRoot, 'v3'))).toBe(false);
             expect(existsSync(join(fileDbRoot, 'v4'))).toBe(true);
+            expect(existsSync(join(fileDbRoot, 'v5'))).toBe(true);
             expect(existsSync(join(fileDbRoot, 'backup'))).toBe(true);
             expect(existsSync(join(fileDbRoot, 'v2'))).toBe(true);
         });

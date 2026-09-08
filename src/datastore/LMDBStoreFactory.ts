@@ -431,7 +431,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 }
 
-const VersionNumber = 6;
+const VersionNumber = 7;
 const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
 

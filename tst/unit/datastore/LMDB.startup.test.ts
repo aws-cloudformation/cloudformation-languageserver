@@ -130,7 +130,7 @@ describe('LMDB startup corruption recovery', () => {
 
     it('should delete the version directory during env recovery', async () => {
         const actual = await vi.importActual<typeof import('lmdb')>('lmdb');
-        const versionDir = join(testDir, 'lmdb', 'v6');
+        const versionDir = join(testDir, 'lmdb', 'v7');
 
         fs.mkdirSync(versionDir, { recursive: true });
         fs.writeFileSync(join(versionDir, 'dummy'), 'data');
@@ -159,7 +159,7 @@ describe('LMDB startup crash detection', () => {
     beforeEach(async () => {
         testDir = join(process.cwd(), 'node_modules', '.cache', 'lmdb-startup-crash-test', `test-${Date.now()}`);
         markersDir = join(testDir, 'lmdb', LMDBOwnershipTracker.DirName);
-        versionDir = join(testDir, 'lmdb', 'v6');
+        versionDir = join(testDir, 'lmdb', 'v7');
         fs.mkdirSync(testDir, { recursive: true });
 
         const actual = await vi.importActual<typeof import('lmdb')>('lmdb');
