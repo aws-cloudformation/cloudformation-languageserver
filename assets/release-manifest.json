@@ -6,9 +6,147 @@
   "alpha": [],
   "beta": [
     {
+      "serverVersion": "1.11.0-beta",
+      "tag": "v1.11.0-beta",
+      "latest": true,
+      "isDelisted": false,
+      "targets": [
+        {
+          "platform": "darwin",
+          "arch": "arm64",
+          "nodejs": "24",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-darwin-arm64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-darwin-arm64-node24.zip",
+              "hashes": [],
+              "bytes": 58811509
+            }
+          ]
+        },
+        {
+          "platform": "darwin",
+          "arch": "x64",
+          "nodejs": "24",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-darwin-x64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-darwin-x64-node24.zip",
+              "hashes": [],
+              "bytes": 58963505
+            }
+          ]
+        },
+        {
+          "platform": "linux",
+          "arch": "arm64",
+          "nodejs": "24",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-linux-arm64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-linux-arm64-node24.zip",
+              "hashes": [],
+              "bytes": 63264323
+            }
+          ]
+        },
+        {
+          "platform": "linux",
+          "arch": "x64",
+          "nodejs": "24",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-linux-x64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-linux-x64-node24.zip",
+              "hashes": [],
+              "bytes": 63536244
+            }
+          ]
+        },
+        {
+          "platform": "linuxglib2.28",
+          "arch": "arm64",
+          "nodejs": "18",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-linuxglib2.28-arm64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-linuxglib2.28-arm64-node18.zip",
+              "hashes": [],
+              "bytes": 62407281
+            }
+          ]
+        },
+        {
+          "platform": "linuxglib2.28",
+          "arch": "x64",
+          "nodejs": "18",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-linuxglib2.28-x64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-linuxglib2.28-x64-node18.zip",
+              "hashes": [],
+              "bytes": 62805405
+            }
+          ]
+        },
+        {
+          "platform": "win32",
+          "arch": "arm64",
+          "nodejs": "24",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-win32-arm64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-win32-arm64-node24.zip",
+              "hashes": [],
+              "bytes": 58573161
+            }
+          ]
+        },
+        {
+          "platform": "windows",
+          "arch": "arm64",
+          "nodejs": "24",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-win32-arm64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-win32-arm64-node24.zip",
+              "hashes": [],
+              "bytes": 58573161
+            }
+          ]
+        },
+        {
+          "platform": "win32",
+          "arch": "x64",
+          "nodejs": "24",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-win32-x64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-win32-x64-node24.zip",
+              "hashes": [],
+              "bytes": 58984256
+            }
+          ]
+        },
+        {
+          "platform": "windows",
+          "arch": "x64",
+          "nodejs": "24",
+          "contents": [
+            {
+              "filename": "cloudformation-languageserver-1.11.0-beta-win32-x64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-win32-x64-node24.zip",
+              "hashes": [],
+              "bytes": 58984256
+            }
+          ]
+        }
+      ]
+    },
+    {
       "serverVersion": "1.10.0-beta",
       "tag": "v1.10.0-beta",
-      "latest": true,
+      "latest": false,
       "isDelisted": false,
       "targets": [
         {
