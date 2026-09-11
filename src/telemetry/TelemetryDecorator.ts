@@ -8,6 +8,8 @@ type ScopeDecoratorOptions = {
 type ScopedMetricsDecoratorOptions = {
     name: string;
     extractContextAttributes?: boolean;
+    /** Attach the string argument at this position as the `resource.type` metric dimension. */
+    resourceTypeArgIndex?: number;
 } & MetricConfig &
     ScopeDecoratorOptions;
 
@@ -78,6 +80,19 @@ function createTelemetryMethodDecorator(methodNames: MethodNames) {
                             attributes: {
                                 ...decoratorOptions.attributes,
                                 ...contextAttributes,
+                            },
+                        };
+                    }
+                }
+
+                if (decoratorOptions.resourceTypeArgIndex !== undefined) {
+                    const resourceType = args[decoratorOptions.resourceTypeArgIndex];
+                    if (typeof resourceType === 'string' && resourceType.length > 0) {
+                        enhancedConfig = {
+                            ...enhancedConfig,
+                            attributes: {
+                                ...enhancedConfig.attributes,
+                                'resource.type': resourceType,
                             },
                         };
                     }

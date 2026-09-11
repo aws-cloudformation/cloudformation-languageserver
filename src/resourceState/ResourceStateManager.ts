@@ -62,7 +62,7 @@ export class ResourceStateManager implements SettingsConfigurable, Closeable {
         this.initializeCounters();
     }
 
-    @Measure({ name: 'getResource', captureErrorType: true })
+    @Measure({ name: 'getResource', captureErrorType: true, resourceTypeArgIndex: 0 })
     public async getResource(typeName: ResourceType, identifier: ResourceId): Promise<GetResourceResult> {
         const cachedResources = this.getResourceState(typeName, identifier);
         if (cachedResources) {
