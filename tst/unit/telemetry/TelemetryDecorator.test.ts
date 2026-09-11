@@ -329,5 +329,56 @@ describe('TelemetryDecorator', () => {
                 attributes: {},
             });
         });
+
+        it('should attach resource.type from the configured argument index', () => {
+            class TestClass {
+                @Measure({ name: 'getResource', resourceTypeArgIndex: 0 })
+                method(_typeName: string, _identifier: string) {
+                    return 'result';
+                }
+            }
+
+            new TestClass().method('AWS::S3::Bucket', 'my-bucket');
+
+            expect(mockTelemetry.measure).toHaveBeenCalledWith('getResource', expect.any(Function), {
+                name: 'getResource',
+                resourceTypeArgIndex: 0,
+                attributes: { 'resource.type': 'AWS::S3::Bucket' },
+            });
+        });
+
+        it('should attach resource.type for async methods', async () => {
+            class TestClass {
+                @Measure({ name: 'getResource', resourceTypeArgIndex: 0 })
+                async method(_typeName: string) {
+                    await Promise.resolve();
+                    return 'result';
+                }
+            }
+
+            await new TestClass().method('AWS::EC2::Instance');
+
+            expect(mockTelemetry.measureAsync).toHaveBeenCalledWith('getResource', expect.any(Function), {
+                name: 'getResource',
+                resourceTypeArgIndex: 0,
+                attributes: { 'resource.type': 'AWS::EC2::Instance' },
+            });
+        });
+
+        it('should not attach resource.type when the argument is missing or not a string', () => {
+            class TestClass {
+                @Measure({ name: 'getResource', resourceTypeArgIndex: 0 })
+                method(_typeName?: unknown) {
+                    return 'result';
+                }
+            }
+
+            new TestClass().method(undefined);
+
+            expect(mockTelemetry.measure).toHaveBeenCalledWith('getResource', expect.any(Function), {
+                name: 'getResource',
+                resourceTypeArgIndex: 0,
+            });
+        });
     });
 });

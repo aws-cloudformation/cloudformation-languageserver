@@ -53,7 +53,7 @@ export class CcapiService {
         });
     }
 
-    @Measure({ name: 'getResource', captureErrorType: true })
+    @Measure({ name: 'getResource', captureErrorType: true, resourceTypeArgIndex: 0 })
     public async getResource(typeName: string, identifier: string) {
         return await this.withClient(async (client) => {
             const getResourceInput: GetResourceInput = {
