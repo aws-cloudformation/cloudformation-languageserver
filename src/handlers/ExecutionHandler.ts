@@ -4,6 +4,34 @@ import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { TelemetryService } from '../telemetry/TelemetryService';
 import { getRegion } from '../utils/Region';
 
+export const CLEAR_DIAGNOSTIC = '/command/template/clear-diagnostic';
+export const TRACK_CODE_ACTION_ACCEPTED = '/command/codeAction/track';
+export const UPDATE_REGION = '/command/region/update';
+
+export function createCommands(suffix?: string) {
+    const s = suffix ? `.${suffix}` : '';
+    return {
+        clearDiagnostic: `${CLEAR_DIAGNOSTIC}${s}`,
+        trackCodeAction: `${TRACK_CODE_ACTION_ACCEPTED}${s}`,
+        updateRegion: `${UPDATE_REGION}${s}`,
+    };
+}
+
+export type Commands = ReturnType<typeof createCommands>;
+
+// Module-level singleton. initCommands() must be called during onInitialize
+// before any workspace/executeCommand requests arrive. This is safe because
+// LSP guarantees no requests are sent until after the initialize handshake.
+let resolvedCommands: Commands = createCommands();
+
+export function initCommands(suffix?: string) {
+    resolvedCommands = createCommands(suffix);
+}
+
+export function getCommands(): Commands {
+    return resolvedCommands;
+}
+
 export function executionHandler(
     components: ServerComponents,
 ): ServerRequestHandler<ExecuteCommandParams, unknown, never, void> {
@@ -12,7 +40,7 @@ export function executionHandler(
         TelemetryService.instance.get('ExecutionHandler').count(`count.${params.command}`, 1);
 
         switch (params.command) {
-            case CLEAR_DIAGNOSTIC: {
+            case resolvedCommands.clearDiagnostic: {
                 const args = params.arguments ?? [];
                 if (args.length >= 2) {
                     const uri = args[0] as string;
@@ -26,7 +54,7 @@ export function executionHandler(
                 }
                 break;
             }
-            case TRACK_CODE_ACTION_ACCEPTED: {
+            case resolvedCommands.trackCodeAction: {
                 const args = params.arguments ?? [];
                 if (args.length > 0) {
                     const actionType = args[0] as string;
@@ -34,7 +62,7 @@ export function executionHandler(
                 }
                 break;
             }
-            case UPDATE_REGION: {
+            case resolvedCommands.updateRegion: {
                 const args = params.arguments ?? [];
                 if (args.length > 0) {
                     components.awsCredentials.handleIamCredentialsDelete();
@@ -49,7 +77,3 @@ export function executionHandler(
         }
     };
 }
-
-export const CLEAR_DIAGNOSTIC = '/command/template/clear-diagnostic';
-export const TRACK_CODE_ACTION_ACCEPTED = '/command/codeAction/track';
-export const UPDATE_REGION = '/command/region/update';
