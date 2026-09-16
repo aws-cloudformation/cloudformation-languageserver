@@ -1,6 +1,9 @@
 import { performance } from 'perf_hooks';
-import { Diagnostic, DiagnosticSeverity, Range } from 'vscode-languageserver';
+import { Diagnostic, DiagnosticSeverity, Position, Range } from 'vscode-languageserver';
 import { SyntaxTreeManager } from '../../context/syntaxtree/SyntaxTreeManager';
+import { NodeSearch } from '../../context/syntaxtree/utils/NodeSearch';
+import { NodeType } from '../../context/syntaxtree/utils/NodeType';
+import { FieldNames } from '../../context/syntaxtree/utils/TreeSitterTypes';
 import { CloudFormationFileType } from '../../document/Document';
 import { DocumentManager } from '../../document/DocumentManager';
 import { ServerComponents } from '../../server/ServerComponents';
@@ -16,6 +19,7 @@ import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 import { readFileIfExistsAsync } from '../../utils/File';
 import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessContributor';
 import { byteSize } from '../../utils/String';
+import { nodeToRange } from '../../utils/TypeConverters';
 import { DeferredValidationInitializer, InitializationStatus, ValidationTrigger } from '../../utils/ValidationUtils';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
 import { getAvailableRulePacks, getRulesForPack, GuardRuleData } from './GeneratedGuardRules';
@@ -326,7 +330,7 @@ export class GuardService
             const message = customMessage ?? violation.message;
 
             // Create group key based on location and message
-            const groupKey = `${violation.location.line}:${violation.location.column}:${message}`;
+            const groupKey = `${violation.location.path ?? ''}:${violation.location.line}:${violation.location.column}:${message}`;
 
             if (!violationGroups.has(groupKey)) {
                 violationGroups.set(groupKey, {
@@ -375,34 +379,34 @@ export class GuardService
     }
 
     /**
-     * Get precise range for a violation using syntax tree
+     * Get precise range for a violation. The template path reported by cfn-guard is resolved to the key of
+     * the offending property. When the path cannot be resolved (e.g. malformed template), the key of the
+     * closest key/value pair enclosing the reported position is used instead.
      */
     private getViolationRange(uri: string, violation: GuardViolation): Range {
-        // Use syntax tree to get node range
-        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);
-        if (syntaxTree) {
-            const startLine = Math.max(0, violation.location.line - 1);
-            const startCharacter = Math.max(0, violation.location.column - 1);
-
-            const node = syntaxTree.getNodeAtPosition({
-                line: startLine,
-                character: startCharacter,
-            });
-
-            return {
-                start: { line: node.startPosition.row, character: node.startPosition.column },
-                end: { line: node.endPosition.row, character: node.endPosition.column },
-            };
+        const position: Position = { line: violation.location.line, character: violation.location.column };
+        const positionOnlyRange: Range = { start: position, end: position };
+        if (!violation.location.path) {
+            // cfn-guard did not report where the violation is; there is nothing to anchor the range to
+            return positionOnlyRange;
         }
 
-        // Fallback: return zero-width range
-        const startLine = Math.max(0, violation.location.line - 1);
-        const startCharacter = Math.max(0, violation.location.column - 1);
+        const keyRange = this.diagnosticCoordinator.getKeyRangeFromPath(uri, violation.location.path);
+        if (keyRange) {
+            return keyRange;
+        }
 
-        return {
-            start: { line: startLine, character: startCharacter },
-            end: { line: startLine, character: startCharacter },
-        };
+        const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);
+        if (!syntaxTree) {
+            return positionOnlyRange;
+        }
+
+        const enclosingPair = NodeSearch.findAncestorNode(syntaxTree.getNodeAtPosition(position), (candidate) =>
+            NodeType.isPairNode(candidate, syntaxTree.type),
+        );
+        const keyNode = enclosingPair?.childForFieldName(FieldNames.KEY);
+        // Without an enclosing pair the node is a document-level container whose range would cover the whole file
+        return keyNode ? nodeToRange(keyNode) : positionOnlyRange;
     }
 
     /**

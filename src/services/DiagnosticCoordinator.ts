@@ -221,9 +221,7 @@ export class DiagnosticCoordinator {
      * Extract the key range from a path using syntax tree directly
      */
     getKeyRangeFromPath(uri: string, path: string): Range | undefined {
-        // Parse paths like "/Resources/User/Properties/Policies"
-        // Remove leading slash if present and split by '/'
-        const pathSegments = path.startsWith('/') ? path.slice(1).split('/') : path.split('/');
+        const pathSegments = DiagnosticCoordinator.parseTemplatePath(path);
 
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);
         if (!syntaxTree) {
@@ -255,6 +253,17 @@ export class DiagnosticCoordinator {
         }
 
         return undefined;
+    }
+
+    /**
+     * Split a template path such as "/Resources/Role/Properties/Policies/0/PolicyName" into syntax-tree path
+     * segments. Numeric segments are sequence indices and must be numbers to match `SyntaxTree.getNodeByPath`.
+     */
+    private static parseTemplatePath(path: string): Array<string | number> {
+        const pathWithoutLeadingSlash = path.startsWith('/') ? path.slice(1) : path;
+        return pathWithoutLeadingSlash
+            .split('/')
+            .map((segment) => (/^\d+$/.test(segment) ? Number.parseInt(segment, 10) : segment));
     }
 
     private trackSeverityBreakdown(source: string, diagnostics: Diagnostic[]): void {

@@ -574,7 +574,7 @@ describe('DiagnosticCoordinator', () => {
                     'Properties',
                     'NotificationConfiguration',
                     'TopicConfigurations',
-                    '0',
+                    0, // numeric segments are sequence indices, matching SyntaxTree's numeric path segments
                     'Topic',
                 ]),
             ).toBe(true);

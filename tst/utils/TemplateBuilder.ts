@@ -1,6 +1,7 @@
 import { CompletionParams, Location, DefinitionParams, Diagnostic, TextDocuments } from 'vscode-languageserver';
 import { TextDocumentContentChangeEvent, TextDocumentPositionParams } from 'vscode-languageserver-protocol';
 import { Position, Range, TextDocument } from 'vscode-languageserver-textdocument';
+import { stubInterface } from 'ts-sinon';
 import { CompletionRouter, createCompletionProviders } from '../../src/autocomplete/CompletionRouter';
 import { TopLevelSection } from '../../src/context/CloudFormationEnums';
 import { Context } from '../../src/context/Context';
@@ -11,8 +12,11 @@ import { DefinitionProvider } from '../../src/definition/DefinitionProvider';
 import { DocumentType, Document } from '../../src/document/Document';
 import { DocumentManager } from '../../src/document/DocumentManager';
 import { HoverRouter } from '../../src/hover/HoverRouter';
+import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
 import { SchemaRetriever } from '../../src/schema/SchemaRetriever';
+import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import { GuardService } from '../../src/services/guard/GuardService';
+import { ValidationManager } from '../../src/stacks/actions/ValidationManager';
 import { UsageTracker } from '../../src/usageTracker/UsageTracker';
 import { extractErrorMessage } from '../../src/utils/errors/ErrorUtils';
 import { expectThrow } from './Expect';
@@ -191,6 +195,16 @@ export class TemplateBuilder {
 
         // Create real GuardService for integration testing
         this.guardService = GuardService.create(mockTestComponents);
+
+        // Resolve violation paths against the real syntax tree so diagnostic ranges match production behavior
+        const pathResolvingCoordinator = new DiagnosticCoordinator(
+            stubInterface<LspDiagnostics>(),
+            this.syntaxTreeManager,
+            stubInterface<ValidationManager>(),
+        );
+        mockTestComponents.core.diagnosticCoordinator.getKeyRangeFromPath.callsFake((uri: string, path: string) =>
+            pathResolvingCoordinator.getKeyRangeFromPath(uri, path),
+        );
 
         // Mock the diagnostic coordinator to capture diagnostics
         mockTestComponents.core.diagnosticCoordinator.publishDiagnostics.callsFake(
