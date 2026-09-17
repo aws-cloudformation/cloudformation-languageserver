@@ -1005,7 +1005,7 @@ export abstract class SyntaxTree {
         const minLength = Math.min(propertyPath.length, targetPath.length);
 
         for (let i = 0; i < minLength; i++) {
-            if (propertyPath[i] === targetPath[i]) {
+            if (this.pathSegmentsMatch(propertyPath[i], targetPath[i])) {
                 matches++;
             } else {
                 break;
@@ -1013,6 +1013,20 @@ export abstract class SyntaxTree {
         }
 
         return matches;
+    }
+
+    private pathSegmentsMatch(first: string | number, second: string | number): boolean {
+        if (first === second) {
+            return true;
+        }
+
+        if (typeof first === 'number' && typeof second === 'string') {
+            return Number.isInteger(first) && first >= 0 && String(first) === second;
+        }
+        if (typeof first === 'string' && typeof second === 'number') {
+            return Number.isInteger(second) && second >= 0 && first === String(second);
+        }
+        return false;
     }
 
     // Finds CloudFormation sections (Parameters, Resources, etc.)

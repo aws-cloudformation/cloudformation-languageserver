@@ -379,9 +379,8 @@ export class GuardService
     }
 
     /**
-     * Get precise range for a violation. The template path reported by cfn-guard is resolved to the key of
-     * the offending property. When the path cannot be resolved (e.g. malformed template), the key of the
-     * closest key/value pair enclosing the reported position is used instead.
+     * Get the key range for a violation. The reported position is the fast path when it identifies the key targeted by
+     * the template path. Path traversal is reserved for positions inside a child node while the path targets a parent.
      */
     private getViolationRange(uri: string, violation: GuardViolation): Range {
         const position: Position = { line: violation.location.line, character: violation.location.column };
@@ -389,11 +388,6 @@ export class GuardService
         if (!violation.location.path) {
             // cfn-guard did not report where the violation is; there is nothing to anchor the range to
             return positionOnlyRange;
-        }
-
-        const keyRange = this.diagnosticCoordinator.getKeyRangeFromPath(uri, violation.location.path);
-        if (keyRange) {
-            return keyRange;
         }
 
         const syntaxTree = this.syntaxTreeManager.getSyntaxTree(uri);
@@ -405,6 +399,16 @@ export class GuardService
             NodeType.isPairNode(candidate, syntaxTree.type),
         );
         const keyNode = enclosingPair?.childForFieldName(FieldNames.KEY);
+        const key = enclosingPair ? NodeType.extractKeyFromPair(enclosingPair, syntaxTree.type) : undefined;
+        if (keyNode && key !== undefined && violation.location.path.endsWith(`/${key}`)) {
+            return nodeToRange(keyNode);
+        }
+
+        const keyRange = this.diagnosticCoordinator.getKeyRangeFromPath(uri, violation.location.path);
+        if (keyRange) {
+            return keyRange;
+        }
+
         // Without an enclosing pair the node is a document-level container whose range would cover the whole file
         return keyNode ? nodeToRange(keyNode) : positionOnlyRange;
     }

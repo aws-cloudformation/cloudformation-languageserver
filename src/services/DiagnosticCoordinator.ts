@@ -256,14 +256,13 @@ export class DiagnosticCoordinator {
     }
 
     /**
-     * Split a template path such as "/Resources/Role/Properties/Policies/0/PolicyName" into syntax-tree path
-     * segments. Numeric segments are sequence indices and must be numbers to match `SyntaxTree.getNodeByPath`.
+     * Split a template path such as "/Resources/Role/Properties/Policies/0/PolicyName" into segments.
+     * External paths do not encode whether a numeric segment is a map key or sequence index, so that distinction is
+     * resolved by `SyntaxTree.getNodeByPath` against the document structure.
      */
-    private static parseTemplatePath(path: string): Array<string | number> {
+    private static parseTemplatePath(path: string): string[] {
         const pathWithoutLeadingSlash = path.startsWith('/') ? path.slice(1) : path;
-        return pathWithoutLeadingSlash
-            .split('/')
-            .map((segment) => (/^\d+$/.test(segment) ? Number.parseInt(segment, 10) : segment));
+        return pathWithoutLeadingSlash.split('/');
     }
 
     private trackSeverityBreakdown(source: string, diagnostics: Diagnostic[]): void {

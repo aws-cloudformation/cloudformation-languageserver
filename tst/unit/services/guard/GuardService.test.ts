@@ -260,59 +260,91 @@ describe('GuardService', () => {
             ).toBe(true);
         });
 
-        it('should validate template and publish diagnostics at the key of the violating path', async () => {
-            const mockFile = stubInterface<Document>();
-            Object.defineProperty(mockFile, 'cfnFileType', {
-                value: CloudFormationFileType.Template,
-                writable: true,
-            });
-            mockComponents.documentManager.get.returns(mockFile);
-
-            const keyRange = {
-                start: { line: 4, character: 8 },
-                end: { line: 4, character: 20 },
+        it('should use the reported position when it resolves to the violating key', async () => {
+            const keyNode = {
+                text: 'BucketName',
+                startPosition: { row: 5, column: 6 },
+                endPosition: { row: 5, column: 16 },
             };
-            mockComponents.diagnosticCoordinator.getKeyRangeFromPath.returns(keyRange);
+            const pairNode = {
+                type: 'block_mapping_pair',
+                parent: null,
+                childForFieldName: stub().withArgs('key').returns(keyNode),
+            };
+            const valueNode = { type: 'plain_scalar', parent: pairNode };
+            const mockSyntaxTree = {
+                type: DocumentType.YAML,
+                getNodeAtPosition: stub().returns(valueNode),
+            };
+            mockComponents.syntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree as any);
 
-            // Mock the rule loading to return test rules
             const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
             stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(mockRules);
-
-            const mockViolations: GuardViolation[] = [
+            mockGuardEngine.validateTemplate.resolves([
                 {
                     ruleName: 'test-rule',
                     message: 'Test violation',
                     severity: DiagnosticSeverity.Error,
-                    location: { line: 5, column: 10, path: '/Resources/MyBucket/Properties/BucketName' },
+                    location: { line: 5, column: 18, path: '/Resources/MyBucket/Properties/BucketName' },
                 },
-            ];
-            mockGuardEngine.validateTemplate.resolves(mockViolations);
+            ]);
 
             await guardService.validate('content', 'file:///template.yaml');
 
-            expect(mockGuardEngine.validateTemplate.called).toBe(true);
+            expect(mockSyntaxTree.getNodeAtPosition.calledWith({ line: 5, character: 18 })).toBe(true);
+            expect(mockComponents.diagnosticCoordinator.getKeyRangeFromPath.called).toBe(false);
+            const publishedDiagnostics = mockComponents.diagnosticCoordinator.publishDiagnostics.lastCall.args[2];
+            expect(publishedDiagnostics).toHaveLength(1);
+            expect(publishedDiagnostics[0].range).toEqual({
+                start: { line: 5, character: 6 },
+                end: { line: 5, character: 16 },
+            });
+        });
+
+        it('should use path resolution when the reported position is inside a different property', async () => {
+            const positionKeyNode = {
+                text: 'PolicyName',
+                startPosition: { row: 6, column: 10 },
+                endPosition: { row: 6, column: 20 },
+            };
+            const pairNode = {
+                type: 'block_mapping_pair',
+                parent: null,
+                childForFieldName: stub().withArgs('key').returns(positionKeyNode),
+            };
+            const valueNode = { type: 'plain_scalar', parent: pairNode };
+            const mockSyntaxTree = {
+                type: DocumentType.YAML,
+                getNodeAtPosition: stub().returns(valueNode),
+            };
+            mockComponents.syntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree as any);
+            const pathRange = {
+                start: { line: 5, character: 6 },
+                end: { line: 5, character: 14 },
+            };
+            mockComponents.diagnosticCoordinator.getKeyRangeFromPath.returns(pathRange);
+
+            const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
+            stub(guardService as any, 'getEnabledRulesByConfiguration').resolves(mockRules);
+            mockGuardEngine.validateTemplate.resolves([
+                {
+                    ruleName: 'test-rule',
+                    message: 'Test violation',
+                    severity: DiagnosticSeverity.Error,
+                    location: { line: 6, column: 22, path: '/Resources/Role/Properties/Policies' },
+                },
+            ]);
+
+            await guardService.validate('content', 'file:///template.yaml');
+
             expect(
                 mockComponents.diagnosticCoordinator.getKeyRangeFromPath.calledWith(
                     'file:///template.yaml',
-                    '/Resources/MyBucket/Properties/BucketName',
+                    '/Resources/Role/Properties/Policies',
                 ),
             ).toBe(true);
-            expect(
-                mockComponents.diagnosticCoordinator.publishDiagnostics.calledWith(
-                    'cfn-guard',
-                    'file:///template.yaml',
-                    [
-                        {
-                            severity: 1, // Error
-                            range: keyRange,
-                            message: 'Test violation',
-                            source: 'cfn-guard',
-                            code: 'test-rule',
-                            data: 'guard-5-10', // Generated diagnostic ID
-                        },
-                    ],
-                ),
-            ).toBe(true);
+            const publishedDiagnostics = mockComponents.diagnosticCoordinator.publishDiagnostics.lastCall.args[2];
+            expect(publishedDiagnostics[0].range).toEqual(pathRange);
         });
 
         it('should fall back to the key of the pair enclosing the reported position when the path does not resolve', async () => {
@@ -325,6 +357,7 @@ describe('GuardService', () => {
             mockComponents.diagnosticCoordinator.getKeyRangeFromPath.returns(undefined);
 
             const keyNode = {
+                text: 'NearbyProperty',
                 startPosition: { row: 5, column: 6 },
                 endPosition: { row: 5, column: 16 },
             };
@@ -555,7 +588,20 @@ describe('GuardService', () => {
                 start: { line: 4, character: 8 },
                 end: { line: 4, character: 20 },
             };
-            mockComponents.diagnosticCoordinator.getKeyRangeFromPath.returns(keyRange);
+            const keyNode = {
+                text: 'MyBucket',
+                startPosition: { row: keyRange.start.line, column: keyRange.start.character },
+                endPosition: { row: keyRange.end.line, column: keyRange.end.character },
+            };
+            const pairNode = {
+                type: 'block_mapping_pair',
+                parent: null,
+                childForFieldName: stub().withArgs('key').returns(keyNode),
+            };
+            mockComponents.syntaxTreeManager.getSyntaxTree.returns({
+                type: DocumentType.YAML,
+                getNodeAtPosition: stub().returns({ type: 'plain_scalar', parent: pairNode }),
+            } as any);
 
             // Mock the rule loading to return test rules
             const mockRules = [{ name: 'test-rule', content: 'rule test {}', pack: 'test' }];
