@@ -1,8 +1,9 @@
 import { Connection, InitializeParams, InitializeResult } from 'vscode-languageserver';
 import { InitializedParams } from 'vscode-languageserver-protocol';
+import { getCommands } from '../handlers/ExecutionHandler';
 import { ExtensionName } from '../utils/ExtensionConfig';
 import { LspAuthHandlers } from './LspAuthHandlers';
-import { LspCapabilities } from './LspCapabilities';
+import { buildCapabilities } from './LspCapabilities';
 import { LspCfnEnvironmentHandlers } from './LspCfnEnvironmentHandlers';
 import { LspCommunication } from './LspCommunication';
 import { LspComponents } from './LspComponents';
@@ -44,7 +45,7 @@ export class LspConnection {
         handlers: LspConnectionHandlers = {},
     ) {
         const {
-            onInitialize = () => LspCapabilities,
+            onInitialize = () => buildCapabilities(getCommands()),
             onInitialized = () => {},
             onShutdown = () => {},
             onExit = () => {},
