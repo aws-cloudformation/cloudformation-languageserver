@@ -150,6 +150,20 @@ export const Templates: Record<string, Record<'json' | 'yaml', TemplateConfig>> 
             },
         },
     },
+    metadataContext: {
+        json: {
+            fileName: 'file://metadata-context.json',
+            get contents() {
+                return loadTemplate('metadata-context.json');
+            },
+        },
+        yaml: {
+            fileName: 'file://metadata-context.yaml',
+            get contents() {
+                return loadTemplate('metadata-context.yaml');
+            },
+        },
+    },
 };
 
 export function point(row: number, column: number): Point {
@@ -170,6 +184,27 @@ export function docPosition(uri: string, line: number, character: number): TextD
         },
         position: position(line, character),
     };
+}
+
+/**
+ * Position of the `occurrence`-th (1-based) line containing `text`, offset `characterOffset` characters into the
+ * match. Lets tests target fixture content by what it says instead of by hardcoded line numbers.
+ */
+export function positionOfText(
+    content: string,
+    text: string,
+    options: { occurrence?: number; characterOffset?: number } = {},
+): Position {
+    const { occurrence = 1, characterOffset = 0 } = options;
+    const lines = content.split('\n');
+    let matchesSeen = 0;
+    for (const [line, lineText] of lines.entries()) {
+        const character = lineText.indexOf(text);
+        if (character !== -1 && ++matchesSeen === occurrence) {
+            return position(line, character + characterOffset);
+        }
+    }
+    throw new Error(`Occurrence ${occurrence} of "${text}" not found in template`);
 }
 
 export function getSimpleJsonTemplateText(): string {

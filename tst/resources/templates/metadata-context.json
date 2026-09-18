@@ -1,0 +1,234 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "Order event buffer that decouples producers from bursty asynchronous processing",
+  "Metadata": {
+    "com.aws.cloudformation.Context": {
+      "arch": "producer -> SQS -> Lambda worker -> DynamoDB; DLQ for poison messages",
+      "must": [
+        "all queues encrypted with SQS-managed SSE",
+        "worker timeout must stay below one sixth of the queue visibility timeout"
+      ],
+      "ref": [
+        "s3://team-context/order-pipeline/context.md",
+        {
+          "at": "https://wiki.example.com/order-pipeline",
+          "has": "runbooks and on-call escalation",
+          "scope": "shared"
+        }
+      ],
+      "owner": "order-platform-team"
+    },
+    "AWS::CloudFormation::Interface": {
+      "ParameterGroups": [
+        {
+          "Label": {
+            "default": "Worker Settings"
+          },
+          "Parameters": [
+            "WorkerTimeout"
+          ]
+        }
+      ]
+    }
+  },
+  "Parameters": {
+    "WorkerTimeout": {
+      "Type": "Number",
+      "Default": 30,
+      "MinValue": 1,
+      "MaxValue": 900
+    }
+  },
+  "Resources": {
+    "OrderQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "decouple producers from bursty worker traffic and absorb retries",
+          "must": [
+            "VisibilityTimeout >= 6x worker timeout, else duplicate processing on retry",
+            "RedrivePolicy must target OrderDeadLetterQueue"
+          ],
+          "mutable": "change-with-constraints",
+          "mutability": {
+            "QueueName": "must-never-change",
+            "VisibilityTimeout": "review-required",
+            "MessageRetentionPeriod": "free-to-tune"
+          },
+          "trust": {
+            "src": "authored",
+            "conf": "high",
+            "cite": "docs/design/order-pipeline.md#queue-sizing"
+          },
+          "deps": [
+            "OrderDeadLetterQueue"
+          ]
+        }
+      },
+      "Properties": {
+        "QueueName": "order-events",
+        "SqsManagedSseEnabled": true,
+        "VisibilityTimeout": 180,
+        "MessageRetentionPeriod": 345600,
+        "RedrivePolicy": {
+          "deadLetterTargetArn": {
+            "Fn::GetAtt": [
+              "OrderDeadLetterQueue",
+              "Arn"
+            ]
+          },
+          "maxReceiveCount": 3
+        }
+      }
+    },
+    "OrderDeadLetterQueue": {
+      "Type": "AWS::SQS::Queue",
+      "Metadata": {
+        "Documentation": "https://wiki.example.com/order-pipeline/dlq",
+        "com.aws.cloudformation.Context": {
+          "why": "capture poison messages for manual inspection",
+          "mutable": "review-required",
+          "trust": {
+            "src": "infer",
+            "conf": "low",
+            "note": "purpose inferred from the RedrivePolicy on OrderQueue"
+          }
+        }
+      },
+      "Properties": {
+        "QueueName": "order-events-dlq",
+        "SqsManagedSseEnabled": true,
+        "MessageRetentionPeriod": 1209600
+      }
+    },
+    "OrderTable": {
+      "Type": "AWS::DynamoDB::Table",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "durable store for processed orders keyed by order id",
+          "must": [
+            "PAY_PER_REQUEST billing because traffic is bursty and unpredictable"
+          ],
+          "mutable": "must-never-change",
+          "mutability": {
+            "PointInTimeRecoverySpecification": "free-to-tune"
+          },
+          "trust": {
+            "src": "commit",
+            "conf": "medium",
+            "cite": "3f2a9c1"
+          },
+          "deps": [
+            "OrderQueue"
+          ]
+        }
+      },
+      "Properties": {
+        "TableName": "orders",
+        "BillingMode": "PAY_PER_REQUEST",
+        "AttributeDefinitions": [
+          {
+            "AttributeName": "OrderId",
+            "AttributeType": "S"
+          }
+        ],
+        "KeySchema": [
+          {
+            "AttributeName": "OrderId",
+            "KeyType": "HASH"
+          }
+        ],
+        "PointInTimeRecoverySpecification": {
+          "PointInTimeRecoveryEnabled": true
+        }
+      }
+    },
+    "WorkerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole"
+            }
+          ]
+        },
+        "ManagedPolicyArns": [
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          "arn:aws:iam::aws:policy/service-role/AWSLambdaSQSQueueExecutionRole"
+        ]
+      }
+    },
+    "WorkerFunction": {
+      "Type": "AWS::Lambda::Function",
+      "Metadata": {
+        "com.aws.cloudformation.Context": {
+          "why": "consumes order events and persists them to OrderTable",
+          "must": [
+            "Timeout must stay below one sixth of OrderQueue VisibilityTimeout"
+          ],
+          "mutable": "change-with-constraints",
+          "mutability": {
+            "Timeout": "review-required",
+            "MemorySize": "free-to-tune"
+          },
+          "trust": {
+            "src": "comment",
+            "conf": "medium",
+            "cite": "src/worker/handler.py:12"
+          },
+          "deps": [
+            "OrderQueue",
+            "OrderTable"
+          ]
+        }
+      },
+      "Properties": {
+        "FunctionName": "order-worker",
+        "Runtime": "python3.12",
+        "Handler": "handler.main",
+        "Role": {
+          "Fn::GetAtt": [
+            "WorkerRole",
+            "Arn"
+          ]
+        },
+        "Timeout": {
+          "Ref": "WorkerTimeout"
+        },
+        "MemorySize": 256,
+        "Code": {
+          "ZipFile": "def main(event, context):\n    return {\"processed\": len(event.get(\"Records\", []))}\n"
+        }
+      }
+    },
+    "WorkerEventSourceMapping": {
+      "Type": "AWS::Lambda::EventSourceMapping",
+      "Properties": {
+        "EventSourceArn": {
+          "Fn::GetAtt": [
+            "OrderQueue",
+            "Arn"
+          ]
+        },
+        "FunctionName": {
+          "Ref": "WorkerFunction"
+        },
+        "BatchSize": 10
+      }
+    }
+  },
+  "Outputs": {
+    "OrderQueueUrl": {
+      "Description": "URL producers publish order events to",
+      "Value": {
+        "Ref": "OrderQueue"
+      }
+    }
+  }
+}

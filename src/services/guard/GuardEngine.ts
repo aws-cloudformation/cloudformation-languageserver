@@ -10,13 +10,43 @@ export interface GuardViolation {
     ruleName: string;
     message: string;
     severity: DiagnosticSeverity;
+    /**
+     * Zero-based location of the violating template node. `line`/`column` are LSP-style (0-based) and
+     * point at the start of the node identified by `path`. When cfn-guard does not report a location,
+     * both are 0 and `path` is undefined.
+     */
     location: {
         line: number;
         column: number;
-        path?: string; // JSON path to the violating element
+        path?: string; // Template path to the violating element, e.g. /Resources/Db/Properties/AutoMinorVersionUpgrade
     };
     context?: string; // additional context about the violation
 }
+
+type SarifRegion = { startLine?: number; startColumn?: number };
+
+type SarifResult = {
+    ruleId: string;
+    message: { text: string };
+    locations?: Array<{ physicalLocation?: { region?: SarifRegion } }>;
+};
+
+type ViolationLocation = GuardViolation['location'];
+
+/**
+ * cfn-guard embeds the location of the offending value in every clause message as
+ * `<path>[L:<line>,C:<column>]`, e.g. `[Path=/Resources/Db/Properties/AutoMinorVersionUpgrade[L:17,C:6] Value=...]`
+ * or `property [/Resources/Role/Properties/Policies[L:12,C:8]] existed`. Both coordinates are 0-based.
+ * Location-less placeholders such as `Path=[L:0,C:0]` (the literal being compared against) have no path
+ * and are intentionally not matched.
+ */
+const MESSAGE_LOCATION_PATTERN = /(\/[^\s[\]]*)\[L:(\d+),C:(\d+)\]/;
+
+/**
+ * cfn-guard only populates the SARIF region for a subset of clause failures and otherwise emits
+ * `startLine: 1, startColumn: 1` as a placeholder (its 0,0 default clamped to a minimum of 1).
+ */
+const SARIF_UNKNOWN_REGION_VALUE = 1;
 
 /**
  * Represents a Guard rule for policy validation
@@ -218,15 +248,7 @@ export class GuardEngine {
         const violations: GuardViolation[] = [];
 
         try {
-            const sarif = JSON.parse(sarifResult) as {
-                runs: Array<{
-                    results: Array<{
-                        ruleId: string;
-                        message: { text: string };
-                        locations: Array<{ physicalLocation: { region: { startLine: number; startColumn: number } } }>;
-                    }>;
-                }>;
-            };
+            const sarif = JSON.parse(sarifResult) as { runs: Array<{ results: SarifResult[] }> };
 
             if (sarif.runs && sarif.runs.length > 0) {
                 const results = sarif.runs[0].results || [];
@@ -235,27 +257,24 @@ export class GuardEngine {
                 const violationGroups = new Map<
                     string,
                     {
-                        line: number;
-                        column: number;
+                        location: ViolationLocation;
                         message: string;
                         ruleNames: Set<string>;
                     }
                 >();
 
                 for (const result of results) {
-                    const line = result.locations[0]?.physicalLocation?.region?.startLine || 1;
-                    const column = result.locations[0]?.physicalLocation?.region?.startColumn || 1;
+                    const location = GuardEngine.resolveLocation(result);
 
                     // Get custom message if available, otherwise use SARIF message
                     const rule = rules.find((r) => r.name === result.ruleId);
                     const message = rule?.message ?? result.message.text;
 
-                    const groupKey = `${line}:${column}:${message}`;
+                    const groupKey = `${location.path ?? ''}:${location.line}:${location.column}:${message}`;
 
                     if (!violationGroups.has(groupKey)) {
                         violationGroups.set(groupKey, {
-                            line,
-                            column,
+                            location,
                             message,
                             ruleNames: new Set(),
                         });
@@ -278,10 +297,7 @@ export class GuardEngine {
                         ruleName: combinedRuleName,
                         message,
                         severity,
-                        location: {
-                            line: group.line,
-                            column: group.column,
-                        },
+                        location: group.location,
                     });
                 }
             }
@@ -290,6 +306,32 @@ export class GuardEngine {
         }
 
         return violations;
+    }
+
+    /**
+     * Resolve the 0-based location of a SARIF result. The location embedded in the message text is
+     * preferred because it is present for every clause type and carries the template path; the SARIF
+     * region is only a fallback since cfn-guard leaves it at the `1:1` placeholder for most failures.
+     */
+    private static resolveLocation(result: SarifResult): ViolationLocation {
+        const embedded = MESSAGE_LOCATION_PATTERN.exec(result.message.text);
+        if (embedded) {
+            return {
+                path: embedded[1],
+                line: Number.parseInt(embedded[2], 10),
+                column: Number.parseInt(embedded[3], 10),
+            };
+        }
+
+        const region = result.locations?.[0]?.physicalLocation?.region;
+        const line = region?.startLine ?? SARIF_UNKNOWN_REGION_VALUE;
+        const column = region?.startColumn ?? SARIF_UNKNOWN_REGION_VALUE;
+        if (line === SARIF_UNKNOWN_REGION_VALUE && column === SARIF_UNKNOWN_REGION_VALUE) {
+            return { line: 0, column: 0 };
+        }
+
+        // cfn-guard copies its internal 0-based coordinates straight into the region
+        return { line: Math.max(0, line), column: Math.max(0, column) };
     }
 
     /**
