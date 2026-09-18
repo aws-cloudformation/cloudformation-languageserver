@@ -87,17 +87,13 @@ export class LocalCfnLintExecutor {
 
             child.on('close', (code) => {
                 try {
-                    if (code === 0 || code === 2) {
-                        // 0 = no issues, 2 = issues found
-                        const diagnostics: CfnLintDiagnostic[] = stdout.trim()
-                            ? (JSON.parse(stdout) as CfnLintDiagnostic[])
-                            : [];
-                        resolve(diagnostics);
-                    } else {
-                        reject(new Error(`cfn-lint exited with code ${code}: ${stderr}`));
-                    }
+                    // cfn-lint exit codes are a severity bitmask (2|4|8); parse the JSON output directly.
+                    const diagnostics: CfnLintDiagnostic[] = stdout.trim()
+                        ? (JSON.parse(stdout) as CfnLintDiagnostic[])
+                        : [];
+                    resolve(diagnostics);
                 } catch (error) {
-                    reject(new Error(`Failed to parse cfn-lint output: ${extractErrorMessage(error)}`));
+                    reject(new Error(`cfn-lint exited with code ${code}: ${stderr || extractErrorMessage(error)}`));
                 }
             });
 
