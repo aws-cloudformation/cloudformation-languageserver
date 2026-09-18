@@ -88,9 +88,7 @@ describe('LocalCfnLintExecutor', () => {
             { exitCode: 12, description: 'warnings + informational', stdout: warningDiagnosticsJson },
             { exitCode: 14, description: 'all severity levels', stdout: errorDiagnosticsJson },
         ])('should parse diagnostics from exit code $exitCode ($description)', async ({ exitCode, stdout }) => {
-            vi.mocked(spawn).mockReturnValue(
-                createMockChildProcess(exitCode, stdout) as unknown as ReturnType<typeof spawn>,
-            );
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(exitCode, stdout));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
@@ -100,9 +98,7 @@ describe('LocalCfnLintExecutor', () => {
         });
 
         test('should reject when stdout is not valid JSON', async () => {
-            vi.mocked(spawn).mockReturnValue(
-                createMockChildProcess(1, 'not json', 'Internal error') as unknown as ReturnType<typeof spawn>,
-            );
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(1, 'not json', 'Internal error'));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
@@ -111,9 +107,7 @@ describe('LocalCfnLintExecutor', () => {
         });
 
         test('should return empty diagnostics when stdout is empty', async () => {
-            vi.mocked(spawn).mockReturnValue(
-                createMockChildProcess(0, '') as unknown as ReturnType<typeof spawn>,
-            );
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(0, ''));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
@@ -122,9 +116,7 @@ describe('LocalCfnLintExecutor', () => {
         });
 
         test('should map informational level to Information severity', async () => {
-            vi.mocked(spawn).mockReturnValue(
-                createMockChildProcess(8, infoDiagnosticsJson) as unknown as ReturnType<typeof spawn>,
-            );
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(8, infoDiagnosticsJson));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
@@ -135,9 +127,7 @@ describe('LocalCfnLintExecutor', () => {
         });
 
         test('should map warning level to Warning severity', async () => {
-            vi.mocked(spawn).mockReturnValue(
-                createMockChildProcess(4, warningDiagnosticsJson) as unknown as ReturnType<typeof spawn>,
-            );
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(4, warningDiagnosticsJson));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
