@@ -86,6 +86,13 @@ export class LocalCfnLintExecutor {
             });
 
             child.on('close', (code) => {
+                // cfn-lint reserves exit code 1 for tool errors (bad arguments, crash), distinct from
+                // the 2|4|8 severity bitmask used for findings. Surface it instead of parsing empty output.
+                if (code === 1) {
+                    reject(new Error(`cfn-lint failed (exit code 1): ${stderr || 'unknown error'}`));
+                    return;
+                }
+
                 try {
                     // cfn-lint exit codes are a severity bitmask (2|4|8); parse the JSON output directly.
                     const diagnostics: CfnLintDiagnostic[] = stdout.trim()
@@ -93,7 +100,12 @@ export class LocalCfnLintExecutor {
                         : [];
                     resolve(diagnostics);
                 } catch (error) {
-                    reject(new Error(`cfn-lint exited with code ${code}: ${stderr || extractErrorMessage(error)}`));
+                    reject(
+                        new Error(
+                            `Failed to parse cfn-lint output (exit code ${code}): ` +
+                                `${stderr || extractErrorMessage(error)}`,
+                        ),
+                    );
                 }
             });
 

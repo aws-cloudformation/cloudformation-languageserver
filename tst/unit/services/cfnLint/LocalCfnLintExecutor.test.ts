@@ -93,16 +93,29 @@ describe('LocalCfnLintExecutor', () => {
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
 
-            expect(result).toBeDefined();
-            expect(Array.isArray(result)).toBe(true);
+            if (exitCode === 0) {
+                expect(result).toEqual([]);
+            } else {
+                expect(result).toHaveLength(1);
+                expect(result[0].diagnostics.length).toBeGreaterThan(0);
+            }
         });
 
-        test('should reject when stdout is not valid JSON', async () => {
-            vi.mocked(spawn).mockReturnValue(createMockChildProcess(1, 'not json', 'Internal error'));
+        test('should reject with a parse error when stdout is not valid JSON', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, 'not json', 'Malformed output'));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
-                'cfn-lint exited with code 1',
+                'Failed to parse cfn-lint output (exit code 2)',
+            );
+        });
+
+        test('should reject when cfn-lint exits with code 1 (tool error)', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(1, '', 'ValueError: bad arguments'));
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
+                'cfn-lint failed (exit code 1): ValueError: bad arguments',
             );
         });
 
@@ -135,6 +148,40 @@ describe('LocalCfnLintExecutor', () => {
             expect(result).toHaveLength(1);
             expect(result[0].diagnostics).toHaveLength(1);
             expect(result[0].diagnostics[0].code).toBe('W8001');
+        });
+    });
+
+    describe('lintTemplate', () => {
+        test('should write a temp file, lint it, and return diagnostics', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(4, warningDiagnosticsJson));
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const result = await executor.lintTemplate('Resources: {}', mockUri, CloudFormationFileType.Template);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].diagnostics[0].code).toBe('W8001');
+        });
+    });
+
+    describe('spawn failure', () => {
+        test('should reject when the process emits an error', async () => {
+            const child = {
+                stdout: new Readable({ read() {} }),
+                stderr: new Readable({ read() {} }),
+                on(event: string, handler: (...args: unknown[]) => void) {
+                    if (event === 'error') {
+                        setImmediate(() => handler(new Error('spawn ENOENT')));
+                    }
+                    return child;
+                },
+            } as unknown as ChildProcess;
+
+            vi.mocked(spawn).mockReturnValue(child);
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
+                'Failed to execute cfn-lint: spawn ENOENT',
+            );
         });
     });
 });
