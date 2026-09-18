@@ -4,7 +4,6 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { PublishDiagnosticsParams, DiagnosticSeverity } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
-import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 
 interface CfnLintDiagnostic {
@@ -30,8 +29,6 @@ interface CfnLintDiagnostic {
 }
 
 export class LocalCfnLintExecutor {
-    private readonly log = LoggerFactory.getLogger(LocalCfnLintExecutor);
-
     constructor(private readonly cfnLintPath: string) {}
 
     async lintTemplate(
@@ -86,15 +83,14 @@ export class LocalCfnLintExecutor {
             });
 
             child.on('close', (code) => {
-                // cfn-lint reserves exit code 1 for tool errors (bad arguments, crash), distinct from
-                // the 2|4|8 severity bitmask used for findings. Surface it instead of parsing empty output.
+                // Exit code 1 is a tool error (bad args/crash), not part of the 2|4|8 findings bitmask.
                 if (code === 1) {
                     reject(new Error(`cfn-lint failed (exit code 1): ${stderr || 'unknown error'}`));
                     return;
                 }
 
                 try {
-                    // cfn-lint exit codes are a severity bitmask (2|4|8); parse the JSON output directly.
+                    // Findings use a 2|4|8 severity bitmask; parse the JSON regardless of code.
                     const diagnostics: CfnLintDiagnostic[] = stdout.trim()
                         ? (JSON.parse(stdout) as CfnLintDiagnostic[])
                         : [];
