@@ -92,9 +92,7 @@ export class LocalCfnLintExecutor {
                 }
 
                 if ((code & ~LocalCfnLintExecutor.FINDINGS_BITMASK) !== 0) {
-                    reject(
-                        new Error(`cfn-lint failed (exit code ${code}): ${stderr || stdout || 'unknown error'}`),
-                    );
+                    reject(new Error(`cfn-lint failed (exit code ${code}): ${stderr || stdout || 'unknown error'}`));
                     return;
                 }
 

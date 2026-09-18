@@ -108,24 +108,21 @@ describe('LocalCfnLintExecutor', () => {
                 description: 'all severity levels',
                 findings: [errorFinding, warningFinding, infoFinding],
             },
-        ])(
-            'should parse diagnostics from exit code $exitCode ($description)',
-            async ({ exitCode, findings }) => {
-                vi.mocked(spawn).mockReturnValue(createMockChildProcess(exitCode, makeDiagnosticsJson(findings)));
+        ])('should parse diagnostics from exit code $exitCode ($description)', async ({ exitCode, findings }) => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(exitCode, makeDiagnosticsJson(findings)));
 
-                const executor = new LocalCfnLintExecutor(mockCfnLintPath);
-                const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
 
-                if (findings.length === 0) {
-                    expect(result).toEqual([]);
-                } else {
-                    expect(result).toHaveLength(1);
-                    expect(result[0].diagnostics).toHaveLength(findings.length);
-                    const severities = result[0].diagnostics.map((d) => d.severity);
-                    expect(severities).toEqual(findings.map((f) => f.expectedSeverity));
-                }
-            },
-        );
+            if (findings.length === 0) {
+                expect(result).toEqual([]);
+            } else {
+                expect(result).toHaveLength(1);
+                expect(result[0].diagnostics).toHaveLength(findings.length);
+                const severities = result[0].diagnostics.map((d) => d.severity);
+                expect(severities).toEqual(findings.map((f) => f.expectedSeverity));
+            }
+        });
 
         test('should reject with a parse error when stdout is not valid JSON', async () => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, 'not json'));
@@ -140,9 +137,9 @@ describe('LocalCfnLintExecutor', () => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, 'not json', 'some warning'));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
-            await expect(
-                executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template),
-            ).rejects.toThrow(/Unexpected token/);
+            await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
+                /Unexpected token/,
+            );
         });
 
         test('should reject when cfn-lint exits with code 1 (tool error)', async () => {
