@@ -2,6 +2,7 @@ import { spawn, type ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import { Readable } from 'stream';
 import { describe, expect, beforeEach, vi, test } from 'vitest';
+import { DiagnosticSeverity } from 'vscode-languageserver';
 import { LocalCfnLintExecutor } from '../../../../src/services/cfnLint/LocalCfnLintExecutor';
 import { CloudFormationFileType } from '../../../../src/document/Document';
 
@@ -18,19 +19,38 @@ const mockCfnLintPath = '/usr/local/bin/cfn-lint';
 interface MockDiagnostic {
     ruleId: string;
     level: string;
+    expectedSeverity: DiagnosticSeverity;
 }
 
-const errorFinding: MockDiagnostic = { ruleId: 'E1001', level: 'Error' };
-const warningFinding: MockDiagnostic = { ruleId: 'W8001', level: 'Warning' };
-const infoFinding: MockDiagnostic = { ruleId: 'I4010', level: 'Info' };
+const errorFinding: MockDiagnostic = {
+    ruleId: 'E1001',
+    level: 'Error',
+    expectedSeverity: DiagnosticSeverity.Error,
+};
+const warningFinding: MockDiagnostic = {
+    ruleId: 'W8001',
+    level: 'Warning',
+    expectedSeverity: DiagnosticSeverity.Warning,
+};
+const infoFinding: MockDiagnostic = {
+    ruleId: 'I4010',
+    level: 'Info',
+    expectedSeverity: DiagnosticSeverity.Information,
+};
 
 /**
- * Fake ChildProcess backed by a real EventEmitter so multiple listeners per event work (a Map keyed
- * by event name would drop all but the last). Emits 'close' after stdout/stderr flush.
+ * Fake ChildProcess backed by a real EventEmitter so multiple listeners per event work.
+ * ChildProcess extends EventEmitter, not EventTarget, so EventTarget cannot be used here.
  */
-function createMockChildProcess(exitCode: number | null, stdout: string, stderr: string = ''): ChildProcess {
+function createMockChildProcess(
+    exitCode: number | null,
+    stdout: string,
+    stderr: string = '',
+    signal: string | null = null,
+): ChildProcess {
     const stdoutStream = new Readable({ read() {} });
     const stderrStream = new Readable({ read() {} });
+    // eslint-disable-next-line unicorn/prefer-event-target
     const child = new EventEmitter() as unknown as ChildProcess;
     (child as unknown as { stdout: Readable }).stdout = stdoutStream;
     (child as unknown as { stderr: Readable }).stderr = stderrStream;
@@ -40,7 +60,7 @@ function createMockChildProcess(exitCode: number | null, stdout: string, stderr:
         stdoutStream.push(null);
         if (stderr) stderrStream.push(stderr);
         stderrStream.push(null);
-        child.emit('close', exitCode);
+        child.emit('close', exitCode, signal);
     });
 
     return child;
@@ -74,61 +94,55 @@ describe('LocalCfnLintExecutor', () => {
     });
 
     describe('exit code handling', () => {
-        // Exit code is a 2|4|8 severity bitmask, so combined codes (e.g. 6 = errors + warnings) are
-        // valid; each fixture matches the severities its code encodes, so we assert content not just parsing.
+        // Exit code is a 2|4|8 severity bitmask; combined codes (e.g. 6 = errors + warnings) are valid.
         test.each([
-            { exitCode: 0, description: 'no issues', findings: [], expectedCount: 0 },
-            { exitCode: 2, description: 'error findings', findings: [errorFinding], expectedCount: 1 },
-            { exitCode: 4, description: 'warning findings', findings: [warningFinding], expectedCount: 1 },
-            {
-                exitCode: 6,
-                description: 'errors + warnings',
-                findings: [errorFinding, warningFinding],
-                expectedCount: 2,
-            },
-            { exitCode: 8, description: 'informational findings', findings: [infoFinding], expectedCount: 1 },
-            {
-                exitCode: 10,
-                description: 'errors + informational',
-                findings: [errorFinding, infoFinding],
-                expectedCount: 2,
-            },
-            {
-                exitCode: 12,
-                description: 'warnings + informational',
-                findings: [warningFinding, infoFinding],
-                expectedCount: 2,
-            },
+            { exitCode: 0, description: 'no issues', findings: [] as MockDiagnostic[] },
+            { exitCode: 2, description: 'error findings', findings: [errorFinding] },
+            { exitCode: 4, description: 'warning findings', findings: [warningFinding] },
+            { exitCode: 6, description: 'errors + warnings', findings: [errorFinding, warningFinding] },
+            { exitCode: 8, description: 'informational findings', findings: [infoFinding] },
+            { exitCode: 10, description: 'errors + informational', findings: [errorFinding, infoFinding] },
+            { exitCode: 12, description: 'warnings + informational', findings: [warningFinding, infoFinding] },
             {
                 exitCode: 14,
                 description: 'all severity levels',
                 findings: [errorFinding, warningFinding, infoFinding],
-                expectedCount: 3,
             },
         ])(
             'should parse diagnostics from exit code $exitCode ($description)',
-            async ({ exitCode, findings, expectedCount }) => {
+            async ({ exitCode, findings }) => {
                 vi.mocked(spawn).mockReturnValue(createMockChildProcess(exitCode, makeDiagnosticsJson(findings)));
 
                 const executor = new LocalCfnLintExecutor(mockCfnLintPath);
                 const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
 
-                if (expectedCount === 0) {
+                if (findings.length === 0) {
                     expect(result).toEqual([]);
                 } else {
                     expect(result).toHaveLength(1);
-                    expect(result[0].diagnostics).toHaveLength(expectedCount);
+                    expect(result[0].diagnostics).toHaveLength(findings.length);
+                    const severities = result[0].diagnostics.map((d) => d.severity);
+                    expect(severities).toEqual(findings.map((f) => f.expectedSeverity));
                 }
             },
         );
 
         test('should reject with a parse error when stdout is not valid JSON', async () => {
-            vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, 'not json', 'Malformed output'));
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, 'not json'));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
-                'Failed to parse cfn-lint output (exit code 2)',
+                /Failed to parse cfn-lint output \(exit code 2\)/,
             );
+        });
+
+        test('should include the parse error even when stderr has content', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, 'not json', 'some warning'));
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            await expect(
+                executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template),
+            ).rejects.toThrow(/Unexpected token/);
         });
 
         test('should reject when cfn-lint exits with code 1 (tool error)', async () => {
@@ -137,6 +151,24 @@ describe('LocalCfnLintExecutor', () => {
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
                 'cfn-lint failed (exit code 1): ValueError: bad arguments',
+            );
+        });
+
+        test('should include stdout in exit-1 error when stderr is empty', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(1, 'Configuration error: bad config'));
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
+                'cfn-lint failed (exit code 1): Configuration error: bad config',
+            );
+        });
+
+        test('should reject when cfn-lint is killed by a signal', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(null, '', '', 'SIGKILL'));
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
+                'cfn-lint terminated by signal SIGKILL',
             );
         });
 
@@ -149,26 +181,18 @@ describe('LocalCfnLintExecutor', () => {
             expect(result).toEqual([]);
         });
 
-        test('should map informational level to Information severity', async () => {
-            vi.mocked(spawn).mockReturnValue(createMockChildProcess(8, makeDiagnosticsJson([infoFinding])));
+        test('should map severity levels correctly', async () => {
+            const allFindings = [errorFinding, warningFinding, infoFinding];
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(14, makeDiagnosticsJson(allFindings)));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
 
             expect(result).toHaveLength(1);
-            expect(result[0].diagnostics).toHaveLength(1);
-            expect(result[0].diagnostics[0].code).toBe('I4010');
-        });
-
-        test('should map warning level to Warning severity', async () => {
-            vi.mocked(spawn).mockReturnValue(createMockChildProcess(4, makeDiagnosticsJson([warningFinding])));
-
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
-            const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
-
-            expect(result).toHaveLength(1);
-            expect(result[0].diagnostics).toHaveLength(1);
-            expect(result[0].diagnostics[0].code).toBe('W8001');
+            expect(result[0].diagnostics).toHaveLength(3);
+            expect(result[0].diagnostics[0].severity).toBe(DiagnosticSeverity.Error);
+            expect(result[0].diagnostics[1].severity).toBe(DiagnosticSeverity.Warning);
+            expect(result[0].diagnostics[2].severity).toBe(DiagnosticSeverity.Information);
         });
     });
 });

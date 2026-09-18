@@ -29,6 +29,9 @@ interface CfnLintDiagnostic {
 }
 
 export class LocalCfnLintExecutor {
+    // cfn-lint exit codes: 2 = error findings, 4 = warnings, 8 = informational. ORed together.
+    private static readonly FINDINGS_BITMASK = 2 | 4 | 8;
+
     constructor(private readonly cfnLintPath: string) {}
 
     async lintTemplate(
@@ -82,15 +85,21 @@ export class LocalCfnLintExecutor {
                 stderr += data.toString();
             });
 
-            child.on('close', (code) => {
-                // Exit code 1 is a tool error (bad args/crash), not part of the 2|4|8 findings bitmask.
-                if (code === 1) {
-                    reject(new Error(`cfn-lint failed (exit code 1): ${stderr || 'unknown error'}`));
+            child.on('close', (code, signal) => {
+                if (code === null) {
+                    reject(new Error(`cfn-lint terminated by signal ${signal}: ${stderr || stdout || 'no output'}`));
+                    return;
+                }
+
+                if ((code & ~LocalCfnLintExecutor.FINDINGS_BITMASK) !== 0) {
+                    reject(
+                        new Error(`cfn-lint failed (exit code ${code}): ${stderr || stdout || 'unknown error'}`),
+                    );
                     return;
                 }
 
                 try {
-                    // Findings use a 2|4|8 severity bitmask; parse the JSON regardless of code.
+                    // Valid bitmask code (0/2/4/6/8/10/12/14): parse findings JSON.
                     const diagnostics: CfnLintDiagnostic[] = stdout.trim()
                         ? (JSON.parse(stdout) as CfnLintDiagnostic[])
                         : [];
@@ -99,7 +108,7 @@ export class LocalCfnLintExecutor {
                     reject(
                         new Error(
                             `Failed to parse cfn-lint output (exit code ${code}): ` +
-                                `${stderr || extractErrorMessage(error)}`,
+                                `${extractErrorMessage(error)}${stderr ? ` stderr: ${stderr}` : ''}`,
                         ),
                     );
                 }
