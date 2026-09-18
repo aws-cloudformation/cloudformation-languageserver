@@ -4,7 +4,6 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { PublishDiagnosticsParams, DiagnosticSeverity } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
-import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 
 interface CfnLintDiagnostic {
@@ -30,7 +29,8 @@ interface CfnLintDiagnostic {
 }
 
 export class LocalCfnLintExecutor {
-    private readonly log = LoggerFactory.getLogger(LocalCfnLintExecutor);
+    // cfn-lint exit codes: 2 = error findings, 4 = warnings, 8 = informational. ORed together.
+    private static readonly FINDINGS_BITMASK = 2 | 4 | 8;
 
     constructor(private readonly cfnLintPath: string) {}
 
@@ -85,19 +85,30 @@ export class LocalCfnLintExecutor {
                 stderr += data.toString();
             });
 
-            child.on('close', (code) => {
+            child.on('close', (code, signal) => {
+                if (code === null) {
+                    reject(new Error(`cfn-lint terminated by signal ${signal}: ${stderr || stdout || 'no output'}`));
+                    return;
+                }
+
+                if ((code & ~LocalCfnLintExecutor.FINDINGS_BITMASK) !== 0) {
+                    reject(new Error(`cfn-lint failed (exit code ${code}): ${stderr || stdout || 'unknown error'}`));
+                    return;
+                }
+
                 try {
-                    if (code === 0 || code === 2) {
-                        // 0 = no issues, 2 = issues found
-                        const diagnostics: CfnLintDiagnostic[] = stdout.trim()
-                            ? (JSON.parse(stdout) as CfnLintDiagnostic[])
-                            : [];
-                        resolve(diagnostics);
-                    } else {
-                        reject(new Error(`cfn-lint exited with code ${code}: ${stderr}`));
-                    }
+                    // Valid bitmask code (0/2/4/6/8/10/12/14): parse findings JSON.
+                    const diagnostics: CfnLintDiagnostic[] = stdout.trim()
+                        ? (JSON.parse(stdout) as CfnLintDiagnostic[])
+                        : [];
+                    resolve(diagnostics);
                 } catch (error) {
-                    reject(new Error(`Failed to parse cfn-lint output: ${extractErrorMessage(error)}`));
+                    reject(
+                        new Error(
+                            `Failed to parse cfn-lint output (exit code ${code}): ` +
+                                `${extractErrorMessage(error)}${stderr ? ` stderr: ${stderr}` : ''}`,
+                        ),
+                    );
                 }
             });
 
