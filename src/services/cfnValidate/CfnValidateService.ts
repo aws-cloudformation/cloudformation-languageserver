@@ -7,6 +7,7 @@ import { CfnLintSettings, DefaultSettings } from '../../settings/Settings';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
+import { byteSize } from '../../utils/String';
 import { LintResult, LintResultObserver } from '../cfnLint/LintResultObserver';
 import { toLspDiagnostics } from './CfnValidateDiagnosticConverter';
 import { CfnValidateEngine } from './CfnValidateEngine';
@@ -40,7 +41,7 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         }
 
         this.compare(result).catch((error: unknown) => {
-            this.telemetry.error('comparison.fault', error, undefined, { captureErrorAttributes: true });
+            this.telemetry.error('validate.error', error, undefined, { captureErrorAttributes: true });
         });
     }
 
@@ -53,9 +54,16 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
             return;
         }
 
-        const report = this.telemetry.measure('validate', () =>
-            this.engine.validate(result.content, result.uri, { severityLevel: this.severityLevel() }),
-        );
+        const now = performance.now();
+
+        this.telemetry.count('validate.count', 1);
+        const report = this.engine.validate(result.content, result.uri, { severityLevel: this.severityLevel() });
+
+        this.telemetry.count('validate.success', 1);
+        this.telemetry.histogram('validate.duration', (performance.now() - now) / byteSize(result.content), {
+            unit: 'ms/byte',
+        });
+
         const comparison = compareDiagnostics(result.diagnostics, this.withoutIgnoredRules(report.diagnostics));
         this.recordComparison(comparison);
     }
@@ -79,7 +87,7 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
             }
             this.telemetry.count('init.success', 1);
         } catch (error) {
-            this.telemetry.error('init.fault', error, undefined, { captureErrorType: true });
+            this.telemetry.error('init.fault', error, undefined, { captureErrorAttributes: true });
             throw error;
         } finally {
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });

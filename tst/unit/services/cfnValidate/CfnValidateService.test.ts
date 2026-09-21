@@ -181,21 +181,22 @@ describe('CfnValidateService', () => {
 
             expect(engine.initialize.calledOnce).toBe(true);
             expect(telemetry.error).toHaveBeenCalledExactlyOnceWith('init.fault', failure, undefined, {
-                captureErrorType: true,
+                captureErrorAttributes: true,
             });
             expect(engine.validate.called).toBe(false);
             expect(telemetry.count).not.toHaveBeenCalledWith('comparison.count', 1);
         });
 
-        test('reports a validation failure as a fault metric without throwing', async () => {
+        test('reports a validation failure as an error metric without throwing', async () => {
             const failure = new Error('engine panic');
             engine.validate.throws(failure);
 
             expect(() => service.onLintResult(lintResult())).not.toThrow();
             await flushAllPromises();
 
-            expect(telemetry.error).toHaveBeenCalledWith('comparison.fault', failure, undefined, {
-                captureErrorType: true,
+            expect(telemetry.count).toHaveBeenCalledWith('validate.count', 1);
+            expect(telemetry.error).toHaveBeenCalledWith('validate.error', failure, undefined, {
+                captureErrorAttributes: true,
             });
             expect(telemetry.count).not.toHaveBeenCalledWith('comparison.count', 1);
         });
