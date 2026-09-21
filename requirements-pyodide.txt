@@ -6,7 +6,7 @@
 # To update: run `python3 -m pip download --only-binary=:all: --python-version 313
 #   --platform any --implementation py --abi none --no-deps <packages>`
 # and update the pinned versions below.
-cfn-lint==1.50.1
+cfn-lint==1.57.0
 aws-sam-translator==1.109.0
 jsonpatch==1.33
 jsonpointer==3.1.1

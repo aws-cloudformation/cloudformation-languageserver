@@ -4,7 +4,7 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { PublishDiagnosticsParams, DiagnosticSeverity } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
-import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { CfnLintSettings } from '../../settings/Settings';
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
 
 interface CfnLintDiagnostic {
@@ -30,9 +30,17 @@ interface CfnLintDiagnostic {
 }
 
 export class LocalCfnLintExecutor {
-    private readonly log = LoggerFactory.getLogger(LocalCfnLintExecutor);
+    // cfn-lint exit codes: 2 = error findings, 4 = warnings, 8 = informational. ORed together.
+    private static readonly FINDINGS_BITMASK = 2 | 4 | 8;
 
-    constructor(private readonly cfnLintPath: string) {}
+    constructor(
+        private readonly cfnLintPath: string,
+        private settings: CfnLintSettings,
+    ) {}
+
+    updateSettings(settings: CfnLintSettings): void {
+        this.settings = settings;
+    }
 
     async lintTemplate(
         content: string,
@@ -68,7 +76,7 @@ export class LocalCfnLintExecutor {
 
     private async executeCfnLint(filePath: string, workspaceRoot?: string): Promise<CfnLintDiagnostic[]> {
         return await new Promise((resolve, reject) => {
-            const args = ['--format', 'json', filePath];
+            const args = this.buildArgs(filePath);
             const child = spawn(this.cfnLintPath, args, {
                 stdio: ['ignore', 'pipe', 'pipe'],
                 cwd: workspaceRoot,
@@ -85,19 +93,30 @@ export class LocalCfnLintExecutor {
                 stderr += data.toString();
             });
 
-            child.on('close', (code) => {
+            child.on('close', (code, signal) => {
+                if (code === null) {
+                    reject(new Error(`cfn-lint terminated by signal ${signal}: ${stderr || stdout || 'no output'}`));
+                    return;
+                }
+
+                if ((code & ~LocalCfnLintExecutor.FINDINGS_BITMASK) !== 0) {
+                    reject(new Error(`cfn-lint failed (exit code ${code}): ${stderr || stdout || 'unknown error'}`));
+                    return;
+                }
+
                 try {
-                    if (code === 0 || code === 2) {
-                        // 0 = no issues, 2 = issues found
-                        const diagnostics: CfnLintDiagnostic[] = stdout.trim()
-                            ? (JSON.parse(stdout) as CfnLintDiagnostic[])
-                            : [];
-                        resolve(diagnostics);
-                    } else {
-                        reject(new Error(`cfn-lint exited with code ${code}: ${stderr}`));
-                    }
+                    // Valid bitmask code (0/2/4/6/8/10/12/14): parse findings JSON.
+                    const diagnostics: CfnLintDiagnostic[] = stdout.trim()
+                        ? (JSON.parse(stdout) as CfnLintDiagnostic[])
+                        : [];
+                    resolve(diagnostics);
                 } catch (error) {
-                    reject(new Error(`Failed to parse cfn-lint output: ${extractErrorMessage(error)}`));
+                    reject(
+                        new Error(
+                            `Failed to parse cfn-lint output (exit code ${code}): ` +
+                                `${extractErrorMessage(error)}${stderr ? ` stderr: ${stderr}` : ''}`,
+                        ),
+                    );
                 }
             });
 
@@ -105,6 +124,44 @@ export class LocalCfnLintExecutor {
                 reject(new Error(`Failed to execute cfn-lint: ${extractErrorMessage(error)}`));
             });
         });
+    }
+
+    private buildArgs(filePath: string): string[] {
+        const args = ['--format', 'json'];
+
+        if (this.settings.includeChecks.length > 0) {
+            args.push('--include-checks', ...this.settings.includeChecks);
+        }
+        if (this.settings.includeExperimental) {
+            args.push('--include-experimental');
+        }
+        if (this.settings.ignoreChecks.length > 0) {
+            args.push('--ignore-checks', ...this.settings.ignoreChecks);
+        }
+        if (this.settings.mandatoryChecks.length > 0) {
+            args.push('--mandatory-checks', ...this.settings.mandatoryChecks);
+        }
+        for (const rule of this.settings.configureRules) {
+            args.push('--configure-rule', rule);
+        }
+        if (this.settings.regions.length > 0) {
+            args.push('--regions', ...this.settings.regions);
+        }
+        for (const rule of this.settings.appendRules) {
+            args.push('--append-rules', rule);
+        }
+        for (const rule of this.settings.customRules) {
+            args.push('--custom-rules', rule);
+        }
+        if (this.settings.overrideSpec) {
+            args.push('--override-spec', this.settings.overrideSpec);
+        }
+        for (const schema of this.settings.registrySchemas) {
+            args.push('--registry-schemas', schema);
+        }
+
+        args.push(filePath);
+        return args;
     }
 
     private convertToLspFormat(diagnostics: CfnLintDiagnostic[], uri: string): PublishDiagnosticsParams[] {

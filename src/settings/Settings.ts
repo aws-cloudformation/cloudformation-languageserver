@@ -117,9 +117,9 @@ export const DefaultSettings: DeepReadonly<Settings> = {
                 totalTimeoutMs: 120_000, // 2 minutes total timeout
             },
             ignoreChecks: [],
-            includeChecks: [],
+            includeChecks: ['I'],
             mandatoryChecks: [],
-            includeExperimental: false,
+            includeExperimental: true,
             configureRules: [],
             regions: [],
             customRules: [],
