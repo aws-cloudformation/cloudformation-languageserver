@@ -49,6 +49,7 @@ import { AwsClient } from '../../src/services/AwsClient';
 import { CcapiService } from '../../src/services/CcapiService';
 import { CfnLintService } from '../../src/services/cfnLint/CfnLintService';
 import { CfnService } from '../../src/services/CfnService';
+import { CfnValidateService } from '../../src/services/cfnValidate/CfnValidateService';
 import { CodeActionService } from '../../src/services/CodeActionService';
 import { DiagnosticCoordinator } from '../../src/services/DiagnosticCoordinator';
 import { GuardService } from '../../src/services/guard/GuardService';
@@ -146,6 +147,13 @@ export function createMockGuardService() {
     mock.getQueuedValidationCount.returns(0);
     mock.getActiveValidationCount.returns(0);
     mock.isReady.returns({ ready: true });
+    return mock;
+}
+
+export function createMockCfnValidateService() {
+    const mock = stubInterface<CfnValidateService>();
+    mock.onLintResult.returns();
+    mock.isInitialized.returns(false);
     return mock;
 }
 
@@ -370,6 +378,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         schemaRetriever: overrides.schemaRetriever ?? createMockSchemaRetriever(),
         schemaReadiness: overrides.schemaReadiness ?? stubInterface(),
         cfnLintService: overrides.cfnLintService ?? createMockCfnLintService(),
+        cfnValidateService: overrides.cfnValidateService ?? createMockCfnValidateService(),
         guardService: overrides.guardService ?? createMockGuardService(),
         s3Service: overrides.s3Service ?? stubInterface(),
         onlineStatus: overrides.onlineStatus ?? stubInterface<OnlineStatus>(),

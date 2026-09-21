@@ -110,7 +110,6 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
         console.log('[DownloadWheels] Skipped (skipWheels=true)');
     }
 
-    // Copy relationship schemas for both development and production
     plugins.push(
         new CopyWebpackPlugin({
             patterns: [
