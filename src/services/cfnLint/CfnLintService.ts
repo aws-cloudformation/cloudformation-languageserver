@@ -137,7 +137,7 @@ export class CfnLintService
 
         // Initialize local executor if path is configured
         if (this.settings.path) {
-            this.localExecutor = new LocalCfnLintExecutor(this.settings.path);
+            this.localExecutor = new LocalCfnLintExecutor(this.settings.path, this.settings);
         }
     }
 
@@ -155,10 +155,12 @@ export class CfnLintService
 
         if (pathChanged) {
             if (newSettings.path) {
-                this.localExecutor = new LocalCfnLintExecutor(newSettings.path);
+                this.localExecutor = new LocalCfnLintExecutor(newSettings.path, newSettings);
             } else {
                 this.localExecutor = undefined;
             }
+        } else if (this.localExecutor) {
+            this.localExecutor.updateSettings(newSettings);
         }
         // Note: Delayer delay is immutable, set at construction time
         // The new delayMs will be used for future operations that check this.settings.delayMs
@@ -185,7 +187,7 @@ export class CfnLintService
 
         if (this.settings.path) {
             // Local executor doesn't need heavy initialization
-            this.localExecutor = new LocalCfnLintExecutor(this.settings.path);
+            this.localExecutor = new LocalCfnLintExecutor(this.settings.path, this.settings);
             this.telemetry.count('init.success', 1, { attributes: { mode: 'local' } });
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
             return;

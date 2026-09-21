@@ -5,6 +5,7 @@ import { describe, expect, beforeEach, vi, test } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { LocalCfnLintExecutor } from '../../../../src/services/cfnLint/LocalCfnLintExecutor';
 import { CloudFormationFileType } from '../../../../src/document/Document';
+import { DefaultSettings } from '../../../../src/settings/Settings';
 
 // Mock the module: spawn is a free function, not an injectable interface (cf. PyodideWorkerManager.test.ts).
 vi.mock('child_process', async (importOriginal) => {
@@ -15,6 +16,7 @@ vi.mock('child_process', async (importOriginal) => {
 const mockFilePath = 'test.yaml';
 const mockUri = 'file:///test.yaml';
 const mockCfnLintPath = '/usr/local/bin/cfn-lint';
+const mockSettings = DefaultSettings.diagnostics.cfnLint;
 
 interface MockDiagnostic {
     ruleId: string;
@@ -111,7 +113,7 @@ describe('LocalCfnLintExecutor', () => {
         ])('should parse diagnostics from exit code $exitCode ($description)', async ({ exitCode, findings }) => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(exitCode, makeDiagnosticsJson(findings)));
 
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
 
             if (findings.length === 0) {
@@ -127,7 +129,7 @@ describe('LocalCfnLintExecutor', () => {
         test('should reject with a parse error when stdout is not valid JSON', async () => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, 'not json'));
 
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
                 /Failed to parse cfn-lint output \(exit code 2\)/,
             );
@@ -136,7 +138,7 @@ describe('LocalCfnLintExecutor', () => {
         test('should include the parse error even when stderr has content', async () => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, 'not json', 'some warning'));
 
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
                 /Unexpected token/,
             );
@@ -145,7 +147,7 @@ describe('LocalCfnLintExecutor', () => {
         test('should reject when cfn-lint exits with code 1 (tool error)', async () => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(1, '', 'ValueError: bad arguments'));
 
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
                 'cfn-lint failed (exit code 1): ValueError: bad arguments',
             );
@@ -154,7 +156,7 @@ describe('LocalCfnLintExecutor', () => {
         test('should include stdout in exit-1 error when stderr is empty', async () => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(1, 'Configuration error: bad config'));
 
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
                 'cfn-lint failed (exit code 1): Configuration error: bad config',
             );
@@ -163,7 +165,7 @@ describe('LocalCfnLintExecutor', () => {
         test('should reject when cfn-lint is killed by a signal', async () => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(null, '', '', 'SIGKILL'));
 
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             await expect(executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template)).rejects.toThrow(
                 'cfn-lint terminated by signal SIGKILL',
             );
@@ -172,7 +174,7 @@ describe('LocalCfnLintExecutor', () => {
         test('should return empty diagnostics when stdout is empty', async () => {
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(0, ''));
 
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
 
             expect(result).toEqual([]);
@@ -182,7 +184,7 @@ describe('LocalCfnLintExecutor', () => {
             const allFindings = [errorFinding, warningFinding, infoFinding];
             vi.mocked(spawn).mockReturnValue(createMockChildProcess(14, makeDiagnosticsJson(allFindings)));
 
-            const executor = new LocalCfnLintExecutor(mockCfnLintPath);
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
 
             expect(result).toHaveLength(1);
@@ -190,6 +192,64 @@ describe('LocalCfnLintExecutor', () => {
             expect(result[0].diagnostics[0].severity).toBe(DiagnosticSeverity.Error);
             expect(result[0].diagnostics[1].severity).toBe(DiagnosticSeverity.Warning);
             expect(result[0].diagnostics[2].severity).toBe(DiagnosticSeverity.Information);
+        });
+    });
+
+    describe('settings passthrough', () => {
+        test('should pass default settings as CLI args', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(0, '[]'));
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
+            await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
+
+            const spawnArgs = vi.mocked(spawn).mock.calls[0][1] as string[];
+            expect(spawnArgs).toContain('--format');
+            expect(spawnArgs).toContain('--include-checks');
+            expect(spawnArgs).toContain('I');
+            expect(spawnArgs).toContain('--include-experimental');
+            expect(spawnArgs[spawnArgs.length - 1]).toBe(mockFilePath);
+        });
+
+        test('should pass ignore-checks when configured', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(0, '[]'));
+            const settings = { ...mockSettings, ignoreChecks: ['W3002', 'E1001'] as readonly string[] };
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, settings);
+            await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
+
+            const spawnArgs = vi.mocked(spawn).mock.calls[0][1] as string[];
+            expect(spawnArgs).toContain('--ignore-checks');
+            expect(spawnArgs).toContain('W3002');
+            expect(spawnArgs).toContain('E1001');
+        });
+
+        test('should omit flags for empty settings', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(0, '[]'));
+            const settings = {
+                ...mockSettings,
+                includeChecks: [] as readonly string[],
+                includeExperimental: false,
+                ignoreChecks: [] as readonly string[],
+            };
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, settings);
+            await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
+
+            const spawnArgs = vi.mocked(spawn).mock.calls[0][1] as string[];
+            expect(spawnArgs).not.toContain('--include-checks');
+            expect(spawnArgs).not.toContain('--include-experimental');
+            expect(spawnArgs).not.toContain('--ignore-checks');
+        });
+
+        test('should reflect updated settings', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(0, '[]'));
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
+
+            executor.updateSettings({ ...mockSettings, includeExperimental: false });
+            await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
+
+            const spawnArgs = vi.mocked(spawn).mock.calls[0][1] as string[];
+            expect(spawnArgs).not.toContain('--include-experimental');
         });
     });
 });
