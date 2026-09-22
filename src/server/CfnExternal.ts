@@ -62,7 +62,8 @@ export class CfnExternal implements Configurables, Closeable {
             );
         this.schemaReadiness = overrides.schemaReadiness ?? new SchemaReadiness(this.schemaStore);
 
-        this.cfnValidateService = overrides.cfnValidateService ?? new CfnValidateService();
+        this.cfnValidateService =
+            overrides.cfnValidateService ?? new CfnValidateService(core.featureFlags.get('CfnValidate'));
         this.cfnLintService =
             overrides.cfnLintService ??
             new CfnLintService(

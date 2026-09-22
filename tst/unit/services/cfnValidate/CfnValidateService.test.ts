@@ -3,6 +3,7 @@ import { StubbedInstance, stubInterface } from 'ts-sinon';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { Diagnostic, DiagnosticSeverity } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../../../src/document/Document';
+import { FeatureFlag } from '../../../../src/featureFlag/FeatureFlagI';
 import { LintResult } from '../../../../src/services/cfnLint/LintResultObserver';
 import { CfnValidateEngine } from '../../../../src/services/cfnValidate/CfnValidateEngine';
 import { CfnValidateService } from '../../../../src/services/cfnValidate/CfnValidateService';
@@ -58,6 +59,7 @@ function settingsWithCfnLint(cfnLintOverrides: Partial<Settings['diagnostics']['
 }
 
 describe('CfnValidateService', () => {
+    let featureFlag: StubbedInstance<FeatureFlag>;
     let engine: StubbedInstance<CfnValidateEngine>;
     let telemetry: { count: Mock; error: Mock; histogram: Mock; measure: Mock };
     let service: CfnValidateService;
@@ -73,12 +75,14 @@ describe('CfnValidateService', () => {
         };
         vi.spyOn(TelemetryService, 'instance', 'get').mockReturnValue({ get: () => telemetry } as never);
 
+        featureFlag = stubInterface<FeatureFlag>();
+        featureFlag.isEnabled.returns(true);
         engine = stubInterface<CfnValidateEngine>();
         engine.initialize.resolves();
         engine.isInitialized.returns(false);
         engine.validate.returns(report([]));
 
-        service = new CfnValidateService(engine);
+        service = new CfnValidateService(featureFlag, engine);
     });
 
     afterEach(() => {
@@ -87,6 +91,30 @@ describe('CfnValidateService', () => {
     });
 
     describe('onLintResult', () => {
+        test('does not initialize the engine when the feature flag is disabled', async () => {
+            featureFlag.isEnabled.returns(false);
+
+            service.onLintResult(lintResult());
+            await flushAllPromises();
+
+            expect(engine.initialize.called).toBe(false);
+            expect(engine.validate.called).toBe(false);
+            expect(telemetry.count).not.toHaveBeenCalled();
+        });
+
+        test('starts validating after the feature flag becomes enabled', async () => {
+            featureFlag.isEnabled.returns(false);
+            service.onLintResult(lintResult());
+            await flushAllPromises();
+
+            featureFlag.isEnabled.returns(true);
+            service.onLintResult(lintResult());
+            await flushAllPromises();
+
+            expect(engine.initialize.calledOnce).toBe(true);
+            expect(engine.validate.calledOnce).toBe(true);
+        });
+
         test.each([
             CloudFormationFileType.GitSyncDeployment,
             CloudFormationFileType.Other,

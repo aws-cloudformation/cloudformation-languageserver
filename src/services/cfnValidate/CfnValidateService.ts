@@ -2,6 +2,7 @@ import { performance } from 'perf_hooks';
 import type { Diagnostic as CfnValidateDiagnostic, Severity } from '@aws/cloudformation-validate';
 import { Diagnostic } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
+import { FeatureFlag } from '../../featureFlag/FeatureFlagI';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../../settings/ISettingsSubscriber';
 import { CfnLintSettings, DefaultSettings } from '../../settings/Settings';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
@@ -25,7 +26,10 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
 
-    constructor(private readonly engine: CfnValidateEngine = new CfnValidateEngine()) {}
+    constructor(
+        private readonly featureFlag: FeatureFlag,
+        private readonly engine: CfnValidateEngine = new CfnValidateEngine(),
+    ) {}
 
     configure(settingsManager: ISettingsSubscriber): void {
         this.settingsSubscription?.unsubscribe();
@@ -36,7 +40,7 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
     }
 
     onLintResult(result: LintResult): void {
-        if (this.closed || result.fileType !== CloudFormationFileType.Template) {
+        if (this.closed || result.fileType !== CloudFormationFileType.Template || !this.featureFlag.isEnabled()) {
             return;
         }
 
