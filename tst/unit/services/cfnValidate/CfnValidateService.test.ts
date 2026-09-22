@@ -101,13 +101,12 @@ describe('CfnValidateService', () => {
             expect(telemetry.count).not.toHaveBeenCalled();
         });
 
-        test('validates the exact content cfn-lint linted with a warning floor by default', async () => {
+        test('validates the exact content cfn-lint linted', async () => {
             service.onLintResult(lintResult());
             await flushAllPromises();
 
-            expect(engine.validate.calledOnceWith(TEMPLATE_CONTENT, TEMPLATE_URI, { severityLevel: 'WARN' })).toBe(
-                true,
-            );
+            expect(engine.validate.calledOnce).toBe(true);
+            expect(engine.validate.firstCall.args.slice(0, 2)).toEqual([TEMPLATE_CONTENT, TEMPLATE_URI]);
         });
 
         test('emits only the comparison count when both tools agree', async () => {
@@ -212,15 +211,18 @@ describe('CfnValidateService', () => {
     });
 
     describe('cfn-lint settings alignment', () => {
-        test('raises the floor to informational when cfn-lint includes informational checks', async () => {
-            service.configure(createMockSettingsManager(settingsWithCfnLint({ includeChecks: ['I'] })));
+        test.each([
+            ['INFO', ['I']],
+            ['INFO', ['I3011', 'W2001']],
+            ['WARN', []],
+            ['WARN', ['W', 'E3012']],
+        ] as const)('uses a %s floor when cfn-lint includeChecks is %j', async (severityLevel, includeChecks) => {
+            service.configure(createMockSettingsManager(settingsWithCfnLint({ includeChecks })));
 
             service.onLintResult(lintResult());
             await flushAllPromises();
 
-            expect(engine.validate.calledOnceWith(TEMPLATE_CONTENT, TEMPLATE_URI, { severityLevel: 'INFO' })).toBe(
-                true,
-            );
+            expect(engine.validate.calledOnceWith(TEMPLATE_CONTENT, TEMPLATE_URI, { severityLevel })).toBe(true);
         });
 
         test('drops validator findings for rules cfn-lint was told to ignore', async () => {
