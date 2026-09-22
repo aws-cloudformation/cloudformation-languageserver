@@ -2,32 +2,11 @@ import { spawn } from 'child_process';
 import { writeFile, unlink } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
-import { PublishDiagnosticsParams, DiagnosticSeverity } from 'vscode-languageserver';
+import { PublishDiagnosticsParams } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
 import { CfnLintSettings } from '../../settings/Settings';
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
-
-interface CfnLintDiagnostic {
-    Level: string;
-    Message: string;
-    Rule: {
-        Id: string;
-        Description: string;
-        Source: string;
-    };
-    Location: {
-        Start: {
-            LineNumber: number;
-            ColumnNumber: number;
-        };
-        End: {
-            LineNumber: number;
-            ColumnNumber: number;
-        };
-        Path: string[];
-    };
-    Filename: string;
-}
+import { CfnLintDiagnostic, toPublishDiagnostics } from './CfnLintDiagnosticConverter';
 
 export class LocalCfnLintExecutor {
     // cfn-lint exit codes: 2 = error findings, 4 = warnings, 8 = informational. ORed together.
@@ -71,7 +50,7 @@ export class LocalCfnLintExecutor {
         workspaceRoot?: string,
     ): Promise<PublishDiagnosticsParams[]> {
         const rawDiagnostics = await this.executeCfnLint(filePath, workspaceRoot);
-        return this.convertToLspFormat(rawDiagnostics, uri);
+        return toPublishDiagnostics(rawDiagnostics, uri);
     }
 
     private async executeCfnLint(filePath: string, workspaceRoot?: string): Promise<CfnLintDiagnostic[]> {
@@ -162,47 +141,5 @@ export class LocalCfnLintExecutor {
 
         args.push(filePath);
         return args;
-    }
-
-    private convertToLspFormat(diagnostics: CfnLintDiagnostic[], uri: string): PublishDiagnosticsParams[] {
-        if (!diagnostics || diagnostics.length === 0) {
-            return [];
-        }
-
-        const lspDiagnostics = diagnostics.map((item) => ({
-            severity: this.convertSeverity(item.Level),
-            range: {
-                start: {
-                    line: Math.max(0, (item.Location?.Start?.LineNumber || 1) - 1),
-                    character: Math.max(0, (item.Location?.Start?.ColumnNumber || 1) - 1),
-                },
-                end: {
-                    line: Math.max(0, (item.Location?.End?.LineNumber || 1) - 1),
-                    character: Math.max(0, (item.Location?.End?.ColumnNumber || 1) - 1),
-                },
-            },
-            message: item.Message || 'Unknown cfn-lint error',
-            source: 'cfn-lint',
-            code: item.Rule?.Id || 'unknown',
-        }));
-
-        return [{ uri, diagnostics: lspDiagnostics }];
-    }
-
-    private convertSeverity(level: string): DiagnosticSeverity {
-        switch (level) {
-            case 'Error': {
-                return DiagnosticSeverity.Error;
-            }
-            case 'Warning': {
-                return DiagnosticSeverity.Warning;
-            }
-            case 'Info': {
-                return DiagnosticSeverity.Information;
-            }
-            default: {
-                return DiagnosticSeverity.Information;
-            }
-        }
     }
 }

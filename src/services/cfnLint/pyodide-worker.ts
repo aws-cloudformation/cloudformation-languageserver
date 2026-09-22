@@ -4,6 +4,7 @@ import { loadPyodide, type PyodideInterface } from 'pyodide';
 import { PublishDiagnosticsParams } from 'vscode-languageserver';
 import { CloudFormationFileType } from '../../document/Document';
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';
+import { CfnLintDiagnostic, toPublishDiagnostics } from './CfnLintDiagnosticConverter';
 
 // Instead of sending stdout/stderr messages back to the main thread,
 // we'll just log them in the worker thread
@@ -269,60 +270,21 @@ async function initializePyodide(): Promise<InitializeResult> {
         // Setup Python functions for linting
         currentInitPhase = 'cfn_lint_setup';
         await pyodide.runPythonAsync(`
-      import json
       from cfnlint.version import __version__
 
       print('cfn-lint version:', __version__)
       
-      import json
       from pathlib import Path
       from cfnlint import lint, lint_by_config, ManualArgs
+      from cfnlint.formatters import JsonFormatter
 
-      def match_to_diagnostics(matches, uri):
-          filename_results = {}
-          for match in matches:
-              
-              # Map severity levels to LSP DiagnosticSeverity
-              severity = 1  # Default: Error
-              if match.rule.severity.lower() == 'warning':
-                  severity = 2
-              elif match.rule.severity.lower() == 'informational':
-                  severity = 3
-              
-              if match.filename not in filename_results:
-                  filename_results[match.filename] = []
-              
-              filename_results[match.filename].append({
-                  'severity': severity,
-                  'range': {
-                      'start': {
-                          'line': match.linenumber - 1,
-                          'character': match.columnnumber - 1,
-                      },
-                      'end': {
-                          'line': match.linenumberend - 1,
-                          'character': match.columnnumberend - 1,
-                      }
-                  },
-                  'message': match.message,
-                  'source': 'cfn-lint',
-                  'code': match.rule.id,
-                  'codeDescription': {
-                      'href': match.rule.source_url,
-                  }
-              })
-          
-          results = []
-          for filename, diagnostics in filename_results.items():
-              # For single-file linting, all diagnostics should map to the original file URI
-              # Multi-file scenarios (like GitSync referencing templates) should be handled
-              # by separate linting sessions for each file
-              results.append({
-                  'uri': uri,
-                  'diagnostics': diagnostics
-              })
-          
-          return results
+      _json_formatter = JsonFormatter()
+
+      def lint_to_json(matches):
+          # Use cfn-lint's own formatter so the output is byte-identical to --format json.
+          # Apply the same sort key the CLI uses (filename, linenumber, rule.id).
+          sorted_matches = sorted(matches, key=lambda m: (m.filename, m.linenumber, m.rule.id))
+          return _json_formatter.print_matches(sorted_matches, None, None)
       
       def parse_cfn_lint_settings(settings):
           """Parse cfn-lint settings into ManualArgs format"""
@@ -366,18 +328,18 @@ async function initializePyodide(): Promise<InitializeResult> {
 
       def lint_str(template_str, uri, settings=None):
           """
-          Lint a CloudFormation template string and return LSP diagnostics
+          Lint a CloudFormation template string and return cfn-lint JSON findings.
           
           Args:
               template_str (str): CloudFormation template as a string
-              uri (str): Document URI
+              uri (str): Document URI (unused here; passed through to the TS caller)
               settings (dict, optional): cfn-lint settings
 
           Returns:
-              dict: LSP PublishDiagnosticsParams
+              str: JSON array of cfn-lint findings (same schema as --format json)
           """
           config = parse_cfn_lint_settings(settings)
-          return match_to_diagnostics(lint(template_str, config=ManualArgs(**config) if config else None), uri)
+          return lint_to_json(lint(template_str, config=ManualArgs(**config) if config else None))
 
       def lint_uri(lint_path, uri, lint_type, settings=None):
           import glob
@@ -392,7 +354,7 @@ async function initializePyodide(): Promise<InitializeResult> {
           elif lint_type == "gitsync-deployment":
               config["deployment_files"] = [glob.escape(str(path))]
 
-          return match_to_diagnostics(lint_by_config(ManualArgs(**config)), uri)
+          return lint_to_json(lint_by_config(ManualArgs(**config)))
     `);
 
         // Create result object with installation source
@@ -425,19 +387,14 @@ async function getVersion(): Promise<string> {
     return result as string;
 }
 
-function convertPythonResultToDiagnostics(result: unknown): PublishDiagnosticsParams[] {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-    if (!result || typeof (result as any).toJs !== 'function') {
-        throw new Error('Invalid result from Python linting');
+// Parse the JSON string returned by lint_str/lint_uri (cfn-lint JsonFormatter output)
+// and convert to LSP diagnostics using the shared converter.
+function convertPythonResultToDiagnostics(result: unknown, uri: string): PublishDiagnosticsParams[] {
+    if (typeof result !== 'string') {
+        throw new Error('Expected a JSON string from Python linting');
     }
-
-    // Type assertion for the conversion result
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
-    const diagnostics = (result as any).toJs({
-        dict_converter: Object.fromEntries,
-    });
-
-    return (Array.isArray(diagnostics) ? diagnostics : []) as PublishDiagnosticsParams[];
+    const findings = JSON.parse(result) as CfnLintDiagnostic[];
+    return toPublishDiagnostics(findings, uri);
 }
 
 // Lint template content as string
@@ -464,7 +421,7 @@ async function lintTemplate(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await pyodide.runPythonAsync(pythonCode);
 
-    return convertPythonResultToDiagnostics(result);
+    return convertPythonResultToDiagnostics(result, uri);
 }
 
 // Lint file using path
@@ -486,7 +443,7 @@ async function lintFile(
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const result = await pyodide.runPythonAsync(pythonCode);
 
-    return convertPythonResultToDiagnostics(result);
+    return convertPythonResultToDiagnostics(result, uri);
 }
 
 // Mount folder to Pyodide filesystem
