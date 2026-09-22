@@ -50,8 +50,8 @@
             "fleetPercentage": 100
         },
         "CfnValidate": {
-            "enabled": false,
-            "fleetPercentage": 0
+            "enabled": true,
+            "fleetPercentage": 100
         }
     }
 }
