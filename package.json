@@ -57,7 +57,7 @@
         "@aws-sdk/client-s3": "3.1117.0",
         "@aws-sdk/client-sts": "3.1117.0",
         "@aws-sdk/credential-provider-node": "3.972.81",
-        "@aws/cloudformation-validate": "1.11.0",
+        "@aws/cloudformation-validate": "1.12.0",
         "@base2/pretty-print-object": "1.0.2",
         "@opentelemetry/api": "1.9.1",
         "@opentelemetry/auto-instrumentations-node": "0.79.0",
