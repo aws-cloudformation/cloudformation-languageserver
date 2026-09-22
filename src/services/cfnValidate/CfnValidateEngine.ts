@@ -1,8 +1,7 @@
-import type { Engine, Severity, TemplateFile, ValidationReport } from '@aws/cloudformation-validate';
+import type { Engine, Severity, ValidationReport } from '@aws/cloudformation-validate';
 import { Closeable } from '../../utils/Closeable';
 
 type CfnValidateModule = typeof import('@aws/cloudformation-validate');
-type TemplateFactory = (path: string, content: string) => TemplateFile;
 
 export interface CfnValidateOptions {
     readonly severityLevel: Severity;
@@ -10,8 +9,8 @@ export interface CfnValidateOptions {
 
 // The module is imported lazily because requiring it compiles an ~9 MB WebAssembly binary
 export class CfnValidateEngine implements Closeable {
+    private module?: CfnValidateModule;
     private engine?: Engine;
-    private createTemplate?: TemplateFactory;
 
     constructor(private readonly loadModule: () => Promise<CfnValidateModule> = defaultModuleLoader) {}
 
@@ -21,8 +20,8 @@ export class CfnValidateEngine implements Closeable {
         }
 
         const module = await this.loadModule();
+        this.module = module;
         this.engine = new module.CompositeEngine();
-        this.createTemplate = InMemoryTemplateFactory(module);
     }
 
     isInitialized(): boolean {
@@ -30,11 +29,11 @@ export class CfnValidateEngine implements Closeable {
     }
 
     validate(content: string, path: string, options: CfnValidateOptions): ValidationReport {
-        if (!this.engine || !this.createTemplate) {
+        if (!this.engine || !this.module) {
             throw new Error('CfnValidateEngine is not initialized. Call initialize() first.');
         }
 
-        return this.engine.validateTemplate(this.createTemplate(path, content), {
+        return this.engine.validateTemplate(new this.module.TemplateContent(content, path), {
             detailLevel: 'STANDARD',
             severityLevel: options.severityLevel,
         });
@@ -43,27 +42,10 @@ export class CfnValidateEngine implements Closeable {
     close(): void {
         this.engine?.free();
         this.engine = undefined;
-        this.createTemplate = undefined;
+        this.module = undefined;
     }
 }
 
 function defaultModuleLoader(): Promise<CfnValidateModule> {
     return import('@aws/cloudformation-validate');
-}
-
-function InMemoryTemplateFactory(module: CfnValidateModule): TemplateFactory {
-    class InMemoryTemplateFile extends module.TemplateFile {
-        constructor(
-            path: string,
-            private readonly content: string,
-        ) {
-            super(path);
-        }
-
-        override readBytes(): Uint8Array {
-            return Buffer.from(this.content, 'utf8');
-        }
-    }
-
-    return (path, content) => new InMemoryTemplateFile(path, content);
 }
