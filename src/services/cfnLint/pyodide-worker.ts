@@ -281,8 +281,10 @@ async function initializePyodide(): Promise<InitializeResult> {
       _json_formatter = JsonFormatter()
 
       def lint_to_json(matches):
-          # Use cfn-lint's own formatter so the output is byte-identical to --format json.
-          # Apply the same sort key the CLI uses (filename, linenumber, rule.id).
+          # Use cfn-lint's own JsonFormatter (cfnlint/formatters/json.py) so the output
+          # schema is identical to --format json consumed by LocalCfnLintExecutor.
+          # print_matches(matches, rules, config): rules and config are explicitly ignored
+          # by the formatter (it deletes rules internally), so None is the correct value.
           sorted_matches = sorted(matches, key=lambda m: (m.filename, m.linenumber, m.rule.id))
           return _json_formatter.print_matches(sorted_matches, None, None)
       
@@ -393,8 +395,12 @@ function convertPythonResultToDiagnostics(result: unknown, uri: string): Publish
     if (typeof result !== 'string') {
         throw new Error('Expected a JSON string from Python linting');
     }
-    const findings = JSON.parse(result) as CfnLintDiagnostic[];
-    return toPublishDiagnostics(findings, uri);
+    try {
+        const findings = JSON.parse(result) as CfnLintDiagnostic[];
+        return toPublishDiagnostics(findings, uri);
+    } catch (error) {
+        throw new Error(`Failed to parse cfn-lint output from Pyodide: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 
 // Lint template content as string

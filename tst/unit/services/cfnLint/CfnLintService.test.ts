@@ -1,5 +1,4 @@
 import { DateTime } from 'luxon';
-import { loadPyodide } from 'pyodide';
 import * as sinon from 'sinon';
 import { StubbedInstance, stubInterface, stubObject } from 'ts-sinon';
 import { describe, expect, beforeEach, afterEach, vi, Mock, test } from 'vitest';
@@ -186,35 +185,17 @@ describe('CfnLintService', () => {
     ];
 
     beforeEach(() => {
-        // Create mock Pyodide instance
+        // mockPyodide is used only as a truthy placeholder for the internal pyodide
+        // property in the initialization race-condition test (see waitForInitialization tests).
+        // CfnLintService tests stub PyodideWorkerManager at the interface level, so Pyodide
+        // is never initialized directly here and the object shape does not matter.
         mockPyodide = {
-            loadPackage: vi.fn().mockResolvedValue(undefined),
-            runPythonAsync: vi.fn().mockResolvedValue({
-                toJs: vi.fn().mockReturnValue([
-                    {
-                        uri: mockUri,
-                        diagnostics: mockDiagnostics,
-                    },
-                ]),
-            }),
-            runPython: vi.fn().mockReturnValue({
-                toJs: vi.fn().mockReturnValue([
-                    {
-                        uri: mockUri,
-                        diagnostics: mockDiagnostics,
-                    },
-                ]),
-            }),
-            toPy: vi.fn((str) => str),
             FS: {
                 mkdirTree: vi.fn(),
                 rmdir: vi.fn(),
             },
             mountNodeFS: vi.fn(),
         };
-
-        // Mock loadPyodide to return our mock instance
-        (loadPyodide as Mock).mockResolvedValue(mockPyodide);
 
         // Create mock workspace folder
         mockWorkspaceFolder = {

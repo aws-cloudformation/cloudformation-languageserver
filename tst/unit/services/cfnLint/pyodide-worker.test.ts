@@ -50,28 +50,28 @@ const createMockPyodide = () => ({
         // Store the code for assertions in tests
         (createMockPyodide as any).lastPythonCode = code;
 
-        return Promise.resolve({
-            toJs: vi.fn().mockReturnValue([
-                {
-                    uri: 'file:///test.yaml',
-                    diagnostics: [
-                        {
-                            severity: 2,
-                            range: {
-                                start: { line: 1, character: 2 },
-                                end: { line: 1, character: 10 },
-                            },
-                            message: 'Test diagnostic',
-                            source: 'cfn-lint',
-                            code: 'E1001',
-                            codeDescription: {
-                                href: 'https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md#E1001',
-                            },
-                        },
-                    ],
+        // The worker now returns a JSON string from lint_str/lint_uri (cfn-lint JsonFormatter
+        // output), not a PyProxy. Returning a pre-built string matches the new contract.
+        return Promise.resolve(JSON.stringify([
+            {
+                Filename: '/tmp/test.yaml',
+                Id: 'test-id',
+                ParentId: null,
+                Level: 'Warning',
+                Message: 'Test diagnostic',
+                Rule: {
+                    Id: 'E1001',
+                    Description: 'Test rule',
+                    ShortDescription: 'Short',
+                    Source: 'https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md#E1001',
                 },
-            ]),
-        });
+                Location: {
+                    Start: { LineNumber: 2, ColumnNumber: 3 },
+                    End: { LineNumber: 2, ColumnNumber: 11 },
+                    Path: ['Resources', 'MyBucket'],
+                },
+            },
+        ]));
     }),
     toPy: vi.fn((val) => {
         // Store the value for assertions in tests
@@ -214,10 +214,13 @@ describe('pyodide-worker', () => {
                         mockPyodide.toPy(uri);
                         mockPyodide.toPy(content?.replaceAll('"""', '\\"\\"\\"'));
 
-                        const pythonResult = await mockPyodide.runPythonAsync(
+                        const lintJsonStr = await mockPyodide.runPythonAsync(
                             `lint_str(r"""${content}""", r"""${uri}""")`,
                         );
-                        result = pythonResult.toJs();
+                        if (typeof lintJsonStr !== 'string') {
+                            throw new Error('Expected a JSON string from Python linting');
+                        }
+                        result = JSON.parse(lintJsonStr);
                         break;
                     }
                     case 'lintFile': {
@@ -229,10 +232,13 @@ describe('pyodide-worker', () => {
                         const uri = message.payload?.uri as string;
                         const fileType = message.payload?.fileType;
 
-                        const pythonResult = await mockPyodide.runPythonAsync(
+                        const lintFileJsonStr = await mockPyodide.runPythonAsync(
                             `lint_uri(r"""${path}""", r"""${uri}""", r"""${fileType}""")`,
                         );
-                        result = pythonResult.toJs();
+                        if (typeof lintFileJsonStr !== 'string') {
+                            throw new Error('Expected a JSON string from Python linting');
+                        }
+                        result = JSON.parse(lintFileJsonStr);
                         break;
                     }
                     case 'mountFolder': {
@@ -607,14 +613,9 @@ describe('pyodide-worker', () => {
             });
         });
 
-        test('should handle toJs conversion error', async () => {
-            // Setup toJs to throw
-            const mockResult = {
-                toJs: vi.fn().mockImplementationOnce(() => {
-                    throw new Error('toJs conversion error');
-                }),
-            };
-            mockPyodide?.runPythonAsync.mockResolvedValueOnce(mockResult);
+        test('should handle JSON parse error from Python result', async () => {
+            // Python returning malformed JSON should surface as an error
+            mockPyodide?.runPythonAsync.mockResolvedValueOnce('not valid json');
 
             await messageHandler({
                 id: '2',
@@ -626,11 +627,10 @@ describe('pyodide-worker', () => {
                 },
             });
 
-            // Verify the error is properly formatted in the response
+            // Verify the error is properly surfaced in the response
             expect(mockParentPort.postMessage).toHaveBeenCalledWith(
                 expect.objectContaining({
                     id: '2',
-                    error: 'toJs conversion error',
                     success: false,
                 }),
             );
@@ -888,18 +888,23 @@ describe('pyodide-worker', () => {
             // Reset mocks
             vi.clearAllMocks();
 
-            // Setup different mock responses for each call
+            // Setup different mock responses for each call — return cfn-lint JSON strings
+            // matching the format emitted by JsonFormatter (same contract as --format json).
             const mockResponses = [
-                { uri: 'file:///test1.yaml', diagnostics: [{ severity: 1, message: 'Error 1' }] },
-                { uri: 'file:///test2.yaml', diagnostics: [{ severity: 2, message: 'Warning 1' }] },
-                { uri: 'file:///test3.yaml', diagnostics: [{ severity: 3, message: 'Info 1' }] },
+                JSON.stringify([{ Filename: '/tmp/test1.yaml', Id: 'id1', ParentId: null, Level: 'Error',
+                    Message: 'Error 1', Rule: { Id: 'E1001', Description: '', ShortDescription: '', Source: '' },
+                    Location: { Start: { LineNumber: 1, ColumnNumber: 1 }, End: { LineNumber: 1, ColumnNumber: 1 }, Path: [] } }]),
+                JSON.stringify([{ Filename: '/tmp/test2.yaml', Id: 'id2', ParentId: null, Level: 'Warning',
+                    Message: 'Warning 1', Rule: { Id: 'W1001', Description: '', ShortDescription: '', Source: '' },
+                    Location: { Start: { LineNumber: 1, ColumnNumber: 1 }, End: { LineNumber: 1, ColumnNumber: 1 }, Path: [] } }]),
+                JSON.stringify([{ Filename: '/tmp/test3.yaml', Id: 'id3', ParentId: null, Level: 'Informational',
+                    Message: 'Info 1', Rule: { Id: 'I4010', Description: '', ShortDescription: '', Source: '' },
+                    Location: { Start: { LineNumber: 1, ColumnNumber: 1 }, End: { LineNumber: 1, ColumnNumber: 1 }, Path: [] } }]),
             ];
 
             let callCount = 0;
             mockPyodide?.runPythonAsync.mockImplementation(() => {
-                const response = {
-                    toJs: vi.fn().mockReturnValue([mockResponses[callCount % mockResponses.length]]),
-                };
+                const response = mockResponses[callCount % mockResponses.length];
                 callCount++;
                 return Promise.resolve(response);
             });
