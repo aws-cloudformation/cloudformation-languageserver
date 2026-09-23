@@ -49,6 +49,10 @@ interface QueuedLintRequest {
     reject: (reason: unknown) => void;
 }
 
+// 'local' = user-provided cfn-lint binary (LocalCfnLintExecutor).
+// 'pyodide' = bundled WASM worker (PyodideWorkerManager).
+type CfnLintExecutionMode = 'local' | 'pyodide';
+
 export class CfnLintService
     extends DeferredValidationInitializer
     implements SettingsConfigurable, Closeable, ReadinessContributor
@@ -96,6 +100,13 @@ export class CfnLintService
 
     private isInfrastructureError(errorType: string): boolean {
         return errorType === 'WorkerNotInitialized' || errorType === 'WorkerCrash' || errorType === 'MountError';
+    }
+
+    // Returns the active lint execution mode for telemetry: 'local' when a
+    // LocalCfnLintExecutor is configured (user-provided cfn-lint binary),
+    // 'pyodide' when running via the bundled WASM worker.
+    private get lintMode(): CfnLintExecutionMode {
+        return this.localExecutor ? 'local' : 'pyodide';
     }
 
     // Request queue for handling requests during initialization
@@ -474,7 +485,7 @@ export class CfnLintService
                         });
                 }
             }
-            this.telemetry.count('lint.success', 1, { attributes: { fileType } });
+            this.telemetry.count('lint.success', 1, { attributes: { fileType, mode: this.lintMode } });
             this.notifyLintResult(uri, content, fileType, diagnosticPayloads);
         } catch (error) {
             this.resetInitialization();
@@ -489,6 +500,7 @@ export class CfnLintService
                     attributes: {
                         fileType,
                         errorType,
+                        mode: this.lintMode,
                     },
                 });
             }
@@ -590,7 +602,7 @@ export class CfnLintService
                         });
                 }
             }
-            this.telemetry.count('lint.success', 1, { attributes: { fileType } });
+            this.telemetry.count('lint.success', 1, { attributes: { fileType, mode: this.lintMode } });
             this.notifyLintResult(uri, content, fileType, diagnosticPayloads);
         } catch (error) {
             this.resetInitialization();
@@ -605,6 +617,7 @@ export class CfnLintService
                     attributes: {
                         fileType,
                         errorType,
+                        mode: this.lintMode,
                     },
                 });
             }
