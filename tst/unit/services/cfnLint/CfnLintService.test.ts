@@ -7,6 +7,7 @@ import { WorkspaceFolder, DiagnosticSeverity } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CloudFormationFileType, Document } from '../../../../src/document/Document';
 import { CfnLintService, sleep } from '../../../../src/services/cfnLint/CfnLintService';
+import { LintResult } from '../../../../src/services/cfnLint/LintResultObserver';
 import { PyodideWorkerManager } from '../../../../src/services/cfnLint/PyodideWorkerManager';
 import { SettingsState } from '../../../../src/settings/Settings';
 import { Delayer } from '../../../../src/utils/Delayer';
@@ -1938,6 +1939,95 @@ describe('CfnLintService', () => {
             await service.initialize();
 
             expect(service.isInitialized()).toBe(true);
+        });
+    });
+
+    describe('lint result observer', () => {
+        let observer: { onLintResult: Mock<(result: LintResult) => void> };
+        let observedService: CfnLintService;
+
+        beforeEach(async () => {
+            observer = { onLintResult: vi.fn<(result: LintResult) => void>() };
+            observedService = CfnLintService.create(mockComponents, mockWorkerManager, mockDelayer, observer);
+            await observedService.initialize();
+        });
+
+        test('should hand standalone lint results to the observer after publishing', async () => {
+            mockComponents.workspace.getWorkspaceFolder.returns(undefined);
+
+            await observedService.lint(mockTemplate, mockUri);
+
+            expect(observer.onLintResult).toHaveBeenCalledExactlyOnceWith({
+                uri: mockUri,
+                content: mockTemplate,
+                fileType: CloudFormationFileType.Template,
+                diagnostics: mockDiagnostics,
+            });
+            expect(
+                mockComponents.diagnosticCoordinator.publishDiagnostics.calledBefore(observer.onLintResult as any),
+            ).toBe(true);
+        });
+
+        test('should hand workspace lint results to the observer', async () => {
+            mockComponents.workspace.getWorkspaceFolder.returns(mockWorkspaceFolder);
+
+            await observedService.lint(mockTemplate, mockUri);
+
+            expect(observer.onLintResult).toHaveBeenCalledExactlyOnceWith({
+                uri: mockUri,
+                content: mockTemplate,
+                fileType: CloudFormationFileType.Template,
+                diagnostics: mockDiagnostics,
+            });
+        });
+
+        test('should report an empty diagnostic list when cfn-lint finds nothing', async () => {
+            mockComponents.workspace.getWorkspaceFolder.returns(undefined);
+            mockWorkerManager.lintTemplate.resolves([]);
+
+            await observedService.lint(mockTemplate, mockUri);
+
+            expect(observer.onLintResult).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({ uri: mockUri, diagnostics: [] }),
+            );
+        });
+
+        test('should only pass diagnostics that target the linted document', async () => {
+            mockComponents.workspace.getWorkspaceFolder.returns(undefined);
+            const otherUri = 'file:///workspace/project/other.yaml';
+            mockWorkerManager.lintTemplate.resolves([
+                { uri: otherUri, diagnostics: mockDiagnostics },
+                { uri: mockUri, diagnostics: mockDiagnostics },
+            ]);
+
+            await observedService.lint(mockTemplate, mockUri);
+
+            expect(observer.onLintResult).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({ uri: mockUri, diagnostics: mockDiagnostics }),
+            );
+        });
+
+        test('should not notify the observer when linting fails', async () => {
+            mockComponents.workspace.getWorkspaceFolder.returns(undefined);
+            mockWorkerManager.lintTemplate.rejects(new Error('Python execution failed'));
+
+            await observedService.lint(mockTemplate, mockUri);
+
+            expect(observer.onLintResult).not.toHaveBeenCalled();
+        });
+
+        test('should not notify the observer for skipped file types', async () => {
+            const components = createMockComponentsWithOpenTemplate();
+            components.diagnostics.publishDiagnostics.resolves();
+            const otherFile = stubInterface<Document>();
+            (otherFile as any).cfnFileType = CloudFormationFileType.Other;
+            components.documentManager.get.returns(otherFile);
+            const skippingService = CfnLintService.create(components, mockWorkerManager, mockDelayer, observer);
+            await skippingService.initialize();
+
+            await skippingService.lint(mockTemplate, mockUri);
+
+            expect(observer.onLintResult).not.toHaveBeenCalled();
         });
     });
 });

@@ -9,6 +9,7 @@ import { AwsClient } from '../services/AwsClient';
 import { CcapiService } from '../services/CcapiService';
 import { CfnLintService } from '../services/cfnLint/CfnLintService';
 import { CfnService } from '../services/CfnService';
+import { CfnValidateService } from '../services/cfnValidate/CfnValidateService';
 import { GuardService } from '../services/guard/GuardService';
 import { OnlineStatus } from '../services/OnlineStatus';
 import { S3Service } from '../services/S3Service';
@@ -33,6 +34,7 @@ export class CfnExternal implements Configurables, Closeable {
     readonly schemaReadiness: SchemaReadiness;
 
     readonly cfnLintService: CfnLintService;
+    readonly cfnValidateService: CfnValidateService;
     readonly guardService: GuardService;
 
     readonly onlineStatus: OnlineStatus;
@@ -60,9 +62,18 @@ export class CfnExternal implements Configurables, Closeable {
             );
         this.schemaReadiness = overrides.schemaReadiness ?? new SchemaReadiness(this.schemaStore);
 
+        this.cfnValidateService =
+            overrides.cfnValidateService ?? new CfnValidateService(core.featureFlags.get('CfnValidate'));
         this.cfnLintService =
             overrides.cfnLintService ??
-            new CfnLintService(core.documentManager, lsp.workspace, core.diagnosticCoordinator);
+            new CfnLintService(
+                core.documentManager,
+                lsp.workspace,
+                core.diagnosticCoordinator,
+                undefined,
+                undefined,
+                this.cfnValidateService,
+            );
         this.guardService =
             overrides.guardService ??
             new GuardService(core.documentManager, core.diagnosticCoordinator, core.syntaxTreeManager);
@@ -73,10 +84,23 @@ export class CfnExternal implements Configurables, Closeable {
     }
 
     configurables(): Configurable[] {
-        return [this.schemaRetriever, this.schemaReadiness, this.cfnLintService, this.guardService, this.cfnService];
+        return [
+            this.schemaRetriever,
+            this.schemaReadiness,
+            this.cfnLintService,
+            this.cfnValidateService,
+            this.guardService,
+            this.cfnService,
+        ];
     }
 
     async close() {
-        return await closeSafely(this.cfnLintService, this.guardService, this.schemaRetriever, this.onlineStatus);
+        return await closeSafely(
+            this.cfnLintService,
+            this.cfnValidateService,
+            this.guardService,
+            this.schemaRetriever,
+            this.onlineStatus,
+        );
     }
 }

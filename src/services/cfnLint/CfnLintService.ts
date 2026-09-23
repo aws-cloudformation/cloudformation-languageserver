@@ -1,6 +1,6 @@
 import { performance } from 'perf_hooks';
 import { DateTime } from 'luxon';
-import { Diagnostic, WorkspaceFolder } from 'vscode-languageserver';
+import { Diagnostic, PublishDiagnosticsParams, WorkspaceFolder } from 'vscode-languageserver';
 import { URI } from 'vscode-uri';
 import { CloudFormationFileType } from '../../document/Document';
 import { DocumentManager } from '../../document/DocumentManager';
@@ -24,6 +24,7 @@ import { ReadinessContributor, ReadinessStatus } from '../../utils/ReadinessCont
 import { byteSize } from '../../utils/String';
 import { DeferredValidationInitializer, InitializationStatus, ValidationTrigger } from '../../utils/ValidationUtils';
 import { DiagnosticCoordinator } from '../DiagnosticCoordinator';
+import { LintResultObserver } from './LintResultObserver';
 import { LocalCfnLintExecutor } from './LocalCfnLintExecutor';
 import { PyodideWorkerManager } from './PyodideWorkerManager';
 
@@ -106,6 +107,7 @@ export class CfnLintService
         private readonly diagnosticCoordinator: DiagnosticCoordinator,
         workerManager?: PyodideWorkerManager,
         delayer?: Delayer<void>,
+        private readonly lintResultObserver?: LintResultObserver,
     ) {
         super(
             () => this.settings.enabled,
@@ -394,6 +396,21 @@ export class CfnLintService
             });
     }
 
+    private notifyLintResult(
+        uri: string,
+        content: string,
+        fileType: CloudFormationFileType,
+        diagnosticPayloads: readonly PublishDiagnosticsParams[] | undefined,
+    ): void {
+        if (!this.lintResultObserver) {
+            return;
+        }
+        const diagnostics = (diagnosticPayloads ?? [])
+            .filter((payload) => payload.uri === uri)
+            .flatMap((payload) => payload.diagnostics);
+        this.lintResultObserver.onLintResult({ uri, content, fileType, diagnostics });
+    }
+
     /**
      * Publish error diagnostics when linting fails
      *
@@ -458,6 +475,7 @@ export class CfnLintService
                 }
             }
             this.telemetry.count('lint.success', 1, { attributes: { fileType } });
+            this.notifyLintResult(uri, content, fileType, diagnosticPayloads);
         } catch (error) {
             this.resetInitialization();
             this.logError(`linting ${fileType} by string`, error);
@@ -573,6 +591,7 @@ export class CfnLintService
                 }
             }
             this.telemetry.count('lint.success', 1, { attributes: { fileType } });
+            this.notifyLintResult(uri, content, fileType, diagnosticPayloads);
         } catch (error) {
             this.resetInitialization();
             this.logError(`linting ${fileType} by file`, error);
@@ -997,6 +1016,7 @@ export class CfnLintService
         components: CfnLspServerComponentsType,
         workerManager?: PyodideWorkerManager,
         delayer?: Delayer<void>,
+        lintResultObserver?: LintResultObserver,
     ) {
         return new CfnLintService(
             components.documentManager,
@@ -1004,6 +1024,7 @@ export class CfnLintService
             components.diagnosticCoordinator,
             workerManager,
             delayer,
+            lintResultObserver,
         );
     }
 }
