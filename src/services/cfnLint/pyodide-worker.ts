@@ -395,14 +395,15 @@ function convertPythonResultToDiagnostics(result: unknown, uri: string): Publish
     if (typeof result !== 'string') {
         throw new TypeError('Expected a JSON string from Python linting');
     }
+    let findings: CfnLintDiagnostic[];
     try {
-        const findings = JSON.parse(result) as CfnLintDiagnostic[];
-        return toPublishDiagnostics(findings, uri);
+        findings = JSON.parse(result) as CfnLintDiagnostic[];
     } catch (error) {
         throw new Error(
             `Failed to parse cfn-lint output from Pyodide: ${error instanceof Error ? error.message : String(error)}`,
         );
     }
+    return toPublishDiagnostics(findings, uri);
 }
 
 // Lint template content as string
