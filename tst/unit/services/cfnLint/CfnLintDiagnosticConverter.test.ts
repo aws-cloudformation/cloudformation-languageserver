@@ -11,8 +11,6 @@ function makeFinding(overrides: Partial<CfnLintDiagnostic> = {}): CfnLintDiagnos
         Message: 'Test error',
         Rule: {
             Id: 'E1001',
-            Description: 'Test rule',
-            ShortDescription: 'Short',
             Source: 'https://docs.example.com/E1001',
         },
         Location: {

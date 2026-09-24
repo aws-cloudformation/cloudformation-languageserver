@@ -102,9 +102,6 @@ export class CfnLintService
         return errorType === 'WorkerNotInitialized' || errorType === 'WorkerCrash' || errorType === 'MountError';
     }
 
-    // Returns the active lint execution mode for telemetry: 'local' when a
-    // LocalCfnLintExecutor is configured (user-provided cfn-lint binary),
-    // 'pyodide' when running via the bundled WASM worker.
     private get lintMode(): CfnLintExecutionMode {
         return this.localExecutor ? 'local' : 'pyodide';
     }

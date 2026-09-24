@@ -1,15 +1,11 @@
 import { DiagnosticSeverity, PublishDiagnosticsParams } from 'vscode-languageserver';
 
-// Matches the JSON shape emitted by cfn-lint --format json (cfnlint/formatters/json.py).
-// Both the local subprocess path and the Pyodide path produce this structure so that a
-// single converter handles both and field-mapping logic has exactly one home.
-export interface CfnLintDiagnostic {
+// JSON shape from cfn-lint --format json. Shared by local and Pyodide paths.
+export type CfnLintDiagnostic = {
     Level: string;
     Message: string;
     Rule: {
         Id: string;
-        Description: string;
-        ShortDescription: string;
         Source: string;
     };
     Location: {
@@ -24,13 +20,9 @@ export interface CfnLintDiagnostic {
         Path: unknown;
     };
     Filename: string;
-    // Id and ParentId are present in the JSON but not consumed for LSP diagnostics.
-}
+};
 
-// Convert a list of cfn-lint JSON findings to LSP PublishDiagnosticsParams.
-// uri is the document URI to attach all diagnostics to.
-// Returns an empty array (not a single entry with empty diagnostics) when there are no findings,
-// matching the contract callers rely on to skip publishing.
+// Returns [] (not [{uri, diagnostics: []}]) when no findings, so callers can skip publishing.
 export function toPublishDiagnostics(diagnostics: CfnLintDiagnostic[], uri: string): PublishDiagnosticsParams[] {
     if (!diagnostics || diagnostics.length === 0) {
         return [];
@@ -64,10 +56,6 @@ export function toPublishDiagnostics(diagnostics: CfnLintDiagnostic[], uri: stri
     return [{ uri, diagnostics: lspDiagnostics }];
 }
 
-// Map cfn-lint Level strings (as emitted by JsonFormatter, capitalized) to LSP severity.
-// 'Informational' is cfn-lint's canonical level for I-prefix rules; 'Info' is not emitted
-// by the JSON formatter but is accepted for forward-compatibility.
-// Unknown levels default to Information (least alarming, matches previous local-path behavior).
 function convertSeverity(level: string): DiagnosticSeverity {
     switch (level) {
         case 'Error': {

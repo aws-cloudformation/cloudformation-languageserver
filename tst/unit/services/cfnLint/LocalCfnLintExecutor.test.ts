@@ -84,8 +84,6 @@ function makeDiagnosticsJson(findings: MockDiagnostic[], sourceUrl = 'https://ex
             ParentId: null,
             Rule: {
                 Id: ruleId,
-                Description: 'Test rule description',
-                ShortDescription: 'Short description',
                 Source: sourceUrl,
             },
         })),

@@ -185,10 +185,7 @@ describe('CfnLintService', () => {
     ];
 
     beforeEach(() => {
-        // mockPyodide is used only as a truthy placeholder for the internal pyodide
-        // property in the initialization race-condition test (see waitForInitialization tests).
-        // CfnLintService tests stub PyodideWorkerManager at the interface level, so Pyodide
-        // is never initialized directly here and the object shape does not matter.
+        // Minimal mock — only FS methods needed for race-condition tests.
         mockPyodide = {
             FS: {
                 mkdirTree: vi.fn(),

@@ -62,8 +62,6 @@ const createMockPyodide = () => ({
                     Message: 'Test diagnostic',
                     Rule: {
                         Id: 'E1001',
-                        Description: 'Test rule',
-                        ShortDescription: 'Short',
                         Source: 'https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md#E1001',
                     },
                     Location: {
@@ -900,7 +898,7 @@ describe('pyodide-worker', () => {
                         ParentId: null,
                         Level: 'Error',
                         Message: 'Error 1',
-                        Rule: { Id: 'E1001', Description: '', ShortDescription: '', Source: '' },
+                        Rule: { Id: 'E1001', Source: '' },
                         Location: {
                             Start: { LineNumber: 1, ColumnNumber: 1 },
                             End: { LineNumber: 1, ColumnNumber: 1 },
@@ -915,7 +913,7 @@ describe('pyodide-worker', () => {
                         ParentId: null,
                         Level: 'Warning',
                         Message: 'Warning 1',
-                        Rule: { Id: 'W1001', Description: '', ShortDescription: '', Source: '' },
+                        Rule: { Id: 'W1001', Source: '' },
                         Location: {
                             Start: { LineNumber: 1, ColumnNumber: 1 },
                             End: { LineNumber: 1, ColumnNumber: 1 },
@@ -930,7 +928,7 @@ describe('pyodide-worker', () => {
                         ParentId: null,
                         Level: 'Informational',
                         Message: 'Info 1',
-                        Rule: { Id: 'I4010', Description: '', ShortDescription: '', Source: '' },
+                        Rule: { Id: 'I4010', Source: '' },
                         Location: {
                             Start: { LineNumber: 1, ColumnNumber: 1 },
                             End: { LineNumber: 1, ColumnNumber: 1 },
