@@ -6,8 +6,8 @@
   "alpha": [],
   "beta": [
     {
-      "serverVersion": "1.11.0-beta",
-      "tag": "v1.11.0-beta",
+      "serverVersion": "1.12.0-beta",
+      "tag": "v1.12.0-beta",
       "latest": true,
       "isDelisted": false,
       "targets": [
@@ -17,10 +17,10 @@
           "nodejs": "24",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-darwin-arm64-node24.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-darwin-arm64-node24.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-darwin-arm64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-darwin-arm64-node24.zip",
               "hashes": [],
-              "bytes": 58811509
+              "bytes": 63017398
             }
           ]
         },
@@ -30,10 +30,10 @@
           "nodejs": "24",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-darwin-x64-node24.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-darwin-x64-node24.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-darwin-x64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-darwin-x64-node24.zip",
               "hashes": [],
-              "bytes": 58963505
+              "bytes": 63169404
             }
           ]
         },
@@ -43,10 +43,10 @@
           "nodejs": "24",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-linux-arm64-node24.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-linux-arm64-node24.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-linux-arm64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-linux-arm64-node24.zip",
               "hashes": [],
-              "bytes": 63264323
+              "bytes": 67470210
             }
           ]
         },
@@ -56,10 +56,10 @@
           "nodejs": "24",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-linux-x64-node24.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-linux-x64-node24.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-linux-x64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-linux-x64-node24.zip",
               "hashes": [],
-              "bytes": 63536244
+              "bytes": 67742138
             }
           ]
         },
@@ -69,10 +69,10 @@
           "nodejs": "18",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-linuxglib2.28-arm64-node18.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-linuxglib2.28-arm64-node18.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-linuxglib2.28-arm64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-linuxglib2.28-arm64-node18.zip",
               "hashes": [],
-              "bytes": 62407281
+              "bytes": 66613161
             }
           ]
         },
@@ -82,10 +82,10 @@
           "nodejs": "18",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-linuxglib2.28-x64-node18.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-linuxglib2.28-x64-node18.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-linuxglib2.28-x64-node18.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-linuxglib2.28-x64-node18.zip",
               "hashes": [],
-              "bytes": 62805405
+              "bytes": 67011290
             }
           ]
         },
@@ -95,10 +95,10 @@
           "nodejs": "24",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-win32-arm64-node24.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-win32-arm64-node24.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-win32-arm64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-win32-arm64-node24.zip",
               "hashes": [],
-              "bytes": 58573161
+              "bytes": 62778614
             }
           ]
         },
@@ -108,10 +108,10 @@
           "nodejs": "24",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-win32-arm64-node24.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-win32-arm64-node24.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-win32-arm64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-win32-arm64-node24.zip",
               "hashes": [],
-              "bytes": 58573161
+              "bytes": 62778614
             }
           ]
         },
@@ -121,10 +121,10 @@
           "nodejs": "24",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-win32-x64-node24.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-win32-x64-node24.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-win32-x64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-win32-x64-node24.zip",
               "hashes": [],
-              "bytes": 58984256
+              "bytes": 63190141
             }
           ]
         },
@@ -134,10 +134,10 @@
           "nodejs": "24",
           "contents": [
             {
-              "filename": "cloudformation-languageserver-1.11.0-beta-win32-x64-node24.zip",
-              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.11.0-beta/cloudformation-languageserver-1.11.0-beta-win32-x64-node24.zip",
+              "filename": "cloudformation-languageserver-1.12.0-beta-win32-x64-node24.zip",
+              "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/releases/download/v1.12.0-beta/cloudformation-languageserver-1.12.0-beta-win32-x64-node24.zip",
               "hashes": [],
-              "bytes": 58984256
+              "bytes": 63190141
             }
           ]
         }
