@@ -110,6 +110,7 @@ export class TestExtension implements Closeable {
                 },
                 clientId: id,
             },
+            commandSuffix: 'test-extension',
             encryption: {
                 key: randomBytes(32).toString('base64'),
                 mode: 'JWT',

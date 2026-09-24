@@ -16,13 +16,13 @@ describe('CfnInfraCore commands', () => {
         });
     }
 
-    function paramsWithExtensionName(name: unknown): ExtendedInitializeParams {
+    function paramsWithCommandSuffix(commandSuffix: unknown): ExtendedInitializeParams {
         return {
             processId: null,
             rootUri: null,
             capabilities: {},
             initializationOptions: {
-                aws: { clientInfo: { extension: { name, version: '1.0.0' } } },
+                aws: { clientInfo: { extension: { name: 'toolkit-vscode', version: '1.0.0' } }, commandSuffix },
             },
         } as unknown as ExtendedInitializeParams;
     }
@@ -31,34 +31,38 @@ describe('CfnInfraCore commands', () => {
         components = createMockComponents();
     });
 
-    it('should derive client-specific commands from the extension name', () => {
-        const core = createCore(paramsWithExtensionName('aws.cloudformation'));
+    it('should derive client-specific commands from the configured command suffix', () => {
+        const core = createCore(paramsWithCommandSuffix('aws.cloudformation'));
 
         expect(core.commands).toEqual(createLspCommands('aws.cloudformation'));
     });
 
-    it('should derive the commands from the sanitized extension name', () => {
-        const core = createCore(paramsWithExtensionName('Test AWS CloudFormation'));
+    it('should derive the commands from the sanitized command suffix', () => {
+        const core = createCore(paramsWithCommandSuffix('Test AWS CloudFormation'));
 
         expect(core.commands).toEqual(createLspCommands('Test-AWS-CloudFormation'));
     });
 
-    it('should derive the unsuffixed commands when the client sends no extension name', () => {
+    it('should derive the unsuffixed commands when the client sends no command suffix', () => {
         const core = createCore({} as ExtendedInitializeParams);
 
         expect(core.commands).toEqual(createLspCommands());
     });
 
-    it('should fail initialization when the extension name is not a string', () => {
-        expect(() => createCore(paramsWithExtensionName(42))).toThrow(
-            /initializationOptions\.aws\.clientInfo\.extension\.name/,
-        );
+    it('should derive the unsuffixed commands for existing clients that only send an extension name', () => {
+        const core = createCore(paramsWithCommandSuffix(undefined));
+
+        expect(core.commands).toEqual(createLspCommands());
+    });
+
+    it('should fail initialization when the command suffix is not a string', () => {
+        expect(() => createCore(paramsWithCommandSuffix(42))).toThrow(/initializationOptions\.aws\.commandSuffix/);
     });
 
     it('should honor an explicit commands override', () => {
         const commands = createLspCommands('override');
 
-        const core = createCore(paramsWithExtensionName('aws.cloudformation'), { commands });
+        const core = createCore(paramsWithCommandSuffix('aws.cloudformation'), { commands });
 
         expect(core.commands).toBe(commands);
     });

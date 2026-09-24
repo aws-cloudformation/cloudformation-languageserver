@@ -8,7 +8,7 @@ const BaseCommandIds = {
     updateRegion: '/command/region/update',
 };
 
-function paramsWithExtensionName(name: unknown): ExtendedInitializeParams {
+function paramsWithCommandSuffix(commandSuffix: unknown): ExtendedInitializeParams {
     return {
         processId: null,
         rootUri: null,
@@ -16,8 +16,9 @@ function paramsWithExtensionName(name: unknown): ExtendedInitializeParams {
         initializationOptions: {
             aws: {
                 clientInfo: {
-                    extension: { name, version: '1.0.0' },
+                    extension: { name: 'toolkit-vscode', version: '1.0.0' },
                 },
+                commandSuffix,
             },
         },
     } as unknown as ExtendedInitializeParams;
@@ -101,16 +102,16 @@ describe('LspCommands', () => {
     });
 
     describe('resolveCommandSuffix', () => {
-        it('should use the client extension name as the suffix', () => {
-            expect(resolveCommandSuffix(paramsWithExtensionName('aws.cloudformation'))).toBe('aws.cloudformation');
+        it('should use the configured command suffix', () => {
+            expect(resolveCommandSuffix(paramsWithCommandSuffix('aws.cloudformation'))).toBe('aws.cloudformation');
         });
 
-        it('should sanitize the client extension name before using it as the suffix', () => {
-            expect(resolveCommandSuffix(paramsWithExtensionName('AWS Toolkit (VS Code)'))).toBe('AWS-Toolkit-VS-Code');
+        it('should sanitize the configured command suffix', () => {
+            expect(resolveCommandSuffix(paramsWithCommandSuffix('AWS Toolkit (VS Code)'))).toBe('AWS-Toolkit-VS-Code');
         });
 
-        it('should return undefined when the sanitized extension name is empty', () => {
-            expect(resolveCommandSuffix(paramsWithExtensionName('  ***  '))).toBeUndefined();
+        it('should return undefined when the sanitized command suffix is empty', () => {
+            expect(resolveCommandSuffix(paramsWithCommandSuffix('  ***  '))).toBeUndefined();
         });
 
         it('should return undefined when no initialization options are sent', () => {
@@ -119,7 +120,7 @@ describe('LspCommands', () => {
             expect(resolveCommandSuffix(params)).toBeUndefined();
         });
 
-        it('should return undefined when the aws metadata has no client info', () => {
+        it('should return undefined when the aws metadata has no command suffix', () => {
             const params = {
                 processId: null,
                 rootUri: null,
@@ -130,8 +131,17 @@ describe('LspCommands', () => {
             expect(resolveCommandSuffix(params)).toBeUndefined();
         });
 
-        it('should return undefined when the extension name is omitted', () => {
-            expect(resolveCommandSuffix(paramsWithExtensionName(undefined))).toBeUndefined();
+        it('should not derive a suffix from the extension name of existing clients', () => {
+            const params = {
+                processId: null,
+                rootUri: null,
+                capabilities: {},
+                initializationOptions: {
+                    aws: { clientInfo: { extension: { name: 'toolkit-vscode', version: '1.0.0' } } },
+                },
+            } as ExtendedInitializeParams;
+
+            expect(resolveCommandSuffix(params)).toBeUndefined();
         });
 
         it.each([
@@ -140,9 +150,9 @@ describe('LspCommands', () => {
             ['an object', { id: 'aws.cloudformation' }],
             ['an array', ['aws.cloudformation']],
             ['a boolean', true],
-        ])('should throw when the extension name is %s', (_label, name) => {
-            expect(() => resolveCommandSuffix(paramsWithExtensionName(name))).toThrow(
-                /initializationOptions\.aws\.clientInfo\.extension\.name/,
+        ])('should throw when the command suffix is %s', (_label, suffix) => {
+            expect(() => resolveCommandSuffix(paramsWithCommandSuffix(suffix))).toThrow(
+                /initializationOptions\.aws\.commandSuffix/,
             );
         });
     });

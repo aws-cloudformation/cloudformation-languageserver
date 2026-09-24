@@ -28,21 +28,21 @@ export function createLspCommands(suffix?: string): LspCommands {
 }
 
 export function resolveCommandSuffix(params: ExtendedInitializeParams): string | undefined {
-    const name: unknown = params.initializationOptions?.aws?.clientInfo?.extension?.name;
-    if (name === undefined) {
+    const suffix: unknown = params.initializationOptions?.aws?.commandSuffix;
+    if (suffix === undefined) {
         return undefined;
     }
-    if (typeof name !== 'string') {
+    if (typeof suffix !== 'string') {
         throw new TypeError(
-            `Invalid initializationOptions.aws.clientInfo.extension.name: expected a string, received ${typeof name}`,
+            `Invalid initializationOptions.aws.commandSuffix: expected a string, received ${typeof suffix}`,
         );
     }
 
-    return sanitizeCommandSuffix(name);
+    return sanitizeCommandSuffix(suffix);
 }
 
-export function sanitizeCommandSuffix(name: string): string | undefined {
-    const sanitized = name
+export function sanitizeCommandSuffix(suffix: string): string | undefined {
+    const sanitized = suffix
         .replaceAll(/[^A-Za-z0-9._-]+/g, '-')
         .slice(0, MaxSuffixLength)
         .replaceAll(/^[._-]+|[._-]+$/g, '');

@@ -11,6 +11,7 @@ type _AwsMetadata = {
         extension?: ClientInfo;
         clientId?: string;
     };
+    commandSuffix?: string;
     encryption?: {
         key: string;
         mode: string;
