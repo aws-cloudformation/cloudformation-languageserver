@@ -84,7 +84,6 @@ export const DescribeHookRequest = new RequestType<DescribeHookParams, DescribeH
 
 export type ListHookResultsParams = {
     typeArn?: string;
-    status?: string;
     targetId?: string;
     targetType?: string;
     nextToken?: string;

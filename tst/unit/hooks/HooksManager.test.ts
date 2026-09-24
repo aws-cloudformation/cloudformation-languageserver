@@ -2,6 +2,14 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { HooksManager, parseHookConfiguration } from '../../../src/hooks/HooksManager';
 import { CfnService } from '../../../src/services/CfnService';
 
+function deferred<T = void>(): { promise: Promise<T>; resolve: (value: T) => void } {
+    let release!: (value: T) => void;
+    const promise = new Promise<T>((resolve) => {
+        release = resolve;
+    });
+    return { promise, resolve: release };
+}
+
 describe('HooksManager', () => {
     let manager: HooksManager;
     let mockCfnService: { listHooks: ReturnType<typeof vi.fn>; describeHook: ReturnType<typeof vi.fn> };
@@ -251,6 +259,33 @@ describe('HooksManager', () => {
         });
     });
 
+    describe('invalidateRuleContent()', () => {
+        it('forces the next getCachedRuleContent for that uri to reload', async () => {
+            const loader = vi.fn().mockResolvedValueOnce('old rule').mockResolvedValueOnce('new rule');
+
+            expect(await manager.getCachedRuleContent('s3://bucket/rule.guard', loader)).toBe('old rule');
+            manager.invalidateRuleContent('s3://bucket/rule.guard');
+            const reloaded = await manager.getCachedRuleContent('s3://bucket/rule.guard', loader);
+
+            expect(reloaded).toBe('new rule');
+            expect(loader).toHaveBeenCalledTimes(2);
+        });
+
+        it('leaves other cached rule uris intact', async () => {
+            const loaderA = vi.fn().mockResolvedValue('rule a');
+            const loaderB = vi.fn().mockResolvedValue('rule b');
+
+            await manager.getCachedRuleContent('s3://bucket/a.guard', loaderA);
+            await manager.getCachedRuleContent('s3://bucket/b.guard', loaderB);
+            manager.invalidateRuleContent('s3://bucket/a.guard');
+            await manager.getCachedRuleContent('s3://bucket/a.guard', loaderA);
+            await manager.getCachedRuleContent('s3://bucket/b.guard', loaderB);
+
+            expect(loaderA).toHaveBeenCalledTimes(2);
+            expect(loaderB).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('clearCache()', () => {
         it('should clear hooks cache so next call refetches', async () => {
             mockCfnService.listHooks.mockResolvedValue({
@@ -476,6 +511,169 @@ describe('HooksManager', () => {
             await detailedManager.listHooksDetailed();
 
             expect(detailedMock.getHookConfiguration).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('listAllHooksDetailed()', () => {
+        let pagedManager: HooksManager;
+        let pagedMock: {
+            listHooks: ReturnType<
+                typeof vi.fn<
+                    (
+                        nextToken?: string,
+                    ) => Promise<{ hooks: Array<{ TypeName: string; TypeArn: string }>; nextToken?: string }>
+                >
+            >;
+            describeHook: ReturnType<typeof vi.fn>;
+            getHookConfiguration: ReturnType<typeof vi.fn<(typeName: string) => Promise<string>>>;
+        };
+
+        beforeEach(() => {
+            pagedMock = {
+                listHooks:
+                    vi.fn<
+                        (
+                            nextToken?: string,
+                        ) => Promise<{ hooks: Array<{ TypeName: string; TypeArn: string }>; nextToken?: string }>
+                    >(),
+                describeHook: vi.fn(),
+                getHookConfiguration: vi.fn<(typeName: string) => Promise<string>>().mockResolvedValue('{}'),
+            };
+            pagedManager = new HooksManager(pagedMock as unknown as CfnService);
+        });
+
+        it('drains every page and returns hooks from all of them', async () => {
+            pagedMock.listHooks
+                .mockResolvedValueOnce({
+                    hooks: [{ TypeName: 'Hook1', TypeArn: 'arn:1' }],
+                    nextToken: 'page-2-token',
+                })
+                .mockResolvedValueOnce({
+                    hooks: [{ TypeName: 'Hook2', TypeArn: 'arn:2' }],
+                    nextToken: undefined,
+                });
+
+            const hooks = await pagedManager.listAllHooksDetailed();
+
+            expect(hooks.map((h) => h.typeName)).toEqual(['Hook1', 'Hook2']);
+            expect(pagedMock.listHooks).toHaveBeenCalledTimes(2);
+            expect(pagedMock.listHooks).toHaveBeenNthCalledWith(1, undefined);
+            expect(pagedMock.listHooks).toHaveBeenNthCalledWith(2, 'page-2-token');
+        });
+
+        it('stops draining when the service keeps returning the same nextToken', async () => {
+            pagedMock.listHooks.mockResolvedValue({
+                hooks: [{ TypeName: 'Hook1', TypeArn: 'arn:1' }],
+                nextToken: 'stuck-token',
+            });
+
+            const hooks = await pagedManager.listAllHooksDetailed();
+
+            expect(hooks.map((h) => h.typeName)).toEqual(['Hook1']);
+            expect(pagedMock.listHooks).toHaveBeenCalledTimes(2);
+            expect(pagedMock.listHooks).toHaveBeenNthCalledWith(1, undefined);
+            expect(pagedMock.listHooks).toHaveBeenNthCalledWith(2, 'stuck-token');
+        });
+
+        it('dedupes a concurrent second drain into the in-flight one', async () => {
+            const gate = deferred();
+            let call = 0;
+            pagedMock.listHooks.mockImplementation(async () => {
+                call += 1;
+                if (call === 1) {
+                    await gate.promise;
+                    return { hooks: [{ TypeName: 'Hook1', TypeArn: 'arn:1' }], nextToken: 'page-2-token' };
+                }
+                return { hooks: [{ TypeName: 'Hook2', TypeArn: 'arn:2' }], nextToken: undefined };
+            });
+
+            const first = pagedManager.listAllHooksDetailed();
+            const second = pagedManager.listAllHooksDetailed();
+            gate.resolve();
+            const [firstHooks, secondHooks] = await Promise.all([first, second]);
+
+            expect(firstHooks).toBe(secondHooks);
+            expect(firstHooks.map((h) => h.typeName)).toEqual(['Hook1', 'Hook2']);
+            expect(pagedMock.listHooks).toHaveBeenCalledTimes(2);
+        });
+
+        it('returns hooks from every page even when the cache is reset mid-drain', async () => {
+            const reachedPage2 = deferred();
+            const gate = deferred();
+            let call = 0;
+            pagedMock.listHooks.mockImplementation(async () => {
+                call += 1;
+                if (call === 1) {
+                    return { hooks: [{ TypeName: 'Hook1', TypeArn: 'arn:1' }], nextToken: 'page-2-token' };
+                }
+                reachedPage2.resolve();
+                await gate.promise;
+                return { hooks: [{ TypeName: 'Hook2', TypeArn: 'arn:2' }], nextToken: undefined };
+            });
+
+            const drain = pagedManager.listAllHooksDetailed();
+            await reachedPage2.promise;
+            pagedManager.clearCache();
+            gate.resolve();
+            const hooks = await drain;
+
+            expect(hooks.map((h) => h.typeName).toSorted()).toEqual(['Hook1', 'Hook2']);
+        });
+    });
+
+    describe('runExclusiveForType()', () => {
+        it('serializes tasks that share a type name', async () => {
+            const order: string[] = [];
+            const first = deferred();
+
+            const firstTask = manager.runExclusiveForType('Type::A', async () => {
+                order.push('first-start');
+                await first.promise;
+                order.push('first-end');
+                return 1;
+            });
+            const secondTask = manager.runExclusiveForType('Type::A', () => {
+                order.push('second-start');
+                return Promise.resolve(2);
+            });
+
+            await Promise.resolve();
+            expect(order).toEqual(['first-start']);
+
+            first.resolve();
+            expect(await firstTask).toBe(1);
+            expect(await secondTask).toBe(2);
+            expect(order).toEqual(['first-start', 'first-end', 'second-start']);
+        });
+
+        it('runs tasks for different type names in parallel', async () => {
+            const order: string[] = [];
+            const blockA = deferred();
+
+            const aTask = manager.runExclusiveForType('Type::A', async () => {
+                order.push('a-start');
+                await blockA.promise;
+                return 'a';
+            });
+            const bTask = manager.runExclusiveForType('Type::B', () => {
+                order.push('b-start');
+                return Promise.resolve('b');
+            });
+
+            expect(await bTask).toBe('b');
+            expect(order).toEqual(['a-start', 'b-start']);
+
+            blockA.resolve();
+            expect(await aTask).toBe('a');
+        });
+
+        it('keeps the chain usable for a type after a task rejects', async () => {
+            await expect(
+                manager.runExclusiveForType('Type::A', () => Promise.reject(new Error('boom'))),
+            ).rejects.toThrow(/boom/);
+
+            const recovered = await manager.runExclusiveForType('Type::A', () => Promise.resolve('recovered'));
+            expect(recovered).toBe('recovered');
         });
     });
 });

@@ -52,6 +52,10 @@ export class HookCache {
         return await load(this.rules, s3Uri, loader);
     }
 
+    invalidateRuleContent(s3Uri: string): void {
+        this.rules.delete(s3Uri);
+    }
+
     invalidateAll(): void {
         this.configs.clear();
         this.rules.clear();

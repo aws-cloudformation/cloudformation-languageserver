@@ -10,7 +10,10 @@ import { CcapiService } from '../services/CcapiService';
 import { CfnLintService } from '../services/cfnLint/CfnLintService';
 import { CfnService } from '../services/CfnService';
 import { CfnValidateService } from '../services/cfnValidate/CfnValidateService';
+import { ControlCatalogService } from '../services/ControlCatalogService';
+import { GuardEngine } from '../services/guard/GuardEngine';
 import { GuardService } from '../services/guard/GuardService';
+import { IamService } from '../services/IamService';
 import { OnlineStatus } from '../services/OnlineStatus';
 import { S3Service } from '../services/S3Service';
 import { Closeable, closeSafely } from '../utils/Closeable';
@@ -28,6 +31,8 @@ export class CfnExternal implements Configurables, Closeable {
     readonly cfnService: CfnService;
     readonly ccapiService: CcapiService;
     readonly s3Service: S3Service;
+    readonly iamService: IamService;
+    readonly controlCatalogService: ControlCatalogService;
 
     readonly schemaStore: SchemaStore;
     readonly schemaRetriever: SchemaRetriever;
@@ -36,6 +41,7 @@ export class CfnExternal implements Configurables, Closeable {
     readonly cfnLintService: CfnLintService;
     readonly cfnValidateService: CfnValidateService;
     readonly guardService: GuardService;
+    readonly guardEngine: GuardEngine;
 
     readonly onlineStatus: OnlineStatus;
     readonly featureFlags: FeatureFlagProvider;
@@ -48,6 +54,8 @@ export class CfnExternal implements Configurables, Closeable {
         this.cfnService = overrides.cfnService ?? new CfnService(this.awsClient);
         this.ccapiService = overrides.ccapiService ?? new CcapiService(this.awsClient);
         this.s3Service = overrides.s3Service ?? new S3Service(this.awsClient);
+        this.iamService = overrides.iamService ?? new IamService(this.awsClient);
+        this.controlCatalogService = overrides.controlCatalogService ?? new ControlCatalogService(this.awsClient);
 
         this.schemaStore = overrides.schemaStore ?? new SchemaStore(core.dataStoreFactory);
         this.schemaRetriever =
@@ -74,9 +82,15 @@ export class CfnExternal implements Configurables, Closeable {
                 undefined,
                 this.cfnValidateService,
             );
+        this.guardEngine = overrides.guardEngine ?? new GuardEngine();
         this.guardService =
             overrides.guardService ??
-            new GuardService(core.documentManager, core.diagnosticCoordinator, core.syntaxTreeManager);
+            new GuardService(
+                core.documentManager,
+                core.diagnosticCoordinator,
+                core.syntaxTreeManager,
+                this.guardEngine,
+            );
 
         this.onlineStatus = overrides.onlineStatus ?? new OnlineStatus();
         this.featureFlags = core.featureFlags;
