@@ -6,6 +6,7 @@ import { DataStoreFactoryProvider, MultiDataStoreFactoryProvider } from '../data
 import { DocumentManager } from '../document/DocumentManager';
 import { DocumentMetadata } from '../document/DocumentProtocol';
 import { featureFlagLocalFile, FeatureFlagProvider, getFromGitHub } from '../featureFlag/FeatureFlagProvider';
+import { createLspCommands, LspCommands, resolveCommandSuffix } from '../protocol/LspCommands';
 import { LspComponents } from '../protocol/LspComponents';
 import { DiagnosticCoordinator } from '../services/DiagnosticCoordinator';
 import { SettingsManager } from '../settings/SettingsManager';
@@ -26,6 +27,7 @@ import { AwsMetadata, ExtendedInitializeParams } from './InitParams';
  */
 export class CfnInfraCore implements Configurables, Closeable {
     readonly awsMetadata?: AwsMetadata;
+    readonly commands: LspCommands;
     readonly featureFlags: FeatureFlagProvider;
     readonly dataStoreFactory: DataStoreFactoryProvider;
     readonly clientMessage: ClientMessage;
@@ -48,6 +50,7 @@ export class CfnInfraCore implements Configurables, Closeable {
         overrides: Partial<CfnInfraCore> = {},
     ) {
         this.awsMetadata = initializeParams.initializationOptions?.aws;
+        this.commands = overrides.commands ?? createLspCommands(resolveCommandSuffix(initializeParams));
         this.featureFlags =
             overrides.featureFlags ??
             new FeatureFlagProvider(

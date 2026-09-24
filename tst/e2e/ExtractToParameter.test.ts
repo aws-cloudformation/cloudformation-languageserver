@@ -114,7 +114,7 @@ describe('Extract to Parameter - End-to-End CodeAction Workflow Tests', () => {
             expect(extractAction?.command?.arguments?.[0]).toBe(uri);
             expect(typeof extractAction?.command?.arguments?.[1]).toBe('string'); // parameter name
             expect(extractAction?.command?.arguments?.[2]).toBe('JSON'); // document type
-            expect(extractAction?.command?.arguments?.[3]).toBe('/command/codeAction/track'); // tracking command
+            expect(extractAction?.command?.arguments?.[3]).toBe(extension.components.commands.trackCodeActionAccepted); // tracking command
             expect(extractAction?.command?.arguments?.[4]).toBe('extractToParameter'); // action type
 
             // Step 10: Sequential extraction test - Apply first extraction and perform second
@@ -298,7 +298,9 @@ Resources:
                 expect(extractAction.command?.arguments?.[0]).toBe(uri);
                 expect(typeof extractAction.command?.arguments?.[1]).toBe('string'); // parameter name
                 expect(extractAction.command?.arguments?.[2]).toBe('YAML'); // document type
-                expect(extractAction.command?.arguments?.[3]).toBe('/command/codeAction/track'); // tracking command
+                expect(extractAction.command?.arguments?.[3]).toBe(
+                    extension.components.commands.trackCodeActionAccepted,
+                ); // tracking command
                 expect(extractAction.command?.arguments?.[4]).toBe('extractToParameter'); // action type
 
                 // Sequential extraction test: Apply first extraction and perform second

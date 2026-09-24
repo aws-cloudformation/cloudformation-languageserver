@@ -15,7 +15,7 @@ import { SyntaxTreeManager } from '../context/syntaxtree/SyntaxTreeManager';
 import { NodeSearch } from '../context/syntaxtree/utils/NodeSearch';
 import { NodeType } from '../context/syntaxtree/utils/NodeType';
 import { DocumentManager } from '../document/DocumentManager';
-import { TRACK_CODE_ACTION_ACCEPTED } from '../handlers/ExecutionHandler';
+import { LspCommands } from '../protocol/LspCommands';
 import { CfnInfraCore } from '../server/CfnInfraCore';
 import { CFN_VALIDATION_SOURCE } from '../stacks/actions/ValidationWorkflow';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -49,6 +49,7 @@ export class CodeActionService {
         private readonly documentManager: DocumentManager,
         private readonly contextManager: ContextManager,
         private readonly extractToParameterProvider: ExtractToParameterProvider,
+        private readonly commands: LspCommands,
     ) {
         this.metadataContextQuickFix = new MetadataContextQuickFix(syntaxTreeManager, documentManager, contextManager);
         this.initializeCounters();
@@ -141,7 +142,7 @@ export class CodeActionService {
                 textEdits: [],
                 command: {
                     title: CodeActionService.REMOVE_ERROR_TITLE,
-                    command: '/command/template/clear-diagnostic',
+                    command: this.commands.clearDiagnostic,
                     arguments: [uri, diagnostic.data],
                 },
             },
@@ -352,7 +353,7 @@ export class CodeActionService {
             } else {
                 codeAction.command = {
                     title: 'Track code action',
-                    command: TRACK_CODE_ACTION_ACCEPTED,
+                    command: this.commands.trackCodeActionAccepted,
                     arguments: [fix.actionType],
                 };
             }
@@ -616,7 +617,7 @@ export class CodeActionService {
                         params.textDocument.uri,
                         extractionResult.parameterName,
                         context.documentType,
-                        TRACK_CODE_ACTION_ACCEPTED,
+                        this.commands.trackCodeActionAccepted,
                         'extractToParameter',
                     ],
                 },
@@ -668,7 +669,7 @@ export class CodeActionService {
                         params.textDocument.uri,
                         extractionResult.parameterName,
                         context.documentType,
-                        TRACK_CODE_ACTION_ACCEPTED,
+                        this.commands.trackCodeActionAccepted,
                         'extractAllToParameter',
                     ],
                 },
@@ -686,6 +687,7 @@ export class CodeActionService {
             core.documentManager,
             core.contextManager,
             extractToParameterProvider,
+            core.commands,
         );
     }
 }

@@ -1,6 +1,6 @@
 import { ErrorCodes, ResponseError } from 'vscode-languageserver';
 import { CredentialsProviderError } from './ErrorClasses';
-import { extractErrorCode, extractErrorMessage } from './ErrorUtils';
+import { errorCauseChain, extractErrorCode, extractErrorMessage } from './ErrorUtils';
 import { isClientNetworkError } from './GenericErrorMapper';
 import { createOnlineFeatureError, OnlineFeatureErrorCode } from './OnlineFeatureError';
 
@@ -202,7 +202,13 @@ export function isClientError(error: unknown): boolean {
 
 export function mapAwsErrorToLspError(error: unknown): ResponseError<unknown> {
     if (error instanceof ResponseError) {
-        return error;
+        const onlineFeatureCause = errorCauseChain(error)
+            .slice(1)
+            .find((cause) => isAwsError(cause) || isClientNetworkError(cause));
+        if (onlineFeatureCause === undefined) {
+            return error;
+        }
+        return mapAwsErrorToLspError(onlineFeatureCause);
     }
 
     if (isErrorLike(error)) {

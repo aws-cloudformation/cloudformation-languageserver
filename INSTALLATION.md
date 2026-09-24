@@ -59,7 +59,7 @@ The language server accepts initialization options via the LSP `initialize` requ
 
 | Option | Type              | Description |
 |--------|-------------------|-------------|
-| `aws.clientInfo.extension.name` | string            | Your editor/client name |
+| `aws.clientInfo.extension.name` | string            | Your editor/client name. Also appended to the server's command ids (for example `/command/region/update.<name>`) so several clients in one editor never register the same command; read command ids from the initialize result or code actions rather than hard-coding them |
 | `aws.clientInfo.extension.version` | string            | Your editor/client version |
 | `aws.clientInfo.clientId` | string (optional) | Unique identifier for the client instance |
 | `aws.telemetryEnabled` | boolean           | Enable anonymous usage metrics (default: `false`) |

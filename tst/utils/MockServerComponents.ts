@@ -21,6 +21,7 @@ import { HoverRouter } from '../../src/hover/HoverRouter';
 import { HooksManager } from '../../src/hooks/HooksManager';
 import { LspAuthHandlers } from '../../src/protocol/LspAuthHandlers';
 import { LspCfnEnvironmentHandlers } from '../../src/protocol/LspCfnEnvironmentHandlers';
+import { createLspCommands } from '../../src/protocol/LspCommands';
 import { LspCommunication } from '../../src/protocol/LspCommunication';
 import { LspComponents } from '../../src/protocol/LspComponents';
 import { LspDiagnostics } from '../../src/protocol/LspDiagnostics';
@@ -363,6 +364,7 @@ export function createMockComponents(o: Partial<CfnLspServerComponentsType> = {}
         featureFlags: overrides.featureFlags ?? stubInterface<FeatureFlagProvider>(),
         clientMessage: overrides.clientMessage ?? createMockClientMessage(),
         settingsManager: overrides.settingsManager ?? createMockSettingsManager(),
+        commands: overrides.commands ?? createLspCommands(),
         syntaxTreeManager: overrides.syntaxTreeManager ?? createMockSyntaxTreeManager(),
         documentManager: overrides.documentManager ?? createMockDocumentManager(),
         fileContextManager: overrides.fileContextManager ?? createMockFileContextManager(),

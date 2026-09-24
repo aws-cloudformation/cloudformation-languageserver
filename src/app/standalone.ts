@@ -1,7 +1,7 @@
 import './polyfills';
 import { createConnection, ProposedFeatures } from 'vscode-languageserver/node'; // eslint-disable-line no-restricted-imports
-import { InitializedParams } from 'vscode-languageserver-protocol';
-import { LspCapabilities } from '../protocol/LspCapabilities';
+import { InitializedParams, InitializeResult } from 'vscode-languageserver-protocol';
+import { createLspCapabilities } from '../protocol/LspCapabilities';
 import { LspConnection } from '../protocol/LspConnection';
 import { ExtendedInitializeParams } from '../server/InitParams';
 import { isExpectedOutputError } from '../utils/errors/ErrorLogs';
@@ -11,7 +11,7 @@ import { staticInitialize } from './initialize';
 let server: unknown;
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-return, @typescript-eslint/no-unsafe-member-access, no-console */
-async function onInitialize(params: ExtendedInitializeParams) {
+async function onInitialize(params: ExtendedInitializeParams): Promise<InitializeResult> {
     staticInitialize(params.clientInfo, params.initializationOptions?.['aws']);
 
     // Dynamically load these modules so that OTEL can instrument all the libraries first
@@ -21,7 +21,7 @@ async function onInitialize(params: ExtendedInitializeParams) {
 
     const { CfnServer } = await import('../server/CfnServer');
     server = new CfnServer(lsp.components, core);
-    return LspCapabilities;
+    return createLspCapabilities(core.commands);
 }
 
 function onInitialized(params: InitializedParams) {

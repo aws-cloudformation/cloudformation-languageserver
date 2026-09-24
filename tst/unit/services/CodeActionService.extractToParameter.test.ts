@@ -7,6 +7,7 @@ import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { Document, DocumentType } from '../../../src/document/Document';
 import { DocumentManager } from '../../../src/document/DocumentManager';
+import { createLspCommands } from '../../../src/protocol/LspCommands';
 import { CodeActionService } from '../../../src/services/CodeActionService';
 import { ExtractToParameterProvider } from '../../../src/services/extractToParameter/ExtractToParameterProvider';
 import { ExtractToParameterResult } from '../../../src/services/extractToParameter/ExtractToParameterTypes';
@@ -36,6 +37,7 @@ describe('CodeActionService - Extract to Parameter Integration', () => {
             mockDocumentManager,
             mockContextManager,
             mockExtractToParameterProvider,
+            createLspCommands(),
         );
     });
 

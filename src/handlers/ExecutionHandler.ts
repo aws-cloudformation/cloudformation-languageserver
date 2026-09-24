@@ -7,12 +7,14 @@ import { getRegion } from '../utils/Region';
 export function executionHandler(
     components: ServerComponents,
 ): ServerRequestHandler<ExecuteCommandParams, unknown, never, void> {
+    const { commands } = components;
+
     return (params): unknown => {
         TelemetryService.instance.get('ExecutionHandler').count('count', 1);
         TelemetryService.instance.get('ExecutionHandler').count(`count.${params.command}`, 1);
 
         switch (params.command) {
-            case CLEAR_DIAGNOSTIC: {
+            case commands.clearDiagnostic: {
                 const args = params.arguments ?? [];
                 if (args.length >= 2) {
                     const uri = args[0] as string;
@@ -26,7 +28,7 @@ export function executionHandler(
                 }
                 break;
             }
-            case TRACK_CODE_ACTION_ACCEPTED: {
+            case commands.trackCodeActionAccepted: {
                 const args = params.arguments ?? [];
                 if (args.length > 0) {
                     const actionType = args[0] as string;
@@ -34,7 +36,7 @@ export function executionHandler(
                 }
                 break;
             }
-            case UPDATE_REGION: {
+            case commands.updateRegion: {
                 const args = params.arguments ?? [];
                 if (args.length > 0) {
                     components.awsCredentials.handleIamCredentialsDelete();
@@ -49,7 +51,3 @@ export function executionHandler(
         }
     };
 }
-
-export const CLEAR_DIAGNOSTIC = '/command/template/clear-diagnostic';
-export const TRACK_CODE_ACTION_ACCEPTED = '/command/codeAction/track';
-export const UPDATE_REGION = '/command/region/update';
