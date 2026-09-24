@@ -28,6 +28,13 @@ import {
     publishValidationDiagnostics,
     isStackInReview,
     computeEligibleDeploymentMode,
+    extractHookFailures,
+    hookFailuresToValidationDetails,
+    mapChangeSetHooks,
+    resolveHookFailureTargets,
+    describeChangeSetHooksOrUndefined,
+    deriveHookFailureReason,
+    HookEventLike,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateValidationParams,
@@ -37,6 +44,7 @@ import {
     DeploymentMode,
 } from '../../../src/stacks/actions/StackActionRequestType';
 import { StackActionWorkflowState } from '../../../src/stacks/actions/StackActionWorkflowType';
+import { LoggerFactory } from '../../../src/telemetry/LoggerFactory';
 import { ExtensionName } from '../../../src/utils/ExtensionConfig';
 import { createMockSyntaxTreeManager, createMockDiagnosticCoordinator } from '../../utils/MockServerComponents';
 
@@ -643,6 +651,42 @@ describe('StackActionWorkflowOperations', () => {
             expect(mockDiagnosticCoordinator.publishDiagnostics.calledOnce).toBe(true);
             expect(validationDetails[0].diagnosticId).toBeDefined();
         });
+
+        it('should anchor hook details without a resolvable range at the top of the template', async () => {
+            const mockSyntaxTree = stubInterface<SyntaxTree>();
+            mockSyntaxTreeManager.getSyntaxTree.returns(mockSyntaxTree);
+
+            const validationDetails: ValidationDetail[] = [
+                {
+                    ValidationName: 'AWS::Test::Hook',
+                    Severity: 'ERROR',
+                    Message: 'Hook AWS::Test::Hook: stack rejected',
+                    isHook: true,
+                },
+                {
+                    ValidationName: 'Enhanced Validation',
+                    Severity: 'ERROR',
+                    Message: 'unanchored non-hook detail',
+                },
+            ];
+
+            await publishValidationDiagnostics(
+                'file:///test.yaml',
+                validationDetails,
+                mockSyntaxTreeManager,
+                mockDiagnosticCoordinator,
+            );
+
+            const published = mockDiagnosticCoordinator.publishDiagnostics.firstCall.args[2];
+            expect(published).toHaveLength(1);
+            expect(published[0].message).toBe('Hook AWS::Test::Hook: stack rejected');
+            expect(published[0].range).toEqual({
+                start: { line: 0, character: 0 },
+                end: { line: 1, character: 0 },
+            });
+            expect(validationDetails[0].diagnosticId).toBeDefined();
+            expect(validationDetails[1].diagnosticId).toBeUndefined();
+        });
     });
 
     describe('isStackInReview', () => {
@@ -773,6 +817,272 @@ describe('StackActionWorkflowOperations', () => {
                 OnStackFailure.DO_NOTHING,
             );
             expect(result).toBeUndefined();
+        });
+    });
+
+    describe('extractHookFailures', () => {
+        it('returns an empty array when there are no hook failures', () => {
+            expect(extractHookFailures([])).toEqual([]);
+            expect(extractHookFailures([{ LogicalResourceId: 'MyResource' }])).toEqual([]);
+        });
+
+        it('extracts failed hook events with type, status, reason, and resource', () => {
+            const events: HookEventLike[] = [
+                {
+                    HookType: 'Private::Guard::S3',
+                    HookStatus: 'HOOK_COMPLETE_FAILED',
+                    HookStatusReason: 'Encryption required',
+                    LogicalResourceId: 'MyBucket',
+                },
+            ];
+            expect(extractHookFailures(events)).toEqual([
+                {
+                    typeName: 'Private::Guard::S3',
+                    status: 'HOOK_COMPLETE_FAILED',
+                    reason: 'Encryption required',
+                    logicalResourceId: 'MyBucket',
+                },
+            ]);
+        });
+
+        it('ignores hook events that did not fail', () => {
+            const events: HookEventLike[] = [
+                { HookType: 'Private::Guard::S3', HookStatus: 'HOOK_COMPLETE_SUCCEEDED' },
+                { HookType: 'Private::Guard::S3', HookStatus: 'HOOK_IN_PROGRESS' },
+            ];
+            expect(extractHookFailures(events)).toEqual([]);
+        });
+
+        it('deduplicates identical hook failures', () => {
+            const dup: HookEventLike = {
+                HookType: 'Private::Guard::S3',
+                HookStatus: 'HOOK_COMPLETE_FAILED',
+                HookStatusReason: 'nope',
+                LogicalResourceId: 'B',
+            };
+            expect(extractHookFailures([dup, { ...dup }])).toHaveLength(1);
+        });
+
+        it('skips failed hook events with no type name', () => {
+            const events: HookEventLike[] = [{ HookStatus: 'HOOK_COMPLETE_FAILED', HookStatusReason: 'x' }];
+            expect(extractHookFailures(events)).toEqual([]);
+        });
+    });
+
+    describe('hookFailuresToValidationDetails', () => {
+        it('maps a hook failure with a reason and resource to an ERROR detail', () => {
+            const details = hookFailuresToValidationDetails([
+                {
+                    typeName: 'Private::Guard::S3',
+                    status: 'HOOK_COMPLETE_FAILED',
+                    reason: 'Encryption required',
+                    logicalResourceId: 'MyBucket',
+                },
+            ]);
+            expect(details).toEqual([
+                {
+                    ValidationName: 'Private::Guard::S3',
+                    LogicalId: 'MyBucket',
+                    Severity: 'ERROR',
+                    Message: 'Hook Private::Guard::S3: Encryption required',
+                    ValidationStatusReason: 'Encryption required',
+                    isHook: true,
+                },
+            ]);
+        });
+
+        it('falls back to the status when there is no reason', () => {
+            const details = hookFailuresToValidationDetails([
+                { typeName: 'Private::Guard::S3', status: 'HOOK_FAILED' },
+            ]);
+            expect(details[0].Message).toBe('Hook Private::Guard::S3 failed (HOOK_FAILED)');
+            expect(details[0].LogicalId).toBeUndefined();
+        });
+
+        it('returns an empty array for no failures', () => {
+            expect(hookFailuresToValidationDetails([])).toEqual([]);
+        });
+    });
+
+    describe('mapChangeSetHooks', () => {
+        it('returns an empty array for undefined or empty input', () => {
+            expect(mapChangeSetHooks(undefined)).toEqual([]);
+            expect(mapChangeSetHooks([])).toEqual([]);
+        });
+
+        it('maps a change-set hook with resource target details', () => {
+            const mapped = mapChangeSetHooks([
+                {
+                    TypeName: 'Private::Guard::S3',
+                    InvocationPoint: 'PRE_PROVISION',
+                    FailureMode: 'FAIL',
+                    TargetDetails: {
+                        TargetType: 'RESOURCE',
+                        ResourceTargetDetails: { LogicalResourceId: 'MyBucket', ResourceAction: 'CREATE' },
+                    },
+                },
+            ] as never);
+            expect(mapped).toEqual([
+                {
+                    typeName: 'Private::Guard::S3',
+                    invocationPoint: 'PRE_PROVISION',
+                    failureMode: 'FAIL',
+                    targetType: 'RESOURCE',
+                    targetName: 'MyBucket',
+                    targetAction: 'CREATE',
+                },
+            ]);
+        });
+
+        it('skips hooks without a type name', () => {
+            expect(mapChangeSetHooks([{ InvocationPoint: 'PRE_PROVISION' }] as never)).toEqual([]);
+        });
+    });
+
+    describe('resolveHookFailureTargets', () => {
+        it('leaves a failure that already has a resource unchanged', () => {
+            const failures = [
+                { typeName: 'Private::Guard::S3', status: 'HOOK_COMPLETE_FAILED', logicalResourceId: 'MyBucket' },
+            ];
+            expect(resolveHookFailureTargets(failures, [])).toEqual(failures);
+        });
+
+        it('fans out to the single matching change-set hook target when exactly one matches', () => {
+            const resolved = resolveHookFailureTargets(
+                [{ typeName: 'Private::Guard::S3', status: 'HOOK_COMPLETE_FAILED', reason: 'nope' }],
+                [
+                    { typeName: 'Private::Guard::S3', targetName: 'BucketA' },
+                    { typeName: 'Private::Guard::Other', targetName: 'BucketC' },
+                ],
+            );
+            expect(resolved).toEqual([
+                {
+                    typeName: 'Private::Guard::S3',
+                    status: 'HOOK_COMPLETE_FAILED',
+                    reason: 'nope',
+                    logicalResourceId: 'BucketA',
+                },
+            ]);
+        });
+
+        it('keeps a single resourceless failure when multiple targets match', () => {
+            const failures = [{ typeName: 'Private::Guard::S3', status: 'HOOK_COMPLETE_FAILED', reason: 'nope' }];
+            const resolved = resolveHookFailureTargets(failures, [
+                { typeName: 'Private::Guard::S3', targetName: 'BucketA' },
+                { typeName: 'Private::Guard::S3', targetName: 'BucketB' },
+            ]);
+            expect(resolved).toEqual(failures);
+        });
+
+        it('keeps a resourceless failure when no target matches', () => {
+            const failures = [{ typeName: 'Private::Guard::S3', status: 'HOOK_FAILED' }];
+            expect(
+                resolveHookFailureTargets(failures, [{ typeName: 'Private::Guard::Other', targetName: 'X' }]),
+            ).toEqual(failures);
+        });
+
+        it('de-duplicates repeated target names', () => {
+            const resolved = resolveHookFailureTargets(
+                [{ typeName: 'Private::Guard::S3', status: 'HOOK_COMPLETE_FAILED' }],
+                [
+                    { typeName: 'Private::Guard::S3', targetName: 'BucketA' },
+                    { typeName: 'Private::Guard::S3', targetName: 'BucketA' },
+                ],
+            );
+            expect(resolved).toHaveLength(1);
+            expect(resolved[0].logicalResourceId).toBe('BucketA');
+        });
+    });
+
+    describe('describeChangeSetHooksOrUndefined', () => {
+        it('returns the change-set hooks output on success', async () => {
+            const output = { Hooks: [{ TypeName: 'Private::Guard::S3' }], Status: 'HOOK_COMPLETE_SUCCEEDED' };
+            const cfnService = { describeChangeSetHooks: vi.fn().mockResolvedValue(output) } as any;
+
+            const result = await describeChangeSetHooksOrUndefined(cfnService, {
+                ChangeSetName: 'cs',
+                StackName: 'stack',
+            });
+
+            expect(result).toBe(output);
+            expect(cfnService.describeChangeSetHooks).toHaveBeenCalledWith({ ChangeSetName: 'cs', StackName: 'stack' });
+        });
+
+        it('returns undefined and warns on an AccessDenied-like failure', async () => {
+            const cfnService = {
+                describeChangeSetHooks: vi.fn().mockRejectedValue({ name: 'AccessDenied', message: 'denied' }),
+            } as any;
+            const warnSpy = vi.spyOn(LoggerFactory.getLogger('StackActionOperations'), 'warn');
+
+            const result = await describeChangeSetHooksOrUndefined(cfnService, { ChangeSetName: 'cs' });
+
+            expect(result).toBeUndefined();
+            expect(warnSpy).toHaveBeenCalled();
+        });
+
+        it('returns undefined on a throttling failure', async () => {
+            const cfnService = {
+                describeChangeSetHooks: vi.fn().mockRejectedValue({ name: 'ThrottlingException' }),
+            } as any;
+
+            const result = await describeChangeSetHooksOrUndefined(cfnService, { ChangeSetName: 'cs' });
+
+            expect(result).toBeUndefined();
+        });
+
+        it('rethrows unexpected errors', async () => {
+            const cfnService = {
+                describeChangeSetHooks: vi.fn().mockRejectedValue(new Error('boom')),
+            } as any;
+
+            await expect(describeChangeSetHooksOrUndefined(cfnService, { ChangeSetName: 'cs' })).rejects.toThrow(
+                'boom',
+            );
+        });
+    });
+
+    describe('deriveHookFailureReason', () => {
+        it('returns undefined when there are no hook failures', () => {
+            expect(deriveHookFailureReason([])).toBeUndefined();
+        });
+
+        it('returns undefined when no failure carries a reason', () => {
+            expect(
+                deriveHookFailureReason([
+                    { typeName: 'AWS::Test::Hook', status: 'HOOK_FAILED', logicalResourceId: 'A' },
+                ]),
+            ).toBeUndefined();
+        });
+
+        it('prefixes the reason with the logical resource id when present', () => {
+            expect(
+                deriveHookFailureReason([
+                    {
+                        typeName: 'AWS::Test::Hook',
+                        status: 'HOOK_FAILED',
+                        reason: 'rule failed',
+                        logicalResourceId: 'MyBucket',
+                    },
+                ]),
+            ).toBe('MyBucket: rule failed');
+        });
+
+        it('omits the prefix when there is no logical resource id', () => {
+            expect(
+                deriveHookFailureReason([
+                    { typeName: 'AWS::Test::Hook', status: 'HOOK_FAILED', reason: 'rule failed' },
+                ]),
+            ).toBe('rule failed');
+        });
+
+        it('dedupes identical prefixed reasons and joins the rest', () => {
+            expect(
+                deriveHookFailureReason([
+                    { typeName: 'AWS::Test::HookA', status: 'HOOK_FAILED', reason: 'x', logicalResourceId: 'B' },
+                    { typeName: 'AWS::Test::HookB', status: 'HOOK_FAILED', reason: 'x', logicalResourceId: 'B' },
+                    { typeName: 'AWS::Test::HookC', status: 'HOOK_FAILED', reason: 'y', logicalResourceId: 'B' },
+                ]),
+            ).toBe('B: x; B: y');
         });
     });
 });

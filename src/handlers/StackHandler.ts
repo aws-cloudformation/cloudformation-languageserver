@@ -7,7 +7,11 @@ import { parseIdentifiable } from '../protocol/LspParser';
 import { Identifiable } from '../protocol/LspTypes';
 import { ServerComponents } from '../server/ServerComponents';
 import { analyzeCapabilities } from '../stacks/actions/CapabilityAnalyzer';
-import { mapChangesToStackChanges } from '../stacks/actions/StackActionOperations';
+import {
+    mapChangesToStackChanges,
+    mapChangeSetHooks,
+    describeChangeSetHooksOrUndefined,
+} from '../stacks/actions/StackActionOperations';
 import {
     parseCreateDeploymentParams,
     parseDeleteChangeSetParams,
@@ -403,11 +407,22 @@ export function describeChangeSetHandler(
     return async (rawParams: DescribeChangeSetParams): Promise<DescribeChangeSetResult> => {
         const params = parseWithPrettyError(parseDescribeChangeSetParams, rawParams);
 
-        const result = (await components.cfnService.describeChangeSet({
-            ChangeSetName: params.changeSetName,
-            IncludePropertyValues: true,
-            StackName: params.stackName,
-        })) as any; // TODO: Remove 'as any' once SDK is released
+        const [rawResult, hooksResult] = await Promise.all([
+            components.cfnService.describeChangeSet({
+                ChangeSetName: params.changeSetName,
+                IncludePropertyValues: true,
+                StackName: params.stackName,
+            }),
+            describeChangeSetHooksOrUndefined(components.cfnService, {
+                ChangeSetName: params.changeSetName,
+                StackName: params.stackName,
+            }),
+        ]);
+
+        const result = rawResult as any; // TODO: Remove 'as any' once SDK is released
+
+        const hooks = hooksResult ? mapChangeSetHooks(hooksResult.Hooks) : undefined;
+        const hookStatus = hooksResult?.Status;
 
         return {
             changeSetName: params.changeSetName,
@@ -417,6 +432,8 @@ export function describeChangeSetHandler(
             description: result.Description,
             changes: mapChangesToStackChanges(result.Changes),
             deploymentMode: result.DeploymentMode,
+            hooks,
+            hookStatus,
         };
     };
 }

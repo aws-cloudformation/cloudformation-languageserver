@@ -17,6 +17,11 @@ import {
     isStackInReview,
     parseValidationEvents,
     publishValidationDiagnostics,
+    extractHookFailures,
+    hookFailuresToValidationDetails,
+    mapChangeSetHooks,
+    resolveHookFailureTargets,
+    describeChangeSetHooksOrUndefined,
 } from '../../../src/stacks/actions/StackActionOperations';
 import {
     CreateValidationParams,
@@ -41,7 +46,7 @@ describe('ValidationWorkflow', () => {
     let mockFeatureFlag: TargetedFeatureFlag<string>;
     let mockAwsCredentials: AwsCredentials;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         mockCfnService = {
             describeStacks: vi.fn(),
             describeEvents: vi.fn(),
@@ -70,6 +75,14 @@ describe('ValidationWorkflow', () => {
             mockAwsCredentials,
         );
         vi.clearAllMocks();
+
+        const actualOperations = await vi.importActual<
+            typeof import('../../../src/stacks/actions/StackActionOperations')
+        >('../../../src/stacks/actions/StackActionOperations');
+        vi.mocked(extractHookFailures).mockImplementation(actualOperations.extractHookFailures);
+        vi.mocked(hookFailuresToValidationDetails).mockImplementation(actualOperations.hookFailuresToValidationDetails);
+        vi.mocked(mapChangeSetHooks).mockImplementation(actualOperations.mapChangeSetHooks);
+        vi.mocked(resolveHookFailureTargets).mockImplementation(actualOperations.resolveHookFailureTargets);
     });
 
     describe('start', () => {
@@ -817,6 +830,126 @@ describe('ValidationWorkflow', () => {
 
             const workflow = (validationWorkflow as any).workflows.get('test-id');
             expect(workflow.failureReason).toBe('Describe Events failed');
+        });
+
+        it('should publish non-hook and unresolved hook diagnostics when the hooks lookup is unavailable', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+            };
+
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_FAILED,
+                state: StackActionState.FAILED,
+                failureReason: 'change set failed',
+            });
+
+            mockCfnService.describeEvents = vi.fn().mockResolvedValueOnce({
+                OperationEvents: [
+                    {
+                        HookStatus: 'HOOK_COMPLETE_FAILED',
+                        HookType: 'AWS::Test::Hook',
+                        HookStatusReason: 'blocked by policy',
+                        LogicalResourceId: 'MyBucket',
+                    },
+                ],
+                $metadata: {},
+            });
+
+            const nonHookDetail = {
+                ValidationName: VALIDATION_NAME,
+                LogicalId: 'MyBucket',
+                Severity: 'ERROR',
+                Message: 'resource invalid',
+            };
+            (parseValidationEvents as any).mockReturnValueOnce([nonHookDetail]);
+
+            vi.mocked(describeChangeSetHooksOrUndefined).mockResolvedValueOnce(undefined);
+
+            await validationWorkflow.start(params);
+            await waitForWorkflowCompletion('test-id');
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            expect(publishValidationDiagnostics).toHaveBeenCalled();
+
+            const publishedDetails = (publishValidationDiagnostics as any).mock.calls.at(-1)[1];
+            expect(publishedDetails).toContainEqual(nonHookDetail);
+            expect(
+                publishedDetails.some(
+                    (detail: any) =>
+                        detail.ValidationName === 'AWS::Test::Hook' &&
+                        detail.Message === 'Hook AWS::Test::Hook: blocked by policy',
+                ),
+            ).toBe(true);
+
+            const workflow = (validationWorkflow as any).workflows.get('test-id');
+            expect(workflow.validationDetails).toContainEqual(nonHookDetail);
+            expect(workflow.validationDetails).toContainEqual(
+                expect.objectContaining({ ValidationName: 'AWS::Test::Hook', isHook: true }),
+            );
+        });
+
+        it('should surface resolved hook failures in the published diagnostics', async () => {
+            const params: CreateValidationParams = {
+                id: 'test-id',
+                uri: 'file:///test.yaml',
+                stackName: 'test-stack',
+            };
+
+            (waitForChangeSetValidation as any).mockResolvedValueOnce({
+                phase: StackActionPhase.VALIDATION_FAILED,
+                state: StackActionState.FAILED,
+                failureReason: 'change set failed',
+            });
+
+            mockCfnService.describeEvents = vi.fn().mockResolvedValueOnce({
+                OperationEvents: [
+                    {
+                        HookStatus: 'HOOK_FAILED',
+                        HookType: 'AWS::Test::Hook',
+                        HookStatusReason: 'rule X failed',
+                    },
+                ],
+                $metadata: {},
+            });
+
+            (parseValidationEvents as any).mockReturnValueOnce([]);
+
+            vi.mocked(describeChangeSetHooksOrUndefined).mockResolvedValueOnce({
+                Hooks: [
+                    {
+                        TypeName: 'AWS::Test::Hook',
+                        TargetDetails: {
+                            TargetType: 'RESOURCE',
+                            ResourceTargetDetails: { LogicalResourceId: 'MyQueue' },
+                        },
+                    },
+                ],
+                $metadata: {},
+            } as any);
+
+            await validationWorkflow.start(params);
+            await waitForWorkflowCompletion('test-id');
+            await new Promise((resolve) => setTimeout(resolve, 50));
+
+            const publishedDetails = (publishValidationDiagnostics as any).mock.calls.at(-1)[1];
+            expect(publishedDetails).toContainEqual(
+                expect.objectContaining({
+                    ValidationName: 'AWS::Test::Hook',
+                    LogicalId: 'MyQueue',
+                    Severity: 'ERROR',
+                    Message: 'Hook AWS::Test::Hook: rule X failed',
+                }),
+            );
+
+            const workflow = (validationWorkflow as any).workflows.get('test-id');
+            expect(workflow.hookFailures).toEqual([
+                expect.objectContaining({ typeName: 'AWS::Test::Hook', logicalResourceId: 'MyQueue' }),
+            ]);
+            expect(workflow.validationDetails).toContainEqual(
+                expect.objectContaining({ ValidationName: 'AWS::Test::Hook', LogicalId: 'MyQueue', isHook: true }),
+            );
         });
     });
 });

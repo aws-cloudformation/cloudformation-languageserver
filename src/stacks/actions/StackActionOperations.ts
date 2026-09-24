@@ -2,10 +2,13 @@ import { randomUUID as uuidv4 } from 'crypto';
 import {
     Change,
     ChangeSetType,
+    ChangeSetHook,
+    DescribeChangeSetHooksCommandOutput,
     StackStatus,
     OnStackFailure,
     EventType,
     HookFailureMode,
+    HookStatus,
     OperationEvent,
 } from '@aws-sdk/client-cloudformation';
 import { WaiterState } from '@smithy/util-waiter';
@@ -22,11 +25,13 @@ import { CfnService } from '../../services/CfnService';
 import { DiagnosticCoordinator } from '../../services/DiagnosticCoordinator';
 import { S3Service } from '../../services/S3Service';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
+import { classifyAwsError } from '../../utils/errors/AwsErrorMapper';
 import { extractErrorMessage, extractStatusReason } from '../../utils/errors/ErrorUtils';
 import { retryWithExponentialBackoff } from '../../utils/Retry';
 import { toHttpsPathStyleS3Url } from '../../utils/S3Url';
 import { toString } from '../../utils/String';
 import { pointToPosition } from '../../utils/TypeConverters';
+import { ChangeSetHookInfo } from '../StackRequestType';
 import {
     StackChange,
     StackActionPhase,
@@ -35,6 +40,7 @@ import {
     ValidationDetail,
     DeploymentMode,
     ResourceToImport,
+    HookFailure,
 } from './StackActionRequestType';
 import {
     StackActionWorkflowState,
@@ -46,8 +52,96 @@ import { CFN_VALIDATION_SOURCE } from './ValidationWorkflow';
 
 const logger = LoggerFactory.getLogger('StackActionOperations');
 
+export type HookEventLike = {
+    HookType?: string;
+    HookStatus?: string;
+    HookStatusReason?: string;
+    LogicalResourceId?: string;
+};
+
+export function isFailedHookStatus(
+    status: string | undefined,
+): status is typeof HookStatus.HOOK_COMPLETE_FAILED | typeof HookStatus.HOOK_FAILED {
+    return status === HookStatus.HOOK_COMPLETE_FAILED || status === HookStatus.HOOK_FAILED;
+}
+
+export function extractHookFailures(events: HookEventLike[]): HookFailure[] {
+    const failures: HookFailure[] = [];
+    const seen = new Set<string>();
+    for (const event of events) {
+        if (isFailedHookStatus(event.HookStatus)) {
+            if (!event.HookType) {
+                continue;
+            }
+            const key = `${event.HookType}::${event.LogicalResourceId ?? ''}::${event.HookStatusReason ?? ''}`;
+            if (seen.has(key)) {
+                continue;
+            }
+            seen.add(key);
+            failures.push({
+                typeName: event.HookType,
+                status: event.HookStatus,
+                reason: event.HookStatusReason,
+                logicalResourceId: event.LogicalResourceId,
+            });
+        }
+    }
+    return failures;
+}
+
 function logCleanupError(error: unknown, workflowId: string, changeSetName: string, operation: string): void {
     logger.warn(error, `Failed to cleanup ${operation} ${workflowId} ${changeSetName}`);
+}
+
+export function hookFailuresToValidationDetails(hookFailures: HookFailure[]): ValidationDetail[] {
+    return hookFailures.map((failure) => ({
+        ValidationName: failure.typeName,
+        LogicalId: failure.logicalResourceId,
+        Severity: 'ERROR',
+        Message: failure.reason
+            ? `Hook ${failure.typeName}: ${failure.reason}`
+            : `Hook ${failure.typeName} failed (${failure.status})`,
+        ValidationStatusReason: failure.reason,
+        isHook: true,
+    }));
+}
+
+export function resolveHookFailureTargets(
+    hookFailures: HookFailure[],
+    changeSetHooks: ChangeSetHookInfo[],
+): HookFailure[] {
+    const resolved: HookFailure[] = [];
+    for (const failure of hookFailures) {
+        if (failure.logicalResourceId) {
+            resolved.push(failure);
+            continue;
+        }
+        const targets = new Set(
+            changeSetHooks.flatMap((hook) =>
+                hook.typeName === failure.typeName && hook.targetName ? [hook.targetName] : [],
+            ),
+        );
+        if (targets.size === 1) {
+            const [logicalResourceId] = targets;
+            resolved.push({ ...failure, logicalResourceId });
+        } else {
+            resolved.push(failure);
+        }
+    }
+    return resolved;
+}
+
+export function deriveHookFailureReason(hookFailures: HookFailure[]): string | undefined {
+    const reasons: string[] = [];
+    for (const failure of hookFailures) {
+        if (!failure.reason) {
+            continue;
+        }
+        const resourcePrefix = failure.logicalResourceId ? `${failure.logicalResourceId}: ` : '';
+        reasons.push(`${resourcePrefix}${failure.reason}`);
+    }
+    const unique = [...new Set(reasons)];
+    return unique.length > 0 ? unique.join('; ') : undefined;
 }
 
 export function computeEligibleDeploymentMode(
@@ -331,6 +425,39 @@ export function mapChangesToStackChanges(changes?: Change[]): StackChange[] | un
     });
 }
 
+export function mapChangeSetHooks(hooks?: ChangeSetHook[]): ChangeSetHookInfo[] {
+    return (hooks ?? [])
+        .filter((hook) => hook.TypeName)
+        .map((hook) => ({
+            typeName: hook.TypeName as string,
+            invocationPoint: hook.InvocationPoint,
+            failureMode: hook.FailureMode,
+            targetType: hook.TargetDetails?.TargetType,
+            targetName: hook.TargetDetails?.ResourceTargetDetails?.LogicalResourceId,
+            targetAction: hook.TargetDetails?.ResourceTargetDetails?.ResourceAction,
+        }));
+}
+
+function isExpectedHooksLookupFailure(error: unknown): boolean {
+    const { category } = classifyAwsError(error);
+    return category === 'permissions' || category === 'throttling';
+}
+
+export async function describeChangeSetHooksOrUndefined(
+    cfnService: CfnService,
+    params: { ChangeSetName: string; StackName?: string },
+): Promise<DescribeChangeSetHooksCommandOutput | undefined> {
+    try {
+        return await cfnService.describeChangeSetHooks(params);
+    } catch (error) {
+        if (!isExpectedHooksLookupFailure(error)) {
+            throw error;
+        }
+        logger.warn(error, `Hooks unavailable for change set ${params.ChangeSetName}`);
+        return undefined;
+    }
+}
+
 export function processWorkflowUpdates(
     workflows: Map<string, StackActionWorkflowState>,
     existingWorkflow: StackActionWorkflowState,
@@ -393,7 +520,11 @@ export async function publishValidationDiagnostics(
             range = diagnosticCoordinator.getKeyRangeFromPath(uri, event.ResourcePropertyPath);
         } else if (event.LogicalId) {
             // fall back to using LogicalId and underlining entire resource
-            logger.warn(event, 'No ResourcePropertyPath found, falling back to using LogicalId');
+            if (event.isHook) {
+                logger.debug(event, 'Hook-derived detail has no ResourcePropertyPath, falling back to using LogicalId');
+            } else {
+                logger.warn(event, 'No ResourcePropertyPath found, falling back to using LogicalId');
+            }
             const resourcesMap = getEntityMap(syntaxTree, TopLevelSection.Resources);
 
             const startPosition = resourcesMap?.get(event.LogicalId)?.startPosition;
@@ -404,6 +535,13 @@ export async function publishValidationDiagnostics(
                     end: pointToPosition(endPosition),
                 };
             }
+        }
+
+        if (!range && event.isHook) {
+            range = {
+                start: { line: 0, character: 0 },
+                end: { line: 1, character: 0 },
+            };
         }
 
         if (range) {

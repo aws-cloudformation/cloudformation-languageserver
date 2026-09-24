@@ -327,4 +327,132 @@ describe('DeploymentWorkflow', () => {
             expect(workflow.deploymentEvents).toBeUndefined();
         });
     });
+
+    describe('deriveFailureReasonFromEvents (hooks-scoped)', () => {
+        const seedWorkflow = (id: string, overrides: Record<string, unknown> = {}): void => {
+            (deploymentWorkflow as any).workflows.set(id, {
+                id,
+                changeSetName: testChangeSetName,
+                stackName: testStackName,
+                startTime: Date.now(),
+                state: StackActionState.FAILED,
+                phase: StackActionPhase.DEPLOYMENT_FAILED,
+                ...overrides,
+            });
+        };
+
+        it('should derive a deduped hook failure reason and surface hook failures for a FAILED deployment', async () => {
+            seedWorkflow('dep-hook');
+            mockCfnService.describeStackEvents = vi.fn().mockResolvedValue({
+                StackEvents: [
+                    {
+                        ClientRequestToken: 'dep-hook',
+                        LogicalResourceId: 'MyBucket',
+                        HookType: 'AWS::Test::Hook',
+                        HookStatus: 'HOOK_FAILED',
+                        HookStatusReason: 'rule failed',
+                    },
+                    {
+                        ClientRequestToken: 'dep-hook',
+                        LogicalResourceId: 'MyBucket',
+                        HookType: 'AWS::Test::Hook',
+                        HookStatus: 'HOOK_FAILED',
+                        HookStatusReason: 'rule failed',
+                    },
+                ],
+                NextToken: undefined,
+            });
+
+            const workflow = (deploymentWorkflow as any).workflows.get('dep-hook');
+            await (deploymentWorkflow as any).processDeploymentEvents(workflow, testStackName);
+
+            const status = deploymentWorkflow.describeStatus({ id: 'dep-hook' });
+            expect(status.FailureReason).toBe('MyBucket: rule failed');
+            expect(status.HookFailures).toEqual([
+                expect.objectContaining({
+                    typeName: 'AWS::Test::Hook',
+                    logicalResourceId: 'MyBucket',
+                    reason: 'rule failed',
+                }),
+            ]);
+        });
+
+        it('should leave the failure reason undefined for non-hook failures (pre-PR behavior)', async () => {
+            seedWorkflow('dep-resource');
+            mockCfnService.describeStackEvents = vi.fn().mockResolvedValue({
+                StackEvents: [
+                    {
+                        ClientRequestToken: 'dep-resource',
+                        LogicalResourceId: 'MyBucket',
+                        ResourceStatus: 'CREATE_FAILED',
+                        ResourceStatusReason: 'insufficient permissions',
+                    },
+                    {
+                        ClientRequestToken: 'dep-resource',
+                        LogicalResourceId: 'MyBucket',
+                        ResourceStatus: 'CREATE_FAILED',
+                        ResourceStatusReason: 'Rollback requested by user',
+                    },
+                ],
+                NextToken: undefined,
+            });
+
+            const workflow = (deploymentWorkflow as any).workflows.get('dep-resource');
+            await (deploymentWorkflow as any).processDeploymentEvents(workflow, testStackName);
+
+            const status = deploymentWorkflow.describeStatus({ id: 'dep-resource' });
+            expect(status.FailureReason).toBeUndefined();
+            expect(status.HookFailures).toBeUndefined();
+            expect(status.DeploymentEvents).toHaveLength(2);
+        });
+
+        it('should preserve an existing failure reason while still surfacing hook failures', async () => {
+            seedWorkflow('dep-keep', { failureReason: 'waiter reason' });
+            mockCfnService.describeStackEvents = vi.fn().mockResolvedValue({
+                StackEvents: [
+                    {
+                        ClientRequestToken: 'dep-keep',
+                        LogicalResourceId: 'MyBucket',
+                        HookType: 'AWS::Test::Hook',
+                        HookStatus: 'HOOK_COMPLETE_FAILED',
+                        HookStatusReason: 'rule failed',
+                    },
+                ],
+                NextToken: undefined,
+            });
+
+            const workflow = (deploymentWorkflow as any).workflows.get('dep-keep');
+            await (deploymentWorkflow as any).processDeploymentEvents(workflow, testStackName);
+
+            const status = deploymentWorkflow.describeStatus({ id: 'dep-keep' });
+            expect(status.FailureReason).toBe('waiter reason');
+            expect(status.HookFailures).toHaveLength(1);
+        });
+
+        it('should not surface hook failures or a derived reason for a non-FAILED deployment', async () => {
+            seedWorkflow('dep-ok', {
+                state: StackActionState.SUCCESSFUL,
+                phase: StackActionPhase.DEPLOYMENT_COMPLETE,
+            });
+            mockCfnService.describeStackEvents = vi.fn().mockResolvedValue({
+                StackEvents: [
+                    {
+                        ClientRequestToken: 'dep-ok',
+                        LogicalResourceId: 'MyBucket',
+                        HookType: 'AWS::Test::Hook',
+                        HookStatus: 'HOOK_FAILED',
+                        HookStatusReason: 'rule failed',
+                    },
+                ],
+                NextToken: undefined,
+            });
+
+            const workflow = (deploymentWorkflow as any).workflows.get('dep-ok');
+            await (deploymentWorkflow as any).processDeploymentEvents(workflow, testStackName);
+
+            const status = deploymentWorkflow.describeStatus({ id: 'dep-ok' });
+            expect(status.FailureReason).toBeUndefined();
+            expect(status.HookFailures).toBeUndefined();
+        });
+    });
 });
