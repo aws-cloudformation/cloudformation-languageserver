@@ -52,26 +52,28 @@ const createMockPyodide = () => ({
 
         // The worker now returns a JSON string from lint_str/lint_uri (cfn-lint JsonFormatter
         // output), not a PyProxy. Returning a pre-built string matches the new contract.
-        return Promise.resolve(JSON.stringify([
-            {
-                Filename: '/tmp/test.yaml',
-                Id: 'test-id',
-                ParentId: null,
-                Level: 'Warning',
-                Message: 'Test diagnostic',
-                Rule: {
-                    Id: 'E1001',
-                    Description: 'Test rule',
-                    ShortDescription: 'Short',
-                    Source: 'https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md#E1001',
+        return Promise.resolve(
+            JSON.stringify([
+                {
+                    Filename: '/tmp/test.yaml',
+                    Id: 'test-id',
+                    ParentId: null,
+                    Level: 'Warning',
+                    Message: 'Test diagnostic',
+                    Rule: {
+                        Id: 'E1001',
+                        Description: 'Test rule',
+                        ShortDescription: 'Short',
+                        Source: 'https://github.com/aws-cloudformation/cfn-lint/blob/main/docs/rules.md#E1001',
+                    },
+                    Location: {
+                        Start: { LineNumber: 2, ColumnNumber: 3 },
+                        End: { LineNumber: 2, ColumnNumber: 11 },
+                        Path: ['Resources', 'MyBucket'],
+                    },
                 },
-                Location: {
-                    Start: { LineNumber: 2, ColumnNumber: 3 },
-                    End: { LineNumber: 2, ColumnNumber: 11 },
-                    Path: ['Resources', 'MyBucket'],
-                },
-            },
-        ]));
+            ]),
+        );
     }),
     toPy: vi.fn((val) => {
         // Store the value for assertions in tests
@@ -218,7 +220,7 @@ describe('pyodide-worker', () => {
                             `lint_str(r"""${content}""", r"""${uri}""")`,
                         );
                         if (typeof lintJsonStr !== 'string') {
-                            throw new Error('Expected a JSON string from Python linting');
+                            throw new TypeError('Expected a JSON string from Python linting');
                         }
                         result = JSON.parse(lintJsonStr);
                         break;
@@ -236,7 +238,7 @@ describe('pyodide-worker', () => {
                             `lint_uri(r"""${path}""", r"""${uri}""", r"""${fileType}""")`,
                         );
                         if (typeof lintFileJsonStr !== 'string') {
-                            throw new Error('Expected a JSON string from Python linting');
+                            throw new TypeError('Expected a JSON string from Python linting');
                         }
                         result = JSON.parse(lintFileJsonStr);
                         break;
@@ -891,15 +893,51 @@ describe('pyodide-worker', () => {
             // Setup different mock responses for each call — return cfn-lint JSON strings
             // matching the format emitted by JsonFormatter (same contract as --format json).
             const mockResponses = [
-                JSON.stringify([{ Filename: '/tmp/test1.yaml', Id: 'id1', ParentId: null, Level: 'Error',
-                    Message: 'Error 1', Rule: { Id: 'E1001', Description: '', ShortDescription: '', Source: '' },
-                    Location: { Start: { LineNumber: 1, ColumnNumber: 1 }, End: { LineNumber: 1, ColumnNumber: 1 }, Path: [] } }]),
-                JSON.stringify([{ Filename: '/tmp/test2.yaml', Id: 'id2', ParentId: null, Level: 'Warning',
-                    Message: 'Warning 1', Rule: { Id: 'W1001', Description: '', ShortDescription: '', Source: '' },
-                    Location: { Start: { LineNumber: 1, ColumnNumber: 1 }, End: { LineNumber: 1, ColumnNumber: 1 }, Path: [] } }]),
-                JSON.stringify([{ Filename: '/tmp/test3.yaml', Id: 'id3', ParentId: null, Level: 'Informational',
-                    Message: 'Info 1', Rule: { Id: 'I4010', Description: '', ShortDescription: '', Source: '' },
-                    Location: { Start: { LineNumber: 1, ColumnNumber: 1 }, End: { LineNumber: 1, ColumnNumber: 1 }, Path: [] } }]),
+                JSON.stringify([
+                    {
+                        Filename: '/tmp/test1.yaml',
+                        Id: 'id1',
+                        ParentId: null,
+                        Level: 'Error',
+                        Message: 'Error 1',
+                        Rule: { Id: 'E1001', Description: '', ShortDescription: '', Source: '' },
+                        Location: {
+                            Start: { LineNumber: 1, ColumnNumber: 1 },
+                            End: { LineNumber: 1, ColumnNumber: 1 },
+                            Path: [],
+                        },
+                    },
+                ]),
+                JSON.stringify([
+                    {
+                        Filename: '/tmp/test2.yaml',
+                        Id: 'id2',
+                        ParentId: null,
+                        Level: 'Warning',
+                        Message: 'Warning 1',
+                        Rule: { Id: 'W1001', Description: '', ShortDescription: '', Source: '' },
+                        Location: {
+                            Start: { LineNumber: 1, ColumnNumber: 1 },
+                            End: { LineNumber: 1, ColumnNumber: 1 },
+                            Path: [],
+                        },
+                    },
+                ]),
+                JSON.stringify([
+                    {
+                        Filename: '/tmp/test3.yaml',
+                        Id: 'id3',
+                        ParentId: null,
+                        Level: 'Informational',
+                        Message: 'Info 1',
+                        Rule: { Id: 'I4010', Description: '', ShortDescription: '', Source: '' },
+                        Location: {
+                            Start: { LineNumber: 1, ColumnNumber: 1 },
+                            End: { LineNumber: 1, ColumnNumber: 1 },
+                            Path: [],
+                        },
+                    },
+                ]),
             ];
 
             let callCount = 0;

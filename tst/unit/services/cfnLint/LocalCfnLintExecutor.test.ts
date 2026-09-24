@@ -198,9 +198,7 @@ describe('LocalCfnLintExecutor', () => {
 
         test('should populate codeDescription.href from Rule.Source', async () => {
             const docsUrl = 'https://docs.aws.amazon.com/cfn-lint/rules/E1001.html';
-            vi.mocked(spawn).mockReturnValue(
-                createMockChildProcess(2, makeDiagnosticsJson([errorFinding], docsUrl)),
-            );
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, makeDiagnosticsJson([errorFinding], docsUrl)));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
@@ -209,9 +207,7 @@ describe('LocalCfnLintExecutor', () => {
         });
 
         test('should omit codeDescription when Rule.Source is empty', async () => {
-            vi.mocked(spawn).mockReturnValue(
-                createMockChildProcess(2, makeDiagnosticsJson([errorFinding], '')),
-            );
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, makeDiagnosticsJson([errorFinding], '')));
 
             const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
             const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);

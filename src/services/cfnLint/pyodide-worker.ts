@@ -393,13 +393,15 @@ async function getVersion(): Promise<string> {
 // and convert to LSP diagnostics using the shared converter.
 function convertPythonResultToDiagnostics(result: unknown, uri: string): PublishDiagnosticsParams[] {
     if (typeof result !== 'string') {
-        throw new Error('Expected a JSON string from Python linting');
+        throw new TypeError('Expected a JSON string from Python linting');
     }
     try {
         const findings = JSON.parse(result) as CfnLintDiagnostic[];
         return toPublishDiagnostics(findings, uri);
     } catch (error) {
-        throw new Error(`Failed to parse cfn-lint output from Pyodide: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+            `Failed to parse cfn-lint output from Pyodide: ${error instanceof Error ? error.message : String(error)}`,
+        );
     }
 }
 

@@ -31,7 +31,6 @@ describe('toPublishDiagnostics', () => {
         });
 
         test('returns empty array for null input', () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             expect(toPublishDiagnostics(null as any, TEST_URI)).toEqual([]);
         });
     });
@@ -69,7 +68,6 @@ describe('toPublishDiagnostics', () => {
 
         test('clamps to 0 when LineNumber or ColumnNumber is missing (uses || 1 fallback)', () => {
             const finding = makeFinding({
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 Location: { Start: {}, End: {}, Path: null } as any,
             });
             const result = toPublishDiagnostics([finding], TEST_URI);
@@ -96,32 +94,41 @@ describe('toPublishDiagnostics', () => {
     describe('codeDescription', () => {
         test('sets codeDescription.href from Rule.Source when present', () => {
             const sourceUrl = 'https://docs.aws.amazon.com/cfn-lint/rules/E1001.html';
-            const result = toPublishDiagnostics([makeFinding({ Rule: { ...makeFinding().Rule, Source: sourceUrl } })], TEST_URI);
+            const result = toPublishDiagnostics(
+                [makeFinding({ Rule: { ...makeFinding().Rule, Source: sourceUrl } })],
+                TEST_URI,
+            );
             expect(result[0].diagnostics[0].codeDescription).toEqual({ href: sourceUrl });
         });
 
         test('omits codeDescription when Rule.Source is empty string', () => {
-            const result = toPublishDiagnostics([makeFinding({ Rule: { ...makeFinding().Rule, Source: '' } })], TEST_URI);
+            const result = toPublishDiagnostics(
+                [makeFinding({ Rule: { ...makeFinding().Rule, Source: '' } })],
+                TEST_URI,
+            );
             expect(result[0].diagnostics[0].codeDescription).toBeUndefined();
         });
 
         test('omits codeDescription when Rule.Source is null', () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const result = toPublishDiagnostics([makeFinding({ Rule: { ...makeFinding().Rule, Source: null as any } })], TEST_URI);
+            const result = toPublishDiagnostics(
+                [makeFinding({ Rule: { ...makeFinding().Rule, Source: null as unknown as string } })],
+                TEST_URI,
+            );
             expect(result[0].diagnostics[0].codeDescription).toBeUndefined();
         });
     });
 
     describe('message and code fallbacks', () => {
         test('uses fallback message when Message is missing', () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const result = toPublishDiagnostics([makeFinding({ Message: undefined as any })], TEST_URI);
+            const result = toPublishDiagnostics([makeFinding({ Message: undefined })], TEST_URI);
             expect(result[0].diagnostics[0].message).toBe('Unknown cfn-lint error');
         });
 
         test('uses fallback code when Rule.Id is missing', () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const result = toPublishDiagnostics([makeFinding({ Rule: { ...makeFinding().Rule, Id: undefined as any } })], TEST_URI);
+            const result = toPublishDiagnostics(
+                [makeFinding({ Rule: { ...makeFinding().Rule, Id: undefined as any } })],
+                TEST_URI,
+            );
             expect(result[0].diagnostics[0].code).toBe('unknown');
         });
     });
@@ -144,7 +151,10 @@ describe('toPublishDiagnostics', () => {
         });
 
         test('sets code to the rule ID', () => {
-            const result = toPublishDiagnostics([makeFinding({ Rule: { ...makeFinding().Rule, Id: 'W4011' } })], TEST_URI);
+            const result = toPublishDiagnostics(
+                [makeFinding({ Rule: { ...makeFinding().Rule, Id: 'W4011' } })],
+                TEST_URI,
+            );
             expect(result[0].diagnostics[0].code).toBe('W4011');
         });
     });
