@@ -283,6 +283,7 @@ async function initializePyodide(): Promise<InitializeResult> {
       def lint_to_json(matches):
           # Use cfn-lint's own JsonFormatter (cfnlint/formatters/json.py) so the output
           # schema is identical to --format json consumed by LocalCfnLintExecutor.
+          # Sort matches to match the CLI's output ordering (cfn-lint sorts internally).
           # print_matches(matches, rules, config): rules and config are explicitly ignored
           # by the formatter (it deletes rules internally), so None is the correct value.
           sorted_matches = sorted(matches, key=lambda m: (m.filename, m.linenumber, m.rule.id))
