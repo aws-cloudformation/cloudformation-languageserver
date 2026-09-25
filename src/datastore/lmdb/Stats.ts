@@ -1,4 +1,4 @@
-import { Database, RootDatabase } from 'lmdb';
+import type { Database, RootDatabase } from 'lmdb';
 
 export function stats(store: RootDatabase | Database): StoreStatsType {
     const stats = store.getStats() as Record<string, number>;

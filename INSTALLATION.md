@@ -8,6 +8,20 @@ This guide covers installing and configuring the CloudFormation Language Server 
 
 1. [Node.js](https://nodejs.org/en) 24.x (version 24.19.0 or newer) for standard builds. Use Node.js 18.x only with the legacy Linux glibc 2.28 builds listed below.
 
+## Install from npm
+
+Production releases are published to npm as [`@aws/cloudformation-languageserver`](https://www.npmjs.com/package/@aws/cloudformation-languageserver) (Node.js 20 or newer):
+
+```bash
+npm install -g @aws/cloudformation-languageserver
+cloudformation-languageserver --stdio
+```
+
+The package installs a `cloudformation-languageserver` executable. When installed this way, replace
+`node /path/to/install-location/cfn-lsp-server-standalone.js` in the client configurations below with
+`cloudformation-languageserver`. The npm package does not include the `cfn-init` binary or the legacy glibc 2.28
+builds; use the GitHub Releases downloads for those.
+
 ## Download
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/aws-cloudformation/cloudformation-languageserver/releases/latest).

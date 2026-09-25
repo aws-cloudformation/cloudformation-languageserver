@@ -1,19 +1,20 @@
 import { randomUUID as v4 } from 'crypto';
 import fs from 'fs';
 import { join } from 'path';
-import { open } from 'lmdb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { loadLmdbModule } from '../../../src/datastore/lmdb/LMDBModule';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDBStoreFactory';
 import { DiscardReason, StoreMetric } from '../../../src/datastore/Utils';
 import { TelemetryService } from '../../../src/telemetry/TelemetryService';
 
-vi.mock('lmdb', async () => {
+vi.mock('../../../src/datastore/lmdb/LMDBModule', async () => {
     const actual = await vi.importActual<typeof import('lmdb')>('lmdb');
-    return { ...actual, open: vi.fn().mockImplementation(actual.open) };
+    const lmdb = { ...actual, open: vi.fn().mockImplementation(actual.open) };
+    return { loadLmdbModule: () => lmdb };
 });
 
-const mockedOpen = vi.mocked(open);
+const mockedOpen = vi.mocked(loadLmdbModule().open);
 
 const OutOfDiskMessage = 'No space left on device: Attempting to write page at position 191807488, size 11976704';
 
