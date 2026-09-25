@@ -5,8 +5,20 @@
     "id": "aws-cloudformation-languageserver",
     "description": "AWS CloudFormation Language Server",
     "publisher": "aws",
-    "author": "Amazon Web Services (AWS)",
     "license": "Apache-2.0",
+    "private": true,
+    "author": {
+        "name": "Amazon Web Services",
+        "url": "https://aws.amazon.com"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/aws-cloudformation/cloudformation-languageserver"
+    },
+    "homepage": "https://github.com/aws-cloudformation/cloudformation-languageserver#readme",
+    "bugs": {
+        "url": "https://github.com/aws-cloudformation/cloudformation-languageserver/issues"
+    },
     "main": "src/app/standalone.ts",
     "engines": {
         "node": ">=24.19.0 <25",

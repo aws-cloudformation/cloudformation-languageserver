@@ -1,20 +1,18 @@
 import fs from 'fs';
 import { join } from 'path';
-import { open } from 'lmdb';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StoreName } from '../../../src/datastore/DataStore';
+import { loadLmdbModule } from '../../../src/datastore/lmdb/LMDBModule';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDBStoreFactory';
 import { LMDBOwnershipTracker, OwnershipPhase } from '../../../src/datastore/lmdb/OwnershipTracker';
 
-vi.mock('lmdb', async () => {
+vi.mock('../../../src/datastore/lmdb/LMDBModule', async () => {
     const actual = await vi.importActual<typeof import('lmdb')>('lmdb');
-    return {
-        ...actual,
-        open: vi.fn().mockImplementation(actual.open),
-    };
+    const lmdb = { ...actual, open: vi.fn().mockImplementation(actual.open) };
+    return { loadLmdbModule: () => lmdb };
 });
 
-const mockedOpen = vi.mocked(open);
+const mockedOpen = vi.mocked(loadLmdbModule().open);
 
 const OWNER_MARKER_PREFIX = 'owner.';
 

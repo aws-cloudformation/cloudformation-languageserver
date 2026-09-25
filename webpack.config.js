@@ -1,4 +1,5 @@
 const { resolve, join } = require('path');
+const { isBuiltin } = require('module');
 const nodeExternals = require('webpack-node-externals');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');
@@ -8,6 +9,7 @@ const { execSync } = require('child_process');
 const path = require('path');
 
 const BUNDLE_NAME = 'cfn-lsp-server-standalone';
+const BIN_NAME = 'cloudformation-languageserver';
 const Package = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const PackageLock = JSON.parse(fs.readFileSync('package-lock.json', 'utf8'));
 const ExternalsDeps = Package.externalDependencies;
@@ -29,6 +31,79 @@ const KEEP_FILES = [
     'python_stdlib.zip',
 ];
 const IGNORE_PATHS = ['/bin/', '/test/', '/benchmarks/', '/examples/'];
+
+// The bundle directory doubles as the npm package: node_modules/ is never packed by npm, and the
+// co-distributed cfn-init binary under bin/ is left out because the server does not invoke it.
+const PUBLISHED_FILES = [
+    '/*.js',
+    '/*.js.map',
+    '/*.wasm',
+    '/assets/',
+    '/vendor/',
+    '/NOTICE',
+    '/THIRD-PARTY-LICENSES.txt',
+];
+// The root engines pin the development toolchain; the published package only needs what the bundle and its
+// runtime dependencies (notably @aws/cloudformation-validate, node >= 20) require, as exercised by the
+// post-release soak matrix.
+const PUBLISHED_ENGINES = { node: '>=20' };
+const DEVELOPMENT_ONLY_KEYS = [
+    'private',
+    'scripts',
+    'devDependencies',
+    'externalDependencies',
+    'nativePrebuilds',
+    'requiredPeerDeps',
+    'rebuildDependencies',
+];
+
+function omitDevelopmentOnlyKeys(manifest) {
+    const runtimeManifest = { ...manifest };
+    for (const key of DEVELOPMENT_ONLY_KEYS) {
+        delete runtimeManifest[key];
+    }
+    return runtimeManifest;
+}
+
+function packageNameOf(request) {
+    const segments = request.split('/');
+    return request.startsWith('@') ? segments.slice(0, 2).join('/') : segments[0];
+}
+
+// The compiled module graph reveals the transitive packages the bundle `require()`s directly (e.g. `yaml`,
+// `lru-cache`), while the declared externals also cover packages loaded by name at runtime, such as pino
+// resolving its `pino-pretty` transport target itself. npm resolves everything below these (including the
+// platform-specific native prebuilds) on the consumer's machine.
+function collectRuntimeDependencies(compilation) {
+    const requestedPackages = [...compilation.modules]
+        .filter((module) => module instanceof webpack.ExternalModule && !isBuiltin(module.userRequest))
+        .map((module) => packageNameOf(module.userRequest));
+
+    const runtimeDependencies = {};
+    for (const packageName of [...ExternalsDeps, ...requestedPackages].sort()) {
+        const lockEntry = PackageLock.packages[`node_modules/${packageName}`];
+        if (!lockEntry) {
+            throw new Error(`External "${packageName}" is not in package-lock.json and cannot be published`);
+        }
+        runtimeDependencies[packageName] = lockEntry.version;
+    }
+    return runtimeDependencies;
+}
+
+// Pulled out of the spread so dependencies and overrides land last.
+function createPublishedManifest(runtimeDependencies) {
+    const { dependencies: _, overrides, ...metadata } = omitDevelopmentOnlyKeys(Package);
+    return {
+        ...metadata,
+        main: `./${BUNDLE_NAME}.js`,
+        bin: { [BIN_NAME]: `./${BUNDLE_NAME}.js` },
+        files: PUBLISHED_FILES,
+        engines: PUBLISHED_ENGINES,
+        scripts: { start: `node ./${BUNDLE_NAME}.js --stdio` },
+        dependencies: runtimeDependencies,
+        overrides,
+    };
+}
 
 function generateExternals() {
     const externals = [...ExternalsDeps, ...RequiredPeerDeps];
@@ -151,21 +226,7 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                     try {
                         console.log('[InstallDependencies] Starting dependency installation...');
 
-                        const tmpPkg = {
-                            ...Package,
-                            main: `./${BUNDLE_NAME}.js`,
-                        };
-
-                        delete tmpPkg['scripts'];
-                        delete tmpPkg['devDependencies'];
-                        delete tmpPkg['externalDependencies'];
-                        delete tmpPkg['nativePrebuilds'];
-                        delete tmpPkg['requiredPeerDeps'];
-                        delete tmpPkg['rebuildDependencies'];
-
-                        tmpPkg['scripts'] = {
-                            start: `node ./${BUNDLE_NAME}.js --stdio`,
-                        };
+                        const tmpPkg = omitDevelopmentOnlyKeys(Package);
 
                         console.log('[InstallDependencies] Cleaning temp directory...');
                         if (fs.existsSync(tmpDir)) {
@@ -210,6 +271,12 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                     }
                 });
 
+                compiler.hooks.done.tap('WritePublishedManifest', (stats) => {
+                    const manifest = createPublishedManifest(collectRuntimeDependencies(stats.compilation));
+                    fs.writeFileSync(path.join(outputPath, 'package.json'), JSON.stringify(manifest, null, 2));
+                    console.log('[WritePublishedManifest] Runtime dependencies:', manifest.dependencies);
+                });
+
                 compiler.hooks.done.tap('CleanupTemp', () => {
                     console.log('[CleanupTemp] Cleaning up temporary files...');
                     if (fs.existsSync(tmpDir)) {
@@ -243,10 +310,6 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                             return isExternal && keep && !ignore;
                         },
                     },
-                    {
-                        from: 'tmp-node-modules/package.json',
-                        to: 'package.json',
-                    },
                     ...COPY_FILES.map((file) => {
                         return {
                             from: file,
@@ -264,6 +327,16 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
             }),
         );
     }
+
+    // Lets npm expose the server through `bin` (`npx cloudformation-languageserver --stdio`).
+    plugins.push(
+        new webpack.BannerPlugin({
+            banner: '#!/usr/bin/env node',
+            raw: true,
+            entryOnly: true,
+            test: new RegExp(`^${BUNDLE_NAME}\\.js$`),
+        }),
+    );
 
     plugins.push(
         new webpack.DefinePlugin({

@@ -378,3 +378,193 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+
+  publish-npm:
+    if: needs.version-and-tag.outputs.is-prerelease == 'false'
+    needs: [ get-configs, version-and-tag, long-running-tests ]
+    runs-on: ubuntu-latest
+    environment: release-npm
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      PACKAGE_NAME: '@aws/cloudformation-languageserver'
+      RELEASE_VERSION: ${{ needs.version-and-tag.outputs.version }}
+    steps:
+      - name: Download linux-x64 bundle
+        uses: actions/download-artifact@v8
+        with:
+          pattern: '*-linux-x64-node*'
+          path: artifacts
+
+      - name: Locate bundle
+        id: bundle
+        run: |
+          set -euo pipefail
+          mapfile -t bundles < <(find artifacts -mindepth 1 -maxdepth 1 -type d)
+          if [ "${#bundles[@]}" -ne 1 ]; then
+            echo "::error::Expected exactly one linux-x64 bundle artifact, found ${#bundles[@]}: ${bundles[*]}"
+            exit 1
+          fi
+          echo "Publishing from ${bundles[0]}"
+          echo "dir=${bundles[0]}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ needs.get-configs.outputs.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+
+      - name: Upgrade npm for Trusted Publishing
+        run: |
+          npm install -g npm@11
+          echo "npm version: $(npm --version)"
+
+      - name: Match version with release tag
+        working-directory: ${{ steps.bundle.outputs.dir }}
+        run: |
+          set -euo pipefail
+          bundle_version="$(jq -r .version package.json)"
+          if [ "$bundle_version" != "$RELEASE_VERSION" ]; then
+            echo "::error::Bundle version ($bundle_version) does not match release version ($RELEASE_VERSION)."
+            exit 1
+          fi
+          echo "Bundle version $bundle_version matches release version."
+
+      - name: Confirm tarball contents
+        working-directory: ${{ steps.bundle.outputs.dir }}
+        run: |
+          set -euo pipefail
+
+          pack_json="$(mktemp)"
+          npm pack --dry-run --json > "$pack_json"
+
+          echo "Packed file list:"
+          jq -r '.[0].files[].path' "$pack_json"
+
+          required=(
+            "package.json"
+            "cfn-lsp-server-standalone.js"
+            "pyodide-worker.js"
+            "guard_bg.wasm"
+            "vendor/cfn-guard/index.js"
+            "README.md"
+            "LICENSE"
+            "NOTICE"
+            "THIRD-PARTY-LICENSES.txt"
+          )
+          required_prefixes=(
+            "assets/wheels/"
+          )
+          forbidden_prefixes=(
+            "node_modules/"
+            "bin/"
+          )
+
+          failed=0
+          for want in "${required[@]}"; do
+            if ! jq -e --arg f "$want" '.[0].files[] | select(.path == $f)' "$pack_json" >/dev/null; then
+              echo "::error::expected file missing from npm tarball: $want"
+              failed=1
+            fi
+          done
+          for prefix in "${required_prefixes[@]}"; do
+            if ! jq -e --arg p "$prefix" '.[0].files[] | select(.path | startswith($p))' "$pack_json" >/dev/null; then
+              echo "::error::expected files missing from npm tarball: $prefix*"
+              failed=1
+            fi
+          done
+          for prefix in "${forbidden_prefixes[@]}"; do
+            if jq -e --arg p "$prefix" '.[0].files[] | select(.path | startswith($p))' "$pack_json" >/dev/null; then
+              echo "::error::platform-specific files must not be in the npm tarball: $prefix*"
+              failed=1
+            fi
+          done
+
+          rm -f "$pack_json"
+
+          if [ "$failed" -ne 0 ]; then
+            echo "::error::tarball content verification failed"
+            exit 1
+          fi
+          echo "All required files are present in the tarball."
+
+      - name: Publish to NPM
+        working-directory: ${{ steps.bundle.outputs.dir }}
+        run: |
+          set -euo pipefail
+
+          release_url="https://registry.npmjs.org/${PACKAGE_NAME/\//%2F}/$RELEASE_VERSION"
+          registry_response="$(mktemp)"
+          if ! http_status="$(curl --silent --show-error --location \
+            --output "$registry_response" --write-out '%{http_code}' "$release_url")"; then
+            rm -f "$registry_response"
+            echo "::error::Failed to check NPM for release $RELEASE_VERSION."
+            exit 1
+          fi
+          case "$http_status" in
+            200)
+              rm -f "$registry_response"
+              echo "NPM release $RELEASE_VERSION already exists; skipping publication."
+              exit 0
+              ;;
+            404) rm -f "$registry_response" ;;
+            *)
+              rm -f "$registry_response"
+              echo "::error::NPM existence check returned HTTP $http_status; refusing to publish."
+              exit 1
+              ;;
+          esac
+
+          npm publish --access public --provenance
+
+  verify-publish-npm:
+    if: needs.version-and-tag.outputs.is-prerelease == 'false'
+    needs: [ get-configs, version-and-tag, publish-npm ]
+    runs-on: ubuntu-latest
+    env:
+      PACKAGE_NAME: '@aws/cloudformation-languageserver'
+      RELEASE_VERSION: ${{ needs.version-and-tag.outputs.version }}
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ needs.get-configs.outputs.node-version }}
+          registry-url: 'https://registry.npmjs.org'
+          package-manager-cache: false
+
+      - name: Verify published package
+        run: |
+          set -euo pipefail
+
+          verify() {
+            local tmp
+            tmp="$(mktemp -d)"
+            (
+              cd "$tmp" \
+                && npm init -y >/dev/null \
+                && npm install "$PACKAGE_NAME@$RELEASE_VERSION" \
+                && npm audit signatures \
+                && test -x node_modules/.bin/cloudformation-languageserver
+            ) || return 1
+
+            local predicate
+            predicate=$(npm view "$PACKAGE_NAME@$RELEASE_VERSION" dist.attestations.provenance.predicateType 2>/dev/null || true)
+            if [ -z "$predicate" ]; then
+              echo "no provenance attestation found for $PACKAGE_NAME@$RELEASE_VERSION"
+              return 1
+            fi
+            echo "provenance attestation predicateType: $predicate"
+          }
+
+          max_attempts=60
+          for attempt in $(seq 1 "$max_attempts"); do
+            echo "attempt $attempt/$max_attempts: verifying $PACKAGE_NAME@$RELEASE_VERSION"
+            if verify; then
+              echo "Published package installed, signatures audited, bin linked, and provenance verified."
+              exit 0
+            fi
+            sleep 60
+          done
+
+          echo "::error::Timed out waiting for $PACKAGE_NAME@$RELEASE_VERSION to verify against the npm registry"
+          exit 1

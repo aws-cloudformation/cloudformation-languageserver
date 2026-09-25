@@ -64,17 +64,21 @@ CloudFormation resource type schemas.
 Persistent and in-memory key-value storage. The `DataStore` interface (`src/datastore/DataStore.ts`) has **three
 implementations** selected at runtime:
 
-| Implementation           | Module                         | Activation                                           |
-|--------------------------|--------------------------------|------------------------------------------------------|
-| **LMDB store** (default) | `src/datastore/lmdb/`          | All platforms by default (when not Windows / fileDb) |
-| **File store**           | `src/datastore/file/`          | Windows OR `FileDb` feature flag enabled             |
-| **Memory store**         | `src/datastore/MemoryStore.ts` | All non-persisted stores (e.g. `private_schemas`)    |
+| Implementation           | Module                         | Activation                                                          |
+|--------------------------|--------------------------------|---------------------------------------------------------------------|
+| **LMDB store** (default) | `src/datastore/lmdb/`          | macOS / Linux when the `lmdb` native module loads and `FileDb` is off |
+| **File store**           | `src/datastore/file/`          | Windows, `FileDb` feature flag enabled, OR `lmdb` fails to load     |
+| **Memory store**         | `src/datastore/MemoryStore.ts` | All non-persisted stores (e.g. `private_schemas`)                   |
 
-`MultiDataStoreFactoryProvider` (`src/datastore/DataStore.ts`) chooses LMDB vs File at startup based on platform and
-feature flag, and pairs whichever persisted store is selected with `MemoryStoreFactory` for in-memory stores.
+`MultiDataStoreFactoryProvider` (`src/datastore/DataStore.ts`) chooses LMDB vs File at startup based on platform,
+feature flag, and whether the `lmdb` native module can be loaded (probed via `src/datastore/lmdb/LMDBModule.ts`,
+which is also the only place that loads `lmdb` at runtime), and pairs whichever persisted store is selected with
+`MemoryStoreFactory` for in-memory stores.
 
 - LMDB is the default persisted store on macOS / Linux. Database directory: `<storage-root>/lmdb/v5/`.
-- File store is the encrypted-file alternative used on Windows or when LMDB is disabled. Database directory:
+- File store is the encrypted-file alternative used on Windows, when LMDB is disabled, or when the `lmdb` native
+  addon cannot be loaded on the host (for example a glibc older than the prebuild requires); the fallback is logged
+  and counted under the `DataStore` telemetry scope as `lmdb.unavailable`. Database directory:
   `<storage-root>/filedb/v3/`. One `.enc` file per key via `KeyedFileStore`.
 - Memory store is used for `StoreName` values not in `PersistedStores` (currently `private_schemas`), so they are
   loaded fresh each session.

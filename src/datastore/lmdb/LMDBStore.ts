@@ -1,4 +1,4 @@
-import { Database } from 'lmdb';
+import type { Database } from 'lmdb';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { TelemetryService } from '../../telemetry/TelemetryService';
 import { LMDBError } from '../../utils/errors/ErrorClasses';
