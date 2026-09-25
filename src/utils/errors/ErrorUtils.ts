@@ -22,14 +22,20 @@ export function extractErrorMessage(error: unknown) {
     return toString(error);
 }
 
+function createResponseError(code: number, message: string, cause: unknown): ResponseError<unknown> {
+    const responseError = new ResponseError<unknown>(code, message);
+    responseError.cause = cause;
+    return responseError;
+}
+
 export function handleLspError(error: unknown, contextMessage: string): never {
     if (error instanceof ResponseError) {
         throw error;
     }
     if (error instanceof TypeError) {
-        throw new ResponseError(ErrorCodes.InvalidParams, error.message);
+        throw createResponseError(ErrorCodes.InvalidParams, error.message, error);
     }
-    throw new ResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`);
+    throw createResponseError(ErrorCodes.InternalError, `${contextMessage}: ${extractErrorMessage(error)}`, error);
 }
 
 export function extractRootCause(error: unknown): Error | undefined {

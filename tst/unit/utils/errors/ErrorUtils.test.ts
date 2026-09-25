@@ -106,6 +106,11 @@ describe('ErrorUtils', () => {
                 const responseError = err as ResponseError<unknown>;
                 expect(responseError.code).toBe(ErrorCodes.InvalidParams);
                 expect(responseError.message).toBe('expected a string');
+                expect(responseError.cause).toBe(typeError);
+                expect(responseError.toJson()).toEqual({
+                    code: ErrorCodes.InvalidParams,
+                    message: 'expected a string',
+                });
             }
         });
 
@@ -120,6 +125,11 @@ describe('ErrorUtils', () => {
                 const responseError = err as ResponseError<unknown>;
                 expect(responseError.code).toBe(ErrorCodes.InternalError);
                 expect(responseError.message).toBe('Failed to write template: disk full');
+                expect(responseError.cause).toBe(error);
+                expect(responseError.toJson()).toEqual({
+                    code: ErrorCodes.InternalError,
+                    message: 'Failed to write template: disk full',
+                });
             }
         });
 

@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { TextDocumentSyncKind, CodeActionKind } from 'vscode-languageserver';
-import { CLEAR_DIAGNOSTIC, TRACK_CODE_ACTION_ACCEPTED, UPDATE_REGION } from '../../../src/handlers/ExecutionHandler';
-import { LspCapabilities } from '../../../src/protocol/LspCapabilities';
+import { createLspCapabilities } from '../../../src/protocol/LspCapabilities';
+import { createLspCommands } from '../../../src/protocol/LspCommands';
 import { ExtensionName, ExtensionVersion } from '../../../src/utils/ExtensionConfig';
+
+const LspCapabilities = createLspCapabilities(createLspCommands());
 
 describe('LspCapabilities', () => {
     describe('capabilities structure', () => {
@@ -53,14 +55,38 @@ describe('LspCapabilities', () => {
             expect(LspCapabilities.capabilities.documentSymbolProvider).toBe(true);
         });
 
-        it('should configure execute command provider with correct commands', () => {
+        it('should advertise the unsuffixed commands for clients without an extension name', () => {
             const executeCommandProvider = LspCapabilities.capabilities.executeCommandProvider;
             expect(executeCommandProvider).toBeDefined();
             expect((executeCommandProvider as any).commands).toEqual([
-                CLEAR_DIAGNOSTIC,
-                TRACK_CODE_ACTION_ACCEPTED,
-                UPDATE_REGION,
+                '/command/template/clear-diagnostic',
+                '/command/codeAction/track',
+                '/command/region/update',
             ]);
+        });
+
+        it('should advertise the client-specific commands it was built with', () => {
+            const commands = createLspCommands('aws.cloudformation');
+
+            const capabilities = createLspCapabilities(commands);
+
+            expect(capabilities.capabilities.executeCommandProvider?.commands).toEqual([
+                '/command/template/clear-diagnostic.aws.cloudformation',
+                '/command/codeAction/track.aws.cloudformation',
+                '/command/region/update.aws.cloudformation',
+            ]);
+        });
+
+        it('should advertise disjoint commands to two clients hosting the server side by side', () => {
+            const toolkit = createLspCapabilities(createLspCommands('amazonwebservices.aws-toolkit-vscode'));
+            const standalone = createLspCapabilities(createLspCommands('aws.cloudformation'));
+
+            const toolkitCommands = toolkit.capabilities.executeCommandProvider?.commands ?? [];
+            const standaloneCommands = standalone.capabilities.executeCommandProvider?.commands ?? [];
+
+            expect(toolkitCommands).toHaveLength(3);
+            expect(standaloneCommands).toHaveLength(3);
+            expect(toolkitCommands.filter((command) => standaloneCommands.includes(command))).toEqual([]);
         });
 
         it('should configure workspace capabilities', () => {

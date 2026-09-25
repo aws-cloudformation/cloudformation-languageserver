@@ -62,6 +62,7 @@ The language server accepts initialization options via the LSP `initialize` requ
 | `aws.clientInfo.extension.name` | string            | Your editor/client name |
 | `aws.clientInfo.extension.version` | string            | Your editor/client version |
 | `aws.clientInfo.clientId` | string (optional) | Unique identifier for the client instance |
+| `aws.commandSuffix` | string (optional) | Appended to the server's command ids (for example `/command/region/update.<suffix>`) so several clients hosting the server in one editor never register the same command. Omit it to keep the unsuffixed ids; either way read command ids from the initialize result or code actions rather than hard-coding them |
 | `aws.telemetryEnabled` | boolean           | Enable anonymous usage metrics (default: `false`) |
 | `aws.storageDir` | string (optional) | Custom directory for logs, caches, and databases. Defaults to platform-specific location (see below) |
 | `aws.settings` | object (optional) | Settings overrides applied before workspace configuration sync. Useful for editors that don't support `workspace/configuration` reliably. See [Settings](#settings) below. |

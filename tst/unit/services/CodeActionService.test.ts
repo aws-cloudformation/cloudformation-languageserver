@@ -7,6 +7,7 @@ import { ContextManager } from '../../../src/context/ContextManager';
 import { SyntaxTree } from '../../../src/context/syntaxtree/SyntaxTree';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { DocumentManager } from '../../../src/document/DocumentManager';
+import { createLspCommands } from '../../../src/protocol/LspCommands';
 import { CodeActionService } from '../../../src/services/CodeActionService';
 import { ExtractToParameterProvider } from '../../../src/services/extractToParameter/ExtractToParameterProvider';
 import { CFN_VALIDATION_SOURCE } from '../../../src/stacks/actions/ValidationWorkflow';
@@ -29,6 +30,7 @@ describe('CodeActionService', () => {
             mockDocumentManager,
             mockContextManager,
             mockExtractToParameterProvider,
+            createLspCommands(),
         );
     });
 
@@ -273,6 +275,37 @@ describe('CodeActionService', () => {
                     arguments: [params.textDocument.uri, 'test-uuid-123'],
                 },
             });
+        });
+
+        it('should emit the client-specific command ids it was constructed with', () => {
+            const suffixedService = new CodeActionService(
+                mockSyntaxTreeManager,
+                mockDocumentManager,
+                stubInterface<ContextManager>(),
+                stubInterface<ExtractToParameterProvider>(),
+                createLspCommands('aws.cloudformation'),
+            );
+            const diagnostic: Diagnostic = {
+                range: {
+                    start: { line: 5, character: 10 },
+                    end: { line: 5, character: 20 },
+                },
+                message: 'Validation failed',
+                severity: DiagnosticSeverity.Error,
+                source: CFN_VALIDATION_SOURCE,
+                data: 'test-uuid-123',
+            };
+            const params: CodeActionParams = {
+                textDocument: { uri: 'file:///test.yaml' },
+                range: diagnostic.range,
+                context: { diagnostics: [diagnostic] },
+            };
+
+            const result = suffixedService.generateCodeActions(params);
+
+            expect(result.map((action) => action.command?.command)).toEqual([
+                '/command/template/clear-diagnostic.aws.cloudformation',
+            ]);
         });
 
         it('should handle errors gracefully', () => {

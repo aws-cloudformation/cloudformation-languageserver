@@ -6,6 +6,7 @@ import { ContextManager } from '../../../src/context/ContextManager';
 import { SyntaxTreeManager } from '../../../src/context/syntaxtree/SyntaxTreeManager';
 import { Document, DocumentType } from '../../../src/document/Document';
 import { DocumentManager } from '../../../src/document/DocumentManager';
+import { createLspCommands } from '../../../src/protocol/LspCommands';
 import { METADATA_CONTEXT_KEY } from '../../../src/schema/MetadataContextSchema';
 import { CodeActionService } from '../../../src/services/CodeActionService';
 import {
@@ -36,6 +37,7 @@ describe('Metadata.Context quick fix', () => {
             documentManager,
             contextManager,
             extractToParameterProvider,
+            createLspCommands(),
         );
 
         return { service, uri };
