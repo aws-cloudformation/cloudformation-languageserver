@@ -42,6 +42,7 @@ const PUBLISHED_FILES = [
     '/vendor/',
     '/NOTICE',
     '/THIRD-PARTY-LICENSES.txt',
+    '/README.md',
 ];
 // The root engines pin the development toolchain; the published package only needs what the bundle and its
 // runtime dependencies (notably @aws/cloudformation-validate, node >= 20) require, as exercised by the
@@ -55,6 +56,9 @@ const DEVELOPMENT_ONLY_KEYS = [
     'nativePrebuilds',
     'requiredPeerDeps',
     'rebuildDependencies',
+    'packageManager',
+    'displayName',
+    'id',
 ];
 
 function omitDevelopmentOnlyKeys(manifest) {
@@ -92,7 +96,7 @@ function collectRuntimeDependencies(compilation) {
 
 // Pulled out of the spread so dependencies and overrides land last.
 function createPublishedManifest(runtimeDependencies) {
-    const { dependencies: _, overrides, ...metadata } = omitDevelopmentOnlyKeys(Package);
+    const { dependencies: _, overrides, allowScripts, ...metadata } = omitDevelopmentOnlyKeys(Package);
     return {
         ...metadata,
         main: `./${BUNDLE_NAME}.js`,
@@ -102,6 +106,7 @@ function createPublishedManifest(runtimeDependencies) {
         scripts: { start: `node ./${BUNDLE_NAME}.js --stdio` },
         dependencies: runtimeDependencies,
         overrides,
+        allowScripts,
     };
 }
 
@@ -141,8 +146,15 @@ function generateExternals() {
     // is dev-only. Webpack will bundle it inline instead.
     const filtered = Array.from(collected).filter((dep) => {
         const topLevelInfo = PackageLock.packages?.[`node_modules/${dep}`];
-        if (topLevelInfo?.dev && !ExternalsDeps.includes(dep) && !RequiredPeerDeps.includes(dep) && !NativePrebuilds.includes(dep)) {
-            console.warn(`[generateExternals] Excluding "${dep}" - dev-only at top level, would not resolve at runtime`);
+        if (
+            topLevelInfo?.dev &&
+            !ExternalsDeps.includes(dep) &&
+            !RequiredPeerDeps.includes(dep) &&
+            !NativePrebuilds.includes(dep)
+        ) {
+            console.warn(
+                `[generateExternals] Excluding "${dep}" - dev-only at top level, would not resolve at runtime`,
+            );
             return false;
         }
         return true;
@@ -424,7 +436,9 @@ module.exports = (env = {}) => {
     console.info(`Building server with mode: ${mode}`);
     console.info(`NODE_ENV: ${mode}`);
     console.info(`AWS_ENV: ${awsEnv}`);
-    console.info(`Platform: ${process.platform}, Arch: ${process.arch}, Rebuild: ${rebuild}, SkipWheels: ${skipWheels}`);
+    console.info(
+        `Platform: ${process.platform}, Arch: ${process.arch}, Rebuild: ${rebuild}, SkipWheels: ${skipWheels}`,
+    );
     console.info(`Node.js ${process.version}, Versions: ${JSON.stringify(process.versions, null, 2)}`);
     console.info(`Output path: ${outputPath}`);
 
