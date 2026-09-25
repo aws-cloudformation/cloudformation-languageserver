@@ -198,7 +198,8 @@ export class CfnLintService
         if (this.settings.path) {
             // Local executor doesn't need heavy initialization
             this.localExecutor = new LocalCfnLintExecutor(this.settings.path, this.settings);
-            this.telemetry.count('init.success', 1, { attributes: { mode: 'local' } });
+            this.telemetry.count('init.success', 1);
+            this.telemetry.count('init.success.local', 1);
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
             return;
         }
@@ -222,6 +223,7 @@ export class CfnLintService
             }
 
             this.telemetry.count('init.success', 1);
+            this.telemetry.count('init.success.pyodide', 1);
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
 
             // Get and track cfn-lint version
@@ -482,7 +484,8 @@ export class CfnLintService
                         });
                 }
             }
-            this.telemetry.count('lint.success', 1, { attributes: { fileType, mode: this.lintMode } });
+            this.telemetry.count('lint.success', 1, { attributes: { fileType } });
+            this.telemetry.count(`lint.success.${this.lintMode}`, 1);
             this.notifyLintResult(uri, content, fileType, diagnosticPayloads);
         } catch (error) {
             this.resetInitialization();
@@ -497,9 +500,9 @@ export class CfnLintService
                     attributes: {
                         fileType,
                         errorType,
-                        mode: this.lintMode,
                     },
                 });
+                this.telemetry.count(`lint.error.${this.lintMode}`, 1);
             }
         } finally {
             this.telemetry.histogram(
@@ -599,7 +602,8 @@ export class CfnLintService
                         });
                 }
             }
-            this.telemetry.count('lint.success', 1, { attributes: { fileType, mode: this.lintMode } });
+            this.telemetry.count('lint.success', 1, { attributes: { fileType } });
+            this.telemetry.count(`lint.success.${this.lintMode}`, 1);
             this.notifyLintResult(uri, content, fileType, diagnosticPayloads);
         } catch (error) {
             this.resetInitialization();
@@ -614,9 +618,9 @@ export class CfnLintService
                     attributes: {
                         fileType,
                         errorType,
-                        mode: this.lintMode,
                     },
                 });
+                this.telemetry.count(`lint.error.${this.lintMode}`, 1);
             }
         } finally {
             this.telemetry.histogram(

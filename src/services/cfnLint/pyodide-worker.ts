@@ -388,7 +388,7 @@ async function getVersion(): Promise<string> {
 
 // Parse the JSON string returned by lint_str/lint_uri (cfn-lint JsonFormatter output)
 // and convert to LSP diagnostics using the shared converter.
-function convertPythonResultToDiagnostics(result: unknown, uri: string): PublishDiagnosticsParams[] {
+export function convertPythonResultToDiagnostics(result: unknown, uri: string): PublishDiagnosticsParams[] {
     if (typeof result !== 'string') {
         throw new TypeError('Expected a JSON string from Python linting');
     }
