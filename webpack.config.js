@@ -332,12 +332,6 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                 ],
             }),
         );
-
-        plugins.push(
-            new webpack.IgnorePlugin({
-                resourceRegExp: /^@opentelemetry\/(winston-transport|exporter-jaeger)$/,
-            }),
-        );
     }
 
     // Lets npm expose the server through `bin` (`npx cloudformation-languageserver --stdio`).

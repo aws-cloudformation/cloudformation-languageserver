@@ -1,21 +1,28 @@
 import { arch, platform, type, release, machine } from 'os';
 import { diag, DiagConsoleLogger, DiagLogLevel } from '@opentelemetry/api';
-import { getNodeAutoInstrumentations } from '@opentelemetry/auto-instrumentations-node';
 import { OTLPMetricExporter } from '@opentelemetry/exporter-metrics-otlp-http';
+import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
 import { resourceFromAttributes } from '@opentelemetry/resources';
 import {
     AggregationTemporality,
+    MeterProvider,
+    MetricReader,
     PeriodicExportingMetricReader,
     AggregationType,
     ViewOptions,
 } from '@opentelemetry/sdk-metrics';
-import { NodeSDK } from '@opentelemetry/sdk-node';
 import { ClientInfo } from '../server/InitParams';
 import { isBeta, isAlpha, isProd, isTest, ServiceEnv, ProcessType, Service } from '../utils/Environment';
 
 const ExportIntervalSeconds = 60;
 
-export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: ClientInfo) {
+export type OtelSdk = {
+    meterProvider: MeterProvider;
+    metricsReader: MetricReader;
+    instrumentation: RuntimeNodeInstrumentation;
+};
+
+export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: ClientInfo): OtelSdk {
     configureDiagnostics();
     const telemetryUrl = telemetryBaseUrl();
 
@@ -27,7 +34,7 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
         exportIntervalMillis: ExportIntervalSeconds * 1000,
     });
 
-    const sdk = new NodeSDK({
+    const meterProvider = new MeterProvider({
         resource: resourceFromAttributes({
             ['service']: Service,
             ['service.env']: ServiceEnv,
@@ -38,8 +45,7 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
             ['process.type']: ProcessType,
             ['process.version']: `node=${process.versions.node} v8=${process.versions.v8} uv=${process.versions.uv} modules=${process.versions.modules}`,
         }),
-        resourceDetectors: [],
-        metricReaders: [metricsReader],
+        readers: [metricsReader],
         views: [
             {
                 instrumentName: '*.duration',
@@ -96,58 +102,13 @@ export function otelSdk(clientId: string, client?: ClientInfo, awsClientInfo?: C
                 },
             } satisfies ViewOptions,
         ],
-        instrumentations: [
-            getNodeAutoInstrumentations({
-                '@opentelemetry/instrumentation-amqplib': { enabled: false },
-                '@opentelemetry/instrumentation-aws-lambda': { enabled: false },
-                '@opentelemetry/instrumentation-aws-sdk': { enabled: false },
-                '@opentelemetry/instrumentation-bunyan': { enabled: false },
-                '@opentelemetry/instrumentation-cassandra-driver': { enabled: false },
-                '@opentelemetry/instrumentation-connect': { enabled: false },
-                '@opentelemetry/instrumentation-cucumber': { enabled: false },
-                '@opentelemetry/instrumentation-dataloader': { enabled: false },
-                '@opentelemetry/instrumentation-dns': { enabled: false },
-                '@opentelemetry/instrumentation-express': { enabled: false },
-                '@opentelemetry/instrumentation-fs': { enabled: false },
-                '@opentelemetry/instrumentation-generic-pool': { enabled: false },
-                '@opentelemetry/instrumentation-graphql': { enabled: false },
-                '@opentelemetry/instrumentation-grpc': { enabled: false },
-                '@opentelemetry/instrumentation-hapi': { enabled: false },
-                '@opentelemetry/instrumentation-http': { enabled: false },
-                '@opentelemetry/instrumentation-ioredis': { enabled: false },
-                '@opentelemetry/instrumentation-kafkajs': { enabled: false },
-                '@opentelemetry/instrumentation-knex': { enabled: false },
-                '@opentelemetry/instrumentation-koa': { enabled: false },
-                '@opentelemetry/instrumentation-lru-memoizer': { enabled: false },
-                '@opentelemetry/instrumentation-memcached': { enabled: false },
-                '@opentelemetry/instrumentation-mongodb': { enabled: false },
-                '@opentelemetry/instrumentation-mongoose': { enabled: false },
-                '@opentelemetry/instrumentation-mysql2': { enabled: false },
-                '@opentelemetry/instrumentation-mysql': { enabled: false },
-                '@opentelemetry/instrumentation-nestjs-core': { enabled: false },
-                '@opentelemetry/instrumentation-net': { enabled: false },
-                '@opentelemetry/instrumentation-openai': { enabled: false },
-                '@opentelemetry/instrumentation-oracledb': { enabled: false },
-                '@opentelemetry/instrumentation-pg': { enabled: false },
-                '@opentelemetry/instrumentation-pino': { enabled: false },
-                '@opentelemetry/instrumentation-redis': { enabled: false },
-                '@opentelemetry/instrumentation-restify': { enabled: false },
-                '@opentelemetry/instrumentation-router': { enabled: false },
-                '@opentelemetry/instrumentation-socket.io': { enabled: false },
-                '@opentelemetry/instrumentation-tedious': { enabled: false },
-                '@opentelemetry/instrumentation-undici': { enabled: false },
-                '@opentelemetry/instrumentation-winston': { enabled: false },
-
-                // Only enable system level instrumentation
-                '@opentelemetry/instrumentation-runtime-node': {
-                    enabled: true,
-                    monitoringPrecision: ExportIntervalSeconds * 1000,
-                },
-            }),
-        ],
     });
 
-    return { sdk, metricsReader };
+    const instrumentation = new RuntimeNodeInstrumentation({
+        monitoringPrecision: ExportIntervalSeconds * 1000,
+    });
+
+    return { meterProvider, metricsReader, instrumentation };
 }
 
 function configureDiagnostics() {
