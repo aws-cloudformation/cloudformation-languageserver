@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, rmSync } from 'fs';
 import { join } from 'path';
-import { open, RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
+import type { RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Telemetry } from '../telemetry/TelemetryDecorator';
@@ -10,6 +10,7 @@ import { DataStoreError, LMDBCrashError } from '../utils/errors/ErrorClasses';
 import { extractErrorMessage } from '../utils/errors/ErrorUtils';
 import { formatNumber, toString } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatastoreSize } from './DataStore';
+import { loadLmdbModule } from './lmdb/LMDBModule';
 import { LMDBStore } from './lmdb/LMDBStore';
 import { LMDBOwnershipTracker } from './lmdb/OwnershipTracker';
 import { stats } from './lmdb/Stats';
@@ -456,7 +457,7 @@ function createEnv(lmdbVersionDir: string) {
 
     return {
         config,
-        env: open(config),
+        env: loadLmdbModule().open(config),
     };
 }
 

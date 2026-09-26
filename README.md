@@ -60,7 +60,7 @@ The server implements the Language Server Protocol (LSP) to enable code editors 
 
 ## Installation
 
-For standalone editors like Neovim, Emacs, Helix, or Sublime Text, see the [Installation Guide](INSTALLATION.md).
+For standalone editors like Neovim, Emacs, Helix, or Sublime Text, install from npm with `npm install -g @aws/cloudformation-languageserver` or download a platform build from GitHub Releases; see the [Installation Guide](INSTALLATION.md).
 
 For [JetBrains](https://plugins.jetbrains.com/plugin/11349-aws-toolkit) and [Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.aws-toolkit-vscode), the language server is bundled with the ***AWS Toolkit*** extension.
 

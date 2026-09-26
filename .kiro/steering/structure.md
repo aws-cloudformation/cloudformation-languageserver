@@ -46,8 +46,8 @@ These wrap implementation classes and are registered in `CfnServer.ts`:
 
 - `src/datastore/` — Pluggable `DataStore` interface with three implementations:
     - `src/datastore/lmdb/` — Default persisted store on macOS / Linux
-    - `src/datastore/file/` — Encrypted-file-per-key store; default on Windows or when `FileDb`
-      feature flag is enabled
+    - `src/datastore/file/` — Encrypted-file-per-key store; default on Windows, when the `FileDb`
+      feature flag is enabled, or when the `lmdb` native module cannot be loaded on the host
     - `src/datastore/MemoryStore.ts` — In-memory, used for non-persisted stores
 - `src/utils/Storage.ts` — Resolves platform-specific storage root
 

@@ -1,16 +1,18 @@
 import { randomUUID as v4 } from 'crypto';
 import { mkdirSync, rmSync } from 'fs';
 import { join } from 'path';
-import { open, RootDatabase } from 'lmdb';
+import type { RootDatabase } from 'lmdb';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { loadLmdbModule } from '../../../src/datastore/lmdb/LMDBModule';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDBStoreFactory';
 
-vi.mock('lmdb', async () => {
+vi.mock('../../../src/datastore/lmdb/LMDBModule', async () => {
     const actual = await vi.importActual<typeof import('lmdb')>('lmdb');
-    return { ...actual, open: vi.fn().mockImplementation(actual.open) };
+    const lmdb = { ...actual, open: vi.fn().mockImplementation(actual.open) };
+    return { loadLmdbModule: () => lmdb };
 });
 
-const mockedOpen = vi.mocked(open);
+const mockedOpen = vi.mocked(loadLmdbModule().open);
 
 type Internals = { env: RootDatabase | undefined; reopenEnv: () => unknown };
 

@@ -1,7 +1,7 @@
 import { randomUUID as v4 } from 'crypto';
-import { metrics, trace } from '@opentelemetry/api';
-import { MetricReader } from '@opentelemetry/sdk-metrics';
-import { NodeSDK } from '@opentelemetry/sdk-node';
+import { metrics } from '@opentelemetry/api';
+import { RuntimeNodeInstrumentation } from '@opentelemetry/instrumentation-runtime-node';
+import { MeterProvider, MetricReader } from '@opentelemetry/sdk-metrics';
 import { AwsMetadata, ClientInfo } from '../server/InitParams';
 import { Closeable } from '../utils/Closeable';
 import { isExpectedOutputError } from '../utils/errors/ErrorLogs';
@@ -15,7 +15,8 @@ export class TelemetryService implements Closeable {
 
     private readonly logger = LoggerFactory.getLogger('TelemetryService');
     private readonly metricsReader?: MetricReader;
-    private readonly sdk?: NodeSDK;
+    private readonly meterProvider?: MeterProvider;
+    private readonly instrumentation?: RuntimeNodeInstrumentation;
     private readonly enabled: boolean;
 
     private readonly scopedTelemetry: Map<string, ScopedTelemetry> = new Map();
@@ -25,18 +26,23 @@ export class TelemetryService implements Closeable {
 
         if (this.enabled) {
             const id = metadata?.clientInfo?.clientId ?? v4();
-            const { metricsReader, sdk } = otelSdk(id, client, metadata?.clientInfo?.extension);
+            const { meterProvider, metricsReader, instrumentation } = otelSdk(
+                id,
+                client,
+                metadata?.clientInfo?.extension,
+            );
 
             this.metricsReader = metricsReader;
-            this.sdk = sdk;
-            this.sdk.start();
+            this.meterProvider = meterProvider;
+            this.instrumentation = instrumentation;
+            metrics.setGlobalMeterProvider(meterProvider);
+            instrumentation.setMeterProvider(meterProvider);
             this.logger.info(
                 `Telemetry enabled for ${id} [${metadata?.clientInfo?.clientId ? 'PROVIDED' : 'GENERATED'}]`,
             );
             this.registerSystemMetrics();
         } else {
             this.logger.info('Telemetry disabled');
-            this.sdk?.shutdown().catch((e) => this.logger.error(e));
         }
     }
 
@@ -46,9 +52,9 @@ export class TelemetryService implements Closeable {
             return telemetry;
         }
 
-        if (this.enabled && this.sdk) {
+        if (this.enabled && this.meterProvider) {
             // @ts-expect-error - ScopedTelemetry constructor is private; TelemetryService is the sole owner
-            telemetry = new ScopedTelemetry(scope, metrics.getMeter(scope), trace.getTracer(scope)) as ScopedTelemetry;
+            telemetry = new ScopedTelemetry(scope, metrics.getMeter(scope)) as ScopedTelemetry;
         } else {
             // @ts-expect-error - ScopedTelemetry constructor is private; TelemetryService is the sole owner
             telemetry = new ScopedTelemetry(scope) as ScopedTelemetry;
@@ -62,7 +68,8 @@ export class TelemetryService implements Closeable {
         try {
             await this.metricsReader?.forceFlush().catch((e) => this.logger.error(e));
         } finally {
-            await this.sdk?.shutdown().catch((e) => this.logger.error(e));
+            this.instrumentation?.disable();
+            await this.meterProvider?.shutdown().catch((e) => this.logger.error(e));
         }
     }
 

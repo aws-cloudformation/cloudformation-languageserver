@@ -6,7 +6,6 @@ import {
     Meter,
     MetricOptions,
     ObservableGauge,
-    Tracer,
     UpDownCounter,
     ValueType,
 } from '@opentelemetry/api';
@@ -32,7 +31,6 @@ export class ScopedTelemetry implements Closeable {
     private constructor(
         readonly scope: string,
         private readonly meter?: Meter,
-        private readonly tracer?: Tracer,
     ) {}
 
     count(name: string, value: number, config?: MetricConfig): void {

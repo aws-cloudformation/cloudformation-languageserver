@@ -14,8 +14,9 @@ These constraints apply to ALL changes in this repository:
   types, or response/return types. Additive changes only — breaking the wire contract breaks the already-shipped VS Code
   and JetBrains clients.
 - **Cross-platform** — All changes must work on macOS, Linux, and Windows. The DataStore layer in particular has two
-  persisted backends (LMDB on macOS / Linux, encrypted file store on Windows or when the `FileDb` feature flag is on);
-  any persistence change must work against both. See `architecture.md`.
+  persisted backends (LMDB on macOS / Linux, encrypted file store on Windows, when the `FileDb` feature flag is on, or
+  when the `lmdb` native module cannot be loaded on the host); any persistence change must work against both. See
+  `architecture.md`.
 - **No database locking** — Never hold long locks on LMDB or other shared resources; multiple concurrent LSP
   connections may exist.
 - **Performance** — Handlers must respond quickly; avoid blocking the event loop or doing synchronous I/O in request
