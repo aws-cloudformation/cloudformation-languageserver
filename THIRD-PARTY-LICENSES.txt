@@ -1,5 +1,5 @@
 @aws-sdk/checksums
-3.1000.29 <https://github.com/aws/aws-sdk-js-v3>
+3.1001.1 <https://github.com/aws/aws-sdk-js-v3>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -1448,7 +1448,7 @@
 ******************************
 
 @aws-sdk/core
-3.977.9 <https://github.com/aws/aws-sdk-js-v3>
+3.978.1 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -1654,7 +1654,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-env
-3.972.70 <https://github.com/aws/aws-sdk-js-v3>
+3.972.72 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -1860,14 +1860,14 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-http
-3.972.72 <https://github.com/aws/aws-sdk-js-v3>
+3.972.74 <https://github.com/aws/aws-sdk-js-v3>
 license: Apache-2.0
 authors: AWS SDK for JavaScript Team <https://aws.amazon.com/sdk-for-javascript/>
 
 ******************************
 
 @aws-sdk/credential-provider-ini
-3.973.15 <https://github.com/aws/aws-sdk-js-v3>
+3.973.17 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -2073,7 +2073,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-login
-3.972.77 <https://github.com/aws/aws-sdk-js-v3>
+3.972.79 <https://github.com/aws/aws-sdk-js-v3>
 license: Apache-2.0
 authors: AWS SDK for JavaScript Team <https://aws.amazon.com/sdk-for-javascript/>
 
@@ -2286,7 +2286,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-process
-3.972.70 <https://github.com/aws/aws-sdk-js-v3>
+3.972.72 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -2492,7 +2492,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-sso
-3.973.14 <https://github.com/aws/aws-sdk-js-v3>
+3.973.16 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -2698,7 +2698,7 @@ Apache License
 ******************************
 
 @aws-sdk/credential-provider-web-identity
-3.972.76 <https://github.com/aws/aws-sdk-js-v3>
+3.972.78 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -2904,7 +2904,7 @@ Apache License
 ******************************
 
 @aws-sdk/middleware-sdk-s3
-3.972.75 <https://github.com/aws/aws-sdk-js-v3>
+3.972.77 <https://github.com/aws/aws-sdk-js-v3>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3111,14 +3111,14 @@ Apache License
 ******************************
 
 @aws-sdk/nested-clients
-3.997.44 <https://github.com/aws/aws-sdk-js-v3>
+3.997.46 <https://github.com/aws/aws-sdk-js-v3>
 license: Apache-2.0
 authors: AWS SDK for JavaScript Team <https://aws.amazon.com/sdk-for-javascript/>
 
 ******************************
 
 @aws-sdk/signature-v4-multi-region
-3.996.46 <https://github.com/aws/aws-sdk-js-v3>
+3.996.47 <https://github.com/aws/aws-sdk-js-v3>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3325,7 +3325,7 @@ authors: AWS SDK for JavaScript Team <https://aws.amazon.com/sdk-for-javascript/
 ******************************
 
 @aws-sdk/token-providers
-3.1116.0 <https://github.com/aws/aws-sdk-js-v3>
+3.1138.0 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3531,7 +3531,7 @@ Apache License
 ******************************
 
 @aws-sdk/types
-3.974.5 <https://github.com/aws/aws-sdk-js-v3>
+3.974.6 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -3737,7 +3737,7 @@ Apache License
 ******************************
 
 @aws-sdk/xml-builder
-3.972.40 <https://github.com/aws/aws-sdk-js-v3>
+3.972.41 <https://github.com/aws/aws-sdk-js-v3>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -7499,7 +7499,7 @@ SOFTWARE.
 ******************************
 
 @smithy/core
-3.33.3 <https://github.com/smithy-lang/smithy-typescript>
+3.35.0 <https://github.com/smithy-lang/smithy-typescript>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -7912,7 +7912,7 @@ Apache License
 ******************************
 
 @smithy/fetch-http-handler
-5.7.2 <https://github.com/smithy-lang/smithy-typescript>
+5.8.0 <https://github.com/smithy-lang/smithy-typescript>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -8118,7 +8118,7 @@ Apache License
 ******************************
 
 @smithy/node-http-handler
-4.11.3 <https://github.com/smithy-lang/smithy-typescript>
+4.12.1 <https://github.com/smithy-lang/smithy-typescript>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -8324,7 +8324,7 @@ Apache License
 ******************************
 
 @smithy/signature-v4
-5.7.3 <https://github.com/smithy-lang/smithy-typescript>
+5.7.4 <https://github.com/smithy-lang/smithy-typescript>
 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -8530,7 +8530,7 @@ Apache License
 ******************************
 
 @smithy/types
-4.17.2 <https://github.com/smithy-lang/smithy-typescript>
+4.19.0 <https://github.com/smithy-lang/smithy-typescript>
                                 Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -9467,7 +9467,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ******************************
 
 b4a
-1.8.1 <https://github.com/holepunchto/b4a>
+1.9.0 <https://github.com/holepunchto/b4a>
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -9701,7 +9701,7 @@ SOFTWARE.
 ******************************
 
 bare-events
-2.9.1 <https://github.com/holepunchto/bare-events>
+2.9.2 <https://github.com/holepunchto/bare-events>
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -9908,7 +9908,7 @@ bare-events
 ******************************
 
 bare-fs
-4.8.1 <https://github.com/holepunchto/bare-fs>
+4.8.2 <https://github.com/holepunchto/bare-fs>
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -10115,7 +10115,7 @@ bare-fs
 ******************************
 
 bare-path
-3.1.1 <https://github.com/holepunchto/bare-path>
+3.1.2 <https://github.com/holepunchto/bare-path>
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -10322,7 +10322,7 @@ bare-path
 ******************************
 
 bare-stream
-2.13.3 <https://github.com/holepunchto/bare-stream>
+2.13.4 <https://github.com/holepunchto/bare-stream>
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -10529,7 +10529,7 @@ bare-stream
 ******************************
 
 bare-url
-2.5.2 <https://github.com/holepunchto/bare-url>
+2.5.4 <https://github.com/holepunchto/bare-url>
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -10808,7 +10808,7 @@ Original Author, when distributed with the Software.
 ******************************
 
 brace-expansion
-2.1.4 <https://github.com/juliangruber/brace-expansion>
+2.1.7 <https://github.com/juliangruber/brace-expansion>
 MIT License
 
 Copyright (c) 2013 Julian Gruber <julian@juliangruber.com>
@@ -11760,7 +11760,7 @@ SOFTWARE.
 ******************************
 
 es-module-lexer
-2.3.2 <https://github.com/guybedford/es-module-lexer>
+3.0.2 <https://github.com/guybedford/es-module-lexer>
 MIT License
 -----------
 
@@ -12093,7 +12093,7 @@ events-universal
 ******************************
 
 fast-copy
-4.0.4 <https://github.com/planttheidea/fast-copy>
+4.1.1 <https://github.com/planttheidea/fast-copy>
 MIT License
 
 Copyright (c) 2025 Tony Quetano
@@ -12762,7 +12762,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 ******************************
 
 import-in-the-middle
-3.3.3 <https://github.com/nodejs/import-in-the-middle>
+3.5.1 <https://github.com/nodejs/import-in-the-middle>
                                  Apache License
                            Version 2.0, January 2004
                         http://www.apache.org/licenses/
@@ -13837,7 +13837,7 @@ IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************
 
 ordered-binary
-1.6.1 <https://github.com/kriszyp/ordered-binary>
+1.6.2 <https://github.com/kriszyp/ordered-binary>
 MIT License
 
 Copyright (c) 2018 Kris Zyp
@@ -14871,7 +14871,7 @@ IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 ******************************
 
 streamx
-2.28.0 <https://github.com/mafintosh/streamx>
+2.28.1 <https://github.com/mafintosh/streamx>
 The MIT License (MIT)
 
 Copyright (c) 2019 Mathias Buus
@@ -14997,7 +14997,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ******************************
 
 tar-stream
-3.2.0 <https://github.com/mafintosh/tar-stream>
+3.2.1 <https://github.com/mafintosh/tar-stream>
 The MIT License (MIT)
 
 Copyright (c) 2014 Mathias Buus
