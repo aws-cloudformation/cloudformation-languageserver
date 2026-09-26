@@ -69,7 +69,7 @@ function createMockChildProcess(
 }
 
 /** Builds cfn-lint `--format json` output for the given findings. */
-function makeDiagnosticsJson(findings: MockDiagnostic[]): string {
+function makeDiagnosticsJson(findings: MockDiagnostic[], sourceUrl = 'https://example.com'): string {
     return JSON.stringify(
         findings.map(({ ruleId, level }) => ({
             Filename: mockFilePath,
@@ -81,10 +81,10 @@ function makeDiagnosticsJson(findings: MockDiagnostic[]): string {
                 Path: ['Resources', 'TestResource'],
             },
             Message: 'Test diagnostic',
+            ParentId: null,
             Rule: {
                 Id: ruleId,
-                Description: 'Test rule description',
-                Source: 'https://example.com',
+                Source: sourceUrl,
             },
         })),
     );
@@ -192,6 +192,25 @@ describe('LocalCfnLintExecutor', () => {
             expect(result[0].diagnostics[0].severity).toBe(DiagnosticSeverity.Error);
             expect(result[0].diagnostics[1].severity).toBe(DiagnosticSeverity.Warning);
             expect(result[0].diagnostics[2].severity).toBe(DiagnosticSeverity.Information);
+        });
+
+        test('should populate codeDescription.href from Rule.Source', async () => {
+            const docsUrl = 'https://docs.aws.amazon.com/cfn-lint/rules/E1001.html';
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, makeDiagnosticsJson([errorFinding], docsUrl)));
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
+            const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
+
+            expect(result[0].diagnostics[0].codeDescription).toEqual({ href: docsUrl });
+        });
+
+        test('should omit codeDescription when Rule.Source is empty', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(2, makeDiagnosticsJson([errorFinding], '')));
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, mockSettings);
+            const result = await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
+
+            expect(result[0].diagnostics[0].codeDescription).toBeUndefined();
         });
     });
 
