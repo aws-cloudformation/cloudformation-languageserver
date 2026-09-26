@@ -75,11 +75,11 @@ feature flag, and whether the `lmdb` native module can be loaded (probed via `sr
 which is also the only place that loads `lmdb` at runtime), and pairs whichever persisted store is selected with
 `MemoryStoreFactory` for in-memory stores.
 
-- LMDB is the default persisted store on macOS / Linux. Database directory: `<storage-root>/lmdb/v5/`.
+- LMDB is the default persisted store on macOS / Linux. Database directory: `<storage-root>/lmdb/v7/`.
 - File store is the encrypted-file alternative used on Windows, when LMDB is disabled, or when the `lmdb` native
   addon cannot be loaded on the host (for example a glibc older than the prebuild requires); the fallback is logged
   and counted under the `DataStore` telemetry scope as `lmdb.unavailable`. Database directory:
-  `<storage-root>/filedb/v3/`. One `.enc` file per key via `KeyedFileStore`.
+  `<storage-root>/filedb/v4/`. One `.enc` file per key via `KeyedFileStore`.
 - Memory store is used for `StoreName` values not in `PersistedStores` (currently `private_schemas`), so they are
   loaded fresh each session.
 
