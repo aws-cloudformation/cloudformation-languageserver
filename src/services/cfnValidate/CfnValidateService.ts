@@ -5,6 +5,7 @@ import { CloudFormationFileType } from '../../document/Document';
 import { FeatureFlag } from '../../featureFlag/FeatureFlagI';
 import { ISettingsSubscriber, SettingsConfigurable, SettingsSubscription } from '../../settings/ISettingsSubscriber';
 import { CfnLintSettings, DefaultSettings } from '../../settings/Settings';
+import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Telemetry } from '../../telemetry/TelemetryDecorator';
 import { Closeable } from '../../utils/Closeable';
@@ -25,7 +26,7 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
     private initialization?: Promise<void>;
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
-
+    private readonly log = LoggerFactory.getLogger(CfnValidateService);
     constructor(
         private readonly featureFlag: FeatureFlag,
         private readonly engine: CfnValidateEngine = new CfnValidateEngine(),
@@ -86,6 +87,7 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         const startTime = performance.now();
         try {
             await this.engine.initialize();
+            this.log.info(`cloudformation-validate version: ${this.engine.version()} (initialized)`);
             if (this.closed) {
                 this.engine.close();
             }
