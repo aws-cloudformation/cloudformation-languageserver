@@ -1,8 +1,12 @@
 import { FeatureFlag } from '../featureFlag/FeatureFlagI';
+import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
+import { Telemetry } from '../telemetry/TelemetryDecorator';
 import { Closeable, closeSafely } from '../utils/Closeable';
 import { isWindows } from '../utils/Environment';
 import { pathToStorage } from '../utils/Storage';
 import { FileStoreFactory } from './FileStoreFactory';
+import { checkLmdbAvailability, LmdbAvailability } from './lmdb/LMDBModule';
 import { LMDBStoreFactory } from './LMDBStoreFactory';
 import { MemoryStoreFactory } from './MemoryStore';
 
@@ -70,17 +74,30 @@ export class MemoryDataStoreFactoryProvider implements DataStoreFactoryProvider 
 }
 
 export class MultiDataStoreFactoryProvider implements DataStoreFactoryProvider {
+    private readonly log = LoggerFactory.getLogger('DataStore');
+    @Telemetry({ scope: 'DataStore' }) private readonly telemetry!: ScopedTelemetry;
+
     private readonly memoryStoreFactory: MemoryStoreFactory;
     private readonly persistedStore: DataStoreFactory;
 
-    constructor(fileDbFeatureFlag: FeatureFlag) {
+    constructor(fileDbFeatureFlag: FeatureFlag, probeLmdb: () => LmdbAvailability = checkLmdbAvailability) {
+        this.persistedStore = this.createPersistedStore(fileDbFeatureFlag, probeLmdb);
+        this.memoryStoreFactory = new MemoryStoreFactory();
+    }
+
+    private createPersistedStore(fileDbFeatureFlag: FeatureFlag, probeLmdb: () => LmdbAvailability): DataStoreFactory {
+        const rootDir = pathToStorage();
         if (fileDbFeatureFlag.isEnabled() || isWindows) {
-            this.persistedStore = new FileStoreFactory(pathToStorage());
-        } else {
-            this.persistedStore = new LMDBStoreFactory(pathToStorage());
+            return new FileStoreFactory(rootDir);
         }
 
-        this.memoryStoreFactory = new MemoryStoreFactory();
+        const lmdb = probeLmdb();
+        if (!lmdb.available) {
+            this.log.warn(lmdb.cause, 'LMDB native module cannot be loaded on this host, falling back to FileDB');
+            this.telemetry.error('lmdb.unavailable', lmdb.cause, undefined, { captureErrorAttributes: true });
+            return new FileStoreFactory(rootDir);
+        }
+        return new LMDBStoreFactory(rootDir);
     }
 
     get(store: StoreName, persistence: Persistence): DataStore {
