@@ -39,6 +39,10 @@ export class CfnValidateEngine implements Closeable {
         });
     }
 
+    version() {
+        return this.module?.version();
+    }
+
     close(): void {
         this.engine?.free();
         this.engine = undefined;
