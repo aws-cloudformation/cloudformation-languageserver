@@ -46,7 +46,7 @@
         },
         "FileDb": {
             "enabled": true,
-            "fleetPercentage": 5
+            "fleetPercentage": 20
         },
         "CfnValidate": {
             "enabled": true,
