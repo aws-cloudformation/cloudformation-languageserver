@@ -5,7 +5,13 @@ import { describe, expect, beforeEach, vi, test, Mock } from 'vitest';
 import { CloudFormationFileType } from '../../../../src/document/Document';
 import { PyodideWorkerManager } from '../../../../src/services/cfnLint/PyodideWorkerManager';
 import { CfnLintSettings } from '../../../../src/settings/Settings';
-import { WorkerShutdownError } from '../../../../src/utils/errors/ErrorClasses';
+import {
+    CfnLintInitializationError,
+    RetryError,
+    WorkerFailureError,
+    WorkerShutdownError,
+} from '../../../../src/utils/errors/ErrorClasses';
+import { errorTypeLabel } from '../../../../src/utils/errors/ErrorStackInfo';
 import * as RetryModule from '../../../../src/utils/Retry';
 import { mockLogger } from '../../../utils/MockServerComponents';
 
@@ -199,6 +205,27 @@ describe('PyodideWorkerManager', () => {
 
             // Expect initialization to reject
             await expect(initPromise).rejects.toThrow('Worker error');
+        });
+
+        test('should surface a bounded error type for a worker error through the retry wrapper', async () => {
+            const initPromise = workerManager.initialize();
+
+            errorHandler(new Error('ENOMEM: worker heap exhausted'));
+
+            const rejection: unknown = await initPromise.catch((error: unknown) => error);
+            expect(rejection).toBeInstanceOf(RetryError);
+            expect((rejection as RetryError).cause).toBeInstanceOf(WorkerFailureError);
+            expect(errorTypeLabel(rejection)).toBe('WorkerError');
+        });
+
+        test('should surface the failed initialization phase as the error type', async () => {
+            const initPromise = workerManager.initialize();
+
+            messageHandler({ id: '1', error: 'micropip failed', phase: 'cfn_lint_install', success: false });
+
+            const rejection: unknown = await initPromise.catch((error: unknown) => error);
+            expect((rejection as RetryError).cause).toBeInstanceOf(CfnLintInitializationError);
+            expect(errorTypeLabel(rejection)).toBe('Init.cfn_lint_install');
         });
 
         test('should handle worker message error', async () => {

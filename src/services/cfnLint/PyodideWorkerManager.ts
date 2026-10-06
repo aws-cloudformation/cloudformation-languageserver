@@ -8,6 +8,8 @@ import { ScopedTelemetry } from '../../telemetry/ScopedTelemetry';
 import { Telemetry } from '../../telemetry/TelemetryDecorator';
 import {
     CfnLintInitializationError,
+    WorkerExitError,
+    WorkerFailureError,
     WorkerNotInitializedError,
     WorkerShutdownError,
 } from '../../utils/errors/ErrorClasses';
@@ -119,7 +121,7 @@ export class PyodideWorkerManager {
 
                         // Reject any pending tasks
                         for (const task of this.tasks.values()) {
-                            task.reject(new Error(`Worker exited unexpectedly with code ${code}`));
+                            task.reject(new WorkerExitError(code));
                         }
                         this.tasks.clear();
                     }
@@ -131,7 +133,7 @@ export class PyodideWorkerManager {
                 // Set up error handler
                 this.worker.on('error', (error: Error) => {
                     this.log.error(error, 'Worker error');
-                    reject(new Error(`Worker error: ${error.message}`));
+                    reject(new WorkerFailureError(error));
                 });
 
                 // Initialize Pyodide in the worker
