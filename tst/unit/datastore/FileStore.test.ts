@@ -1,6 +1,6 @@
 import { execFile } from 'child_process';
 import { randomUUID as v4 } from 'crypto';
-import { rmSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync } from 'fs';
+import { rmSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync, statSync, utimesSync } from 'fs';
 import { basename, join } from 'path';
 import { promisify } from 'util';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -9,6 +9,8 @@ import { decrypt, encryptionKey } from '../../../src/datastore/file/Encryption';
 import { EncryptedFile } from '../../../src/datastore/file/EncryptedFile';
 import { KeyedFileStore } from '../../../src/datastore/file/KeyedFileStore';
 import { FileStoreFactory } from '../../../src/datastore/FileStoreFactory';
+import { HeartbeatFileName, RecentUseWindowMs, touchHeartbeat } from '../../../src/datastore/VersionDirectory';
+import { TelemetryService } from '../../../src/telemetry/TelemetryService';
 import { stableHashCode } from '../../../src/utils/StableHash';
 
 describe('FileStore', () => {
@@ -579,6 +581,8 @@ describe('FileStore', () => {
             writeFileSync(join(fileDbRoot, 'v5', 'data.enc'), 'newer');
             mkdirSync(join(fileDbRoot, 'backup'), { recursive: true });
             writeFileSync(join(fileDbRoot, 'v2'), 'not a directory');
+            markUnused(join(fileDbRoot, 'v1'));
+            markUnused(join(fileDbRoot, 'v3'));
 
             expect(existsSync(join(fileDbRoot, 'v4'))).toBe(true);
 
@@ -590,6 +594,38 @@ describe('FileStore', () => {
             expect(existsSync(join(fileDbRoot, 'v5'))).toBe(true);
             expect(existsSync(join(fileDbRoot, 'backup'))).toBe(true);
             expect(existsSync(join(fileDbRoot, 'v2'))).toBe(true);
+        });
+
+        it('should preserve an older version directory that another live process is still using', () => {
+            const fileDbRoot = join(testDir, 'filedb');
+            const heartbeatDir = join(fileDbRoot, 'v3');
+            const recentlyWrittenDir = join(fileDbRoot, 'v1');
+            mkdirSync(heartbeatDir, { recursive: true });
+            writeFileSync(join(heartbeatDir, 'data.enc'), 'previous');
+            markUnused(heartbeatDir);
+            touchHeartbeat(heartbeatDir);
+            mkdirSync(recentlyWrittenDir, { recursive: true });
+            writeFileSync(join(recentlyWrittenDir, 'data.enc'), 'legacy binary without heartbeat');
+            const skipped = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'count');
+
+            (fileFactory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
+
+            expect(existsSync(heartbeatDir)).toBe(true);
+            expect(existsSync(recentlyWrittenDir)).toBe(true);
+            expect(skipped).toHaveBeenCalledWith('oldVersion.cleanup.skipped', 1);
+            expect(skipped).not.toHaveBeenCalledWith('oldVersion.cleanup.count', 1);
+        });
+
+        it('should write a heartbeat for its own version directory at startup and on every metrics tick', () => {
+            const heartbeat = join(testDir, 'filedb', 'v4', HeartbeatFileName);
+            expect(existsSync(heartbeat)).toBe(true);
+
+            const stale = new Date(Date.now() - RecentUseWindowMs);
+            utimesSync(heartbeat, stale, stale);
+
+            (fileFactory as unknown as { emitMetrics(): void }).emitMetrics();
+
+            expect(statSync(heartbeat).mtimeMs).toBeGreaterThan(stale.getTime());
         });
 
         it('should handle cleanup when directory does not exist', async () => {
@@ -719,6 +755,11 @@ describe('FileStore', () => {
         });
     });
 });
+
+function markUnused(versionDir: string) {
+    const stale = new Date(Date.now() - 2 * RecentUseWindowMs);
+    utimesSync(versionDir, stale, stale);
+}
 
 function encodedFilePath(dir: string, store: string, key: string) {
     const filePath = join(dir, `${store}.${stableHashCode(key)}.enc`);

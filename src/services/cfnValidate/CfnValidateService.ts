@@ -64,8 +64,10 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         this.telemetry.count('validate.count', 1);
         const report = this.engine.validate(result.content, result.uri, { severityLevel: this.severityLevel() });
 
+        const elapsedMs = performance.now() - now;
         this.telemetry.count('validate.success', 1);
-        this.telemetry.histogram('validate.duration', (performance.now() - now) / byteSize(result.content), {
+        this.telemetry.histogram('validate.latency', elapsedMs, { unit: 'ms' });
+        this.telemetry.histogram('validate.duration', elapsedMs / byteSize(result.content), {
             unit: 'ms/byte',
         });
 

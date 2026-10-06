@@ -8,6 +8,8 @@ import {
     CfnLintInitializationError,
     MountError,
     RequestCancellationError,
+    WorkerExitError,
+    WorkerFailureError,
     WorkerNotInitializedError,
 } from '../../../../src/utils/errors/ErrorClasses';
 
@@ -58,6 +60,8 @@ describe('GenericErrorMapper', () => {
             new CfnLintInitializationError('worker failed'),
             new MountError('mount failed'),
             new WorkerNotInitializedError(),
+            new WorkerExitError(1),
+            new WorkerFailureError(new Error('out of memory')),
         ])('should classify cfn-lint errors', (error) => {
             expect(classifyGenericError(error)).toBe('cfn_lint');
         });

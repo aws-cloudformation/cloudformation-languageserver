@@ -1,6 +1,7 @@
 import { Logger } from 'pino';
 import * as sinon from 'sinon';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { RetryError } from '../../../src/utils/errors/ErrorClasses';
 import { RetryOptions, retryWithExponentialBackoff, sleep } from '../../../src/utils/Retry';
 
 describe('sleep', () => {
@@ -67,7 +68,8 @@ describe('retryWithExponentialBackoff', () => {
     });
 
     it('should respect total timeout', async () => {
-        const mockFn = vi.fn().mockRejectedValue(new Error('Failure'));
+        const failure = new Error('Failure');
+        const mockFn = vi.fn().mockRejectedValue(failure);
         const promise = retryWithExponentialBackoff(
             mockFn,
             {
@@ -81,14 +83,30 @@ describe('retryWithExponentialBackoff', () => {
         try {
             await promise;
         } catch (err) {
-            expect(err).instanceof(Error);
+            expect(err).instanceof(RetryError);
             const message = (err as Error).message;
             expect(message).contains('SomeOperation timed out after');
             expect(message).contains('on attempt #2/3. Last error: Failure');
+            expect((err as RetryError).code).toBe('RetryTimeout');
+            expect((err as RetryError).cause).toBe(failure);
             return;
         }
 
         throw new Error('Tests have failed');
+    });
+
+    it('should tag exhausted retries with a code and keep the last error as cause', async () => {
+        const failure = Object.assign(new Error('worker died'), { code: 'WorkerExit' });
+        const mockFn = vi.fn().mockRejectedValue(failure);
+
+        const promise = retryWithExponentialBackoff(mockFn, options, mockLog, sleepFn);
+
+        await expect(promise).rejects.toMatchObject({
+            name: 'RetryError',
+            code: 'RetryExhausted',
+            cause: failure,
+            message: 'SomeOperation failed after 3 attempts. Last error: worker died',
+        });
     });
 
     it('should apply exponential backoff correctly', async () => {

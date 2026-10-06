@@ -16,7 +16,7 @@ import { LMDBOwnershipTracker } from './lmdb/OwnershipTracker';
 import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
-import { isOlderVersionDirectory } from './VersionDirectory';
+import { isOlderVersionDirectory, isRecentlyUsed, touchHeartbeat } from './VersionDirectory';
 
 const MetricsIntervalMs = 60 * 1000;
 const CleanupDelayMs = 2 * 60 * 1000;
@@ -91,7 +91,14 @@ export class LMDBStoreFactory implements DataStoreFactory {
         // The env and stores opened successfully — promote the marker out of `opening`
         // so an abrupt kill from now on is not mistaken for a startup crash.
         this.ownershipTracker.markRunning();
+        this.recordHeartbeat();
         this.scheduleBackgroundTasks();
+    }
+
+    private recordHeartbeat(): void {
+        if (!touchHeartbeat(this.lmdbVersionDir)) {
+            this.telemetry.count('heartbeat.error', 1);
+        }
     }
 
     get(store: StoreName): DataStore {
@@ -346,13 +353,21 @@ export class LMDBStoreFactory implements DataStoreFactory {
         for (const entry of entries) {
             try {
                 if (
-                    entry.isDirectory() &&
-                    isOlderVersionDirectory(entry.name, VersionNumber) &&
-                    entry.name !== LMDBOwnershipTracker.DirName
+                    !entry.isDirectory() ||
+                    !isOlderVersionDirectory(entry.name, VersionNumber) ||
+                    entry.name === LMDBOwnershipTracker.DirName
                 ) {
-                    this.telemetry.count('oldVersion.cleanup.count', 1);
-                    rmSync(join(this.lmdbDir, entry.name), { recursive: true, force: true });
+                    continue;
                 }
+
+                const versionDir = join(this.lmdbDir, entry.name);
+                if (isRecentlyUsed(versionDir)) {
+                    this.telemetry.count('oldVersion.cleanup.skipped', 1);
+                    continue;
+                }
+
+                this.telemetry.count('oldVersion.cleanup.count', 1);
+                rmSync(versionDir, { recursive: true, force: true });
             } catch (error) {
                 this.log.error(error, 'Failed to cleanup old LMDB versions');
                 this.telemetry.count('oldVersion.cleanup.error', 1);
@@ -364,6 +379,8 @@ export class LMDBStoreFactory implements DataStoreFactory {
         if (this.closed || this.env === undefined) {
             return;
         }
+
+        this.recordHeartbeat();
 
         try {
             const staleLocks = this.env.readerCheck();
