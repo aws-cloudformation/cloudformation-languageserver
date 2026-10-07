@@ -20,6 +20,7 @@ export default defineConfig({
             },
             exclude: [
                 'src/services/cfnLint/pyodide-worker.ts',
+                'src/services/cfnValidate/cfn-validate-worker.ts',
                 'src/telemetry/OTELInstrumentation.ts',
                 'src/telemetry/TelemetryService.ts',
                 'src/services/guard/assets/**',
