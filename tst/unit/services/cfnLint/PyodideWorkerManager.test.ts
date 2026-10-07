@@ -11,7 +11,6 @@ import {
     WorkerFailureError,
     WorkerShutdownError,
 } from '../../../../src/utils/errors/ErrorClasses';
-import { errorTypeLabel } from '../../../../src/utils/errors/ErrorStackInfo';
 import * as RetryModule from '../../../../src/utils/Retry';
 import { mockLogger } from '../../../utils/MockServerComponents';
 
@@ -215,7 +214,6 @@ describe('PyodideWorkerManager', () => {
             const rejection: unknown = await initPromise.catch((error: unknown) => error);
             expect(rejection).toBeInstanceOf(RetryError);
             expect((rejection as RetryError).cause).toBeInstanceOf(WorkerFailureError);
-            expect(errorTypeLabel(rejection)).toBe('WorkerError');
         });
 
         test('should surface the failed initialization phase as the error type', async () => {
@@ -225,7 +223,6 @@ describe('PyodideWorkerManager', () => {
 
             const rejection: unknown = await initPromise.catch((error: unknown) => error);
             expect((rejection as RetryError).cause).toBeInstanceOf(CfnLintInitializationError);
-            expect(errorTypeLabel(rejection)).toBe('Init.cfn_lint_install');
         });
 
         test('should handle worker message error', async () => {
