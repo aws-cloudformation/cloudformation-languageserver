@@ -1,33 +1,8 @@
 import { Attributes } from '@opentelemetry/api';
 import { sanitizeMessage } from '../Sanitizer';
 import { classifyAwsError } from './AwsErrorMapper';
-import { extractRootCause, extractErrorCode, extractHttpStatus, errorCauseChain } from './ErrorUtils';
+import { extractRootCause, extractErrorCode, extractHttpStatus } from './ErrorUtils';
 import { classifyGenericError } from './GenericErrorMapper';
-
-/**
- * Single bounded-cardinality label for the `errorType` metric dimension, which {@link errorType} always emits
- * (the one error attribute the telemetry pipeline exports as a dimension). Prefers the deepest error code in the
- * cause chain (errno, AWS, or a code set by our own wrappers), then the deepest specific class name, then the
- * error's own class name.
- */
-export function errorTypeLabel(error: unknown): string {
-    const deepestFirst = errorCauseChain(error).toReversed();
-
-    for (const link of deepestFirst) {
-        const code = extractErrorCode(link);
-        if (code !== undefined) {
-            return sanitizeMessage(code);
-        }
-    }
-
-    for (const link of deepestFirst) {
-        if (link instanceof Error && link.name !== 'Error') {
-            return sanitizeMessage(link.name);
-        }
-    }
-
-    return sanitizeMessage(error instanceof Error ? error.name : typeof error);
-}
 
 /**
  * Best effort extraction of location of exception based on stack trace
@@ -84,7 +59,6 @@ export function errorType(error: unknown): Attributes {
     }
 
     return {
-        'error.type.label': errorTypeLabel(error),
         'error.type': sanitizeMessage(type),
         'error.code': sanitizeMessage(code ?? 'Unknown'),
         ...genericAttr,
