@@ -1,52 +1,7 @@
 import { describe, test, expect } from 'vitest';
-import {
-    errorAttributes,
-    errorType,
-    errorTypeLabel,
-    extractLocationFromStack,
-} from '../../../../src/utils/errors/ErrorStackInfo';
+import { errorAttributes, errorType, extractLocationFromStack } from '../../../../src/utils/errors/ErrorStackInfo';
 
 describe('ErrorStackInfo', () => {
-    describe('errorTypeLabel', () => {
-        test('uses the error code when present', () => {
-            expect(errorTypeLabel(Object.assign(new Error('missing'), { code: 'ENOENT' }))).toBe('ENOENT');
-        });
-
-        test('prefers the deepest code in the cause chain over the wrapper code', () => {
-            const cause = Object.assign(new Error('worker died'), { code: 'WorkerExit' });
-            const wrapper = Object.assign(new Error('init failed after 3 attempts', { cause }), {
-                code: 'RetryExhausted',
-            });
-
-            expect(errorTypeLabel(wrapper)).toBe('WorkerExit');
-        });
-
-        test('falls back to the wrapper code when no cause carries one', () => {
-            const wrapper = Object.assign(new Error('timed out', { cause: new Error('slow') }), {
-                code: 'RetryTimeout',
-            });
-
-            expect(errorTypeLabel(wrapper)).toBe('RetryTimeout');
-        });
-
-        test('uses the deepest specific class name when no code exists', () => {
-            const cause = new TypeError('bad input');
-            const wrapper = new Error('validation failed', { cause });
-
-            expect(errorTypeLabel(wrapper)).toBe('TypeError');
-        });
-
-        test('uses the error class name when nothing more specific exists', () => {
-            expect(errorTypeLabel(new Error('plain', { cause: new Error('also plain') }))).toBe('Error');
-            expect(errorTypeLabel(new RangeError('range'))).toBe('RangeError');
-        });
-
-        test('uses the value type for non-error throwables', () => {
-            expect(errorTypeLabel('boom')).toBe('string');
-            expect(errorTypeLabel(undefined)).toBe('undefined');
-        });
-    });
-
     describe('extractLocationFromStack', () => {
         test('returns empty object when stack is undefined', () => {
             expect(extractLocationFromStack(undefined)).toEqual({});

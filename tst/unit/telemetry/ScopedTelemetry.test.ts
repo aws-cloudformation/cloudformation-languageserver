@@ -18,17 +18,6 @@ describe('ScopedTelemetry', () => {
         scopedTelemetry = new ScopedTelemetry('test-scope', mockMeter);
     });
 
-    describe('error label', () => {
-        it('exports the error label dimension', () => {
-            const mockCounter = { add: vi.fn() };
-            mockMeter.createCounter.mockReturnValue(mockCounter);
-
-            scopedTelemetry.error('scan.error', Object.assign(new Error('gone'), { code: 'ENOENT' }));
-
-            expect(mockCounter.add).toHaveBeenCalledWith(1, expect.objectContaining({ 'error.type.label': 'ENOENT' }));
-        });
-    });
-
     describe('count', () => {
         it('should increment counter', () => {
             scopedTelemetry.count('test', 5);
@@ -375,7 +364,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'Error',
-                'error.type.label': 'Error',
                 'error.code': 'Unknown',
             });
         });
@@ -391,7 +379,6 @@ describe('ScopedTelemetry', () => {
                 1,
                 expect.objectContaining({
                     'error.type': 'Error',
-                    'error.type.label': 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
                     'error.code': 'UNABLE_TO_GET_ISSUER_CERT_LOCALLY',
                     'error.category': 'tls',
                 }),
@@ -407,7 +394,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'Error',
-                'error.type.label': 'Error',
                 'error.code': 'Unknown',
             });
         });
@@ -428,7 +414,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'Error',
-                'error.type.label': 'Error',
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test error',
                 'error.stack': 'at func (file.ts:10:5)',
@@ -446,7 +431,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'TypeError',
-                'error.type.label': 'TypeError',
                 'error.origin': 'uncaughtException',
                 'error.message': 'TypeError: type error',
                 'error.stack': 'at test (test.ts:1:1)',
@@ -464,7 +448,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'Error',
-                'error.type.label': 'Error',
                 'error.origin': 'unhandledRejection',
                 'error.message': 'Error: rejection',
                 'error.stack': 'at promise (p.ts:5:10)',
@@ -487,7 +470,6 @@ describe('ScopedTelemetry', () => {
                 custom: 'value',
                 region: 'us-east-1',
                 'error.type': 'Error',
-                'error.type.label': 'Error',
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test',
                 'error.stack': 'at x (x.ts:1:1)',
@@ -515,7 +497,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'Error',
-                'error.type.label': 'Error',
                 'error.origin': 'Unknown',
                 'error.message': 'Error: test',
                 'error.stack': 'at x (x.ts:1:1)',
@@ -530,7 +511,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'string',
-                'error.type.label': 'string',
                 'error.origin': 'Unknown',
                 'error.code': 'Unknown',
             });
@@ -543,7 +523,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'object',
-                'error.type.label': 'object',
                 'error.origin': 'Unknown',
                 'error.code': 'Unknown',
             });
@@ -556,7 +535,6 @@ describe('ScopedTelemetry', () => {
                 HandlerSource: 'Unknown',
                 'aws.emf.storage_resolution': 1,
                 'error.type': 'undefined',
-                'error.type.label': 'undefined',
                 'error.origin': 'Unknown',
                 'error.code': 'Unknown',
             });
