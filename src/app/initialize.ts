@@ -20,6 +20,7 @@ export function staticInitialize(ClientInfo?: ClientInfo, AwsMetadata?: AwsMetad
                 ClientInfo,
                 aws: {
                     clientInfo: AwsMetadata?.clientInfo,
+                    commandSuffix: AwsMetadata?.commandSuffix,
                     telemetryEnabled: AwsMetadata?.telemetryEnabled,
                     logLevel: AwsMetadata?.logLevel,
                     cloudformation: AwsMetadata?.cloudformation,
