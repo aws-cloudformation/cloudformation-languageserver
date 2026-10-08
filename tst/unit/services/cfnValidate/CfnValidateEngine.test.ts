@@ -2,8 +2,9 @@ import { EventEmitter } from 'events';
 import path from 'path';
 import { Worker } from 'worker_threads';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
-import { CfnValidateEngine, CfnValidateResponse } from '../../../../src/services/cfnValidate/CfnValidateEngine';
+import { CfnValidateEngine } from '../../../../src/services/cfnValidate/CfnValidateEngine';
 import { WorkerExitError, WorkerFailureError, WorkerShutdownError } from '../../../../src/utils/errors/ErrorClasses';
+import { CfnValidateResponse } from '../../../../src/services/cfnValidate/cfn-validate-worker';
 
 // Path deliberately does not exist on disk: the engine must read the content it is given, not the file system
 const UNSAVED_TEMPLATE_PATH = '/does/not/exist/template.yaml';
