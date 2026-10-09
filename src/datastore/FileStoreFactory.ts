@@ -10,7 +10,7 @@ import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatast
 import { encryptionKey } from './file/Encryption';
 import { KeyedFileStore } from './file/KeyedFileStore';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
-import { isOlderVersionDirectory } from './VersionDirectory';
+import { isOlderVersionDirectory, isRecentlyUsed, touchHeartbeat } from './VersionDirectory';
 
 export class FileStoreFactory implements DataStoreFactory {
     private readonly log = LoggerFactory.getLogger('FileStore.Global');
@@ -34,6 +34,7 @@ export class FileStoreFactory implements DataStoreFactory {
         if (!existsSync(this.fileDbDir)) {
             mkdirSync(this.fileDbDir, { recursive: true });
         }
+        this.recordHeartbeat();
 
         for (const store of storeNames) {
             this.stores.set(
@@ -88,6 +89,7 @@ export class FileStoreFactory implements DataStoreFactory {
     private emitMetrics(): void {
         if (this.closed) return;
 
+        this.recordHeartbeat();
         this.telemetry.histogram('version', VersionNumber);
         this.telemetry.histogram('env.entries', this.stores.size);
 
@@ -114,16 +116,30 @@ export class FileStoreFactory implements DataStoreFactory {
         }
     }
 
+    private recordHeartbeat(): void {
+        if (!touchHeartbeat(this.fileDbDir)) {
+            this.telemetry.count('heartbeat.error', 1);
+        }
+    }
+
     private cleanupOldVersions(): void {
         if (this.closed || !existsSync(this.fileDbRoot)) return;
 
         const entries = readdirSync(this.fileDbRoot, { withFileTypes: true });
         for (const entry of entries) {
             try {
-                if (entry.isDirectory() && isOlderVersionDirectory(entry.name, VersionNumber)) {
-                    this.telemetry.count('oldVersion.cleanup.count', 1);
-                    rmSync(join(this.fileDbRoot, entry.name), { recursive: true, force: true });
+                if (!entry.isDirectory() || !isOlderVersionDirectory(entry.name, VersionNumber)) {
+                    continue;
                 }
+
+                const versionDir = join(this.fileDbRoot, entry.name);
+                if (isRecentlyUsed(versionDir)) {
+                    this.telemetry.count('oldVersion.cleanup.skipped', 1);
+                    continue;
+                }
+
+                this.telemetry.count('oldVersion.cleanup.count', 1);
+                rmSync(versionDir, { recursive: true, force: true });
             } catch (error) {
                 this.log.error(error, 'Failed to cleanup old FileDB versions');
                 this.telemetry.count('oldVersion.cleanup.error', 1);

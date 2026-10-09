@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { StoreName } from '../../../src/datastore/DataStore';
 import { LMDBStoreFactory } from '../../../src/datastore/LMDBStoreFactory';
 import { LMDBOwnershipTracker } from '../../../src/datastore/lmdb/OwnershipTracker';
+import { HeartbeatFileName, RecentUseWindowMs, touchHeartbeat } from '../../../src/datastore/VersionDirectory';
 
 describe('LMDB fork detection and recovery', () => {
     let testDir: string;
@@ -247,6 +248,9 @@ describe('LMDB fork detection and recovery', () => {
             fs.mkdirSync(join(lmdbDir, 'v8'), { recursive: true });
             fs.mkdirSync(join(lmdbDir, 'backup'), { recursive: true });
             fs.writeFileSync(join(lmdbDir, 'v2'), 'not a directory');
+            const stale = new Date(Date.now() - 2 * RecentUseWindowMs);
+            fs.utimesSync(join(lmdbDir, 'v1'), stale, stale);
+            fs.utimesSync(join(lmdbDir, 'v6'), stale, stale);
 
             (factory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
 
@@ -257,6 +261,34 @@ describe('LMDB fork detection and recovery', () => {
             expect(fs.existsSync(join(lmdbDir, 'backup'))).toBe(true);
             expect(fs.existsSync(join(lmdbDir, 'v2'))).toBe(true);
             expect(fs.existsSync(markersDir)).toBe(true);
+        });
+
+        it('should preserve an older version directory that another live process is still using', () => {
+            const lmdbDir = join(testDir, 'lmdb');
+            const heartbeatDir = join(lmdbDir, 'v6');
+            const recentlyWrittenDir = join(lmdbDir, 'v5');
+            fs.mkdirSync(heartbeatDir, { recursive: true });
+            const stale = new Date(Date.now() - 2 * RecentUseWindowMs);
+            fs.utimesSync(heartbeatDir, stale, stale);
+            touchHeartbeat(heartbeatDir);
+            fs.mkdirSync(recentlyWrittenDir, { recursive: true });
+
+            (factory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
+
+            expect(fs.existsSync(heartbeatDir)).toBe(true);
+            expect(fs.existsSync(recentlyWrittenDir)).toBe(true);
+        });
+
+        it('should write a heartbeat for its own version directory once open and on every metrics tick', () => {
+            const heartbeat = join(testDir, 'lmdb', 'v7', HeartbeatFileName);
+            expect(fs.existsSync(heartbeat)).toBe(true);
+
+            const stale = new Date(Date.now() - RecentUseWindowMs);
+            fs.utimesSync(heartbeat, stale, stale);
+
+            (factory as unknown as { emitMetrics(): void }).emitMetrics();
+
+            expect(fs.statSync(heartbeat).mtimeMs).toBeGreaterThan(stale.getTime());
         });
     });
 });

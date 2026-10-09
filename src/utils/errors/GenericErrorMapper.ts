@@ -1,4 +1,10 @@
-import { CfnLintInitializationError, MountError, WorkerNotInitializedError } from './ErrorClasses';
+import {
+    CfnLintInitializationError,
+    MountError,
+    WorkerExitError,
+    WorkerFailureError,
+    WorkerNotInitializedError,
+} from './ErrorClasses';
 import { extractErrorCode, extractErrorMessage, extractHttpStatus } from './ErrorUtils';
 
 const CANCELLATION_ERROR_IDENTIFIERS = new Set([
@@ -32,6 +38,8 @@ const FILESYSTEM_ERROR_CODES = new Set([
 const CFN_LINT_ERROR_NAMES = new Set([
     CfnLintInitializationError.name,
     MountError.name,
+    WorkerExitError.name,
+    WorkerFailureError.name,
     WorkerNotInitializedError.name,
 ]);
 
