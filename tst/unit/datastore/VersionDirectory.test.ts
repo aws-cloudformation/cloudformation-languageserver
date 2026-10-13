@@ -1,8 +1,10 @@
 import { randomUUID as v4 } from 'crypto';
-import { existsSync, mkdirSync, rmSync, statSync, utimesSync } from 'fs';
+import { existsSync, mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { afterEach, beforeEach, describe, it, expect } from 'vitest';
 import {
+    getVersionStorageDirs,
+    getLmdbRoot,
     HeartbeatFileName,
     isOlderVersionDirectory,
     isRecentlyUsed,
@@ -68,6 +70,24 @@ describe('version directory heartbeat', () => {
         rmSync(versionDir, { recursive: true, force: true });
 
         expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(false);
+    });
+
+    it('returns the LMDB root under the storage root', () => {
+        const storageRoot = join(versionDir, '..', '..');
+
+        expect(getLmdbRoot(storageRoot)).toBe(join(storageRoot, 'lmdb'));
+    });
+
+    it('returns LMDB version directories and excludes other entries', () => {
+        const lmdbRoot = join(versionDir, '..');
+        const otherVersionDir = join(lmdbRoot, 'v4');
+        mkdirSync(otherVersionDir);
+        mkdirSync(join(lmdbRoot, 'markers'));
+        mkdirSync(join(lmdbRoot, 'backup'));
+        writeFileSync(join(lmdbRoot, 'v5'), 'not a directory');
+        writeFileSync(join(lmdbRoot, 'data.mdb'), 'not a directory');
+
+        expect(getVersionStorageDirs(lmdbRoot).toSorted()).toEqual([versionDir, otherVersionDir].toSorted());
     });
 });
 

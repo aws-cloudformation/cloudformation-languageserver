@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
@@ -10,7 +10,14 @@ import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatast
 import { encryptionKey } from './file/Encryption';
 import { KeyedFileStore } from './file/KeyedFileStore';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
-import { isOlderVersionDirectory, isRecentlyUsed, touchHeartbeat } from './VersionDirectory';
+import {
+    getFileDbRoot,
+    getLmdbRoot,
+    touchHeartbeat,
+    cleanupOldStorageDirs,
+    FileDbVersionNumber as VersionNumber,
+    LmdbVersionNumber,
+} from './VersionDirectory';
 
 export class FileStoreFactory implements DataStoreFactory {
     private readonly log = LoggerFactory.getLogger('FileStore.Global');
@@ -19,6 +26,7 @@ export class FileStoreFactory implements DataStoreFactory {
     private readonly stores = new Map<StoreName, KeyedFileStore>();
     private readonly fileDbRoot: string;
     private readonly fileDbDir: string;
+    private readonly lmdbRoot: string;
 
     private readonly metricsInterval: NodeJS.Timeout;
     private readonly timeout: NodeJS.Timeout;
@@ -28,8 +36,9 @@ export class FileStoreFactory implements DataStoreFactory {
         rootDir: string,
         public readonly storeNames = PersistedStores,
     ) {
-        this.fileDbRoot = join(rootDir, 'filedb');
+        this.fileDbRoot = getFileDbRoot(rootDir);
         this.fileDbDir = join(this.fileDbRoot, Version);
+        this.lmdbRoot = getLmdbRoot(rootDir);
 
         if (!existsSync(this.fileDbDir)) {
             mkdirSync(this.fileDbDir, { recursive: true });
@@ -123,28 +132,10 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 
     private cleanupOldVersions(): void {
-        if (this.closed || !existsSync(this.fileDbRoot)) return;
+        if (this.closed) return;
 
-        const entries = readdirSync(this.fileDbRoot, { withFileTypes: true });
-        for (const entry of entries) {
-            try {
-                if (!entry.isDirectory() || !isOlderVersionDirectory(entry.name, VersionNumber)) {
-                    continue;
-                }
-
-                const versionDir = join(this.fileDbRoot, entry.name);
-                if (isRecentlyUsed(versionDir)) {
-                    this.telemetry.count('oldVersion.cleanup.skipped', 1);
-                    continue;
-                }
-
-                this.telemetry.count('oldVersion.cleanup.count', 1);
-                rmSync(versionDir, { recursive: true, force: true });
-            } catch (error) {
-                this.log.error(error, 'Failed to cleanup old FileDB versions');
-                this.telemetry.count('oldVersion.cleanup.error', 1);
-            }
-        }
+        cleanupOldStorageDirs(this.fileDbRoot, VersionNumber, this.telemetry, 'filedb', this.log);
+        cleanupOldStorageDirs(this.lmdbRoot, LmdbVersionNumber, this.telemetry, 'lmdb', this.log, false);
     }
 
     private totalBytes() {
@@ -169,5 +160,4 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 }
 
-const VersionNumber = 4;
 const Version = `v${VersionNumber}`;

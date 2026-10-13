@@ -1,10 +1,29 @@
-import { closeSync, openSync, statSync, utimesSync } from 'fs';
-import { join } from 'path';
+import { closeSync, existsSync, openSync, readdirSync, rmSync, statSync, utimesSync } from 'fs';
+import { basename, join } from 'path';
+import { Logger } from 'pino';
+import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 
 const VersionDirectoryPattern = /^v(\d+)$/;
 
+export const LmdbVersionNumber = 7;
+export const FileDbVersionNumber = 4;
+
 export const HeartbeatFileName = '.heartbeat';
 export const RecentUseWindowMs = 24 * 60 * 60 * 1000;
+
+export function getLmdbRoot(storageRoot: string): string {
+    return join(storageRoot, 'lmdb');
+}
+
+export function getFileDbRoot(storageRoot: string): string {
+    return join(storageRoot, 'filedb');
+}
+
+export function getVersionStorageDirs(storageRoot: string): ReadonlyArray<string> {
+    return readdirSync(storageRoot, { withFileTypes: true })
+        .filter((entry) => entry.isDirectory() && VersionDirectoryPattern.test(entry.name))
+        .map((entry) => join(storageRoot, entry.name));
+}
 
 /**
  * True only for a strict `v<number>` directory whose version is below {@link currentVersion}.
@@ -66,5 +85,40 @@ function mtimeMs(path: string): number {
         return statSync(path).mtimeMs;
     } catch (error) {
         return (error as NodeJS.ErrnoException).code === 'ENOENT' ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+    }
+}
+
+export function cleanupOldStorageDirs(
+    storageDir: string,
+    latestVersion: number,
+    telemetry: ScopedTelemetry,
+    dbType: string,
+    log: Logger,
+    onlyDeleteOlderDirs = true,
+) {
+    if (!existsSync(storageDir)) {
+        return;
+    }
+
+    const directories = getVersionStorageDirs(storageDir);
+    for (const versionDir of directories) {
+        try {
+            const directoryName = basename(versionDir);
+            if (onlyDeleteOlderDirs && !isOlderVersionDirectory(directoryName, latestVersion)) {
+                telemetry.count(`${dbType}.oldVersion.cleanup.skipped`, 1);
+                continue;
+            }
+
+            if (isRecentlyUsed(versionDir)) {
+                telemetry.count(`${dbType}.oldVersion.cleanup.skipped`, 1);
+                continue;
+            }
+
+            telemetry.count(`${dbType}.oldVersion.cleanup.count`, 1);
+            rmSync(versionDir, { recursive: true, force: true });
+        } catch (error) {
+            log.error(error, `Failed to cleanup old ${dbType} storage versions`);
+            telemetry.count(`${dbType}.oldVersion.cleanup.error`, 1);
+        }
     }
 }

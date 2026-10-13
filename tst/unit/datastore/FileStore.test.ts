@@ -1,6 +1,7 @@
 import { execFile } from 'child_process';
 import { randomUUID as v4 } from 'crypto';
-import { rmSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync, statSync, utimesSync } from 'fs';
+import fs, { rmSync, mkdirSync, writeFileSync, existsSync, readdirSync, readFileSync, statSync, utimesSync } from 'fs';
+import { syncBuiltinESMExports } from 'module';
 import { basename, join } from 'path';
 import { promisify } from 'util';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -626,6 +627,104 @@ describe('FileStore', () => {
             (fileFactory as unknown as { emitMetrics(): void }).emitMetrics();
 
             expect(statSync(heartbeat).mtimeMs).toBeGreaterThan(stale.getTime());
+        });
+
+        it('should remove unused LMDB storage', () => {
+            const lmdbRoot = join(testDir, 'lmdb');
+            const lmdbVersionDir = join(lmdbRoot, 'v7');
+            mkdirSync(lmdbVersionDir, { recursive: true });
+            writeFileSync(join(lmdbVersionDir, 'data.mdb'), 'old cache');
+            markUnused(lmdbVersionDir);
+            const count = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'count');
+            count.mockClear();
+
+            (fileFactory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
+
+            expect(existsSync(lmdbVersionDir)).toBe(false);
+            expect(existsSync(lmdbRoot)).toBe(true);
+            expect(count).toHaveBeenCalledWith('lmdb.cleanup.count', 1);
+        });
+
+        it('should preserve LMDB storage used recently', () => {
+            const lmdbRoot = join(testDir, 'lmdb');
+            const lmdbVersionDir = join(lmdbRoot, 'v7');
+            const staleVersionDir = join(lmdbRoot, 'v6');
+            mkdirSync(lmdbVersionDir, { recursive: true });
+            mkdirSync(staleVersionDir, { recursive: true });
+            writeFileSync(join(lmdbVersionDir, 'data.mdb'), 'active cache');
+            writeFileSync(join(staleVersionDir, 'data.mdb'), 'old cache');
+            markUnused(staleVersionDir);
+            const count = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'count');
+            count.mockClear();
+
+            (fileFactory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
+
+            expect(existsSync(lmdbVersionDir)).toBe(true);
+            expect(existsSync(staleVersionDir)).toBe(false);
+            expect(count).toHaveBeenCalledWith('lmdb.cleanup.skipped', 1);
+            expect(count).toHaveBeenCalledWith('lmdb.cleanup.count', 1);
+        });
+
+        it('should continue LMDB cleanup when one stale directory cannot be removed', () => {
+            const lmdbRoot = join(testDir, 'lmdb');
+            const firstVersionDir = join(lmdbRoot, 'v6');
+            const secondVersionDir = join(lmdbRoot, 'v5');
+            const markersDir = join(lmdbRoot, 'markers');
+            for (const dir of [firstVersionDir, secondVersionDir, markersDir]) {
+                mkdirSync(dir, { recursive: true });
+                writeFileSync(join(dir, 'data.mdb'), 'old cache');
+                markUnused(dir);
+            }
+            const actualRmSync = fs.rmSync;
+            let failedVersionDir: string | undefined;
+            const rm = vi.spyOn(fs, 'rmSync').mockImplementation((path, options) => {
+                if (failedVersionDir === undefined) {
+                    failedVersionDir = String(path);
+                    throw new Error('EBUSY: resource busy or locked');
+                }
+                actualRmSync(path, options);
+            });
+            // The factory binds rmSync through the read-only ESM namespace, which only reflects the
+            // spied CommonJS export once the builtin bindings are synced.
+            syncBuiltinESMExports();
+            const count = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'count');
+            count.mockClear();
+
+            try {
+                (fileFactory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
+
+                expect(rm).toHaveBeenCalledTimes(2);
+                expect(failedVersionDir).toBeDefined();
+                const removedVersionDir = [firstVersionDir, secondVersionDir].find(
+                    (versionDir) => versionDir !== failedVersionDir,
+                );
+                expect(existsSync(failedVersionDir!)).toBe(true);
+                expect(existsSync(removedVersionDir!)).toBe(false);
+                expect(existsSync(markersDir)).toBe(true);
+                expect(count).toHaveBeenCalledWith('lmdb.cleanup.error', 1);
+                expect(count).toHaveBeenCalledWith('lmdb.cleanup.count', 1);
+            } finally {
+                rm.mockRestore();
+                syncBuiltinESMExports();
+                count.mockRestore();
+            }
+        });
+
+        it('should continue FileDB cleanup when LMDB storage cannot be listed', () => {
+            const lmdbRoot = join(testDir, 'lmdb');
+            writeFileSync(lmdbRoot, 'not a directory');
+            const oldFileDbVersionDir = join(testDir, 'filedb', 'v3');
+            mkdirSync(oldFileDbVersionDir, { recursive: true });
+            markUnused(oldFileDbVersionDir);
+            const count = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'count');
+            count.mockClear();
+
+            (fileFactory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
+
+            expect(existsSync(lmdbRoot)).toBe(true);
+            expect(existsSync(oldFileDbVersionDir)).toBe(false);
+            expect(count).toHaveBeenCalledWith('lmdb.cleanup.error', 1);
+            expect(count).toHaveBeenCalledWith('oldVersion.cleanup.count', 1);
         });
 
         it('should handle cleanup when directory does not exist', async () => {
