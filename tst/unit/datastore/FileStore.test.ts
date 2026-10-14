@@ -597,7 +597,7 @@ describe('FileStore', () => {
             expect(existsSync(join(fileDbRoot, 'v2'))).toBe(true);
         });
 
-        it('should preserve an older version directory that another live process is still using', () => {
+        it('should preserve an older version directory with a recent heartbeat or directory mtime', () => {
             const fileDbRoot = join(testDir, 'filedb');
             const heartbeatDir = join(fileDbRoot, 'v3');
             const recentlyWrittenDir = join(fileDbRoot, 'v1');
@@ -607,14 +607,14 @@ describe('FileStore', () => {
             touchHeartbeat(heartbeatDir);
             mkdirSync(recentlyWrittenDir, { recursive: true });
             writeFileSync(join(recentlyWrittenDir, 'data.enc'), 'legacy binary without heartbeat');
-            const skipped = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'count');
+            const count = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'count');
 
             (fileFactory as unknown as { cleanupOldVersions(): void }).cleanupOldVersions();
 
             expect(existsSync(heartbeatDir)).toBe(true);
             expect(existsSync(recentlyWrittenDir)).toBe(true);
-            expect(skipped).toHaveBeenCalledWith('oldVersion.cleanup.skipped', 1);
-            expect(skipped).not.toHaveBeenCalledWith('oldVersion.cleanup.count', 1);
+            expect(count).toHaveBeenCalledWith('filedb.oldVersion.cleanup.skipped', 1);
+            expect(count).not.toHaveBeenCalledWith('filedb.oldVersion.cleanup.count', 1);
         });
 
         it('should write a heartbeat for its own version directory at startup and on every metrics tick', () => {
@@ -642,7 +642,7 @@ describe('FileStore', () => {
 
             expect(existsSync(lmdbVersionDir)).toBe(false);
             expect(existsSync(lmdbRoot)).toBe(true);
-            expect(count).toHaveBeenCalledWith('lmdb.cleanup.count', 1);
+            expect(count).toHaveBeenCalledWith('lmdb.oldVersion.cleanup.count', 1);
         });
 
         it('should preserve LMDB storage used recently', () => {
@@ -652,6 +652,7 @@ describe('FileStore', () => {
             mkdirSync(lmdbVersionDir, { recursive: true });
             mkdirSync(staleVersionDir, { recursive: true });
             writeFileSync(join(lmdbVersionDir, 'data.mdb'), 'active cache');
+            touchHeartbeat(lmdbVersionDir);
             writeFileSync(join(staleVersionDir, 'data.mdb'), 'old cache');
             markUnused(staleVersionDir);
             const count = vi.spyOn(TelemetryService.instance.get('FileStore.Global'), 'count');
@@ -661,8 +662,8 @@ describe('FileStore', () => {
 
             expect(existsSync(lmdbVersionDir)).toBe(true);
             expect(existsSync(staleVersionDir)).toBe(false);
-            expect(count).toHaveBeenCalledWith('lmdb.cleanup.skipped', 1);
-            expect(count).toHaveBeenCalledWith('lmdb.cleanup.count', 1);
+            expect(count).toHaveBeenCalledWith('lmdb.oldVersion.cleanup.skipped', 1);
+            expect(count).toHaveBeenCalledWith('lmdb.oldVersion.cleanup.count', 1);
         });
 
         it('should continue LMDB cleanup when one stale directory cannot be removed', () => {
@@ -701,8 +702,8 @@ describe('FileStore', () => {
                 expect(existsSync(failedVersionDir!)).toBe(true);
                 expect(existsSync(removedVersionDir!)).toBe(false);
                 expect(existsSync(markersDir)).toBe(true);
-                expect(count).toHaveBeenCalledWith('lmdb.cleanup.error', 1);
-                expect(count).toHaveBeenCalledWith('lmdb.cleanup.count', 1);
+                expect(count).toHaveBeenCalledWith('lmdb.oldVersion.cleanup.error', 1);
+                expect(count).toHaveBeenCalledWith('lmdb.oldVersion.cleanup.count', 1);
             } finally {
                 rm.mockRestore();
                 syncBuiltinESMExports();
@@ -723,8 +724,8 @@ describe('FileStore', () => {
 
             expect(existsSync(lmdbRoot)).toBe(true);
             expect(existsSync(oldFileDbVersionDir)).toBe(false);
-            expect(count).toHaveBeenCalledWith('lmdb.cleanup.error', 1);
-            expect(count).toHaveBeenCalledWith('oldVersion.cleanup.count', 1);
+            expect(count).toHaveBeenCalledWith('lmdb.oldVersion.cleanup.error', 1);
+            expect(count).toHaveBeenCalledWith('filedb.oldVersion.cleanup.count', 1);
         });
 
         it('should handle cleanup when directory does not exist', async () => {

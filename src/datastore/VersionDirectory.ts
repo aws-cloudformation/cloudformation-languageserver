@@ -100,7 +100,15 @@ export function cleanupOldStorageDirs(
         return;
     }
 
-    const directories = getVersionStorageDirs(storageDir);
+    let directories: ReadonlyArray<string>;
+    try {
+        directories = getVersionStorageDirs(storageDir);
+    } catch (error) {
+        log.error(error, `Failed to list ${dbType} storage versions for cleanup`);
+        telemetry.count(`${dbType}.oldVersion.cleanup.error`, 1);
+        return;
+    }
+
     for (const versionDir of directories) {
         try {
             const directoryName = basename(versionDir);
