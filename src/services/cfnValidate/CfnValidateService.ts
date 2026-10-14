@@ -20,10 +20,10 @@ const CFN_VALIDATE_TOOL = 'cloudformation-validate';
 
 export class CfnValidateService implements LintResultObserver, SettingsConfigurable, Closeable {
     private closed = false;
+    private validating = false;
     private cfnLintSettings: CfnLintSettings = DefaultSettings.diagnostics.cfnLint;
 
     private settingsSubscription?: SettingsSubscription;
-    private initialization?: Promise<void>;
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private readonly log = LoggerFactory.getLogger(CfnValidateService);
@@ -40,13 +40,21 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         });
     }
 
+    // The engine validates one template at a time; a result that arrives while it is busy is skipped
     onLintResult(result: LintResult): void {
-        if (this.closed || result.fileType !== CloudFormationFileType.Template || !this.featureFlag.isEnabled()) {
+        if (
+            this.closed ||
+            this.validating ||
+            result.fileType !== CloudFormationFileType.Template ||
+            !this.featureFlag.isEnabled() ||
+            this.engine.isFailed()
+        ) {
             return;
         }
 
-        this.compare(result).catch((error: unknown) => {
-            this.telemetry.error('validate.error', error, undefined, { captureErrorAttributes: true });
+        this.validating = true;
+        void this.compare(result).finally(() => {
+            this.validating = false;
         });
     }
 
@@ -60,12 +68,22 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         }
 
         const now = performance.now();
-
         this.telemetry.count('validate.count', 1);
-        const report = this.engine.validate(result.content, result.uri, { severityLevel: this.severityLevel() });
+        let report;
+        try {
+            report = await this.engine.validate(result.content, result.uri, { severityLevel: this.severityLevel() });
+        } catch (error) {
+            if (!this.closed) {
+                this.telemetry.error('validate.error', error, undefined, { captureErrorAttributes: true });
+                this.log.warn(error, 'cloudformation-validate failed; comparisons stop until the server restarts');
+            }
+            return;
+        }
 
+        const elapsedMs = performance.now() - now;
         this.telemetry.count('validate.success', 1);
-        this.telemetry.histogram('validate.duration', (performance.now() - now) / byteSize(result.content), {
+        this.telemetry.histogram('validate.latency', elapsedMs, { unit: 'ms' });
+        this.telemetry.histogram('validate.duration', elapsedMs / byteSize(result.content), {
             unit: 'ms/byte',
         });
 
@@ -74,27 +92,21 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
     }
 
     private async ensureInitialized(): Promise<boolean> {
-        this.initialization ??= this.initializeEngine();
-        try {
-            await this.initialization;
+        if (this.engine.isInitialized()) {
             return true;
-        } catch {
-            return false;
         }
-    }
 
-    private async initializeEngine(): Promise<void> {
         const startTime = performance.now();
         try {
             await this.engine.initialize();
             this.log.info(`cloudformation-validate version: ${this.engine.version()} (initialized)`);
-            if (this.closed) {
-                this.engine.close();
-            }
             this.telemetry.count('init.success', 1);
+            return true;
         } catch (error) {
-            this.telemetry.error('init.fault', error, undefined, { captureErrorAttributes: true });
-            throw error;
+            if (!this.closed) {
+                this.telemetry.error('init.fault', error, undefined, { captureErrorAttributes: true });
+            }
+            return false;
         } finally {
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
         }
@@ -138,10 +150,10 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         }
     }
 
-    close(): void {
+    async close(): Promise<void> {
         this.closed = true;
         this.settingsSubscription?.unsubscribe();
         this.settingsSubscription = undefined;
-        this.engine.close();
+        await this.engine.close();
     }
 }

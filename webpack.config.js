@@ -360,6 +360,7 @@ const baseConfig = {
     entry: {
         [BUNDLE_NAME]: './src/app/standalone.ts',
         'pyodide-worker': './src/services/cfnLint/pyodide-worker.ts',
+        'cfn-validate-worker': './src/services/cfnValidate/cfn-validate-worker.ts',
     },
     resolve: {
         extensions: ['.ts', '.js', '.node'],

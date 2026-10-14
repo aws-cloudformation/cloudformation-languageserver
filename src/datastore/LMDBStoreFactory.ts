@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, rmSync } from 'fs';
+import { existsSync, rmSync } from 'fs';
 import { join } from 'path';
 import type { RootDatabase, RootDatabaseOptionsWithPath } from 'lmdb';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
@@ -16,7 +16,12 @@ import { LMDBOwnershipTracker } from './lmdb/OwnershipTracker';
 import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
-import { isOlderVersionDirectory } from './VersionDirectory';
+import {
+    getLmdbRoot,
+    touchHeartbeat,
+    LmdbVersionNumber as VersionNumber,
+    cleanupOldStorageDirs,
+} from './VersionDirectory';
 
 const MetricsIntervalMs = 60 * 1000;
 const CleanupDelayMs = 2 * 60 * 1000;
@@ -47,7 +52,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
         rootDir: string,
         public readonly storeNames = PersistedStores,
     ) {
-        this.lmdbDir = join(rootDir, 'lmdb');
+        this.lmdbDir = getLmdbRoot(rootDir);
         this.lmdbVersionDir = join(this.lmdbDir, Version);
         this.ownershipTracker = new LMDBOwnershipTracker(this.lmdbDir);
     }
@@ -91,7 +96,14 @@ export class LMDBStoreFactory implements DataStoreFactory {
         // The env and stores opened successfully — promote the marker out of `opening`
         // so an abrupt kill from now on is not mistaken for a startup crash.
         this.ownershipTracker.markRunning();
+        this.recordHeartbeat();
         this.scheduleBackgroundTasks();
+    }
+
+    private recordHeartbeat(): void {
+        if (!touchHeartbeat(this.lmdbVersionDir)) {
+            this.telemetry.count('heartbeat.error', 1);
+        }
     }
 
     get(store: StoreName): DataStore {
@@ -342,28 +354,15 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private cleanupOldVersions(): void {
         if (this.closed || !existsSync(this.lmdbDir)) return;
 
-        const entries = readdirSync(this.lmdbDir, { withFileTypes: true });
-        for (const entry of entries) {
-            try {
-                if (
-                    entry.isDirectory() &&
-                    isOlderVersionDirectory(entry.name, VersionNumber) &&
-                    entry.name !== LMDBOwnershipTracker.DirName
-                ) {
-                    this.telemetry.count('oldVersion.cleanup.count', 1);
-                    rmSync(join(this.lmdbDir, entry.name), { recursive: true, force: true });
-                }
-            } catch (error) {
-                this.log.error(error, 'Failed to cleanup old LMDB versions');
-                this.telemetry.count('oldVersion.cleanup.error', 1);
-            }
-        }
+        cleanupOldStorageDirs(this.lmdbDir, VersionNumber, this.telemetry, 'lmdb', this.log);
     }
 
     private emitMetrics(): void {
         if (this.closed || this.env === undefined) {
             return;
         }
+
+        this.recordHeartbeat();
 
         try {
             const staleLocks = this.env.readerCheck();
@@ -432,7 +431,6 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 }
 
-const VersionNumber = 7;
 const Version = `v${VersionNumber}`;
 const Encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack';
 

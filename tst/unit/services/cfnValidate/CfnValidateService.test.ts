@@ -15,6 +15,10 @@ import { flushAllPromises } from '../../../utils/Utils';
 const TEMPLATE_URI = 'file:///workspace/template.yaml';
 const TEMPLATE_CONTENT = 'Resources:\n  Bucket:\n    Type: AWS::S3::Bucket\n';
 
+// The TypeScript lib configured for this project does not declare the WebAssembly namespace
+const WasmRuntimeError = (globalThis as unknown as { WebAssembly: { RuntimeError: ErrorConstructor } }).WebAssembly
+    .RuntimeError;
+
 function cfnLintDiagnostic(code: string, line: number): Diagnostic {
     return {
         code,
@@ -78,15 +82,20 @@ describe('CfnValidateService', () => {
         featureFlag = stubInterface<FeatureFlag>();
         featureFlag.isEnabled.returns(true);
         engine = stubInterface<CfnValidateEngine>();
-        engine.initialize.resolves();
         engine.isInitialized.returns(false);
-        engine.validate.returns(report([]));
+        engine.initialize.callsFake(() => {
+            engine.isInitialized.returns(true);
+            return Promise.resolve();
+        });
+        engine.isFailed.returns(false);
+        engine.close.resolves();
+        engine.validate.resolves(report([]));
 
         service = new CfnValidateService(featureFlag, engine);
     });
 
-    afterEach(() => {
-        service.close();
+    afterEach(async () => {
+        await service.close();
         vi.restoreAllMocks();
     });
 
@@ -138,7 +147,7 @@ describe('CfnValidateService', () => {
         });
 
         test('emits only the comparison count when both tools agree', async () => {
-            engine.validate.returns(report([validateDiagnostic('E3012', 3)]));
+            engine.validate.resolves(report([validateDiagnostic('E3012', 3)]));
 
             service.onLintResult(lintResult({ diagnostics: [cfnLintDiagnostic('E3012', 2)] }));
             await flushAllPromises();
@@ -157,7 +166,7 @@ describe('CfnValidateService', () => {
         });
 
         test('emits a rule id mismatch per rule attributed to the tool that reported it', async () => {
-            engine.validate.returns(report([validateDiagnostic('W9003', 3), validateDiagnostic('W9003', 8)]));
+            engine.validate.resolves(report([validateDiagnostic('W9003', 3), validateDiagnostic('W9003', 8)]));
 
             service.onLintResult(lintResult({ diagnostics: [cfnLintDiagnostic('E3012', 2)] }));
             await flushAllPromises();
@@ -171,7 +180,7 @@ describe('CfnValidateService', () => {
         });
 
         test('emits a location mismatch per rule when both tools report it on different lines', async () => {
-            engine.validate.returns(report([validateDiagnostic('E3012', 9)]));
+            engine.validate.resolves(report([validateDiagnostic('E3012', 9)]));
 
             service.onLintResult(lintResult({ diagnostics: [cfnLintDiagnostic('E3012', 2)] }));
             await flushAllPromises();
@@ -188,6 +197,7 @@ describe('CfnValidateService', () => {
 
         test('initializes the engine once across lint results', async () => {
             service.onLintResult(lintResult());
+            await flushAllPromises();
             service.onLintResult(lintResult({ uri: 'file:///workspace/other.yaml' }));
             await flushAllPromises();
 
@@ -197,9 +207,32 @@ describe('CfnValidateService', () => {
             expect(telemetry.histogram).toHaveBeenCalledWith('init.duration', expect.any(Number), { unit: 'ms' });
         });
 
+        test('skips a lint result while a validation is in flight', async () => {
+            let finishFirst!: () => void;
+            engine.validate.onFirstCall().returns(
+                new Promise((resolve) => {
+                    finishFirst = () => resolve(report([]));
+                }),
+            );
+
+            service.onLintResult(lintResult({ content: 'first' }));
+            await flushAllPromises();
+            service.onLintResult(lintResult({ content: 'skipped' }));
+            await flushAllPromises();
+            finishFirst();
+            await flushAllPromises();
+            service.onLintResult(lintResult({ content: 'third' }));
+            await flushAllPromises();
+
+            expect(engine.validate.getCalls().map((call) => call.args[0])).toEqual(['first', 'third']);
+        });
+
         test('reports an initialization failure once and skips every later comparison', async () => {
             const failure = new Error('wasm unavailable');
-            engine.initialize.rejects(failure);
+            engine.initialize.callsFake(() => {
+                engine.isFailed.returns(true);
+                return Promise.reject(failure);
+            });
 
             service.onLintResult(lintResult());
             await flushAllPromises();
@@ -216,7 +249,7 @@ describe('CfnValidateService', () => {
 
         test('reports a validation failure as an error metric without throwing', async () => {
             const failure = new Error('engine panic');
-            engine.validate.throws(failure);
+            engine.validate.rejects(failure);
 
             expect(() => service.onLintResult(lintResult())).not.toThrow();
             await flushAllPromises();
@@ -228,8 +261,39 @@ describe('CfnValidateService', () => {
             expect(telemetry.count).not.toHaveBeenCalledWith('comparison.count', 1);
         });
 
+        test('stops validating once the engine has failed', async () => {
+            const trap = new WasmRuntimeError('unreachable');
+            engine.validate.callsFake(() => {
+                engine.isFailed.returns(true);
+                return Promise.reject(trap);
+            });
+
+            service.onLintResult(lintResult());
+            await flushAllPromises();
+            service.onLintResult(lintResult());
+            await flushAllPromises();
+
+            expect(engine.validate.calledOnce).toBe(true);
+            expect(telemetry.error).toHaveBeenCalledExactlyOnceWith('validate.error', trap, undefined, {
+                captureErrorAttributes: true,
+            });
+            expect(telemetry.count.mock.calls.filter(([name]) => name === 'validate.count')).toHaveLength(1);
+        });
+
+        test('does not report failures caused by closing the service', async () => {
+            engine.validate.callsFake(async () => {
+                await service.close();
+                throw new Error('Worker shutdown');
+            });
+
+            service.onLintResult(lintResult());
+            await flushAllPromises();
+
+            expect(telemetry.error).not.toHaveBeenCalled();
+        });
+
         test('does nothing after the service is closed', async () => {
-            service.close();
+            await service.close();
 
             service.onLintResult(lintResult());
             await flushAllPromises();
@@ -255,7 +319,7 @@ describe('CfnValidateService', () => {
 
         test('drops validator findings for rules cfn-lint was told to ignore', async () => {
             service.configure(createMockSettingsManager(settingsWithCfnLint({ ignoreChecks: ['W', 'E3012'] })));
-            engine.validate.returns(
+            engine.validate.resolves(
                 report([
                     validateDiagnostic('W9003', 3),
                     validateDiagnostic('E3012', 4),
@@ -295,13 +359,13 @@ describe('CfnValidateService', () => {
             );
         });
 
-        test('unsubscribes from settings on close', () => {
+        test('unsubscribes from settings on close', async () => {
             const unsubscribe = vi.fn();
             const settingsManager = createMockSettingsManager();
             settingsManager.subscribe.returns({ unsubscribe, isActive: () => true });
             service.configure(settingsManager);
 
-            service.close();
+            await service.close();
 
             expect(unsubscribe).toHaveBeenCalledOnce();
             expect(engine.close.calledOnce).toBe(true);

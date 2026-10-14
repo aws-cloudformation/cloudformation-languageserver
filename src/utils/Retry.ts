@@ -1,4 +1,5 @@
 import { Logger } from 'pino';
+import { RetryError } from './errors/ErrorClasses';
 import { extractErrorMessage } from './errors/ErrorUtils';
 
 export type RetryOptions = {
@@ -79,7 +80,7 @@ export async function retryWithExponentialBackoff<T>(
         if (attemptIdx > 0 && performance.now() - startTime >= totalTimeoutMs) {
             const message = `${operationName} timed out after ${performance.now() - startTime}ms, on attempt #${attemptIdx + 1}/${attempts}`;
             const errorMsg = lastError ? `${message}. Last error: ${lastError.message}` : message;
-            throw new Error(errorMsg);
+            throw new RetryError(errorMsg, 'RetryTimeout', lastError);
         }
 
         try {
@@ -91,7 +92,11 @@ export async function retryWithExponentialBackoff<T>(
             }
 
             if (attemptIdx === attempts - 1) {
-                throw new Error(`${operationName} failed after ${attempts} attempts. Last error: ${lastError.message}`);
+                throw new RetryError(
+                    `${operationName} failed after ${attempts} attempts. Last error: ${lastError.message}`,
+                    'RetryExhausted',
+                    lastError,
+                );
             }
 
             const delay = calculateDelay(attemptIdx, initialDelayMs, jitterFactor, backoffMultiplier, maxDelayMs);
