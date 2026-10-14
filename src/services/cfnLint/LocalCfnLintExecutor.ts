@@ -139,7 +139,7 @@ export class LocalCfnLintExecutor {
             args.push('--registry-schemas', schema);
         }
 
-        args.push(filePath);
+        args.push('--', filePath);
         return args;
     }
 }

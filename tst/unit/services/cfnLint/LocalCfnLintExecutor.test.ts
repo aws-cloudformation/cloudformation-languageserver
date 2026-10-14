@@ -270,5 +270,19 @@ describe('LocalCfnLintExecutor', () => {
             const spawnArgs = vi.mocked(spawn).mock.calls[0][1] as string[];
             expect(spawnArgs).not.toContain('--include-experimental');
         });
+
+        test('should separate filearg from flags', async () => {
+            vi.mocked(spawn).mockReturnValue(createMockChildProcess(0, '[]'));
+            const settings = {
+                ...mockSettings,
+                registrySchemas: ['./schemas'] as readonly string[],
+            };
+
+            const executor = new LocalCfnLintExecutor(mockCfnLintPath, settings);
+            await executor.lintFile(mockFilePath, mockUri, CloudFormationFileType.Template);
+
+            const spawnArgs = vi.mocked(spawn).mock.calls[0][1] as string[];
+            expect(spawnArgs.slice(-2)).toEqual(['--', mockFilePath]);
+        });
     });
 });
