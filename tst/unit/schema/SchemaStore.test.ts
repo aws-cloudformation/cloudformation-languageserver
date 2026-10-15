@@ -2,6 +2,7 @@ import { DateTime } from 'luxon';
 import * as sinon from 'sinon';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { MemoryDataStoreFactoryProvider } from '../../../src/datastore/DataStore';
+import { LocalSchemas, LocalStoreKey } from '../../../src/schema/LocalSchemas';
 import { PrivateStoreKey } from '../../../src/schema/PrivateSchemas';
 import { SamStoreKey } from '../../../src/schema/SamSchemas';
 import { SchemaStore } from '../../../src/schema/SchemaStore';
@@ -290,6 +291,41 @@ describe('SchemaStore', () => {
 
         it('should return undefined when no SAM schemas stored', () => {
             expect(schemaStore.getSamSchemas()).toBeUndefined();
+        });
+    });
+
+    describe('getLocalSchemas', () => {
+        const customSchema = {
+            typeName: 'Custom::Thing',
+            description: 'custom',
+            properties: { Id: { type: 'string' } },
+            primaryIdentifier: ['/properties/Id'],
+            additionalProperties: false,
+        };
+        const localSchemaData = {
+            version: LocalSchemas.V1,
+            schemas: [{ name: customSchema.typeName, content: JSON.stringify(customSchema), createdMs: Date.now() }],
+            firstCreatedMs: Date.now(),
+            lastModifiedMs: Date.now(),
+        };
+
+        it('should return local schemas', async () => {
+            await schemaStore.localSchemas.put(LocalStoreKey, localSchemaData);
+
+            expect(schemaStore.getLocalSchemas()?.schemas).toHaveLength(1);
+        });
+
+        it('should return undefined when no local schemas stored', () => {
+            expect(schemaStore.getLocalSchemas()).toBeUndefined();
+        });
+
+        it('should include local schemas in combined schemas', async () => {
+            await schemaStore.localSchemas.put(LocalStoreKey, localSchemaData);
+
+            const combined = schemaStore.get('us-east-1' as AwsRegion, 'default');
+
+            expect(combined.localSchemas?.schemas.has('Custom::Thing')).toBe(true);
+            expect(combined.schemas.has('Custom::Thing')).toBe(true);
         });
     });
 

@@ -5,6 +5,7 @@ import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
 import { Measure, Telemetry } from '../telemetry/TelemetryDecorator';
 import { AwsRegion, getRegion } from '../utils/Region';
 import { CombinedSchemas } from './CombinedSchemas';
+import { LocalSchemasType, LocalStoreKey } from './LocalSchemas';
 import { PrivateSchemasType, PrivateStoreKey } from './PrivateSchemas';
 import { RegionalSchemasType } from './RegionalSchemas';
 import { SamSchemasType, SamStoreKey } from './SamSchemas';
@@ -14,13 +15,14 @@ export class SchemaStore {
     private readonly telemetry!: ScopedTelemetry;
     private readonly log = LoggerFactory.getLogger(SchemaStore);
 
-    private readonly createCombinedSchemas: typeof CombinedSchemas.from = (r, p, s) => {
-        return CombinedSchemas.from(r, p, s);
+    private readonly createCombinedSchemas: typeof CombinedSchemas.from = (r, p, s, l) => {
+        return CombinedSchemas.from(r, p, s, l);
     };
 
     public readonly publicSchemas = this.dataStoreFactory.get(StoreName.public_schemas, Persistence.local);
     public readonly privateSchemas = this.dataStoreFactory.get(StoreName.private_schemas, Persistence.memory);
     public readonly samSchemas = this.dataStoreFactory.get(StoreName.sam_schemas, Persistence.local);
+    public readonly localSchemas = this.dataStoreFactory.get(StoreName.local_schemas, Persistence.local);
 
     private regionalSchemaKey?: string;
     private regionalSchemas?: RegionalSchemasType;
@@ -60,6 +62,7 @@ export class SchemaStore {
                 this.regionalSchemas,
                 this.getPrivateSchemas(),
                 this.getSamSchemas(),
+                this.getLocalSchemas(),
             );
 
             this.log.info(
@@ -96,6 +99,10 @@ export class SchemaStore {
 
     getSamSchemas(): SamSchemasType | undefined {
         return this.samSchemas.get<SamSchemasType>(SamStoreKey);
+    }
+
+    getLocalSchemas(): LocalSchemasType | undefined {
+        return this.localSchemas.get<LocalSchemasType>(LocalStoreKey);
     }
 
     getSamSchemaAge(): number {
