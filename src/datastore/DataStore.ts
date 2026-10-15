@@ -20,6 +20,7 @@ export enum Persistence {
 export enum StoreName {
     public_schemas = 'public_schemas',
     sam_schemas = 'sam_schemas',
+    local_schemas = 'local_schemas',
     private_schemas = 'private_schemas',
 }
 

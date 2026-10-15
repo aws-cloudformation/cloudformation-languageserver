@@ -157,6 +157,7 @@ export class TestExtension implements Closeable {
                         () => {
                             return Promise.resolve(samFileType(Object.values(SamSchemaFiles)));
                         },
+                        () => Promise.resolve(new Map()),
                     );
 
                     this.external = new CfnExternal(lsp, this.core, {
