@@ -1,5 +1,6 @@
 import { FeatureFlagProvider } from '../featureFlag/FeatureFlagProvider';
 import { LspComponents } from '../protocol/LspComponents';
+import { getLocalSchemas } from '../schema/GetLocalSchemaTask';
 import { getSamSchemas } from '../schema/GetSamSchemaTask';
 import { getRemotePrivateSchemas, getRemotePublicSchemas } from '../schema/GetSchemaTask';
 import { SchemaReadiness } from '../schema/SchemaReadiness';
@@ -65,6 +66,7 @@ export class CfnExternal implements Configurables, Closeable {
                 getRemotePublicSchemas,
                 () => getRemotePrivateSchemas(core.awsCredentials, this.cfnService),
                 getSamSchemas,
+                getLocalSchemas,
                 undefined,
                 validatePositiveOrUndefined(core.awsMetadata?.schema?.staleDaysThreshold),
             );
