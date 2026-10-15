@@ -1,6 +1,7 @@
 import { DescribeTypeOutput } from '@aws-sdk/client-cloudformation';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { AwsRegion, getRegion } from '../utils/Region';
+import { GetLocalSchemaTask } from './GetLocalSchemaTask';
 import { GetSamSchemaTask } from './GetSamSchemaTask';
 import { GetPrivateSchemasTask, GetPublicSchemaTask } from './GetSchemaTask';
 import { SchemaFileType } from './RegionalSchemas';
@@ -22,6 +23,9 @@ export class GetSchemaTaskManager {
         private readonly getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
         getPrivateResources: () => Promise<DescribeTypeOutput[]>,
         private readonly getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
+        private readonly getLocalSchemas: (
+            dirs: readonly string[],
+        ) => Promise<Map<string, CloudFormationResourceSchema>>,
     ) {
         this.privateTask = new GetPrivateSchemasTask(getPrivateResources);
         this.samTask = new GetSamSchemaTask(getSamSchemas);
@@ -75,5 +79,12 @@ export class GetSchemaTaskManager {
                 .catch((e) => this.log.error(e));
         }
         this.didSamTaskRun = true;
+    }
+
+    runLocalTask(dirs: readonly string[]) {
+        new GetLocalSchemaTask(this.getLocalSchemas, dirs)
+            .run(this.schemas.localSchemas)
+            .then(() => this.schemas.invalidate())
+            .catch((e) => this.log.error(e));
     }
 }
