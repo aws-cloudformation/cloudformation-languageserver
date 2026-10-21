@@ -65,6 +65,7 @@ function settingsWithCfnLint(cfnLintOverrides: Partial<Settings['diagnostics']['
 describe('CfnValidateService', () => {
     let featureFlag: StubbedInstance<FeatureFlag>;
     let engine: StubbedInstance<CfnValidateEngine>;
+    let createEngine: ReturnType<typeof vi.fn<() => CfnValidateEngine>>;
     let telemetry: { count: Mock; error: Mock; histogram: Mock; measure: Mock };
     let service: CfnValidateService;
 
@@ -90,8 +91,9 @@ describe('CfnValidateService', () => {
         engine.isFailed.returns(false);
         engine.close.resolves();
         engine.validate.resolves(report([]));
+        createEngine = vi.fn<() => CfnValidateEngine>(() => engine);
 
-        service = new CfnValidateService(featureFlag, engine);
+        service = new CfnValidateService(featureFlag, createEngine);
     });
 
     afterEach(async () => {
@@ -100,12 +102,27 @@ describe('CfnValidateService', () => {
     });
 
     describe('onLintResult', () => {
+        test('constructs the engine only when an eligible comparison is required', async () => {
+            expect(service.isInitialized()).toBe(false);
+            expect(createEngine).not.toHaveBeenCalled();
+
+            service.onLintResult(lintResult());
+            await flushAllPromises();
+            service.onLintResult(lintResult({ uri: 'file:///workspace/other.yaml' }));
+            await flushAllPromises();
+
+            expect(createEngine).toHaveBeenCalledOnce();
+            expect(engine.initialize.calledOnce).toBe(true);
+            expect(engine.validate.calledTwice).toBe(true);
+        });
+
         test('does not initialize the engine when the feature flag is disabled', async () => {
             featureFlag.isEnabled.returns(false);
 
             service.onLintResult(lintResult());
             await flushAllPromises();
 
+            expect(createEngine).not.toHaveBeenCalled();
             expect(engine.initialize.called).toBe(false);
             expect(engine.validate.called).toBe(false);
             expect(telemetry.count).not.toHaveBeenCalled();
@@ -359,7 +376,7 @@ describe('CfnValidateService', () => {
             );
         });
 
-        test('unsubscribes from settings on close', async () => {
+        test('unsubscribes from settings on close without constructing the engine', async () => {
             const unsubscribe = vi.fn();
             const settingsManager = createMockSettingsManager();
             settingsManager.subscribe.returns({ unsubscribe, isActive: () => true });
@@ -368,12 +385,17 @@ describe('CfnValidateService', () => {
             await service.close();
 
             expect(unsubscribe).toHaveBeenCalledOnce();
-            expect(engine.close.calledOnce).toBe(true);
+            expect(createEngine).not.toHaveBeenCalled();
+            expect(engine.close.called).toBe(false);
         });
     });
 
-    test('reports whether the engine is initialized', () => {
-        engine.isInitialized.returns(true);
+    test('reports initialization without constructing the engine for a status check', async () => {
+        expect(service.isInitialized()).toBe(false);
+        expect(createEngine).not.toHaveBeenCalled();
+
+        service.onLintResult(lintResult());
+        await flushAllPromises();
 
         expect(service.isInitialized()).toBe(true);
     });

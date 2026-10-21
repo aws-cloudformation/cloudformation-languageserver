@@ -2,24 +2,36 @@ import path from 'path';
 import { Worker } from 'worker_threads';
 import type { ValidationReport } from '@aws/cloudformation-validate';
 import { Closeable } from '../../utils/Closeable';
-import { WorkerExitError, WorkerFailureError, WorkerShutdownError } from '../../utils/errors/ErrorClasses';
+import {
+    WorkerExitError,
+    WorkerFailureError,
+    WorkerShutdownError,
+    WorkerTimeoutError,
+} from '../../utils/errors/ErrorClasses';
 import type {
     CfnValidateOptions,
     CfnValidateRequest,
     CfnValidateResponse,
     CfnValidateWorkerFactory,
-    Pending,
-} from './cfn-validate-worker';
+} from './CfnValidateProtocol';
 
-const VALIDATE_TIMEOUT_MS = 30_000;
+const WORKER_TIMEOUT_MS = 30_000;
+
+interface PendingValidation {
+    readonly id: number;
+    readonly resolve: (report: ValidationReport) => void;
+    readonly reject: (error: Error) => void;
+    readonly timer: NodeJS.Timeout;
+}
 
 export class CfnValidateEngine implements Closeable {
     private worker?: Worker;
     private ready?: Promise<void>;
     private rejectReady?: (error: Error) => void;
+    private initializationTimer?: NodeJS.Timeout;
     private initialized = false;
     private failed = false;
-    private pending?: Pending;
+    private pending?: PendingValidation;
     private nextId = 0;
     private engineVersion?: string;
 
@@ -30,11 +42,20 @@ export class CfnValidateEngine implements Closeable {
             this.rejectReady = reject;
             const worker = this.createWorker();
             this.worker = worker;
+            this.initializationTimer = setTimeout(
+                () =>
+                    this.abort(
+                        worker,
+                        new WorkerTimeoutError('cloudformation-validate initialization', WORKER_TIMEOUT_MS),
+                    ),
+                WORKER_TIMEOUT_MS,
+            );
             worker.on('message', (message: CfnValidateResponse) => {
                 if (this.worker !== worker) {
                     return;
                 }
                 if ('ready' in message) {
+                    this.clearInitializationTimer();
                     this.engineVersion = message.ready;
                     this.initialized = true;
                     resolve();
@@ -73,11 +94,8 @@ export class CfnValidateEngine implements Closeable {
         return new Promise((resolve, reject) => {
             const timer = setTimeout(
                 () =>
-                    this.abort(
-                        worker,
-                        new Error(`cloudformation-validate did not finish within ${VALIDATE_TIMEOUT_MS} ms`),
-                    ),
-                VALIDATE_TIMEOUT_MS,
+                    this.abort(worker, new WorkerTimeoutError('cloudformation-validate validation', WORKER_TIMEOUT_MS)),
+                WORKER_TIMEOUT_MS,
             );
             this.pending = { id, resolve, reject, timer };
             const request: CfnValidateRequest = { id, content, path, severityLevel: options.severityLevel };
@@ -111,10 +129,18 @@ export class CfnValidateEngine implements Closeable {
         const worker = this.worker;
         this.worker = undefined;
         this.initialized = false;
+        this.clearInitializationTimer();
         return worker;
     }
 
-    private takePending(): Pending | undefined {
+    private clearInitializationTimer(): void {
+        if (this.initializationTimer !== undefined) {
+            clearTimeout(this.initializationTimer);
+            this.initializationTimer = undefined;
+        }
+    }
+
+    private takePending(): PendingValidation | undefined {
         const pending = this.pending;
         if (pending) {
             clearTimeout(pending.timer);

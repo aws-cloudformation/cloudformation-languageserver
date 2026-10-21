@@ -11,6 +11,8 @@ export const FileDbVersionNumber = 4;
 export const HeartbeatFileName = '.heartbeat';
 export const RecentUseWindowMs = 24 * 60 * 60 * 1000;
 
+type DataStoreType = 'filedb' | 'lmdb';
+
 export function getLmdbRoot(storageRoot: string): string {
     return join(storageRoot, 'lmdb');
 }
@@ -48,53 +50,90 @@ export function isOlderVersionDirectory(directoryName: string, currentVersion: n
     return version < currentVersion;
 }
 
-/**
- * Marks {@link versionDir} as in use by a live process. A newer binary on the same machine checks this
- * before deleting an older version directory, so an older process that is still running (another IDE,
- * a window that has not restarted yet) does not lose its store underneath it.
- *
- * @returns false when the marker could not be written (for example the directory is gone)
- */
-export function touchHeartbeat(versionDir: string, now = new Date()): boolean {
+/** Marks {@link versionDir} as in use by the current process. */
+export function touchHeartbeat(versionDir: string, now = new Date()) {
     const heartbeat = join(versionDir, HeartbeatFileName);
     try {
-        try {
-            utimesSync(heartbeat, now, now);
-        } catch {
-            closeSync(openSync(heartbeat, 'a'));
-            utimesSync(heartbeat, now, now);
+        utimesSync(heartbeat, now, now);
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+            throw error;
         }
-        return true;
-    } catch {
-        return false;
+        closeSync(openSync(heartbeat, 'a'));
+        utimesSync(heartbeat, now, now);
     }
 }
 
 /**
  * True when the directory was used within {@link windowMs}. The heartbeat written by
- * {@link touchHeartbeat} is authoritative; the directory's own mtime is the fallback for stores written
- * by binaries that predate the heartbeat. Unreadable directories are treated as in use.
+ * {@link touchHeartbeat} is authoritative. Directory and immediate-entry mtimes are fallbacks for stores written
+ * by binaries that predate the heartbeat; checking entries matters for LMDB because it updates its database files
+ * in place without changing the parent directory mtime. Unreadable directories or entries are treated as in use.
  */
 export function isRecentlyUsed(versionDir: string, windowMs = RecentUseWindowMs, now = Date.now()): boolean {
-    const lastUsed = Math.max(mtimeMs(join(versionDir, HeartbeatFileName)), mtimeMs(versionDir));
-    return lastUsed === Number.POSITIVE_INFINITY || now - lastUsed < windowMs;
+    const heartbeatOrDirectoryMtime = Math.max(mtimeMs(join(versionDir, HeartbeatFileName)), mtimeMs(versionDir));
+    if (heartbeatOrDirectoryMtime === Number.POSITIVE_INFINITY || now - heartbeatOrDirectoryMtime < windowMs) {
+        return true;
+    }
+
+    const entryMtime = latestEntryMtimeMs(versionDir);
+    return entryMtime === Number.POSITIVE_INFINITY || now - entryMtime < windowMs;
+}
+
+function latestEntryMtimeMs(directory: string): number {
+    let entries: string[];
+    try {
+        entries = readdirSync(directory);
+    } catch (error) {
+        return mtimeOnReadFailure(error);
+    }
+
+    let latest = Number.NEGATIVE_INFINITY;
+    for (const entry of entries) {
+        latest = Math.max(latest, mtimeMs(join(directory, entry)));
+    }
+    return latest;
 }
 
 function mtimeMs(path: string): number {
     try {
         return statSync(path).mtimeMs;
     } catch (error) {
-        return (error as NodeJS.ErrnoException).code === 'ENOENT' ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+        return mtimeOnReadFailure(error);
     }
 }
 
-export function cleanupOldStorageDirs(
+function mtimeOnReadFailure(error: unknown): number {
+    return (error as NodeJS.ErrnoException).code === 'ENOENT' ? Number.NEGATIVE_INFINITY : Number.POSITIVE_INFINITY;
+}
+
+export function cleanupUnusedOlderStorageDirs(
     storageDir: string,
-    latestVersion: number,
+    currentVersion: number,
     telemetry: ScopedTelemetry,
-    dbType: string,
+    dbType: DataStoreType,
     log: Logger,
-    onlyDeleteOlderDirs = true,
+) {
+    cleanupStorageDirs(storageDir, telemetry, dbType, log, (directoryName) =>
+        isOlderVersionDirectory(directoryName, currentVersion),
+    );
+}
+
+export function cleanupUnusedStorageDirs(
+    storageDir: string,
+    telemetry: ScopedTelemetry,
+    dbType: DataStoreType,
+    log: Logger,
+) {
+    cleanupStorageDirs(storageDir, telemetry, dbType, log, () => true);
+}
+
+function cleanupStorageDirs(
+    storageDir: string,
+    telemetry: ScopedTelemetry,
+    dbType: DataStoreType,
+    log: Logger,
+    isEligible: (directoryName: string) => boolean,
 ) {
     if (!existsSync(storageDir)) {
         return;
@@ -111,13 +150,7 @@ export function cleanupOldStorageDirs(
 
     for (const versionDir of directories) {
         try {
-            const directoryName = basename(versionDir);
-            if (onlyDeleteOlderDirs && !isOlderVersionDirectory(directoryName, latestVersion)) {
-                telemetry.count(`${dbType}.oldVersion.cleanup.skipped`, 1);
-                continue;
-            }
-
-            if (isRecentlyUsed(versionDir)) {
+            if (!isEligible(basename(versionDir)) || isRecentlyUsed(versionDir)) {
                 telemetry.count(`${dbType}.oldVersion.cleanup.skipped`, 1);
                 continue;
             }

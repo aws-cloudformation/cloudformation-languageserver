@@ -308,6 +308,46 @@ describe('LMDBOwnershipTracker', () => {
         });
     });
 
+    describe('runExclusiveIfUnowned', () => {
+        it('runs the operation when no live process owns LMDB', async () => {
+            const operation = vi.fn();
+            const tracker = new LMDBOwnershipTracker(lmdbDir);
+
+            await expect(tracker.runExclusiveIfUnowned(operation)).resolves.toBe(true);
+
+            expect(operation).toHaveBeenCalledOnce();
+        });
+
+        it('skips the operation while another process owns LMDB', async () => {
+            mkdirSync(markersDir, { recursive: true });
+            const liveForeignPid = 99990;
+            writeFileSync(
+                join(markersDir, markerName(liveForeignPid, OwnershipPhase.running)),
+                markerBody(liveForeignPid, 1000),
+            );
+            vi.spyOn(process, 'kill').mockImplementation((pid: number) => {
+                if (pid === liveForeignPid) return true;
+                throw Object.assign(new Error('ESRCH'), { code: 'ESRCH' });
+            });
+            const operation = vi.fn();
+            const tracker = new LMDBOwnershipTracker(lmdbDir);
+
+            await expect(tracker.runExclusiveIfUnowned(operation)).resolves.toBe(false);
+
+            expect(operation).not.toHaveBeenCalled();
+        });
+
+        it('rejects without running the operation when ownership cannot be checked', async () => {
+            writeFileSync(lmdbDir, 'not a directory');
+            const operation = vi.fn();
+            const tracker = new LMDBOwnershipTracker(lmdbDir);
+
+            await expect(tracker.runExclusiveIfUnowned(operation)).rejects.toThrow();
+
+            expect(operation).not.toHaveBeenCalled();
+        });
+    });
+
     describe('markRunning', () => {
         it('promotes the opening marker to running', async () => {
             const tracker = new LMDBOwnershipTracker(lmdbDir);

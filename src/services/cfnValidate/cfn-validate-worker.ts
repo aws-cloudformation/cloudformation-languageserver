@@ -1,36 +1,6 @@
-import { parentPort, Worker } from 'worker_threads';
-import {
-    type Severity,
-    type ValidationReport,
-    CompositeEngine,
-    TemplateContent,
-    version,
-} from '@aws/cloudformation-validate';
-
-export interface Pending {
-    readonly id: number;
-    readonly resolve: (report: ValidationReport) => void;
-    readonly reject: (error: Error) => void;
-    readonly timer: NodeJS.Timeout;
-}
-
-export interface CfnValidateOptions {
-    readonly severityLevel: Severity;
-}
-
-export interface CfnValidateRequest {
-    readonly id: number;
-    readonly content: string;
-    readonly path: string;
-    readonly severityLevel: Severity;
-}
-
-export type CfnValidateResponse =
-    | { readonly ready: string }
-    | { readonly id: number; readonly report: ValidationReport }
-    | { readonly id: number; readonly error: { name: string; message: string; stack?: string } };
-
-export type CfnValidateWorkerFactory = () => Worker;
+import { parentPort } from 'worker_threads';
+import { CompositeEngine, TemplateContent, version } from '@aws/cloudformation-validate';
+import type { CfnValidateRequest, CfnValidateResponse } from './CfnValidateProtocol';
 
 const engine = new CompositeEngine();
 

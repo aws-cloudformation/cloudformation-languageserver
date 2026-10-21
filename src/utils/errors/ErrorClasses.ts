@@ -22,7 +22,7 @@ export class DoesNotExist extends Error {
     }
 }
 
-// ======= CFN LINT Errors =======
+// ======= Worker and CFN LINT Errors =======
 export class WorkerNotInitializedError extends Error {
     constructor(message: string = 'Worker not initialized', options?: ErrorOptions) {
         super(message, options);
@@ -41,13 +41,11 @@ export class WorkerShutdownError extends Error {
 
 export class CfnLintInitializationError extends Error {
     public readonly phase: string;
-    public readonly code: string;
 
     constructor(message: string, phase?: string, options?: ErrorOptions) {
         super(message, options);
         this.name = 'CfnLintInitializationError';
         this.phase = phase ?? 'unknown';
-        this.code = `Init.${this.phase}`;
         Object.setPrototypeOf(this, CfnLintInitializationError.prototype);
     }
 }
@@ -73,6 +71,16 @@ export class WorkerFailureError extends Error {
         super(`Worker error: ${cause.message}`, { ...options, cause });
         this.name = 'WorkerFailureError';
         Object.setPrototypeOf(this, WorkerFailureError.prototype);
+    }
+}
+
+export class WorkerTimeoutError extends Error {
+    public readonly code = 'WorkerTimeout';
+
+    constructor(operation: string, timeoutMs: number, options?: ErrorOptions) {
+        super(`${operation} did not finish within ${timeoutMs} ms`, options);
+        this.name = 'WorkerTimeoutError';
+        Object.setPrototypeOf(this, WorkerTimeoutError.prototype);
     }
 }
 

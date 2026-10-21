@@ -17,10 +17,10 @@ import { stats } from './lmdb/Stats';
 import { encryptionStrategy } from './lmdb/Utils';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
 import {
+    cleanupUnusedOlderStorageDirs,
     getLmdbRoot,
-    touchHeartbeat,
     LmdbVersionNumber as VersionNumber,
-    cleanupOldStorageDirs,
+    touchHeartbeat,
 } from './VersionDirectory';
 
 const MetricsIntervalMs = 60 * 1000;
@@ -101,8 +101,10 @@ export class LMDBStoreFactory implements DataStoreFactory {
     }
 
     private recordHeartbeat(): void {
-        if (!touchHeartbeat(this.lmdbVersionDir)) {
-            this.telemetry.count('heartbeat.error', 1);
+        try {
+            touchHeartbeat(this.lmdbVersionDir);
+        } catch (error) {
+            this.telemetry.error('heartbeat.error', error, undefined, { captureErrorAttributes: true });
         }
     }
 
@@ -354,7 +356,7 @@ export class LMDBStoreFactory implements DataStoreFactory {
     private cleanupOldVersions(): void {
         if (this.closed || !existsSync(this.lmdbDir)) return;
 
-        cleanupOldStorageDirs(this.lmdbDir, VersionNumber, this.telemetry, 'lmdb', this.log);
+        cleanupUnusedOlderStorageDirs(this.lmdbDir, VersionNumber, this.telemetry, 'lmdb', this.log);
     }
 
     private emitMetrics(): void {

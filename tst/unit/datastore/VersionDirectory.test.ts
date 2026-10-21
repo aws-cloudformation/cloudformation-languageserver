@@ -1,7 +1,8 @@
 import { randomUUID as v4 } from 'crypto';
-import { existsSync, mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'fs';
+import fs, { existsSync, mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'fs';
+import { syncBuiltinESMExports } from 'module';
 import { join } from 'path';
-import { afterEach, beforeEach, describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import {
     getVersionStorageDirs,
     getLmdbRoot,
@@ -30,24 +31,32 @@ describe('version directory heartbeat', () => {
     it('creates the heartbeat marker on first touch and refreshes it afterwards', () => {
         const first = new Date(now - 60_000);
 
-        expect(touchHeartbeat(versionDir, first)).toBe(true);
+        touchHeartbeat(versionDir, first);
         expect(existsSync(join(versionDir, HeartbeatFileName))).toBe(true);
         expect(statSync(join(versionDir, HeartbeatFileName)).mtimeMs).toBeCloseTo(first.getTime(), -3);
 
-        expect(touchHeartbeat(versionDir, new Date(now))).toBe(true);
+        touchHeartbeat(versionDir, new Date(now));
         expect(statSync(join(versionDir, HeartbeatFileName)).mtimeMs).toBeCloseTo(now, -3);
     });
 
-    it('reports failure instead of throwing when the directory is gone', () => {
+    it('surfaces failure when the directory is gone', () => {
         rmSync(versionDir, { recursive: true, force: true });
 
-        expect(touchHeartbeat(versionDir)).toBe(false);
+        expect(() => touchHeartbeat(versionDir)).toThrow();
     });
 
-    it('treats a directory with a fresh heartbeat as recently used', () => {
+    it('uses a fresh heartbeat without scanning directory entries', () => {
         touchHeartbeat(versionDir, new Date(now));
+        const readdir = vi.spyOn(fs, 'readdirSync');
+        syncBuiltinESMExports();
 
-        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(true);
+        try {
+            expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(true);
+            expect(readdir).not.toHaveBeenCalled();
+        } finally {
+            readdir.mockRestore();
+            syncBuiltinESMExports();
+        }
     });
 
     it('treats a directory whose heartbeat is older than the window as unused', () => {
@@ -62,6 +71,18 @@ describe('version directory heartbeat', () => {
 
         const recent = new Date(now - 60_000);
         utimesSync(versionDir, recent, recent);
+
+        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(true);
+    });
+
+    it('detects recent in-place writes without relying on the directory mtime', () => {
+        const dataFile = join(versionDir, 'data.mdb');
+        writeFileSync(dataFile, 'old data');
+        utimesSync(dataFile, twoDaysAgo, twoDaysAgo);
+        utimesSync(versionDir, twoDaysAgo, twoDaysAgo);
+        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(false);
+
+        writeFileSync(dataFile, 'active data');
 
         expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(true);
     });

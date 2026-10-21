@@ -9,14 +9,15 @@ import { formatNumber } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatastoreSize } from './DataStore';
 import { encryptionKey } from './file/Encryption';
 import { KeyedFileStore } from './file/KeyedFileStore';
+import { LMDBOwnershipTracker } from './lmdb/OwnershipTracker';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
 import {
+    cleanupUnusedOlderStorageDirs,
+    cleanupUnusedStorageDirs,
+    FileDbVersionNumber as VersionNumber,
     getFileDbRoot,
     getLmdbRoot,
     touchHeartbeat,
-    cleanupOldStorageDirs,
-    FileDbVersionNumber as VersionNumber,
-    LmdbVersionNumber,
 } from './VersionDirectory';
 
 export class FileStoreFactory implements DataStoreFactory {
@@ -27,9 +28,11 @@ export class FileStoreFactory implements DataStoreFactory {
     private readonly fileDbRoot: string;
     private readonly fileDbDir: string;
     private readonly lmdbRoot: string;
+    private readonly lmdbOwnershipTracker: LMDBOwnershipTracker;
 
     private readonly metricsInterval: NodeJS.Timeout;
     private readonly timeout: NodeJS.Timeout;
+    private pendingCleanup?: Promise<void>;
     private closed = false;
 
     constructor(
@@ -39,6 +42,7 @@ export class FileStoreFactory implements DataStoreFactory {
         this.fileDbRoot = getFileDbRoot(rootDir);
         this.fileDbDir = join(this.fileDbRoot, Version);
         this.lmdbRoot = getLmdbRoot(rootDir);
+        this.lmdbOwnershipTracker = new LMDBOwnershipTracker(this.lmdbRoot);
 
         if (!existsSync(this.fileDbDir)) {
             mkdirSync(this.fileDbDir, { recursive: true });
@@ -66,7 +70,7 @@ export class FileStoreFactory implements DataStoreFactory {
 
         this.timeout = setTimeout(
             () => {
-                this.cleanupOldVersions();
+                this.pendingCleanup = this.cleanupOldVersions();
             },
             2 * 60 * 1000,
         );
@@ -126,16 +130,29 @@ export class FileStoreFactory implements DataStoreFactory {
     }
 
     private recordHeartbeat(): void {
-        if (!touchHeartbeat(this.fileDbDir)) {
-            this.telemetry.count('heartbeat.error', 1);
+        try {
+            touchHeartbeat(this.fileDbDir);
+        } catch (error) {
+            this.telemetry.error('heartbeat.error', error, undefined, { captureErrorAttributes: true });
         }
     }
 
-    private cleanupOldVersions(): void {
+    private async cleanupOldVersions(): Promise<void> {
         if (this.closed) return;
 
-        cleanupOldStorageDirs(this.fileDbRoot, VersionNumber, this.telemetry, 'filedb', this.log);
-        cleanupOldStorageDirs(this.lmdbRoot, LmdbVersionNumber, this.telemetry, 'lmdb', this.log, false);
+        cleanupUnusedOlderStorageDirs(this.fileDbRoot, VersionNumber, this.telemetry, 'filedb', this.log);
+
+        try {
+            const cleaned = await this.lmdbOwnershipTracker.runExclusiveIfUnowned(() => {
+                cleanupUnusedStorageDirs(this.lmdbRoot, this.telemetry, 'lmdb', this.log);
+            });
+
+            if (!cleaned) {
+                this.telemetry.count('lmdb.oldVersion.cleanup.skipped', 1);
+            }
+        } catch (error) {
+            this.telemetry.error('lmdb.oldVersion.cleanup.error', error, undefined, { captureErrorAttributes: true });
+        }
     }
 
     private totalBytes() {
@@ -148,15 +165,14 @@ export class FileStoreFactory implements DataStoreFactory {
         return totalBytes;
     }
 
-    close(): Promise<void> {
-        if (this.closed) {
-            return Promise.resolve();
+    async close(): Promise<void> {
+        if (!this.closed) {
+            this.closed = true;
+            clearTimeout(this.timeout);
+            clearInterval(this.metricsInterval);
         }
 
-        this.closed = true;
-        clearTimeout(this.timeout);
-        clearInterval(this.metricsInterval);
-        return Promise.resolve();
+        await this.pendingCleanup;
     }
 }
 

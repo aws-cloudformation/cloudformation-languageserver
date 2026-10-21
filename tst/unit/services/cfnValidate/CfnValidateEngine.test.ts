@@ -3,8 +3,13 @@ import path from 'path';
 import { Worker } from 'worker_threads';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { CfnValidateEngine } from '../../../../src/services/cfnValidate/CfnValidateEngine';
-import { WorkerExitError, WorkerFailureError, WorkerShutdownError } from '../../../../src/utils/errors/ErrorClasses';
-import { CfnValidateResponse } from '../../../../src/services/cfnValidate/cfn-validate-worker';
+import type { CfnValidateResponse } from '../../../../src/services/cfnValidate/CfnValidateProtocol';
+import {
+    WorkerExitError,
+    WorkerFailureError,
+    WorkerShutdownError,
+    WorkerTimeoutError,
+} from '../../../../src/utils/errors/ErrorClasses';
 
 // Path deliberately does not exist on disk: the engine must read the content it is given, not the file system
 const UNSAVED_TEMPLATE_PATH = '/does/not/exist/template.yaml';
@@ -146,6 +151,19 @@ describe('CfnValidateEngine', () => {
             await expect(initialized).rejects.toBeInstanceOf(WorkerExitError);
         });
 
+        test('an initialization that exceeds the timeout terminates the worker', async () => {
+            vi.useFakeTimers();
+            const initializing = engine();
+            const initialized = initializing.initialize();
+            const rejection = initialized.catch((error: unknown) => error);
+
+            vi.advanceTimersByTime(30_000);
+
+            await expect(rejection).resolves.toBeInstanceOf(WorkerTimeoutError);
+            expect(worker.terminate).toHaveBeenCalledOnce();
+            expect(initializing.isFailed()).toBe(true);
+        });
+
         test('a validation that exceeds the timeout terminates the worker', async () => {
             vi.useFakeTimers();
             const ready = await readyEngine();
@@ -153,7 +171,8 @@ describe('CfnValidateEngine', () => {
             const validation = ready.validate('Resources: {}', UNSAVED_TEMPLATE_PATH, WARN);
             vi.advanceTimersByTime(30_000);
 
-            await expect(validation).rejects.toThrow('did not finish within');
+            await expect(validation).rejects.toBeInstanceOf(WorkerTimeoutError);
+            await expect(validation).rejects.toMatchObject({ code: 'WorkerTimeout' });
             expect(worker.terminate).toHaveBeenCalledOnce();
             expect(ready.isFailed()).toBe(true);
         });

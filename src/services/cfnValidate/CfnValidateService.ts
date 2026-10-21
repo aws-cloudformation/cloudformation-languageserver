@@ -18,18 +18,21 @@ import { compareDiagnostics, DiagnosticComparisonResult } from './DiagnosticComp
 const CFN_LINT_TOOL = 'cfn-lint';
 const CFN_VALIDATE_TOOL = 'cloudformation-validate';
 
+type CfnValidateEngineFactory = () => CfnValidateEngine;
+
 export class CfnValidateService implements LintResultObserver, SettingsConfigurable, Closeable {
     private closed = false;
     private validating = false;
     private cfnLintSettings: CfnLintSettings = DefaultSettings.diagnostics.cfnLint;
-
+    private engine?: CfnValidateEngine;
     private settingsSubscription?: SettingsSubscription;
 
     @Telemetry() private readonly telemetry!: ScopedTelemetry;
     private readonly log = LoggerFactory.getLogger(CfnValidateService);
+
     constructor(
         private readonly featureFlag: FeatureFlag,
-        private readonly engine: CfnValidateEngine = new CfnValidateEngine(),
+        private readonly createEngine: CfnValidateEngineFactory = () => new CfnValidateEngine(),
     ) {}
 
     configure(settingsManager: ISettingsSubscriber): void {
@@ -47,7 +50,7 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
             this.validating ||
             result.fileType !== CloudFormationFileType.Template ||
             !this.featureFlag.isEnabled() ||
-            this.engine.isFailed()
+            this.engine?.isFailed() === true
         ) {
             return;
         }
@@ -59,11 +62,12 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
     }
 
     isInitialized(): boolean {
-        return this.engine.isInitialized();
+        return this.engine?.isInitialized() ?? false;
     }
 
     private async compare(result: LintResult): Promise<void> {
-        if (!(await this.ensureInitialized()) || this.closed) {
+        const engine = await this.ensureInitialized();
+        if (engine === undefined || this.closed) {
             return;
         }
 
@@ -71,7 +75,7 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         this.telemetry.count('validate.count', 1);
         let report;
         try {
-            report = await this.engine.validate(result.content, result.uri, { severityLevel: this.severityLevel() });
+            report = await engine.validate(result.content, result.uri, { severityLevel: this.severityLevel() });
         } catch (error) {
             if (!this.closed) {
                 this.telemetry.error('validate.error', error, undefined, { captureErrorAttributes: true });
@@ -91,22 +95,23 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         this.recordComparison(comparison);
     }
 
-    private async ensureInitialized(): Promise<boolean> {
-        if (this.engine.isInitialized()) {
-            return true;
+    private async ensureInitialized(): Promise<CfnValidateEngine | undefined> {
+        const engine = (this.engine ??= this.createEngine());
+        if (engine.isInitialized()) {
+            return engine;
         }
 
         const startTime = performance.now();
         try {
-            await this.engine.initialize();
-            this.log.info(`cloudformation-validate version: ${this.engine.version()} (initialized)`);
+            await engine.initialize();
+            this.log.info(`cloudformation-validate version: ${engine.version()} (initialized)`);
             this.telemetry.count('init.success', 1);
-            return true;
+            return engine;
         } catch (error) {
             if (!this.closed) {
                 this.telemetry.error('init.fault', error, undefined, { captureErrorAttributes: true });
             }
-            return false;
+            return undefined;
         } finally {
             this.telemetry.histogram('init.duration', performance.now() - startTime, { unit: 'ms' });
         }
@@ -154,6 +159,6 @@ export class CfnValidateService implements LintResultObserver, SettingsConfigura
         this.closed = true;
         this.settingsSubscription?.unsubscribe();
         this.settingsSubscription = undefined;
-        await this.engine.close();
+        await this.engine?.close();
     }
 }
