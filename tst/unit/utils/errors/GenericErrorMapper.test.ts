@@ -8,7 +8,10 @@ import {
     CfnLintInitializationError,
     MountError,
     RequestCancellationError,
+    WorkerExitError,
+    WorkerFailureError,
     WorkerNotInitializedError,
+    WorkerTimeoutError,
 } from '../../../../src/utils/errors/ErrorClasses';
 
 describe('GenericErrorMapper', () => {
@@ -60,6 +63,14 @@ describe('GenericErrorMapper', () => {
             new WorkerNotInitializedError(),
         ])('should classify cfn-lint errors', (error) => {
             expect(classifyGenericError(error)).toBe('cfn_lint');
+        });
+
+        it.each([
+            new WorkerExitError(1),
+            new WorkerFailureError(new Error('out of memory')),
+            new WorkerTimeoutError('validation', 30_000),
+        ])('should classify worker errors', (error) => {
+            expect(classifyGenericError(error)).toBe('worker');
         });
 
         it.each(['MDB_CORRUPTED', 'MDB_MAP_FULL', 'MDB_PAGE_NOTFOUND'])(

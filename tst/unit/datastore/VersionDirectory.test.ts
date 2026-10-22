@@ -1,5 +1,116 @@
-import { describe, it, expect } from 'vitest';
-import { isOlderVersionDirectory } from '../../../src/datastore/VersionDirectory';
+import { randomUUID as v4 } from 'crypto';
+import fs, { existsSync, mkdirSync, rmSync, statSync, utimesSync, writeFileSync } from 'fs';
+import { syncBuiltinESMExports } from 'module';
+import { join } from 'path';
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
+import {
+    getVersionStorageDirs,
+    getLmdbRoot,
+    HeartbeatFileName,
+    isOlderVersionDirectory,
+    isRecentlyUsed,
+    RecentUseWindowMs,
+    touchHeartbeat,
+} from '../../../src/datastore/VersionDirectory';
+
+describe('version directory heartbeat', () => {
+    let versionDir: string;
+    const now = Date.now();
+    const twoDaysAgo = new Date(now - 2 * RecentUseWindowMs);
+
+    beforeEach(() => {
+        versionDir = join(process.cwd(), 'node_modules', '.cache', 'version-directory', v4(), 'v3');
+        mkdirSync(versionDir, { recursive: true });
+        utimesSync(versionDir, twoDaysAgo, twoDaysAgo);
+    });
+
+    afterEach(() => {
+        rmSync(join(versionDir, '..'), { recursive: true, force: true });
+    });
+
+    it('creates the heartbeat marker on first touch and refreshes it afterwards', () => {
+        const first = new Date(now - 60_000);
+
+        touchHeartbeat(versionDir, first);
+        expect(existsSync(join(versionDir, HeartbeatFileName))).toBe(true);
+        expect(statSync(join(versionDir, HeartbeatFileName)).mtimeMs).toBeCloseTo(first.getTime(), -3);
+
+        touchHeartbeat(versionDir, new Date(now));
+        expect(statSync(join(versionDir, HeartbeatFileName)).mtimeMs).toBeCloseTo(now, -3);
+    });
+
+    it('surfaces failure when the directory is gone', () => {
+        rmSync(versionDir, { recursive: true, force: true });
+
+        expect(() => touchHeartbeat(versionDir)).toThrow();
+    });
+
+    it('uses a fresh heartbeat without scanning directory entries', () => {
+        touchHeartbeat(versionDir, new Date(now));
+        const readdir = vi.spyOn(fs, 'readdirSync');
+        syncBuiltinESMExports();
+
+        try {
+            expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(true);
+            expect(readdir).not.toHaveBeenCalled();
+        } finally {
+            readdir.mockRestore();
+            syncBuiltinESMExports();
+        }
+    });
+
+    it('treats a directory whose heartbeat is older than the window as unused', () => {
+        touchHeartbeat(versionDir, twoDaysAgo);
+        utimesSync(versionDir, twoDaysAgo, twoDaysAgo);
+
+        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(false);
+    });
+
+    it('falls back to the directory mtime when no heartbeat was ever written', () => {
+        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(false);
+
+        const recent = new Date(now - 60_000);
+        utimesSync(versionDir, recent, recent);
+
+        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(true);
+    });
+
+    it('detects recent in-place writes without relying on the directory mtime', () => {
+        const dataFile = join(versionDir, 'data.mdb');
+        writeFileSync(dataFile, 'old data');
+        utimesSync(dataFile, twoDaysAgo, twoDaysAgo);
+        utimesSync(versionDir, twoDaysAgo, twoDaysAgo);
+        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(false);
+
+        writeFileSync(dataFile, 'active data');
+
+        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(true);
+    });
+
+    it('treats a directory that no longer exists as unused', () => {
+        rmSync(versionDir, { recursive: true, force: true });
+
+        expect(isRecentlyUsed(versionDir, RecentUseWindowMs, now)).toBe(false);
+    });
+
+    it('returns the LMDB root under the storage root', () => {
+        const storageRoot = join(versionDir, '..', '..');
+
+        expect(getLmdbRoot(storageRoot)).toBe(join(storageRoot, 'lmdb'));
+    });
+
+    it('returns LMDB version directories and excludes other entries', () => {
+        const lmdbRoot = join(versionDir, '..');
+        const otherVersionDir = join(lmdbRoot, 'v4');
+        mkdirSync(otherVersionDir);
+        mkdirSync(join(lmdbRoot, 'markers'));
+        mkdirSync(join(lmdbRoot, 'backup'));
+        writeFileSync(join(lmdbRoot, 'v5'), 'not a directory');
+        writeFileSync(join(lmdbRoot, 'data.mdb'), 'not a directory');
+
+        expect(getVersionStorageDirs(lmdbRoot).toSorted()).toEqual([versionDir, otherVersionDir].toSorted());
+    });
+});
 
 describe('isOlderVersionDirectory', () => {
     const currentVersion = 6;

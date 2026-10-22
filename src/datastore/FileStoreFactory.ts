@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, rmSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
 import { ScopedTelemetry } from '../telemetry/ScopedTelemetry';
@@ -9,8 +9,16 @@ import { formatNumber } from '../utils/String';
 import { DataStore, DataStoreFactory, PersistedStores, StoreName, TotalMaxDatastoreSize } from './DataStore';
 import { encryptionKey } from './file/Encryption';
 import { KeyedFileStore } from './file/KeyedFileStore';
+import { LMDBOwnershipTracker } from './lmdb/OwnershipTracker';
 import { recordDiscardedData, recordDiskUsage, recordOutOfDiskFailure, StoreOperation } from './Utils';
-import { isOlderVersionDirectory } from './VersionDirectory';
+import {
+    cleanupUnusedOlderStorageDirs,
+    cleanupUnusedStorageDirs,
+    FileDbVersionNumber as VersionNumber,
+    getFileDbRoot,
+    getLmdbRoot,
+    touchHeartbeat,
+} from './VersionDirectory';
 
 export class FileStoreFactory implements DataStoreFactory {
     private readonly log = LoggerFactory.getLogger('FileStore.Global');
@@ -19,21 +27,27 @@ export class FileStoreFactory implements DataStoreFactory {
     private readonly stores = new Map<StoreName, KeyedFileStore>();
     private readonly fileDbRoot: string;
     private readonly fileDbDir: string;
+    private readonly lmdbRoot: string;
+    private readonly lmdbOwnershipTracker: LMDBOwnershipTracker;
 
     private readonly metricsInterval: NodeJS.Timeout;
     private readonly timeout: NodeJS.Timeout;
+    private pendingCleanup?: Promise<void>;
     private closed = false;
 
     constructor(
         rootDir: string,
         public readonly storeNames = PersistedStores,
     ) {
-        this.fileDbRoot = join(rootDir, 'filedb');
+        this.fileDbRoot = getFileDbRoot(rootDir);
         this.fileDbDir = join(this.fileDbRoot, Version);
+        this.lmdbRoot = getLmdbRoot(rootDir);
+        this.lmdbOwnershipTracker = new LMDBOwnershipTracker(this.lmdbRoot);
 
         if (!existsSync(this.fileDbDir)) {
             mkdirSync(this.fileDbDir, { recursive: true });
         }
+        this.recordHeartbeat();
 
         for (const store of storeNames) {
             this.stores.set(
@@ -56,7 +70,7 @@ export class FileStoreFactory implements DataStoreFactory {
 
         this.timeout = setTimeout(
             () => {
-                this.cleanupOldVersions();
+                this.pendingCleanup = this.cleanupOldVersions();
             },
             2 * 60 * 1000,
         );
@@ -88,6 +102,7 @@ export class FileStoreFactory implements DataStoreFactory {
     private emitMetrics(): void {
         if (this.closed) return;
 
+        this.recordHeartbeat();
         this.telemetry.histogram('version', VersionNumber);
         this.telemetry.histogram('env.entries', this.stores.size);
 
@@ -114,20 +129,29 @@ export class FileStoreFactory implements DataStoreFactory {
         }
     }
 
-    private cleanupOldVersions(): void {
-        if (this.closed || !existsSync(this.fileDbRoot)) return;
+    private recordHeartbeat(): void {
+        try {
+            touchHeartbeat(this.fileDbDir);
+        } catch (error) {
+            this.telemetry.error('heartbeat.error', error, undefined, { captureErrorAttributes: true });
+        }
+    }
 
-        const entries = readdirSync(this.fileDbRoot, { withFileTypes: true });
-        for (const entry of entries) {
-            try {
-                if (entry.isDirectory() && isOlderVersionDirectory(entry.name, VersionNumber)) {
-                    this.telemetry.count('oldVersion.cleanup.count', 1);
-                    rmSync(join(this.fileDbRoot, entry.name), { recursive: true, force: true });
-                }
-            } catch (error) {
-                this.log.error(error, 'Failed to cleanup old FileDB versions');
-                this.telemetry.count('oldVersion.cleanup.error', 1);
+    private async cleanupOldVersions(): Promise<void> {
+        if (this.closed) return;
+
+        cleanupUnusedOlderStorageDirs(this.fileDbRoot, VersionNumber, this.telemetry, 'filedb', this.log);
+
+        try {
+            const cleaned = await this.lmdbOwnershipTracker.runExclusiveIfUnowned(() => {
+                cleanupUnusedStorageDirs(this.lmdbRoot, this.telemetry, 'lmdb', this.log);
+            });
+
+            if (!cleaned) {
+                this.telemetry.count('lmdb.oldVersion.cleanup.skipped', 1);
             }
+        } catch (error) {
+            this.telemetry.error('lmdb.oldVersion.cleanup.error', error, undefined, { captureErrorAttributes: true });
         }
     }
 
@@ -141,17 +165,15 @@ export class FileStoreFactory implements DataStoreFactory {
         return totalBytes;
     }
 
-    close(): Promise<void> {
-        if (this.closed) {
-            return Promise.resolve();
+    async close(): Promise<void> {
+        if (!this.closed) {
+            this.closed = true;
+            clearTimeout(this.timeout);
+            clearInterval(this.metricsInterval);
         }
 
-        this.closed = true;
-        clearTimeout(this.timeout);
-        clearInterval(this.metricsInterval);
-        return Promise.resolve();
+        await this.pendingCleanup;
     }
 }
 
-const VersionNumber = 4;
 const Version = `v${VersionNumber}`;

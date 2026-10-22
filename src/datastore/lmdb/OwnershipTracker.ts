@@ -116,6 +116,29 @@ export class LMDBOwnershipTracker {
     }
 
     /**
+     * Runs {@link operation} under the startup coordination lock only when no other live process owns LMDB.
+     * Failures are propagated so cleanup callers can fail closed instead of deleting data when ownership is unknown.
+     *
+     * @returns true when the operation ran, or false when a live owner caused it to be skipped
+     */
+    async runExclusiveIfUnowned(operation: () => void): Promise<boolean> {
+        mkdirSync(this.markersDir, { recursive: true });
+
+        const release = await lock(this.coordinationPath, LOCK_OPTIONS);
+        try {
+            const { liveOwners } = this.scanMarkers();
+            if (liveOwners > 0) {
+                return false;
+            }
+
+            operation();
+            return true;
+        } finally {
+            await release();
+        }
+    }
+
+    /**
      * Promote this process's marker from `opening` to `running` after the env opens.
      * Lock-free: only this process touches its own marker.
      */
@@ -140,14 +163,7 @@ export class LMDBOwnershipTracker {
     }
 
     private scanMarkers(): MarkerScan {
-        let entries: string[];
-        try {
-            entries = readdirSync(this.markersDir);
-        } catch (error) {
-            this.log.warn(error, 'Failed to list LMDB marker directory');
-            return { liveOwners: 0, removableFiles: [], crashedStartups: 0 };
-        }
-
+        const entries = readdirSync(this.markersDir);
         const scan: MarkerScan = { liveOwners: 0, removableFiles: [], crashedStartups: 0 };
         const now = Date.now();
 

@@ -1,4 +1,12 @@
-import { CfnLintInitializationError, MountError, WorkerNotInitializedError } from './ErrorClasses';
+import {
+    CfnLintInitializationError,
+    MountError,
+    WorkerExitError,
+    WorkerFailureError,
+    WorkerNotInitializedError,
+    WorkerShutdownError,
+    WorkerTimeoutError,
+} from './ErrorClasses';
 import { extractErrorCode, extractErrorMessage, extractHttpStatus } from './ErrorUtils';
 
 const CANCELLATION_ERROR_IDENTIFIERS = new Set([
@@ -33,6 +41,13 @@ const CFN_LINT_ERROR_NAMES = new Set([
     CfnLintInitializationError.name,
     MountError.name,
     WorkerNotInitializedError.name,
+]);
+
+const WORKER_ERROR_NAMES = new Set([
+    WorkerShutdownError.name,
+    WorkerExitError.name,
+    WorkerFailureError.name,
+    WorkerTimeoutError.name,
 ]);
 
 const NETWORK_ERROR_CODES = new Set([
@@ -97,7 +112,7 @@ const LMDB_ERROR_CODE_PREFIX = 'MDB_'; // Native LMDB status codes share this pr
 const LMDB_ERROR_MESSAGE_PATTERN = /\bMDB_[A-Z_]+\b/; // lmdb-js may embed the native code only in the message
 
 export type GenericErrorCategory =
-    'cancellation' | 'cfn_lint' | 'filesystem' | 'http' | 'lmdb' | 'network' | 'tls' | 'validation';
+    'cancellation' | 'cfn_lint' | 'filesystem' | 'http' | 'lmdb' | 'network' | 'tls' | 'validation' | 'worker';
 
 function errorSearchText(error: unknown): string {
     const parts: string[] = [extractErrorMessage(error)];
@@ -181,6 +196,9 @@ export function classifyGenericError(error: unknown): GenericErrorCategory | und
     }
     if (code !== undefined && VALIDATION_ERROR_CODES.has(code)) {
         return 'validation';
+    }
+    if (hasErrorIdentifier(error, WORKER_ERROR_NAMES)) {
+        return 'worker';
     }
     if (hasErrorIdentifier(error, CFN_LINT_ERROR_NAMES)) {
         return 'cfn_lint';

@@ -22,7 +22,7 @@ export class DoesNotExist extends Error {
     }
 }
 
-// ======= CFN LINT Errors =======
+// ======= Worker and CFN LINT Errors =======
 export class WorkerNotInitializedError extends Error {
     constructor(message: string = 'Worker not initialized', options?: ErrorOptions) {
         super(message, options);
@@ -47,6 +47,40 @@ export class CfnLintInitializationError extends Error {
         this.name = 'CfnLintInitializationError';
         this.phase = phase ?? 'unknown';
         Object.setPrototypeOf(this, CfnLintInitializationError.prototype);
+    }
+}
+
+export class WorkerExitError extends Error {
+    public readonly code = 'WorkerExit';
+
+    constructor(
+        public readonly exitCode: number,
+        options?: ErrorOptions,
+    ) {
+        super(`Worker exited unexpectedly with code ${exitCode}`, options);
+        this.name = 'WorkerExitError';
+        Object.setPrototypeOf(this, WorkerExitError.prototype);
+    }
+}
+
+export class WorkerFailureError extends Error {
+    public readonly code = 'WorkerError';
+    public override readonly cause?: Error;
+
+    constructor(cause: Error, options?: ErrorOptions) {
+        super(`Worker error: ${cause.message}`, { ...options, cause });
+        this.name = 'WorkerFailureError';
+        Object.setPrototypeOf(this, WorkerFailureError.prototype);
+    }
+}
+
+export class WorkerTimeoutError extends Error {
+    public readonly code = 'WorkerTimeout';
+
+    constructor(operation: string, timeoutMs: number, options?: ErrorOptions) {
+        super(`${operation} did not finish within ${timeoutMs} ms`, options);
+        this.name = 'WorkerTimeoutError';
+        Object.setPrototypeOf(this, WorkerTimeoutError.prototype);
     }
 }
 
@@ -83,5 +117,22 @@ export class LMDBCrashError extends LMDBError {
         super(message, options);
         this.name = 'LMDBCrashError';
         Object.setPrototypeOf(this, LMDBCrashError.prototype);
+    }
+}
+
+export type RetryErrorCode = 'RetryTimeout' | 'RetryExhausted';
+
+export class RetryError extends Error {
+    public override readonly cause?: Error;
+
+    constructor(
+        message: string,
+        public readonly code: RetryErrorCode,
+        cause?: Error,
+        options?: ErrorOptions,
+    ) {
+        super(message, cause === undefined ? undefined : { ...options, cause });
+        this.name = 'RetryError';
+        Object.setPrototypeOf(this, RetryError.prototype);
     }
 }
