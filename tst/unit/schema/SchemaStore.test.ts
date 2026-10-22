@@ -319,6 +319,29 @@ describe('SchemaStore', () => {
             expect(schemaStore.getLocalSchemas()).toBeUndefined();
         });
 
+        it('should use a local schema when its type name collides with a regional schema', async () => {
+            const region = 'us-east-1' as AwsRegion;
+            const typeName = 'AWS::S3::Bucket';
+            const localCollision = { ...customSchema, typeName, description: 'local collision' };
+
+            await schemaStore.publicSchemas.put(region, {
+                version: 1,
+                region,
+                schemas: schemaFileType([Schemas.S3Bucket]),
+                firstCreatedMs: Date.now(),
+                lastModifiedMs: Date.now(),
+            });
+            await schemaStore.localSchemas.put(LocalStoreKey, {
+                ...localSchemaData,
+                schemas: [{ name: typeName, content: JSON.stringify(localCollision), createdMs: Date.now() }],
+            });
+
+            const combined = schemaStore.get(region, 'default');
+
+            expect(combined.schemas.get(typeName)).toBe(combined.localSchemas?.schemas.get(typeName));
+            expect(combined.schemas.get(typeName)?.description).toBe(localCollision.description);
+        });
+
         it('should include local schemas in combined schemas', async () => {
             await schemaStore.localSchemas.put(LocalStoreKey, localSchemaData);
 

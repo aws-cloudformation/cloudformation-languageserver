@@ -168,6 +168,43 @@ describe('GetSchemaTaskManager', () => {
             await waitFor(() => expect(invalidateSpy.called).toBe(true), timeout);
         });
 
+        it('should serialize refreshes so the latest settings win', async () => {
+            let resolveFirstLoad!: (schemas: Map<string, typeof localSchema>) => void;
+            let resolveLatestLoad!: (schemas: Map<string, typeof localSchema>) => void;
+            const firstLoad = new Promise<Map<string, typeof localSchema>>((resolve) => {
+                resolveFirstLoad = resolve;
+            });
+            const latestLoad = new Promise<Map<string, typeof localSchema>>((resolve) => {
+                resolveLatestLoad = resolve;
+            });
+            const firstSchema = { ...localSchema, typeName: 'Custom::First' };
+            const latestSchema = { ...localSchema, typeName: 'Custom::Latest' };
+            const invalidateSpy = sinon.spy(schemaStore, 'invalidate');
+
+            getLocalSchemasStub.resetBehavior();
+            getLocalSchemasStub.onFirstCall().returns(firstLoad);
+            getLocalSchemasStub.onSecondCall().returns(latestLoad);
+
+            taskManager.runLocalTask(['/first']);
+            await waitFor(() => expect(getLocalSchemasStub.calledOnce).toBe(true), timeout);
+
+            taskManager.runLocalTask(['/latest']);
+            expect(getLocalSchemasStub.calledOnce).toBe(true);
+
+            resolveFirstLoad(new Map([[firstSchema.typeName, firstSchema]]));
+            await waitFor(() => {
+                expect(getLocalSchemasStub.secondCall.calledWith(['/latest'])).toBe(true);
+                expect(schemaStore.getLocalSchemas()?.schemas[0].name).toBe(firstSchema.typeName);
+                expect(invalidateSpy.calledOnce).toBe(true);
+            }, timeout);
+
+            resolveLatestLoad(new Map([[latestSchema.typeName, latestSchema]]));
+            await waitFor(() => {
+                expect(schemaStore.getLocalSchemas()?.schemas[0].name).toBe(latestSchema.typeName);
+                expect(invalidateSpy.calledTwice).toBe(true);
+            }, timeout);
+        });
+
         it('should handle errors gracefully', async () => {
             const invalidateSpy = sinon.spy(schemaStore, 'invalidate');
             getLocalSchemasStub.rejects(new Error('read error'));
