@@ -8,12 +8,14 @@ import { waitFor } from '../../utils/Utils';
 
 describe('GetSchemaTaskManager', () => {
     const timeout = 250;
+    const localSchema = { typeName: 'Custom::Thing', description: 'custom', properties: { Name: { type: 'string' } } };
 
     let schemaStore: SchemaStore;
     let taskManager: GetSchemaTaskManager;
     let getPublicSchemasStub: sinon.SinonStub;
     let getPrivateResourcesStub: sinon.SinonStub;
     let getSamSchemasStub: sinon.SinonStub;
+    let getLocalSchemasStub: sinon.SinonStub;
 
     beforeEach(() => {
         schemaStore = new SchemaStore(new MemoryDataStoreFactoryProvider());
@@ -21,12 +23,14 @@ describe('GetSchemaTaskManager', () => {
         getPublicSchemasStub = sinon.stub().resolves(schemaFileType([Schemas.S3Bucket]));
         getPrivateResourcesStub = sinon.stub().resolves(getTestPrivateSchemas());
         getSamSchemasStub = sinon.stub().resolves(samFileType([SamSchemaFiles.ServerlessFunction]));
+        getLocalSchemasStub = sinon.stub().resolves(new Map([['Custom::Thing', localSchema]]));
 
         taskManager = new GetSchemaTaskManager(
             schemaStore,
             getPublicSchemasStub,
             getPrivateResourcesStub,
             getSamSchemasStub,
+            getLocalSchemasStub,
         );
     });
 
@@ -139,6 +143,76 @@ describe('GetSchemaTaskManager', () => {
                 const schemas = schemaStore.getSamSchemas();
                 expect(schemas).toBeUndefined();
             }, timeout);
+        });
+    });
+
+    describe('runLocalTask', () => {
+        it('should fetch local schemas from the given directories', async () => {
+            taskManager.runLocalTask(['/a', '/b']);
+            await waitFor(() => expect(getLocalSchemasStub.calledWith(['/a', '/b'])).toBe(true), timeout);
+        });
+
+        it('should store local schemas in datastore', async () => {
+            taskManager.runLocalTask(['/a']);
+            await waitFor(() => {
+                const schemas = schemaStore.getLocalSchemas();
+                expect(schemas?.schemas).toHaveLength(1);
+                expect(schemas?.schemas[0].name).toBe('Custom::Thing');
+            }, timeout);
+        });
+
+        it('should invalidate combined schemas after completion', async () => {
+            const invalidateSpy = sinon.spy(schemaStore, 'invalidate');
+
+            taskManager.runLocalTask(['/a']);
+            await waitFor(() => expect(invalidateSpy.called).toBe(true), timeout);
+        });
+
+        it('should serialize refreshes so the latest settings win', async () => {
+            let resolveFirstLoad!: (schemas: Map<string, typeof localSchema>) => void;
+            let resolveLatestLoad!: (schemas: Map<string, typeof localSchema>) => void;
+            const firstLoad = new Promise<Map<string, typeof localSchema>>((resolve) => {
+                resolveFirstLoad = resolve;
+            });
+            const latestLoad = new Promise<Map<string, typeof localSchema>>((resolve) => {
+                resolveLatestLoad = resolve;
+            });
+            const firstSchema = { ...localSchema, typeName: 'Custom::First' };
+            const latestSchema = { ...localSchema, typeName: 'Custom::Latest' };
+            const invalidateSpy = sinon.spy(schemaStore, 'invalidate');
+
+            getLocalSchemasStub.resetBehavior();
+            getLocalSchemasStub.onFirstCall().returns(firstLoad);
+            getLocalSchemasStub.onSecondCall().returns(latestLoad);
+
+            taskManager.runLocalTask(['/first']);
+            await waitFor(() => expect(getLocalSchemasStub.calledOnce).toBe(true), timeout);
+
+            taskManager.runLocalTask(['/latest']);
+            expect(getLocalSchemasStub.calledOnce).toBe(true);
+
+            resolveFirstLoad(new Map([[firstSchema.typeName, firstSchema]]));
+            await waitFor(() => {
+                expect(getLocalSchemasStub.secondCall.calledWith(['/latest'])).toBe(true);
+                expect(schemaStore.getLocalSchemas()?.schemas[0].name).toBe(firstSchema.typeName);
+                expect(invalidateSpy.calledOnce).toBe(true);
+            }, timeout);
+
+            resolveLatestLoad(new Map([[latestSchema.typeName, latestSchema]]));
+            await waitFor(() => {
+                expect(schemaStore.getLocalSchemas()?.schemas[0].name).toBe(latestSchema.typeName);
+                expect(invalidateSpy.calledTwice).toBe(true);
+            }, timeout);
+        });
+
+        it('should handle errors gracefully', async () => {
+            const invalidateSpy = sinon.spy(schemaStore, 'invalidate');
+            getLocalSchemasStub.rejects(new Error('read error'));
+
+            taskManager.runLocalTask(['/a']);
+            await waitFor(() => expect(getLocalSchemasStub.called).toBe(true), timeout);
+            expect(schemaStore.getLocalSchemas()).toBeUndefined();
+            expect(invalidateSpy.called).toBe(false);
         });
     });
 });

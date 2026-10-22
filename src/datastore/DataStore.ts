@@ -20,10 +20,15 @@ export enum Persistence {
 export enum StoreName {
     public_schemas = 'public_schemas',
     sam_schemas = 'sam_schemas',
+    local_schemas = 'local_schemas',
     private_schemas = 'private_schemas',
 }
 
-export const PersistedStores: ReadonlyArray<StoreName> = [StoreName.public_schemas, StoreName.sam_schemas];
+export const PersistedStores: ReadonlyArray<StoreName> = [
+    StoreName.public_schemas,
+    StoreName.sam_schemas,
+    StoreName.local_schemas,
+];
 
 export interface DataStore {
     get<T>(key: string): T | undefined;

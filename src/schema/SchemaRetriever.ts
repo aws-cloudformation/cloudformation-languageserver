@@ -16,7 +16,8 @@ import { SchemaStore } from './SchemaStore';
 const StaleDaysThreshold = 7;
 
 export class SchemaRetriever implements SettingsConfigurable, Closeable {
-    private settingsSubscription?: SettingsSubscription;
+    private profileSettingsSubscription?: SettingsSubscription;
+    private diagnosticSettingsSubscription?: SettingsSubscription;
     private settings: ProfileSettings = DefaultSettings.profile;
     private readonly log = LoggerFactory.getLogger(SchemaRetriever);
 
@@ -28,11 +29,13 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         getPublicSchemas: (region: AwsRegion) => Promise<SchemaFileType[]>,
         getPrivateResources: () => Promise<DescribeTypeOutput[]>,
         getSamSchemas: () => Promise<Map<string, CloudFormationResourceSchema>>,
+        getLocalSchemas: (dirs: readonly string[]) => Promise<Map<string, CloudFormationResourceSchema>>,
         private readonly schemaTaskManager: GetSchemaTaskManager = new GetSchemaTaskManager(
             schemaStore,
             getPublicSchemas,
             getPrivateResources,
             getSamSchemas,
+            getLocalSchemas,
         ),
         private readonly staleDaysThreshold: number = StaleDaysThreshold,
     ) {
@@ -55,15 +58,26 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
 
     configure(settingsManager: ISettingsSubscriber): void {
         // Clean up existing subscription if present
-        if (this.settingsSubscription) {
-            this.settingsSubscription.unsubscribe();
+        if (this.profileSettingsSubscription) {
+            this.profileSettingsSubscription.unsubscribe();
         }
 
         // Subscribe to profile settings changes
-        this.settingsSubscription = settingsManager.subscribe('profile', (newProfileSettings) => {
+        this.profileSettingsSubscription = settingsManager.subscribe('profile', (newProfileSettings) => {
             this.getRegionalSchemasIfMissing([newProfileSettings.region]);
             this.schemaTaskManager.runPrivateTask();
             this.settings = newProfileSettings;
+        });
+
+        // Clean up existing subscription if present
+        if (this.diagnosticSettingsSubscription) {
+            this.diagnosticSettingsSubscription.unsubscribe();
+        }
+
+        // Subscribe to diagnostics settings changes
+        this.diagnosticSettingsSubscription = settingsManager.subscribe('diagnostics', (newDiagnosticSettings) => {
+            const registrySchemas = newDiagnosticSettings.cfnLint.registrySchemas ?? [];
+            this.schemaTaskManager.runLocalTask(registrySchemas);
         });
     }
 
@@ -131,7 +145,10 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
     }
 
     close(): void {
-        this.settingsSubscription?.unsubscribe();
-        this.settingsSubscription = undefined;
+        this.profileSettingsSubscription?.unsubscribe();
+        this.profileSettingsSubscription = undefined;
+
+        this.diagnosticSettingsSubscription?.unsubscribe();
+        this.diagnosticSettingsSubscription = undefined;
     }
 }
