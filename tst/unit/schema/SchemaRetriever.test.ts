@@ -187,12 +187,12 @@ describe('SchemaRetriever', () => {
                 expect(taskManagerStub.runLocalTask.calledWith(['/schemas'])).toBe(true);
             });
 
-            it('should not run local task when no registry schemas are configured', () => {
+            it('should clear local schemas when no registry schemas are configured', () => {
                 schemaRetriever.configure(settingsManager);
 
                 diagnosticsObserver?.(diagnosticsWith([]));
 
-                expect(taskManagerStub.runLocalTask.called).toBe(false);
+                expect(taskManagerStub.runLocalTask.calledWith([])).toBe(true);
             });
 
             it('should unsubscribe both subscriptions on close', () => {

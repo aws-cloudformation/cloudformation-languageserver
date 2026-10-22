@@ -77,9 +77,7 @@ export class SchemaRetriever implements SettingsConfigurable, Closeable {
         // Subscribe to diagnostics settings changes
         this.diagnosticSettingsSubscription = settingsManager.subscribe('diagnostics', (newDiagnosticSettings) => {
             const registrySchemas = newDiagnosticSettings.cfnLint.registrySchemas ?? [];
-            if (registrySchemas.length > 0) {
-                this.schemaTaskManager.runLocalTask(registrySchemas);
-            }
+            this.schemaTaskManager.runLocalTask(registrySchemas);
         });
     }
 

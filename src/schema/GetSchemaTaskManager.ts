@@ -17,6 +17,7 @@ export class GetSchemaTaskManager {
     private readonly samTask: GetSamSchemaTask;
     private readonly log = LoggerFactory.getLogger(GetSchemaTaskManager);
     private isRunning = false;
+    private localTaskChain = Promise.resolve();
 
     constructor(
         private readonly schemas: SchemaStore,
@@ -82,8 +83,14 @@ export class GetSchemaTaskManager {
     }
 
     runLocalTask(dirs: readonly string[]) {
-        new GetLocalSchemaTask(this.getLocalSchemas, dirs)
-            .run(this.schemas.localSchemas)
+        this.localTaskChain = this.localTaskChain
+            .then(() =>
+                new GetLocalSchemaTask(
+                    this.getLocalSchemas,
+                    [...dirs],
+                    this.schemas.getLocalSchemas()?.firstCreatedMs,
+                ).run(this.schemas.localSchemas),
+            )
             .then(() => this.schemas.invalidate())
             .catch((e) => this.log.error(e));
     }
