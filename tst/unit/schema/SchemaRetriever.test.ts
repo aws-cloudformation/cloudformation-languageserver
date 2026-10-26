@@ -20,6 +20,7 @@ describe('SchemaRetriever', () => {
     const getPublicSchemasStub = sinon.stub().resolves(schemaFileType([Schemas.S3Bucket]));
     const getPrivateResourcesStub = sinon.stub().resolves(getTestPrivateSchemas());
     const getSamSchemasStub = sinon.stub().resolves(samFileType([SamSchemaFiles.ServerlessFunction]));
+    const getLocalSchemasStub = sinon.stub().resolves(new Map());
 
     let settingsManager: ISettingsSubscriber;
     let taskManagerStub: StubbedInstance<GetSchemaTaskManager>;
@@ -45,6 +46,7 @@ describe('SchemaRetriever', () => {
             getPublicSchemasStub,
             getPrivateResourcesStub,
             getSamSchemasStub,
+            getLocalSchemasStub,
             taskManagerStub,
         );
     });
@@ -70,6 +72,7 @@ describe('SchemaRetriever', () => {
                 getPublicSchemasStub,
                 getPrivateResourcesStub,
                 getSamSchemasStub,
+                getLocalSchemasStub,
                 newTaskManagerStub,
             );
 
@@ -153,6 +156,63 @@ describe('SchemaRetriever', () => {
             profileObserver?.({ region: 'eu-west-1' as AwsRegion, profile: 'test-profile' });
             expect(taskManagerStub.addTask.calledWith('eu-west-1')).toBe(true);
             expect(taskManagerStub.runPrivateTask.called).toBe(true);
+        });
+
+        describe('diagnostics subscription', () => {
+            let diagnosticsObserver: PartialDataObserver<Settings['diagnostics']> | undefined;
+            let unsubscribes: Record<string, sinon.SinonStub>;
+
+            const diagnosticsWith = (registrySchemas: readonly string[]) => ({
+                ...DefaultSettings.diagnostics,
+                cfnLint: { ...DefaultSettings.diagnostics.cfnLint, registrySchemas },
+            });
+
+            beforeEach(() => {
+                diagnosticsObserver = undefined;
+                unsubscribes = {};
+                (settingsManager.subscribe as sinon.SinonStub).callsFake((path, observer) => {
+                    if (path === 'diagnostics') {
+                        diagnosticsObserver = observer;
+                    }
+                    unsubscribes[path] = sinon.stub();
+                    return { unsubscribe: unsubscribes[path] };
+                });
+            });
+
+            it('should run local task when registry schemas are configured', () => {
+                schemaRetriever.configure(settingsManager);
+
+                diagnosticsObserver?.(diagnosticsWith(['/schemas']));
+
+                expect(taskManagerStub.runLocalTask.calledWith(['/schemas'])).toBe(true);
+            });
+
+            it('should clear local schemas when no registry schemas are configured', () => {
+                schemaRetriever.configure(settingsManager);
+
+                diagnosticsObserver?.(diagnosticsWith([]));
+
+                expect(taskManagerStub.runLocalTask.calledWith([])).toBe(true);
+            });
+
+            it('should unsubscribe both subscriptions on close', () => {
+                schemaRetriever.configure(settingsManager);
+
+                schemaRetriever.close();
+
+                expect(unsubscribes['profile'].calledOnce).toBe(true);
+                expect(unsubscribes['diagnostics'].calledOnce).toBe(true);
+            });
+
+            it('should replace both subscriptions when reconfigured', () => {
+                schemaRetriever.configure(settingsManager);
+                const first = { ...unsubscribes };
+
+                schemaRetriever.configure(settingsManager);
+
+                expect(first['profile'].calledOnce).toBe(true);
+                expect(first['diagnostics'].calledOnce).toBe(true);
+            });
         });
     });
 
