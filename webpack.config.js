@@ -31,6 +31,16 @@ const KEEP_FILES = [
     'python_stdlib.zip',
 ];
 const IGNORE_PATHS = ['/bin/', '/test/', '/benchmarks/', '/examples/'];
+const NON_RUNTIME_PACKAGE_FILES = [
+    '/node_modules/msgpackr/dist/test.js',
+    '/node_modules/msgpackr/dist/test.js.map',
+    '/node_modules/msgpackr/rollup.config.js',
+    '/node_modules/msgpackr/test-worker.js',
+];
+const OPENTELEMETRY_ALTERNATE_BUILD_PATH =
+    /\/node_modules\/@opentelemetry\/[^/]+\/build\/(?:esm|esnext)\//;
+const TREE_SITTER_PREBUILD_PATH =
+    /\/node_modules\/(?:@tree-sitter-grammars\/tree-sitter-yaml|tree-sitter(?:-json)?)\/prebuilds\/([^/]+)\//;
 
 // The bundle directory doubles as the npm package: node_modules/ is never packed by npm, and the
 // co-distributed cfn-init binary under bin/ is left out because the server does not invoke it.
@@ -39,7 +49,6 @@ const PUBLISHED_FILES = [
     '/*.js.map',
     '/*.wasm',
     '/assets/',
-    '/vendor/',
     '/NOTICE',
     '/THIRD-PARTY-LICENSES.txt',
     '/README.md',
@@ -72,6 +81,35 @@ function omitDevelopmentOnlyKeys(manifest) {
 function packageNameOf(request) {
     const segments = request.split('/');
     return request.startsWith('@') ? segments.slice(0, 2).join('/') : segments[0];
+}
+
+function isCompatibleTreeSitterPrebuild(relativePath, platform, arch) {
+    const target = TREE_SITTER_PREBUILD_PATH.exec(relativePath)?.[1];
+    if (!target) {
+        return true;
+    }
+
+    const platformPrefix = `${platform}-`;
+    return target.startsWith(platformPrefix) && target.slice(platformPrefix.length).split('+').includes(arch);
+}
+
+function shouldCopyExternalFile(relativePath, externalDependencies, platform, arch) {
+    const isExternal = externalDependencies.some((external) => {
+        return relativePath.includes(`/node_modules/${external}/`);
+    });
+    const keep = KEEP_FILES.some((pattern) => relativePath.endsWith(pattern));
+    const ignoredPath = IGNORE_PATHS.some((pattern) => relativePath.includes(pattern));
+    const nonRuntimePackageFile = NON_RUNTIME_PACKAGE_FILES.some((file) => relativePath.endsWith(file));
+    const alternateOpenTelemetryBuild = OPENTELEMETRY_ALTERNATE_BUILD_PATH.test(relativePath);
+
+    return (
+        isExternal &&
+        keep &&
+        !ignoredPath &&
+        !nonRuntimePackageFile &&
+        !alternateOpenTelemetryBuild &&
+        isCompatibleTreeSitterPrebuild(relativePath, platform, arch)
+    );
 }
 
 // The compiled module graph reveals the transitive packages the bundle `require()`s directly (e.g. `yaml`,
@@ -208,22 +246,6 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                     from: 'vendor/cfn-guard/guard_bg.wasm',
                     to: 'guard_bg.wasm',
                 },
-                {
-                    from: 'vendor/cfn-guard/guard.js',
-                    to: 'vendor/cfn-guard/guard.js',
-                },
-                {
-                    from: 'vendor/cfn-guard/index.js',
-                    to: 'vendor/cfn-guard/index.js',
-                },
-                {
-                    from: 'vendor/cfn-guard/package.json',
-                    to: 'vendor/cfn-guard/package.json',
-                },
-                {
-                    from: 'vendor/cfn-guard/guard_bg.wasm',
-                    to: 'vendor/cfn-guard/guard_bg.wasm',
-                },
             ],
         }),
     );
@@ -313,13 +335,8 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                         from: path.join('tmp-node-modules', 'node_modules'),
                         to: 'node_modules',
                         filter: (resourcePath) => {
-                            const relativePath = resourcePath.replace(process.cwd(), '');
-                            const isExternal = EXTERNALS.some((external) => {
-                                return relativePath.includes(`/node_modules/${external}/`);
-                            });
-                            const keep = KEEP_FILES.some((pattern) => relativePath.endsWith(pattern));
-                            const ignore = IGNORE_PATHS.some((pattern) => relativePath.includes(pattern));
-                            return isExternal && keep && !ignore;
+                            const relativePath = `/${path.relative(process.cwd(), resourcePath).split(path.sep).join('/')}`;
+                            return shouldCopyExternalFile(relativePath, EXTERNALS, process.platform, process.arch);
                         },
                     },
                     ...COPY_FILES.map((file) => {
@@ -400,7 +417,7 @@ const baseConfig = {
     },
 };
 
-module.exports = (env = {}) => {
+function createWebpackConfig(env = {}) {
     const mode = env.mode;
     let awsEnv = env.env;
     const rebuild = env.rebuild === 'true' || env.rebuild === true;
@@ -463,4 +480,7 @@ module.exports = (env = {}) => {
         },
         plugins: createPlugins(isDevelopment, outputPath, mode, awsEnv, rebuild, buildTarget, skipWheels),
     };
-};
+}
+
+module.exports = createWebpackConfig;
+module.exports.shouldCopyExternalFile = shouldCopyExternalFile;

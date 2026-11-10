@@ -126,7 +126,6 @@ jobs:
             "cfn-lsp-server-standalone.js"
             "pyodide-worker.js"
             "guard_bg.wasm"
-            "vendor/cfn-guard/index.js"
             "README.md"
             "LICENSE"
             "NOTICE"
