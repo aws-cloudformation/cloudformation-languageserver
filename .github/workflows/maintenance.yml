@@ -37,6 +37,40 @@ jobs:
       - name: Update wheels
         run: npm run download-wheels
 
+      - name: Update cfn-guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          latest_tag="$(gh api repos/aws-cloudformation/cloudformation-guard/releases/latest --jq 'select(.draft == false and .prerelease == false) | .tag_name')"
+          if [[ ! "$latest_tag" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Latest cfn-guard release is not a stable version tag: $latest_tag"
+            exit 1
+          fi
+
+          latest_commit="$(gh api "repos/aws-cloudformation/cloudformation-guard/commits/$latest_tag" --jq '.sha')"
+          if [[ ! "$latest_commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Latest cfn-guard release did not resolve to a commit SHA."
+            exit 1
+          fi
+
+          current_commit="$(sed -nE "s/^const COMMIT_HASH = '([0-9a-f]{7,40})';$/\1/p" tools/build-cfn-guard.ts)"
+          if [[ ! "$current_commit" =~ ^[0-9a-f]{7,40}$ ]]; then
+            echo "::error::Unable to read the current cfn-guard commit SHA."
+            exit 1
+          fi
+
+          if [ "$current_commit" = "$latest_commit" ]; then
+            echo "cfn-guard is already current at $latest_tag ($latest_commit)."
+            exit 0
+          fi
+
+          sed -i -E "s/^const COMMIT_HASH = '[0-9a-f]{7,40}';$/const COMMIT_HASH = '$latest_commit';/" tools/build-cfn-guard.ts
+          grep -Fxq "const COMMIT_HASH = '$latest_commit';" tools/build-cfn-guard.ts
+          npm run build-cfn-guard
+          npm install --package-lock-only --ignore-scripts
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
@@ -48,6 +82,7 @@ jobs:
             Automated maintenance update.
 
             - Updated wheels via download-wheels
+            - Updated vendored cfn-guard from the latest stable release
 
             This PR was created by the `maintenance` workflow.
 
