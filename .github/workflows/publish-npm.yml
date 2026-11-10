@@ -40,7 +40,6 @@ jobs:
           GH_REPO: ${{ github.repository }}
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ inputs.tag }}
-          SIGNING_PUBLIC_KEY: ${{ secrets.SIGNING_PUBLIC_KEY }}
         run: |
           set -euo pipefail
 
@@ -55,6 +54,8 @@ jobs:
           gh release download "$RELEASE_TAG" \
             --pattern '*-linux-x64-node*.zip' \
             --pattern '*-linux-x64-node*.zip.sig' \
+            --pattern 'signing-key.pem' \
+            --pattern 'signing-key.pem.sha256' \
             --dir artifacts
 
           mapfile -t bundles < <(find artifacts -mindepth 1 -maxdepth 1 -type f -name '*.zip')
@@ -63,19 +64,28 @@ jobs:
             exit 1
           fi
 
-          signature="${bundles[0]}.sig"
-          if [ ! -f "$signature" ]; then
-            echo "::error::Release bundle signature is missing: $signature"
+          expected_signing_fingerprint="$(tr -d '[:space:]' < artifacts/signing-key.pem.sha256 | tr '[:upper:]' '[:lower:]')"
+          actual_signing_fingerprint="$(openssl pkey \
+            -pubin \
+            -in artifacts/signing-key.pem \
+            -outform DER \
+            | openssl dgst -sha256 \
+            | awk '{print tolower($NF)}')"
+          if [[ ! "$expected_signing_fingerprint" =~ ^[0-9a-f]{64}$ ]] \
+            || [ "$actual_signing_fingerprint" != "$expected_signing_fingerprint" ]; then
+            echo "::error::Published signing key fingerprint is invalid."
             exit 1
           fi
 
-          printf '%s\n' "$SIGNING_PUBLIC_KEY" > signing-key.pem
-          if ! openssl dgst -sha256 -verify signing-key.pem -signature "$signature" "${bundles[0]}"; then
-            rm -f signing-key.pem
+          signature="${bundles[0]}.sig"
+          if ! openssl dgst \
+            -sha256 \
+            -verify artifacts/signing-key.pem \
+            -signature "$signature" \
+            "${bundles[0]}"; then
             echo "::error::Release bundle signature verification failed."
             exit 1
           fi
-          rm -f signing-key.pem
 
           echo "Publishing from ${bundles[0]}"
           unzip -q "${bundles[0]}" -d bundle
