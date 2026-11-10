@@ -65,3 +65,13 @@ jobs:
       code-quality: write
     with:
       tag: ${{ needs.promote-beta-to-prod.outputs.tag }}
+
+  publish-npm:
+    needs: [promote-beta-to-prod, call-release]
+    uses: ./.github/workflows/publish-npm.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      id-token: write
+    with:
+      tag: ${{ needs.promote-beta-to-prod.outputs.tag }}
