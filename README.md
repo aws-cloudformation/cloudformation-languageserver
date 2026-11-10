@@ -6,6 +6,7 @@
 
 [![Node.js](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Faws-cloudformation%2Fcloudformation-languageserver%2Frefs%2Fheads%2Fmain%2Fpackage.json&query=%24.engines.node&label=Node.js&color=339933&logo=node.js&logoColor=white)](https://github.com/aws-cloudformation/cloudformation-languageserver/blob/main/package.json)
 [![Latest Release](https://img.shields.io/github/v/release/aws-cloudformation/cloudformation-languageserver?include_prereleases&sort=semver)](https://github.com/aws-cloudformation/cloudformation-languageserver/releases)
+[![npm version](https://img.shields.io/npm/v/%40aws%2Fcloudformation-languageserver.svg?logo=npm)](https://www.npmjs.com/package/@aws/cloudformation-languageserver)
 [![Downloads](https://img.shields.io/github/downloads/aws-cloudformation/cloudformation-languageserver/total.svg)](https://github.com/aws-cloudformation/cloudformation-languageserver/releases)
 
 The AWS CloudFormation Language Server provides auto-completion, validation, navigation, and refactoring for CloudFormation templates.
@@ -60,7 +61,7 @@ The server implements the Language Server Protocol (LSP) to enable code editors 
 
 ## Installation
 
-For standalone editors like Neovim, Emacs, Helix, or Sublime Text, install from npm with `npm install -g @aws/cloudformation-languageserver` or download a platform build from GitHub Releases; see the [Installation Guide](INSTALLATION.md).
+For standalone editors like Neovim, Emacs, Helix, or Sublime Text, install the [`@aws/cloudformation-languageserver`](https://www.npmjs.com/package/@aws/cloudformation-languageserver) package with `npm install -g @aws/cloudformation-languageserver` or download a platform build from GitHub Releases; see the [Installation Guide](INSTALLATION.md).
 
 For [JetBrains](https://plugins.jetbrains.com/plugin/11349-aws-toolkit) and [Visual Studio Code](https://marketplace.visualstudio.com/items?itemName=AmazonWebServices.aws-toolkit-vscode), the language server is bundled with the ***AWS Toolkit*** extension.
 
