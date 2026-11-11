@@ -4,7 +4,7 @@ import { execSync } from 'child_process';
 import { existsSync, rmSync, mkdirSync, cpSync } from 'fs';
 import { join, resolve } from 'path';
 
-const COMMIT_HASH = '33d9931';
+const COMMIT_HASH = 'e531ef56092abb662e08fc6062c92db6d53f99c9';
 const TEMP_DIR = 'temp-cfn-guard';
 const OUTPUT_DIR = 'vendor/cfn-guard';
 
