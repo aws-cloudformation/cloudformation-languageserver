@@ -352,7 +352,7 @@ ${packsObject}
 };
 
 export function getRulesForPack(packName: string): GuardRuleData[] {
-    const ruleNames = RULE_PACKS[packName];
+    const ruleNames = RULE_PACKS[packName.toLowerCase()];
     if (!ruleNames) {
         throw new Error('Unknown rule pack: ' + packName);
     }
