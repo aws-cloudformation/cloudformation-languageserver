@@ -71,6 +71,9 @@ jobs:
           npm run build-cfn-guard
           npm install --package-lock-only --ignore-scripts
 
+      - name: Update Guard rules
+        run: npm run generate:guard-rules
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
@@ -83,6 +86,7 @@ jobs:
 
             - Updated wheels via download-wheels
             - Updated vendored cfn-guard from the latest stable release
+            - Updated generated Guard rules from the AWS Guard Rules Registry
 
             This PR was created by the `maintenance` workflow.
 

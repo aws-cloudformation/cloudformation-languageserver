@@ -2,11 +2,12 @@
 
 import { execSync } from 'child_process';
 import { existsSync, rmSync, mkdirSync, cpSync } from 'fs';
-import { join, resolve } from 'path';
+import { basename, join, resolve } from 'path';
 
-const COMMIT_HASH = '33d9931';
+const COMMIT_HASH = 'e531ef5';
 const TEMP_DIR = 'temp-cfn-guard';
 const OUTPUT_DIR = 'vendor/cfn-guard';
+const EXCLUDED_OUTPUT_ENTRY_NAMES = new Set(['README.md', '__tests__']);
 
 function buildCfnGuard(): void {
     const projectRoot = resolve(__dirname, '..');
@@ -42,7 +43,10 @@ function buildCfnGuard(): void {
         console.log(`Copying ts-lib files to ${OUTPUT_DIR}...`);
         mkdirSync(outputPath, { recursive: true });
 
-        cpSync(tsLibPath, outputPath, { recursive: true });
+        cpSync(tsLibPath, outputPath, {
+            recursive: true,
+            filter: (sourcePath) => !EXCLUDED_OUTPUT_ENTRY_NAMES.has(basename(sourcePath)),
+        });
 
         console.log(`cfn-guard copied to ${OUTPUT_DIR}`);
     } catch (error) {

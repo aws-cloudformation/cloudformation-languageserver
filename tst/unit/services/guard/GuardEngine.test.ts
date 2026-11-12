@@ -1,4 +1,3 @@
-import { readFileSync } from 'fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { ALL_RULES } from '../../../../src/services/guard/GeneratedGuardRules';
@@ -541,18 +540,6 @@ Resources:
             const result = guardEngine.validateRule(
                 'rule R when Resources !empty {\n  Resources.X != /[A-Za-z0-9\\\\/+=]{4}/\n}',
             );
-            expect(result.valid).toBe(true);
-            expect(result.parseErrors).toHaveLength(0);
-        });
-
-        it('accepts the vendored negative-lookbehind regex fixture', () => {
-            const fixture = readFileSync(
-                'vendor/cfn-guard/__tests__/__fixtures__/rules-dir/nested-dir/advanced_regex_negative_lookbehind_rule.guard',
-                'utf8',
-            );
-
-            const result = guardEngine.validateRule(fixture);
-
             expect(result.valid).toBe(true);
             expect(result.parseErrors).toHaveLength(0);
         });
