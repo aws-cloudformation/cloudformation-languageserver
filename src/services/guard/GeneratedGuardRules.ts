@@ -9,7 +9,7 @@
  * runtime file parsing and reduce bundle size.
  *
  * Source: AWS Guard Rules Registry (main branch)
- * Generated: 2026-11-12T21:37:45.256Z
+ * Generated: 2026-11-14T10:05:35.242Z
  * URL: https://github.com/aws-cloudformation/aws-guard-rules-registry/archive/refs/heads/main.zip
  */
 
