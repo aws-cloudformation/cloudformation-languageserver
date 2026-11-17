@@ -28,6 +28,8 @@ export class SchemaStore {
     private regionalSchemas?: RegionalSchemasType;
 
     private readonly publicLastModifiedMs = new Map<string, number>();
+    private samLastModifiedMs?: number;
+    private samLastModifiedMsInitialized = false;
 
     private combined?: CombinedSchemas;
 
@@ -106,8 +108,13 @@ export class SchemaStore {
     }
 
     getSamSchemaAge(): number {
-        const schemas = this.combined?.samSchemas ?? this.getSamSchemas();
-        return ageMs(schemas?.lastModifiedMs) ?? Number.MAX_SAFE_INTEGER;
+        if (!this.samLastModifiedMsInitialized) {
+            const samSchemas = this.combined?.samSchemas ?? this.getSamSchemas();
+            this.samLastModifiedMs = samSchemas?.lastModifiedMs;
+            this.samLastModifiedMsInitialized = true;
+        }
+
+        return ageMs(this.samLastModifiedMs) ?? Number.MAX_SAFE_INTEGER;
     }
 
     getPublicSchemasMaxAge(): number {
@@ -135,6 +142,8 @@ export class SchemaStore {
         this.telemetry.count('invalidate', 1);
         this.combined = undefined;
         this.publicLastModifiedMs.clear();
+        this.samLastModifiedMs = undefined;
+        this.samLastModifiedMsInitialized = false;
     }
 }
 
