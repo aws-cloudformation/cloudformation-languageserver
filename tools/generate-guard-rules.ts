@@ -319,8 +319,6 @@ function generateTypeScriptFile(allRules: ParsedGuardRule[], rulePacks: RulePack
         })
         .join(',\n');
 
-    const generationDate = new Date().toISOString();
-
     return `/* eslint-disable prettier/prettier */
 /**
  * Generated Guard Rules Data
@@ -332,7 +330,6 @@ function generateTypeScriptFile(allRules: ParsedGuardRule[], rulePacks: RulePack
  * runtime file parsing and reduce bundle size.
  *
  * Source: AWS Guard Rules Registry (main branch)
- * Generated: ${generationDate}
  * URL: ${RULES_ZIP_URL}
  */
 
@@ -487,10 +484,14 @@ async function main() {
             fs.mkdirSync(outputFileDir, { recursive: true });
         }
 
-        // Write output file
-        fs.writeFileSync(OUTPUT_FILE, tsContent, 'utf8');
+        const existingContent = fs.existsSync(OUTPUT_FILE) ? fs.readFileSync(OUTPUT_FILE, 'utf8') : undefined;
+        if (existingContent === tsContent) {
+            console.log(`✅ ${OUTPUT_FILE} is already up to date`);
+        } else {
+            fs.writeFileSync(OUTPUT_FILE, tsContent, 'utf8');
+            console.log(`✅ Generated ${OUTPUT_FILE}`);
+        }
 
-        console.log(`✅ Generated ${OUTPUT_FILE}`);
         console.log(`📊 Summary: ${allRules.length} rules, ${rulePacks.length} packs`);
     } catch (error) {
         console.error('❌ Error generating guard rules:', error);
