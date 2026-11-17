@@ -78,7 +78,7 @@
         "@opentelemetry/sdk-metrics": "2.10.0",
         "@smithy/util-waiter": "4.6.2",
         "@tree-sitter-grammars/tree-sitter-yaml": "0.7.1",
-        "archiver": "7.0.1",
+        "archiver": "8.0.0",
         "async-mutex": "0.5.0",
         "axios": "1.21.1",
         "cfn-guard": "file:./vendor/cfn-guard",
