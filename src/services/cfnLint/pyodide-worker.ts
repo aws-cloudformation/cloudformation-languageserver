@@ -22,6 +22,7 @@ const customStderr = (_text: string): void => {
 // handles we use so call sites stay type-safe (no unsafe-any lint).
 type DisposablePyProxy = { destroy: () => void };
 type DisposablePyCallable = ((...args: unknown[]) => unknown) & DisposablePyProxy;
+type PyGlobals = { get(name: string): unknown };
 
 interface WorkerMessage {
     id: string;
@@ -422,7 +423,7 @@ async function lintTemplate(
     // Call lint_str with the content and uri as native arguments rather than
     // interpolating them into a Python source string. This passes the values
     // through verbatim and keeps the call independent of their contents.
-    const pyGlobals = pyodide.globals as unknown as { get(name: string): unknown };
+    const pyGlobals = pyodide.globals as unknown as PyGlobals;
     const lintStr = pyGlobals.get('lint_str') as DisposablePyCallable;
     const pySettings = pyodide.toPy(settings ?? {}) as unknown as DisposablePyProxy;
     try {
@@ -448,7 +449,7 @@ async function lintFile(
     // Call lint_uri with path, uri and fileType as native arguments rather
     // than interpolating them into a Python source string, so the values are
     // passed through verbatim regardless of their contents.
-    const pyGlobals = pyodide.globals as unknown as { get(name: string): unknown };
+    const pyGlobals = pyodide.globals as unknown as PyGlobals;
     const lintUri = pyGlobals.get('lint_uri') as DisposablePyCallable;
     const pySettings = pyodide.toPy(settings ?? {}) as unknown as DisposablePyProxy;
     try {
