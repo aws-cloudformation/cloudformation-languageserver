@@ -18,6 +18,11 @@ const customStderr = (_text: string): void => {
     // console.error(text);
 };
 
+// pyodide.globals.get() and pyodide.toPy() are typed as `any`; narrow the
+// handles we use so call sites stay type-safe (no unsafe-any lint).
+type DisposablePyProxy = { destroy: () => void };
+type DisposablePyCallable = ((...args: unknown[]) => unknown) & DisposablePyProxy;
+
 interface WorkerMessage {
     id: string;
     action: string;
@@ -414,20 +419,19 @@ async function lintTemplate(
         throw new Error('Pyodide not initialized');
     }
 
-    // Safe type assertions since we know the expected types
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const pyUri = pyodide.toPy(uri);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const pyContent = pyodide.toPy(content.replaceAll('"""', '\\"\\"\\"'));
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const pySettings = pyodide.toPy(settings ?? {});
-
-    // Execute Python code and get result
-    const pythonCode = `lint_str(r"""${pyContent}""", r"""${pyUri}""", ${pySettings})`;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const result = await pyodide.runPythonAsync(pythonCode);
-
-    return convertPythonResultToDiagnostics(result, uri);
+    // Call lint_str with the content and uri as native arguments rather than
+    // interpolating them into a Python source string. This passes the values
+    // through verbatim and keeps the call independent of their contents.
+    const pyGlobals = pyodide.globals as unknown as { get(name: string): unknown };
+    const lintStr = pyGlobals.get('lint_str') as DisposablePyCallable;
+    const pySettings = pyodide.toPy(settings ?? {}) as unknown as DisposablePyProxy;
+    try {
+        const result = await lintStr(content, uri, pySettings);
+        return convertPythonResultToDiagnostics(result, uri);
+    } finally {
+        lintStr.destroy();
+        pySettings.destroy();
+    }
 }
 
 // Lint file using path
@@ -441,15 +445,19 @@ async function lintFile(
         throw new Error('Pyodide not initialized');
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const pySettings = pyodide.toPy(settings ?? {});
-
-    // Execute Python code and get result
-    const pythonCode = `lint_uri(r"""${path}""", r"""${uri}""", r"""${fileType}""", ${pySettings})`;
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const result = await pyodide.runPythonAsync(pythonCode);
-
-    return convertPythonResultToDiagnostics(result, uri);
+    // Call lint_uri with path, uri and fileType as native arguments rather
+    // than interpolating them into a Python source string, so the values are
+    // passed through verbatim regardless of their contents.
+    const pyGlobals = pyodide.globals as unknown as { get(name: string): unknown };
+    const lintUri = pyGlobals.get('lint_uri') as DisposablePyCallable;
+    const pySettings = pyodide.toPy(settings ?? {}) as unknown as DisposablePyProxy;
+    try {
+        const result = await lintUri(path, uri, fileType, pySettings);
+        return convertPythonResultToDiagnostics(result, uri);
+    } finally {
+        lintUri.destroy();
+        pySettings.destroy();
+    }
 }
 
 // Mount folder to Pyodide filesystem
