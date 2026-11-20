@@ -83,17 +83,12 @@ function packageNameOf(request) {
     return request.startsWith('@') ? segments.slice(0, 2).join('/') : segments[0];
 }
 
-function isCompatibleTreeSitterPrebuild(relativePath, platform, arch) {
+function isTreeSitterPrebuildForPlatform(relativePath, platform) {
     const target = TREE_SITTER_PREBUILD_PATH.exec(relativePath)?.[1];
-    if (!target) {
-        return true;
-    }
-
-    const platformPrefix = `${platform}-`;
-    return target.startsWith(platformPrefix) && target.slice(platformPrefix.length).split('+').includes(arch);
+    return !target || target.startsWith(`${platform}-`);
 }
 
-function shouldCopyExternalFile(relativePath, externalDependencies, platform, arch) {
+function shouldCopyExternalFile(relativePath, externalDependencies, platform) {
     const isExternal = externalDependencies.some((external) => {
         return relativePath.includes(`/node_modules/${external}/`);
     });
@@ -108,7 +103,7 @@ function shouldCopyExternalFile(relativePath, externalDependencies, platform, ar
         !ignoredPath &&
         !nonRuntimePackageFile &&
         !alternateOpenTelemetryBuild &&
-        isCompatibleTreeSitterPrebuild(relativePath, platform, arch)
+        isTreeSitterPrebuildForPlatform(relativePath, platform)
     );
 }
 
@@ -336,7 +331,7 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                         to: 'node_modules',
                         filter: (resourcePath) => {
                             const relativePath = `/${path.relative(process.cwd(), resourcePath).split(path.sep).join('/')}`;
-                            return shouldCopyExternalFile(relativePath, EXTERNALS, process.platform, process.arch);
+                            return shouldCopyExternalFile(relativePath, EXTERNALS, process.platform);
                         },
                     },
                     ...COPY_FILES.map((file) => {

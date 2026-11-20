@@ -5,7 +5,6 @@ type ShouldCopyExternalFile = (
     relativePath: string,
     externalDependencies: readonly string[],
     platform: NodeJS.Platform,
-    arch: string,
 ) => boolean;
 
 const requireModule = createRequire(__filename);
@@ -21,8 +20,8 @@ const externalDependencies = [
     'tree-sitter-json',
 ];
 
-function shouldCopy(relativePath: string, platform: NodeJS.Platform = 'darwin', arch = 'arm64'): boolean {
-    return shouldCopyExternalFile(relativePath, externalDependencies, platform, arch);
+function shouldCopy(relativePath: string, platform: NodeJS.Platform = 'darwin'): boolean {
+    return shouldCopyExternalFile(relativePath, externalDependencies, platform);
 }
 
 describe('Bundle file filter', () => {
@@ -38,22 +37,22 @@ describe('Bundle file filter', () => {
         expect(shouldCopy('/node_modules/@opentelemetry/api/build/esnext/index.js.map')).toBe(false);
     });
 
-    it('keeps only tree-sitter prebuilds compatible with the bundle target', () => {
+    it('keeps tree-sitter prebuilds for the bundle platform across architectures', () => {
         expect(shouldCopy('/node_modules/tree-sitter/prebuilds/darwin-arm64/tree-sitter.node')).toBe(true);
-        expect(shouldCopy('/node_modules/tree-sitter/prebuilds/darwin-x64/tree-sitter.node')).toBe(false);
-        expect(
-            shouldCopy('/node_modules/tree-sitter-json/prebuilds/linux-x64/tree-sitter-json.node', 'linux', 'x64'),
-        ).toBe(true);
+        expect(shouldCopy('/node_modules/tree-sitter/prebuilds/darwin-x64/tree-sitter.node')).toBe(true);
+        expect(shouldCopy('/node_modules/tree-sitter/prebuilds/linux-arm64/tree-sitter.node')).toBe(false);
+        expect(shouldCopy('/node_modules/tree-sitter-json/prebuilds/linux-x64/tree-sitter-json.node', 'linux')).toBe(
+            true,
+        );
         expect(
             shouldCopy(
                 '/node_modules/@tree-sitter-grammars/tree-sitter-yaml/prebuilds/win32-arm64/tree-sitter-yaml.node',
                 'win32',
-                'arm64',
             ),
         ).toBe(true);
     });
 
-    it('supports universal prebuild directories containing the target architecture', () => {
+    it('supports universal prebuild directories for the bundle platform', () => {
         expect(shouldCopy('/node_modules/tree-sitter/prebuilds/darwin-x64+arm64/tree-sitter.node')).toBe(true);
     });
 
