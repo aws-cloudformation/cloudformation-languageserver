@@ -72,7 +72,7 @@ jobs:
               fi
               ;;
             windows-latest) PATTERN="*win32*x64*node24*.zip" ;;
-            macos-latest) PATTERN="*darwin*x64*node24*.zip" ;;
+            macos-latest) PATTERN="*darwin*arm64*node24*.zip" ;;
           esac
           gh release download "$TAG" --pattern "$PATTERN"
 
