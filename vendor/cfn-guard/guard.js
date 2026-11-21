@@ -351,7 +351,7 @@ class ValidateBuilder {
 }
 module.exports.ValidateBuilder = ValidateBuilder;
 
-module.exports.__wbg_existsSync_9d100236f2312506 = function() { return handleError(function (arg0, arg1) {
+module.exports.__wbg_existsSync_20ae45722207ecb2 = function() { return handleError(function (arg0, arg1) {
     const ret = existsSync(getStringFromWasm0(arg0, arg1));
     return ret;
 }, arguments) };
@@ -366,7 +366,7 @@ module.exports.__wbg_new0_f788a2397c7ca929 = function() {
     return addHeapObject(ret);
 };
 
-module.exports.__wbg_resolve_dfa74a9f91c373ba = function() { return handleError(function (arg0, arg1, arg2) {
+module.exports.__wbg_resolve_8564a73028164e73 = function() { return handleError(function (arg0, arg1, arg2) {
     const ret = resolve(getStringFromWasm0(arg1, arg2));
     const ptr1 = passStringToWasm0(ret, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
     const len1 = WASM_VECTOR_LEN;
