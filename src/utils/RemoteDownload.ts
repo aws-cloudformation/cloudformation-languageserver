@@ -28,7 +28,6 @@ async function retryDownload<T>(url: string, download: () => Promise<T>): Promis
             {
                 operationName: `Download ${url}`,
                 totalTimeoutMs: DownloadRetryTimeoutMs,
-                maxRetries: 5,
             },
             log,
         );
