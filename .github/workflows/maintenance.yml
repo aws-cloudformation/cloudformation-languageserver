@@ -51,7 +51,6 @@ jobs:
             Automated maintenance update.
 
             - Updated wheels via download-wheels
-            - Updated vendored cfn-guard from the latest stable release
             - Updated generated Guard rules from the AWS Guard Rules Registry
 
             This PR was created by the `maintenance` workflow.
