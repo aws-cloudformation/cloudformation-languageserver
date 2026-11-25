@@ -89,17 +89,25 @@ function isTreeSitterPrebuildForPlatform(relativePath, platform) {
     return !target || target.startsWith(`${platform}-`);
 }
 
+function pathWithinExternalPackage(relativePath, externalDependencies) {
+    for (const external of externalDependencies) {
+        const packageRoot = `/node_modules/${external}/`;
+        const packageRootIndex = relativePath.indexOf(packageRoot);
+        if (packageRootIndex !== -1) {
+            return `/${relativePath.slice(packageRootIndex + packageRoot.length)}`;
+        }
+    }
+}
+
 function shouldCopyExternalFile(relativePath, externalDependencies, platform) {
-    const isExternal = externalDependencies.some((external) => {
-        return relativePath.includes(`/node_modules/${external}/`);
-    });
+    const packageRelativePath = pathWithinExternalPackage(relativePath, externalDependencies);
     const keep = KEEP_FILES.some((pattern) => relativePath.endsWith(pattern));
-    const ignoredPath = IGNORE_PATHS.some((pattern) => pattern.test(relativePath));
+    const ignoredPath =
+        packageRelativePath === undefined || IGNORE_PATHS.some((pattern) => pattern.test(packageRelativePath));
     const nonRuntimePackageFile = NON_RUNTIME_PACKAGE_FILES.some((file) => relativePath.endsWith(file));
     const alternateOpenTelemetryBuild = OPENTELEMETRY_ALTERNATE_BUILD_PATH.test(relativePath);
 
     return (
-        isExternal &&
         keep &&
         !ignoredPath &&
         !nonRuntimePackageFile &&

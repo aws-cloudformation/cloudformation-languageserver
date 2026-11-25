@@ -14,7 +14,9 @@ const { shouldCopyExternalFile } = requireModule('../../../webpack.config.js') a
 
 const externalDependencies = [
     '@opentelemetry/api',
+    '@standard-schema/spec',
     '@tree-sitter-grammars/tree-sitter-yaml',
+    'example',
     'msgpackr',
     'tree-sitter',
     'tree-sitter-json',
@@ -54,6 +56,11 @@ describe('Bundle file filter', () => {
 
     it('supports universal prebuild directories for the bundle platform', () => {
         expect(shouldCopy('/node_modules/tree-sitter/prebuilds/darwin-x64+arm64/tree-sitter.node')).toBe(true);
+    });
+
+    it('keeps runtime files when package names resemble ignored directories', () => {
+        expect(shouldCopy('/node_modules/@standard-schema/spec/dist/index.js')).toBe(true);
+        expect(shouldCopy('/node_modules/example/dist/index.js')).toBe(true);
     });
 
     it('excludes conventional test and spec directories', () => {
