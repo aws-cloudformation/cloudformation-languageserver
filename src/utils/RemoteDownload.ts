@@ -1,5 +1,10 @@
 import axios, { AxiosProxyConfig } from 'axios';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { retryWithExponentialBackoff } from './Retry';
+
+const DownloadTimeoutMs = 10 * 60 * 1000;
+const DownloadRetryTimeoutMs = 60 * 60 * 1000;
+const log = LoggerFactory.getLogger('Remote');
 
 function getProxyConfig(): AxiosProxyConfig | undefined {
     const proxyUrl =
@@ -16,26 +21,50 @@ function getProxyConfig(): AxiosProxyConfig | undefined {
 }
 
 export async function downloadFile(url: string): Promise<Buffer> {
-    const response = await axios({
-        method: 'get',
-        url: url,
-        responseType: 'arraybuffer',
-        proxy: getProxyConfig(),
-        maxRedirects: 7,
-    });
+    log.info(`Fetching ${url}`);
 
-    LoggerFactory.getLogger('Remote').info(`Fetching ${url}`);
+    const response = await retryWithExponentialBackoff(
+        () => {
+            return axios({
+                method: 'get',
+                url,
+                responseType: 'arraybuffer',
+                proxy: getProxyConfig(),
+                maxRedirects: 7,
+                timeout: DownloadTimeoutMs,
+            });
+        },
+        {
+            operationName: `FileDownload ${url}`,
+            totalTimeoutMs: DownloadRetryTimeoutMs,
+            maxRetries: 5,
+        },
+        log,
+    );
+
     return Buffer.from(response.data);
 }
 
 export async function downloadJson<T = unknown>(url: string): Promise<T> {
-    LoggerFactory.getLogger('Remote').info(`Fetching ${url}`);
-    const response = await axios<T>({
-        method: 'get',
-        url: url,
-        proxy: getProxyConfig(),
-        maxRedirects: 7,
-    });
+    log.info(`Fetching ${url}`);
+
+    const response = await retryWithExponentialBackoff(
+        () => {
+            return axios<T>({
+                method: 'get',
+                url,
+                proxy: getProxyConfig(),
+                maxRedirects: 7,
+                timeout: DownloadTimeoutMs,
+            });
+        },
+        {
+            operationName: `FileDownload ${url}`,
+            totalTimeoutMs: DownloadRetryTimeoutMs,
+            maxRetries: 5,
+        },
+        log,
+    );
 
     return response.data;
 }

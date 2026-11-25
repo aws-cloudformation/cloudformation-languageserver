@@ -56,12 +56,29 @@ describe('Bundle file filter', () => {
         expect(shouldCopy('/node_modules/tree-sitter/prebuilds/darwin-x64+arm64/tree-sitter.node')).toBe(true);
     });
 
-    it('excludes msgpackr build and test artifacts while retaining its runtime entry point', () => {
-        expect(shouldCopy('/node_modules/msgpackr/dist/node.cjs')).toBe(true);
+    it('excludes conventional test and spec directories', () => {
+        expect(shouldCopy('/node_modules/msgpackr/test/fixture.js')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/tests/fixture.js')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/__tests__/fixture.js')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/spec/fixture.js')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/__specs__/fixture.js')).toBe(false);
+    });
+
+    it('excludes conventional test and spec file names without matching runtime names', () => {
         expect(shouldCopy('/node_modules/msgpackr/dist/test.js')).toBe(false);
         expect(shouldCopy('/node_modules/msgpackr/dist/test.js.map')).toBe(false);
-        expect(shouldCopy('/node_modules/msgpackr/rollup.config.js')).toBe(false);
         expect(shouldCopy('/node_modules/msgpackr/test-worker.js')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/dist/pack.test.js')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/dist/pack.tests.js')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/dist/pack.spec.cjs')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/dist/specs.js')).toBe(false);
+        expect(shouldCopy('/node_modules/msgpackr/dist/contest.js')).toBe(true);
+        expect(shouldCopy('/node_modules/msgpackr/dist/latest.js')).toBe(true);
+    });
+
+    it('excludes msgpackr build artifacts while retaining its runtime entry point', () => {
+        expect(shouldCopy('/node_modules/msgpackr/dist/node.cjs')).toBe(true);
+        expect(shouldCopy('/node_modules/msgpackr/rollup.config.js')).toBe(false);
     });
 
     it('retains existing extension and ignored-directory filtering', () => {
