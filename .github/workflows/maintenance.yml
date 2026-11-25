@@ -37,11 +37,6 @@ jobs:
       - name: Update wheels
         run: npm run download-wheels
 
-      - name: Update cfn-guard
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: npm run build-cfn-guard
-
       - name: Update Guard rules
         run: npm run generate:guard-rules
 
@@ -56,7 +51,6 @@ jobs:
             Automated maintenance update.
 
             - Updated wheels via download-wheels
-            - Updated vendored cfn-guard from the latest stable release
             - Updated generated Guard rules from the AWS Guard Rules Registry
 
             This PR was created by the `maintenance` workflow.

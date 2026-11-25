@@ -1,5 +1,11 @@
 import axios, { AxiosProxyConfig } from 'axios';
 import { LoggerFactory } from '../telemetry/LoggerFactory';
+import { RetryError } from './errors/ErrorClasses';
+import { retryWithExponentialBackoff } from './Retry';
+
+const DownloadTimeoutMs = 10 * 60 * 1000;
+const DownloadRetryTimeoutMs = 60 * 60 * 1000;
+const log = LoggerFactory.getLogger('Remote');
 
 function getProxyConfig(): AxiosProxyConfig | undefined {
     const proxyUrl =
@@ -15,26 +21,52 @@ function getProxyConfig(): AxiosProxyConfig | undefined {
     };
 }
 
+async function retryDownload<T>(url: string, download: () => Promise<T>): Promise<T> {
+    try {
+        return await retryWithExponentialBackoff(
+            download,
+            {
+                operationName: `Download ${url}`,
+                totalTimeoutMs: DownloadRetryTimeoutMs,
+            },
+            log,
+        );
+    } catch (error) {
+        if (error instanceof RetryError && error.cause !== undefined) {
+            throw error.cause;
+        }
+        throw error;
+    }
+}
+
 export async function downloadFile(url: string): Promise<Buffer> {
-    const response = await axios({
-        method: 'get',
-        url: url,
-        responseType: 'arraybuffer',
-        proxy: getProxyConfig(),
-        maxRedirects: 7,
+    log.info(`Fetching ${url}`);
+
+    const response = await retryDownload(url, () => {
+        return axios({
+            method: 'get',
+            url,
+            responseType: 'arraybuffer',
+            proxy: getProxyConfig(),
+            maxRedirects: 7,
+            timeout: DownloadTimeoutMs,
+        });
     });
 
-    LoggerFactory.getLogger('Remote').info(`Fetching ${url}`);
     return Buffer.from(response.data);
 }
 
 export async function downloadJson<T = unknown>(url: string): Promise<T> {
-    LoggerFactory.getLogger('Remote').info(`Fetching ${url}`);
-    const response = await axios<T>({
-        method: 'get',
-        url: url,
-        proxy: getProxyConfig(),
-        maxRedirects: 7,
+    log.info(`Fetching ${url}`);
+
+    const response = await retryDownload(url, () => {
+        return axios<T>({
+            method: 'get',
+            url,
+            proxy: getProxyConfig(),
+            maxRedirects: 7,
+            timeout: DownloadTimeoutMs,
+        });
     });
 
     return response.data;

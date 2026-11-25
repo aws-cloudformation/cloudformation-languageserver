@@ -125,7 +125,6 @@ jobs:
             "package.json"
             "cfn-lsp-server-standalone.js"
             "pyodide-worker.js"
-            "guard_bg.wasm"
             "README.md"
             "LICENSE"
             "NOTICE"

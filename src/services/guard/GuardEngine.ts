@@ -1,4 +1,4 @@
-import { OutputFormatType, ShowSummaryType, ValidateBuilder } from 'cfn-guard/guard';
+import { OutputFormatType, ShowSummaryType, ValidateBuilder } from '@aws/cloudformation-guard/guard';
 import { DiagnosticSeverity } from 'vscode-languageserver';
 import { LoggerFactory } from '../../telemetry/LoggerFactory';
 import { extractErrorMessage } from '../../utils/errors/ErrorUtils';

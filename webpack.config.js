@@ -30,13 +30,14 @@ const KEEP_FILES = [
     'pyodide-lock.json',
     'python_stdlib.zip',
 ];
-const IGNORE_PATHS = ['/bin/', '/test/', '/benchmarks/', '/examples/'];
-const NON_RUNTIME_PACKAGE_FILES = [
-    '/node_modules/msgpackr/dist/test.js',
-    '/node_modules/msgpackr/dist/test.js.map',
-    '/node_modules/msgpackr/rollup.config.js',
-    '/node_modules/msgpackr/test-worker.js',
+const IGNORE_PATHS = [
+    /\/bin\//,
+    /\/(?:__tests?__|__specs?__|tests?|specs?)\//,
+    /\/benchmarks?\//,
+    /\/examples?\//,
+    /\/(?:[^/]+\.)?(?:tests?|specs?)(?:[-_.][^/]*)?\.(?:c|m)?js(?:\.map)?$/,
 ];
+const NON_RUNTIME_PACKAGE_FILES = ['/node_modules/msgpackr/rollup.config.js'];
 const OPENTELEMETRY_ALTERNATE_BUILD_PATH =
     /\/node_modules\/@opentelemetry\/[^/]+\/build\/(?:esm|esnext)\//;
 const TREE_SITTER_PREBUILD_PATH =
@@ -88,17 +89,25 @@ function isTreeSitterPrebuildForPlatform(relativePath, platform) {
     return !target || target.startsWith(`${platform}-`);
 }
 
+function pathWithinExternalPackage(relativePath, externalDependencies) {
+    for (const external of externalDependencies) {
+        const packageRoot = `/node_modules/${external}/`;
+        const packageRootIndex = relativePath.indexOf(packageRoot);
+        if (packageRootIndex !== -1) {
+            return `/${relativePath.slice(packageRootIndex + packageRoot.length)}`;
+        }
+    }
+}
+
 function shouldCopyExternalFile(relativePath, externalDependencies, platform) {
-    const isExternal = externalDependencies.some((external) => {
-        return relativePath.includes(`/node_modules/${external}/`);
-    });
+    const packageRelativePath = pathWithinExternalPackage(relativePath, externalDependencies);
     const keep = KEEP_FILES.some((pattern) => relativePath.endsWith(pattern));
-    const ignoredPath = IGNORE_PATHS.some((pattern) => relativePath.includes(pattern));
+    const ignoredPath =
+        packageRelativePath === undefined || IGNORE_PATHS.some((pattern) => pattern.test(packageRelativePath));
     const nonRuntimePackageFile = NON_RUNTIME_PACKAGE_FILES.some((file) => relativePath.endsWith(file));
     const alternateOpenTelemetryBuild = OPENTELEMETRY_ALTERNATE_BUILD_PATH.test(relativePath);
 
     return (
-        isExternal &&
         keep &&
         !ignoredPath &&
         !nonRuntimePackageFile &&
@@ -197,6 +206,7 @@ function generateExternals() {
 }
 
 const EXTERNALS = generateExternals();
+const EXTERNAL_SUBPATHS = ['@aws/cloudformation-guard/guard'];
 
 function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, buildTarget = '', skipWheels = false) {
     const plugins = [];
@@ -236,10 +246,6 @@ function createPlugins(isDevelopment, outputPath, mode, env, rebuild = false, bu
                 {
                     from: 'assets',
                     to: 'assets',
-                },
-                {
-                    from: 'vendor/cfn-guard/guard_bg.wasm',
-                    to: 'guard_bg.wasm',
                 },
             ],
         }),
@@ -462,7 +468,7 @@ function createWebpackConfig(env = {}) {
                 type: 'commonjs2',
             },
         },
-        externals: isDevelopment ? [nodeExternals()] : EXTERNALS,
+        externals: isDevelopment ? [nodeExternals()] : [...EXTERNALS, ...EXTERNAL_SUBPATHS],
         optimization: {
             minimize: false,
             moduleIds: 'named',

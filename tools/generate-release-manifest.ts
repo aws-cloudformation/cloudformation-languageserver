@@ -37,26 +37,24 @@ type Version = {
 
 const ENVIRONMENTS = ['alpha', 'beta', 'prod'];
 
-const DELISTED_VERSIONS = new Set([
-    'v1.0.0',
-    'v1.0.0-beta',
-    'v1.1.0',
-    'v1.1.0-beta',
-    'v1.2.0',
-    'v1.2.0-beta',
-    'v1.3.0',
-    'v1.3.0-beta',
-    'v1.3.1',
-    'v1.3.1-beta',
-    'v1.4.0',
-    'v1.4.0-beta',
-    'v1.5.0',
-    'v1.5.0-beta',
-    'v1.6.0',
-    'v1.6.0-beta',
-    'v1.7.0',
-    'v1.7.0-beta',
-]);
+const DELISTED_VERSIONS = new Set(
+    [
+        '1.0.0',
+        '1.1.0',
+        '1.2.0',
+        '1.3.0',
+        '1.3.1',
+        '1.4.0',
+        '1.5.0',
+        '1.6.0',
+        '1.7.0',
+        '1.8.0',
+        '1.9.0',
+        '1.10.0',
+    ].flatMap((v) => {
+        return [`v${v}`, `v${v}-beta`, `v${v}-alpha`];
+    }),
+);
 
 function getEnvFromTag(tag: string): string {
     for (const env of ENVIRONMENTS) {

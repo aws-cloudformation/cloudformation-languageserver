@@ -3,9 +3,9 @@
   "dataLicense": "CC0-1.0",
   "SPDXID": "SPDXRef-DOCUMENT",
   "name": "@aws/cloudformation-languageserver@1.15.0",
-  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.15.0-32c65f26-5fa5-432d-80d2-bd9158a13bfb",
+  "documentNamespace": "http://spdx.org/spdxdocs/@aws%2fcloudformation-languageserver-1.15.0-ce3e8679-776d-480b-9123-b6a056df803d",
   "creationInfo": {
-    "created": "2026-11-18T20:59:15.890Z",
+    "created": "2026-11-25T20:55:59.654Z",
     "creators": [
       "Tool: npm/cli-11.17.0"
     ]
@@ -556,6 +556,30 @@
         {
           "algorithm": "SHA512",
           "checksumValue": "ac6f10571e033ab256a6db2882ed40abe083b273ca681ac0949a4a2f1ac9ac80d702ad449675b4c908e3067956497965d1c0da9021ba503bdaab0cf403d77d3a"
+        }
+      ]
+    },
+    {
+      "name": "@aws/cloudformation-guard",
+      "SPDXID": "SPDXRef-Package-aws.cloudformation-guard-3.4.0",
+      "versionInfo": "3.4.0",
+      "packageFileName": "node_modules/@aws/cloudformation-guard",
+      "description": "TypeScript and JavaScript bindings for AWS CloudFormation Guard.",
+      "downloadLocation": "https://registry.npmjs.org/@aws/cloudformation-guard/-/cloudformation-guard-3.4.0.tgz",
+      "filesAnalyzed": false,
+      "homepage": "https://github.com/aws-cloudformation/cloudformation-guard/tree/main/guard/ts-lib#readme",
+      "licenseDeclared": "Apache-2.0",
+      "externalRefs": [
+        {
+          "referenceCategory": "PACKAGE-MANAGER",
+          "referenceType": "purl",
+          "referenceLocator": "pkg:npm/%40aws/cloudformation-guard@3.4.0"
+        }
+      ],
+      "checksums": [
+        {
+          "algorithm": "SHA512",
+          "checksumValue": "df6e09f4f8486d0c49544829b088fa70bcc2be23fbf7e134aa4c0763364b79cfa120eeb1ca90e633daf481fc01bad9fceb25e922fb6a33883383d11a002bd546"
         }
       ]
     },
@@ -4589,24 +4613,6 @@
           "checksumValue": "83c5b60f6914e9af2e9ed734e777d7d6e5412b333bcaa0315bfdf3c24f37fba472176f9228eb95f9cd30043854c335753da19aa66647fab99c5333dffb7086c2"
         }
       ]
-    },
-    {
-      "name": "cfn-guard",
-      "SPDXID": "SPDXRef-Package-cfn-guard-3.2.2",
-      "versionInfo": "3.2.2",
-      "packageFileName": "vendor/cfn-guard",
-      "description": "AWS CloudFormation Guard is an open-source general-purpose policy-as-code evaluation tool. It provides developers with a simple-to-use, yet powerful and expressive domain-specific language (DSL) to define policies and enables developers to validate JSON- or YAML- formatted structured data with those policies.",
-      "downloadLocation": "NOASSERTION",
-      "filesAnalyzed": false,
-      "homepage": "NOASSERTION",
-      "licenseDeclared": "Apache-2.0",
-      "externalRefs": [
-        {
-          "referenceCategory": "PACKAGE-MANAGER",
-          "referenceType": "purl",
-          "referenceLocator": "pkg:npm/cfn-guard@3.2.2"
-        }
-      ]
     }
   ],
   "relationships": [
@@ -4647,6 +4653,11 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-aws-sdk.credential-provider-node-3.972.81",
+      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.15.0",
+      "relationshipType": "DEPENDENCY_OF"
+    },
+    {
+      "spdxElementId": "SPDXRef-Package-aws.cloudformation-guard-3.4.0",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.15.0",
       "relationshipType": "DEPENDENCY_OF"
     },
@@ -4702,11 +4713,6 @@
     },
     {
       "spdxElementId": "SPDXRef-Package-axios-1.21.1",
-      "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.15.0",
-      "relationshipType": "DEPENDENCY_OF"
-    },
-    {
-      "spdxElementId": "SPDXRef-Package-cfn-guard-3.2.2",
       "relatedSpdxElement": "SPDXRef-Package-aws.cloudformation-languageserver-1.15.0",
       "relationshipType": "DEPENDENCY_OF"
     },
