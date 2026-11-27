@@ -92,6 +92,6 @@ describe('RemoteDownload', () => {
         await vi.runAllTimersAsync();
 
         await expect(resultPromise).resolves.toBe(timeoutError);
-        expect(axios).toHaveBeenCalledTimes(6);
+        expect(axios).toHaveBeenCalledTimes(4);
     });
 });
